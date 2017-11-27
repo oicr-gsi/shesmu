@@ -1,0 +1,6 @@
+Run nothing
+  Group files = path By accession, donor
+  With {
+    memory = 4Gi,
+    input = files
+  }

@@ -1,0 +1,12 @@
+{
+  "definitions": [
+    {
+      "name": "fastqc",
+      "parameters": {
+        "input": "as",
+        "memory": "i"
+      }
+    }
+  ],
+  "url": "http://example.com/"
+}

@@ -1,0 +1,98 @@
+package ca.on.oicr.gsi.shesmu.compiler;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.objectweb.asm.ClassVisitor;
+
+import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.Lookup;
+
+/**
+ * A shell of building a compiler that can output bytecode
+ */
+public abstract class Compiler {
+
+	private class MaxParseError implements ErrorConsumer {
+		private int column;
+		private int line;
+		private String message = "No error.";
+
+		@Override
+		public void raise(int line, int column, String errorMessage) {
+			if (this.line < line || this.line == line && this.column <= column) {
+				this.line = line;
+				this.column = column;
+				message = errorMessage;
+			}
+		}
+
+		public void write() {
+			errorHandler(String.format("%d:%d: %s", line, column, message));
+		}
+	}
+
+	/**
+	 * Compile a program
+	 *
+	 * @param input
+	 *            the bytes in the script
+	 * @param name
+	 *            the internal name of the class to generate; it will extend
+	 *            {@link ActionGenerator}
+	 * @param path
+	 *            the source file's path for debugging information
+	 * @return whether compilation was successful
+	 */
+	public final boolean compile(byte[] input, String name, String path) {
+		final AtomicReference<List<OliveNode>> program = new AtomicReference<>();
+		final MaxParseError maxParseError = new MaxParseError();
+		final boolean parseOk = OliveNode.parseFile(new String(input, StandardCharsets.UTF_8), program::set,
+				maxParseError);
+		if (!parseOk) {
+			maxParseError.write();
+		}
+		if (parseOk && OliveNode.validate(program.get(), this::getLookup, this::getAction, this::errorHandler)) {
+			final RootBuilder builder = new RootBuilder(name, path) {
+				@Override
+				protected ClassVisitor createClassVisitor() {
+					return Compiler.this.createClassVisitor();
+				}
+			};
+			OliveNode.render(builder, program.get());
+			builder.finish();
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Create a new class visitor for bytecode generation.
+	 */
+	protected abstract ClassVisitor createClassVisitor();
+
+	/**
+	 * Report an error to the user.
+	 */
+	protected abstract void errorHandler(String message);
+
+	/**
+	 * Get an action by name.
+	 *
+	 * @param name
+	 *            the name of the action
+	 * @return the action definition, or null if no action is available
+	 */
+	protected abstract ActionDefinition getAction(String name);
+
+	/**
+	 * Get a lookup by name.
+	 *
+	 * @param name
+	 *            the name of the lookup
+	 * @return the lookup or null if no lookup is available
+	 */
+	protected abstract Lookup getLookup(String name);
+}
