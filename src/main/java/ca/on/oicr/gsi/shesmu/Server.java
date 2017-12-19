@@ -169,6 +169,7 @@ public final class Server {
 		add(url, t -> {
 			final ObjectMapper mapper = new ObjectMapper();
 			final JsonNode node = fetcher.apply(mapper);
+			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
 				mapper.writeValue(os, node);
