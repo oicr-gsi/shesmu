@@ -278,3 +278,12 @@ number of underscores, lowercase letters a-z, and decimal digits.
 Olive definitions, lookup names, action names, and variables exist in different
 name spaces. It is possible to create a parameter with the same name as an
 action, though this is not recommended.
+
+## Variables
+The default variables available in the Shesmu langauge can be seen on the status page, or:
+
+    curl http://localhost:8081/variables | js -S .
+
+or:
+
+    java ca.on.oicr.gsi.shesmu.compiler.Build -v

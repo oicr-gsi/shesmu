@@ -85,7 +85,18 @@ public final class Server {
 						});
 				writer.write("</table><h1>Compile Errors</h1><p>");
 				writer.write(compiler.errorHtml());
-				writer.write("</p></body></html>");
+				writer.write("</p><h1>Variables</h1><table>");
+				NameDefinitions.baseStreamVariables().forEach(variable -> {
+					try {
+						writer.write("<tr><td>");
+						writer.write(variable.name());
+						writer.write("</td><td>");
+						writer.write(variable.type().name().replace("<", "&lt;").replace(">", "&gt;"));
+						writer.write("</td></tr>");
+					} catch (final IOException e) {
+					}
+				});
+				writer.write("</table></body></html>");
 			}
 		});
 
