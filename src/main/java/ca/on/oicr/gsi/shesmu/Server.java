@@ -189,7 +189,7 @@ public final class Server {
 		System.out.printf("Found %d actions\n", actionCount);
 		System.out.println("Finding lookups...");
 		final long lookupCount = lookupRepository.stream().count();
-		System.out.printf("Found %d looks\n", lookupCount);
+		System.out.printf("Found %d lookups\n", lookupCount);
 		System.out.println("Compiling script...");
 		compiler.start();
 		System.out.println("Starting action processor...");
