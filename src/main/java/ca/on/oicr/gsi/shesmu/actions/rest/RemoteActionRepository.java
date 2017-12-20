@@ -31,11 +31,17 @@ public final class RemoteActionRepository implements ActionRepository {
 
 	private static final String URL_VARIABLE = "SHESMU_ACTION_URLS";
 
+	public Optional<String> environmentVariable() {
+		return Optional.ofNullable(System.getenv(URL_VARIABLE));
+	}
+
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		final Map<String, String> map = new TreeMap<>();
-		map.put("url", System.getenv(URL_VARIABLE));
-		return Stream.of(new Pair<>("Remote Action Repositories", map));
+		return environmentVariable().map(url -> {
+			final Map<String, String> map = new TreeMap<>();
+			map.put("url", url);
+			return Stream.of(new Pair<>("Remote Action Repositories", map));
+		}).orElse(Stream.empty());
 	}
 
 	@Override
@@ -56,7 +62,7 @@ public final class RemoteActionRepository implements ActionRepository {
 	}
 
 	private Stream<String> roots() {
-		return Optional.ofNullable(System.getenv(URL_VARIABLE)).map(SEMICOLON::splitAsStream).orElse(Stream.empty());
+		return environmentVariable().map(SEMICOLON::splitAsStream).orElse(Stream.empty());
 	}
 
 }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -133,9 +134,12 @@ public class TsvLookupRepository implements LookupRepository {
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return configuration.stream().map(lookup -> new Pair<>(String.format("Lookup %s", lookup.name()), lookup.types()//
-				.map(Pair.number())//
-				.collect(Collectors.toMap(pair -> pair.first().toString(), pair -> pair.second().toString()))));
+		return environmentVariable().map(path -> {
+			Map<String, String> map = new TreeMap<>();
+			map.put("path", path);
+			return Stream.of(new Pair<>("TSV Lookups", map));
+
+		}).orElse(Stream.empty());
 	}
 
 	@Override

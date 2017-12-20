@@ -5,11 +5,11 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -58,45 +58,59 @@ public final class Server {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody(); Writer writer = new PrintWriter(os)) {
-				writer.write("<html><head><title>Shesmu</title></head><body><table>");
-				final Map<String, String> properties = new TreeMap<>();
-				properties.put("Uptime", Duration.between(startTime, Instant.now()).toString());
-				properties.put("Start Time", startTime.toString());
-				Stream.concat(Stream.of(new Pair<>("shesmu core", properties)),
-						Stream.concat(actionRepository.implementations(), lookupRepository.implementations())
-								.flatMap(LoadedConfiguration::listConfiguration))
-						.forEach(config -> {
-							try {
-								writer.write("<tr><td colspan=\"2\">");
-								writer.write(config.first());
-								writer.write("</td></tr>");
-							} catch (final IOException e) {
-							}
-							config.second().forEach((k, v) -> {
-								try {
-									writer.write("<tr><td>");
-									writer.write(k);
-									writer.write("</td><td>");
-									writer.write(v);
-									writer.write("</td></tr>");
-								} catch (final IOException e) {
-								}
-							});
-						});
-				writer.write("</table><h1>Compile Errors</h1><p>");
+				writePageHeader(writer);
+				writeHeader(writer, "Core");
+				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
+				writeRow(writer, "Start Time", startTime.toString());
+				writeFinish(writer);
+
+				writer.write("<h1>Compile Errors</h1><p>");
 				writer.write(compiler.errorHtml());
-				writer.write("</p><h1>Variables</h1><table>");
-				NameDefinitions.baseStreamVariables().forEach(variable -> {
-					try {
-						writer.write("<tr><td>");
-						writer.write(variable.name());
-						writer.write("</td><td>");
-						writer.write(variable.type().name().replace("<", "&lt;").replace(">", "&gt;"));
-						writer.write("</td></tr>");
-					} catch (final IOException e) {
-					}
+				writer.write("</p>");
+
+				Stream.concat(actionRepository.implementations(), lookupRepository.implementations())
+						.flatMap(LoadedConfiguration::listConfiguration).forEach(config -> {
+							writeHeader(writer, config.first());
+							config.second().forEach((k, v) -> writeRow(writer, k, v));
+							writeFinish(writer);
+						});
+
+				writePageFooter(writer);
+			}
+		});
+
+		add("/definitions", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody(); Writer writer = new PrintWriter(os)) {
+				writePageHeader(writer);
+
+				writeHeader(writer, "Lookups");
+				lookupRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(lookup -> {
+					writeBlock(writer, "Lookup: " + lookup.name());
+					writeRow(writer, "Return", lookup.returnType().name());
+					lookup.types().map(Pair.number())
+							.forEach(p -> writeRow(writer, p.first().toString(), p.second().signature()));
+
 				});
-				writer.write("</table></body></html>");
+				writeFinish(writer);
+
+				writeHeader(writer, "Actions");
+				actionRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(action -> {
+					writeBlock(writer, "Action: " + action.name());
+					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
+							.forEach(p -> writeRow(writer, p.name(), p.type().signature()));
+
+				});
+				writeFinish(writer);
+
+				writeHeader(writer, "Variables");
+				NameDefinitions.baseStreamVariables().forEach(variable -> {
+					writeRow(writer, variable.name(), variable.type().name().replace("<", "&lt;").replace(">", "&gt;"));
+				});
+				writeFinish(writer);
+
+				writePageFooter(writer);
 			}
 		});
 
@@ -149,6 +163,8 @@ public final class Server {
 			});
 			return node;
 		});
+
+		add("/main.css", "text/css");
 	}
 
 	private Stream<ActionDefinition> actionDefinitions() {
@@ -161,6 +177,18 @@ public final class Server {
 				handler.handle(t);
 			} catch (final Exception e) {
 				throw new IOException(e);
+			}
+		});
+	}
+
+	private void add(String url, String type) {
+		server.createContext(url, t -> {
+			t.getResponseHeaders().set("Content-type", type);
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream output = t.getResponseBody()) {
+				Files.copy(Paths.get(getClass().getResource(url).toURI()), output);
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
 			}
 		});
 	}
@@ -196,5 +224,52 @@ public final class Server {
 		processor.start();
 		System.out.println("Starting scheduler...");
 		z_master.start();
+	}
+
+	private void writeBlock(Writer writer, String title) {
+		try {
+			writer.write("<tr><td colspan=\"2\">");
+			writer.write(title);
+			writer.write("</td></tr>");
+		} catch (final IOException e) {
+		}
+	}
+
+	private void writeFinish(Writer writer) {
+		try {
+			writer.write("</table>");
+		} catch (final IOException e) {
+		}
+
+	}
+
+	private void writeHeader(Writer writer, String title) {
+		try {
+			writer.write("<h1>");
+			writer.write(title);
+			writer.write("</h1><table>");
+		} catch (final IOException e) {
+		}
+	}
+
+	private void writePageFooter(Writer writer) throws IOException {
+		writer.write("</div></body></html>");
+	}
+
+	private void writePageHeader(Writer writer) throws IOException {
+		writer.write(
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><title>Shesmu</title></head><body><nav><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
+	}
+
+	private void writeRow(Writer writer, String key, String value) {
+		try {
+			writer.write("<tr><td>");
+			writer.write(key);
+			writer.write("</td><td>");
+			writer.write(value);
+			writer.write("</td></tr>");
+		} catch (final IOException e) {
+		}
+
 	}
 }
