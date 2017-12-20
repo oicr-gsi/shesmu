@@ -1,0 +1,3 @@
+Run ok
+ Group a = accession By workflow
+ With { ok = Count a == 2 }

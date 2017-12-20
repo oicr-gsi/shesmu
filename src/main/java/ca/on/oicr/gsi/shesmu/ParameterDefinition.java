@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 
 import org.objectweb.asm.Type;
 
+import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 
 /**
@@ -11,14 +12,14 @@ import ca.on.oicr.gsi.shesmu.compiler.Renderer;
  */
 public interface ParameterDefinition {
 	/**
-	 * Create a string parameter definition that will be written to a public field
+	 * Create a parameter definition that will be written to a public field
 	 *
 	 * @param owner
 	 *            The type of the action object
 	 * @param fieldName
 	 *            the name of the field
 	 */
-	public static ParameterDefinition forStringField(Type owner, String fieldName) {
+	public static ParameterDefinition forField(Type owner, String fieldName, BaseImyhat fieldType) {
 		return new ParameterDefinition() {
 
 			@Override
@@ -30,12 +31,12 @@ public interface ParameterDefinition {
 			public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
 				renderer.methodGen().loadLocal(actionLocal);
 				loadParameter.accept(renderer);
-				renderer.methodGen().putField(owner, fieldName, Type.getType(String.class));
+				renderer.methodGen().putField(owner, fieldName, fieldType.asmType());
 			}
 
 			@Override
 			public Imyhat type() {
-				return Imyhat.STRING;
+				return fieldType;
 			}
 
 		};

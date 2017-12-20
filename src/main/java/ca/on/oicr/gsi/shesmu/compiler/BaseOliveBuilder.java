@@ -98,8 +98,8 @@ public abstract class BaseOliveBuilder {
 					Type.getMethodDescriptor(A_PREDICATE_TYPE,
 							Stream.concat(Stream.of(owner.selfType()),
 									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodDescriptor(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
-					method.getDescriptor());
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
+					Type.getMethodType(BOOLEAN_TYPE, currentType));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
@@ -136,18 +136,20 @@ public abstract class BaseOliveBuilder {
 
 			renderer.methodGen().loadThis();
 			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, newMethod.getDescriptor(), new Handle(Opcodes.H_INVOKEVIRTUAL,
+			renderer.methodGen().invokeDynamic(
+					"apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes), LAMBDA_METAFACTORY_BSM,
+					Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
 							owner.selfType().getInternalName(), newMethod.getName(), newMethod.getDescriptor(), false),
-					Type.getMethodDescriptor(A_OBJECT_TYPE, A_OBJECT_TYPE));
+					Type.getMethodType(newType, oldType));
 
 			renderer.methodGen().loadThis();
 			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, collectMethod.getDescriptor(),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), collectMethod.getName(),
-							collectMethod.getDescriptor(), false),
-					Type.getMethodDescriptor(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE));
+			renderer.methodGen()
+					.invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
+							LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
+							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+									collectMethod.getName(), collectMethod.getDescriptor(), false),
+							Type.getMethodType(VOID_TYPE, newType, oldType));
 
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
 		});

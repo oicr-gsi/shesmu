@@ -1,0 +1,2 @@
+Define foo(string s)
+	Group a = accession By s;

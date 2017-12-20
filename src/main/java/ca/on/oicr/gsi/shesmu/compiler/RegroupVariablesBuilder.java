@@ -197,7 +197,7 @@ public class RegroupVariablesBuilder {
 		this.collectedSelfArgument = collectedSelfArgument;
 		self = Type.getObjectType(name);
 		classVisitor = builder.createClassVisitor();
-		classVisitor.visit(Opcodes.V1_8, 0, name, null, A_OBJECT_TYPE.getInternalName(), null);
+		classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, name, null, A_OBJECT_TYPE.getInternalName(), null);
 		classVisitor.visitSource(builder.sourcePath(), null);
 	}
 

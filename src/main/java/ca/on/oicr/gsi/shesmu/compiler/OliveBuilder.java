@@ -13,16 +13,13 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-import ca.on.oicr.gsi.shesmu.Variables;
-
 /**
  * An olive that will result in an action being performed
  */
 public final class OliveBuilder extends BaseOliveBuilder {
 	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
-	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
 
-	private static final Type A_VARIABLES_TYPE = Type.getType(Variables.class);
+	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
 
 	private static final Method METHOD_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE, new Type[] { A_OBJECT_TYPE });
 
@@ -66,8 +63,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
 				method.getDescriptor(), false);
 		runMethod.invokeDynamic("accept", Type.getMethodDescriptor(A_CONSUMER_TYPE, owner.selfType(), A_CONSUMER_TYPE),
-				LAMBDA_METAFACTORY_BSM, Type.getMethodDescriptor(VOID_TYPE, A_OBJECT_TYPE), handle,
-				method.getDescriptor());
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(VOID_TYPE, currentType()));
 
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor), 1,
 				currentType(), Collections.emptyMap());
