@@ -1,0 +1,1 @@
+Run ok With { ok = ("string" ? 3 : 4) == 3  }

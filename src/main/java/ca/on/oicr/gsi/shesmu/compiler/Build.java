@@ -36,7 +36,7 @@ public final class Build extends Compiler implements AutoCloseable {
 	public static void main(String[] args) {
 		final Options options = new Options();
 		options.addOption("h", "help", false, "This dreck.");
-		options.addOption("x", "nocompute", false, "Don't automatically computed MAXS and FRAMES.");
+		options.addOption("x", "nocompute", false, "Don't automatically compute MAXS and FRAMES.");
 		options.addOption("v", "variables", false, "List all the variables known in the base stream.");
 		options.addOption("d", "dump", false, "Dump loaded actions and lookups in output.");
 		options.addOption("l", "lookups", true,
