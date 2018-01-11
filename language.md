@@ -99,6 +99,11 @@ _valueexpr_ must have the same type. The _refexpr_ and every _testexpr_ must
 have the same type, but not necessarily the same type as the _altexpr_ and
 _valueexpr_.
 
+- _testexpr_ `?` _trueexpr_ `:` _falseexpr_
+
+Evaluates _testexpr_ and if true, returns _trueexpr_; if false, returns _falseexpr_.
+_testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the same type.
+
 ### Logical Disjunction
 - _expr_ `||` _expr_
 
