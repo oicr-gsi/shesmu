@@ -2,11 +2,11 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.VOID_TYPE;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
@@ -49,6 +49,26 @@ public abstract class RootBuilder {
 	private static final Method METHOD_NAME_LOADER__GET = new Method("get", A_OBJECT_TYPE,
 			new Type[] { A_STRING_TYPE });
 
+	public static Stream<LoadableValue> proxyCaptured(int offset, LoadableValue... capturedVariables) {
+		return IntStream.range(0, capturedVariables.length).boxed().map(index -> new LoadableValue() {
+
+			@Override
+			public void accept(Renderer renderer) {
+				renderer.methodGen().loadArg(index + offset);
+			}
+
+			@Override
+			public String name() {
+				return capturedVariables[index].name();
+			}
+
+			@Override
+			public Type type() {
+				return capturedVariables[index].type();
+			}
+		});
+	}
+
 	private final GeneratorAdapter classInitMethod;
 	final ClassVisitor classVisitor;
 	private final Set<String> imyhats = new HashSet<>();
@@ -57,6 +77,7 @@ public abstract class RootBuilder {
 	private final String path;
 	private final GeneratorAdapter populateLookupsMethod;
 	private final GeneratorAdapter runMethod;
+
 	private final Type selfType;
 
 	public RootBuilder(String name, String path) {
@@ -171,7 +192,7 @@ public abstract class RootBuilder {
 	 * No stream variables are available in this context
 	 */
 	public final Renderer rootRenderer() {
-		return new Renderer(this, runMethod, -1, null, Collections.emptyMap());
+		return new Renderer(this, runMethod, -1, null, Stream.empty());
 	}
 
 	/**

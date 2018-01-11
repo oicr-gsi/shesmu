@@ -79,7 +79,7 @@ public abstract class ExpressionNode {
 
 		SUFFIX.addKeyword("In", (p, o) -> {
 			final AtomicReference<ExpressionNode> collection = new AtomicReference<>();
-			final Parser result = parse8(p, collection::set);
+			final Parser result = parse8(p.whitespace(), collection::set);
 			if (result.isGood()) {
 				final ExpressionNode c = collection.get();
 				o.accept(node -> new ExpressionNodeContains(p.line(), p.column(), node, c));

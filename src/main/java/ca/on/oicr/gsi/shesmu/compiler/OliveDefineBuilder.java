@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
@@ -67,8 +66,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 	public void finish() {
 		final Renderer renderer = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor), 0, null,
-				IntStream.range(0, parameters.size()).boxed().collect(
-						Collectors.toMap(index -> parameters.get(index).name(), index -> mg -> mg.loadArg(index + 1))));
+				parameters.stream());
 		renderer.methodGen().visitCode();
 		renderer.methodGen().loadArg(0);
 		steps.forEach(step -> step.accept(renderer));

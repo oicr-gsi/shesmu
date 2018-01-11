@@ -40,10 +40,11 @@ public class RegroupVariablesBuilder {
 		@Override
 		public void buildCollect() {
 			collectRenderer.methodGen().loadArg(collectedSelfArgument);
-			collectRenderer.methodGen().getField(self, fieldName, A_SET_TYPE);
+			collectRenderer.methodGen().invokeVirtual(self, new Method(fieldName, A_SET_TYPE, new Type[] {}));
 			loader.accept(collectRenderer);
 			collectRenderer.methodGen().box(valueType);
-			collectRenderer.methodGen().invokeVirtual(A_SET_TYPE, METHOD_SET__ADD);
+			collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
+			collectRenderer.methodGen().pop();
 		}
 
 		@Override
@@ -178,7 +179,7 @@ public class RegroupVariablesBuilder {
 			false);
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
-	private static final Method METHOD_SET__ADD = new Method("add", VOID_TYPE, new Type[] { A_OBJECT_TYPE });
+	private static final Method METHOD_SET__ADD = new Method("add", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private final ClassVisitor classVisitor;
 	public final int collectedSelfArgument;
 

@@ -57,7 +57,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 		final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
 		boolean good = arguments.stream().filter(argument -> argument.resolve(limitedDefs, errorHandler))
 				.count() == arguments.size();
-		Optional<Stream<Target>> replacements = target.outputStreamVariables(errorHandler);
+		final Optional<Stream<Target>> replacements = target.outputStreamVariables(errorHandler);
 		good &= replacements.isPresent();
 		return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
 

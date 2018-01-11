@@ -20,7 +20,7 @@ public class ExpressionNodeList extends ExpressionNode {
 
 	private static final Method CTOR_DEFAULT = new Method("<init>", Type.VOID_TYPE, new Type[] {});
 
-	private static final Method METHOD_HASH_SET__ADD = new Method("add", Type.VOID_TYPE, new Type[] { A_OBJECT_TYPE });
+	private static final Method METHOD_HASH_SET__ADD = new Method("add", Type.BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 
 	private final List<ExpressionNode> items;
 
@@ -46,7 +46,7 @@ public class ExpressionNodeList extends ExpressionNode {
 			renderer.methodGen().dup();
 			item.render(renderer);
 			renderer.methodGen().box(item.type().asmType());
-			renderer.methodGen().invokeConstructor(A_HASH_SET_TYPE, METHOD_HASH_SET__ADD);
+			renderer.methodGen().invokeVirtual(A_HASH_SET_TYPE, METHOD_HASH_SET__ADD);
 			renderer.methodGen().pop();
 		});
 		renderer.mark(line());

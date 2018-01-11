@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.VOID_TYPE;
 
-import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -24,6 +23,9 @@ public final class OliveBuilder extends BaseOliveBuilder {
 	private static final Method METHOD_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE, new Type[] { A_OBJECT_TYPE });
 
 	private static final Method METHOD_SUPPLIER__GET = new Method("get", A_OBJECT_TYPE, new Type[] {});
+
+	private static final Method METHOD_STREAM__FOR_EACH = new Method("forEach", VOID_TYPE,
+			new Type[] { A_CONSUMER_TYPE });
 
 	@SafeVarargs
 	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, LoadableValue... captures) {
@@ -65,9 +67,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		runMethod.invokeDynamic("accept", Type.getMethodDescriptor(A_CONSUMER_TYPE, owner.selfType(), A_CONSUMER_TYPE),
 				LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE), handle,
 				Type.getMethodType(VOID_TYPE, currentType()));
+		runMethod.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
 
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor), 1,
-				currentType(), Collections.emptyMap());
+				currentType(), Stream.empty());
 	}
 
 	@Override

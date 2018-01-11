@@ -39,7 +39,7 @@ public class ExpressionNodeLookup extends ExpressionNode {
 			return Stream.empty();
 		}
 	};
-	private static final Method METHOD_LOOKUP__GET = new Method("get", A_OBJECT_TYPE,
+	private static final Method METHOD_LOOKUP__LOOKUP = new Method("lookup", A_OBJECT_TYPE,
 			new Type[] { Type.getType(Object[].class) });
 
 	private final List<ExpressionNode> arguments;
@@ -72,7 +72,7 @@ public class ExpressionNodeLookup extends ExpressionNode {
 			renderer.methodGen().arrayStore(A_OBJECT_TYPE);
 		}
 
-		renderer.methodGen().invokeInterface(A_LOOKUP_TYPE, METHOD_LOOKUP__GET);
+		renderer.methodGen().invokeInterface(A_LOOKUP_TYPE, METHOD_LOOKUP__LOOKUP);
 		renderer.methodGen().unbox(lookup.returnType().asmType());
 	}
 

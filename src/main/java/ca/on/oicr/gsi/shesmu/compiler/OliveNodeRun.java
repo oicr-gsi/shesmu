@@ -79,7 +79,8 @@ public final class OliveNodeRun extends OliveNode {
 	protected boolean resolveDefinitionsExtra(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler) {
-		boolean ok = true;
+		boolean ok = arguments.stream().filter(arg -> arg.resolveLookups(definedLookups, errorHandler))
+				.count() == arguments.size();
 
 		final Set<String> argumentNames = arguments.stream().map(OliveActionArgumentNode::name).distinct()
 				.collect(Collectors.toSet());

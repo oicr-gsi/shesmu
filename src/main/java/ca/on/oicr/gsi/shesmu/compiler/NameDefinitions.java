@@ -129,7 +129,7 @@ public class NameDefinitions {
 		return new NameDefinitions(
 				Stream.concat(variables.values().stream().filter(variable -> variable.flavour() != Flavour.STREAM),
 						newStreamVariables).collect(Collectors.toMap(Target::name, Function.identity())),
-				good);
+				isGood && good);
 	}
 
 	public Stream<Target> stream() {

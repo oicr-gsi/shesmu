@@ -99,7 +99,7 @@ public class RunTest {
 
 		@Override
 		public String name() {
-			return "int2date";
+			return "int_to_date";
 		}
 
 		@Override
@@ -122,7 +122,7 @@ public class RunTest {
 
 		@Override
 		public String name() {
-			return "int2str";
+			return "int_to_str";
 		}
 
 		@Override
@@ -164,19 +164,33 @@ public class RunTest {
 		try (Stream<Path> files = Files.walk(Paths.get(this.getClass().getResource("/run").getPath()), 1)) {
 			Assert.assertTrue("Sample program failed to run!", files//
 					.filter(Files::isRegularFile)//
+					.filter(f -> f.getFileName().toString().endsWith(".shesmu"))//
+					.sorted((a, b) -> a.getFileName().compareTo(b.getFileName()))//
 					.filter(this::testFile)//
-					.peek(file -> System.err.printf("FAIL %s\n", file))//
 					.count() == 0);
 		}
 
 	}
 
 	private boolean testFile(Path file) {
-		HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions);
-		ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
-		ActionChecker checker = new ActionChecker();
-		generator.run(checker, this::data);
-		return checker.ok();
-	}
+		try {
+			HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions);
+			ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
+			ActionChecker checker = new ActionChecker();
+			generator.populateLookups(new NameLoader<>(lookups(), Lookup::name));
+			generator.run(checker, this::data);
+			if (checker.ok()) {
+				System.err.printf("OK %s\n", file.getFileName());
+				return false;
+			} else {
+				System.err.printf("FAIL %s\n", file.getFileName());
+				return true;
+			}
+		} catch (Exception | VerifyError e) {
+			System.err.printf("EXCP %s\n", file.getFileName());
+			e.printStackTrace();
+			return true;
 
+		}
+	}
 }

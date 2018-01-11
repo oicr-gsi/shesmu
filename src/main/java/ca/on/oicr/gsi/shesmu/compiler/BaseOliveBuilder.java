@@ -7,13 +7,11 @@ import java.lang.invoke.LambdaMetafactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Handle;
@@ -46,10 +44,6 @@ public abstract class BaseOliveBuilder {
 
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
-
-	protected static Consumer<GeneratorAdapter> loader(int index) {
-		return mg -> mg.loadArg(index);
-	}
 
 	private Type currentType;
 
@@ -103,7 +97,7 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, currentType, proxyCaptured(1, capturedVariables));
+				capturedVariables.length, currentType, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 
 	/**
@@ -156,10 +150,10 @@ public abstract class BaseOliveBuilder {
 
 		final Renderer newMethodGen = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, proxyCaptured(0, capturedVariables));
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
 		final Renderer collectedMethodGen = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
-				capturedVariables.length + 1, oldType, proxyCaptured(0, capturedVariables));
+				capturedVariables.length + 1, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
 
 		return new RegroupVariablesBuilder(owner, groupClassName, newMethodGen, collectedMethodGen,
 				capturedVariables.length);
@@ -197,10 +191,5 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeVirtual(owner.selfType(), matcher.method());
 		});
 		currentType = matcher.currentType();
-	}
-
-	private Map<String, Consumer<GeneratorAdapter>> proxyCaptured(int offset, LoadableValue... capturedVariables) {
-		return IntStream.range(0, capturedVariables.length).boxed()
-				.collect(Collectors.toMap(index -> capturedVariables[index].name(), index -> loader(index + offset)));
 	}
 }

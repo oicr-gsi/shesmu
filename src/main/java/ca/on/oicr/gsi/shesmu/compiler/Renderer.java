@@ -1,7 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -10,7 +12,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  * Helper class to hold state and context for bytecode generation.
  */
 public class Renderer {
-	private final Map<String, Consumer<GeneratorAdapter>> loadables;
+	private final Map<String, LoadableValue> loadables;
 	private final GeneratorAdapter methodGen;
 	private final RootBuilder rootBuilder;
 
@@ -19,13 +21,17 @@ public class Renderer {
 	private final Type streamType;
 
 	public Renderer(RootBuilder rootBuilder, GeneratorAdapter methodGen, int streamArg, Type streamType,
-			Map<String, Consumer<GeneratorAdapter>> loadables) {
+			Stream<LoadableValue> loadables) {
 		this.rootBuilder = rootBuilder;
 		this.methodGen = methodGen;
 		this.streamArg = streamArg;
 		this.streamType = streamType;
-		this.loadables = loadables;
+		this.loadables = loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity()));
 
+	}
+
+	public Stream<LoadableValue> allValues() {
+		return loadables.values().stream();
 	}
 
 	/**
@@ -34,7 +40,7 @@ public class Renderer {
 	 * @param name
 	 */
 	public void emitNamed(String name) {
-		loadables.get(name).accept(methodGen);
+		loadables.get(name).accept(this);
 	}
 
 	public void loadImyhat(String signature) {
