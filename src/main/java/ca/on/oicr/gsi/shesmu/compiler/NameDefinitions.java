@@ -95,6 +95,22 @@ public class NameDefinitions {
 	}
 
 	/**
+	 * Bind a lambda parameter to the known names
+	 *
+	 * This will eclipse any existing definition
+	 *
+	 * @param parameter
+	 *            the parameter to bind
+	 * @return
+	 */
+	public NameDefinitions bind(Target parameter) {
+		return new NameDefinitions(
+				Stream.concat(variables.values().stream().filter(variable -> !variable.name().equals(parameter.name())),
+						Stream.of(parameter)).collect(Collectors.toMap(Target::name, Function.identity())),
+				isGood);
+	}
+
+	/**
 	 * Create a new set of defined variables that is identical, but mark it as a
 	 * failure.
 	 */

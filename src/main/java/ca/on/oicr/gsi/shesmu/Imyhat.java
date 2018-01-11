@@ -100,6 +100,10 @@ public abstract class Imyhat {
 		public String signature() {
 			return "a" + inner.signature();
 		}
+
+		public Imyhat inner() {
+			return inner;
+		}
 	}
 
 	public static final class TupleImyhat extends Imyhat {
@@ -260,6 +264,9 @@ public abstract class Imyhat {
 		public String signature() {
 			return "b";
 		}
+		public Type boxedAsmType() {
+			return Type.getType(Boolean.class);
+		}
 
 	};
 	public static final BaseImyhat DATE = new BaseImyhat() {
@@ -340,6 +347,9 @@ public abstract class Imyhat {
 		@Override
 		public Object parse(String s) {
 			return Long.parseLong(s);
+		}
+		public Type boxedAsmType() {
+			return Type.getType(Long.class);
 		}
 
 		@Override
@@ -507,5 +517,9 @@ public abstract class Imyhat {
 	@Override
 	public final String toString() {
 		return signature();
+	}
+
+	public Type boxedAsmType() {
+		return asmType();
 	}
 }

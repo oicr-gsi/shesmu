@@ -86,14 +86,25 @@ public abstract class ExpressionNode {
 			}
 			return result;
 		});
-		// TODO map/filter
-
 		SUFFIX.addSymbol("@", (p, o) -> {
 			final AtomicLong index = new AtomicLong();
 			final Parser result = p.whitespace().integer(index::set, 10);
 			if (result.isGood()) {
 				final int i = (int) index.get();
 				o.accept(node -> new ExpressionNodeTupleGet(p.line(), p.column(), node, i));
+			}
+			return result;
+		});
+		SUFFIX.addSymbol("$", (p, o) -> {
+			final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
+			final AtomicReference<CollectNode> collector = new AtomicReference<>();
+			final Parser result = p.whitespace()//
+					.list(transforms::set, ListNode::parse)//
+					.then(CollectNode::parse, collector::set)//
+					.whitespace();
+			if (result.isGood()) {
+				o.accept(node -> new ExpressionNodeListTransform(p.line(), p.column(), node, transforms.get(),
+						collector.get()));
 			}
 			return result;
 		});

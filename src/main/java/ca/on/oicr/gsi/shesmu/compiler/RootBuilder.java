@@ -80,6 +80,8 @@ public abstract class RootBuilder {
 
 	private final Type selfType;
 
+	private int streamId;
+
 	public RootBuilder(String name, String path) {
 		this.path = path;
 		classVisitor = createClassVisitor();
@@ -184,6 +186,10 @@ public abstract class RootBuilder {
 		}
 		methodGen.loadThis();
 		methodGen.getField(selfType, name, A_LOOKUP_TYPE);
+	}
+
+	int nextStreamId() {
+		return streamId++;
 	}
 
 	/**

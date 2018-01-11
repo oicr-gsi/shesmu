@@ -1,0 +1,39 @@
+package ca.on.oicr.gsi.shesmu.compiler;
+
+import java.util.function.Consumer;
+
+import ca.on.oicr.gsi.shesmu.Imyhat;
+
+public class ListNodeFilter extends ListNode {
+
+	public ListNodeFilter(int line, int column, String name, ExpressionNode expression) {
+		super(line, column, name, expression);
+	}
+
+	@Override
+	protected void finishMethod(Renderer renderer) {
+		// Do nothing.
+	}
+
+	@Override
+	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
+		return builder.filter(name, loadables);
+	}
+
+	@Override
+	public Imyhat nextType() {
+		return parameter.type();
+	}
+
+	@Override
+	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
+		if (expression.type().isSame(Imyhat.BOOLEAN)) {
+			return true;
+		} else {
+			errorHandler.accept(String.format("%d:%d: Filter expression must be boolean, but got %s.", line(), column(),
+					expression.type().name()));
+			return false;
+		}
+	}
+
+}

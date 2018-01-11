@@ -1,0 +1,2 @@
+Run ok
+ With { ok = ([ [1,2],[3, 4] ] $ Flatten(x) x Map(x) x + 1 Reduce(x, a=0) a + x) == 14 }

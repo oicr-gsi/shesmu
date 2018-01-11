@@ -5,10 +5,12 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -17,6 +19,14 @@ import java.util.stream.Stream;
  * Utilities for making bytecode generation easier
  */
 public final class RuntimeSupport {
+	public static final BinaryOperator<?> USELESS_BINARY_OPERATOR = new BinaryOperator<Object>() {
+
+		@Override
+		public Object apply(Object t, Object u) {
+			throw new UnsupportedOperationException();
+		}
+	};
+
 	/**
 	 * Put a formatted date-time into a string builder
 	 *
@@ -48,6 +58,10 @@ public final class RuntimeSupport {
 			builder.append("0");
 		}
 		return builder.append(result);
+	}
+
+	public static <T, X extends Comparable<X>> Comparator<T> comparator(Function<T, X> transformer) {
+		return (a, b) -> transformer.apply(a).compareTo(transformer.apply(b));
 	}
 
 	public static long difference(Instant left, Instant right) {
