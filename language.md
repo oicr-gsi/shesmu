@@ -203,6 +203,11 @@ zero-based index of the item in the tuple. The result type will be based on the
 type of that position in the tuple. If _n_ is beyond the number of items in the
 tuple, an error occurs.
 
+#### List Modification
+- _expr_ `$` modifications... collector
+
+Takes the elements in a list and process them using the supplied modificiatiosn
+and then computes a result using  the collector.
 
 ### Terminals
 #### Date Literal
@@ -274,6 +279,57 @@ The value of a variable. There are three kinds of variables in Shesmu:
 - lambda variables, XXXTODOXXX
 
 Only stream variables may be used as discriminators in `Group` clauses.
+
+### List Modifiers
+#### Map
+- `Map(` _x_ `)` _expr_
+
+Replaces each item in the list, _x_, with the value computed by _expr_.
+
+- `Flatten(` _x_ `)` _expr_
+
+For each item in the list, _x_, _expr_ computes a matching list and the items
+in this list are presented to the downstream operations.
+
+- `Filter(` _x_ `)` _expr_
+
+Eliminates any item in the list, _x_, where _expr_ evaluates to false.
+
+- `Sort(` _x_ `)` _expr_
+
+Sorts the items in a list, _x_, based on an integer or date returned by _expr_.
+
+### Collectors
+#### Count
+- `Count`
+
+Returns the number of items in the list.
+
+#### First Item
+- `First` _expr_
+
+Returns the first item in the list of _expr_ if no items are present.
+
+#### List
+- `List`
+
+Collects all the items into a list.
+
+#### Optima
+- `Max(` _x_ `)` _sortexpr_ `Default` _defaultexpr_
+- `Min(` _x_ `)` _sortexpr_ `Default` _defaultexpr_
+
+Finds the minimum or maximum item in a list, _x_, based on the _sortexpr_,
+which must be an integer or date. If the list is empty, _defaultexpr_ is
+returned.
+
+#### Reduce
+- `Reduce(` _x_`,` _a_ `=` _initialexpr_ `)` _expr_
+
+Performs a reduction operation on all the items in the list. _a_ is the
+accumulator, which will be returned, which is initially set to _initialexpr_.
+For every item, _expr_ is evaluated with _a_ set the the previously returned
+value.
 
 ## Identifiers
 All identifier is Shesmu, including olive definitions, lookup names, action

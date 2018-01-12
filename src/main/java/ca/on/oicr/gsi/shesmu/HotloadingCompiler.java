@@ -20,7 +20,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Compiler;
  * Compiles a user-specified file into a useable program and updates it as
  * necessary
  */
-public class HotloadingCompiler {
+public final class HotloadingCompiler {
 	final class WritingClassVisitor extends ClassVisitor {
 
 		private String className;
