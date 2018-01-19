@@ -67,6 +67,7 @@ public class ProvenanceVariablesSource implements VariablesSource {
 			return 0;
 		}
 	}
+
 	private static Tuple parseWorkflowVersion(String input) {
 		Matcher m = WORKFLOW_VERSION.matcher(input);
 		if (m.matches()) {
@@ -75,6 +76,7 @@ public class ProvenanceVariablesSource implements VariablesSource {
 		badWorkflowVersions.inc();
 		return new Tuple(0L, 0L, 0L);
 	}
+
 	private static <T> void setProvider(Map<String, T> source, BiConsumer<String, T> consumer) {
 		source.entrySet().stream().forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
 	}

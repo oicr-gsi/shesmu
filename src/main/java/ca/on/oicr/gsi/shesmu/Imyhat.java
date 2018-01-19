@@ -264,6 +264,7 @@ public abstract class Imyhat {
 		public String signature() {
 			return "b";
 		}
+
 		public Type boxedAsmType() {
 			return Type.getType(Boolean.class);
 		}
@@ -348,6 +349,7 @@ public abstract class Imyhat {
 		public Object parse(String s) {
 			return Long.parseLong(s);
 		}
+
 		public Type boxedAsmType() {
 			return Type.getType(Long.class);
 		}
