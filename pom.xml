@@ -63,6 +63,16 @@
         <artifactId>commons-cli</artifactId>
         <version>1.4</version>
     </dependency>
+    <dependency>
+        <groupId>ca.on.oicr.gsi</groupId>
+        <artifactId>provenance-core</artifactId>
+        <version>1.2</version>
+    </dependency>
+    <dependency>
+    	<groupId>ca.on.oicr.gsi</groupId>
+    	<artifactId>pipedev-provenance-impl</artifactId>
+    	<version>2.4</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>shesmu</finalName>

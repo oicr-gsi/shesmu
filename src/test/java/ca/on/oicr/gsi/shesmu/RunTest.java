@@ -78,17 +78,17 @@ public class RunTest {
 			new Variables(1, "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA",
 					new Tuple(1L, 2L, 3L), Collections.singleton("the_foo_study"),
 					Collections.singleton("unknown_sample"), Collections.singleton("that_guy"),
-					Collections.singleton(new Tuple("RUN", 1L, "AACCGGTT")), Collections.singleton("EX"),
+					new Tuple("RUN", 1L, "AACCGGTT"), Collections.singleton("EX"),
 					Collections.singleton("Fresh"), Collections.singleton("An"), Collections.singleton("Frozen"),
 					Collections.emptySet(), Collections.singleton("Inside"), Collections.emptySet(),
-					Collections.emptySet(), Collections.singleton("justright"), Collections.singleton("pointy")),
+					Collections.emptySet(), Collections.singleton(307L), Collections.singleton("pointy")),
 			new Variables(2, "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA",
 					new Tuple(1L, 2L, 3L), Collections.singleton("the_foo_study"),
 					Collections.singleton("unknown_sample"), Collections.singleton("that_guy"),
-					Collections.singleton(new Tuple("RUN", 1L, "ACGTACGT")), Collections.singleton("EX"),
+					new Tuple("RUN", 1L, "ACGTACGT"), Collections.singleton("EX"),
 					Collections.singleton("Fresh"), Collections.singleton("nn"), Collections.singleton("Frozen"),
 					Collections.emptySet(), Collections.singleton("Inside"), Collections.emptySet(),
-					Collections.emptySet(), Collections.singleton("justright"), Collections.singleton("pointy")) };
+					Collections.emptySet(), Collections.singleton(300L), Collections.singleton("pointy")) };
 
 	private static final Lookup INT2DATE = new Lookup() {
 

@@ -51,9 +51,9 @@ public class NameDefinitions {
 		BASE_VARIABLES.put("file_size", Imyhat.INTEGER);
 		BASE_VARIABLES.put("group_desc", Imyhat.STRING.asList());
 		BASE_VARIABLES.put("group_id", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("ius", Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING).asList());
+		BASE_VARIABLES.put("ius", Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING));
 		BASE_VARIABLES.put("library_sample", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("library_size", Imyhat.STRING.asList());
+		BASE_VARIABLES.put("library_size", Imyhat.INTEGER.asList());
 		BASE_VARIABLES.put("library_template_type", Imyhat.STRING.asList());
 		BASE_VARIABLES.put("library_type", Imyhat.STRING.asList());
 		BASE_VARIABLES.put("md5", Imyhat.STRING);

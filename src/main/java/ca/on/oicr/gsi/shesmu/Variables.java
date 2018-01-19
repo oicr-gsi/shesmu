@@ -8,9 +8,9 @@ public final class Variables {
 	private final long file_size;
 	private final Set<String> group_desc;
 	private final Set<String> group_id;
-	private final Set<Tuple> ius;
+	private final Tuple ius;
 	private final Set<String> library_sample;
-	private final Set<String> library_size;
+	private final Set<Long> library_size;
 	private final Set<String> library_template_type;
 	private final Set<String> library_type;
 	private final String md5;
@@ -26,10 +26,10 @@ public final class Variables {
 	private final Tuple workflow_version;
 
 	public Variables(long accession, String path, String metatype, String md5, long file_size, String workflow,
-			Tuple workflow_version, Set<String> study, Set<String> library_sample, Set<String> donor, Set<Tuple> ius,
+			Tuple workflow_version, Set<String> study, Set<String> library_sample, Set<String> donor, Tuple ius,
 			Set<String> library_template_type, Set<String> tissue_type, Set<String> tissue_origin,
 			Set<String> tissue_prep, Set<String> targeted_resequencing, Set<String> tissue_region, Set<String> group_id,
-			Set<String> group_desc, Set<String> library_size, Set<String> library_type) {
+			Set<String> group_desc, Set<Long> library_size, Set<String> library_type) {
 		super();
 		this.accession = accession;
 		this.path = path;
@@ -74,7 +74,7 @@ public final class Variables {
 		return group_id;
 	}
 
-	public Set<Tuple> ius() {
+	public Tuple ius() {
 		return ius;
 	}
 
@@ -82,7 +82,7 @@ public final class Variables {
 		return library_sample;
 	}
 
-	public Set<String> library_size() {
+	public Set<Long> library_size() {
 		return library_size;
 	}
 
