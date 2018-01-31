@@ -1,0 +1,4 @@
+Run ok
+ Where Count study == 1
+ Monitor foo "The foos." { x = metatype }
+ With { ok = True }

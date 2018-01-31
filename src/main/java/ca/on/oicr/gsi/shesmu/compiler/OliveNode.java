@@ -1,8 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -47,7 +49,7 @@ public abstract class OliveNode {
 		});
 		ROOTS.addKeyword("Run", (input, output) -> {
 			final AtomicReference<String> name = new AtomicReference<>();
-			final AtomicReference<List<OliveActionArgumentNode>> arguments = new AtomicReference<>();
+			final AtomicReference<List<OliveArgumentNode>> arguments = new AtomicReference<>();
 			final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
 			final Parser result = input//
 					.whitespace()//
@@ -59,7 +61,7 @@ public abstract class OliveNode {
 					.whitespace()//
 					.symbol("{")//
 					.whitespace()//
-					.list(arguments::set, OliveActionArgumentNode::parse, ',')//
+					.list(arguments::set, OliveArgumentNode::parse, ',')//
 					.symbol("}")//
 					.whitespace();
 			if (result.isGood()) {
@@ -120,11 +122,11 @@ public abstract class OliveNode {
 
 		// Find and resolve olive “Define” and “Matches”
 		final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
+		final Set<String> metricNames = new HashSet<>();
 		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
 				.count() == olives.size();
-		ok &= olives.stream()
-				.filter(olive -> olive.resolveDefinitions(definedOlives, definedLookups, definedActions, errorHandler))
-				.count() == olives.size();
+		ok &= olives.stream().filter(olive -> olive.resolveDefinitions(definedOlives, definedLookups, definedActions,
+				metricNames, errorHandler)).count() == olives.size();
 
 		// Resolve variables
 		if (ok) {
@@ -199,10 +201,9 @@ public abstract class OliveNode {
 	 */
 	public final boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler) {
-		final boolean clausesOk = clauses.stream().filter(
-				clause -> clause.resolveDefinitions(definedOlives, definedLookups, definedActions, errorHandler))
-				.count() == clauses.size();
+			Set<String> metricNames, Consumer<String> errorHandler) {
+		final boolean clausesOk = clauses.stream().filter(clause -> clause.resolveDefinitions(definedOlives,
+				definedLookups, definedActions, metricNames, errorHandler)).count() == clauses.size();
 		return clausesOk & resolveDefinitionsExtra(definedOlives, definedLookups, definedActions, errorHandler);
 	}
 

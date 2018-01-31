@@ -46,7 +46,7 @@ operation.
 To make reusable logic, the _Define_ olive can be used:
 
     Define standard_fastq():
-      Where file_meta_type == "x-chemical/fastq-gzip"
+      Where metatype == "x-chemical/fastq-gzip"
       Where workflow == "CASAVA 1.8"
 
     Run fastqc
@@ -60,7 +60,7 @@ The `Define` olive creates a reusable set of clauses and `Matches` includes it i
 
     Define standard_fastq(date limit):
       Where after_date > limit
-      Where file_meta_type == "x-chemical/fastq-gzip"
+      Where metatype == "x-chemical/fastq-gzip"
       Where workflow == "CASAVA 1.8"
 
     Run fastqc
@@ -71,6 +71,23 @@ The `Define` olive creates a reusable set of clauses and `Matches` includes it i
       }
 
 Because grouping changes variables, `Matches` must appear before `Group` clauses.
+
+Once a Shesmu program is running, debugging is rather difficult, so Prometheus
+monitoring is built into the language using the `Monitor` clause:
+
+
+    Run fastqc
+      Where workflow == "BamQC 2.7+"
+      Monitor fastqc "The number of records for FastQC execution." { metatype = metatype }
+      With {
+        memory = 4Gi,
+        input = file_swa
+      }
+
+The number of hits to each monitoring clause will be output via Prometheus. The
+name, which will be exported as `shesmu_user_fastqc`, must be unique in the
+program. After the name is the help test. Inside the braces, labels can be
+specified; the values must be strings.
 
 ## Types
 There are a small number of types in the language, listed below. Each has

@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -66,7 +67,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler) {
+			Set<String> metricNames, Consumer<String> errorHandler) {
 		final boolean ok = arguments.stream().filter(argument -> argument.resolveLookups(definedLookups, errorHandler))
 				.count() == arguments.size();
 		if (definedOlives.containsKey(name)) {

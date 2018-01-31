@@ -125,7 +125,7 @@ public class OliveClauseNodeGroup extends OliveClauseNode {
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler) {
+			Set<String> metricNames, Consumer<String> errorHandler) {
 		boolean ok = groups.stream()
 				.filter(group -> group.resolveDefinitions(definedOlives, definedLookups, definedActions, errorHandler))
 				.count() == groups.size();

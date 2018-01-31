@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -8,10 +9,10 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
 /**
- * The arguments defined in the “With” section of a “Run” olive.
+ * The arguments defined in the “With” section of a “Run” olive or “Monitor” clause.
  */
-public final class OliveActionArgumentNode {
-	public static Parser parse(Parser input, Consumer<OliveActionArgumentNode> output) {
+public final class OliveArgumentNode {
+	public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {
 		final AtomicReference<String> name = new AtomicReference<>();
 		final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
 
@@ -24,7 +25,7 @@ public final class OliveActionArgumentNode {
 				.then(ExpressionNode::parse, expression::set)//
 				.whitespace();
 		if (result.isGood()) {
-			output.accept(new OliveActionArgumentNode(input.line(), input.column(), name.get(), expression.get()));
+			output.accept(new OliveArgumentNode(input.line(), input.column(), name.get(), expression.get()));
 		}
 		return result;
 	}
@@ -35,11 +36,15 @@ public final class OliveActionArgumentNode {
 
 	private final String name;
 
-	public OliveActionArgumentNode(int line, int column, String name, ExpressionNode expression) {
+	public OliveArgumentNode(int line, int column, String name, ExpressionNode expression) {
 		this.line = line;
 		this.column = column;
 		this.name = name;
 		this.expression = expression;
+	}
+
+	public void collectFreeVariables(Set<String> freeVariables) {
+		expression.collectFreeVariables(freeVariables);
 	}
 
 	/**

@@ -22,13 +22,16 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Variables;
+import io.prometheus.client.Gauge;
 
 /**
  * Helper to build bytecode for “olives” (decision-action stanzas)
  */
 public abstract class BaseOliveBuilder {
 	private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
+	protected static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 	protected static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
+	protected static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
 	protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	protected static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
 	protected static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
@@ -41,6 +44,8 @@ public abstract class BaseOliveBuilder {
 
 	protected static final Method METHOD_REGROUP = new Method("regroup", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
+	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
+			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
 
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
@@ -191,5 +196,40 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeVirtual(owner.selfType(), matcher.method());
 		});
 		currentType = matcher.currentType();
+	}
+
+	/**
+	 * Create a “Monitor” clause in an olive
+	 * 
+	 * @param metricName
+	 *            the Prometheus metric name
+	 * @param help
+	 *            the help text to export
+	 * @param names
+	 *            the names of the labels
+	 * @param capturedVariables
+	 *            the variables needed in the method that computes the label values
+	 * @return
+	 */
+	public Renderer monitor(String metricName, String help, List<String> names, LoadableValue[] capturedVariables) {
+		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), A_OBJECT_ARRAY_TYPE,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(currentType))
+						.toArray(Type[]::new));
+		steps.add(renderer -> {
+			owner.loadGauge(metricName, help, names, renderer.methodGen());
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+					method.getName(), method.getDescriptor(), false);
+			renderer.methodGen().invokeDynamic("apply",
+					Type.getMethodDescriptor(A_FUNCTION_TYPE,
+							Stream.concat(Stream.of(owner.selfType()),
+									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
+					Type.getMethodType(A_OBJECT_TYPE, currentType));
+			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_MONITOR);
+		});
+		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
+				capturedVariables.length, currentType, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 }

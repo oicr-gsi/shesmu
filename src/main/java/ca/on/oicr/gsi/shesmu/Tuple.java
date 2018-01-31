@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A fixed-length list of heterogenous values
@@ -51,6 +53,15 @@ public final class Tuple {
 		int result = 1;
 		result = prime * result + Arrays.hashCode(elements);
 		return result;
+	}
+
+	public Stream<Object> stream() {
+		return Arrays.stream(elements);
+	}
+
+	@Override
+	public String toString() {
+		return Arrays.stream(elements).map(Object::toString).collect(Collectors.joining(", ", "[ ", "]"));
 	}
 
 }

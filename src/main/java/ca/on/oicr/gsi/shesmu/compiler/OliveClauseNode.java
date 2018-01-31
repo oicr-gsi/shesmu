@@ -2,8 +2,10 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import com.atlassian.util.concurrent.atomic.AtomicReference;
 
@@ -15,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
  * Base type for an olive clause
  */
 public abstract class OliveClauseNode {
+	private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
 
 	public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
 
@@ -64,6 +67,29 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
+		final Parser monitorParser = input.keyword("Monitor");
+		if (monitorParser.isGood()) {
+			final AtomicReference<String> metricName = new AtomicReference<>();
+			final AtomicReference<String> help = new AtomicReference<>();
+			final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
+
+			final Parser result = monitorParser//
+					.whitespace()//
+					.identifier(metricName::set)//
+					.whitespace()//
+					.regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")//
+					.whitespace()//
+					.symbol("{")//
+					.list(labels::set, OliveArgumentNode::parse, ',')//
+					.symbol("}")//
+					.whitespace();
+
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeMonitor(input.line(), input.column(), metricName.get(), help.get(),
+						labels.get()));
+			}
+			return result;
+		}
 		return input.raise("Expected olive clause.");
 
 	}
@@ -100,7 +126,7 @@ public abstract class OliveClauseNode {
 	 */
 	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler);
+			Set<String> metricNames, Consumer<String> errorHandler);
 
 	/**
 	 * Type any expression in the clause

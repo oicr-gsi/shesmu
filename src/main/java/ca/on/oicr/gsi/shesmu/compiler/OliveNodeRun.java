@@ -19,12 +19,12 @@ import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 public final class OliveNodeRun extends OliveNode {
 
 	private final String actionName;
-	private final List<OliveActionArgumentNode> arguments;
+	private final List<OliveArgumentNode> arguments;
 	private final int column;
 	private ActionDefinition definition;
 	private final int line;
 
-	public OliveNodeRun(int line, int column, String actionName, List<OliveActionArgumentNode> arguments,
+	public OliveNodeRun(int line, int column, String actionName, List<OliveArgumentNode> arguments,
 			List<OliveClauseNode> clauses) {
 		super(clauses);
 		this.line = line;
@@ -54,8 +54,8 @@ public final class OliveNodeRun extends OliveNode {
 		final int local = action.methodGen().newLocal(definition.type());
 		action.methodGen().storeLocal(local);
 
-		final Map<String, OliveActionArgumentNode> argumentMap = arguments.stream()
-				.collect(Collectors.toMap(OliveActionArgumentNode::name, Function.identity()));
+		final Map<String, OliveArgumentNode> argumentMap = arguments.stream()
+				.collect(Collectors.toMap(OliveArgumentNode::name, Function.identity()));
 		definition.parameters().forEach(parameter -> {
 			parameter.store(action, local, argumentMap.get(parameter.name())::render);
 		});
@@ -82,7 +82,7 @@ public final class OliveNodeRun extends OliveNode {
 		boolean ok = arguments.stream().filter(arg -> arg.resolveLookups(definedLookups, errorHandler))
 				.count() == arguments.size();
 
-		final Set<String> argumentNames = arguments.stream().map(OliveActionArgumentNode::name).distinct()
+		final Set<String> argumentNames = arguments.stream().map(OliveArgumentNode::name).distinct()
 				.collect(Collectors.toSet());
 		if (argumentNames.size() != arguments.size()) {
 			errorHandler.accept(String.format("%d:%d: Duplicate arguments to action.", line, column));
