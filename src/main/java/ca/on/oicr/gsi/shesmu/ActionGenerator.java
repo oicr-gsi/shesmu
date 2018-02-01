@@ -1,8 +1,14 @@
 package ca.on.oicr.gsi.shesmu;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import io.prometheus.client.Collector;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Gauge;
 
 /**
  * User-supplied code base
@@ -29,6 +35,14 @@ public abstract class ActionGenerator {
 
 	};
 
+	private final List<Collector> collectors = new ArrayList<>();
+
+	protected final Gauge buildGauge(String metricName, String help, String[] labelNames) {
+		Gauge g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).register();
+		collectors.add(g);
+		return g;
+	}
+
 	/**
 	 * Gather the instances of any lookups required by this action generator.
 	 *
@@ -38,6 +52,13 @@ public abstract class ActionGenerator {
 	 *            source of lookup instances
 	 */
 	public abstract void populateLookups(NameLoader<Lookup> loader);
+
+	/**
+	 * Add all Prometheus monitoring for this program.
+	 */
+	public final void register() {
+		collectors.forEach(CollectorRegistry.defaultRegistry::register);
+	}
 
 	/**
 	 * Call the action generator to process the input.
@@ -51,4 +72,11 @@ public abstract class ActionGenerator {
 	 *            remain the value-equivalent for each call
 	 */
 	public abstract void run(Consumer<Action> consumer, Supplier<Stream<Variables>> input);
+
+	/**
+	 * Remove all Prometheus monitoring for this program.
+	 */
+	public final void unregister() {
+		collectors.forEach(CollectorRegistry.defaultRegistry::unregister);
+	}
 }

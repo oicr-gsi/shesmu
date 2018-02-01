@@ -20,7 +20,6 @@ import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.NameLoader;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Variables;
 import io.prometheus.client.Gauge;
 
@@ -37,7 +36,6 @@ public abstract class RootBuilder {
 	private static final Type A_LOOKUP_TYPE = Type.getType(Lookup.class);
 	private static final Type A_NAME_LOADER_TYPE = Type.getType(NameLoader.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-	private static final Type A_RUNTIME_SUPPORT = Type.getType(RuntimeSupport.class);
 	private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
@@ -57,10 +55,8 @@ public abstract class RootBuilder {
 			new Type[] { A_CHAR_SEQ_TYPE });
 	private static final Method METHOD_NAME_LOADER__GET = new Method("get", A_OBJECT_TYPE,
 			new Type[] { A_STRING_TYPE });
-	private static final Method METHOD_RUNTIME_SUPPORT__BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
+	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
-	private static final Method METHOD_RUNTIME_SUPPORT__RESET_GAUGES = new Method("resetGauges", VOID_TYPE,
-			new Type[] {});
 
 	public static Stream<LoadableValue> proxyCaptured(int offset, LoadableValue... capturedVariables) {
 		return IntStream.range(0, capturedVariables.length).boxed().map(index -> new LoadableValue() {
@@ -110,7 +106,6 @@ public abstract class RootBuilder {
 		ctor.visitCode();
 		ctor.loadThis();
 		ctor.invokeConstructor(A_ACTION_GENERATOR_TYPE, CTOR_DEFAULT);
-		ctor.invokeStatic(A_RUNTIME_SUPPORT, METHOD_RUNTIME_SUPPORT__RESET_GAUGES);
 
 		clearGaugeMethod = new GeneratorAdapter(Opcodes.ACC_PRIVATE, METHOD_ACTION_GENERATOR__CLEAR_GAUGE, null, null,
 				classVisitor);
@@ -186,6 +181,7 @@ public abstract class RootBuilder {
 			classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, A_GAUGE_TYPE.getDescriptor(), null, null)
 					.visitEnd();
 			ctor.loadThis();
+			ctor.loadThis();
 			ctor.push(metricName);
 			ctor.push(help);
 			ctor.push(labelNames.size());
@@ -196,7 +192,7 @@ public abstract class RootBuilder {
 				ctor.push(labelNames.get(i));
 				ctor.arrayStore(A_STRING_TYPE);
 			}
-			ctor.invokeStatic(A_RUNTIME_SUPPORT, METHOD_RUNTIME_SUPPORT__BUILD_GAUGE);
+			ctor.invokeVirtual(selfType, METHOD_BUILD_GAUGE);
 			ctor.putField(selfType, fieldName, A_GAUGE_TYPE);
 		}
 		methodGen.loadThis();

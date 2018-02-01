@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -16,14 +15,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 
 /**
  * Utilities for making bytecode generation easier
  */
 public final class RuntimeSupport {
-	private static final List<Gauge> customGauges = new ArrayList<>();
 
 	public static final BinaryOperator<?> USELESS_BINARY_OPERATOR = new BinaryOperator<Object>() {
 
@@ -64,12 +61,6 @@ public final class RuntimeSupport {
 			builder.append("0");
 		}
 		return builder.append(result);
-	}
-
-	public static Gauge buildGauge(String metricName, String help, String[] labelNames) {
-		Gauge g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).register();
-		customGauges.add(g);
-		return g;
 	}
 
 	public static <T, X extends Comparable<X>> Comparator<T> comparator(Function<T, X> transformer) {
@@ -124,11 +115,6 @@ public final class RuntimeSupport {
 		final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
 		return groups.entrySet().stream().peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))
 				.map(Entry::getKey);
-	}
-
-	public static void resetGauges() {
-		customGauges.forEach(CollectorRegistry.defaultRegistry::unregister);
-		customGauges.clear();
 	}
 
 	private RuntimeSupport() {
