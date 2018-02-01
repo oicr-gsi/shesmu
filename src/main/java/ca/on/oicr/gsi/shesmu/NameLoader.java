@@ -23,6 +23,7 @@ public final class NameLoader<T> {
 		return items.values().stream();
 	}
 
+	@RuntimeInterop
 	public T get(String name) {
 		return items.get(name);
 	}

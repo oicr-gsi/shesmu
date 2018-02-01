@@ -14,6 +14,7 @@ public interface Lookup {
 	 *            the parameters, to be cast to the correct types
 	 * @return the value or null if no match is available
 	 */
+	@RuntimeInterop
 	Object lookup(Object... parameters);
 
 	/**

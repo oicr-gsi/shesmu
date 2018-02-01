@@ -46,7 +46,6 @@ public abstract class BaseOliveBuilder {
 			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
-
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
 

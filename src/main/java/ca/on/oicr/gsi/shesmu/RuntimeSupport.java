@@ -40,6 +40,7 @@ public final class RuntimeSupport {
 	 * @param format
 	 *            the format code for {@link DateTimeFormatter}
 	 */
+	@RuntimeInterop
 	public static StringBuilder appendFormatted(StringBuilder builder, Instant instant, String format) {
 		return builder
 				.append(DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC)));
@@ -55,6 +56,7 @@ public final class RuntimeSupport {
 	 * @param width
 	 *            the number of digits the number should be
 	 */
+	@RuntimeInterop
 	public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
 		final String result = Long.toString(value);
 		for (int padding = width = result.length(); padding > 0; padding--) {
@@ -63,10 +65,22 @@ public final class RuntimeSupport {
 		return builder.append(result);
 	}
 
+	/**
+	 * Generate a comparator over objects which can have a comparable element
+	 * extracted from them
+	 * 
+	 * @param transformer
+	 *            the extraction from the original values the the comparable form
+	 */
+	@RuntimeInterop
 	public static <T, X extends Comparable<X>> Comparator<T> comparator(Function<T, X> transformer) {
 		return (a, b) -> transformer.apply(a).compareTo(transformer.apply(b));
 	}
 
+	/**
+	 * Determine the difference between two instants, in seconds.
+	 */
+	@RuntimeInterop
 	public static long difference(Instant left, Instant right) {
 		return Duration.between(right, left).getSeconds();
 	}
@@ -82,6 +96,7 @@ public final class RuntimeSupport {
 	 *            a function to compute the values of the labels for the gauge; the
 	 *            order is preserved
 	 */
+	@RuntimeInterop
 	public static <T> Stream<T> monitor(Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
 		return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
 	}
@@ -111,6 +126,7 @@ public final class RuntimeSupport {
 	 *            output value
 	 * @return the grouped output stream
 	 */
+	@RuntimeInterop
 	public static <I, O> Stream<O> regroup(Stream<I> input, Function<I, O> makeKey, BiConsumer<O, I> collector) {
 		final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
 		return groups.entrySet().stream().peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))

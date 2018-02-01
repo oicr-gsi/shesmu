@@ -43,8 +43,15 @@ public final class Tuple {
 		return true;
 	}
 
-	public Object get(int i) {
-		return elements[i];
+	/**
+	 * Get an element from the tuple
+	 * 
+	 * @param index
+	 *            the zero-based position in the tuple
+	 */
+	@RuntimeInterop
+	public Object get(int index) {
+		return elements[index];
 	}
 
 	@Override

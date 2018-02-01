@@ -37,6 +37,7 @@ public abstract class ActionGenerator {
 
 	private final List<Collector> collectors = new ArrayList<>();
 
+	@RuntimeInterop
 	protected final Gauge buildGauge(String metricName, String help, String[] labelNames) {
 		Gauge g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).register();
 		collectors.add(g);
@@ -51,6 +52,7 @@ public abstract class ActionGenerator {
 	 * @param loader
 	 *            source of lookup instances
 	 */
+	@RuntimeInterop
 	public abstract void populateLookups(NameLoader<Lookup> loader);
 
 	/**
@@ -71,6 +73,7 @@ public abstract class ActionGenerator {
 	 *            maybe called multiple times; the contents of the stream should
 	 *            remain the value-equivalent for each call
 	 */
+	@RuntimeInterop
 	public abstract void run(Consumer<Action> consumer, Supplier<Stream<Variables>> input);
 
 	/**
