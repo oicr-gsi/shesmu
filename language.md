@@ -223,7 +223,7 @@ tuple, an error occurs.
 #### List Modification
 - _expr_ `$` modifications... collector
 
-Takes the elements in a list and process them using the supplied modificiatiosn
+Takes the elements in a list and process them using the supplied modifications
 and then computes a result using  the collector.
 
 ### Terminals
@@ -246,7 +246,7 @@ determined based on the elements.
 
 Creates a new list from the specified elements. All the expressions must be of the same type.
 
-#### String Literla
+#### String Literal
 - `"`parts`"`
 
 Specified a new string literal. A string may contain the following special items in addition to text:
@@ -258,7 +258,7 @@ Specified a new string literal. A string may contain the following special items
 - `{`_expr_`:`_n_`}` for a zero-padded integer string interpolation; the expression must be an integer and _n_ is the number of digits to pad to
 - `{`_expr_`:`_f_`}` for a formatted date string interpolation; the expression must be a date and _f_ is the [format code](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html)
 
-#### Subexpression
+#### Sub-expression
 - `(`_expr_`)`
 
 #### Integer Literal
@@ -293,7 +293,7 @@ The value of a variable. There are three kinds of variables in Shesmu:
 
 - stream variables, attached to the data being processed (or the grouped versions of it)
 - parameters, as specified in `Define` olives
-- lambda variables, XXXTODOXXX
+- lambda variables, as specified in list operations (_e.g._, `Map`, `Reduce`, `Filter`)
 
 Only stream variables may be used as discriminators in `Group` clauses.
 
@@ -358,7 +358,7 @@ name spaces. It is possible to create a parameter with the same name as an
 action, though this is not recommended.
 
 ## Variables
-The default variables available in the Shesmu langauge can be seen on the status page, or:
+The default variables available in the Shesmu language can be seen on the status page, or:
 
     curl http://localhost:8081/variables | js -S .
 
