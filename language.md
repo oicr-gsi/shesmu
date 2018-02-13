@@ -21,11 +21,11 @@ A _run_ olive specifies an action to run if the conditions are met. For example:
         input = fileswa
       }
 
-This will take all the input provenance and filter out any run by the workflow
+This will take all the input provenance and selects any run by the workflow
 `BamQC 2.7+` and then launch `fastqc`. The `With` portion sets all the
 parameters. These are specific to the action.
 
-The `Where` line is an _olive clause_. There are three clauses: where, group, and matches.
+The `Where` line is an _olive clause_. The clauses are: where, group, matches, and monitor.
 
 A `Group` clause groups items in the stream to be de-duplicated based on
 _discriminators_ and other variables are grouped into _collectors_.
@@ -45,9 +45,9 @@ operation.
 
 To make reusable logic, the _Define_ olive can be used:
 
-    Define standard_fastq():
+    Define standard_fastq()
       Where metatype == "x-chemical/fastq-gzip"
-      Where workflow == "CASAVA 1.8"
+      Where workflow == "CASAVA 1.8";
 
     Run fastqc
       Matches standard_fastq()
@@ -86,7 +86,7 @@ monitoring is built into the language using the `Monitor` clause:
 
 The number of hits to each monitoring clause will be output via Prometheus. The
 name, which will be exported as `shesmu_user_fastqc`, must be unique in the
-program. After the name is the help test. Inside the braces, labels can be
+program. After the name is the help text. Inside the braces, labels can be
 specified; the values must be strings.
 
 ## Types
@@ -101,7 +101,7 @@ machine-to-machine communication.
 | Boolean   | boolean         | `boolean`                | `b`	      |
 | Date      | Instant         | `date`                   | `d`        |
 | List      | Set             | `[`_inner_`]`            | `a`_inner_ |
-| Tuple     | Tuple (custom)  | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_` _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Tuple     | Tuple (custom)  | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 
 
 ## Expressions
@@ -224,7 +224,8 @@ tuple, an error occurs.
 - _expr_ `$` modifications... collector
 
 Takes the elements in a list and process them using the supplied modifications
-and then computes a result using  the collector.
+and then computes a result using  the collector. The modifications and
+collectors are described below.
 
 ### Terminals
 #### Date Literal
@@ -261,13 +262,16 @@ Specified a new string literal. A string may contain the following special items
 #### Sub-expression
 - `(`_expr_`)`
 
-#### Integer Literal
 A subexpression.
+
+#### Integer Literal
 
 - _n_
 
 An integer literal. Integer may be suffixed by one of the following multipliers:
 
+| Unit  | Multiplier |
+|--- |---     |
 | G  | 1000^3 |
 | Gi | 1024^3 |
 | M  | 1000^2 |
