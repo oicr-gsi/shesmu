@@ -1,12 +1,11 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
@@ -185,9 +184,13 @@ public final class Server {
 		server.createContext(url, t -> {
 			t.getResponseHeaders().set("Content-type", type);
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream output = t.getResponseBody()) {
-				Files.copy(Paths.get(getClass().getResource(url).toURI()), output);
-			} catch (URISyntaxException e) {
+			byte[] b = new byte[1024];
+			try (OutputStream output = t.getResponseBody(); InputStream input = getClass().getResourceAsStream(url)) {
+				int count;
+				while ((count = input.read(b)) > 0) {
+					output.write(b, 0, count);
+				}
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		});
