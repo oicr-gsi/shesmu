@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
@@ -54,8 +53,7 @@ public class JiraActionRepository implements ActionRepository {
 				methodGen.dup();
 				methodGen.push(config.getName());
 				methodGen.push(config.getUrl());
-				methodGen.push(config.getUser());
-				methodGen.push(config.getPassword());
+				methodGen.push(config.getToken());
 				methodGen.push(config.getProjectKey());
 				methodGen.invokeConstructor(A_FILE_TICKET_TYPE, CTOR_FILE_TICKET);
 			}
@@ -83,7 +81,6 @@ public class JiraActionRepository implements ActionRepository {
 		lastRead.setToCurrentTime();
 		configuration.clear();
 		return Optional.ofNullable(System.getenv("SHESMU_JIRA"))//
-				.filter(Objects::nonNull)//
 				.map(Paths::get)//
 				.filter(Files::exists)//
 				.flatMap(this::readFile)//

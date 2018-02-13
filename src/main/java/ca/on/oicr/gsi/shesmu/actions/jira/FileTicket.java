@@ -5,6 +5,8 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.atlassian.httpclient.api.Request.Builder;
+import com.atlassian.jira.rest.client.api.AuthenticationHandler;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
@@ -49,12 +51,17 @@ public class FileTicket extends Action {
 
 	public String summary;
 
-	public FileTicket(String name, String url, String user, String password, String projectKey)
+	public FileTicket(String name, String url, String token, String projectKey)
 			throws URISyntaxException {
 		this.name = name;
 		this.projectKey = projectKey;
-		client = new AsynchronousJiraRestClientFactory().createWithBasicHttpAuthentication(new URI(url), user,
-				password);
+		client = new AsynchronousJiraRestClientFactory().create(new URI(url), new AuthenticationHandler() {
+
+			@Override
+			public void configure(Builder builder) {
+				builder.setHeader("Authorization", "Bearer " + token);
+			}
+		});
 
 	}
 
