@@ -15,18 +15,16 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.MetaInfServices;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 @MetaInfServices
 public final class RemoteActionRepository implements ActionRepository {
 
-	private static CloseableHttpClient httpclient = HttpClients.createDefault();
+	private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
-	private static final ObjectMapper mapper = new ObjectMapper();
 	private static final Pattern SEMICOLON = Pattern.compile(";");
 
 	private static final String URL_VARIABLE = "SHESMU_ACTION_URLS";
@@ -50,8 +48,8 @@ public final class RemoteActionRepository implements ActionRepository {
 	}
 
 	private Stream<ActionDefinition> queryActionsCatalog(String url) {
-		try (CloseableHttpResponse response = httpclient.execute(new HttpGet(url + "/actioncatalog"))) {
-			return Arrays.stream(mapper.readValue(response.getEntity().getContent(), Definition[].class))
+		try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(url + "/actioncatalog"))) {
+			return Arrays.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), Definition[].class))
 					.map(def -> def.toDefinition(url));
 		} catch (final ClientProtocolException e) {
 			e.printStackTrace();

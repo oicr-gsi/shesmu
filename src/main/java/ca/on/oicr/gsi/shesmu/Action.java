@@ -29,6 +29,13 @@ public abstract class Action {
 	public abstract ActionState perform();
 
 	/**
+	 * A priority for determine which actions should get processed first.
+	 *
+	 * This method should be O(1).
+	 */
+	public abstract int priority();
+
+	/**
 	 * The number of minutes to wait before attempting to retry this action.
 	 *
 	 * This method should be O(1).

@@ -136,9 +136,9 @@ public final class JavaStreamBuilder {
 
 	public final Renderer filter(String name, LoadableValue... capturedVariables) {
 		final Type filterType = currentType;
-		final Method method = new Method(String.format("chain_%d_%d_filter", streamId, steps.size()), BOOLEAN_TYPE, Stream
-				.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(streamType, filterType))
-				.toArray(Type[]::new));
+		final Method method = new Method(String.format("chain_%d_%d_filter", streamId, steps.size()), BOOLEAN_TYPE,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type),
+						Stream.of(streamType, filterType)).toArray(Type[]::new));
 		steps.add(renderer -> {
 			renderer.methodGen().loadThis();
 			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));

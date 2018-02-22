@@ -12,12 +12,12 @@ import ca.on.oicr.gsi.shesmu.Lookup;
 
 public class ExpressionNodeTernaryIf extends ExpressionNode {
 
-	private ExpressionNode testExpression;
-	private ExpressionNode trueExpression;
-	private ExpressionNode falseExpression;
+	private final ExpressionNode falseExpression;
+	private final ExpressionNode testExpression;
+	private final ExpressionNode trueExpression;
 
-	public ExpressionNodeTernaryIf(int line, int column, ExpressionNode testExpression, 
-			ExpressionNode trueExpression, ExpressionNode falseExpression) {
+	public ExpressionNodeTernaryIf(int line, int column, ExpressionNode testExpression, ExpressionNode trueExpression,
+			ExpressionNode falseExpression) {
 		super(line, column);
 		this.testExpression = testExpression;
 		this.trueExpression = trueExpression;
@@ -35,7 +35,7 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 	public void render(Renderer renderer) {
 		testExpression.render(renderer);
 		renderer.mark(line());
-		
+
 		final Label end = renderer.methodGen().newLabel();
 		final Label truePath = renderer.methodGen().newLabel();
 		renderer.methodGen().ifZCmp(GeneratorAdapter.NE, truePath);
@@ -48,14 +48,14 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 
 	@Override
 	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return testExpression.resolve(defs, errorHandler) & trueExpression.resolve(defs, errorHandler) 
+		return testExpression.resolve(defs, errorHandler) & trueExpression.resolve(defs, errorHandler)
 				& falseExpression.resolve(defs, errorHandler);
 	}
 
 	@Override
 	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
-		return testExpression.resolveLookups(definedLookups, errorHandler) 
-				& trueExpression.resolveLookups(definedLookups, errorHandler) 
+		return testExpression.resolveLookups(definedLookups, errorHandler)
+				& trueExpression.resolveLookups(definedLookups, errorHandler)
 				& falseExpression.resolveLookups(definedLookups, errorHandler);
 	}
 
@@ -69,12 +69,16 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 		boolean testOk = testExpression.typeCheck(errorHandler);
 		if (testOk) {
 			testOk = testExpression.type().isSame(Imyhat.BOOLEAN);
-			if (!testOk) typeError("boolean", testExpression.type(), errorHandler);
+			if (!testOk) {
+				typeError("boolean", testExpression.type(), errorHandler);
+			}
 		}
 		boolean resultOk = trueExpression.typeCheck(errorHandler) & falseExpression.typeCheck(errorHandler);
 		if (resultOk) {
 			resultOk = trueExpression.type().isSame(falseExpression.type());
-			if (!resultOk) typeError(trueExpression.type().name(), falseExpression.type(), errorHandler);
+			if (!resultOk) {
+				typeError(trueExpression.type().name(), falseExpression.type(), errorHandler);
+			}
 		}
 		return testOk & resultOk;
 	}

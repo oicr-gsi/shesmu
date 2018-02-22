@@ -5,12 +5,12 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 
-import com.atlassian.util.concurrent.atomic.AtomicReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -61,6 +61,10 @@ public abstract class Imyhat {
 			return A_SET_TYPE;
 		}
 
+		public Imyhat inner() {
+			return inner;
+		}
+
 		@Override
 		public boolean isBad() {
 			return inner.isBad();
@@ -99,10 +103,6 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return "a" + inner.signature();
-		}
-
-		public Imyhat inner() {
-			return inner;
 		}
 	}
 
@@ -231,6 +231,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Type boxedAsmType() {
+			return Type.getType(Boolean.class);
+		}
+
+		@Override
 		public Object defaultValue() {
 			return false;
 		}
@@ -263,10 +268,6 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return "b";
-		}
-
-		public Type boxedAsmType() {
-			return Type.getType(Boolean.class);
 		}
 
 	};
@@ -321,6 +322,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Type boxedAsmType() {
+			return Type.getType(Long.class);
+		}
+
+		@Override
 		public Object defaultValue() {
 			return 0L;
 		}
@@ -348,10 +354,6 @@ public abstract class Imyhat {
 		@Override
 		public Object parse(String s) {
 			return Long.parseLong(s);
-		}
-
-		public Type boxedAsmType() {
-			return Type.getType(Long.class);
 		}
 
 		@Override
@@ -495,6 +497,10 @@ public abstract class Imyhat {
 	 */
 	public abstract Type asmType();
 
+	public Type boxedAsmType() {
+		return asmType();
+	}
+
 	public abstract boolean isBad();
 
 	public abstract boolean isOrderable();
@@ -520,9 +526,5 @@ public abstract class Imyhat {
 	@Override
 	public final String toString() {
 		return signature();
-	}
-
-	public Type boxedAsmType() {
-		return asmType();
 	}
 }

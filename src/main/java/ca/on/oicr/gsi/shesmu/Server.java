@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,13 +62,18 @@ public final class Server {
 				writeHeader(writer, "Core");
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
+				writeRow(writer, "Environment", Throttler.ENVIRONMENT);
 				writeFinish(writer);
 
 				writer.write("<h1>Compile Errors</h1><p>");
 				writer.write(compiler.errorHtml());
 				writer.write("</p>");
 
-				Stream.concat(actionRepository.implementations(), lookupRepository.implementations())
+				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
+						actionRepository::implementations, //
+						lookupRepository::implementations, //
+						Throttler::services)//
+						.flatMap(Supplier::get)//
 						.flatMap(LoadedConfiguration::listConfiguration).forEach(config -> {
 							writeHeader(writer, config.first());
 							config.second().forEach((k, v) -> writeRow(writer, k, v));
@@ -147,11 +153,10 @@ public final class Server {
 		});
 
 		add("/query", t -> {
-			final ObjectMapper mapper = new ObjectMapper();
-			final Query query = mapper.readValue(t.getRequestBody(), Query.class);
+			final Query query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
-				query.perform(os, mapper, processor);
+				query.perform(os, RuntimeSupport.MAPPER, processor);
 			}
 		});
 
@@ -184,13 +189,13 @@ public final class Server {
 		server.createContext(url, t -> {
 			t.getResponseHeaders().set("Content-type", type);
 			t.sendResponseHeaders(200, 0);
-			byte[] b = new byte[1024];
+			final byte[] b = new byte[1024];
 			try (OutputStream output = t.getResponseBody(); InputStream input = getClass().getResourceAsStream(url)) {
 				int count;
 				while ((count = input.read(b)) > 0) {
 					output.write(b, 0, count);
 				}
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				e.printStackTrace();
 			}
 		});
@@ -198,12 +203,11 @@ public final class Server {
 
 	private void addJson(String url, Function<ObjectMapper, JsonNode> fetcher) {
 		add(url, t -> {
-			final ObjectMapper mapper = new ObjectMapper();
-			final JsonNode node = fetcher.apply(mapper);
+			final JsonNode node = fetcher.apply(RuntimeSupport.MAPPER);
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
-				mapper.writeValue(os, node);
+				RuntimeSupport.MAPPER.writeValue(os, node);
 			}
 		});
 	}

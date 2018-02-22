@@ -9,7 +9,8 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
 /**
- * The arguments defined in the “With” section of a “Run” olive or “Monitor” clause.
+ * The arguments defined in the “With” section of a “Run” olive or “Monitor”
+ * clause.
  */
 public final class OliveArgumentNode {
 	public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {

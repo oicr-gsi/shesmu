@@ -135,7 +135,7 @@ public class TsvLookupRepository implements LookupRepository {
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		return environmentVariable().map(path -> {
-			Map<String, String> map = new TreeMap<>();
+			final Map<String, String> map = new TreeMap<>();
 			map.put("path", path);
 			return Stream.of(new Pair<>("TSV Lookups", map));
 

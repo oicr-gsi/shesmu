@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.actions.rest;
 import java.util.Map.Entry;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -16,54 +15,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.Renderer;
+import ca.on.oicr.gsi.shesmu.actions.util.JsonParameter;
 
 public final class Definition {
-	private static final class JsonParameter implements ParameterDefinition {
-		private final String name;
-		private final Imyhat type;
-
-		private JsonParameter(String name, Imyhat type) {
-			this.name = name;
-			this.type = type;
-		}
-
-		@Override
-		public String name() {
-			return name;
-		}
-
-		@Override
-		public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
-			renderer.loadImyhat(type.signature());
-			renderer.methodGen().loadLocal(actionLocal);
-			renderer.methodGen().getField(A_LAUNCH_REMOTE_TYPE, "parameters", A_OBJECT_NODE_TYPE);
-			renderer.methodGen().push(name);
-			loadParameter.accept(renderer);
-			renderer.methodGen().box(type.asmType());
-			renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__PACK_JSON);
-
-		}
-
-		@Override
-		public Imyhat type() {
-			return type;
-		}
-	}
-
-	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
-	private static final Type A_LAUNCH_REMOTE_TYPE = Type.getType(LaunchRemote.class);
-
-	private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
-	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+	static final Type A_LAUNCH_REMOTE_TYPE = Type.getType(LaunchRemote.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Method CTOR_LAUNCH_REMOTE = new Method("<init>", Type.VOID_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE });
-
-	private static final Method METHOD_IMYHAT__PACK_JSON = new Method("packJson", Type.VOID_TYPE,
-			new Type[] { A_OBJECT_NODE_TYPE, A_STRING_TYPE, A_OBJECT_TYPE });
 
 	private String name;
 

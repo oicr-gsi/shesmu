@@ -14,18 +14,15 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 @MetaInfServices
 public final class FileActionRepository implements ActionRepository {
 
 	private static final String FILES_VARIABLE = "SHESMU_DATA";
-
-	private static final ObjectMapper mapper = new ObjectMapper();
 
 	public static Optional<String> environmentVariable() {
 		return Optional.ofNullable(System.getenv(FILES_VARIABLE));
@@ -37,7 +34,8 @@ public final class FileActionRepository implements ActionRepository {
 
 	private static Stream<ActionDefinition> queryActionsCatalog(Path file) {
 		try {
-			final FileDefinition fileDef = mapper.readValue(Files.readAllBytes(file), FileDefinition.class);
+			final FileDefinition fileDef = RuntimeSupport.MAPPER.readValue(Files.readAllBytes(file),
+					FileDefinition.class);
 			return Arrays.stream(fileDef.getDefinitions()).map(def -> def.toDefinition(fileDef.getUrl()));
 		} catch (final IOException e) {
 			e.printStackTrace();

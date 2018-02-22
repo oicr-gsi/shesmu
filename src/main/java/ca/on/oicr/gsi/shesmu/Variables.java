@@ -1,35 +1,34 @@
 package ca.on.oicr.gsi.shesmu;
 
-import java.util.Set;
-
 public final class Variables {
-	private final long accession;
-	private final Set<String> donor;
+	private final String accession;
+	private final String donor;
 	private final long file_size;
-	private final Set<String> group_desc;
-	private final Set<String> group_id;
+	private final String group_desc;
+	private final String group_id;
 	private final Tuple ius;
-	private final Set<String> library_sample;
-	private final Set<Long> library_size;
-	private final Set<String> library_template_type;
-	private final Set<String> library_type;
+	private final String library_sample;
+	private final Long library_size;
+	private final String library_template_type;
+	private final String library_type;
 	private final String md5;
 	private final String metatype;
 	private final String path;
-	private final Set<String> study;
-	private final Set<String> targeted_resequencing;
-	private final Set<String> tissue_origin;
-	private final Set<String> tissue_prep;
-	private final Set<String> tissue_region;
-	private final Set<String> tissue_type;
+	private final String source;
+	private final String study;
+	private final String targeted_resequencing;
+	private final String tissue_origin;
+	private final String tissue_prep;
+	private final String tissue_region;
+	private final String tissue_type;
 	private final String workflow;
 	private final Tuple workflow_version;
 
-	public Variables(long accession, String path, String metatype, String md5, long file_size, String workflow,
-			Tuple workflow_version, Set<String> study, Set<String> library_sample, Set<String> donor, Tuple ius,
-			Set<String> library_template_type, Set<String> tissue_type, Set<String> tissue_origin,
-			Set<String> tissue_prep, Set<String> targeted_resequencing, Set<String> tissue_region, Set<String> group_id,
-			Set<String> group_desc, Set<Long> library_size, Set<String> library_type) {
+	public Variables(String accession, String path, String metatype, String md5, long file_size, String workflow,
+			Tuple workflow_version, String study, String library_sample, String donor, Tuple ius,
+			String library_template_type, String tissue_type, String tissue_origin, String tissue_prep,
+			String targeted_resequencing, String tissue_region, String group_id, String group_desc, Long library_size,
+			String library_type, String source) {
 		super();
 		this.accession = accession;
 		this.path = path;
@@ -52,13 +51,14 @@ public final class Variables {
 		this.group_desc = group_desc;
 		this.library_size = library_size;
 		this.library_type = library_type;
+		this.source = source;
 	}
 
-	public long accession() {
+	public String accession() {
 		return accession;
 	}
 
-	public Set<String> donor() {
+	public String donor() {
 		return donor;
 	}
 
@@ -66,11 +66,11 @@ public final class Variables {
 		return file_size;
 	}
 
-	public Set<String> group_desc() {
+	public String group_desc() {
 		return group_desc;
 	}
 
-	public Set<String> group_id() {
+	public String group_id() {
 		return group_id;
 	}
 
@@ -78,19 +78,19 @@ public final class Variables {
 		return ius;
 	}
 
-	public Set<String> library_sample() {
+	public String library_sample() {
 		return library_sample;
 	}
 
-	public Set<Long> library_size() {
+	public Long library_size() {
 		return library_size;
 	}
 
-	public Set<String> library_template_type() {
+	public String library_template_type() {
 		return library_template_type;
 	}
 
-	public Set<String> library_type() {
+	public String library_type() {
 		return library_type;
 	}
 
@@ -106,27 +106,31 @@ public final class Variables {
 		return path;
 	}
 
-	public Set<String> study() {
+	public String source() {
+		return source;
+	}
+
+	public String study() {
 		return study;
 	}
 
-	public Set<String> targeted_resequencing() {
+	public String targeted_resequencing() {
 		return targeted_resequencing;
 	}
 
-	public Set<String> tissue_origin() {
+	public String tissue_origin() {
 		return tissue_origin;
 	}
 
-	public Set<String> tissue_prep() {
+	public String tissue_prep() {
 		return tissue_prep;
 	}
 
-	public Set<String> tissue_region() {
+	public String tissue_region() {
 		return tissue_region;
 	}
 
-	public Set<String> tissue_type() {
+	public String tissue_type() {
 		return tissue_type;
 	}
 

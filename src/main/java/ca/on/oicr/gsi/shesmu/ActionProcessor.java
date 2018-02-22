@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -91,7 +91,7 @@ public final class ActionProcessor implements Consumer<Action> {
 		};
 	}
 
-	private final Map<Action, Information> actions = new ConcurrentHashMap<>();
+	private final Map<Action, Information> actions = new ConcurrentSkipListMap<>((a, b) -> b.priority() - a.priority());
 
 	private final Thread processing = new Thread(this::update, "action-processor");
 

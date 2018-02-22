@@ -32,9 +32,9 @@ public abstract class AutoUpdatingFile {
 	}
 
 	/**
-	 * The file being monitoried
+	 * The file being monitored
 	 */
-	protected final Path fileName() {
+	public final Path fileName() {
 		return fileName;
 	}
 

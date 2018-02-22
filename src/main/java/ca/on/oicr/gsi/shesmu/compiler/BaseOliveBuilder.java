@@ -29,8 +29,8 @@ import io.prometheus.client.Gauge;
  */
 public abstract class BaseOliveBuilder {
 	private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
-	protected static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 	protected static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
+	protected static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 	protected static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
 	protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	protected static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
@@ -42,10 +42,10 @@ public abstract class BaseOliveBuilder {
 			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
 			false);
 
-	protected static final Method METHOD_REGROUP = new Method("regroup", A_STREAM_TYPE,
-			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
+	protected static final Method METHOD_REGROUP = new Method("regroup", A_STREAM_TYPE,
+			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
 
@@ -199,7 +199,7 @@ public abstract class BaseOliveBuilder {
 
 	/**
 	 * Create a “Monitor” clause in an olive
-	 * 
+	 *
 	 * @param metricName
 	 *            the Prometheus metric name
 	 * @param help

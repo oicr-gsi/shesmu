@@ -39,7 +39,7 @@ public abstract class ActionGenerator {
 
 	@RuntimeInterop
 	protected final Gauge buildGauge(String metricName, String help, String[] labelNames) {
-		Gauge g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).register();
+		final Gauge g = Gauge.build("shesmu_user_" + metricName, help).labelNames(labelNames).register();
 		collectors.add(g);
 		return g;
 	}

@@ -15,12 +15,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.prometheus.client.Gauge;
 
 /**
  * Utilities for making bytecode generation easier
  */
 public final class RuntimeSupport {
+
+	public static final ObjectMapper MAPPER = new ObjectMapper();
 
 	public static final BinaryOperator<?> USELESS_BINARY_OPERATOR = new BinaryOperator<Object>() {
 
@@ -68,7 +72,7 @@ public final class RuntimeSupport {
 	/**
 	 * Generate a comparator over objects which can have a comparable element
 	 * extracted from them
-	 * 
+	 *
 	 * @param transformer
 	 *            the extraction from the original values the the comparable form
 	 */
@@ -87,7 +91,7 @@ public final class RuntimeSupport {
 
 	/**
 	 * Add Prometheus monitoring to a stream.
-	 * 
+	 *
 	 * @param input
 	 *            the stream to monitor
 	 * @param gauge

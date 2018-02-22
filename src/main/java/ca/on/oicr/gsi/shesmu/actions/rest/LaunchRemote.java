@@ -17,11 +17,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.actions.util.JsonParameterised;
 import io.prometheus.client.Counter;
 
-public class LaunchRemote extends Action {
+public final class LaunchRemote extends Action implements JsonParameterised {
 	private static final CloseableHttpClient httpclient = HttpClients.createDefault();
-	private static final ObjectMapper mapper = new ObjectMapper();
 	private static final Counter remoteError = Counter
 			.build("shesmu_remote_action_errors", "Number of errors contacting the remote action service.")
 			.labelNames("target").register();
@@ -30,9 +31,9 @@ public class LaunchRemote extends Action {
 
 	private final String launchUrl;
 
-	public final ObjectNode parameters = mapper.createObjectNode();
+	private final ObjectNode parameters = RuntimeSupport.MAPPER.createObjectNode();
 
-	private final ObjectNode request = mapper.createObjectNode();
+	private final ObjectNode request = RuntimeSupport.MAPPER.createObjectNode();
 
 	private String resultUrl;
 
@@ -89,15 +90,22 @@ public class LaunchRemote extends Action {
 	}
 
 	@Override
+	public ObjectNode parameters() {
+		return parameters;
+	}
+
+	@Override
 	public ActionState perform() {
 		try {
 			final HttpPost post = new HttpPost(launchUrl + "/launchaction");
-			post.setEntity(new StringEntity(mapper.writeValueAsString(request), ContentType.APPLICATION_JSON));
+			post.setEntity(
+					new StringEntity(RuntimeSupport.MAPPER.writeValueAsString(request), ContentType.APPLICATION_JSON));
 			try (AutoCloseable timer = requestTime.start(launchUrl);
 					CloseableHttpResponse response = httpclient.execute(post)) {
 				switch (response.getStatusLine().getStatusCode()) {
 				case HttpStatus.SC_OK:
-					final ObjectNode result = mapper.readValue(response.getEntity().getContent(), ObjectNode.class);
+					final ObjectNode result = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
+							ObjectNode.class);
 					resultUrl = result.get("url").textValue();
 					return ActionState.SUCCEEDED;
 				case HttpStatus.SC_ACCEPTED:
@@ -116,6 +124,11 @@ public class LaunchRemote extends Action {
 		} catch (final JsonProcessingException e) {
 			return ActionState.FAILED;
 		}
+	}
+
+	@Override
+	public int priority() {
+		return -10;
 	}
 
 	@Override

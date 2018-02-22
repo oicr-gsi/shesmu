@@ -50,13 +50,13 @@ public abstract class RootBuilder {
 			new Type[] { A_NAME_LOADER_TYPE });
 	private static final Method METHOD_ACTION_GENERATOR__RUN = new Method("run", VOID_TYPE,
 			new Type[] { A_CONSUMER_TYPE, A_SUPPLIER_TYPE });
+	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
+			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
 	private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
 	private static final Method METHOD_IMYHAT__PARSE = new Method("parse", A_IMYHAT_TYPE,
 			new Type[] { A_CHAR_SEQ_TYPE });
 	private static final Method METHOD_NAME_LOADER__GET = new Method("get", A_OBJECT_TYPE,
 			new Type[] { A_STRING_TYPE });
-	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
-			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
 
 	public static Stream<LoadableValue> proxyCaptured(int offset, LoadableValue... capturedVariables) {
 		return IntStream.range(0, capturedVariables.length).boxed().map(index -> new LoadableValue() {

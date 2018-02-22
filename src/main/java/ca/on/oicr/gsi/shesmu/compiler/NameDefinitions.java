@@ -46,25 +46,26 @@ public class NameDefinitions {
 	private static final Map<String, Imyhat> BASE_VARIABLES = new HashMap<>();
 
 	static {
-		BASE_VARIABLES.put("accession", Imyhat.INTEGER);
-		BASE_VARIABLES.put("donor", Imyhat.STRING.asList());
+		BASE_VARIABLES.put("accession", Imyhat.STRING);
+		BASE_VARIABLES.put("donor", Imyhat.STRING);
 		BASE_VARIABLES.put("file_size", Imyhat.INTEGER);
-		BASE_VARIABLES.put("group_desc", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("group_id", Imyhat.STRING.asList());
+		BASE_VARIABLES.put("group_desc", Imyhat.STRING);
+		BASE_VARIABLES.put("group_id", Imyhat.STRING);
 		BASE_VARIABLES.put("ius", Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING));
-		BASE_VARIABLES.put("library_sample", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("library_size", Imyhat.INTEGER.asList());
-		BASE_VARIABLES.put("library_template_type", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("library_type", Imyhat.STRING.asList());
+		BASE_VARIABLES.put("library_sample", Imyhat.STRING);
+		BASE_VARIABLES.put("library_size", Imyhat.INTEGER);
+		BASE_VARIABLES.put("library_template_type", Imyhat.STRING);
+		BASE_VARIABLES.put("library_type", Imyhat.STRING);
 		BASE_VARIABLES.put("md5", Imyhat.STRING);
 		BASE_VARIABLES.put("metatype", Imyhat.STRING);
 		BASE_VARIABLES.put("path", Imyhat.STRING);
-		BASE_VARIABLES.put("study", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("targeted_resequencing", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("tissue_origin", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("tissue_prep", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("tissue_region", Imyhat.STRING.asList());
-		BASE_VARIABLES.put("tissue_type", Imyhat.STRING.asList());
+		BASE_VARIABLES.put("source", Imyhat.STRING);
+		BASE_VARIABLES.put("study", Imyhat.STRING);
+		BASE_VARIABLES.put("targeted_resequencing", Imyhat.STRING);
+		BASE_VARIABLES.put("tissue_origin", Imyhat.STRING);
+		BASE_VARIABLES.put("tissue_prep", Imyhat.STRING);
+		BASE_VARIABLES.put("tissue_region", Imyhat.STRING);
+		BASE_VARIABLES.put("tissue_type", Imyhat.STRING);
 		BASE_VARIABLES.put("workflow", Imyhat.STRING);
 		BASE_VARIABLES.put("workflow_version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER));
 	}

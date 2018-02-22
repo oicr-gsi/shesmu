@@ -17,13 +17,12 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Gauge;
 
 @MetaInfServices
@@ -37,8 +36,6 @@ public class JiraActionRepository implements ActionRepository {
 
 	private static final Gauge lastRead = Gauge.build("shesmu_jira_config_last_read",
 			"The last time, in seconds since the epoch, that the configuration was read.").register();
-
-	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private final List<Pair<String, Map<String, String>>> configuration = new ArrayList<>();
 
@@ -67,7 +64,7 @@ public class JiraActionRepository implements ActionRepository {
 
 	private Stream<ActionDefinition> parseJsonConfig(byte[] bytes) {
 		try {
-			return Arrays.stream(mapper.readValue(bytes, Configuration[].class))//
+			return Arrays.stream(RuntimeSupport.MAPPER.readValue(bytes, Configuration[].class))//
 					.peek(this::writeConfigBlock)//
 					.map(this::createActionDefinition);
 		} catch (final IOException e) {

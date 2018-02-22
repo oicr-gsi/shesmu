@@ -1,3 +1,3 @@
 Run ok
- Where Count study == 1
+ Where Count [1,2] == 2
  With { ok = True }

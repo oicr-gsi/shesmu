@@ -18,11 +18,11 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 public class OliveClauseNodeMonitor extends OliveClauseNode {
 
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
+	private final int column;
 	private final String help;
 	private final List<OliveArgumentNode> labels;
-	private final String metricName;
-	private final int column;
 	private final int line;
+	private final String metricName;
 
 	public OliveClauseNodeMonitor(int line, int column, String metricName, String help,
 			List<OliveArgumentNode> labels) {
@@ -44,7 +44,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode {
 		final Set<String> freeVariables = new HashSet<>();
 		labels.forEach(arg -> arg.collectFreeVariables(freeVariables));
 
-		Renderer renderer = oliveBuilder.monitor(metricName, help,
+		final Renderer renderer = oliveBuilder.monitor(metricName, help,
 				labels.stream().map(OliveArgumentNode::name).collect(Collectors.toList()), oliveBuilder.loadableValues()
 						.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();

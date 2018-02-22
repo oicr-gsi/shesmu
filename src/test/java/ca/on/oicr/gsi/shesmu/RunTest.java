@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -61,6 +60,11 @@ public class RunTest {
 		}
 
 		@Override
+		public int priority() {
+			return 0;
+		}
+
+		@Override
 		public long retryMinutes() {
 			return 15;
 		}
@@ -75,20 +79,14 @@ public class RunTest {
 	private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
 
 	private static Variables[] DATA = new Variables[] {
-			new Variables(1, "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA",
-					new Tuple(1L, 2L, 3L), Collections.singleton("the_foo_study"),
-					Collections.singleton("unknown_sample"), Collections.singleton("that_guy"),
-					new Tuple("RUN", 1L, "AACCGGTT"), Collections.singleton("EX"),
-					Collections.singleton("Fresh"), Collections.singleton("An"), Collections.singleton("Frozen"),
-					Collections.emptySet(), Collections.singleton("Inside"), Collections.emptySet(),
-					Collections.emptySet(), Collections.singleton(307L), Collections.singleton("pointy")),
-			new Variables(2, "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA",
-					new Tuple(1L, 2L, 3L), Collections.singleton("the_foo_study"),
-					Collections.singleton("unknown_sample"), Collections.singleton("that_guy"),
-					new Tuple("RUN", 1L, "ACGTACGT"), Collections.singleton("EX"),
-					Collections.singleton("Fresh"), Collections.singleton("nn"), Collections.singleton("Frozen"),
-					Collections.emptySet(), Collections.singleton("Inside"), Collections.emptySet(),
-					Collections.emptySet(), Collections.singleton(300L), Collections.singleton("pointy")) };
+			new Variables("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA",
+					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
+					new Tuple("RUN", 1L, "AACCGGTT"), "EX", "Fresh", "An", "Frozen", "", "Inside", "", "", 307L,
+					"pointy", "test"),
+			new Variables("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA",
+					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
+					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
+					"pointy", "test") };
 
 	private static final Lookup INT2DATE = new Lookup() {
 

@@ -18,7 +18,6 @@ public final class Configuration {
 		return token;
 	}
 
-
 	public String getUrl() {
 		return url;
 	}

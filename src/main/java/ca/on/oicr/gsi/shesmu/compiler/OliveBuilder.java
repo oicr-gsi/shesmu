@@ -22,10 +22,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	private static final Method METHOD_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE, new Type[] { A_OBJECT_TYPE });
 
-	private static final Method METHOD_SUPPLIER__GET = new Method("get", A_OBJECT_TYPE, new Type[] {});
-
 	private static final Method METHOD_STREAM__FOR_EACH = new Method("forEach", VOID_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
+
+	private static final Method METHOD_SUPPLIER__GET = new Method("get", A_OBJECT_TYPE, new Type[] {});
 
 	@SafeVarargs
 	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, LoadableValue... captures) {

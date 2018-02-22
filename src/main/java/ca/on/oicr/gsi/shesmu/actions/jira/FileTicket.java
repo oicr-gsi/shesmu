@@ -25,18 +25,17 @@ import io.prometheus.client.Counter;
 public class FileTicket extends Action {
 	private static final Counter failure = Counter
 			.build("shesmu_jira_client_failures", "Number of failed requests to the JIRA web service.")
-			.labelNames("instance").register();
+			.labelNames("name").register();
 	private static final Counter issueBad = Counter
-			.build("shesmu_jira_client_issue_bad", "Number of bad issues found in JIRA.").labelNames("instance")
-			.register();
+			.build("shesmu_jira_client_issue_bad", "Number of bad issues found in JIRA.").labelNames("name").register();
 	private static final Counter issueCreates = Counter
-			.build("shesmu_jira_client_issue_creates", "Number of new issues added to JIRA.").labelNames("instance")
+			.build("shesmu_jira_client_issue_creates", "Number of new issues added to JIRA.").labelNames("name")
 			.register();
 	private static final Counter issueUpdates = Counter
-			.build("shesmu_jira_client_issue_updates", "Number of changes to issues found in JIRA.")
-			.labelNames("instance").register();
+			.build("shesmu_jira_client_issue_updates", "Number of changes to issues found in JIRA.").labelNames("name")
+			.register();
 	private static final Counter requests = Counter
-			.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.").labelNames("instance")
+			.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.").labelNames("v")
 			.register();
 
 	private final JiraRestClient client;
@@ -51,8 +50,7 @@ public class FileTicket extends Action {
 
 	public String summary;
 
-	public FileTicket(String name, String url, String token, String projectKey)
-			throws URISyntaxException {
+	public FileTicket(String name, String url, String token, String projectKey) throws URISyntaxException {
 		this.name = name;
 		this.projectKey = projectKey;
 		client = new AsynchronousJiraRestClientFactory().create(new URI(url), new AuthenticationHandler() {
@@ -163,6 +161,11 @@ public class FileTicket extends Action {
 			failure.labels(name).inc();
 			return ActionState.UNKNOWN;
 		}
+	}
+
+	@Override
+	public int priority() {
+		return 1000;
 	}
 
 	@Override

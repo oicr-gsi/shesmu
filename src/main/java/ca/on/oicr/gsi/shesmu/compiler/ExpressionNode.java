@@ -247,22 +247,23 @@ public abstract class ExpressionNode {
 			}
 			return result;
 		}
-		AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-		Parser parserResult = parse1(input, expression::set);
+		final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+		final Parser parserResult = parse1(input, expression::set);
 		if (!parserResult.isGood()) {
 			return parserResult;
 		}
 		final Parser ternaryParser = parserResult.symbol("?");
 		if (ternaryParser.isGood()) {
-			AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
-			AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
-			Parser result = ternaryParser.whitespace() //
+			final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
+			final Parser result = ternaryParser.whitespace() //
 					.then(ExpressionNode::parse1, trueExpression::set) //
 					.symbol(":") //
 					.whitespace() //
 					.then(ExpressionNode::parse1, falseExpression::set);
 			if (result.isGood()) {
-				output.accept(new ExpressionNodeTernaryIf(input.line(), input.column(), expression.get(), trueExpression.get(), falseExpression.get()));
+				output.accept(new ExpressionNodeTernaryIf(input.line(), input.column(), expression.get(),
+						trueExpression.get(), falseExpression.get()));
 			}
 			return result;
 		} else {

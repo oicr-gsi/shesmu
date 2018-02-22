@@ -45,7 +45,7 @@ public final class Tuple {
 
 	/**
 	 * Get an element from the tuple
-	 * 
+	 *
 	 * @param index
 	 *            the zero-based position in the tuple
 	 */
