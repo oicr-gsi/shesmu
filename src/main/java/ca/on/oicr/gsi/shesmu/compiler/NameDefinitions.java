@@ -1,8 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,9 +20,9 @@ public class NameDefinitions {
 		private final String name;
 		private final Imyhat type;
 
-		public DefaultStreamTarget(Entry<String, Imyhat> entry) {
-			name = entry.getKey();
-			type = entry.getValue();
+		public DefaultStreamTarget(String name, Imyhat type) {
+			this.name = name;
+			this.type = type;
 		}
 
 		@Override
@@ -43,35 +42,32 @@ public class NameDefinitions {
 
 	}
 
-	private static final Map<String, Imyhat> BASE_VARIABLES = new HashMap<>();
-
-	static {
-		BASE_VARIABLES.put("accession", Imyhat.STRING);
-		BASE_VARIABLES.put("donor", Imyhat.STRING);
-		BASE_VARIABLES.put("file_size", Imyhat.INTEGER);
-		BASE_VARIABLES.put("group_desc", Imyhat.STRING);
-		BASE_VARIABLES.put("group_id", Imyhat.STRING);
-		BASE_VARIABLES.put("ius", Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING));
-		BASE_VARIABLES.put("library_sample", Imyhat.STRING);
-		BASE_VARIABLES.put("library_size", Imyhat.INTEGER);
-		BASE_VARIABLES.put("library_template_type", Imyhat.STRING);
-		BASE_VARIABLES.put("library_type", Imyhat.STRING);
-		BASE_VARIABLES.put("md5", Imyhat.STRING);
-		BASE_VARIABLES.put("metatype", Imyhat.STRING);
-		BASE_VARIABLES.put("path", Imyhat.STRING);
-		BASE_VARIABLES.put("source", Imyhat.STRING);
-		BASE_VARIABLES.put("study", Imyhat.STRING);
-		BASE_VARIABLES.put("targeted_resequencing", Imyhat.STRING);
-		BASE_VARIABLES.put("tissue_origin", Imyhat.STRING);
-		BASE_VARIABLES.put("tissue_prep", Imyhat.STRING);
-		BASE_VARIABLES.put("tissue_region", Imyhat.STRING);
-		BASE_VARIABLES.put("tissue_type", Imyhat.STRING);
-		BASE_VARIABLES.put("workflow", Imyhat.STRING);
-		BASE_VARIABLES.put("workflow_version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER));
-	}
+	private static final Target[] BASE_VARIABLES = new Target[] { //
+			new DefaultStreamTarget("accession", Imyhat.STRING), //
+			new DefaultStreamTarget("donor", Imyhat.STRING), //
+			new DefaultStreamTarget("file_size", Imyhat.INTEGER), //
+			new DefaultStreamTarget("group_desc", Imyhat.STRING), //
+			new DefaultStreamTarget("group_id", Imyhat.STRING), //
+			new DefaultStreamTarget("ius", Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING)), //
+			new DefaultStreamTarget("library_sample", Imyhat.STRING), //
+			new DefaultStreamTarget("library_size", Imyhat.INTEGER), //
+			new DefaultStreamTarget("library_template_type", Imyhat.STRING), //
+			new DefaultStreamTarget("library_type", Imyhat.STRING), //
+			new DefaultStreamTarget("md5", Imyhat.STRING), //
+			new DefaultStreamTarget("metatype", Imyhat.STRING), //
+			new DefaultStreamTarget("path", Imyhat.STRING), //
+			new DefaultStreamTarget("source", Imyhat.STRING), //
+			new DefaultStreamTarget("study", Imyhat.STRING), //
+			new DefaultStreamTarget("targeted_resequencing", Imyhat.STRING), //
+			new DefaultStreamTarget("tissue_origin", Imyhat.STRING), //
+			new DefaultStreamTarget("tissue_prep", Imyhat.STRING), //
+			new DefaultStreamTarget("tissue_region", Imyhat.STRING), //
+			new DefaultStreamTarget("tissue_type", Imyhat.STRING), //
+			new DefaultStreamTarget("workflow", Imyhat.STRING), //
+			new DefaultStreamTarget("workflow_version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER)) };
 
 	public static Stream<Target> baseStreamVariables() {
-		return BASE_VARIABLES.entrySet().stream().map(DefaultStreamTarget::new);
+		return Arrays.stream(BASE_VARIABLES);
 	}
 
 	/**
