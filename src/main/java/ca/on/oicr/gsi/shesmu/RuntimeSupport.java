@@ -70,18 +70,6 @@ public final class RuntimeSupport {
 	}
 
 	/**
-	 * Generate a comparator over objects which can have a comparable element
-	 * extracted from them
-	 *
-	 * @param transformer
-	 *            the extraction from the original values the the comparable form
-	 */
-	@RuntimeInterop
-	public static <T, X extends Comparable<X>> Comparator<T> comparator(Function<T, X> transformer) {
-		return (a, b) -> transformer.apply(a).compareTo(transformer.apply(b));
-	}
-
-	/**
 	 * Determine the difference between two instants, in seconds.
 	 */
 	@RuntimeInterop

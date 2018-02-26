@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -91,7 +92,7 @@ public final class ActionProcessor implements Consumer<Action> {
 		};
 	}
 
-	private final Map<Action, Information> actions = new ConcurrentSkipListMap<>((a, b) -> b.priority() - a.priority());
+	private final Map<Action, Information> actions = new ConcurrentSkipListMap<>(Comparator.comparingInt(Action::priority));
 
 	private final Thread processing = new Thread(this::update, "action-processor");
 

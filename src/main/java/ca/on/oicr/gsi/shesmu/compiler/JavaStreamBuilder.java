@@ -55,7 +55,7 @@ public final class JavaStreamBuilder {
 	private static final Method METHOD_OPTIONAL__OR_ELSE_GET = new Method("orElseGet", A_OBJECT_TYPE,
 			new Type[] { A_SUPPLIER_TYPE });
 
-	private static final Method METHOD_RUNTIME_SUPPORT__COMPARATOR = new Method("comparator", A_COMPARATOR_TYPE,
+	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
 	private static final Method METHOD_SET__STREAM = new Method("stream", A_STREAM_TYPE, new Type[] {});
 	private static final Method METHOD_STREAM__COLLECT = new Method("collect", Type.VOID_TYPE,
@@ -123,7 +123,7 @@ public final class JavaStreamBuilder {
 							.toArray(Type[]::new)),
 					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
 					Type.getMethodType(targetType.boxedAsmType(), sortType));
-			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__COMPARATOR);
+			renderer.methodGen().invokeStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, sortType));
