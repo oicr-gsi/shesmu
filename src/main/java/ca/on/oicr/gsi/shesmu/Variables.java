@@ -8,7 +8,7 @@ public final class Variables {
 	private final String group_id;
 	private final Tuple ius;
 	private final String library_sample;
-	private final Long library_size;
+	private final long library_size;
 	private final String library_template_type;
 	private final String library_type;
 	private final String md5;
@@ -27,7 +27,7 @@ public final class Variables {
 	public Variables(String accession, String path, String metatype, String md5, long file_size, String workflow,
 			Tuple workflow_version, String study, String library_sample, String donor, Tuple ius,
 			String library_template_type, String tissue_type, String tissue_origin, String tissue_prep,
-			String targeted_resequencing, String tissue_region, String group_id, String group_desc, Long library_size,
+			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
 			String library_type, String source) {
 		super();
 		this.accession = accession;
@@ -90,7 +90,7 @@ public final class Variables {
 	}
 
 	@Export(type = "i")
-	public Long library_size() {
+	public long library_size() {
 		return library_size;
 	}
 
