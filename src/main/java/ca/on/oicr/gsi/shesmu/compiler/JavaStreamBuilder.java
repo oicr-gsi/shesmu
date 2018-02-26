@@ -52,11 +52,11 @@ public final class JavaStreamBuilder {
 			false);
 
 	private static final Method METHOD_COLLECTORS__TO_SET = new Method("toSet", A_COLLECTOR_TYPE, new Type[] {});
-	private static final Method METHOD_OPTIONAL__OR_ELSE_GET = new Method("orElseGet", A_OBJECT_TYPE,
-			new Type[] { A_SUPPLIER_TYPE });
-
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
+
+	private static final Method METHOD_OPTIONAL__OR_ELSE_GET = new Method("orElseGet", A_OBJECT_TYPE,
+			new Type[] { A_SUPPLIER_TYPE });
 	private static final Method METHOD_SET__STREAM = new Method("stream", A_STREAM_TYPE, new Type[] {});
 	private static final Method METHOD_STREAM__COLLECT = new Method("collect", Type.VOID_TYPE,
 			new Type[] { A_COLLECTOR_TYPE });

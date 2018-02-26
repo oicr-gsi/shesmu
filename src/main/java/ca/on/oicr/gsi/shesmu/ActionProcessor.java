@@ -92,7 +92,8 @@ public final class ActionProcessor implements Consumer<Action> {
 		};
 	}
 
-	private final Map<Action, Information> actions = new ConcurrentSkipListMap<>(Comparator.comparingInt(Action::priority));
+	private final Map<Action, Information> actions = new ConcurrentSkipListMap<>(
+			Comparator.comparingInt(Action::priority));
 
 	private final Thread processing = new Thread(this::update, "action-processor");
 

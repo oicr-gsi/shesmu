@@ -27,7 +27,7 @@ public class ReportDefinition extends ActionDefinition {
 	private static Stream<ParameterDefinition> transform(ObjectNode parameters) {
 		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(parameters.fields(), 0), false).map(entry -> {
 			final Imyhat type = Imyhat.parse(entry.getValue().asText());
-			return new JsonParameter(entry.getKey(), type);
+			return new JsonParameter(entry.getKey(), type, true);
 		});
 	}
 

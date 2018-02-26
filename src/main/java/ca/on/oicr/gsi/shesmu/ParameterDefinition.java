@@ -19,12 +19,17 @@ public interface ParameterDefinition {
 	 * @param fieldName
 	 *            the name of the field
 	 */
-	public static ParameterDefinition forField(Type owner, String fieldName, BaseImyhat fieldType) {
+	public static ParameterDefinition forField(Type owner, String fieldName, BaseImyhat fieldType, boolean required) {
 		return new ParameterDefinition() {
 
 			@Override
 			public String name() {
 				return fieldName;
+			}
+
+			@Override
+			public boolean required() {
+				return required;
 			}
 
 			@Override
@@ -46,6 +51,11 @@ public interface ParameterDefinition {
 	 * The name of the parameter as the user will set it.
 	 */
 	String name();
+
+	/**
+	 * Whether this parameter is required or not.
+	 */
+	boolean required();
 
 	/**
 	 * A procedure to write the bytecode to set the parameter in the action instance

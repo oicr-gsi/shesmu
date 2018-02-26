@@ -94,6 +94,8 @@ public final class OliveNodeRun extends OliveNode {
 
 			final Set<String> definedArgumentNames = definition.parameters().map(ParameterDefinition::name)
 					.collect(Collectors.toSet());
+			final Set<String> requiredArgumentNames = definition.parameters().filter(ParameterDefinition::required)
+					.map(ParameterDefinition::name).collect(Collectors.toSet());
 			if (!definedArgumentNames.containsAll(argumentNames)) {
 				ok = false;
 				final Set<String> badTerms = new HashSet<>(argumentNames);
@@ -101,9 +103,9 @@ public final class OliveNodeRun extends OliveNode {
 				errorHandler.accept(String.format("%d:%d: Extra arguments for action %s: %s", line, column, actionName,
 						String.join(", ", badTerms)));
 			}
-			if (!argumentNames.containsAll(definedArgumentNames)) {
+			if (!argumentNames.containsAll(requiredArgumentNames)) {
 				ok = false;
-				final Set<String> badTerms = new HashSet<>(definedArgumentNames);
+				final Set<String> badTerms = new HashSet<>(requiredArgumentNames);
 				badTerms.removeAll(argumentNames);
 				errorHandler.accept(String.format("%d:%d: Missing arguments for action %s: %s", line, column,
 						actionName, String.join(", ", badTerms)));

@@ -24,16 +24,23 @@ public final class JsonParameter implements ParameterDefinition {
 			new Type[] {});
 
 	private final String name;
+	private final boolean required;
 	private final Imyhat type;
 
-	public JsonParameter(String name, Imyhat type) {
+	public JsonParameter(String name, Imyhat type, boolean required) {
 		this.name = name;
 		this.type = type;
+		this.required = required;
 	}
 
 	@Override
 	public String name() {
 		return name;
+	}
+
+	@Override
+	public boolean required() {
+		return required;
 	}
 
 	@Override

@@ -41,8 +41,8 @@ public class JiraActionRepository implements ActionRepository {
 
 	private ActionDefinition createActionDefinition(Configuration config) {
 		return new ActionDefinition(String.format("ticket_%s", config.getName()), A_FILE_TICKET_TYPE,
-				Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "summary", Imyhat.STRING),
-						ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING))) {
+				Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "summary", Imyhat.STRING, false),
+						ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, false))) {
 
 			@Override
 			public void initialize(GeneratorAdapter methodGen) {

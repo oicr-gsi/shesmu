@@ -52,7 +52,7 @@ public final class Definition {
 	public ActionDefinition toDefinition(String url) {
 		return new ActionDefinition(name, A_LAUNCH_REMOTE_TYPE, parametersStream().map(p -> {
 			final Imyhat type = Imyhat.parse(p.getValue().asText());
-			return new JsonParameter(p.getKey(), type);
+			return new JsonParameter(p.getKey(), type, true);
 		})) {
 
 			@Override
