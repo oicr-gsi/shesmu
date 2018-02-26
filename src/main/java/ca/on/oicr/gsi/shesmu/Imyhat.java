@@ -457,7 +457,7 @@ public abstract class Imyhat {
 			int count = 0;
 			int index;
 			for (index = 1; Character.isDigit(input.charAt(index)); index++) {
-				count += 10 * Character.digit(input.charAt(index), 10);
+				count = 10 * count + Character.digit(input.charAt(index), 10);
 			}
 			if (count == 0) {
 				return BAD;

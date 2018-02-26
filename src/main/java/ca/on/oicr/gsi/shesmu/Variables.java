@@ -54,90 +54,112 @@ public final class Variables {
 		this.source = source;
 	}
 
+	@Export(type = "s")
 	public String accession() {
 		return accession;
 	}
 
+	@Export(type = "s")
 	public String donor() {
 		return donor;
 	}
 
+	@Export(type = "i")
 	public long file_size() {
 		return file_size;
 	}
 
+	@Export(type = "s")
 	public String group_desc() {
 		return group_desc;
 	}
 
+	@Export(type = "s")
 	public String group_id() {
 		return group_id;
 	}
 
+	@Export(type = "t3sis")
 	public Tuple ius() {
 		return ius;
 	}
 
+	@Export(type = "s")
 	public String library_sample() {
 		return library_sample;
 	}
 
+	@Export(type = "i")
 	public Long library_size() {
 		return library_size;
 	}
 
+	@Export(type = "s")
 	public String library_template_type() {
 		return library_template_type;
 	}
 
+	@Export(type = "s")
 	public String library_type() {
 		return library_type;
 	}
 
+	@Export(type = "s")
 	public String md5() {
 		return md5;
 	}
 
+	@Export(type = "s")
 	public String metatype() {
 		return metatype;
 	}
 
+	@Export(type = "s")
 	public String path() {
 		return path;
 	}
 
+	@Export(type = "s")
 	public String source() {
 		return source;
 	}
 
+	@Export(type = "s")
 	public String study() {
 		return study;
 	}
 
+	@Export(type = "s")
 	public String targeted_resequencing() {
 		return targeted_resequencing;
 	}
 
+	@Export(type = "s")
 	public String tissue_origin() {
 		return tissue_origin;
 	}
 
+	@Export(type = "s")
 	public String tissue_prep() {
 		return tissue_prep;
 	}
 
+	@Export(type = "s")
 	public String tissue_region() {
 		return tissue_region;
 	}
 
+	@Export(type = "s")
 	public String tissue_type() {
 		return tissue_type;
 	}
 
+	@Export(type = "s")
 	public String workflow() {
 		return workflow;
 	}
 
+	@Export(type = "t3iii")
 	public Tuple workflow_version() {
 		return workflow_version;
 	}

@@ -7,7 +7,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.shesmu.Export;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Variables;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
@@ -42,29 +44,13 @@ public class NameDefinitions {
 
 	}
 
-	private static final Target[] BASE_VARIABLES = new Target[] { //
-			new DefaultStreamTarget("accession", Imyhat.STRING), //
-			new DefaultStreamTarget("donor", Imyhat.STRING), //
-			new DefaultStreamTarget("file_size", Imyhat.INTEGER), //
-			new DefaultStreamTarget("group_desc", Imyhat.STRING), //
-			new DefaultStreamTarget("group_id", Imyhat.STRING), //
-			new DefaultStreamTarget("ius", Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING)), //
-			new DefaultStreamTarget("library_sample", Imyhat.STRING), //
-			new DefaultStreamTarget("library_size", Imyhat.INTEGER), //
-			new DefaultStreamTarget("library_template_type", Imyhat.STRING), //
-			new DefaultStreamTarget("library_type", Imyhat.STRING), //
-			new DefaultStreamTarget("md5", Imyhat.STRING), //
-			new DefaultStreamTarget("metatype", Imyhat.STRING), //
-			new DefaultStreamTarget("path", Imyhat.STRING), //
-			new DefaultStreamTarget("source", Imyhat.STRING), //
-			new DefaultStreamTarget("study", Imyhat.STRING), //
-			new DefaultStreamTarget("targeted_resequencing", Imyhat.STRING), //
-			new DefaultStreamTarget("tissue_origin", Imyhat.STRING), //
-			new DefaultStreamTarget("tissue_prep", Imyhat.STRING), //
-			new DefaultStreamTarget("tissue_region", Imyhat.STRING), //
-			new DefaultStreamTarget("tissue_type", Imyhat.STRING), //
-			new DefaultStreamTarget("workflow", Imyhat.STRING), //
-			new DefaultStreamTarget("workflow_version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER)) };
+	private static final Target[] BASE_VARIABLES = Arrays.stream(Variables.class.getMethods()).flatMap(method -> {
+		Export[] exports = method.getAnnotationsByType(Export.class);
+		if (exports.length == 1) {
+			return Stream.of(new DefaultStreamTarget(method.getName(), Imyhat.parse(exports[0].type())));
+		}
+		return Stream.empty();
+	}).toArray(Target[]::new);
 
 	public static Stream<Target> baseStreamVariables() {
 		return Arrays.stream(BASE_VARIABLES);
