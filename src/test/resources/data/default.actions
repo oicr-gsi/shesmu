@@ -3,17 +3,25 @@
     {
       "name": "fastqc",
       "parameters": {
-        "input": "as",
-        "memory": "i"
+        "input": {
+          "required": true,
+          "type": "as"
+        },
+        "memory": {
+          "required": true,
+          "type": "i"
+        }
       }
     },
     {
       "name": "ok",
       "parameters": {
-        "ok": "b"
+        "ok": {
+          "required": true,
+          "type": "b"
+        }
       }
     }
-
   ],
   "url": "http://example.com/"
 }

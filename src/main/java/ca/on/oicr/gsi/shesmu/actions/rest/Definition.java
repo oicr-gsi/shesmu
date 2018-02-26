@@ -1,17 +1,10 @@
 package ca.on.oicr.gsi.shesmu.actions.rest;
 
-import java.util.Map.Entry;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.Map;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -26,33 +19,28 @@ public final class Definition {
 
 	private String name;
 
-	private ObjectNode parameters;
+	private Map<String, ParameterInfo> parameters;
 
 	public String getName() {
 		return name;
 	}
 
-	public ObjectNode getParameters() {
+	public Map<String, ParameterInfo> getParameters() {
 		return parameters;
-	}
-
-	private Stream<Entry<String, JsonNode>> parametersStream() {
-		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(parameters.fields(), Spliterator.ORDERED),
-				false);
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public void setParameters(ObjectNode parameters) {
+	public void setParameters(Map<String, ParameterInfo> parameters) {
 		this.parameters = parameters;
 	}
 
 	public ActionDefinition toDefinition(String url) {
-		return new ActionDefinition(name, A_LAUNCH_REMOTE_TYPE, parametersStream().map(p -> {
-			final Imyhat type = Imyhat.parse(p.getValue().asText());
-			return new JsonParameter(p.getKey(), type, true);
+		return new ActionDefinition(name, A_LAUNCH_REMOTE_TYPE, parameters.entrySet().stream().map(p -> {
+			final Imyhat type = Imyhat.parse(p.getValue().getType());
+			return new JsonParameter(p.getKey(), type, p.getValue().isRequired());
 		})) {
 
 			@Override

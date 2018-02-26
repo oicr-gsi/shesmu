@@ -66,7 +66,9 @@ which the remote service should exist.
     {
       name: String,
       parameters: {
-        [parameterName]: Shesmu signature string
+        [parameterName]: {
+          type: String (Shesmu signature),
+          required: boolean
       }
     }
 ### ActionRequest
