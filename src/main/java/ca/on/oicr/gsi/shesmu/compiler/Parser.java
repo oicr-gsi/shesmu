@@ -250,7 +250,7 @@ public abstract class Parser {
 
 	private static Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
 
-	private static Pattern IDENTIFIER = Pattern.compile("[a-z][a-z_]*");
+	public static Pattern IDENTIFIER = Pattern.compile("[a-z][a-z_]*");
 
 	private static Pattern WHITESPACE = Pattern.compile("[\\t ]+");
 

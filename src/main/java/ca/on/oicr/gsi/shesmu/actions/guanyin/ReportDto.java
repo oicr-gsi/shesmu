@@ -1,11 +1,18 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Map;
 
-class ReportDto {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.actions.rest.ParameterInfo;
+import ca.on.oicr.gsi.shesmu.actions.util.JsonParameter;
+import ca.on.oicr.gsi.shesmu.compiler.Parser;
+
+public class ReportDto {
 	private String category;
 	private String name;
-	private ObjectNode permitted_parameters;
+	private Map<String, ParameterInfo> permitted_parameters;
 	private long report_id;
 	private String version;
 
@@ -21,12 +28,17 @@ class ReportDto {
 		return name;
 	}
 
-	public ObjectNode getPermittedParameters() {
+	@JsonProperty("permitted_parameters")
+	public Map<String, ParameterInfo> getPermittedParameters() {
 		return permitted_parameters;
 	}
 
 	public String getVersion() {
 		return version;
+	}
+
+	public boolean isValid() {
+		return Parser.IDENTIFIER.matcher(category).matches() && Parser.IDENTIFIER.matcher(name).matches();
 	}
 
 	public void setCategory(String category) {
@@ -41,7 +53,7 @@ class ReportDto {
 		this.name = name;
 	}
 
-	public void setPermittedParameters(ObjectNode permitted_parameters) {
+	public void setPermittedParameters(Map<String, ParameterInfo> permitted_parameters) {
 		this.permitted_parameters = permitted_parameters;
 	}
 
@@ -49,9 +61,10 @@ class ReportDto {
 		this.version = version;
 	}
 
-	public ReportDefinition toDefinition(String guanyinUrl, String drmaaUrl) {
-		// TODO Auto-generated method stub
-		return null;
+	public ReportDefinition toDefinition(String drmaaUrl, String 观音Url) {
+		return new ReportDefinition(drmaaUrl, 观音Url, drmaaUrl, category, name,
+				permitted_parameters.entrySet().stream().map(e -> new JsonParameter(e.getKey(),
+						Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
 	}
 
 }

@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -25,14 +24,13 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 public class ReportActionRepository implements ActionRepository {
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
-	private static final Pattern INVALID_CATEGORY = Pattern.compile("^pinery-report.*$");
 	private static final String VARIABLE = "GUANYIN_CONFIG";
 
 	private static Stream<ActionDefinition> queryCatalog(Configuration configuration) {
 		try (CloseableHttpResponse response = HTTP_CLIENT
 				.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
 			return Arrays.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class))
-					.filter(report -> !INVALID_CATEGORY.matcher(report.getCategory()).matches())
+					.filter(ReportDto::isValid)
 					.map(def -> def.toDefinition(configuration.getGuanyin(), configuration.getDrmaa()));
 		} catch (final IOException e) {
 			e.printStackTrace();

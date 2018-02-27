@@ -45,7 +45,7 @@ public class NameDefinitions {
 	}
 
 	private static final Target[] BASE_VARIABLES = Arrays.stream(Variables.class.getMethods()).flatMap(method -> {
-		Export[] exports = method.getAnnotationsByType(Export.class);
+		final Export[] exports = method.getAnnotationsByType(Export.class);
 		if (exports.length == 1) {
 			return Stream.of(new DefaultStreamTarget(method.getName(), Imyhat.parse(exports[0].type())));
 		}
