@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
+import java.security.MessageDigest;
 import java.util.OptionalLong;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -24,6 +27,7 @@ public class RunReport extends Action implements JsonParameterised {
 			"The request time latency to launch a remote action.", "target");
 
 	private final String category;
+	private final String drmaaPsk;
 	private final String drmaaUrl;
 	private final String name;
 	private final ObjectNode parameters = RuntimeSupport.MAPPER.createObjectNode();
@@ -32,10 +36,11 @@ public class RunReport extends Action implements JsonParameterised {
 	private final String version;
 	private final String 观音Url;
 
-	public RunReport(String drmaaUrl, String 觀音Url, String rootDirectory, String category, String name,
+	public RunReport(String drmaaUrl, String drmaaPsk, String 觀音Url, String rootDirectory, String category, String name,
 			String version) {
 		super();
 		this.drmaaUrl = drmaaUrl;
+		this.drmaaPsk = drmaaPsk;
 		观音Url = 觀音Url;
 		this.rootDirectory = rootDirectory;
 		this.category = category;
@@ -158,8 +163,12 @@ public class RunReport extends Action implements JsonParameterised {
 			drmaaParameters.put("drmaa_remote_command",
 					String.format("%s/reports/%s/%s-%s", rootDirectory, category, name, version));
 			drmaaParameters.putArray("drmaa_v_argv").add(RuntimeSupport.MAPPER.writeValueAsString(parameters));
-			drmaaRequest.setEntity(new StringEntity(RuntimeSupport.MAPPER.writeValueAsString(drmaaParameters),
-					ContentType.APPLICATION_JSON));
+			final String body = RuntimeSupport.MAPPER.writeValueAsString(drmaaParameters);
+			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+			digest.digest(drmaaPsk.getBytes());
+			digest.digest(body.getBytes());
+			drmaaRequest.addHeader("Authorization", "signed " + DatatypeConverter.printHexBinary(digest.digest()));
+			drmaaRequest.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return ActionState.FAILED;

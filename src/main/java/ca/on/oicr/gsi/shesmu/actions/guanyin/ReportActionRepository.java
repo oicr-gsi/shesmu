@@ -30,8 +30,8 @@ public class ReportActionRepository implements ActionRepository {
 		try (CloseableHttpResponse response = HTTP_CLIENT
 				.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
 			return Arrays.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class))
-					.filter(ReportDto::isValid)
-					.map(def -> def.toDefinition(configuration.getGuanyin(), configuration.getDrmaa()));
+					.filter(ReportDto::isValid).map(def -> def.toDefinition(configuration.getGuanyin(),
+							configuration.getDrmaa(), configuration.getDrmaaPsk()));
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}

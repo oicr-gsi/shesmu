@@ -19,17 +19,19 @@ public class ReportDefinition extends ActionDefinition {
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE });
 
 	private final String category;
+	private final String drmaaPsk;
 	private final String drmaaUrl;
 	private final String name;
-	private final String version;
 
+	private final String version;
 	private final String 观音Url;
 
-	public ReportDefinition(String drmaaUrl, String 观音Url, String category, String name, String version,
-			Stream<ParameterDefinition> parameters) {
+	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String category, String name,
+			String version, Stream<ParameterDefinition> parameters) {
 		super(name + "_" + version.replaceAll("[^A-Za-z0-9_]", "_"), ACTION_TYPE, parameters);
-		this.drmaaUrl = drmaaUrl;
 		this.观音Url = 观音Url;
+		this.drmaaUrl = drmaaUrl;
+		this.drmaaPsk = drmaaPsk;
 		this.category = category;
 		this.name = name;
 		this.version = version;
@@ -41,6 +43,7 @@ public class ReportDefinition extends ActionDefinition {
 		methodGen.dup();
 		methodGen.push(观音Url);
 		methodGen.push(drmaaUrl);
+		methodGen.push(drmaaPsk);
 		methodGen.push(category);
 		methodGen.push(name);
 		methodGen.push(version);

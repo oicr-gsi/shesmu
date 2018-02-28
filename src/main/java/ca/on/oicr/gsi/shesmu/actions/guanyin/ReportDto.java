@@ -61,8 +61,8 @@ public class ReportDto {
 		this.version = version;
 	}
 
-	public ReportDefinition toDefinition(String drmaaUrl, String 观音Url) {
-		return new ReportDefinition(drmaaUrl, 观音Url, drmaaUrl, category, name,
+	public ReportDefinition toDefinition(String 观音Url, String drmaaUrl, String drmaaPsk) {
+		return new ReportDefinition(观音Url, drmaaUrl, drmaaPsk, category, name, version,
 				permitted_parameters.entrySet().stream().map(e -> new JsonParameter(e.getKey(),
 						Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
 	}
