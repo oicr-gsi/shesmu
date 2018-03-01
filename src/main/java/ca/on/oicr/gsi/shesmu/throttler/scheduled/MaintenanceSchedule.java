@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.throttler.scheduled;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,6 +20,7 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.AutoUpdatingFile;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Throttler;
 
 /**
@@ -62,13 +62,11 @@ public class MaintenanceSchedule implements Throttler {
 
 	private static final Pattern BLANK = Pattern.compile("\\s+");
 
-	private final Optional<ScheduleReader> schedule = Optional.ofNullable(System.getenv("SHESMU_DATA"))//
-			.map(dir -> Paths.get(dir, "maintenance.tsv"))//
-			.filter(Files::exists)//
+	private final Optional<ScheduleReader> schedule = RuntimeSupport.dataFile("maintenance.tsv")//
 			.map(ScheduleReader::new);
 
 	@Override
-	public boolean isOverloaded(String environment, Set<String> services) {
+	public boolean isOverloaded(Set<String> services) {
 		return schedule.map(ScheduleReader::inMaintenanceWindow).orElse(false);
 	}
 

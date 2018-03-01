@@ -62,7 +62,6 @@ public final class Server {
 				writeHeader(writer, "Core");
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
-				writeRow(writer, "Environment", Throttler.ENVIRONMENT);
 				writeFinish(writer);
 
 				writer.write("<h1>Compile Errors</h1><p>");

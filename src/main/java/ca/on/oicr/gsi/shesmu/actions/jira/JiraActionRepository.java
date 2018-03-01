@@ -1,14 +1,8 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -62,37 +56,14 @@ public class JiraActionRepository implements ActionRepository {
 		return configuration.stream();
 	}
 
-	private Stream<ActionDefinition> parseJsonConfig(byte[] bytes) {
-		try {
-			return Arrays.stream(RuntimeSupport.MAPPER.readValue(bytes, Configuration[].class))//
-					.peek(this::writeConfigBlock)//
-					.map(this::createActionDefinition);
-		} catch (final IOException e) {
-			e.printStackTrace();
-			return Stream.empty();
-		}
-	}
-
 	@Override
 	public Stream<ActionDefinition> query() {
 		lastRead.setToCurrentTime();
 		configuration.clear();
-		return Optional.ofNullable(System.getenv("SHESMU_JIRA"))//
-				.map(Paths::get)//
-				.filter(Files::exists)//
-				.flatMap(this::readFile)//
-				.map(this::parseJsonConfig)//
-				.orElseGet(Stream::empty);
+		return RuntimeSupport.dataFiles(Configuration.class, ".jira")//
+				.peek(this::writeConfigBlock)//
+				.map(this::createActionDefinition);
 
-	}
-
-	private Optional<byte[]> readFile(Path path) {
-		try {
-			return Optional.ofNullable(Files.readAllBytes(path));
-		} catch (final IOException e) {
-			e.printStackTrace();
-			return Optional.empty();
-		}
 	}
 
 	private void writeConfigBlock(Configuration config) {

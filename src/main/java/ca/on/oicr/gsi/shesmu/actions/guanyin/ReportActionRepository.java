@@ -1,12 +1,11 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -24,8 +23,6 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 public class ReportActionRepository implements ActionRepository {
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
-	private static final String VARIABLE = "GUANYIN_CONFIG";
-
 	private static Stream<ActionDefinition> queryCatalog(Configuration configuration) {
 		try (CloseableHttpResponse response = HTTP_CLIENT
 				.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
@@ -38,35 +35,24 @@ public class ReportActionRepository implements ActionRepository {
 		return Stream.empty();
 	}
 
-	private final Optional<Configuration> configuration;
+	private final List<Configuration> configuration;
 
 	public ReportActionRepository() {
-		configuration = Optional.ofNullable(System.getenv(VARIABLE))//
-				.map(Paths::get)//
-				.filter(Files::isReadable)//
-				.flatMap(path -> {
-					try {
-						return Optional
-								.of(RuntimeSupport.MAPPER.readValue(Files.readAllBytes(path), Configuration.class));
-					} catch (final IOException e) {
-						e.printStackTrace();
-						return Optional.empty();
-					}
-				});
+		configuration = RuntimeSupport.dataFiles(Configuration.class, ".guanyin").collect(Collectors.toList());
 	}
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return configuration.map(configuration -> {
+		return configuration.stream().map(configuration -> {
 			final Map<String, String> map = new TreeMap<>();
 			map.put("drmaa", configuration.getDrmaa());
 			map.put("觀音", configuration.getGuanyin());
-			return Stream.of(new Pair<>("觀音 Report Repository", map));
-		}).orElse(Stream.empty());
+			return new Pair<>("觀音 Report Repository", map);
+		});
 	}
 
 	@Override
 	public Stream<ActionDefinition> query() {
-		return configuration.map(ReportActionRepository::queryCatalog).orElseGet(Stream::empty);
+		return configuration.stream().flatMap(ReportActionRepository::queryCatalog);
 	}
 }

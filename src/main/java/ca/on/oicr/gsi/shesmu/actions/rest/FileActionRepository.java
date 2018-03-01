@@ -22,12 +22,6 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 @MetaInfServices
 public final class FileActionRepository implements ActionRepository {
 
-	private static final String FILES_VARIABLE = "SHESMU_DATA";
-
-	public static Optional<String> environmentVariable() {
-		return Optional.ofNullable(System.getenv(FILES_VARIABLE));
-	}
-
 	public static Stream<ActionDefinition> of(Optional<String> input) {
 		return roots(input).flatMap(FileActionRepository::queryActionsCatalog);
 	}
@@ -58,14 +52,16 @@ public final class FileActionRepository implements ActionRepository {
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		final Map<String, String> map = new TreeMap<>();
-		map.put("path", System.getenv(FILES_VARIABLE));
-		return Stream.of(new Pair<>("File Action Repositories", map));
+		return RuntimeSupport.environmentVariable().map(path -> {
+			final Map<String, String> map = new TreeMap<>();
+			map.put("path", path);
+			return Stream.of(new Pair<>("File Action Repositories", map));
+		}).orElseGet(Stream::empty);
 	}
 
 	@Override
 	public Stream<ActionDefinition> query() {
-		return of(environmentVariable());
+		return of(RuntimeSupport.environmentVariable());
 	}
 
 }

@@ -27,10 +27,8 @@ public final class RemoteActionRepository implements ActionRepository {
 
 	private static final Pattern SEMICOLON = Pattern.compile(";");
 
-	private static final String URL_VARIABLE = "SHESMU_ACTION_URLS";
-
 	public Optional<String> environmentVariable() {
-		return Optional.ofNullable(System.getenv(URL_VARIABLE));
+		return Optional.ofNullable(System.getenv("SHESMU_ACTION_URLS"));
 	}
 
 	@Override

@@ -3,11 +3,9 @@ package ca.on.oicr.gsi.shesmu.lookup;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -23,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Gauge;
 
 @MetaInfServices
@@ -32,23 +31,6 @@ public class TsvLookupRepository implements LookupRepository {
 			"The last time, in seconds since the epoch, that the configuration was read.").register();
 
 	private static final Pattern TAB = Pattern.compile("\t");
-
-	public static Optional<String> environmentVariable() {
-		return Optional.ofNullable(System.getenv("SHESMU_DATA"));
-	}
-
-	private static Stream<Lookup> findLookups(Path path) {
-		try (Stream<Path> files = Files.walk(path, 1)) {
-			return files//
-					.filter(f -> f.getFileName().toString().toLowerCase().endsWith(".lookup"))//
-					.map(TsvLookupRepository::readLookup)//
-					.filter(Objects::nonNull)//
-					.collect(Collectors.toList()).stream();
-		} catch (final IOException e) {
-			e.printStackTrace();
-			return Stream.empty();
-		}
-	}
 
 	private static Lookup makeLookup(String name, List<String> lines) {
 		if (lines.size() < 2) {
@@ -112,11 +94,7 @@ public class TsvLookupRepository implements LookupRepository {
 	}
 
 	public static Stream<Lookup> of(Optional<String> source) {
-		return source.map(Paths::get)//
-				.filter(Files::exists)//
-				.filter(Files::isDirectory)//
-				.map(TsvLookupRepository::findLookups)//
-				.orElseGet(Stream::empty);
+		return RuntimeSupport.dataFilesForPath(source, ".lookup").map(TsvLookupRepository::readLookup);
 	}
 
 	private static Lookup readLookup(Path lookupFile) {
@@ -134,11 +112,10 @@ public class TsvLookupRepository implements LookupRepository {
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return environmentVariable().map(path -> {
+		return RuntimeSupport.environmentVariable().map(path -> {
 			final Map<String, String> map = new TreeMap<>();
 			map.put("path", path);
 			return Stream.of(new Pair<>("TSV Lookups", map));
-
 		}).orElse(Stream.empty());
 	}
 
@@ -146,7 +123,7 @@ public class TsvLookupRepository implements LookupRepository {
 	public Stream<Lookup> query() {
 		lastRead.setToCurrentTime();
 		configuration.clear();
-		return of(environmentVariable())//
+		return of(RuntimeSupport.environmentVariable())//
 				.peek(configuration::add);
 	}
 

@@ -25,6 +25,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.NameLoader;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.lookup.TsvLookupRepository;
 
@@ -39,16 +40,13 @@ public final class Build extends Compiler implements AutoCloseable {
 		options.addOption("x", "nocompute", false, "Don't automatically compute MAXS and FRAMES.");
 		options.addOption("v", "variables", false, "List all the variables known in the base stream.");
 		options.addOption("d", "dump", false, "Dump loaded actions and lookups in output.");
-		options.addOption("l", "lookups", true,
-				"The directory containing the JSON and TSV files for lookups. If not supplied, the path in the environment variable SHESMU_DATA is used.");
-		options.addOption("a", "actions", true,
-				"A colon-separated list of directories containing action definition files. If none are found, SHESMU_DATA is used instead.");
+		options.addOption("D", "data", true,
+				"The directory containing the JSON and TSV files for lookups and actions. If not supplied, the path in the environment variable SHESMU_DATA is used.");
 		final CommandLineParser parser = new DefaultParser();
-		Optional<String> actionPath = FileActionRepository.environmentVariable();
-		Optional<String> lookupPath = TsvLookupRepository.environmentVariable();
 		String file;
 		boolean dump;
 		boolean skipCompute;
+		Optional<String> dataDirectory = RuntimeSupport.environmentVariable();
 		try {
 			final CommandLine cmd = parser.parse(options, args);
 
@@ -65,11 +63,8 @@ public final class Build extends Compiler implements AutoCloseable {
 						.forEach(variable -> System.out.printf("\t%s :: %s (%s)\n", variable.name(),
 								variable.type().name(), variable.type().signature()));
 			}
-			if (cmd.hasOption('l')) {
-				lookupPath = Optional.ofNullable(cmd.getOptionValue('l'));
-			}
-			if (cmd.hasOption('a')) {
-				actionPath = Optional.ofNullable(cmd.getOptionValue('a'));
+			if (cmd.hasOption('D')) {
+				dataDirectory = Optional.ofNullable(cmd.getOptionValue('D'));
 			}
 			if (cmd.getArgs().length != 1) {
 				System.err.println("Exactly one file must be specified to compile.");
@@ -84,8 +79,8 @@ public final class Build extends Compiler implements AutoCloseable {
 			System.exit(1);
 			return;
 		}
-		try (Build compiler = new Build(new NameLoader<>(TsvLookupRepository.of(lookupPath), Lookup::name),
-				new NameLoader<>(FileActionRepository.of(actionPath), ActionDefinition::name), skipCompute, true)) {
+		try (Build compiler = new Build(new NameLoader<>(TsvLookupRepository.of(dataDirectory), Lookup::name),
+				new NameLoader<>(FileActionRepository.of(dataDirectory), ActionDefinition::name), skipCompute, true)) {
 			if (dump) {
 				compiler.dump();
 			}

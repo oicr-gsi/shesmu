@@ -7,9 +7,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -46,40 +46,43 @@ public class PrometheusThrottler implements Throttler {
 
 	private List<AlertDto> alerts = Collections.emptyList();
 
+	private final List<Configuration> configuration = RuntimeSupport.dataFiles(Configuration.class, ".alertman")
+			.collect(Collectors.toList());
 	private Instant lastUpdateTime = Instant.EPOCH;
-	private final Optional<String> url = Optional.ofNullable(System.getenv("ALERTMANAGER_URL"))
-			.map(url -> String.format("%s/api/v1/alerts", url));
 
 	@Override
-	public boolean isOverloaded(String environment, Set<String> services) {
-		return url.<Boolean>map(address -> {
-			if (Duration.between(lastUpdateTime, Instant.now()).get(ChronoUnit.MINUTES) > 5) {
-				try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(address))) {
-					final AlertResultDto result = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
-							AlertResultDto.class);
-					if (result == null || result.getData() == null) {
-						return false;
+	public boolean isOverloaded(Set<String> services) {
+		return configuration.stream()//
+				.anyMatch(configuration -> {
+					if (Duration.between(lastUpdateTime, Instant.now()).get(ChronoUnit.MINUTES) > 5) {
+						try (CloseableHttpResponse response = HTTP_CLIENT.execute(
+								new HttpGet(String.format("%s/api/v1/alerts", configuration.getAlertmanager())))) {
+							final AlertResultDto result = RuntimeSupport.MAPPER
+									.readValue(response.getEntity().getContent(), AlertResultDto.class);
+							if (result == null || result.getData() == null) {
+								return false;
+							}
+							alerts = result.getData();
+							ok.set(1);
+							lastUpdateTime = Instant.now();
+							lastUpdated.setToCurrentTime();
+						} catch (final IOException e) {
+							e.printStackTrace();
+							ok.set(0);
+						}
 					}
-					alerts = result.getData();
-					ok.set(1);
-					lastUpdateTime = Instant.now();
-					lastUpdated.setToCurrentTime();
-				} catch (final IOException e) {
-					e.printStackTrace();
-					ok.set(0);
-				}
-			}
-			return alerts.stream().anyMatch(alert -> alert.matches(environment, services));
-		}).orElse(false);
+					return alerts.stream().anyMatch(alert -> alert.matches(configuration.getEnvironment(), services));
+				});
 	}
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return url.map(address -> {
+		return configuration.stream().map(configuration -> {
 			final Map<String, String> properties = new TreeMap<>();
-			properties.put("address", address);
-			return Stream.of(new Pair<>("Prometheus Throttler", properties));
-		}).orElseGet(Stream::empty);
+			properties.put("address", configuration.getAlertmanager());
+			properties.put("environment", configuration.getEnvironment());
+			return new Pair<>("Prometheus Throttler", properties);
+		});
 	}
 
 }
