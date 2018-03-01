@@ -63,11 +63,11 @@ public final class Server {
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
 				writeFinish(writer);
-
-				writer.write("<h1>Compile Errors</h1><p>");
-				writer.write(compiler.errorHtml());
-				writer.write("</p>");
-
+				if (!compiler.errorHtml().isEmpty()) {
+					writer.write("<h1>Compile Errors</h1><p>");
+					writer.write(compiler.errorHtml());
+					writer.write("</p>");
+				}
 				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
 						actionRepository::implementations, //
 						lookupRepository::implementations, //
@@ -103,7 +103,7 @@ public final class Server {
 				actionRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(action -> {
 					writeBlock(writer, "Action: " + action.name());
 					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
-							.forEach(p -> writeRow(writer, p.name(), p.type().signature()));
+							.forEach(p -> writeRow(writer, p.name(), p.type().name()));
 
 				});
 				writeFinish(writer);

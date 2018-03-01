@@ -70,7 +70,7 @@ public class JiraActionRepository implements ActionRepository {
 		final Map<String, String> properties = new TreeMap<>();
 		properties.put("instance", config.getName());
 		properties.put("url", config.getUrl());
-		configuration.add(new Pair<>("jira:instance", properties));
+		configuration.add(new Pair<>("JIRA Instance", properties));
 	}
 
 }
