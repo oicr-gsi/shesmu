@@ -19,12 +19,17 @@ import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.actions.util.JsonParameterised;
+import io.prometheus.client.Counter;
 
 public class RunReport extends Action implements JsonParameterised {
 	private static final LatencyHistogram drmaaRequestTime = new LatencyHistogram("shesmu_drmaa_request_time",
 			"The request time latency to launch a remote action.", "target");
 	private static final LatencyHistogram 观音RequestTime = new LatencyHistogram("shesmu_guanyin_request_time",
 			"The request time latency to launch a remote action.", "target");
+	private static final Counter drmaaRequestErrors = Counter.build("shesmu_drmaa_request_errors",
+			"The number of errors trying to countact the DRMAA web service").labelNames("target").register();
+	private static final Counter 观音RequestErrors = Counter.build("shesmu_guanyin_request_errors",
+			"The number of errors trying to countact the Guanyin web service.").labelNames("target").register();
 
 	private final String category;
 	private final String drmaaPsk;
@@ -155,6 +160,7 @@ public class RunReport extends Action implements JsonParameterised {
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
+			观音RequestErrors.inc();
 			return ActionState.FAILED;
 		}
 		final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", drmaaUrl));
@@ -180,6 +186,7 @@ public class RunReport extends Action implements JsonParameterised {
 			return state == null ? ActionState.UNKNOWN : state;
 		} catch (final Exception e) {
 			e.printStackTrace();
+			drmaaRequestErrors.inc();
 			return ActionState.FAILED;
 		}
 	}
