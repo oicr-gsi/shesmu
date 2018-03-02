@@ -31,7 +31,7 @@ public class MasterRunner {
 			try (AutoCloseable timer = runTime.start()) {
 				final ActionGenerator generator = actionGeneratorSource.get();
 				generator.populateLookups(new NameLoader<>(lookupSource.get(), Lookup::name));
-				generator.run(actionSink, () -> VariablesSource.all());
+				generator.run(actionSink, VariablesSource::all);
 			} catch (final Exception e) {
 				e.printStackTrace();
 				errors.inc();

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -24,6 +25,7 @@ import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
 import ca.on.oicr.gsi.provenance.model.FileProvenance.Status;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.Variables;
 import ca.on.oicr.gsi.shesmu.VariablesSource;
@@ -83,16 +85,24 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 	private List<Variables> cache = Collections.emptyList();
 
 	private final DefaultProvenanceClient client = new DefaultProvenanceClient();
-
 	private Instant lastUpdated = Instant.EPOCH;
+
+	private final Map<String, String> properties = new TreeMap<>();
 
 	public FileProvenanceVariablesSource() throws IOException {
 		Utils.LOADER.ifPresent(loader -> {
-
 			setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
 			setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
 			setProvider(loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
+			properties.put("analyis providers", Integer.toString(loader.getAnalysisProvenanceProviders().size()));
+			properties.put("lane providers", Integer.toString(loader.getLaneProvenanceProviders().size()));
+			properties.put("sample providers", Integer.toString(loader.getSampleProvenanceProviders().size()));
 		});
+	}
+
+	@Override
+	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+		return Stream.of(new Pair<>("File Provenance Variable Source", properties));
 	}
 
 	@Override

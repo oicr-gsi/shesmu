@@ -69,6 +69,7 @@ public final class Server {
 					writer.write("</p>");
 				}
 				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
+						VariablesSource::sources, //
 						actionRepository::implementations, //
 						lookupRepository::implementations, //
 						Throttler::services)//

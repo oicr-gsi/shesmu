@@ -5,8 +5,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -18,6 +20,7 @@ import ca.on.oicr.gsi.provenance.ProviderLoader;
 import ca.on.oicr.gsi.provenance.SampleProvenanceProvider;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.Variables;
 import ca.on.oicr.gsi.shesmu.VariablesSource;
@@ -52,6 +55,13 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 				}
 				return Optional.of(m.values().iterator().next());
 			});
+
+	@Override
+	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+		Map<String, String> properties = new TreeMap<>();
+		properties.put("sample provider", provider.isPresent() ? "yes" : "no");
+		return Stream.of(new Pair<>("Sample Provenance Variable Source", properties));
+	}
 
 	@Override
 	public Stream<Variables> stream() {

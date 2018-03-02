@@ -9,11 +9,15 @@ import java.util.stream.StreamSupport;
  * requirements of {@link Variables}
  *
  */
-public interface VariablesSource {
+public interface VariablesSource extends LoadedConfiguration {
 	final static ServiceLoader<VariablesSource> LOADER = ServiceLoader.load(VariablesSource.class);
 
 	public static Stream<Variables> all() {
-		return StreamSupport.stream(LOADER.spliterator(), false).flatMap(VariablesSource::stream);
+		return sources().flatMap(VariablesSource::stream);
+	}
+
+	public static Stream<VariablesSource> sources() {
+		return StreamSupport.stream(LOADER.spliterator(), false);
 	}
 
 	public Stream<Variables> stream();

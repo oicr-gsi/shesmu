@@ -5,8 +5,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -17,6 +19,7 @@ import org.kohsuke.MetaInfServices;
 import ca.on.oicr.gsi.provenance.LaneProvenanceProvider;
 import ca.on.oicr.gsi.provenance.ProviderLoader;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.Variables;
 import ca.on.oicr.gsi.shesmu.VariablesSource;
@@ -46,6 +49,13 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 				}
 				return Optional.of(m.values().iterator().next());
 			});
+
+	@Override
+	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+		Map<String, String> properties = new TreeMap<>();
+		properties.put("lane provider", provider.isPresent() ? "yes" : "no");
+		return Stream.of(new Pair<>("Lane Provenance Variable Source", properties));
+	}
 
 	@Override
 	public Stream<Variables> stream() {
