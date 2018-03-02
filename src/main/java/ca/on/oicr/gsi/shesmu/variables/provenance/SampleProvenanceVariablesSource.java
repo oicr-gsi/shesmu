@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.variables.provenance;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,6 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.provenance.ProviderLoader;
 import ca.on.oicr.gsi.provenance.SampleProvenanceProvider;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
@@ -48,18 +48,14 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 
 	private Instant lastUpdated = Instant.EPOCH;
 
-	final Optional<SampleProvenanceProvider> provider = Utils.LOADER.map(ProviderLoader::getSampleProvenanceProviders)
-			.flatMap(m -> {
-				if (m.isEmpty()) {
-					return Optional.empty();
-				}
-				return Optional.of(m.values().iterator().next());
-			});
+	final List<SampleProvenanceProvider> provider = Utils.LOADER
+			.<List<SampleProvenanceProvider>>map(p -> new ArrayList<>(p.getSampleProvenanceProviders().values()))
+			.orElseGet(Collections::emptyList);
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		Map<String, String> properties = new TreeMap<>();
-		properties.put("sample provider", provider.isPresent() ? "yes" : "no");
+		properties.put("sample provider", Integer.toString(provider.size()));
 		return Stream.of(new Pair<>("Sample Provenance Variable Source", properties));
 	}
 
@@ -68,7 +64,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.MINUTES) > 15) {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
-				cache = provider.map(provider -> provider.getSampleProvenance().stream()).orElseGet(Stream::empty)//
+				cache = provider.stream().flatMap(provider -> provider.getSampleProvenance().stream())//
 						.filter(sp -> sp.getSkip() == null || sp.getSkip())//
 						.map(sp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);

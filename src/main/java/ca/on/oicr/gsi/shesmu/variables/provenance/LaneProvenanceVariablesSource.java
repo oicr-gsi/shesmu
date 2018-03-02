@@ -3,11 +3,11 @@ package ca.on.oicr.gsi.shesmu.variables.provenance;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.provenance.LaneProvenanceProvider;
-import ca.on.oicr.gsi.provenance.ProviderLoader;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
@@ -42,18 +41,14 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 	private List<Variables> cache = Collections.emptyList();
 	private Instant lastUpdated = Instant.EPOCH;
 
-	final Optional<LaneProvenanceProvider> provider = Utils.LOADER.map(ProviderLoader::getLaneProvenanceProviders)
-			.flatMap(m -> {
-				if (m.isEmpty()) {
-					return Optional.empty();
-				}
-				return Optional.of(m.values().iterator().next());
-			});
+	final List<LaneProvenanceProvider> provider = Utils.LOADER
+			.<List<LaneProvenanceProvider>>map(p -> new ArrayList<>(p.getLaneProvenanceProviders().values()))
+			.orElseGet(Collections::emptyList);
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		Map<String, String> properties = new TreeMap<>();
-		properties.put("lane provider", provider.isPresent() ? "yes" : "no");
+		properties.put("lane provider", Integer.toString(provider.size()));
 		return Stream.of(new Pair<>("Lane Provenance Variable Source", properties));
 	}
 
@@ -62,7 +57,7 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.MINUTES) > 15) {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
-				cache = provider.map(provider -> provider.getLaneProvenance().stream()).orElseGet(Stream::empty)//
+				cache = provider.stream().flatMap(provider -> provider.getLaneProvenance().stream())//
 						.filter(lp -> lp.getSkip() == null || lp.getSkip())//
 						.map(lp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
