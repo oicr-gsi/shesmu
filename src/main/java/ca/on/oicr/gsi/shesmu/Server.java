@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
@@ -57,16 +58,16 @@ public final class Server {
 		add("/", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody(); Writer writer = new PrintWriter(os)) {
+			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
 				writeHeader(writer, "Core");
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
 				writeFinish(writer);
 				if (!compiler.errorHtml().isEmpty()) {
-					writer.write("<h1>Compile Errors</h1><p>");
-					writer.write(compiler.errorHtml());
-					writer.write("</p>");
+					writer.print("<h1>Compile Errors</h1><p>");
+					writer.print(compiler.errorHtml());
+					writer.print("</p>");
 				}
 				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
 						VariablesSource::sources, //
@@ -87,7 +88,7 @@ public final class Server {
 		add("/definitions", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody(); Writer writer = new PrintWriter(os)) {
+			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
 
 				writeHeader(writer, "Lookups");
@@ -233,50 +234,38 @@ public final class Server {
 		z_master.start();
 	}
 
-	private void writeBlock(Writer writer, String title) {
-		try {
-			writer.write("<tr><td colspan=\"2\">");
-			writer.write(title);
-			writer.write("</td></tr>");
-		} catch (final IOException e) {
-		}
+	private void writeBlock(PrintStream writer, String title) {
+		writer.print("<tr><td colspan=\"2\">");
+		writer.print(title);
+		writer.print("</td></tr>");
 	}
 
-	private void writeFinish(Writer writer) {
-		try {
-			writer.write("</table>");
-		} catch (final IOException e) {
-		}
+	private void writeFinish(PrintStream writer) {
+		writer.print("</table>");
 
 	}
 
-	private void writeHeader(Writer writer, String title) {
-		try {
-			writer.write("<h1>");
-			writer.write(title);
-			writer.write("</h1><table>");
-		} catch (final IOException e) {
-		}
+	private void writeHeader(PrintStream writer, String title) {
+		writer.print("<h1>");
+		writer.print(title);
+		writer.print("</h1><table>");
 	}
 
-	private void writePageFooter(Writer writer) throws IOException {
-		writer.write("</div></body></html>");
+	private void writePageFooter(PrintStream writer) {
+		writer.print("</div></body></html>");
 	}
 
-	private void writePageHeader(Writer writer) throws IOException {
-		writer.write(
+	private void writePageHeader(PrintStream writer) {
+		writer.print(
 				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><title>Shesmu</title></head><body><nav><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
 	}
 
-	private void writeRow(Writer writer, String key, String value) {
-		try {
-			writer.write("<tr><td>");
-			writer.write(key);
-			writer.write("</td><td>");
-			writer.write(value);
-			writer.write("</td></tr>");
-		} catch (final IOException e) {
-		}
+	private void writeRow(PrintStream writer, String key, String value) {
+		writer.print("<tr><td>");
+		writer.print(key);
+		writer.print("</td><td>");
+		writer.print(value);
+		writer.print("</td></tr>");
 
 	}
 }
