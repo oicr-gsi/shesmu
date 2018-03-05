@@ -69,6 +69,7 @@ public class JiraActionRepository implements ActionRepository {
 	private void writeConfigBlock(Configuration config) {
 		final Map<String, String> properties = new TreeMap<>();
 		properties.put("instance", config.getName());
+		properties.put("project", config.getProjectKey());
 		properties.put("url", config.getUrl());
 		configuration.add(new Pair<>("JIRA Instance", properties));
 	}
