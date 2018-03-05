@@ -1,19 +1,37 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+
+import ca.on.oicr.gsi.shesmu.Imyhat;
 
 /**
  * Helper class to hold state and context for bytecode generation.
  */
 public class Renderer {
+	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+	private static final Type A_STRING_TYPE = Type.getType(String.class);
+	private static final Handle HANDLER_IMYHAT = new Handle(Opcodes.H_INVOKESTATIC, A_IMYHAT_TYPE.getInternalName(),
+			"bootstrap", Type.getMethodDescriptor(Type.getType(CallSite.class),
+					Type.getType(MethodHandles.Lookup.class), A_STRING_TYPE, Type.getType(MethodType.class)),
+			false);
+
+	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
+
 	private final Map<String, LoadableValue> loadables;
+
 	private final GeneratorAdapter methodGen;
+
 	private final RootBuilder rootBuilder;
 
 	private final int streamArg;
@@ -29,15 +47,12 @@ public class Renderer {
 		this.loadables = loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity()));
 
 	}
-
 	public Stream<LoadableValue> allValues() {
 		return loadables.values().stream();
 	}
-
 	public JavaStreamBuilder buildStream(Type initialType) {
 		return new JavaStreamBuilder(rootBuilder, this, streamType, rootBuilder.nextStreamId(), initialType);
 	}
-
 	/**
 	 * Find a known variable by name and load it on the stack.
 	 *
@@ -48,7 +63,7 @@ public class Renderer {
 	}
 
 	public void loadImyhat(String signature) {
-		rootBuilder.loadImyhat(signature, methodGen);
+		methodGen.invokeDynamic(signature, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 	}
 
 	/**

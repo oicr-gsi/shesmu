@@ -17,7 +17,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.Variables;
@@ -29,10 +28,8 @@ import io.prometheus.client.Gauge;
 public abstract class RootBuilder {
 
 	private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
-	private static final Type A_CHAR_SEQ_TYPE = Type.getType(CharSequence.class);
 	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
-	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_LOOKUP_TYPE = Type.getType(Lookup.class);
 	private static final Type A_NAME_LOADER_TYPE = Type.getType(NameLoader.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
@@ -53,8 +50,6 @@ public abstract class RootBuilder {
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
 	private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
-	private static final Method METHOD_IMYHAT__PARSE = new Method("parse", A_IMYHAT_TYPE,
-			new Type[] { A_CHAR_SEQ_TYPE });
 	private static final Method METHOD_NAME_LOADER__GET = new Method("get", A_OBJECT_TYPE,
 			new Type[] { A_STRING_TYPE });
 
@@ -83,7 +78,6 @@ public abstract class RootBuilder {
 	private final GeneratorAdapter clearGaugeMethod;
 	private final GeneratorAdapter ctor;
 	private final Set<String> gauges = new HashSet<>();
-	private final Set<String> imyhats = new HashSet<>();
 	private final Set<String> lookups = new HashSet<>();
 	private int oliveId = 0;
 	private final String path;
@@ -197,21 +191,6 @@ public abstract class RootBuilder {
 		}
 		methodGen.loadThis();
 		methodGen.getField(selfType, fieldName, A_GAUGE_TYPE);
-	}
-
-	public void loadImyhat(String signature, GeneratorAdapter methodGen) {
-		final String name = "imyhat$" + signature;
-		if (!imyhats.contains(name)) {
-			classVisitor.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, name,
-					A_IMYHAT_TYPE.getDescriptor(), null, null).visitEnd();
-
-			classInitMethod.push(signature);
-			classInitMethod.invokeStatic(A_IMYHAT_TYPE, METHOD_IMYHAT__PARSE);
-			classInitMethod.putStatic(selfType, name, A_IMYHAT_TYPE);
-
-			imyhats.add(name);
-		}
-		methodGen.getStatic(selfType, name, A_IMYHAT_TYPE);
 	}
 
 	/**

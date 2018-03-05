@@ -1,9 +1,16 @@
 package ca.on.oicr.gsi.shesmu;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -177,6 +184,7 @@ public abstract class Imyhat {
 	}
 
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
+
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
@@ -223,6 +231,7 @@ public abstract class Imyhat {
 		}
 
 	};
+
 	public static final BaseImyhat BOOLEAN = new BaseImyhat() {
 
 		@Override
@@ -271,6 +280,7 @@ public abstract class Imyhat {
 		}
 
 	};
+	private static final Map<String, CallSite> callsites = new HashMap<>();
 	public static final BaseImyhat DATE = new BaseImyhat() {
 
 		@Override
@@ -404,6 +414,25 @@ public abstract class Imyhat {
 			return "s";
 		}
 	};
+
+	public static CallSite bootstrap(Lookup lookup, String signature, MethodType type) {
+		if (!type.returnType().equals(Imyhat.class)) {
+			throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
+		}
+		if (type.parameterCount() != 0) {
+			throw new IllegalArgumentException("Method cannot take parameters.");
+		}
+		if (callsites.containsKey(signature)) {
+			return callsites.get(signature);
+		}
+		final Imyhat imyhat = parse(signature);
+		if (imyhat.isBad()) {
+			throw new IllegalArgumentException("Bad type signature: " + signature);
+		}
+		final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Imyhat.class, imyhat));
+		callsites.put(signature, callsite);
+		return callsite;
+	}
 
 	public static BaseImyhat forName(String s) {
 		return Stream.of(BOOLEAN, DATE, INTEGER, STRING).filter(t -> t.name().equals(s)).findAny()
