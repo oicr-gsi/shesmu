@@ -5,104 +5,83 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
 /**
- * The arguments defined in the “With” section of a “Run” olive or “Monitor”
- * clause.
+ * The arguments defined in the “With” section of a “Run” olive.
  */
-public final class OliveArgumentNode {
+public abstract class OliveArgumentNode {
 	public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {
 		final AtomicReference<String> name = new AtomicReference<>();
 		final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+		final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
 
 		final Parser result = input//
 				.whitespace()//
 				.identifier(name::set)//
 				.whitespace()//
-				.keyword("=")//
+				.symbol("=")//
 				.whitespace()//
 				.then(ExpressionNode::parse, expression::set)//
 				.whitespace();
+		final Parser conditionResult = result.keyword("If")//
+				.whitespace()//
+				.then(ExpressionNode::parse, condition::set)//
+				.whitespace();
+		if (conditionResult.isGood()) {
+			output.accept(new OliveArgumentNodeOptional(input.line(), input.column(), name.get(), condition.get(),
+					expression.get()));
+			return conditionResult;
+		}
 		if (result.isGood()) {
-			output.accept(new OliveArgumentNode(input.line(), input.column(), name.get(), expression.get()));
+			output.accept(new OliveArgumentNodeProvided(input.line(), input.column(), name.get(), expression.get()));
 		}
 		return result;
 	}
 
-	private final int column;
-	private final ExpressionNode expression;
-	private final int line;
+	protected final int column;
+	protected final int line;
 
-	private final String name;
+	protected final String name;
 
-	public OliveArgumentNode(int line, int column, String name, ExpressionNode expression) {
+	public OliveArgumentNode(int line, int column, String name) {
 		this.line = line;
 		this.column = column;
 		this.name = name;
-		this.expression = expression;
 	}
 
-	public void collectFreeVariables(Set<String> freeVariables) {
-		expression.collectFreeVariables(freeVariables);
-	}
+	public abstract void collectFreeVariables(Set<String> freeVariables);
 
 	/**
 	 * Produce an error if the type of the expression is not as required
-	 *
-	 * @param targetType
-	 *            the required type
 	 */
-	public boolean ensureType(Imyhat targetType, Consumer<String> errorHandler) {
-		final boolean ok = targetType.isSame(type());
-		if (!ok) {
-			errorHandler.accept(String.format("%d:%d: Expected argument “%s” to have type %s, but got %s.", line,
-					column, name, targetType.name(), type().name()));
-		}
-		return ok;
-	}
+	public abstract boolean ensureType(ParameterDefinition definition, Consumer<String> errorHandler);
 
 	/**
 	 * The argument name
 	 */
-	public String name() {
+	public final String name() {
 		return name;
 	}
 
 	/**
 	 * Generate bytecode for this argument's value
 	 */
-	public void render(Renderer renderer) {
-		expression.render(renderer);
-	}
+	public abstract void render(Renderer renderer, int action);
 
 	/**
 	 * Resolve variables in the expression of this argument
 	 */
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return expression.resolve(defs, errorHandler);
-	}
+	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
 	 * Resolve lookups in this argument
 	 */
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler);
-
-	}
-
-	/**
-	 * Get the type of this expression
-	 */
-	public Imyhat type() {
-		return expression.type();
-	}
+	public abstract boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler);
 
 	/**
 	 * Perform type check on this argument's expression
 	 */
-	public boolean typeCheck(Consumer<String> errorHandler) {
-		return expression.typeCheck(errorHandler);
-	}
+	public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

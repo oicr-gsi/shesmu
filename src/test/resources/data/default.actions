@@ -21,6 +21,19 @@
           "type": "b"
         }
       }
+    },
+    {
+      "name": "optional",
+      "parameters": {
+        "junk": {
+          "required": true,
+          "type": "b"
+        },
+        "ok": {
+          "required": false,
+          "type": "b"
+        }
+      }
     }
   ],
   "url": "http://example.com/"

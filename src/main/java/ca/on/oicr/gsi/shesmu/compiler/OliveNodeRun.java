@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
@@ -54,10 +53,8 @@ public final class OliveNodeRun extends OliveNode {
 		final int local = action.methodGen().newLocal(definition.type());
 		action.methodGen().storeLocal(local);
 
-		final Map<String, OliveArgumentNode> argumentMap = arguments.stream()
-				.collect(Collectors.toMap(OliveArgumentNode::name, Function.identity()));
-		definition.parameters().forEach(parameter -> {
-			parameter.store(action, local, argumentMap.get(parameter.name())::render);
+		arguments.forEach(parameter -> {
+			parameter.render(action, local);
 		});
 		oliveBuilder.emitAction(action.methodGen(), local);
 		action.methodGen().visitInsn(Opcodes.RETURN);
@@ -123,10 +120,10 @@ public final class OliveNodeRun extends OliveNode {
 		boolean ok = arguments.stream().filter(argument -> argument.typeCheck(errorHandler)).count() == arguments
 				.size();
 		if (ok) {
-			final Map<String, Imyhat> argumentTypes = definition.parameters()
-					.collect(Collectors.toMap(ParameterDefinition::name, ParameterDefinition::type));
+			final Map<String, ParameterDefinition> parameterInfo = definition.parameters()
+					.collect(Collectors.toMap(ParameterDefinition::name, Function.identity()));
 			ok = arguments.stream()
-					.filter(argument -> argument.ensureType(argumentTypes.get(argument.name()), errorHandler))
+					.filter(argument -> argument.ensureType(parameterInfo.get(argument.name()), errorHandler))
 					.count() == arguments.size();
 		}
 		return ok;

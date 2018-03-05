@@ -25,6 +25,16 @@ This will take all the input provenance and selects any run by the workflow
 `BamQC 2.7+` and then launch `fastqc`. The `With` portion sets all the
 parameters. These are specific to the action.
 
+Some parameters can be optionally specified:
+
+    Run fastqc
+      Where workflow == "BamQC 2.7+"
+      With {
+        memory = 4Gi,
+        input = fileswa,
+        bed_file = bedfile[study] If study In ["PCSI", "TEST", "OCT"]
+      }
+
 The `Where` line is an _olive clause_. The clauses are: where, group, matches, and monitor.
 
 A `Group` clause groups items in the stream to be de-duplicated based on

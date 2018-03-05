@@ -71,7 +71,7 @@ public abstract class OliveClauseNode {
 		if (monitorParser.isGood()) {
 			final AtomicReference<String> metricName = new AtomicReference<>();
 			final AtomicReference<String> help = new AtomicReference<>();
-			final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
+			final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
 
 			final Parser result = monitorParser//
 					.whitespace()//
@@ -80,7 +80,7 @@ public abstract class OliveClauseNode {
 					.regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")//
 					.whitespace()//
 					.symbol("{")//
-					.list(labels::set, OliveArgumentNode::parse, ',')//
+					.list(labels::set, MonitorArgumentNode::parse, ',')//
 					.symbol("}")//
 					.whitespace();
 

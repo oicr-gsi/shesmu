@@ -47,12 +47,15 @@ public class Renderer {
 		this.loadables = loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity()));
 
 	}
+
 	public Stream<LoadableValue> allValues() {
 		return loadables.values().stream();
 	}
+
 	public JavaStreamBuilder buildStream(Type initialType) {
 		return new JavaStreamBuilder(rootBuilder, this, streamType, rootBuilder.nextStreamId(), initialType);
 	}
+
 	/**
 	 * Find a known variable by name and load it on the stack.
 	 *
