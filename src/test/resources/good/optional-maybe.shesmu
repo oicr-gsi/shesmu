@@ -1,4 +1,0 @@
-Run optional
-  With {
-    ok = study == "hi" If library_size > 300
-  }

@@ -1,4 +1,10 @@
 #!/bin/sh
-set -ev
 
-mvn clean test
+set -eu
+
+for dir in shesmu-server action-jira
+do
+	cd $dir
+	mvn clean install
+	cd ..
+done
