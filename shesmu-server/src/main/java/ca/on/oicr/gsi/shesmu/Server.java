@@ -32,6 +32,10 @@ public final class Server {
 	private static final LatencyHistogram responseTime = new LatencyHistogram("shesmu_http_request_time",
 			"The time to respond to an HTTP request.", "url");
 
+	private static String htmlEscape(Imyhat type) {
+		return type.name().replace("<", "&lt;").replace(">", "&gt;");
+	}
+
 	public static void main(String[] args) throws Exception {
 		DefaultExports.initialize();
 
@@ -47,6 +51,7 @@ public final class Server {
 			LookupRepository.class, LookupRepository::query);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
+
 	private final Instant startTime = Instant.now();
 
 	private final MasterRunner z_master = new MasterRunner(compiler::generator, lookupRepository::stream, processor);
@@ -93,26 +98,26 @@ public final class Server {
 
 				writeHeader(writer, "Lookups");
 				lookupRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(lookup -> {
-					writeBlock(writer, "Lookup: " + lookup.name());
+					writeBlock(writer, lookup.name());
 					writeRow(writer, "Return", lookup.returnType().name());
-					lookup.types().map(Pair.number())
-							.forEach(p -> writeRow(writer, p.first().toString(), p.second().signature()));
+					lookup.types().map(Pair.number()).forEach(p -> writeRow(writer,
+							"Argument " + Integer.toString(p.first() + 1), htmlEscape(p.second())));
 
 				});
 				writeFinish(writer);
 
 				writeHeader(writer, "Actions");
 				actionRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(action -> {
-					writeBlock(writer, "Action: " + action.name());
+					writeBlock(writer, action.name());
 					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
-							.forEach(p -> writeRow(writer, p.name(), p.type().name()));
+							.forEach(p -> writeRow(writer, p.name(), htmlEscape(p.type())));
 
 				});
 				writeFinish(writer);
 
 				writeHeader(writer, "Variables");
 				NameDefinitions.baseStreamVariables().forEach(variable -> {
-					writeRow(writer, variable.name(), variable.type().name().replace("<", "&lt;").replace(">", "&gt;"));
+					writeRow(writer, variable.name(), htmlEscape(variable.type()));
 				});
 				writeFinish(writer);
 
@@ -235,9 +240,9 @@ public final class Server {
 	}
 
 	private void writeBlock(PrintStream writer, String title) {
-		writer.print("<tr><td colspan=\"2\">");
+		writer.print("<tr><th colspan=\"2\">");
 		writer.print(title);
-		writer.print("</td></tr>");
+		writer.print("</th></tr>");
 	}
 
 	private void writeFinish(PrintStream writer) {

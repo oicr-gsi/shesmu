@@ -3,6 +3,10 @@ margin:0;
 font-family:sans-serif;
 }
 
+h1 {
+font-size:120%;
+}
+
 div {
 margin:1em;
 }
@@ -41,10 +45,12 @@ border:none;
 
 td {
 border-top:1px solid #ddd;
+width:50%;
 }
 
 th {
 font-weight:700;
+text-align:left;
 }
 
 tr:hover {
