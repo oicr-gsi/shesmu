@@ -2,7 +2,7 @@
 
 set -eu
 
-for dir in shesmu-server action-jira
+for dir in shesmu-server action-jira source-pinery
 do
 	cd $dir
 	mvn clean install
