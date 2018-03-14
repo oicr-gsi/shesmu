@@ -1,6 +1,12 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.io.IOException;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,6 +24,8 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,6 +37,8 @@ import io.prometheus.client.Gauge;
  * Utilities for making bytecode generation easier
  */
 public final class RuntimeSupport {
+
+	private static final Map<String, CallSite> callsites = new HashMap<>();
 
 	public static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -171,6 +182,29 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static <T> Stream<T> monitor(Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
 		return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
+	}
+
+	@RuntimeInterop
+	public static CallSite regexBootstrap(Lookup lookup, String signature, MethodType type)
+			throws NoSuchMethodException, IllegalAccessException {
+		if (!type.returnType().equals(boolean.class)) {
+			throw new IllegalArgumentException("Method cannot return non-boolean type.");
+		}
+		if (type.parameterCount() != 1 || !type.parameterType(0).equals(CharSequence.class)) {
+			throw new IllegalArgumentException("Method must take exactly 1 character sequence parameter.");
+		}
+		if (callsites.containsKey(signature)) {
+			return callsites.get(signature);
+		}
+		final Pattern pattern = Pattern.compile(signature);
+		pattern.matcher("").matches();
+		final MethodHandle matcher = lookup.findVirtual(Pattern.class, "matcher",
+				MethodType.methodType(Matcher.class, CharSequence.class));
+		final MethodHandle matches = lookup.findVirtual(Matcher.class, "matches", MethodType.methodType(boolean.class));
+		final CallSite callsite = new ConstantCallSite(
+				MethodHandles.filterReturnValue(MethodHandles.insertArguments(matcher, 0, pattern), matches));
+		callsites.put(signature, callsite);
+		return callsite;
 	}
 
 	/**

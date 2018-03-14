@@ -118,7 +118,7 @@ machine-to-machine communication.
 Shesmu has the following expressions, for lowest precedence to highest precendence.
 
 ### Switch Selections
-- `Switch` _refexpr_ (`When` _testexpr_ `Then` _valueexpr_)* `Else` _altexpr_
+- `Switch` _refexpr_ (`When` _testexpr_ `Then` _valueexpr_)\* `Else` _altexpr_
 
 Compares _refexpr_ to every _testexpr_ for equality and returns the matching
 _valueexpr_. If none match, returns _altexpr_. The _altexpr_ and every
@@ -134,12 +134,12 @@ _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the sam
 ### Logical Disjunction
 - _expr_ `||` _expr_
 
-Logical short-circuring `or`. Both operands must be boolean and the result is boolean.
+Logical short-circuiting `or`. Both operands must be boolean and the result is boolean.
 
 ### Logical Conjunction
 - _expr_ `&&` _expr_
 
-Logical short-circuring `and`. Both operands must be boolean and the result is boolean.
+Logical short-circuiting `and`. Both operands must be boolean and the result is boolean.
 
 ### Comparison
 #### Equality
@@ -162,6 +162,12 @@ Compare two values for inequality. This is the logical complement to `==`.
 
 Compare two values for order. This is only defined for integers and dates. For
 dates, the lesser value occurs temporally earlier.
+
+#### Regular Expression
+- _expr_ ~ /_re_/
+
+Check whether _expr_, which must be a string, must matches the provided regular
+expression.
 
 ### Arithmetic Disjunction
 #### Addition
@@ -214,7 +220,7 @@ Computes the arithmetic additive inverse of the expression, which must be an int
 Computes the number of unique items in the expression, which must be a list.
 
 
-### Suffx Operators
+### Suffix Operators
 #### List Membership
 - _needle_ `In` _haystack_
 

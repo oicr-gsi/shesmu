@@ -38,6 +38,7 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<Integer> INT_SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION = new Parser.ParseDispatch<>();
+	private static final Pattern REGEX = Pattern.compile("^/(([^/]|\\/)*)/");
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY = new Parser.ParseDispatch<>();
@@ -66,6 +67,15 @@ public abstract class ExpressionNode {
 				return result;
 			});
 		}
+		COMPARISON.addSymbol("~", (p, o) -> {
+			final AtomicReference<String> regex = new AtomicReference<>();
+			final Parser result = p.whitespace().regex(REGEX, m -> regex.set(m.group(1)), "Regular expression.")
+					.whitespace();
+			if (result.isGood()) {
+				o.accept(left -> new ExpressionNodeRegex(p.line(), p.column(), left, regex.get()));
+			}
+			return result;
+		});
 		ARITHMETIC_DISJUNCTION.addSymbol("+", just(ExpressionNodeArithmeticAdd::new));
 		ARITHMETIC_DISJUNCTION.addSymbol("-", just(ExpressionNodeArithmeticSubtract::new));
 
