@@ -1,5 +1,5 @@
 Define foo(string s)
- Where s == study;
+ Where s == project;
 
 Run ok
  Matches foo("the_foo_study")

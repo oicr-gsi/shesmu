@@ -14,8 +14,8 @@ public final class Variables {
 	private final String md5;
 	private final String metatype;
 	private final String path;
+	private final String project;
 	private final String source;
-	private final String study;
 	private final String targeted_resequencing;
 	private final String tissue_origin;
 	private final String tissue_prep;
@@ -25,7 +25,7 @@ public final class Variables {
 	private final Tuple workflow_version;
 
 	public Variables(String accession, String path, String metatype, String md5, long file_size, String workflow,
-			Tuple workflow_version, String study, String library_sample, String donor, Tuple ius,
+			Tuple workflow_version, String project, String library_sample, String donor, Tuple ius,
 			String library_template_type, String tissue_type, String tissue_origin, String tissue_prep,
 			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
 			String library_type, String source) {
@@ -37,7 +37,7 @@ public final class Variables {
 		this.file_size = file_size;
 		this.workflow = workflow;
 		this.workflow_version = workflow_version;
-		this.study = study;
+		this.project = project;
 		this.library_sample = library_sample;
 		this.donor = donor;
 		this.ius = ius;
@@ -120,13 +120,13 @@ public final class Variables {
 	}
 
 	@Export(type = "s")
-	public String source() {
-		return source;
+	public String project() {
+		return project;
 	}
 
 	@Export(type = "s")
-	public String study() {
-		return study;
+	public String source() {
+		return source;
 	}
 
 	@Export(type = "s")

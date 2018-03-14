@@ -54,15 +54,33 @@ all the `path` values for each `project`. Any other variables, (_e.g._,
 operation.
 
 A `Smash` clause also groups items, but it is trying to take the same variable
-depending on other conditions. It also has _discriminators_.
+depending on other conditions. It also has _discriminators_. If the incoming
+data is a table, `Smash` is doing a sub-select. The _discriminators_ specify
+the scope of the sub-select and each smash creates a new column based on some
+existing data at a particular row.
 
     Run project_report
-      Smash qc = path When workflow == "BamQC 2.7+", fingerprint = file When workflow == "Fingerprinting" By project, library_name
-      Group chunks = {library_name, qc, fingerprint} By project
+      Smash
+          qc = path Where workflow == "BamQC 2.7+",
+            # Use the output file from BamQC as `qc`
+          fingerprint = path Where workflow == "Fingerprinting"
+            # Use the output file from fingerprinting as `fingerprint`
+        By project, library_name
+            # All scoped over project + library_name pairs
+      Group
+          chunks = {library_name, qc, fingerprint}
+            # Create a tuple for each interesting file for each library
+            # in this project
+        By project
+      # And create on report per project
       With {
         memory = 4Gi,
         chunks = chunks
       }
+
+If a value is missing (_e.g._, there's no `Fingerprinting` workflow for a
+`library_name`), there will be no output for that discriminator combination.
+That is, partial smashes are discarded.
 
 To make reusable logic, the _Define_ olive can be used:
 

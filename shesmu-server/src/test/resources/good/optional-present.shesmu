@@ -1,5 +1,5 @@
 Run optional
   With {
     junk = True,
-    ok = study == "hi"
+    ok = project == "hi"
   }
