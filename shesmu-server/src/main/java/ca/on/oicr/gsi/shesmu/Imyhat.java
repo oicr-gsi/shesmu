@@ -415,6 +415,7 @@ public abstract class Imyhat {
 		}
 	};
 
+	@RuntimeInterop
 	public static CallSite bootstrap(Lookup lookup, String signature, MethodType type) {
 		if (!type.returnType().equals(Imyhat.class)) {
 			throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
