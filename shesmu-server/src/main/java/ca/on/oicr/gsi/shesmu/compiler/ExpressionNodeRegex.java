@@ -22,9 +22,9 @@ public class ExpressionNodeRegex extends ExpressionNode {
 			Type.getMethodDescriptor(Type.getType(CallSite.class), Type.getType(MethodHandles.Lookup.class),
 					Type.getType(String.class), Type.getType(MethodType.class)),
 			false);
-	
+
 	private static final String METHOD = Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(CharSequence.class));
-	
+
 	private final ExpressionNode expression;
 
 	private final String regex;

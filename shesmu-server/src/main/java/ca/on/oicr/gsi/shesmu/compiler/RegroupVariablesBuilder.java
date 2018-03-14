@@ -4,7 +4,6 @@ import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
-import java.lang.invoke.LambdaMetafactory;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -21,9 +19,10 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /**
- * Helps to build a “Group” clause and the corresponding variable class
+ * Helps to build a “Group” or “Smash” clause and the corresponding variable
+ * class
  */
-public class RegroupVariablesBuilder {
+public final class RegroupVariablesBuilder {
 
 	private class Collected extends Element {
 		private final String fieldName;
@@ -73,9 +72,13 @@ public class RegroupVariablesBuilder {
 		}
 
 		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// Do nothing
+		}
+
+		@Override
 		public void loadConstructorArgument() {
 			// No argument to constructor.
-
 		}
 
 	}
@@ -147,6 +150,11 @@ public class RegroupVariablesBuilder {
 		}
 
 		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// Do nothing
+		}
+
+		@Override
 		public void loadConstructorArgument() {
 			loader.accept(newRenderer);
 		}
@@ -165,7 +173,76 @@ public class RegroupVariablesBuilder {
 
 		public abstract Type constructorType();
 
+		public abstract void failIfBad(GeneratorAdapter okMethod);
+
 		public abstract void loadConstructorArgument();
+	}
+
+	private class Smash extends Element {
+
+		private final Consumer<Renderer> condition;
+		private final String fieldName;
+		private final Type fieldType;
+		private final Consumer<Renderer> loader;
+
+		public Smash(Type fieldType, String fieldName, Consumer<Renderer> condition, Consumer<Renderer> loader) {
+			this.fieldType = fieldType;
+			this.fieldName = fieldName;
+			this.condition = condition;
+			this.loader = loader;
+		}
+
+		@Override
+		public void buildCollect() {
+			condition.accept(collectRenderer);
+			final Label skip = collectRenderer.methodGen().newLabel();
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.EQ, skip);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().push(true);
+			collectRenderer.methodGen().putField(self, fieldName + "$ok", BOOLEAN_TYPE);
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			loader.accept(collectRenderer);
+			collectRenderer.methodGen().putField(self, fieldName, fieldType);
+			collectRenderer.methodGen().mark(skip);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			return index;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// Smashes are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter method) {
+			// Smashes are not included in has code.
+		}
+
+		@Override
+		public Type constructorType() {
+			return null;
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			okMethod.loadThis();
+			okMethod.getField(self, fieldName + "$ok", BOOLEAN_TYPE);
+			final Label next = okMethod.newLabel();
+			okMethod.ifZCmp(GeneratorAdapter.NE, next);
+			okMethod.push(false);
+			okMethod.returnValue();
+			okMethod.mark(next);
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			// No argument to constructor.
+		}
+
 	}
 
 	private static final Type A_HASHSET_TYPE = Type.getType(HashSet.class);
@@ -173,12 +250,9 @@ public class RegroupVariablesBuilder {
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
 
-	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
-			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
-			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-			false);
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
+	private static final Method METHOD_NEED_OK = new Method("$isOk", BOOLEAN_TYPE, new Type[] {});
 	private static final Method METHOD_SET__ADD = new Method("add", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private final ClassVisitor classVisitor;
 	public final int collectedSelfArgument;
@@ -235,6 +309,30 @@ public class RegroupVariablesBuilder {
 	public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {
 		classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, fieldType.getDescriptor(), null, null).visitEnd();
 		elements.add(new Discriminator(fieldType, fieldName, loader));
+
+		final GeneratorAdapter getMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
+				new Method(fieldName, fieldType, new Type[] {}), null, null, classVisitor);
+		getMethod.visitCode();
+		getMethod.loadThis();
+		getMethod.getField(self, fieldName, fieldType);
+		getMethod.returnValue();
+		getMethod.visitMaxs(0, 0);
+		getMethod.visitEnd();
+	}
+
+	/**
+	 * A single value to collected by a matching row
+	 *
+	 * @param fieldType
+	 *            the type of the value being added
+	 * @param fieldName
+	 *            the name of the variable for consumption by downstream uses
+	 */
+	public void addSmash(Type fieldType, String fieldName, Consumer<Renderer> condition, Consumer<Renderer> loader) {
+		classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName, fieldType.getDescriptor(), null, null).visitEnd();
+		classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$ok", BOOLEAN_TYPE.getDescriptor(), null, null)
+				.visitEnd();
+		elements.add(new Smash(fieldType, fieldName, condition, loader));
 
 		final GeneratorAdapter getMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
 				new Method(fieldName, fieldType, new Type[] {}), null, null, classVisitor);
@@ -307,6 +405,15 @@ public class RegroupVariablesBuilder {
 		collectRenderer.methodGen().visitInsn(Opcodes.RETURN);
 		collectRenderer.methodGen().visitMaxs(0, 0);
 		collectRenderer.methodGen().visitEnd();
+
+		final GeneratorAdapter okMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_NEED_OK, null, null,
+				classVisitor);
+		okMethod.visitCode();
+		elements.forEach(element -> element.failIfBad(okMethod));
+		okMethod.push(true);
+		okMethod.returnValue();
+		okMethod.visitMaxs(0, 0);
+		okMethod.visitEnd();
 
 		classVisitor.visitEnd();
 	}

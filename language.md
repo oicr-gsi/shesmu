@@ -18,7 +18,7 @@ A _run_ olive specifies an action to run if the conditions are met. For example:
       Where workflow == "BamQC 2.7+"
       With {
         memory = 4Gi,
-        input = fileswa
+        input = path
       }
 
 This will take all the input provenance and selects any run by the workflow
@@ -31,7 +31,7 @@ Some parameters can be optionally specified:
       Where workflow == "BamQC 2.7+"
       With {
         memory = 4Gi,
-        input = fileswa,
+        input = path,
         bed_file = bedfile[study] If study In ["PCSI", "TEST", "OCT"]
       }
 
@@ -42,16 +42,27 @@ _discriminators_ and other variables are grouped into _collectors_.
 
     Run fingerprint
       Where workflow == "BamQC 2.7+"
-      Group files = file_swa By project
+      Group files = path By project
       With {
         memory = 4Gi,
         input = files
       }
 
 The grouping changes the stream. After the grouping, `files` will be a list of
-all the `file_swa` values for each `project`. Any other variables, (_e.g._,
+all the `path` values for each `project`. Any other variables, (_e.g._,
 `workflow`) won't be accessible since they weren't included in the grouping
 operation.
+
+A `Smash` clause also groups items, but it is trying to take the same variable
+depending on other conditions. It also has _discriminators_.
+
+    Run project_report
+      Smash qc = path When workflow == "BamQC 2.7+", fingerprint = file When workflow == "Fingerprinting" By project, library_name
+      Group chunks = {library_name, qc, fingerprint} By project
+      With {
+        memory = 4Gi,
+        chunks = chunks
+      }
 
 To make reusable logic, the _Define_ olive can be used:
 
@@ -63,7 +74,7 @@ To make reusable logic, the _Define_ olive can be used:
       Matches standard_fastq()
       With {
         memory = 4Gi,
-        input = file_swa
+        input = path
       }
 
 The `Define` olive creates a reusable set of clauses and `Matches` includes it in another olive. Parameters can also be specified:
@@ -77,7 +88,7 @@ The `Define` olive creates a reusable set of clauses and `Matches` includes it i
       Matches standard_fastq(Date 2017-01-01)
       With {
         memory = 4Gi,
-        input = file_swa
+        input = path
       }
 
 Because grouping changes variables, `Matches` must appear before `Group` clauses.
@@ -91,7 +102,7 @@ monitoring is built into the language using the `Monitor` clause:
       Monitor fastqc "The number of records for FastQC execution." { metatype = metatype }
       With {
         memory = 4Gi,
-        input = file_swa
+        input = path
       }
 
 The number of hits to each monitoring clause will be output via Prometheus. The

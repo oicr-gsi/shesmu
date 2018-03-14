@@ -8,29 +8,29 @@ import java.util.Set;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-public class OliveClauseNodeGroup extends OliveClauseNodeBaseBy<GroupNode> {
+public class OliveClauseNodeSmash extends OliveClauseNodeBaseBy<SmashNode> {
 
-	public OliveClauseNodeGroup(int line, int column, List<GroupNode> groups, List<String> discriminators) {
-		super("Group", line, column, groups, discriminators);
+	public OliveClauseNodeSmash(int line, int column, List<SmashNode> smashes, List<String> discriminators) {
+		super("Smash", line, column, smashes, discriminators);
 	}
 
 	@Override
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		children().forEach(group -> group.collectFreeVariables(freeVariables));
+		children().forEach(expression -> expression.collectFreeVariables(freeVariables));
 
-		final RegroupVariablesBuilder regroup = oliveBuilder.group(oliveBuilder.loadableValues()
+		final RegroupVariablesBuilder smasher = oliveBuilder.smash(oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 
 		discriminators().forEach(discriminator -> {
-			regroup.addKey(discriminator.type().asmType(), discriminator.name(), context -> {
+			smasher.addKey(discriminator.type().asmType(), discriminator.name(), context -> {
 				context.loadStream();
 				context.methodGen().invokeVirtual(context.streamType(),
 						new Method(discriminator.name(), discriminator.type().asmType(), new Type[] {}));
 			});
 		});
-		children().forEach(group -> group.render(regroup, builder));
-		regroup.finish();
+		children().forEach(smash -> smash.render(smasher, builder));
+		smasher.finish();
 	}
 }

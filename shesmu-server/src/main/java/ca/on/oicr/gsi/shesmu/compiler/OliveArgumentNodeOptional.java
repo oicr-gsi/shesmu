@@ -82,7 +82,8 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 	 */
 	@Override
 	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler) & condition.resolveLookups(definedLookups, errorHandler);
+		return expression.resolveLookups(definedLookups, errorHandler)
+				& condition.resolveLookups(definedLookups, errorHandler);
 
 	}
 

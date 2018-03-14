@@ -112,55 +112,8 @@ public abstract class BaseOliveBuilder {
 	 *            clause. These will be available in the resulting method
 	 * @return a method generator for the body of the clause
 	 */
-	@SafeVarargs
 	public final RegroupVariablesBuilder group(LoadableValue... capturedVariables) {
-		final String groupClassName = String.format("shesmu/dyn/Group%d$%d", oliveId, steps.size());
-
-		final Type oldType = currentType;
-		final Type newType = Type.getObjectType(groupClassName);
-		currentType = newType;
-
-		final Method newMethod = new Method(String.format("group_%d_%d_new", oliveId, steps.size()), newType,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
-						.toArray(Type[]::new));
-		final Method collectMethod = new Method(String.format("group_%d_%d_collect", oliveId, steps.size()), VOID_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, oldType))
-						.toArray(Type[]::new));
-
-		steps.add(renderer -> {
-			final Type[] captureTypes = Stream
-					.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
-					.toArray(Type[]::new);
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic(
-					"apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes), LAMBDA_METAFACTORY_BSM,
-					Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
-							owner.selfType().getInternalName(), newMethod.getName(), newMethod.getDescriptor(), false),
-					Type.getMethodType(newType, oldType));
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen()
-					.invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
-							LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
-							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-									collectMethod.getName(), collectMethod.getDescriptor(), false),
-							Type.getMethodType(VOID_TYPE, newType, oldType));
-
-			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
-		});
-
-		final Renderer newMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
-		final Renderer collectedMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
-				capturedVariables.length + 1, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
-
-		return new RegroupVariablesBuilder(owner, groupClassName, newMethodGen, collectedMethodGen,
-				capturedVariables.length);
+		return regroup("Group", "group", false, capturedVariables);
 	}
 
 	/**
@@ -230,5 +183,69 @@ public abstract class BaseOliveBuilder {
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, currentType, RootBuilder.proxyCaptured(0, capturedVariables));
+	}
+
+	private final RegroupVariablesBuilder regroup(String classPrefix, String methodPrefix, boolean needsOk,
+			LoadableValue... capturedVariables) {
+		final String className = String.format("shesmu/dyn/%s%d$%d", classPrefix, oliveId, steps.size());
+
+		final Type oldType = currentType;
+		final Type newType = Type.getObjectType(className);
+		currentType = newType;
+
+		final Method newMethod = new Method(String.format("%s_%d_%d_new", methodPrefix, oliveId, steps.size()), newType,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
+						.toArray(Type[]::new));
+		final Method collectMethod = new Method(String.format("%s_%d_%d_collect", methodPrefix, oliveId, steps.size()),
+				VOID_TYPE,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, oldType))
+						.toArray(Type[]::new));
+
+		steps.add(renderer -> {
+			final Type[] captureTypes = Stream
+					.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
+					.toArray(Type[]::new);
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen().invokeDynamic(
+					"apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes), LAMBDA_METAFACTORY_BSM,
+					Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
+							owner.selfType().getInternalName(), newMethod.getName(), newMethod.getDescriptor(), false),
+					Type.getMethodType(newType, oldType));
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen()
+					.invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
+							LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
+							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+									collectMethod.getName(), collectMethod.getDescriptor(), false),
+							Type.getMethodType(VOID_TYPE, newType, oldType));
+
+			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
+			if (needsOk) {
+				renderer.methodGen().invokeDynamic(
+						"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
+						Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL, className,
+								"$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
+						Type.getMethodType(BOOLEAN_TYPE, newType));
+				renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
+			}
+		});
+
+		final Renderer newMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
+		final Renderer collectedMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
+				capturedVariables.length + 1, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
+
+		return new RegroupVariablesBuilder(owner, className, newMethodGen, collectedMethodGen,
+				capturedVariables.length);
+	}
+
+	public RegroupVariablesBuilder smash(LoadableValue[] capturedVariables) {
+		return regroup("Smash", "smash", true, capturedVariables);
 	}
 }

@@ -48,11 +48,11 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
-		final Parser runParser = input.keyword("Group");
-		if (runParser.isGood()) {
+		final Parser groupParser = input.keyword("Group");
+		if (groupParser.isGood()) {
 			final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
 			final AtomicReference<List<String>> discriminators = new AtomicReference<>();
-			final Parser result = runParser//
+			final Parser result = groupParser//
 					.whitespace()//
 					.list(groups::set, GroupNode::parse, ',')//
 					.whitespace()//
@@ -63,6 +63,24 @@ public abstract class OliveClauseNode {
 			if (result.isGood()) {
 				output.accept(
 						new OliveClauseNodeGroup(input.line(), input.column(), groups.get(), discriminators.get()));
+			}
+			return result;
+		}
+		final Parser smashParser = input.keyword("Smash");
+		if (smashParser.isGood()) {
+			final AtomicReference<List<SmashNode>> smashes = new AtomicReference<>();
+			final AtomicReference<List<String>> discriminators = new AtomicReference<>();
+			final Parser result = smashParser//
+					.whitespace()//
+					.list(smashes::set, SmashNode::parse, ',')//
+					.whitespace()//
+					.keyword("By")//
+					.whitespace()//
+					.list(discriminators::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(
+						new OliveClauseNodeSmash(input.line(), input.column(), smashes.get(), discriminators.get()));
 			}
 			return result;
 		}

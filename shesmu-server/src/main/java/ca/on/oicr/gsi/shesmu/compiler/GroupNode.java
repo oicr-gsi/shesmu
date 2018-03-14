@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -14,7 +15,7 @@ import ca.on.oicr.gsi.shesmu.Lookup;
  *
  * Also usable as the variable definition for the result
  */
-public final class GroupNode extends Target {
+public final class GroupNode extends ByChildNode {
 	public static Parser parse(Parser input, Consumer<GroupNode> output) {
 		final AtomicReference<String> name = new AtomicReference<>();
 		final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
@@ -29,48 +30,27 @@ public final class GroupNode extends Target {
 
 	}
 
-	private final int column;
 	private final ExpressionNode expression;
-	private final int line;
-	private final String name;
 
 	public GroupNode(int line, int column, String name, ExpressionNode expression) {
-		this.line = line;
-		this.column = column;
-		this.name = name;
+		super(line, column, name);
 		this.expression = expression;
 	}
 
-	public int column() {
-		return column;
-	}
-
-	public ExpressionNode expression() {
-		return expression;
-	}
-
-	@Override
-	public Flavour flavour() {
-		return Flavour.STREAM;
-	}
-
-	public int line() {
-		return line;
-	}
-
-	@Override
-	public String name() {
-		return name;
+	public void collectFreeVariables(Set<String> freeVariables) {
+		expression.collectFreeVariables(freeVariables);
 	}
 
 	public void render(RegroupVariablesBuilder regroup, RootBuilder rootBuilder) {
-		regroup.addCollected(expression.type().asmType(), name, context -> expression.render(context));
+		regroup.addCollected(expression.type().asmType(), name(), expression::render);
 	}
 
+	@Override
 	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
 		return expression.resolve(defs, errorHandler);
 	}
 
+	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler) {
@@ -82,6 +62,7 @@ public final class GroupNode extends Target {
 		return expression.type().asList();
 	}
 
+	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		return expression.typeCheck(errorHandler);
 	}
