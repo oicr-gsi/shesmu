@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.lookup;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
@@ -10,26 +10,27 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
 @MetaInfServices
-public class StartOfDay implements Lookup {
+public class FileName implements Lookup {
 
 	@Override
 	public Object lookup(Object... parameters) {
-		return ((Instant) parameters[0]).truncatedTo(ChronoUnit.DAYS);
+		final Path path = Paths.get((String) parameters[0]);
+		return path.getFileName().toString();
 	}
 
 	@Override
 	public String name() {
-		return "start_of_day";
+		return "file_name";
 	}
 
 	@Override
 	public Imyhat returnType() {
-		return Imyhat.DATE;
+		return Imyhat.STRING;
 	}
 
 	@Override
 	public Stream<Imyhat> types() {
-		return Stream.of(Imyhat.DATE);
+		return Stream.of(Imyhat.STRING);
 	}
 
 }
