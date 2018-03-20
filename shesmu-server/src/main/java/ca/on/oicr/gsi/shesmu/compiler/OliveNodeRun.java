@@ -6,12 +6,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
@@ -63,9 +65,9 @@ public final class OliveNodeRun extends OliveNode {
 	}
 
 	@Override
-	public boolean resolve(Consumer<String> errorHandler) {
-		final NameDefinitions defs = clauses().stream().reduce(NameDefinitions.root(Stream.empty()),
-				(d, clause) -> clause.resolve(d, errorHandler), (a, b) -> {
+	public boolean resolve(Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
+		final NameDefinitions defs = clauses().stream().reduce(NameDefinitions.root(constants.get()),
+				(d, clause) -> clause.resolve(d, constants, errorHandler), (a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		return defs.isGood() & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler))

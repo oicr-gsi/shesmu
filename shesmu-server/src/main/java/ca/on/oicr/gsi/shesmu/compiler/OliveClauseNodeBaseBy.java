@@ -7,10 +7,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
@@ -46,7 +48,8 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 	}
 
 	@Override
-	public final NameDefinitions resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public final NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
+			Consumer<String> errorHandler) {
 		boolean ok = children.stream().filter(child -> child.resolve(defs, errorHandler)).count() == children.size();
 		discriminatorVariables = discriminators.stream().map(name -> {
 			final Optional<Target> target = defs.get(name);

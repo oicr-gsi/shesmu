@@ -78,7 +78,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 
 	@Override
 	public Stream<LoadableValue> loadableValues() {
-		return parameters.stream();
+		return Stream.concat(parameters.stream(), owner.constants());
 	}
 
 	/**

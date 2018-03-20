@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -155,6 +156,8 @@ public class RunTest {
 	private Stream<Lookup> lookups() {
 		return Stream.of(INT2STR, INT2DATE);
 	}
+	
+	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("project_constant", "the_foo_study"));
 
 	@Test
 	public void testData() throws IOException {
@@ -172,7 +175,7 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions);
+			HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions, CONSTANTS::stream);
 			ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			ActionChecker checker = new ActionChecker();
 			generator.populateLookups(new NameLoader<>(lookups(), Lookup::name));
@@ -181,6 +184,7 @@ public class RunTest {
 				System.err.printf("OK %s\n", file.getFileName());
 				return false;
 			} else {
+				compiler.errors().forEach(System.out::println);
 				System.err.printf("FAIL %s\n", file.getFileName());
 				return true;
 			}

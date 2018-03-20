@@ -1,0 +1,6 @@
+Define foo()
+ Where project == project_constant;
+
+Run ok
+  Matches foo()
+  With { ok = project == project_constant }

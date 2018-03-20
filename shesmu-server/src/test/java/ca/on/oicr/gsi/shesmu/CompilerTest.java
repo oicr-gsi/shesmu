@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -59,6 +61,9 @@ public class CompilerTest {
 
 	}
 
+	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("alwaystrue", true),
+			Constant.of("notpi", 3));
+
 	private final NameLoader<ActionDefinition> actions = new NameLoader<>(
 			FileActionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())),
 			ActionDefinition::name);
@@ -86,8 +91,8 @@ public class CompilerTest {
 	private Pair<Path, Optional<Boolean>> testFile(Path file) {
 		CompilerHarness compiler = new CompilerHarness();
 		try {
-			return new Pair<>(file,
-					Optional.of(compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program", file.toString())
+			return new Pair<>(file, Optional.of(
+					compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program", file.toString(), CONSTANTS::stream)
 							&& compiler.ok()));
 		} catch (Exception e) {
 			return new Pair<>(file, Optional.empty());

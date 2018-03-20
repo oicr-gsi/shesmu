@@ -148,6 +148,10 @@ public final class RuntimeSupport {
 				}).orElseGet(Stream::empty);
 	}
 
+	public static Stream<Path> dataFiles(String extension) {
+		return dataFiles(dataDirectory(), extension);
+	}
+
 	public static <T> Stream<T> dataFilesForPath(Optional<String> root, Class<T> clazz, String suffix) {
 		return dataFiles(dataDirectory(root), clazz, suffix);
 	}

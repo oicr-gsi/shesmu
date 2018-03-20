@@ -46,7 +46,7 @@ public final class Server {
 	private final CachedRepository<ActionRepository, ActionDefinition> actionRepository = new CachedRepository<>(
 			ActionRepository.class, ActionRepository::query);
 	private final CompiledGenerator compiler = new CompiledGenerator(Paths.get(System.getenv("SHESMU_SCRIPT")),
-			this::lookups, this::actionDefinitions);
+			this::lookups, this::actionDefinitions, ConstantSource::all);
 	private final CachedRepository<LookupRepository, Lookup> lookupRepository = new CachedRepository<>(
 			LookupRepository.class, LookupRepository::query);
 	private final ActionProcessor processor = new ActionProcessor();
@@ -118,6 +118,12 @@ public final class Server {
 				writeHeader(writer, "Variables");
 				NameDefinitions.baseStreamVariables().forEach(variable -> {
 					writeRow(writer, variable.name(), htmlEscape(variable.type()));
+				});
+				writeFinish(writer);
+
+				writeHeader(writer, "Constants");
+				ConstantSource.all().forEach(constant -> {
+					writeRow(writer, constant.name(), htmlEscape(constant.type()));
 				});
 				writeFinish(writer);
 

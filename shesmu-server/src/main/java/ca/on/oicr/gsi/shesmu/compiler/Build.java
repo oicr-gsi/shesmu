@@ -22,6 +22,7 @@ import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.NameLoader;
@@ -84,7 +85,8 @@ public final class Build extends Compiler implements AutoCloseable {
 			if (dump) {
 				compiler.dump();
 			}
-			final boolean ok = compiler.compile(Files.readAllBytes(Paths.get(file)), "dyn/shesmu/Program", file);
+			final boolean ok = compiler.compile(Files.readAllBytes(Paths.get(file)), "dyn/shesmu/Program", file,
+					ConstantSource::all);
 			System.exit(ok ? 0 : 1);
 		} catch (final Exception e) {
 			e.printStackTrace();

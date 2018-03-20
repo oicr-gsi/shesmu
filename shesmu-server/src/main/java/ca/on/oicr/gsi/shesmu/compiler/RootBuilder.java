@@ -17,6 +17,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.Variables;
@@ -76,20 +77,22 @@ public abstract class RootBuilder {
 	private final GeneratorAdapter classInitMethod;
 	final ClassVisitor classVisitor;
 	private final GeneratorAdapter clearGaugeMethod;
+	private final Supplier<Stream<Constant>> constants;
 	private final GeneratorAdapter ctor;
 	private final Set<String> gauges = new HashSet<>();
 	private final Set<String> lookups = new HashSet<>();
 	private int oliveId = 0;
 	private final String path;
 	private final GeneratorAdapter populateLookupsMethod;
+
 	private final GeneratorAdapter runMethod;
 
 	private final Type selfType;
-
 	private int streamId;
 
-	public RootBuilder(String name, String path) {
+	public RootBuilder(String name, String path, Supplier<Stream<Constant>> constants) {
 		this.path = path;
+		this.constants = constants;
 		selfType = Type.getObjectType(name);
 
 		classVisitor = createClassVisitor();
@@ -130,6 +133,10 @@ public abstract class RootBuilder {
 	 */
 	public final OliveBuilder buildRunOlive() {
 		return new OliveBuilder(this, oliveId++, A_VARIABLES_TYPE);
+	}
+
+	public Stream<LoadableValue> constants() {
+		return constants.get().map(Constant::asLoadable);
 	}
 
 	/**

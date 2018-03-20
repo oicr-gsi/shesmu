@@ -96,6 +96,14 @@ This is where Shesmu gets provenance data for olives to ingest. The following ar
 - Pinery+SeqWare (in the `source-pinery` directory). Set `PROVENANCE_SETTINGS`
   to the file containing the provenance settings.
 
+### Constant Sources
+Variables with constant values can also be included in a Shesmu script. The
+following are available:
+
+ - Constant files (JSON files `SHESMU_DATA` named `.constants`). Each file
+   should contain an object where the property names are the variable names to
+   use and the values are the constant values to use.
+
 ### Lookup Sources
 Lookups are functions or tables available to olives. For instance, suppose a
 BED file is needed for different projects. It is convenient to turn this into a

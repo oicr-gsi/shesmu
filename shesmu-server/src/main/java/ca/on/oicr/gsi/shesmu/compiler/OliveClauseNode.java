@@ -6,9 +6,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
@@ -136,7 +139,8 @@ public abstract class OliveClauseNode {
 	 *            the variable definitions available to this clause
 	 * @return the variable definitions available to the next clause
 	 */
-	public abstract NameDefinitions resolve(NameDefinitions defs, Consumer<String> errorHandler);
+	public abstract NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
+			Consumer<String> errorHandler);
 
 	/**
 	 * Resolve all non-variable definitions

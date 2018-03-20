@@ -3,11 +3,14 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
 /**
@@ -46,7 +49,7 @@ public abstract class Compiler {
 	 *            the source file's path for debugging information
 	 * @return whether compilation was successful
 	 */
-	public final boolean compile(byte[] input, String name, String path) {
+	public final boolean compile(byte[] input, String name, String path, Supplier<Stream<Constant>> constants) {
 		final AtomicReference<List<OliveNode>> program = new AtomicReference<>();
 		final MaxParseError maxParseError = new MaxParseError();
 		final boolean parseOk = OliveNode.parseFile(new String(input, StandardCharsets.UTF_8), program::set,
@@ -54,8 +57,9 @@ public abstract class Compiler {
 		if (!parseOk) {
 			maxParseError.write();
 		}
-		if (parseOk && OliveNode.validate(program.get(), this::getLookup, this::getAction, this::errorHandler)) {
-			final RootBuilder builder = new RootBuilder(name, path) {
+		if (parseOk
+				&& OliveNode.validate(program.get(), this::getLookup, this::getAction, this::errorHandler, constants)) {
+			final RootBuilder builder = new RootBuilder(name, path, constants) {
 				@Override
 				protected ClassVisitor createClassVisitor() {
 					return Compiler.this.createClassVisitor();

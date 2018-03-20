@@ -63,13 +63,17 @@ public final class HotloadingCompiler {
 
 	};
 
+	private final Supplier<Stream<Constant>> constants;
+
 	private final List<String> errors = new ArrayList<>();
 
 	private final Supplier<Stream<Lookup>> lookups;
 
-	public HotloadingCompiler(Supplier<Stream<Lookup>> lookups, Supplier<Stream<ActionDefinition>> actions) {
+	public HotloadingCompiler(Supplier<Stream<Lookup>> lookups, Supplier<Stream<ActionDefinition>> actions,
+			Supplier<Stream<Constant>> constants) {
 		this.lookups = lookups;
 		this.actions = actions;
+		this.constants = constants;
 	}
 
 	public Optional<ActionGenerator> compile(Path fileName) {
@@ -103,7 +107,7 @@ public final class HotloadingCompiler {
 			};
 
 			bytecode.clear();
-			if (compiler.compile(Files.readAllBytes(fileName), "dyn/shesmu/Program", fileName.toString())) {
+			if (compiler.compile(Files.readAllBytes(fileName), "dyn/shesmu/Program", fileName.toString(), constants)) {
 				return Optional.of(
 						classloader.loadClass("dyn.shesmu.Program").asSubclass(ActionGenerator.class).newInstance());
 			}

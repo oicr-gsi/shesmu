@@ -63,9 +63,10 @@ public class NameDefinitions {
 	 *            the parameters for this environment
 	 */
 	public static NameDefinitions root(Stream<? extends Target> parameters) {
-		return new NameDefinitions(Stream
-				.concat(parameters.filter(variable -> variable.flavour() == Flavour.PARAMETER), baseStreamVariables())
-				.collect(Collectors.toMap(Target::name, Function.identity())), true);
+		return new NameDefinitions(Stream.concat(
+				parameters.filter(
+						variable -> variable.flavour() == Flavour.PARAMETER || variable.flavour() == Flavour.CONSTANT),
+				baseStreamVariables()).collect(Collectors.toMap(Target::name, Function.identity())), true);
 	}
 
 	private final boolean isGood;

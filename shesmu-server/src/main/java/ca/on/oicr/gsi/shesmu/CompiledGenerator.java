@@ -23,6 +23,8 @@ public class CompiledGenerator extends AutoUpdatingFile {
 			.labelNames("filename").register();
 	private final Supplier<Stream<ActionDefinition>> actions;
 
+	private final Supplier<Stream<Constant>> constants;
+
 	private String errors;
 
 	private ActionGenerator generator = ActionGenerator.NULL;
@@ -30,14 +32,15 @@ public class CompiledGenerator extends AutoUpdatingFile {
 	private final Supplier<Stream<Lookup>> lookups;
 
 	public CompiledGenerator(Path fileName, Supplier<Stream<Lookup>> lookups,
-			Supplier<Stream<ActionDefinition>> actions) {
+			Supplier<Stream<ActionDefinition>> actions, Supplier<Stream<Constant>> constants) {
 		super(fileName);
 		this.lookups = lookups;
 		this.actions = actions;
+		this.constants = constants;
 	}
 
 	private void compile() {
-		final HotloadingCompiler compiler = new HotloadingCompiler(lookups, actions);
+		final HotloadingCompiler compiler = new HotloadingCompiler(lookups, actions, constants);
 		final Optional<ActionGenerator> result = compiler.compile(fileName());
 		sourceValid.labels(fileName().toString()).set(result.isPresent() ? 1 : 0);
 		result.ifPresent(x -> {

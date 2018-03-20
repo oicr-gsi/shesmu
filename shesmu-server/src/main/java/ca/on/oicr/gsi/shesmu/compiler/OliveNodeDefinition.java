@@ -5,10 +5,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
@@ -55,8 +57,9 @@ public final class OliveNodeDefinition extends OliveNode {
 		return clauses().stream().noneMatch(OliveClauseNodeGroup.class::isInstance);
 	}
 
-	public Optional<Stream<Target>> outputStreamVariables(Consumer<String> errorHandler) {
-		if (outputStreamVariables != null || resolve(errorHandler)) {
+	public Optional<Stream<Target>> outputStreamVariables(Consumer<String> errorHandler,
+			Supplier<Stream<Constant>> constants) {
+		if (outputStreamVariables != null || resolve(errorHandler, constants)) {
 			return Optional.of(outputStreamVariables.stream());
 		}
 		return Optional.empty();
@@ -78,15 +81,16 @@ public final class OliveNodeDefinition extends OliveNode {
 	}
 
 	@Override
-	public boolean resolve(Consumer<String> errorHandler) {
+	public boolean resolve(Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
 		if (resolveLock) {
 			errorHandler.accept(
 					String.format("%d:%d: Olive definition %s includes itself via “Matches”.", line, column, name));
 			return false;
 		}
 		resolveLock = true;
-		final NameDefinitions result = clauses().stream().reduce(NameDefinitions.root(parameters.stream()),
-				(defs, clause) -> clause.resolve(defs, errorHandler), (a, b) -> {
+		final NameDefinitions result = clauses().stream().reduce(
+				NameDefinitions.root(Stream.concat(parameters.stream(), constants.get())),
+				(defs, clause) -> clause.resolve(defs, constants, errorHandler), (a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		outputStreamVariables = result.stream().filter(target -> target.flavour() == Flavour.STREAM)

@@ -70,12 +70,12 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		runMethod.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
 
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor), 1,
-				currentType(), Stream.empty());
+				currentType(), loadableValues());
 	}
 
 	@Override
 	public Stream<LoadableValue> loadableValues() {
-		return Stream.empty();
+		return owner.constants();
 	}
 
 }

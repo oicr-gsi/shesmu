@@ -8,9 +8,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
 /**
@@ -115,9 +118,11 @@ public abstract class OliveNode {
 	 * @param definedActions
 	 *            the actions available; if an action is not found, null should be
 	 *            returned
+	 * @param constants
 	 */
 	public static boolean validate(List<OliveNode> olives, Function<String, Lookup> definedLookups,
-			Function<String, ActionDefinition> definedActions, Consumer<String> errorHandler) {
+			Function<String, ActionDefinition> definedActions, Consumer<String> errorHandler,
+			Supplier<Stream<Constant>> constants) {
 
 		// Find and resolve olive “Define” and “Matches”
 		final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
@@ -129,7 +134,7 @@ public abstract class OliveNode {
 
 		// Resolve variables
 		if (ok) {
-			ok = olives.stream().filter(olive -> olive.resolve(errorHandler)).count() == olives.size();
+			ok = olives.stream().filter(olive -> olive.resolve(errorHandler, constants)).count() == olives.size();
 		}
 
 		// Type check the resolved structure
@@ -189,8 +194,10 @@ public abstract class OliveNode {
 
 	/**
 	 * Resolve all variable definitions
+	 *
+	 * @param constants
 	 */
-	public abstract boolean resolve(Consumer<String> errorHandler);
+	public abstract boolean resolve(Consumer<String> errorHandler, Supplier<Stream<Constant>> constants);
 
 	/**
 	 * Resolve all non-variable definitions

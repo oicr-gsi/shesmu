@@ -7,7 +7,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
  */
 public abstract class Target {
 	public enum Flavour {
-		LAMBDA, PARAMETER, STREAM
+		CONSTANT, LAMBDA, PARAMETER, STREAM
 	}
 
 	/**

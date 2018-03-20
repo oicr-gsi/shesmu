@@ -5,8 +5,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
@@ -44,7 +47,8 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
+			Consumer<String> errorHandler) {
 		return defs.fail(expression.resolve(defs, errorHandler));
 	}
 
