@@ -171,6 +171,7 @@ public class RunReport extends Action implements JsonParameterised {
 			drmaaParameters.put("drmaa_remote_command",
 					String.format("%s/reports/%s/%s-%s", rootDirectory, category, name, version));
 			drmaaParameters.putArray("drmaa_v_argv").add(RuntimeSupport.MAPPER.writeValueAsString(parameters));
+			drmaaParameters.putArray("drmaa_v_env").add("GUANYIN=" + 观音Url);
 			final String body = RuntimeSupport.MAPPER.writeValueAsString(drmaaParameters);
 			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
 			digest.digest(drmaaPsk.getBytes());
