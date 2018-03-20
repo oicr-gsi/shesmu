@@ -1,0 +1,85 @@
+swagger: "2.0"
+info:
+  description: "This API is implemented by action repositories connected to [Shesmu](https://github.com/oicr-gsi/shesmu). Shesmu itself does not implement the API."
+  version: "1.0.0"
+  title: "Shesmu Action Repository"
+  contact:
+    email: "apiteam@swagger.io"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+schemes:
+- "http"
+paths:
+  /actioncatalog:
+    get:
+      summary: "Get a list of actions that can be performed by this server."
+      description: ""
+      operationId: "getCatalog"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "Action catalog transmitted"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ActionDefinition"
+  /launchaction:
+    post:
+      summary: "Run an action or check its status"
+      description: ""
+      operationId: "launchAction"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Causes an action to be launched. The status code indicates whether the job has successfully finished running. If completed successfully, an optional URL may be provided where the result may be viewed."
+        required: true
+        schema:
+          $ref: "#/definitions/ActionRequest"
+      responses:
+        200:
+          description: "The action has been completed and the results are available"
+          schema:
+            $ref: "#/definitions/ActionResult"
+        202:
+          description: "The action has been started but is still in progress"
+        400:
+          description: "The names of the parameters or the types do not match."
+        503:
+          description: "The server has a backlog of requests and cannot queue the action for execution."
+definitions:
+  ActionDefinition:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      parameters:
+        type: "object"
+        additionalProperties:
+          type: "object"
+          properties:
+            type:
+              type: "string"
+              format: "signature"
+            required:
+              type: "boolean"
+  ActionRequest:
+    type: "object"
+    properties:
+      arguments:
+        type: "object"
+      name:
+        type: "string"
+    xml:
+      name: "Category"
+  ActionResult:
+    type: "object"
+    properties:
+      url:
+        type: "string"
+        format: "url"
