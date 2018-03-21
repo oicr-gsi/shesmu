@@ -16,6 +16,7 @@ public class ExpressionNodeLogicalOr extends ExpressionNodeBinarySymmetric {
 		final Label end = renderer.methodGen().newLabel();
 		renderer.methodGen().dup();
 		renderer.methodGen().ifZCmp(GeneratorAdapter.NE, end);
+		renderer.methodGen().pop();
 		right().render(renderer);
 		renderer.methodGen().mark(end);
 	}
