@@ -20,6 +20,7 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
  */
 public abstract class OliveClauseNode {
 	private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
+	private static final Pattern OPTIMA = Pattern.compile("^(Min|Max)");
 
 	public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
 
@@ -107,6 +108,25 @@ public abstract class OliveClauseNode {
 			if (result.isGood()) {
 				output.accept(new OliveClauseNodeMonitor(input.line(), input.column(), metricName.get(), help.get(),
 						labels.get()));
+			}
+			return result;
+		}
+		final AtomicReference<Boolean> direction = new AtomicReference<>();
+		final Parser pickParser = input.regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.");
+		if (pickParser.isGood()) {
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final AtomicReference<List<String>> discriminators = new AtomicReference<>();
+			final Parser result = pickParser//
+					.whitespace()//
+					.then(ExpressionNode::parse, expression::set)//
+					.whitespace()//
+					.keyword("By")//
+					.whitespace()//
+					.list(discriminators::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodePick(input.line(), input.column(), direction.get(), expression.get(),
+						discriminators.get()));
 			}
 			return result;
 		}

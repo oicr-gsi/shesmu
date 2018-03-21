@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,11 +20,33 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends OliveClauseNode {
 
+	public static Optional<List<Target>> checkDiscriminators(int line, int column, NameDefinitions defs,
+			List<String> discriminators, Consumer<String> errorHandler) {
+		final List<Target> discriminatorVariables = discriminators.stream().map(name -> {
+			final Optional<Target> target = defs.get(name);
+			if (!target.isPresent()) {
+				errorHandler.accept(String.format("%d:%d: Undefined variable “%s” in “By”.", line, column, name));
+				return null;
+			}
+			if (!target.map(Target::flavour).map(Flavour.STREAM::equals).orElse(false)) {
+				errorHandler.accept(String.format("%d:%d: Non-stream variable “%s” in “By”.", line, column, name));
+				return null;
+			}
+			return target.orElse(null);
+		}).filter(Objects::nonNull).collect(Collectors.toList());
+
+		if (discriminators.size() != discriminatorVariables.size()) {
+			return Optional.empty();
+		}
+		return Optional.of(discriminatorVariables);
+	}
+
 	private final List<T> children;
 	private final int column;
 	private final List<String> discriminators;
-	private List<Target> discriminatorVariables;
+	private List<Target> discriminatorVariables = Collections.emptyList();
 	private final int line;
+
 	private final String syntax;
 
 	public OliveClauseNodeBaseBy(String syntax, int line, int column, List<T> children, List<String> discriminators) {
@@ -51,19 +74,11 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 	public final NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
 			Consumer<String> errorHandler) {
 		boolean ok = children.stream().filter(child -> child.resolve(defs, errorHandler)).count() == children.size();
-		discriminatorVariables = discriminators.stream().map(name -> {
-			final Optional<Target> target = defs.get(name);
-			if (!target.isPresent()) {
-				errorHandler.accept(String.format("%d:%d: Undefined variable “%s” in “By”.", line, column, name));
-			}
-			if (!target.map(Target::flavour).map(Flavour.STREAM::equals).orElse(false)) {
-				errorHandler.accept(String.format("%d:%d: Non-stream variable “%s” in “By”.", line, column, name));
-				return null;
-			}
-			return target.orElse(null);
-		}).filter(Objects::nonNull).collect(Collectors.toList());
+		final Optional<List<Target>> maybeDiscriminatorVariables = checkDiscriminators(line, column, defs,
+				discriminators, errorHandler);
+		maybeDiscriminatorVariables.ifPresent(x -> discriminatorVariables = x);
 
-		if (discriminators.size() != discriminatorVariables.size()) {
+		if (!maybeDiscriminatorVariables.isPresent()) {
 			ok = false;
 		}
 

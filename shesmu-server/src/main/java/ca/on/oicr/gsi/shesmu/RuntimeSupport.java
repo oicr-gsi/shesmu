@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +23,10 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,6 +40,39 @@ import io.prometheus.client.Gauge;
  * Utilities for making bytecode generation easier
  */
 public final class RuntimeSupport {
+
+	private static class Holder<T> {
+
+		private final BiPredicate<T, T> equals;
+		private final int hashCode;
+		private final T item;
+
+		public Holder(BiPredicate<T, T> equals, int hashCode, T item) {
+			this.equals = equals;
+			this.hashCode = hashCode;
+			this.item = item;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Holder) {
+				@SuppressWarnings("unchecked")
+				final Holder<T> other = (Holder<T>) obj;
+				return equals.test(other.unbox(), item);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return hashCode;
+		}
+
+		public T unbox() {
+			return item;
+		}
+
+	}
 
 	private static final Map<String, CallSite> callsites = new HashMap<>();
 
@@ -186,6 +222,26 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static <T> Stream<T> monitor(Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
 		return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
+	}
+
+	/**
+	 * Pick the first value for sorted groups of items.
+	 *
+	 * @param input
+	 *            the stream of input items
+	 * @param hashCode
+	 *            the hashing for the grouping of interest over the input type
+	 * @param equals
+	 *            a equality for the grouping of interest over the input type
+	 * @param comparator
+	 *            the sorting operating to be performed on the grouped input
+	 */
+	@RuntimeInterop
+	public static <T> Stream<T> pick(Stream<T> input, ToIntFunction<T> hashCode, BiPredicate<T, T> equals,
+			Comparator<T> comparator) {
+		final Map<Holder<T>, List<T>> groups = input
+				.collect(Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
+		return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
 	}
 
 	@RuntimeInterop

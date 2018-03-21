@@ -82,6 +82,22 @@ If a value is missing (_e.g._, there's no `Fingerprinting` workflow for a
 `library_name`), there will be no output for that discriminator combination.
 That is, partial smashes are discarded.
 
+Often, the same data is duplicated and there needs to be grouping that uses the
+“best” value. For this, a `Min` or `Max` clause can get the right data:
+
+    Run project_report
+      Where workflow == "BamQC 2.7+"
+      Max timestamp By workflow, library_name
+      Group
+          paths = path
+        By project
+      # And create on report per project
+      With {
+        memory = 4Gi,
+        project = project
+        paths = paths
+      }
+
 To make reusable logic, the _Define_ olive can be used:
 
     Define standard_fastq()
