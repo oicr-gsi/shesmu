@@ -88,6 +88,7 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 									"", //
 									0L, //
 									"", //
+									lp.getCreatedDate().toInstant(), //
 									"lane_provenance");
 
 							if (badSetInRecord.get()) {

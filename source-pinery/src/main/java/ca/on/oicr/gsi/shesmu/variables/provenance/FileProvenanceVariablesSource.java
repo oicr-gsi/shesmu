@@ -144,6 +144,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 									limsAttr(fp, "geo_group_id_description", badAttr).orElse(""), //
 									limsAttr(fp, "geo_library_size_code", badAttr).map(Utils::parseLong).orElse(0L), //
 									limsAttr(fp, "geo_library_type", badAttr).orElse(""), //
+									fp.getLastModified().toInstant(), //
 									"file_provenance");
 
 							if (badSetInRecord.get()) {

@@ -96,6 +96,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 									limsAttr(sp, "geo_group_id_description", badAttr).orElse(""), //
 									limsAttr(sp, "geo_library_size_code", badAttr).map(Utils::parseLong).orElse(0L), //
 									limsAttr(sp, "geo_library_type", badAttr).orElse(""), //
+									sp.getCreatedDate().toInstant(), //
 									"sample_provenance");
 
 							if (badSetInRecord.get()) {
