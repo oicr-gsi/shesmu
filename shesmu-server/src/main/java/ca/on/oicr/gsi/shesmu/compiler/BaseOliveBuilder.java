@@ -204,7 +204,20 @@ public abstract class BaseOliveBuilder {
 				capturedVariables.length, currentType, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 
-	public Renderer pick(Imyhat compareType, Boolean max, Stream<Target> discriminators,
+	/**
+	 * Select rows based on a minimum/maximum value for some expression in a group
+	 * 
+	 * @param compareType
+	 *            the type that we are finding the minimum/maximum of
+	 * @param max
+	 *            whether we are finding a maximum or a minimum
+	 * @param discriminators
+	 *            the stream variables over which the groups are constructed
+	 * @param capturedVariables
+	 *            any captures that are needed by the comparison expression
+	 * @return a new method that must return a value to be compared for a input row
+	 */
+	public Renderer pick(Imyhat compareType, boolean max, Stream<Target> discriminators,
 			LoadableValue[] capturedVariables) {
 		final Type streamType = currentType;
 
@@ -372,6 +385,9 @@ public abstract class BaseOliveBuilder {
 				capturedVariables.length);
 	}
 
+	/**
+	 * Create a “Smash” clause
+	 */
 	public RegroupVariablesBuilder smash(LoadableValue[] capturedVariables) {
 		return regroup("Smash", "smash", true, capturedVariables);
 	}

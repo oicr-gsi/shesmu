@@ -10,11 +10,23 @@ import ca.on.oicr.gsi.shesmu.compiler.LoadableValue;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 
+/**
+ * A constant value that can be injected into a Shesmu program
+ *
+ * Constant values get written into the program, so they are not updated until
+ * the program is recompiled even if the {@link ConstantSource}
+ */
 public abstract class Constant extends Target {
 
 	private static Method INSTANT_CTOR = new Method("ofEpochMilli", Imyhat.DATE.asmType(),
 			new Type[] { Type.LONG_TYPE });
 
+	/**
+	 * Define a boolean constant
+	 * 
+	 * @param name
+	 *            the name, which must be a valid Shesmu identifier
+	 */
 	public static Constant of(String name, boolean value) {
 		return new Constant(name, Imyhat.BOOLEAN) {
 
@@ -25,6 +37,12 @@ public abstract class Constant extends Target {
 		};
 	}
 
+	/**
+	 * Define a date constant
+	 * 
+	 * @param name
+	 *            the name, which must be a valid Shesmu identifier
+	 */
 	public static Constant of(String name, Instant value) {
 		return new Constant(name, Imyhat.DATE) {
 
@@ -36,6 +54,12 @@ public abstract class Constant extends Target {
 		};
 	}
 
+	/**
+	 * Define an integer constant
+	 * 
+	 * @param name
+	 *            the name, which must be a valid Shesmu identifier
+	 */
 	public static Constant of(String name, long value) {
 		return new Constant(name, Imyhat.INTEGER) {
 
@@ -46,6 +70,12 @@ public abstract class Constant extends Target {
 		};
 	}
 
+	/**
+	 * Define a string constant
+	 * 
+	 * @param name
+	 *            the name, which must be a valid Shesmu identifier
+	 */
 	public static Constant of(String name, String value) {
 		return new Constant(name, Imyhat.STRING) {
 
@@ -93,6 +123,13 @@ public abstract class Constant extends Target {
 		return Flavour.CONSTANT;
 	}
 
+	/**
+	 * Generate bytecode in the supplied method to load this constant on the operand
+	 * stack.
+	 * 
+	 * @param methodGen
+	 *            the method to load the value in
+	 */
 	protected abstract void load(GeneratorAdapter methodGen);
 
 	@Override

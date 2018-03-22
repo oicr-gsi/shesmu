@@ -244,6 +244,10 @@ public final class RuntimeSupport {
 		return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
 	}
 
+	/**
+	 * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular
+	 * expression (which is the method name).
+s	 */
 	@RuntimeInterop
 	public static CallSite regexBootstrap(Lookup lookup, String signature, MethodType type)
 			throws NoSuchMethodException, IllegalAccessException {

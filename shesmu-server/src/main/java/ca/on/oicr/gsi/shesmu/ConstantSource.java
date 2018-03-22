@@ -4,6 +4,10 @@ import java.util.ServiceLoader;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * A service class that can provide external constants that should be visible to
+ * Shesmu programs
+ */
 public interface ConstantSource extends LoadedConfiguration {
 	final static ServiceLoader<ConstantSource> LOADER = ServiceLoader.load(ConstantSource.class);
 

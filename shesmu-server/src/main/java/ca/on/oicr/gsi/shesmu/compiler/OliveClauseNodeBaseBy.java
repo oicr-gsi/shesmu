@@ -20,6 +20,11 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends OliveClauseNode {
 
+	/**
+	 * Check that the list of strings provided are valid discriminators
+	 * 
+	 * That is, they are defined stream variables
+	 */
 	public static Optional<List<Target>> checkDiscriminators(int line, int column, NameDefinitions defs,
 			List<String> discriminators, Consumer<String> errorHandler) {
 		final List<Target> discriminatorVariables = discriminators.stream().map(name -> {
