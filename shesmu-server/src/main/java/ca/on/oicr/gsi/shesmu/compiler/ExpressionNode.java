@@ -38,7 +38,7 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<Integer> INT_SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION = new Parser.ParseDispatch<>();
-	private static final Pattern REGEX = Pattern.compile("^/(([^/]|\\/)*)/");
+	private static final Pattern REGEX = Pattern.compile("^/(([^/\n]|\\\\/)*)/");
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY = new Parser.ParseDispatch<>();
