@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -22,6 +23,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
+import ca.on.oicr.gsi.shesmu.compiler.Target;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
@@ -97,7 +99,7 @@ public final class Server {
 				writePageHeader(writer);
 
 				writeHeader(writer, "Lookups");
-				lookupRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(lookup -> {
+				lookupRepository.stream().sorted(Comparator.comparing(Lookup::name)).forEach(lookup -> {
 					writeBlock(writer, lookup.name());
 					writeRow(writer, "Return", lookup.returnType().name());
 					lookup.types().map(Pair.number()).forEach(p -> writeRow(writer,
@@ -107,7 +109,7 @@ public final class Server {
 				writeFinish(writer);
 
 				writeHeader(writer, "Actions");
-				actionRepository.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(action -> {
+				actionRepository.stream().sorted(Comparator.comparing(ActionDefinition::name)).forEach(action -> {
 					writeBlock(writer, action.name());
 					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
 							.forEach(p -> writeRow(writer, p.name(), htmlEscape(p.type())));
@@ -116,13 +118,13 @@ public final class Server {
 				writeFinish(writer);
 
 				writeHeader(writer, "Variables");
-				NameDefinitions.baseStreamVariables().forEach(variable -> {
+				NameDefinitions.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
 					writeRow(writer, variable.name(), htmlEscape(variable.type()));
 				});
 				writeFinish(writer);
 
 				writeHeader(writer, "Constants");
-				ConstantSource.all().forEach(constant -> {
+				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
 					writeRow(writer, constant.name(), htmlEscape(constant.type()));
 				});
 				writeFinish(writer);
