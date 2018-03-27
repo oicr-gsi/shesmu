@@ -80,7 +80,8 @@ public final class Server {
 						VariablesSource::sources, //
 						actionRepository::implementations, //
 						lookupRepository::implementations, //
-						Throttler::services)//
+						Throttler::services, //
+						ConstantSource::sources)//
 						.flatMap(Supplier::get)//
 						.flatMap(LoadedConfiguration::listConfiguration)//
 						.sorted(Comparator.comparing(Pair::first))//
