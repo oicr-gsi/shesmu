@@ -17,11 +17,14 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
@@ -31,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -246,8 +250,8 @@ public final class RuntimeSupport {
 
 	/**
 	 * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular
-	 * expression (which is the method name).
-s	 */
+	 * expression (which is the method name). s
+	 */
 	@RuntimeInterop
 	public static CallSite regexBootstrap(Lookup lookup, String signature, MethodType type)
 			throws NoSuchMethodException, IllegalAccessException {
@@ -301,6 +305,10 @@ s	 */
 		final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
 		return groups.entrySet().stream().peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))
 				.map(Entry::getKey);
+	}
+
+	public static <T> Stream<T> stream(Iterator<T> iterator) {
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
 	}
 
 	private RuntimeSupport() {
