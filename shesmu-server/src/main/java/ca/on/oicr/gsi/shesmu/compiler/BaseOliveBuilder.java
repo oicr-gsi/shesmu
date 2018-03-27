@@ -103,8 +103,9 @@ public abstract class BaseOliveBuilder {
 	 */
 	@SafeVarargs
 	public final Renderer filter(LoadableValue... capturedVariables) {
+		final Type type = currentType;
 		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), BOOLEAN_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(currentType))
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
 						.toArray(Type[]::new));
 		steps.add(renderer -> {
 			renderer.methodGen().loadThis();
@@ -116,11 +117,11 @@ public abstract class BaseOliveBuilder {
 							Stream.concat(Stream.of(owner.selfType()),
 									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
 					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(BOOLEAN_TYPE, currentType));
+					Type.getMethodType(BOOLEAN_TYPE, type));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, currentType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 
 	/**
@@ -183,9 +184,11 @@ public abstract class BaseOliveBuilder {
 	 * @return
 	 */
 	public Renderer monitor(String metricName, String help, List<String> names, LoadableValue[] capturedVariables) {
+		final Type type = currentType;
 		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), A_OBJECT_ARRAY_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(currentType))
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
 						.toArray(Type[]::new));
+
 		steps.add(renderer -> {
 			owner.loadGauge(metricName, help, names, renderer.methodGen());
 			renderer.methodGen().loadThis();
@@ -197,11 +200,11 @@ public abstract class BaseOliveBuilder {
 							Stream.concat(Stream.of(owner.selfType()),
 									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
 					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(A_OBJECT_TYPE, currentType));
+					Type.getMethodType(A_OBJECT_TYPE, type));
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_MONITOR);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, currentType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 
 	/**
