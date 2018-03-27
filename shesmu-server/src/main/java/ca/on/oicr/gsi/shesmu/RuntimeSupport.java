@@ -253,7 +253,7 @@ public final class RuntimeSupport {
 	 * expression (which is the method name). s
 	 */
 	@RuntimeInterop
-	public static CallSite regexBootstrap(Lookup lookup, String signature, MethodType type)
+	public static CallSite regexBootstrap(Lookup lookup, String signature, MethodType type, String regex)
 			throws NoSuchMethodException, IllegalAccessException {
 		if (!type.returnType().equals(boolean.class)) {
 			throw new IllegalArgumentException("Method cannot return non-boolean type.");
@@ -261,17 +261,17 @@ public final class RuntimeSupport {
 		if (type.parameterCount() != 1 || !type.parameterType(0).equals(CharSequence.class)) {
 			throw new IllegalArgumentException("Method must take exactly 1 character sequence parameter.");
 		}
-		if (callsites.containsKey(signature)) {
-			return callsites.get(signature);
+		if (callsites.containsKey(regex)) {
+			return callsites.get(regex);
 		}
-		final Pattern pattern = Pattern.compile(signature);
+		final Pattern pattern = Pattern.compile(regex);
 		pattern.matcher("").matches();
 		final MethodHandle matcher = lookup.findVirtual(Pattern.class, "matcher",
 				MethodType.methodType(Matcher.class, CharSequence.class));
 		final MethodHandle matches = lookup.findVirtual(Matcher.class, "matches", MethodType.methodType(boolean.class));
 		final CallSite callsite = new ConstantCallSite(
 				MethodHandles.filterReturnValue(MethodHandles.insertArguments(matcher, 0, pattern), matches));
-		callsites.put(signature, callsite);
+		callsites.put(regex, callsite);
 		return callsite;
 	}
 

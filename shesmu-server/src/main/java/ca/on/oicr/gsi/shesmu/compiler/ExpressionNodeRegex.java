@@ -20,7 +20,7 @@ public class ExpressionNodeRegex extends ExpressionNode {
 	private static final Handle BSM = new Handle(Opcodes.H_INVOKESTATIC,
 			Type.getType(RuntimeSupport.class).getInternalName(), "regexBootstrap",
 			Type.getMethodDescriptor(Type.getType(CallSite.class), Type.getType(MethodHandles.Lookup.class),
-					Type.getType(String.class), Type.getType(MethodType.class)),
+					Type.getType(String.class), Type.getType(MethodType.class), Type.getType(String.class)),
 			false);
 
 	private static final String METHOD = Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(CharSequence.class));
@@ -44,7 +44,7 @@ public class ExpressionNodeRegex extends ExpressionNode {
 	@Override
 	public void render(Renderer renderer) {
 		expression.render(renderer);
-		renderer.methodGen().invokeDynamic(regex, METHOD, BSM);
+		renderer.methodGen().invokeDynamic("regex", METHOD, BSM, regex);
 	}
 
 	@Override
