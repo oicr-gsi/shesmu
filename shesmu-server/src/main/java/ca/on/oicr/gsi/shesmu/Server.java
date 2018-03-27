@@ -82,7 +82,9 @@ public final class Server {
 						lookupRepository::implementations, //
 						Throttler::services)//
 						.flatMap(Supplier::get)//
-						.flatMap(LoadedConfiguration::listConfiguration).forEach(config -> {
+						.flatMap(LoadedConfiguration::listConfiguration)//
+						.sorted(Comparator.comparing(Pair::first))//
+						.forEach(config -> {
 							writeHeader(writer, config.first());
 							config.second().forEach((k, v) -> writeRow(writer, k, v));
 							writeFinish(writer);
