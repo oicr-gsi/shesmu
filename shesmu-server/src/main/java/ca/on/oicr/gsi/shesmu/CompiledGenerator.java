@@ -25,7 +25,7 @@ public class CompiledGenerator extends AutoUpdatingFile {
 
 	private final Supplier<Stream<Constant>> constants;
 
-	private String errors;
+	private String errors = "Not yet compiled or exception during compilation.";
 
 	private ActionGenerator generator = ActionGenerator.NULL;
 
