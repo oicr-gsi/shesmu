@@ -12,16 +12,17 @@ import ca.on.oicr.gsi.shesmu.compiler.Parser;
 public class ReportDto {
 	private String category;
 	private String name;
-	private Map<String, ParameterInfo> permitted_parameters;
-	private long report_id;
+	private Map<String, ParameterInfo> permittedParameters;
+	private long id;
 	private String version;
 
 	public String getCategory() {
 		return category;
 	}
 
+	@JsonProperty("report_id")
 	public long getId() {
-		return report_id;
+		return id;
 	}
 
 	public String getName() {
@@ -30,7 +31,7 @@ public class ReportDto {
 
 	@JsonProperty("permitted_parameters")
 	public Map<String, ParameterInfo> getPermittedParameters() {
-		return permitted_parameters;
+		return permittedParameters;
 	}
 
 	public String getVersion() {
@@ -45,16 +46,16 @@ public class ReportDto {
 		this.category = category;
 	}
 
-	public void setId(long report_id) {
-		this.report_id = report_id;
+	public void setId(long id) {
+		this.id = id;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public void setPermittedParameters(Map<String, ParameterInfo> permitted_parameters) {
-		this.permitted_parameters = permitted_parameters;
+	public void setPermittedParameters(Map<String, ParameterInfo> permittedParameters) {
+		this.permittedParameters = permittedParameters;
 	}
 
 	public void setVersion(String version) {
@@ -63,7 +64,7 @@ public class ReportDto {
 
 	public ReportDefinition toDefinition(String 观音Url, String drmaaUrl, String drmaaPsk) {
 		return new ReportDefinition(观音Url, drmaaUrl, drmaaPsk, category, name, version,
-				permitted_parameters.entrySet().stream().map(e -> new JsonParameter(e.getKey(),
+				permittedParameters.entrySet().stream().map(e -> new JsonParameter(e.getKey(),
 						Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
 	}
 

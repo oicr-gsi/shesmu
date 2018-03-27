@@ -5,25 +5,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ResultDto {
-	private long report_id;
-	private long report_record_id;
+	private long report;
+	private long id;
 
 	@JsonProperty("report_record_id")
 	public long getId() {
-		return report_record_id;
+		return id;
 	}
 
 	@JsonProperty("report_id")
 	public long getReport() {
-		return report_id;
+		return report;
 	}
 
-	public void setId(long report_record_id) {
-		this.report_record_id = report_record_id;
+	public void setId(long id) {
+		this.id = id;
 	}
 
-	public void setReport(long report_id) {
-		this.report_id = report_id;
+	public void setReport(long report) {
+		this.report = report;
 	}
 
 }
