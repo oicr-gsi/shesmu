@@ -114,11 +114,10 @@ public final class ActionProcessor implements Consumer<Action> {
 	 * kept.
 	 */
 	@Override
-	public void accept(Action action) {
-		// Non-critical race condition: if two threads add the same action, the
-		// information associated could be replaced by a blank instance.
+	public synchronized void accept(Action action) {
 		if (!actions.containsKey(action)) {
 			actions.put(action, new Information());
+			stateCount.labels(ActionState.UNKNOWN.name()).inc();
 		}
 	}
 
