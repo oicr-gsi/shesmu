@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ResultDto {
-	private long report;
 	private long id;
+	private long report;
 
 	@JsonProperty("report_record_id")
 	public long getId() {

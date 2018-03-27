@@ -11,9 +11,9 @@ import ca.on.oicr.gsi.shesmu.compiler.Parser;
 
 public class ReportDto {
 	private String category;
+	private long id;
 	private String name;
 	private Map<String, ParameterInfo> permittedParameters;
-	private long id;
 	private String version;
 
 	public String getCategory() {
@@ -62,8 +62,8 @@ public class ReportDto {
 		this.version = version;
 	}
 
-	public ReportDefinition toDefinition(String 观音Url, String drmaaUrl, String drmaaPsk) {
-		return new ReportDefinition(观音Url, drmaaUrl, drmaaPsk, category, name, version,
+	public ReportDefinition toDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String rootDirectory) {
+		return new ReportDefinition(观音Url, drmaaUrl, drmaaPsk, rootDirectory, category, name, version,
 				permittedParameters.entrySet().stream().map(e -> new JsonParameter(e.getKey(),
 						Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
 	}

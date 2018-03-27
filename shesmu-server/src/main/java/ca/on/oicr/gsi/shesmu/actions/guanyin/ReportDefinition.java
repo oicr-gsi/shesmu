@@ -15,23 +15,25 @@ public class ReportDefinition extends ActionDefinition {
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Type ACTION_TYPE = Type.getType(RunReport.class);
 
-	private static final Method CTOR = new Method("<init>", Type.VOID_TYPE,
-			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE });
+	private static final Method CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] { A_STRING_TYPE, A_STRING_TYPE,
+			A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE });
 
 	private final String category;
 	private final String drmaaPsk;
 	private final String drmaaUrl;
 	private final String name;
 
+	private final String rootDirectory;
 	private final String version;
 	private final String 观音Url;
 
-	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String category, String name,
-			String version, Stream<ParameterDefinition> parameters) {
+	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String rootDirectory, String category,
+			String name, String version, Stream<ParameterDefinition> parameters) {
 		super(name + "_" + version.replaceAll("[^A-Za-z0-9_]", "_"), ACTION_TYPE, parameters);
 		this.观音Url = 观音Url;
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;
+		this.rootDirectory = rootDirectory;
 		this.category = category;
 		this.name = name;
 		this.version = version;
@@ -44,6 +46,7 @@ public class ReportDefinition extends ActionDefinition {
 		methodGen.push(观音Url);
 		methodGen.push(drmaaUrl);
 		methodGen.push(drmaaPsk);
+		methodGen.push(rootDirectory);
 		methodGen.push(category);
 		methodGen.push(name);
 		methodGen.push(version);

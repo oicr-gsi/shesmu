@@ -28,7 +28,7 @@ public class ReportActionRepository implements ActionRepository {
 				.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
 			return Arrays.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class))
 					.filter(ReportDto::isValid).map(def -> def.toDefinition(configuration.getGuanyin(),
-							configuration.getDrmaa(), configuration.getDrmaaPsk()));
+							configuration.getDrmaa(), configuration.getDrmaaPsk(), configuration.getRootDirectory()));
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -47,6 +47,7 @@ public class ReportActionRepository implements ActionRepository {
 			final Map<String, String> map = new TreeMap<>();
 			map.put("drmaa", configuration.getDrmaa());
 			map.put("觀音", configuration.getGuanyin());
+			map.put("directory", configuration.getRootDirectory());
 			return new Pair<>("觀音 Report Repository", map);
 		});
 	}
