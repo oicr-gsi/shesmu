@@ -145,6 +145,7 @@ public final class Server {
 					final ObjectNode paramInfo = parameters.addObject();
 					paramInfo.put("name", param.name());
 					paramInfo.put("type", param.type().toString());
+					paramInfo.put("required", param.required());
 				});
 			});
 			return array;
@@ -155,7 +156,8 @@ public final class Server {
 			lookupRepository.stream().forEach(lookup -> {
 				final ObjectNode obj = array.addObject();
 				obj.put("name", lookup.name());
-				lookup.types().map(Object::toString).forEach(obj.putArray("types")::add);
+				obj.put("return", lookup.returnType().signature());
+				lookup.types().map(Imyhat::signature).forEach(obj.putArray("types")::add);
 			});
 			return array;
 		});
