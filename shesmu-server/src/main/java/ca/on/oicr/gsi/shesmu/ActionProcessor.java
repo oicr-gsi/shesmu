@@ -52,6 +52,9 @@ public final class ActionProcessor implements Consumer<Action> {
 	private static final Gauge actionThrows = Gauge.build("shesmu_action_perform_throw",
 			"The number of actions that threw an exception in their last attempt.").register();
 
+	private static final Gauge lastRun = Gauge
+			.build("shesmu_action_perform_last_time", "The last time the actions were processed.").register();
+
 	private static final Gauge stateCount = Gauge
 			.build("shesmu_action_state_count", "The number of actions in a particular state.").labelNames("state")
 			.register();
@@ -190,6 +193,7 @@ public final class ActionProcessor implements Consumer<Action> {
 						}
 						actionThrows.inc((entry.getValue().thrown ? 0 : 1) - (oldThrown ? 0 : 1));
 					});
+			lastRun.setToCurrentTime();
 			try {
 				Thread.sleep(60_000);
 			} catch (final InterruptedException e) {

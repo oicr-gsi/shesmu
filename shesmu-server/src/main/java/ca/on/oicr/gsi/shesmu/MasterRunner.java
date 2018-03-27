@@ -5,10 +5,13 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
 
 public class MasterRunner {
 	private static final Counter errors = Counter
 			.build("shesmu_run_errors", "The number of times processing the input has thrown.").register();
+	private static final Gauge lastRun = Gauge.build("shesmu_run_last_run", "The last time the input was run.")
+			.register();
 	private static final LatencyHistogram runTime = new LatencyHistogram("shesmu_run_time",
 			"The time the script takes to run on all the input.");
 	private final Supplier<ActionGenerator> actionGeneratorSource;
@@ -28,6 +31,7 @@ public class MasterRunner {
 
 	private void run() {
 		while (running) {
+			lastRun.setToCurrentTime();
 			try (AutoCloseable timer = runTime.start()) {
 				final ActionGenerator generator = actionGeneratorSource.get();
 				generator.populateLookups(new NameLoader<>(lookupSource.get(), Lookup::name));
