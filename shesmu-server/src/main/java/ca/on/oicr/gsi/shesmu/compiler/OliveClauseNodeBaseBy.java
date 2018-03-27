@@ -22,7 +22,7 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 
 	/**
 	 * Check that the list of strings provided are valid discriminators
-	 * 
+	 *
 	 * That is, they are defined stream variables
 	 */
 	public static Optional<List<Target>> checkDiscriminators(int line, int column, NameDefinitions defs,

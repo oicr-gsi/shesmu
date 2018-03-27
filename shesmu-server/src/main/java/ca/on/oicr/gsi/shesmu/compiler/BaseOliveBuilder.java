@@ -206,7 +206,7 @@ public abstract class BaseOliveBuilder {
 
 	/**
 	 * Select rows based on a minimum/maximum value for some expression in a group
-	 * 
+	 *
 	 * @param compareType
 	 *            the type that we are finding the minimum/maximum of
 	 * @param max

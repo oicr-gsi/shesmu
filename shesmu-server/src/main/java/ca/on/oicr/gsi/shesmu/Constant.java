@@ -23,7 +23,7 @@ public abstract class Constant extends Target {
 
 	/**
 	 * Define a boolean constant
-	 * 
+	 *
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
@@ -39,7 +39,7 @@ public abstract class Constant extends Target {
 
 	/**
 	 * Define a date constant
-	 * 
+	 *
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
@@ -56,7 +56,7 @@ public abstract class Constant extends Target {
 
 	/**
 	 * Define an integer constant
-	 * 
+	 *
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
@@ -72,7 +72,7 @@ public abstract class Constant extends Target {
 
 	/**
 	 * Define a string constant
-	 * 
+	 *
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
@@ -126,7 +126,7 @@ public abstract class Constant extends Target {
 	/**
 	 * Generate bytecode in the supplied method to load this constant on the operand
 	 * stack.
-	 * 
+	 *
 	 * @param methodGen
 	 *            the method to load the value in
 	 */
