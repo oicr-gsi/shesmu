@@ -6,11 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.kohsuke.MetaInfServices;
 
@@ -44,17 +41,14 @@ public class FileConstants implements ConstantSource {
 		@Override
 		protected void update() {
 			try {
-				constants = StreamSupport
-						.stream(Spliterators
-								.spliteratorUnknownSize(
-										RuntimeSupport.MAPPER
-												.readValue(Files.readAllBytes(fileName()), ObjectNode.class).fields(),
-										Spliterator.DISTINCT),
-								false)
+				constants = RuntimeSupport
+						.stream(RuntimeSupport.MAPPER.readValue(Files.readAllBytes(fileName()), ObjectNode.class)
+								.fields())//
 						.map(FileConstants::convert)//
 						.filter(Objects::nonNull)//
 						.collect(Collectors.toList());
 			} catch (final Exception e) {
+				e.printStackTrace();
 				constants = Collections.emptyList();
 			}
 
@@ -77,7 +71,8 @@ public class FileConstants implements ConstantSource {
 	private final List<ConstantsFile> files;
 
 	public FileConstants() {
-		files = RuntimeSupport.dataFiles(".constants").map(ConstantsFile::new).collect(Collectors.toList());
+		files = RuntimeSupport.dataFiles(".constants").map(ConstantsFile::new).peek(ConstantsFile::start)
+				.collect(Collectors.toList());
 	}
 
 	@Override
