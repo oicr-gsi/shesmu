@@ -108,6 +108,7 @@ public final class Build extends Compiler implements AutoCloseable {
 
 	private Build(NameLoader<Lookup> lookups, NameLoader<ActionDefinition> actions, boolean skipCompute,
 			boolean dataFlowAnalysis) {
+		super(false);
 		this.lookups = lookups;
 		this.actions = actions;
 		this.skipCompute = skipCompute;

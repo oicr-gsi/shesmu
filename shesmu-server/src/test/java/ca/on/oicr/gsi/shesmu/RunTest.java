@@ -79,6 +79,8 @@ public class RunTest {
 
 	private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
 
+	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("project_constant", "the_foo_study"));
+
 	private static Variables[] DATA = new Variables[] {
 			new Variables("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
@@ -111,7 +113,6 @@ public class RunTest {
 			return Stream.of(Imyhat.INTEGER);
 		}
 	};
-
 	private static final Lookup INT2STR = new Lookup() {
 
 		@Override
@@ -134,6 +135,7 @@ public class RunTest {
 			return Stream.of(Imyhat.INTEGER);
 		}
 	};
+
 	private static final ActionDefinition OK_ACTION_DEFINITION = new ActionDefinition("ok", A_OK_ACTION_TYPE,
 			Stream.of(ParameterDefinition.forField(A_OK_ACTION_TYPE, "ok", Imyhat.BOOLEAN, true))) {
 
@@ -156,8 +158,6 @@ public class RunTest {
 	private Stream<Lookup> lookups() {
 		return Stream.of(INT2STR, INT2DATE);
 	}
-	
-	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("project_constant", "the_foo_study"));
 
 	@Test
 	public void testData() throws IOException {
@@ -175,9 +175,9 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions, CONSTANTS::stream);
-			ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
-			ActionChecker checker = new ActionChecker();
+			final HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions, CONSTANTS::stream);
+			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
+			final ActionChecker checker = new ActionChecker();
 			generator.populateLookups(new NameLoader<>(lookups(), Lookup::name));
 			generator.run(checker, this::data);
 			if (checker.ok()) {

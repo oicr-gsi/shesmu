@@ -25,6 +25,10 @@ public class CompilerTest {
 	public final class CompilerHarness extends Compiler {
 		private boolean dirty;
 
+		public CompilerHarness() {
+			super(false);
+		}
+
 		@Override
 		protected ClassVisitor createClassVisitor() {
 			final ClassWriter outputWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
@@ -78,7 +82,7 @@ public class CompilerTest {
 					.filter(Files::isRegularFile)//
 					.map(this::testFile)//
 					.filter(Pair.predicate((file, result) -> {
-						boolean failed = result.orElse(true);
+						final boolean failed = result.orElse(true);
 						if (failed) {
 							System.err.printf("NEGFAIL %s\n", file);
 						}
@@ -89,12 +93,12 @@ public class CompilerTest {
 	}
 
 	private Pair<Path, Optional<Boolean>> testFile(Path file) {
-		CompilerHarness compiler = new CompilerHarness();
+		final CompilerHarness compiler = new CompilerHarness();
 		try {
 			return new Pair<>(file, Optional.of(
 					compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program", file.toString(), CONSTANTS::stream)
 							&& compiler.ok()));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return new Pair<>(file, Optional.empty());
 		}
 	}
@@ -107,7 +111,7 @@ public class CompilerTest {
 					.filter(Files::isRegularFile)//
 					.map(this::testFile)//
 					.filter(Pair.predicate((file, result) -> {
-						boolean failed = !result.orElse(false);
+						final boolean failed = !result.orElse(false);
 						if (failed) {
 							System.err.printf("FAIL %s\n", file);
 						}

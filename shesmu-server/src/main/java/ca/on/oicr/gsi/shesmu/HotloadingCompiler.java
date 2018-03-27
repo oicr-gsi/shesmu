@@ -79,7 +79,7 @@ public final class HotloadingCompiler {
 	public Optional<ActionGenerator> compile(Path fileName) {
 		try {
 			errors.clear();
-			final Compiler compiler = new Compiler() {
+			final Compiler compiler = new Compiler(false) {
 				private final NameLoader<ActionDefinition> actionCache = new NameLoader<>(actions.get(),
 						ActionDefinition::name);
 				private final NameLoader<Lookup> lookupCache = new NameLoader<>(lookups.get(), Lookup::name);

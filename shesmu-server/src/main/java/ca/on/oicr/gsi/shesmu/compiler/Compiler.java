@@ -37,6 +37,13 @@ public abstract class Compiler {
 		}
 	}
 
+	private final boolean skipRender;
+
+	public Compiler(boolean skipRender) {
+		super();
+		this.skipRender = skipRender;
+	}
+
 	/**
 	 * Compile a program
 	 *
@@ -59,6 +66,9 @@ public abstract class Compiler {
 		}
 		if (parseOk
 				&& OliveNode.validate(program.get(), this::getLookup, this::getAction, this::errorHandler, constants)) {
+			if (skipRender) {
+				return true;
+			}
 			final RootBuilder builder = new RootBuilder(name, path, constants) {
 				@Override
 				protected ClassVisitor createClassVisitor() {
