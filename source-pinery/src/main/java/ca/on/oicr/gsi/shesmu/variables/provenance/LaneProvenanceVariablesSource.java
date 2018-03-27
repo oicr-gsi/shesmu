@@ -27,11 +27,13 @@ import io.prometheus.client.Gauge;
 
 @MetaInfServices(VariablesSource.class)
 public class LaneProvenanceVariablesSource implements VariablesSource {
+	private static final Gauge count = Gauge
+			.build("shesmu_lane_provenance_last_count", "The number of items from Provenance occured.").register();
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_lane_provenance_request_time",
 			"The time to fetch data from Provenance.");
+
 	private static final Gauge lastFetchTime = Gauge.build("shesmu_lane_provenance_last_fetch_time",
 			"The time, in seconds since the epoch, when the last fetch from Provenance occured.").register();
-
 	private static final Counter provenanceError = Counter
 			.build("shesmu_lane_provenance_error", "The number of times calling out to Provenance has failed.")
 			.register();
@@ -47,7 +49,7 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		Map<String, String> properties = new TreeMap<>();
+		final Map<String, String> properties = new TreeMap<>();
 		properties.put("lane provider", Integer.toString(provider.size()));
 		return Stream.of(new Pair<>("Lane Provenance Variable Source", properties));
 	}
@@ -98,6 +100,7 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 						})//
 						.filter(Objects::nonNull)//
 						.collect(Collectors.toList());
+				count.set(cache.size());
 				lastUpdated = Instant.now();
 				lastFetchTime.setToCurrentTime();
 			} catch (final Exception e) {

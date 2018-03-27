@@ -43,6 +43,8 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 					"The number of records with a bad workflow version (not x.y.z) was received from Provenance.")
 			.register();
 
+	private static final Gauge count = Gauge
+			.build("shesmu_file_provenance_last_count", "The number of items from Provenance occured.").register();
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_file_provenance_request_time",
 			"The time to fetch data from Provenance.");
 
@@ -154,6 +156,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 						})//
 						.filter(Objects::nonNull)//
 						.collect(Collectors.toList());
+				count.set(cache.size());
 				lastUpdated = Instant.now();
 				badSetError.set(badSets.get());
 				badWorkflowVersions.set(badVersions.get());

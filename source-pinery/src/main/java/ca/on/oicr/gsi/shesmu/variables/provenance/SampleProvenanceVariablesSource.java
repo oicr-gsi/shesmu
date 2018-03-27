@@ -29,6 +29,8 @@ import io.prometheus.client.Gauge;
 
 @MetaInfServices(VariablesSource.class)
 public class SampleProvenanceVariablesSource implements VariablesSource {
+	private static final Gauge count = Gauge
+			.build("shesmu_sample_provenance_last_count", "The number of items from Provenance occured.").register();
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_sample_provenance_request_time",
 			"The time to fetch data from Provenance.");
 	private static final Gauge lastFetchTime = Gauge.build("shesmu_sample_provenance_last_fetch_time",
@@ -54,7 +56,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		Map<String, String> properties = new TreeMap<>();
+		final Map<String, String> properties = new TreeMap<>();
 		properties.put("sample provider", Integer.toString(provider.size()));
 		return Stream.of(new Pair<>("Sample Provenance Variable Source", properties));
 	}
@@ -106,6 +108,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 						})//
 						.filter(Objects::nonNull)//
 						.collect(Collectors.toList());
+				count.set(cache.size());
 				lastUpdated = Instant.now();
 				lastFetchTime.setToCurrentTime();
 			} catch (final Exception e) {
