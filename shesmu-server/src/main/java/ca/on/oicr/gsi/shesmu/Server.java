@@ -151,6 +151,16 @@ public final class Server {
 			return array;
 		});
 
+		addJson("/constants", mapper -> {
+			final ArrayNode array = mapper.createArrayNode();
+			ConstantSource.all().forEach(actionDefinition -> {
+				final ObjectNode obj = array.addObject();
+				obj.put("name", actionDefinition.name());
+				obj.put("type", actionDefinition.type().signature());
+			});
+			return array;
+		});
+
 		addJson("/lookups", mapper -> {
 			final ArrayNode array = mapper.createArrayNode();
 			lookupRepository.stream().forEach(lookup -> {
@@ -243,6 +253,8 @@ public final class Server {
 		System.out.println("Finding lookups...");
 		final long lookupCount = lookupRepository.stream().count();
 		System.out.printf("Found %d lookups\n", lookupCount);
+		final long constantCount = ConstantSource.all().count();
+		System.out.printf("Found %d constants\n", constantCount);
 		System.out.println("Compiling script...");
 		compiler.start();
 		System.out.println("Starting action processor...");
