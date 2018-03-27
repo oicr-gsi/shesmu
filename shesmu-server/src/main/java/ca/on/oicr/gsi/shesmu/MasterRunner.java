@@ -43,13 +43,13 @@ public class MasterRunner {
 			try {
 				Thread.sleep(5 * 60_000);
 			} catch (final InterruptedException e) {
-
 			}
 		}
 
 	}
 
 	public void start() {
+		running = true;
 		thread.start();
 	}
 
