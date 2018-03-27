@@ -54,7 +54,7 @@ public class PrometheusThrottler implements Throttler {
 	public boolean isOverloaded(Set<String> services) {
 		return configuration.stream()//
 				.anyMatch(configuration -> {
-					if (Duration.between(lastUpdateTime, Instant.now()).get(ChronoUnit.MINUTES) > 5) {
+					if (Duration.between(lastUpdateTime, Instant.now()).get(ChronoUnit.SECONDS) > 300) {
 						try (CloseableHttpResponse response = HTTP_CLIENT.execute(
 								new HttpGet(String.format("%s/api/v1/alerts", configuration.getAlertmanager())))) {
 							final AlertResultDto result = RuntimeSupport.MAPPER

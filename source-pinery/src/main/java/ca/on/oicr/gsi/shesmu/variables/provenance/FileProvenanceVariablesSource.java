@@ -109,7 +109,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 
 	@Override
 	public Stream<Variables> stream() {
-		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.MINUTES) > 15) {
+		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
 				final AtomicInteger badVersions = new AtomicInteger();
