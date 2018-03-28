@@ -86,6 +86,14 @@
                   <shadedPattern>com.atlassian.javax.ws</shadedPattern>
                 </relocation>
               </relocations>
+                <filters>
+                    <filter>
+                        <artifact>*:*:*:*</artifact>
+                        <excludes>
+                            <exclude>log4j.properties</exclude>
+                        </excludes>
+                    </filter>
+                </filters>
             </configuration>
           </execution>
         </executions>
