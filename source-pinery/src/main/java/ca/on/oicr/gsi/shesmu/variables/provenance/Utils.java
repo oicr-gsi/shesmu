@@ -41,6 +41,10 @@ public final class Utils {
 	}
 
 	public static Optional<String> singleton(Collection<String> items, Runnable isBad) {
+		if (items == null) {
+			isBad.run();
+			return Optional.empty();
+		}
 		switch (items.size()) {
 		case 0:
 			isBad.run();
