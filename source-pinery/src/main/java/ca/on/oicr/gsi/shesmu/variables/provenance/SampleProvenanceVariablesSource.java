@@ -66,8 +66,8 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
-				cache = provider.stream().flatMap(provider -> provider.getSampleProvenance().stream())//
-						.filter(sp -> sp.getSkip() == null || sp.getSkip())//
+				cache = provider.stream()//
+						.flatMap(provider -> provider.getSampleProvenance().stream())//
 						.map(sp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);
@@ -98,7 +98,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 									limsAttr(sp, "geo_group_id_description", badAttr).orElse(""), //
 									limsAttr(sp, "geo_library_size_code", badAttr).map(Utils::parseLong).orElse(0L), //
 									limsAttr(sp, "geo_library_type", badAttr).orElse(""), //
-									sp.getCreatedDate().toInstant(), //
+									sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
 									"sample_provenance");
 
 							if (badSetInRecord.get()) {

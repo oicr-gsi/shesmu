@@ -59,7 +59,8 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
-				cache = provider.stream().flatMap(provider -> provider.getLaneProvenance().stream())//
+				cache = provider.stream()//
+						.flatMap(provider -> provider.getLaneProvenance().stream())//
 						.filter(lp -> lp.getSkip() == null || lp.getSkip())//
 						.map(lp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
@@ -90,7 +91,7 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 									"", //
 									0L, //
 									"", //
-									lp.getCreatedDate().toInstant(), //
+									lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(), //
 									"lane_provenance");
 
 							if (badSetInRecord.get()) {

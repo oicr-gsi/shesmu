@@ -5,11 +5,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,8 +24,8 @@ import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
+import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
-import ca.on.oicr.gsi.provenance.model.FileProvenance.Status;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
@@ -45,17 +47,27 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 
 	private static final Gauge count = Gauge
 			.build("shesmu_file_provenance_last_count", "The number of items from Provenance occured.").register();
+	
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_file_provenance_request_time",
 			"The time to fetch data from Provenance.");
 
 	private static final Gauge lastFetchTime = Gauge.build("shesmu_file_provenance_last_fetch_time",
 			"The time, in seconds since the epoch, when the last fetch from Provenance occured.").register();
 
+	private static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER = new EnumMap<>(
+			FileProvenanceFilter.class);
+
 	private static final Counter provenanceError = Counter
 			.build("shesmu_file_provenance_error", "The number of times calling out to Provenance has failed.")
 			.register();
 
 	private static final Pattern WORKFLOW_VERSION = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
+
+	static {
+		PROVENANCE_FILTER.put(FileProvenanceFilter.processing_status, Collections.singleton("success"));
+		PROVENANCE_FILTER.put(FileProvenanceFilter.workflow_run_status, Collections.singleton("completed"));
+		PROVENANCE_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("false"));
+	}
 
 	public static Optional<String> limsAttr(FileProvenance fp, String key, Runnable isBad) {
 		return Utils.singleton(fp.getSampleAttributes().get(key), isBad);
@@ -87,6 +99,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 	private List<Variables> cache = Collections.emptyList();
 
 	private final DefaultProvenanceClient client = new DefaultProvenanceClient();
+
 	private Instant lastUpdated = Instant.EPOCH;
 
 	private final Map<String, String> properties = new TreeMap<>();
@@ -113,8 +126,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
 				final AtomicInteger badVersions = new AtomicInteger();
-				cache = client.getFileProvenance().stream()//
-						.filter(fp -> fp.getStatus() == Status.OKAY && !fp.getSkip().equals("true"))//
+				cache = client.getFileProvenance(PROVENANCE_FILTER).stream()//
 						.map(fp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);
