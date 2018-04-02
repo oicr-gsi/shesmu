@@ -20,6 +20,7 @@ public class OliveClauseNodeSmash extends OliveClauseNodeBaseBy<SmashNode> {
 		final Set<String> freeVariables = new HashSet<>();
 		children().forEach(expression -> expression.collectFreeVariables(freeVariables));
 
+		oliveBuilder.line(line);
 		final RegroupVariablesBuilder smasher = oliveBuilder.smash(oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 

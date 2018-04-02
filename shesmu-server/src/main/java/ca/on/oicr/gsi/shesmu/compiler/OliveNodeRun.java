@@ -49,8 +49,10 @@ public final class OliveNodeRun extends OliveNode {
 	public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
 		final OliveBuilder oliveBuilder = builder.buildRunOlive();
 		clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
+		oliveBuilder.line(line);
 		final Renderer action = oliveBuilder.finish();
 		action.methodGen().visitCode();
+		action.methodGen().visitLineNumber(line, action.methodGen().mark());
 		definition.initialize(action.methodGen());
 		final int local = action.methodGen().newLocal(definition.type());
 		action.methodGen().storeLocal(local);
@@ -58,6 +60,7 @@ public final class OliveNodeRun extends OliveNode {
 		arguments.forEach(parameter -> {
 			parameter.render(action, local);
 		});
+		action.methodGen().visitLineNumber(line, action.methodGen().mark());
 		oliveBuilder.emitAction(action.methodGen(), local);
 		action.methodGen().visitInsn(Opcodes.RETURN);
 		action.methodGen().visitMaxs(0, 0);

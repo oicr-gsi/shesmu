@@ -63,6 +63,7 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 	@Override
 	public void render(Renderer renderer, int action) {
 		condition.render(renderer);
+		renderer.mark(line);
 		final Label end = renderer.methodGen().newLabel();
 		renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, end);
 		definition.store(renderer, action, expression::render);

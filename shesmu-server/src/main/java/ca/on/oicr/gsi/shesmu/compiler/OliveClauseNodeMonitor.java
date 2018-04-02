@@ -46,6 +46,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode {
 		final Set<String> freeVariables = new HashSet<>();
 		labels.forEach(arg -> arg.collectFreeVariables(freeVariables));
 
+		oliveBuilder.line(line);
 		final Renderer renderer = oliveBuilder.monitor(metricName, help,
 				labels.stream().map(MonitorArgumentNode::name).collect(Collectors.toList()),
 				oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))

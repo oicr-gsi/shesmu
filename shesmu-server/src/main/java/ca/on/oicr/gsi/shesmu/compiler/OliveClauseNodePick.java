@@ -46,6 +46,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
 		final Set<String> freeVariables = new HashSet<>();
 		extractor.collectFreeVariables(freeVariables);
 
+		oliveBuilder.line(line);
 		final Renderer extractorMethod = oliveBuilder.pick(extractor.type(), max, discriminatorVariables.stream(),
 				oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))
 						.toArray(LoadableValue[]::new));

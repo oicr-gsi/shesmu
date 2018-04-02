@@ -50,6 +50,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	@Override
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
+		oliveBuilder.line(line);
 		oliveBuilder.matches(definitions.get(name),
 				arguments.stream().map(argument -> renderer -> argument.render(renderer)));
 

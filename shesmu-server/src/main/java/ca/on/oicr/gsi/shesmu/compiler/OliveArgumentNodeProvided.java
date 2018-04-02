@@ -47,6 +47,7 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 	 */
 	@Override
 	public void render(Renderer renderer, int action) {
+		renderer.mark(line);
 		definition.store(renderer, action, expression::render);
 
 	}

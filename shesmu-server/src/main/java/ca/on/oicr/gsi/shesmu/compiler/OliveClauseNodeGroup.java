@@ -20,6 +20,7 @@ public class OliveClauseNodeGroup extends OliveClauseNodeBaseBy<GroupNode> {
 		final Set<String> freeVariables = new HashSet<>();
 		children().forEach(group -> group.collectFreeVariables(freeVariables));
 
+		oliveBuilder.line(line);
 		final RegroupVariablesBuilder regroup = oliveBuilder.group(oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 

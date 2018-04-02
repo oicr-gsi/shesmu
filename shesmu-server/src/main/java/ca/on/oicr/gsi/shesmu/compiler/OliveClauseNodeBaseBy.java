@@ -50,7 +50,7 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 	private final int column;
 	private final List<String> discriminators;
 	private List<Target> discriminatorVariables = Collections.emptyList();
-	private final int line;
+	protected final int line;
 
 	private final String syntax;
 

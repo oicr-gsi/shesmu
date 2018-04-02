@@ -136,6 +136,10 @@ public abstract class BaseOliveBuilder {
 		return regroup("Group", "group", false, capturedVariables);
 	}
 
+	public void line(int line) {
+		steps.add(renderer -> renderer.mark(line));
+	}
+
 	/**
 	 * Stream of all the parameters available for capture/use in the clauses.
 	 */
