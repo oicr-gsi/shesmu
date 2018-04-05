@@ -162,7 +162,7 @@ public class RunReport extends Action implements JsonParameterised {
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			观音RequestErrors.inc();
+			观音RequestErrors.labels(观音Url).inc();
 			return ActionState.FAILED;
 		}
 		final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", drmaaUrl));
@@ -189,7 +189,7 @@ public class RunReport extends Action implements JsonParameterised {
 			return state == null ? ActionState.UNKNOWN : state;
 		} catch (final Exception e) {
 			e.printStackTrace();
-			drmaaRequestErrors.inc();
+			drmaaRequestErrors.labels(drmaaUrl).inc();
 			return ActionState.FAILED;
 		}
 	}
