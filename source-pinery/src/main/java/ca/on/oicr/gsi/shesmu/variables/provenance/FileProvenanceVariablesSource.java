@@ -140,7 +140,9 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 									fp.getFileMetaType(), //
 									fp.getFileMd5sum(), //
 									Utils.parseLong(fp.getFileSize()), //
-									fp.getWorkflowName(), parseWorkflowVersion(fp.getWorkflowVersion(), () -> {
+									fp.getWorkflowName(), //
+									Optional.ofNullable(fp.getWorkflowRunSWID()).map(Object::toString).orElse(""), //
+									parseWorkflowVersion(fp.getWorkflowVersion(), () -> {
 										badVersions.incrementAndGet();
 										badRecord.set(true);
 									}), //

@@ -25,13 +25,14 @@ public final class Variables {
 	private final String tissue_region;
 	private final String tissue_type;
 	private final String workflow;
+	private final String workflow_accession;
 	private final Tuple workflow_version;
 
 	public Variables(String accession, String path, String metatype, String md5, long file_size, String workflow,
-			Tuple workflow_version, String project, String library_name, String donor, Tuple ius, String library_design,
-			String tissue_type, String tissue_origin, String tissue_prep, String targeted_resequencing,
-			String tissue_region, String group_id, String group_desc, long library_size, String library_type,
-			Instant timestamp, String source) {
+			String workflow_accession, Tuple workflow_version, String project, String library_name, String donor,
+			Tuple ius, String library_design, String tissue_type, String tissue_origin, String tissue_prep,
+			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
+			String library_type, Instant timestamp, String source) {
 		super();
 		this.accession = accession;
 		this.path = path;
@@ -39,6 +40,7 @@ public final class Variables {
 		this.md5 = md5;
 		this.file_size = file_size;
 		this.workflow = workflow;
+		this.workflow_accession = workflow_accession;
 		this.workflow_version = workflow_version;
 		this.project = project;
 		this.library_name = library_name;
@@ -166,6 +168,11 @@ public final class Variables {
 	@Export(type = "s")
 	public String workflow() {
 		return workflow;
+	}
+
+	@Export(type = "s")
+	public String workflow_accession() {
+		return workflow_accession;
 	}
 
 	@Export(type = "t3iii")

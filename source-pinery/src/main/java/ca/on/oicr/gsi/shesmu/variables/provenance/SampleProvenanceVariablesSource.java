@@ -82,6 +82,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 									"0000000000000000000000000000000", //
 									0, //
 									"Sequencer", //
+									sp.getSequencerRunName(), //
 									VERSION, //
 									sp.getStudyTitle(), //
 									sp.getSampleName(), //

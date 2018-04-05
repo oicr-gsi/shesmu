@@ -82,11 +82,11 @@ public class RunTest {
 	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("project_constant", "the_foo_study"));
 
 	private static Variables[] DATA = new Variables[] {
-			new Variables("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA",
+			new Variables("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA", "aaa1",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
 					new Tuple("RUN", 1L, "AACCGGTT"), "EX", "Fresh", "An", "Frozen", "", "Inside", "", "", 307L,
 					"pointy", Instant.EPOCH, "test"),
-			new Variables("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA",
+			new Variables("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA", "aaa2",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
 					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
 					"pointy", Instant.EPOCH, "test") };
