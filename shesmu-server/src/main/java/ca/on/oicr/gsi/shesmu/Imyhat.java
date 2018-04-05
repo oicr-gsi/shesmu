@@ -8,6 +8,7 @@ import java.lang.invoke.MethodType;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,13 +99,13 @@ public abstract class Imyhat {
 		@Override
 		protected void packJson(ArrayNode array, Object value) {
 			final ArrayNode listJson = array.addArray();
-			((List<?>) value).forEach(item -> inner.packJson(listJson, item));
+			((Collection<?>) value).forEach(item -> inner.packJson(listJson, item));
 		}
 
 		@Override
 		public void packJson(ObjectNode node, String key, Object value) {
 			final ArrayNode listJson = node.putArray(key);
-			((List<?>) value).forEach(item -> inner.packJson(listJson, item));
+			((Collection<?>) value).forEach(item -> inner.packJson(listJson, item));
 		}
 
 		@Override
