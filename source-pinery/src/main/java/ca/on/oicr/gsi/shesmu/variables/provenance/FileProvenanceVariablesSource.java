@@ -13,9 +13,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -40,6 +42,11 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 	private static final Gauge badSetError = Gauge.build("shesmu_file_provenance_bad_set_size",
 			"The number of records where a set contained not exactly one item.").register();
 
+	private static final Gauge badSetMap = Gauge
+			.build("shesmu_file_provenance_bad_set",
+					"The number of provenace records with sets not containing exactly one item.")
+			.labelNames("property", "reason").register();
+
 	private static final Gauge badWorkflowVersions = Gauge
 			.build("shesmu_file_provenance_bad_workflow",
 					"The number of records with a bad workflow version (not x.y.z) was received from Provenance.")
@@ -47,7 +54,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 
 	private static final Gauge count = Gauge
 			.build("shesmu_file_provenance_last_count", "The number of items from Provenance occured.").register();
-	
+
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_file_provenance_request_time",
 			"The time to fetch data from Provenance.");
 
@@ -70,8 +77,8 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 		PROVENANCE_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("false"));
 	}
 
-	public static Optional<String> limsAttr(FileProvenance fp, String key, Runnable isBad) {
-		return Utils.singleton(fp.getSampleAttributes().get(key), isBad);
+	public static Optional<String> limsAttr(FileProvenance fp, String key, Consumer<String> isBad, boolean required) {
+		return Utils.singleton(fp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
 	}
 
 	private static Tuple packIUS(FileProvenance fp) {
@@ -131,14 +138,11 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
 				final AtomicInteger badVersions = new AtomicInteger();
+				final Map<String, Integer> badSetCounts = new TreeMap<>();
 				cache = Utils.stream(client.getFileProvenance(PROVENANCE_FILTER))//
 						.map(fp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
-							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);
-							final Runnable badAttr = () -> {
-								badRecord.set(true);
-								badSetInRecord.set(true);
-							};
+							final Set<String> badSetInRecord = new TreeSet<>();
 							final Variables result = new Variables(//
 									fp.getFileSWID().toString(), //
 									fp.getFilePath(), //
@@ -151,25 +155,32 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 										badVersions.incrementAndGet();
 										badRecord.set(true);
 									}), //
-									Utils.singleton(fp.getStudyTitles(), badAttr).orElse(""), //
-									Utils.singleton(fp.getSampleNames(), badAttr).orElse(""), //
-									Utils.singleton(fp.getRootSampleNames(), badAttr).orElse(""), //
+									Utils.singleton(fp.getStudyTitles(),
+											reason -> badSetInRecord.add("study:" + reason), true).orElse(""), //
+									Utils.singleton(fp.getSampleNames(),
+											reason -> badSetInRecord.add("librarynames:" + reason), true).orElse(""), //
+									Utils.singleton(fp.getRootSampleNames(),
+											reason -> badSetInRecord.add("samplenames:" + reason), true).orElse(""), //
 									packIUS(fp), //
-									limsAttr(fp, "geo_library_source_template_type", badAttr).orElse(""), //
-									limsAttr(fp, "geo_tissue_type", badAttr).orElse(""), //
-									limsAttr(fp, "geo_tissue_origin", badAttr).orElse(""), //
-									limsAttr(fp, "geo_tissue_preparation", badAttr).orElse(""), //
-									limsAttr(fp, "geo_targeted_resequencing", badAttr).orElse(""), //
-									limsAttr(fp, "geo_tissue_region", badAttr).orElse(""), //
-									limsAttr(fp, "geo_group_id", badAttr).orElse(""), //
-									limsAttr(fp, "geo_group_id_description", badAttr).orElse(""), //
-									limsAttr(fp, "geo_library_size_code", badAttr).map(Utils::parseLong).orElse(0L), //
-									limsAttr(fp, "geo_library_type", badAttr).orElse(""), //
+									limsAttr(fp, "geo_library_source_template_type", badSetInRecord::add, true)
+											.orElse(""), //
+									limsAttr(fp, "geo_tissue_type", badSetInRecord::add, true).orElse(""), //
+									limsAttr(fp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""), //
+									limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add, false).orElse(""), //
+									limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add, false).orElse(""), //
+									limsAttr(fp, "geo_tissue_region", badSetInRecord::add, false).orElse(""), //
+									limsAttr(fp, "geo_group_id", badSetInRecord::add, false).orElse(""), //
+									limsAttr(fp, "geo_group_id_description", badSetInRecord::add, false).orElse(""), //
+									limsAttr(fp, "geo_library_size_code", badSetInRecord::add, false)
+											.map(Utils::parseLong).orElse(0L), //
+									limsAttr(fp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
 									fp.getLastModified().toInstant(), //
 									"file_provenance");
 
-							if (badSetInRecord.get()) {
+							if (!badSetInRecord.isEmpty()) {
 								badSets.incrementAndGet();
+								badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
+								return null;
 							}
 							return badRecord.get() ? null : result;
 						})//
@@ -180,6 +191,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 				badSetError.set(badSets.get());
 				badWorkflowVersions.set(badVersions.get());
 				lastFetchTime.setToCurrentTime();
+				badSetCounts.entrySet().forEach(e -> badSetMap.labels(e.getKey().split(":")).set(e.getValue()));
 			} catch (final Exception e) {
 				e.printStackTrace();
 				provenanceError.inc();

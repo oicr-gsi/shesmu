@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -41,19 +42,23 @@ public final class Utils {
 		}
 	}
 
-	public static Optional<String> singleton(Collection<String> items, Runnable isBad) {
+	public static Optional<String> singleton(Collection<String> items, Consumer<String> isBad, boolean required) {
 		if (items == null) {
-			isBad.run();
+			if (required) {
+				isBad.accept("null");
+			}
 			return Optional.empty();
 		}
 		switch (items.size()) {
 		case 0:
-			isBad.run();
+			if (required) {
+				isBad.accept("empty");
+			}
 			return Optional.empty();
 		case 1:
 			return Optional.of(items.iterator().next());
 		default:
-			isBad.run();
+			isBad.accept("multiple");
 			return Optional.of(items.iterator().next());
 		}
 	}

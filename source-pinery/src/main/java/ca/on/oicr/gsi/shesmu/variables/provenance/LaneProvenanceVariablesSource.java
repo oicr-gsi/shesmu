@@ -65,13 +65,12 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 						.map(lp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);
-							final Runnable badAttr = () -> {
-								badRecord.set(true);
-								badSetInRecord.set(true);
-							};
 							final Variables result = new Variables(//
 									lp.getLaneProvenanceId(), //
-									Utils.singleton(lp.getSequencerRunAttributes().get("run_dir"), badAttr).orElse(""), //
+									Utils.singleton(lp.getSequencerRunAttributes().get("run_dir"), s -> {
+										badRecord.set(true);
+										badSetInRecord.set(true);
+									}, true).orElse(""), //
 									"inode/directory", //
 									"0000000000000000000000000000000", //
 									0, //

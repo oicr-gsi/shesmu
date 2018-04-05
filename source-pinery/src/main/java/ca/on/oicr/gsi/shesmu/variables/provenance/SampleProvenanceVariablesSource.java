@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,10 +30,15 @@ import io.prometheus.client.Gauge;
 
 @MetaInfServices(VariablesSource.class)
 public class SampleProvenanceVariablesSource implements VariablesSource {
+	private static final Gauge badSetMap = Gauge
+			.build("shesmu_sample_provenance_bad_set",
+					"The number of provenace records with sets not containing exactly one item.")
+			.labelNames("property", "reason").register();
 	private static final Gauge count = Gauge
 			.build("shesmu_sample_provenance_last_count", "The number of items from Provenance occured.").register();
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_sample_provenance_request_time",
 			"The time to fetch data from Provenance.");
+
 	private static final Gauge lastFetchTime = Gauge.build("shesmu_sample_provenance_last_fetch_time",
 			"The time, in seconds since the epoch, when the last fetch from Provenance occured.").register();
 
@@ -42,8 +48,8 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 
 	private static final Tuple VERSION = new Tuple(0L, 0L, 0L);
 
-	public static Optional<String> limsAttr(SampleProvenance sp, String key, Runnable isBad) {
-		return Utils.singleton(sp.getSampleAttributes().get(key), isBad);
+	public static Optional<String> limsAttr(SampleProvenance sp, String key, Consumer<String> isBad, boolean required) {
+		return Utils.singleton(sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
 	}
 
 	private List<Variables> cache = Collections.emptyList();
@@ -65,19 +71,14 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 	public Stream<Variables> stream() {
 		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
 			try (AutoCloseable timer = fetchLatency.start()) {
-				final AtomicInteger badSets = new AtomicInteger();
+				final Map<String, Integer> badSetCounts = new TreeMap<>();
 				cache = provider.stream()//
 						.flatMap(provider -> Utils.stream(provider.getSampleProvenance()))//
 						.map(sp -> {
-							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
-							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);
-							final Runnable badAttr = () -> {
-								badRecord.set(true);
-								badSetInRecord.set(true);
-							};
+							final Set<String> badSetInRecord = new TreeSet<>();
 							final Variables result = new Variables(//
 									sp.getSampleProvenanceId(), //
-									Utils.singleton(sp.getSequencerRunAttributes().get("run_dir"), badAttr).orElse(""), //
+									"", //
 									"inode/directory", //
 									"0000000000000000000000000000000", //
 									0, //
@@ -89,29 +90,34 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 									sp.getRootSampleName(), //
 									new Tuple(sp.getSequencerRunName(), Utils.parseLaneNumber(sp.getLaneNumber()),
 											sp.getIusTag()), //
-									limsAttr(sp, "geo_library_source_template_type", badAttr).orElse(""), //
-									limsAttr(sp, "geo_tissue_type", badAttr).orElse(""), //
-									limsAttr(sp, "geo_tissue_origin", badAttr).orElse(""), //
-									limsAttr(sp, "geo_tissue_preparation", badAttr).orElse(""), //
-									limsAttr(sp, "geo_targeted_resequencing", badAttr).orElse(""), //
-									limsAttr(sp, "geo_tissue_region", badAttr).orElse(""), //
-									limsAttr(sp, "geo_group_id", badAttr).orElse(""), //
-									limsAttr(sp, "geo_group_id_description", badAttr).orElse(""), //
-									limsAttr(sp, "geo_library_size_code", badAttr).map(Utils::parseLong).orElse(0L), //
-									limsAttr(sp, "geo_library_type", badAttr).orElse(""), //
+									limsAttr(sp, "geo_library_source_template_type", badSetInRecord::add, true)
+											.orElse(""), //
+									limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""), //
+									limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""), //
+									limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false).orElse(""), //
+									limsAttr(sp, "geo_targeted_resequencing", badSetInRecord::add, false).orElse(""), //
+									limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false).orElse(""), //
+									limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""), //
+									limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false).orElse(""), //
+									limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false)
+											.map(Utils::parseLong).orElse(0L), //
+									limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
 									sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
 									"sample_provenance");
 
-							if (badSetInRecord.get()) {
-								badSets.incrementAndGet();
+							if (badSetInRecord.isEmpty()) {
+								return result;
+							} else {
+								badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
+								return null;
 							}
-							return badRecord.get() ? null : result;
 						})//
 						.filter(Objects::nonNull)//
 						.collect(Collectors.toList());
 				count.set(cache.size());
 				lastUpdated = Instant.now();
 				lastFetchTime.setToCurrentTime();
+				badSetCounts.entrySet().forEach(e -> badSetMap.labels(e.getKey().split(":")).set(e.getValue()));
 			} catch (final Exception e) {
 				e.printStackTrace();
 				provenanceError.inc();
