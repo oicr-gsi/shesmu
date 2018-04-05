@@ -126,7 +126,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
 				final AtomicInteger badVersions = new AtomicInteger();
-				cache = client.getFileProvenance(PROVENANCE_FILTER).stream()//
+				cache = Utils.stream(client.getFileProvenance(PROVENANCE_FILTER))//
 						.map(fp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);

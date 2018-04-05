@@ -67,7 +67,7 @@ public class SampleProvenanceVariablesSource implements VariablesSource {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
 				cache = provider.stream()//
-						.flatMap(provider -> provider.getSampleProvenance().stream())//
+						.flatMap(provider -> Utils.stream(provider.getSampleProvenance()))//
 						.map(sp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final AtomicReference<Boolean> badSetInRecord = new AtomicReference<>(false);

@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.provenance.ProviderLoader;
 
@@ -55,6 +56,10 @@ public final class Utils {
 			isBad.run();
 			return Optional.of(items.iterator().next());
 		}
+	}
+
+	public static <T> Stream<T> stream(Collection<T> collection) {
+		return collection == null ? Stream.empty() : collection.stream();
 	}
 
 	private Utils() {

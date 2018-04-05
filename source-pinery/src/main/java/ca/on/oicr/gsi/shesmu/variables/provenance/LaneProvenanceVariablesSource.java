@@ -60,7 +60,7 @@ public class LaneProvenanceVariablesSource implements VariablesSource {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
 				cache = provider.stream()//
-						.flatMap(provider -> provider.getLaneProvenance().stream())//
+						.flatMap(provider -> Utils.stream(provider.getLaneProvenance()))//
 						.filter(lp -> lp.getSkip() == null || lp.getSkip())//
 						.map(lp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
