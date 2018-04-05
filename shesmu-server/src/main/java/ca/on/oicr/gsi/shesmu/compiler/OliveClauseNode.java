@@ -101,7 +101,7 @@ public abstract class OliveClauseNode {
 					.regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")//
 					.whitespace()//
 					.symbol("{")//
-					.list(labels::set, MonitorArgumentNode::parse, ',')//
+					.listEmpty(labels::set, MonitorArgumentNode::parse, ',')//
 					.symbol("}")//
 					.whitespace();
 
