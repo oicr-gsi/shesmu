@@ -61,7 +61,8 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 			.build("shesmu_file_provenance_error", "The number of times calling out to Provenance has failed.")
 			.register();
 
-	private static final Pattern WORKFLOW_VERSION = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
+	private static final Pattern WORKFLOW_VERSION2 = Pattern.compile("^(\\d+)\\.(\\d+)$");
+	private static final Pattern WORKFLOW_VERSION3 = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
 
 	static {
 		PROVENANCE_FILTER.put(FileProvenanceFilter.processing_status, Collections.singleton("success"));
@@ -84,9 +85,13 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 	}
 
 	private static Tuple parseWorkflowVersion(String input, Runnable isBad) {
-		final Matcher m = WORKFLOW_VERSION.matcher(input);
-		if (m.matches()) {
-			return new Tuple(Long.parseLong(m.group(1)), Long.parseLong(m.group(2)), Long.parseLong(m.group(3)));
+		final Matcher m3 = WORKFLOW_VERSION3.matcher(input);
+		if (m3.matches()) {
+			return new Tuple(Long.parseLong(m3.group(1)), Long.parseLong(m3.group(2)), Long.parseLong(m3.group(3)));
+		}
+		final Matcher m2 = WORKFLOW_VERSION2.matcher(input);
+		if (m2.matches()) {
+			return new Tuple(Long.parseLong(m2.group(1)), Long.parseLong(m2.group(2)), 0L);
 		}
 		isBad.run();
 		return new Tuple(0L, 0L, 0L);
