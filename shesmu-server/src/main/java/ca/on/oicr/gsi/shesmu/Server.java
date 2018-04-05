@@ -198,6 +198,8 @@ public final class Server {
 		});
 
 		add("/main.css", "text/css");
+		add("/shesmu.svg", "image/svg+xml");
+		add("/favicon.png", "image/png");
 	}
 
 	private Stream<ActionDefinition> actionDefinitions() {
@@ -287,7 +289,7 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><title>Shesmu</title></head><body><nav><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
 	}
 
 	private void writeRow(PrintStream writer, String key, String value) {
