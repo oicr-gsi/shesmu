@@ -37,7 +37,8 @@ public class RunReport extends Action implements JsonParameterised {
 	private final String drmaaPsk;
 	private final String drmaaUrl;
 	private final String name;
-	private final ObjectNode parameters = RuntimeSupport.MAPPER.createObjectNode();
+	private final ObjectNode rootParameters = RuntimeSupport.MAPPER.createObjectNode();
+	private final ObjectNode parameters;
 	private OptionalLong reportRecordId = OptionalLong.empty();
 	private final String rootDirectory;
 	private final String version;
@@ -53,6 +54,7 @@ public class RunReport extends Action implements JsonParameterised {
 		this.category = category;
 		this.name = name;
 		this.version = version;
+		parameters = rootParameters.putObject("parameters");
 	}
 
 	@Override
@@ -145,8 +147,9 @@ public class RunReport extends Action implements JsonParameterised {
 		}
 		final HttpPost request = new HttpPost(
 				String.format("%s/reportdb/record_parameters?name=%s&version=%s", 观音Url, name, version));
+		request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
 		try {
-			request.setEntity(new StringEntity(RuntimeSupport.MAPPER.writeValueAsString(parameters),
+			request.setEntity(new StringEntity(RuntimeSupport.MAPPER.writeValueAsString(rootParameters),
 					ContentType.APPLICATION_JSON));
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -154,6 +157,10 @@ public class RunReport extends Action implements JsonParameterised {
 		}
 		try (CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(request);
 				AutoCloseable timer = 观音RequestTime.start(观音Url)) {
+			if (response.getStatusLine().getStatusCode() != 200) {
+				观音RequestErrors.labels(观音Url).inc();
+				return ActionState.FAILED;
+			}
 			final ReportDto[] results = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
 					ReportDto[].class);
 			if (results.length > 0) {
