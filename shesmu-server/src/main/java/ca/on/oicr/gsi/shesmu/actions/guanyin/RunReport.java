@@ -1,12 +1,15 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.OptionalLong;
+import java.util.Scanner;
 
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 
@@ -155,8 +158,8 @@ public class RunReport extends Action implements JsonParameterised {
 			e.printStackTrace();
 			return ActionState.FAILED;
 		}
-		try (CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(request);
-				AutoCloseable timer = 观音RequestTime.start(观音Url)) {
+		try (AutoCloseable timer = 观音RequestTime.start(观音Url);
+				CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(request)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
 				观音RequestErrors.labels(观音Url).inc();
 				return ActionState.FAILED;
@@ -179,18 +182,30 @@ public class RunReport extends Action implements JsonParameterised {
 					String.format("%s/reports/%s/%s-%s", rootDirectory, category, name, version));
 			drmaaParameters.putArray("drmaa_v_argv").add(RuntimeSupport.MAPPER.writeValueAsString(parameters));
 			drmaaParameters.putArray("drmaa_v_env").add("GUANYIN=" + 观音Url);
-			final String body = RuntimeSupport.MAPPER.writeValueAsString(drmaaParameters);
+			final byte[] body = RuntimeSupport.MAPPER.writeValueAsBytes(drmaaParameters);
 			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
-			digest.digest(drmaaPsk.getBytes());
-			digest.digest(body.getBytes());
+			digest.update(drmaaPsk.getBytes(StandardCharsets.UTF_8));
+			digest.update(body);
+			drmaaRequest.setHeader("Accept", "application/json");
 			drmaaRequest.addHeader("Authorization", "signed " + DatatypeConverter.printHexBinary(digest.digest()));
-			drmaaRequest.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+			drmaaRequest.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return ActionState.FAILED;
 		}
-		try (CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(drmaaRequest);
-				AutoCloseable timer = drmaaRequestTime.start(drmaaUrl)) {
+		try (AutoCloseable timer = drmaaRequestTime.start(drmaaUrl);
+				CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(drmaaRequest)) {
+			if (response.getStatusLine().getStatusCode() != 200) {
+				try (Scanner s = new Scanner(response.getEntity().getContent())) {
+					s.useDelimiter("\\A");
+					if (s.hasNext()) {
+						System.err.print("Error from DRMAA: ");
+						System.err.println(s.next());
+					}
+					drmaaRequestErrors.labels(drmaaUrl).inc();
+					return ActionState.FAILED;
+				}
+			}
 			final String result = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), String.class);
 			final ActionState state = ActionState.valueOf(result);
 			return state == null ? ActionState.UNKNOWN : state;
