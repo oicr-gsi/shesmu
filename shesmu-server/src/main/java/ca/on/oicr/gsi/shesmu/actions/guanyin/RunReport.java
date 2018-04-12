@@ -2,8 +2,10 @@ package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Comparator;
 import java.util.OptionalLong;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -164,10 +166,11 @@ public class RunReport extends Action implements JsonParameterised {
 				观音RequestErrors.labels(观音Url).inc();
 				return ActionState.FAILED;
 			}
-			final ReportDto[] results = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
-					ReportDto[].class);
+			final RecordDto[] results = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
+					RecordDto[].class);
 			if (results.length > 0) {
-				reportRecordId = OptionalLong.of(results[0].getId());
+				reportRecordId = Stream.of(results).sorted(Comparator.comparing(RecordDto::getGenerated).reversed())
+						.mapToLong(RecordDto::getId).findFirst();
 				return ActionState.SUCCEEDED;
 			}
 		} catch (final Exception e) {

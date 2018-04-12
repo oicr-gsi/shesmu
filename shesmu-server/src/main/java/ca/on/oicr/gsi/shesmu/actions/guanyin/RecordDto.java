@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ResultDto {
+public class RecordDto {
 	private long id;
 	private long report;
+	private String generated;
 
 	@JsonProperty("report_record_id")
 	public long getId() {
@@ -24,6 +25,15 @@ public class ResultDto {
 
 	public void setReport(long report) {
 		this.report = report;
+	}
+
+	@JsonProperty("date_generated")
+	public String getGenerated() {
+		return generated;
+	}
+
+	public void setGenerated(String generated) {
+		this.generated = generated;
 	}
 
 }
