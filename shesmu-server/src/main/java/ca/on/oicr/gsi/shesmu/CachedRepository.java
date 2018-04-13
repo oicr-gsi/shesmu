@@ -16,8 +16,6 @@ import io.prometheus.client.Gauge;
 /**
  * Caches the results of a streaming process and updates it periodically
  *
- * @author amasella
- *
  * @param <I>
  *            The interface to access using a {@link ServiceLoader}
  * @param <T>
@@ -46,9 +44,22 @@ public final class CachedRepository<I, T> {
 	private final Class<I> serviceClass;
 
 	private final ServiceLoader<I> serviceLoader;
+	private final int updateInterval;
 
-	public CachedRepository(Class<I> serviceClass, Function<I, Stream<T>> flatMapper) {
+	/**
+	 * Create a self-updating cache backed by {@link ServiceLoader}.
+	 *
+	 * @param serviceClass
+	 *            the class/interface to request from the
+	 *            {@link ServiceLoader#load(Class)
+	 * @param updateInterval
+	 *            how frequently, in minutes, to refresh the cache
+	 * @param flatMapper
+	 *            the way to extract cachable objects from the services
+	 */
+	public CachedRepository(Class<I> serviceClass, int updateInterval, Function<I, Stream<T>> flatMapper) {
 		this.serviceClass = serviceClass;
+		this.updateInterval = updateInterval;
 		this.flatMapper = flatMapper;
 		serviceLoader = ServiceLoader.load(serviceClass);
 		implementationCount.labels(serviceClass.getCanonicalName()).set(implementations().count());
@@ -71,7 +82,7 @@ public final class CachedRepository<I, T> {
 		List<T> current;
 		try (AutoCloseable timer = lockedTime.start(serviceClass.getCanonicalName())) {
 			semaphore.acquireUninterruptibly();
-			if (Duration.between(lastUpdated, Instant.now()).toMinutes() > 15) {
+			if (Duration.between(lastUpdated, Instant.now()).toMinutes() > updateInterval) {
 				try (AutoCloseable populationTimer = populationTime.start(serviceClass.getCanonicalName())) {
 					items = implementations().flatMap(flatMapper).collect(Collectors.toList());
 				}

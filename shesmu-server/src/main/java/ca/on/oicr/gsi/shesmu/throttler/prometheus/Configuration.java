@@ -1,5 +1,8 @@
 package ca.on.oicr.gsi.shesmu.throttler.prometheus;
 
+/**
+ * Bean of the on-disk configuration for a {@link PrometheusThrottler}.
+ */
 public class Configuration {
 	private String alertmanager;
 	private String environment;

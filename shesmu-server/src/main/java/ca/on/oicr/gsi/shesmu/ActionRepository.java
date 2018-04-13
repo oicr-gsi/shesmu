@@ -12,9 +12,7 @@ public interface ActionRepository extends LoadedConfiguration {
 	 *
 	 * This can be updated over time.
 	 *
-	 * @return a pair containing the name of the action and a callback to generate a
-	 *         matching action builder. The callback may be invoked multiple times
-	 *         and should return a fresh instance every time.
+	 * @return a stream of definitions for actions the compiler can use
 	 */
 	Stream<ActionDefinition> query();
 

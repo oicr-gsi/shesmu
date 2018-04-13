@@ -11,13 +11,22 @@ import java.util.stream.StreamSupport;
 public interface ConstantSource extends LoadedConfiguration {
 	final static ServiceLoader<ConstantSource> LOADER = ServiceLoader.load(ConstantSource.class);
 
+	/**
+	 * Get all the constants available
+	 */
 	public static Stream<Constant> all() {
 		return sources().flatMap(ConstantSource::stream);
 	}
 
+	/**
+	 * Get all the services that can provide constants
+	 */
 	public static Stream<ConstantSource> sources() {
 		return StreamSupport.stream(LOADER.spliterator(), false);
 	}
 
+	/**
+	 * Provide all constants know by this service
+	 */
 	Stream<Constant> stream();
 }

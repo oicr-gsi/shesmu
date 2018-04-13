@@ -8,6 +8,9 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+/**
+ * Default constants provided to Shesmu scripts
+ */
 @MetaInfServices(ConstantSource.class)
 public class StandardConstants implements ConstantSource {
 	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("epoch", Instant.EPOCH));

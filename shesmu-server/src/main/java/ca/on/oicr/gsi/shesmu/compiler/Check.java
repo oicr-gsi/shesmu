@@ -34,7 +34,11 @@ import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 /**
- * The command-line compiler for Shesmu scripts
+ * The command-line checker for Shesmu scripts
+ * 
+ * This talks to a running Shesmu server and uses the actions, lookups, and
+ * constants it knows to validate a script. This cannot compile the script, so
+ * no bytecode generation is attempted.
  */
 public final class Check extends Compiler {
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();

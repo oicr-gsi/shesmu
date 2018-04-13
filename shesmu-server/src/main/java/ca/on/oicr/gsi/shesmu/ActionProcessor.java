@@ -18,6 +18,9 @@ import io.prometheus.client.Gauge;
 
 /**
  * Background process for launching actions and reporting the results
+ *
+ * This class collects actions and tries to {@link Action#perform()} until
+ * successful.
  */
 public final class ActionProcessor implements Consumer<Action> {
 	/**
@@ -128,6 +131,11 @@ public final class ActionProcessor implements Consumer<Action> {
 		processing.start();
 	}
 
+	private Stream<Entry<Action, Information>> startStream(Filter... filters) {
+		return actions.entrySet().stream()
+				.filter(entry -> Arrays.stream(filters).allMatch(filter -> filter.check(entry.getValue())));
+	}
+
 	/**
 	 * Stop the action processors thread
 	 *
@@ -145,9 +153,7 @@ public final class ActionProcessor implements Consumer<Action> {
 	 *            the filters to match
 	 */
 	public Stream<Action> stream(Filter... filters) {
-		return actions.entrySet().stream()
-				.filter(entry -> Arrays.stream(filters).allMatch(filter -> filter.check(entry.getValue())))
-				.map(Entry::getKey);
+		return startStream(filters).map(Entry::getKey);
 	}
 
 	/**
@@ -158,14 +164,12 @@ public final class ActionProcessor implements Consumer<Action> {
 	 *            the filters to match
 	 */
 	public Stream<ObjectNode> stream(ObjectMapper mapper, Filter... filters) {
-		return actions.entrySet().stream()
-				.filter(entry -> Arrays.stream(filters).allMatch(filter -> filter.check(entry.getValue())))
-				.map(entry -> {
-					final ObjectNode node = entry.getKey().toJson(mapper);
-					node.put("state", entry.getValue().lastState.name());
-					node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
-					return node;
-				});
+		return startStream(filters).map(entry -> {
+			final ObjectNode node = entry.getKey().toJson(mapper);
+			node.put("state", entry.getValue().lastState.name());
+			node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
+			return node;
+		});
 	}
 
 	private void update() {

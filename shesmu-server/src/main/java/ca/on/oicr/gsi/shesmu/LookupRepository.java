@@ -4,7 +4,6 @@ import java.util.stream.Stream;
 
 /**
  * A source for lookups
- *
  */
 public interface LookupRepository extends LoadedConfiguration {
 

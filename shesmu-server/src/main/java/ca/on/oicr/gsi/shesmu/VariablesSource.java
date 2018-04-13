@@ -12,13 +12,27 @@ import java.util.stream.StreamSupport;
 public interface VariablesSource extends LoadedConfiguration {
 	final static ServiceLoader<VariablesSource> LOADER = ServiceLoader.load(VariablesSource.class);
 
+	/**
+	 * Get all information currently available
+	 */
 	public static Stream<Variables> all() {
 		return sources().flatMap(VariablesSource::stream);
 	}
 
+	/**
+	 * Get all the providers of variables
+	 *
+	 * @return
+	 */
 	public static Stream<VariablesSource> sources() {
 		return StreamSupport.stream(LOADER.spliterator(), false);
 	}
 
+	/**
+	 * Get all the variables that this instance knows about.
+	 *
+	 * Duplicates are permitted, but this may be a problem for the receiving Shesmu
+	 * script.
+	 */
 	public Stream<Variables> stream();
 }

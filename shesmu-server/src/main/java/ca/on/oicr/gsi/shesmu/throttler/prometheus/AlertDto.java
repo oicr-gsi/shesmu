@@ -6,6 +6,9 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+/**
+ * Bean of the Alert Manager alert JSON object
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AlertDto {
 	private ObjectNode annotations;

@@ -15,7 +15,13 @@ public abstract class Target {
 	 */
 	public abstract Flavour flavour();
 
+	/**
+	 * The Shemsu name for this variable
+	 */
 	public abstract String name();
 
+	/**
+	 * The Shesmu type for this variable
+	 */
 	public abstract Imyhat type();
 }

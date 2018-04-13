@@ -6,10 +6,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * An action that can be performed as a result of the decision-making process
  *
- * This is the information needed to perform an action. Creating this action
- * should not perform it until {{@link #perform()} is called. The action should
- * be connected to some kind of stateful remote system to check if the action
- * has been performed and track its status.
+ * This is the information needed to perform an action. As a Shesmu program
+ * operates, it will instantiate new actions using
+ * {@link ActionDefinition#initialize(org.objectweb.asm.commons.GeneratorAdapter)}
+ * and then put them in a set. If the same action is create multiple times, it
+ * should be de-duplicated using {@link #equals(Object)} by the set.
+ * {@link ActionProcessor} will then attempt to complete each action and track
+ * the success of performing an action.
+ *
+ * Creating this action should not perform it until {{@link #perform()} is
+ * called. If the action is needs to be in contact with a remote system, that
+ * information must be baked into its constructor.
  */
 public abstract class Action {
 	@Override
@@ -19,26 +26,31 @@ public abstract class Action {
 	public abstract int hashCode();
 
 	/**
-	 * Perform this action.
+	 * Attempt to complete this action.
 	 *
-	 * This will be called multiple times, so if the action needs to be performed,
-	 * it should be launched. The status of previously launched copies should be
-	 * reported. This object may be recreated since the launch, so the action cannot
-	 * expect to hold permanent state (e.g., job id) as a field.
+	 * This will be called multiple times until an action returns
+	 * {@link ActionState#SUCCEEDED}. Because Shesmu is stateless, the action must
+	 * determine if an equivalent action has already been performed. This object may
+	 * be recreated since the launch, so the action cannot expect to hold permanent
+	 * state (e.g., job id) as a field.
 	 */
 	public abstract ActionState perform();
 
 	/**
 	 * A priority for determine which actions should get processed first.
 	 *
-	 * This method should be O(1).
+	 * The {@link ActionProcessor} will sort actions by priority and work in order.
+	 * Smaller numbers have higher priority. This method should return a constant.
 	 */
 	public abstract int priority();
 
 	/**
 	 * The number of minutes to wait before attempting to retry this action.
 	 *
-	 * This method should be O(1).
+	 * If an action has to be re-attempted, the action processor can wait until a
+	 * certain window expires before it will call {@link #perform()} again. This
+	 * only sets a lower limit on how frequently an action can be retried; there is
+	 * no upper limit. This method should return a constant.
 	 */
 	public abstract long retryMinutes();
 

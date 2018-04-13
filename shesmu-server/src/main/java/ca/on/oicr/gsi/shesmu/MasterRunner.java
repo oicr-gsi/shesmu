@@ -7,6 +7,10 @@ import java.util.stream.Stream;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
+/**
+ * Periodically run an {@link ActionGenerator} on all available variables from
+ * {@link VariablesSource}
+ */
 public class MasterRunner {
 	private static final Counter errors = Counter
 			.build("shesmu_run_errors", "The number of times processing the input has thrown.").register();

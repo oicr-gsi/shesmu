@@ -7,6 +7,9 @@ import java.util.stream.Stream;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
+/**
+ * Load variables incrementally from a remote source
+ */
 public abstract class CachedVariablesSource implements VariablesSource {
 
 	private static final Counter errors = Counter
@@ -24,21 +27,46 @@ public abstract class CachedVariablesSource implements VariablesSource {
 	private final Set<Variables> cache = new HashSet<>();
 
 	private final String name;
+	private final int refreshInterval;
 	private volatile boolean running = true;
 	private final Thread updateThread = new Thread(this::update, "variable-source");
 
-	public CachedVariablesSource(String name) {
+	/**
+	 * Create a new remote variable cache
+	 *
+	 * @param name
+	 *            the name of this source, for monitoring purposes
+	 * @param refreshInterval
+	 *            the number of minutes to wait before refreshing
+	 */
+	public CachedVariablesSource(String name, int refreshInterval) {
 		super();
 		this.name = name;
+		this.refreshInterval = refreshInterval;
 		Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 	}
 
+	/**
+	 * Load any new data from the remote source.
+	 *
+	 * Duplicate items may be returned (and will be de-duplicated). This method will
+	 * be called at the requested interval. The interval is the time since the last
+	 * call, so if the transfer time is more than the interval, this method will not
+	 * be called continuously. If no new data is available, it should return an
+	 * empty stream.
+	 */
 	protected abstract Stream<Variables> more() throws Exception;
 
+	/**
+	 * Start the thread to pull from the remote source
+	 */
 	public final void start() {
 		updateThread.start();
 	}
 
+	/**
+	 * Stop the thread, interrupting any current transfer
+	 */
 	public final void stop() {
 		running = false;
 		updateThread.interrupt();
@@ -60,10 +88,9 @@ public abstract class CachedVariablesSource implements VariablesSource {
 				errors.labels(name).inc();
 			}
 			try {
-				Thread.sleep(5 * 60_000);
+				Thread.sleep(refreshInterval * 60_000);
 			} catch (final InterruptedException e) {
 			}
 		}
 	}
-
 }

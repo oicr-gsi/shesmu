@@ -46,11 +46,11 @@ public final class Server {
 	}
 
 	private final CachedRepository<ActionRepository, ActionDefinition> actionRepository = new CachedRepository<>(
-			ActionRepository.class, ActionRepository::query);
+			ActionRepository.class, 15, ActionRepository::query);
 	private final CompiledGenerator compiler = new CompiledGenerator(Paths.get(System.getenv("SHESMU_SCRIPT")),
 			this::lookups, this::actionDefinitions, ConstantSource::all);
 	private final CachedRepository<LookupRepository, Lookup> lookupRepository = new CachedRepository<>(
-			LookupRepository.class, LookupRepository::query);
+			LookupRepository.class, 15, LookupRepository::query);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
 
@@ -206,6 +206,9 @@ public final class Server {
 		return actionRepository.stream();
 	}
 
+	/**
+	 * Add a new service endpoint with Prometheus monitoring
+	 */
 	private void add(String url, HttpHandler handler) {
 		server.createContext(url, t -> {
 			try (AutoCloseable timer = responseTime.start(url)) {
@@ -216,6 +219,9 @@ public final class Server {
 		});
 	}
 
+	/**
+	 * Add a file backed by a class resource
+	 */
 	private void add(String url, String type) {
 		server.createContext(url, t -> {
 			t.getResponseHeaders().set("Content-type", type);
@@ -232,6 +238,9 @@ public final class Server {
 		});
 	}
 
+	/**
+	 * Add a new service endpoint with Prometheus monitoring that handles JSON
+	 */
 	private void addJson(String url, Function<ObjectMapper, JsonNode> fetcher) {
 		add(url, t -> {
 			final JsonNode node = fetcher.apply(RuntimeSupport.MAPPER);

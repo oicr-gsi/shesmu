@@ -9,7 +9,13 @@ import org.objectweb.asm.Type;
  *
  */
 public abstract class LoadableValue implements Consumer<Renderer> {
+	/**
+	 * The variable name of this value
+	 */
 	public abstract String name();
 
+	/**
+	 * The Java/ASM type for this value
+	 */
 	public abstract Type type();
 }

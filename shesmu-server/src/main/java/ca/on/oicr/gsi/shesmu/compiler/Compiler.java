@@ -14,7 +14,7 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
 /**
- * A shell of building a compiler that can output bytecode
+ * A shell of a compiler that can output bytecode
  */
 public abstract class Compiler {
 
@@ -39,6 +39,13 @@ public abstract class Compiler {
 
 	private final boolean skipRender;
 
+	/**
+	 * Create a new instance of this compiler
+	 * 
+	 * @param skipRender
+	 *            if true, no bytecode will be generated when compiler is called;
+	 *            only parsing and checking
+	 */
 	public Compiler(boolean skipRender) {
 		super();
 		this.skipRender = skipRender;

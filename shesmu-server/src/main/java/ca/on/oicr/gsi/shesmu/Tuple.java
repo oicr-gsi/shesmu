@@ -62,6 +62,9 @@ public final class Tuple {
 		return result;
 	}
 
+	/**
+	 * Get all the elements in the tuple
+	 */
 	public Stream<Object> stream() {
 		return Arrays.stream(elements);
 	}

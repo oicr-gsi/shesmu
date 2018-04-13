@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 import io.prometheus.client.Gauge;
 
 /**
- * Compiles a user-specified file into a useable program and updates it as
+ * Compiles a user-specified file into a usable program and updates it as
  * necessary
  */
 public class CompiledGenerator extends AutoUpdatingFile {

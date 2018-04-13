@@ -11,6 +11,12 @@ import ca.on.oicr.gsi.shesmu.Lookup;
 import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
 
+/**
+ * Load any {@link Lookup} objects available by {@link ServiceLoader}
+ * 
+ * Some lookups are simple functions that can be coded directly in Java (rather
+ * than parsed from files). This interface loads them.
+ */
 @MetaInfServices
 public class PredefinedLookupSource implements LookupRepository {
 

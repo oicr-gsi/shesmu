@@ -9,6 +9,9 @@ import org.kohsuke.MetaInfServices;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Lookup;
 
+/**
+ * Get filename of a path
+ */
 @MetaInfServices
 public class FileName implements Lookup {
 

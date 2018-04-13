@@ -28,7 +28,8 @@ public abstract class ActionDefinition {
 	 * Write the bytecode to create a new instance of the action.
 	 *
 	 * This method should create an new instance of the action and leave it on the
-	 * stack.
+	 * stack. If there is any hidden state (remote server addresses, workflow
+	 * identifier), they must be handled at this stage.
 	 *
 	 * @param methodGen
 	 *            the method to generate the bytecode in
@@ -51,6 +52,14 @@ public abstract class ActionDefinition {
 		return parameters.stream();
 	}
 
+	/**
+	 * The Java type for the action.
+	 *
+	 * The action maybe put in local variables or function parameters as part of
+	 * handling, so it must know the type of the action. This type must be a
+	 * subclass of {@link Action}, but this is not checked (it will just explode
+	 * spectacularly at runtime).
+	 */
 	public final Type type() {
 		return type;
 	}

@@ -17,7 +17,7 @@ import org.objectweb.asm.Opcodes;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 
 /**
- * Compiles a user-specified file into a useable program and updates it as
+ * Compiles a user-specified file into a usable program and updates it as
  * necessary
  */
 public final class HotloadingCompiler {

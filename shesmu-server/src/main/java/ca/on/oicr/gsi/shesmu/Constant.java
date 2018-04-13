@@ -108,12 +108,23 @@ public abstract class Constant extends Target {
 
 	private final Imyhat type;
 
+	/**
+	 * Create a new constant
+	 *
+	 * @param name
+	 *            the name of the constant, which must be valid Shesmu identifier
+	 * @param type
+	 *            the Shemsu type of the constant
+	 */
 	public Constant(String name, Imyhat type) {
 		super();
 		this.name = name;
 		this.type = type;
 	}
 
+	/**
+	 * Convert the constant into a form that can be used during bytecode generation
+	 */
 	public final LoadableValue asLoadable() {
 		return loadable;
 	}

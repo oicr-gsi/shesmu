@@ -9,6 +9,9 @@ import ca.on.oicr.gsi.shesmu.actions.rest.ParameterInfo;
 import ca.on.oicr.gsi.shesmu.actions.util.JsonParameter;
 import ca.on.oicr.gsi.shesmu.compiler.Parser;
 
+/**
+ * Bean of Report responses from Guanyin
+ */
 public class ReportDto {
 	private String category;
 	private long id;

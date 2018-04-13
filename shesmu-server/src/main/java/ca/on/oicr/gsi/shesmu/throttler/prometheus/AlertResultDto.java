@@ -2,6 +2,9 @@ package ca.on.oicr.gsi.shesmu.throttler.prometheus;
 
 import java.util.List;
 
+/**
+ * Bean containing list of alerting results JSON from Alert Manager
+ */
 public class AlertResultDto {
 	private List<AlertDto> data;
 	private String status;

@@ -18,6 +18,10 @@ public interface ParameterDefinition {
 	 *            The type of the action object
 	 * @param fieldName
 	 *            the name of the field
+	 * @param fieldType
+	 *            type of the field
+	 * @param required
+	 *            whether this field must be set in the script
 	 */
 	public static ParameterDefinition forField(Type owner, String fieldName, BaseImyhat fieldType, boolean required) {
 		return new ParameterDefinition() {
@@ -54,6 +58,8 @@ public interface ParameterDefinition {
 
 	/**
 	 * Whether this parameter is required or not.
+	 *
+	 * If not required, the user may omit setting the value.s
 	 */
 	boolean required();
 

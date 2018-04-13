@@ -11,6 +11,15 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 
+/**
+ * A parameter definition for a parameter in a JSON object
+ * 
+ * This assumes that the {@link Action} implements {@link JsonParameterised} and
+ * will set a property in that JSON object.
+ * 
+ * @author amasella
+ *
+ */
 public final class JsonParameter implements ParameterDefinition {
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_JSON_PARAMETERISED_TYPE = Type.getType(JsonParameterised.class);
@@ -27,6 +36,13 @@ public final class JsonParameter implements ParameterDefinition {
 	private final boolean required;
 	private final Imyhat type;
 
+	/**
+	 * The name of the JSON field
+	 * 
+	 * @param name the JSON property name
+	 * @param type the type to use
+	 * @param required whether this parameter is required
+	 */
 	public JsonParameter(String name, Imyhat type, boolean required) {
 		this.name = name;
 		this.type = type;

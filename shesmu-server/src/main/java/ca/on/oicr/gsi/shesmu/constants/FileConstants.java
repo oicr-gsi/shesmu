@@ -20,6 +20,10 @@ import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
+/**
+ * Read constants from JSON files (and automatically reparse those files if they
+ * change)
+ */
 @MetaInfServices(ConstantSource.class)
 public class FileConstants implements ConstantSource {
 

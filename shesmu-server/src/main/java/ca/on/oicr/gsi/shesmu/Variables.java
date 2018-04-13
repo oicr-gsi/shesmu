@@ -2,6 +2,12 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.time.Instant;
 
+/**
+ * The information available to Shesmu scripts for processing
+ *
+ * This is one “row” in the information being fed into Shesmu
+ *
+ */
 public final class Variables {
 	private final String accession;
 	private final String donor;
@@ -70,6 +76,181 @@ public final class Variables {
 		return donor;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final Variables other = (Variables) obj;
+		if (accession == null) {
+			if (other.accession != null) {
+				return false;
+			}
+		} else if (!accession.equals(other.accession)) {
+			return false;
+		}
+		if (donor == null) {
+			if (other.donor != null) {
+				return false;
+			}
+		} else if (!donor.equals(other.donor)) {
+			return false;
+		}
+		if (file_size != other.file_size) {
+			return false;
+		}
+		if (group_desc == null) {
+			if (other.group_desc != null) {
+				return false;
+			}
+		} else if (!group_desc.equals(other.group_desc)) {
+			return false;
+		}
+		if (group_id == null) {
+			if (other.group_id != null) {
+				return false;
+			}
+		} else if (!group_id.equals(other.group_id)) {
+			return false;
+		}
+		if (ius == null) {
+			if (other.ius != null) {
+				return false;
+			}
+		} else if (!ius.equals(other.ius)) {
+			return false;
+		}
+		if (library_design == null) {
+			if (other.library_design != null) {
+				return false;
+			}
+		} else if (!library_design.equals(other.library_design)) {
+			return false;
+		}
+		if (library_name == null) {
+			if (other.library_name != null) {
+				return false;
+			}
+		} else if (!library_name.equals(other.library_name)) {
+			return false;
+		}
+		if (library_size != other.library_size) {
+			return false;
+		}
+		if (library_type == null) {
+			if (other.library_type != null) {
+				return false;
+			}
+		} else if (!library_type.equals(other.library_type)) {
+			return false;
+		}
+		if (md5 == null) {
+			if (other.md5 != null) {
+				return false;
+			}
+		} else if (!md5.equals(other.md5)) {
+			return false;
+		}
+		if (metatype == null) {
+			if (other.metatype != null) {
+				return false;
+			}
+		} else if (!metatype.equals(other.metatype)) {
+			return false;
+		}
+		if (path == null) {
+			if (other.path != null) {
+				return false;
+			}
+		} else if (!path.equals(other.path)) {
+			return false;
+		}
+		if (project == null) {
+			if (other.project != null) {
+				return false;
+			}
+		} else if (!project.equals(other.project)) {
+			return false;
+		}
+		if (source == null) {
+			if (other.source != null) {
+				return false;
+			}
+		} else if (!source.equals(other.source)) {
+			return false;
+		}
+		if (targeted_resequencing == null) {
+			if (other.targeted_resequencing != null) {
+				return false;
+			}
+		} else if (!targeted_resequencing.equals(other.targeted_resequencing)) {
+			return false;
+		}
+		if (timestamp == null) {
+			if (other.timestamp != null) {
+				return false;
+			}
+		} else if (!timestamp.equals(other.timestamp)) {
+			return false;
+		}
+		if (tissue_origin == null) {
+			if (other.tissue_origin != null) {
+				return false;
+			}
+		} else if (!tissue_origin.equals(other.tissue_origin)) {
+			return false;
+		}
+		if (tissue_prep == null) {
+			if (other.tissue_prep != null) {
+				return false;
+			}
+		} else if (!tissue_prep.equals(other.tissue_prep)) {
+			return false;
+		}
+		if (tissue_region == null) {
+			if (other.tissue_region != null) {
+				return false;
+			}
+		} else if (!tissue_region.equals(other.tissue_region)) {
+			return false;
+		}
+		if (tissue_type == null) {
+			if (other.tissue_type != null) {
+				return false;
+			}
+		} else if (!tissue_type.equals(other.tissue_type)) {
+			return false;
+		}
+		if (workflow == null) {
+			if (other.workflow != null) {
+				return false;
+			}
+		} else if (!workflow.equals(other.workflow)) {
+			return false;
+		}
+		if (workflow_accession == null) {
+			if (other.workflow_accession != null) {
+				return false;
+			}
+		} else if (!workflow_accession.equals(other.workflow_accession)) {
+			return false;
+		}
+		if (workflow_version == null) {
+			if (other.workflow_version != null) {
+				return false;
+			}
+		} else if (!workflow_version.equals(other.workflow_version)) {
+			return false;
+		}
+		return true;
+	}
+
 	@Export(type = "i")
 	public long file_size() {
 		return file_size;
@@ -83,6 +264,37 @@ public final class Variables {
 	@Export(type = "s")
 	public String group_id() {
 		return group_id;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (accession == null ? 0 : accession.hashCode());
+		result = prime * result + (donor == null ? 0 : donor.hashCode());
+		result = prime * result + (int) (file_size ^ file_size >>> 32);
+		result = prime * result + (group_desc == null ? 0 : group_desc.hashCode());
+		result = prime * result + (group_id == null ? 0 : group_id.hashCode());
+		result = prime * result + (ius == null ? 0 : ius.hashCode());
+		result = prime * result + (library_design == null ? 0 : library_design.hashCode());
+		result = prime * result + (library_name == null ? 0 : library_name.hashCode());
+		result = prime * result + (int) (library_size ^ library_size >>> 32);
+		result = prime * result + (library_type == null ? 0 : library_type.hashCode());
+		result = prime * result + (md5 == null ? 0 : md5.hashCode());
+		result = prime * result + (metatype == null ? 0 : metatype.hashCode());
+		result = prime * result + (path == null ? 0 : path.hashCode());
+		result = prime * result + (project == null ? 0 : project.hashCode());
+		result = prime * result + (source == null ? 0 : source.hashCode());
+		result = prime * result + (targeted_resequencing == null ? 0 : targeted_resequencing.hashCode());
+		result = prime * result + (timestamp == null ? 0 : timestamp.hashCode());
+		result = prime * result + (tissue_origin == null ? 0 : tissue_origin.hashCode());
+		result = prime * result + (tissue_prep == null ? 0 : tissue_prep.hashCode());
+		result = prime * result + (tissue_region == null ? 0 : tissue_region.hashCode());
+		result = prime * result + (tissue_type == null ? 0 : tissue_type.hashCode());
+		result = prime * result + (workflow == null ? 0 : workflow.hashCode());
+		result = prime * result + (workflow_accession == null ? 0 : workflow_accession.hashCode());
+		result = prime * result + (workflow_version == null ? 0 : workflow_version.hashCode());
+		return result;
 	}
 
 	@Export(type = "t3sis")

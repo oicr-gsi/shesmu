@@ -12,7 +12,7 @@ public interface Lookup {
 	 *
 	 * @param parameters
 	 *            the parameters, to be cast to the correct types
-	 * @return the value or null if no match is available
+	 * @return the result value; must not be null
 	 */
 	@RuntimeInterop
 	Object lookup(Object... parameters);

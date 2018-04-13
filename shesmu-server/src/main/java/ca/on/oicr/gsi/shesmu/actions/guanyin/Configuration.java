@@ -1,5 +1,8 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
+/**
+ * Bean for on-disk Guanyin service configuration files
+ */
 public class Configuration {
 	private String drmaa;
 	private String drmaaPsk;

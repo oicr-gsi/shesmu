@@ -3,6 +3,11 @@ package ca.on.oicr.gsi.shesmu.actions.guanyin;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Bean of ecord responses from Guanyin
+ * 
+ * This does not map all fields: only the ones actually consume by Shesmu
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RecordDto {
 	private long id;

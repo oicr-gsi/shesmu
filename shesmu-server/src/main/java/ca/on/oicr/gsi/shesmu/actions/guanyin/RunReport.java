@@ -26,6 +26,12 @@ import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.actions.util.JsonParameterised;
 import io.prometheus.client.Counter;
 
+/**
+ * Action to query/launch a report using Guanyin and DRMAAWS
+ *
+ * The action will first query Guanyin to see if the report has been run
+ * previously. If not, attempt to run it using DRMAAWS.
+ */
 public class RunReport extends Action implements JsonParameterised {
 	private static final Counter drmaaRequestErrors = Counter
 			.build("shesmu_drmaa_request_errors", "The number of errors trying to countact the DRMAA web service")
