@@ -46,9 +46,9 @@ public class ReportActionRepository implements ActionRepository {
 		return configuration.stream().map(configuration -> {
 			final Map<String, String> map = new TreeMap<>();
 			map.put("drmaa", configuration.getDrmaa());
-			map.put("觀音", configuration.getGuanyin());
+			map.put("观音", configuration.getGuanyin());
 			map.put("directory", configuration.getRootDirectory());
-			return new Pair<>("觀音 Report Repository", map);
+			return new Pair<>("观音 Report Repository", map);
 		});
 	}
 

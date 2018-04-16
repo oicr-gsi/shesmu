@@ -55,12 +55,12 @@ public class RunReport extends Action implements JsonParameterised {
 	private final String version;
 	private final String 观音Url;
 
-	public RunReport(String 觀音Url, String drmaaUrl, String drmaaPsk, String rootDirectory, String category, String name,
+	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String rootDirectory, String category, String name,
 			String version) {
 		super();
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;
-		观音Url = 觀音Url;
+		this.观音Url = 观音Url;
 		this.rootDirectory = rootDirectory;
 		this.category = category;
 		this.name = name;
