@@ -24,7 +24,7 @@ public class MasterRunner {
 	private final Supplier<Stream<Lookup>> lookupSource;
 
 	private volatile boolean running;
-	private final Thread thread = new Thread(this::run);
+	private final Thread thread = new Thread(this::run, "master_runner");
 
 	public MasterRunner(Supplier<ActionGenerator> actionGeneratorSource, Supplier<Stream<Lookup>> lookupSource,
 			Consumer<Action> actionSink) {
