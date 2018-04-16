@@ -7,8 +7,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Consumer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +21,7 @@ import io.prometheus.client.Gauge;
  * This class collects actions and tries to {@link Action#perform()} until
  * successful.
  */
-public final class ActionProcessor implements Consumer<Action> {
+public final class ActionProcessor {
 	/**
 	 * A filter all the actions based on some criteria
 	 */
@@ -98,8 +97,7 @@ public final class ActionProcessor implements Consumer<Action> {
 		};
 	}
 
-	private final Map<Action, Information> actions = new ConcurrentSkipListMap<>(
-			Comparator.comparingInt(Action::priority));
+	private final Map<Action, Information> actions = new ConcurrentHashMap<>();
 
 	private final Thread processing = new Thread(this::update, "action-processor");
 
@@ -116,11 +114,13 @@ public final class ActionProcessor implements Consumer<Action> {
 	 * If this action is a duplicate of an existing action, the existing state is
 	 * kept.
 	 */
-	@Override
-	public synchronized void accept(Action action) {
+	public synchronized boolean accept(Action action) {
 		if (!actions.containsKey(action)) {
 			actions.put(action, new Information());
 			stateCount.labels(ActionState.UNKNOWN.name()).inc();
+			return false;
+		} else {
+			return true;
 		}
 	}
 
@@ -175,10 +175,11 @@ public final class ActionProcessor implements Consumer<Action> {
 	private void update() {
 		while (running) {
 			final Instant now = Instant.now();
-			actions.entrySet().stream()
+			actions.entrySet().stream()//
+					.sorted(Comparator.comparingInt(e -> e.getKey().priority()))//
 					.filter(entry -> entry.getValue().lastState != ActionState.SUCCEEDED
 							&& Duration.between(entry.getValue().lastChecked, now).toMinutes() >= Math.max(5,
-									entry.getKey().retryMinutes()))
+									entry.getKey().retryMinutes()))//
 					.forEach(entry -> {
 						entry.getValue().lastChecked = Instant.now();
 						final ActionState oldState = entry.getValue().lastState;
