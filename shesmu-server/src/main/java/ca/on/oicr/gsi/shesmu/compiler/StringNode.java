@@ -14,7 +14,7 @@ import ca.on.oicr.gsi.shesmu.Lookup;
  */
 public abstract class StringNode {
 	private static final Pattern DATE_FORMAT = Pattern.compile("^[GyMdhHmsSEDFwWakKz]");
-	private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt])");
+	private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt{])");
 	private static final Pattern LITERAL = Pattern.compile("^[^\\\\\"{]+");
 	private static final Parser.ParseDispatch<StringNode> PARTS = new Parser.ParseDispatch<>();
 
