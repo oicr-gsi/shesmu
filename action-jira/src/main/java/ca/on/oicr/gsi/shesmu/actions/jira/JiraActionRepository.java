@@ -22,7 +22,31 @@ import io.prometheus.client.Gauge;
 @MetaInfServices
 public class JiraActionRepository implements ActionRepository {
 
+	private static class TicketActionDefinition extends ActionDefinition {
+		private final Configuration config;
+
+		public TicketActionDefinition(Configuration config, String prefix, Type type,
+				Stream<ParameterDefinition> parameters) {
+			super(String.format("%s_%s", prefix, config.getName()), type, Stream.concat(parameters,
+					Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "summary", Imyhat.STRING, true))));
+			this.config = config;
+		}
+
+		@Override
+		public void initialize(GeneratorAdapter methodGen) {
+			methodGen.newInstance(type());
+			methodGen.dup();
+			methodGen.push(config.getName());
+			methodGen.push(config.getUrl());
+			methodGen.push(config.getToken());
+			methodGen.push(config.getProjectKey());
+			methodGen.invokeConstructor(type(), CTOR_FILE_TICKET);
+		}
+
+	}
+
 	private static final Type A_FILE_TICKET_TYPE = Type.getType(FileTicket.class);
+	private static final Type A_RESOLVE_TICKET_TYPE = Type.getType(ResolveTicket.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Method CTOR_FILE_TICKET = new Method("<init>", Type.VOID_TYPE,
@@ -33,22 +57,12 @@ public class JiraActionRepository implements ActionRepository {
 
 	private final List<Pair<String, Map<String, String>>> configuration = new ArrayList<>();
 
-	private ActionDefinition createActionDefinition(Configuration config) {
-		return new ActionDefinition(String.format("ticket_%s", config.getName()), A_FILE_TICKET_TYPE,
-				Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "summary", Imyhat.STRING, true),
-						ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, true))) {
-
-			@Override
-			public void initialize(GeneratorAdapter methodGen) {
-				methodGen.newInstance(A_FILE_TICKET_TYPE);
-				methodGen.dup();
-				methodGen.push(config.getName());
-				methodGen.push(config.getUrl());
-				methodGen.push(config.getToken());
-				methodGen.push(config.getProjectKey());
-				methodGen.invokeConstructor(A_FILE_TICKET_TYPE, CTOR_FILE_TICKET);
-			}
-		};
+	private Stream<ActionDefinition> createActionDefinitions(Configuration config) {
+		return Stream.of(
+				new TicketActionDefinition(config, "ticket", A_FILE_TICKET_TYPE,
+						Stream.of(
+								ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, true))),
+				new TicketActionDefinition(config, "resolve_ticket", A_RESOLVE_TICKET_TYPE, Stream.empty()));
 	}
 
 	@Override
@@ -62,7 +76,7 @@ public class JiraActionRepository implements ActionRepository {
 		configuration.clear();
 		return RuntimeSupport.dataFiles(Configuration.class, ".jira")//
 				.peek(this::writeConfigBlock)//
-				.map(this::createActionDefinition);
+				.flatMap(this::createActionDefinitions);
 
 	}
 

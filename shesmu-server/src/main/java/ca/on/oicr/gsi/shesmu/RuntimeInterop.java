@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu;
 
+import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
@@ -13,7 +14,7 @@ import java.lang.annotation.Target;
  * changes in the code generator.
  */
 @Retention(SOURCE)
-@Target(METHOD)
+@Target({METHOD, FIELD})
 public @interface RuntimeInterop {
 
 }
