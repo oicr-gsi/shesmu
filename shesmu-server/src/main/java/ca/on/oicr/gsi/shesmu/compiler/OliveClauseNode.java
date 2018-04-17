@@ -58,7 +58,7 @@ public abstract class OliveClauseNode {
 			final AtomicReference<List<String>> discriminators = new AtomicReference<>();
 			final Parser result = groupParser//
 					.whitespace()//
-					.list(groups::set, GroupNode::parse, ',')//
+					.listEmpty(groups::set, GroupNode::parse, ',')//
 					.whitespace()//
 					.keyword("By")//
 					.whitespace()//
