@@ -174,10 +174,10 @@ public abstract class BaseFileTicket extends Action {
 		return node;
 	}
 
-	protected final ActionState updateIssue(Issue issue, int transition) {
+	protected final ActionState updateIssue(Issue issue, TransitionInput transition) {
 		issueUpdates.labels(name).inc();
 		issueUrl = issue.getSelf();
-		client.getIssueClient().transition(issue, new TransitionInput(transition)).claim();
+		client.getIssueClient().transition(issue, transition).claim();
 		return ActionState.SUCCEEDED;
 	}
 

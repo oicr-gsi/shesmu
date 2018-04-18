@@ -4,6 +4,7 @@ import java.net.URISyntaxException;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
+import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
@@ -20,7 +21,7 @@ public class FileTicket extends BaseFileTicket {
 	private ActionState checkIssue(Issue issue) {
 		if (issue.getStatus().getName().equalsIgnoreCase("CLOSED")
 				|| issue.getStatus().getName().equalsIgnoreCase("RESOLVED")) {
-			updateIssue(issue, 3);
+			updateIssue(issue, new TransitionInput(3));
 		}
 		return ActionState.SUCCEEDED;
 	}

@@ -62,7 +62,8 @@ public class JiraActionRepository implements ActionRepository {
 				new TicketActionDefinition(config, "ticket", A_FILE_TICKET_TYPE,
 						Stream.of(
 								ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, true))),
-				new TicketActionDefinition(config, "resolve_ticket", A_RESOLVE_TICKET_TYPE, Stream.empty()));
+				new TicketActionDefinition(config, "resolve_ticket", A_RESOLVE_TICKET_TYPE, Stream.of(
+						ParameterDefinition.forField(A_RESOLVE_TICKET_TYPE, "comment", Imyhat.STRING, false))));
 	}
 
 	@Override
