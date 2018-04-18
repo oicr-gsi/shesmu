@@ -75,6 +75,7 @@ existing data at a particular row.
       # And create on report per project
       With {
         memory = 4Gi,
+        project = project,
         chunks = chunks
       }
 
@@ -188,7 +189,7 @@ Logical short-circuiting `and`. Both operands must be boolean and the result is 
 
 ### Comparison
 #### Equality
-- _expr_ == _expr_
+- _expr_ `==` _expr_
 
 Compare two types for equality. This is supported for all types. For tuples,
 the values in the tuples must be the same. For lists, the items must be the
@@ -209,7 +210,7 @@ Compare two values for order. This is only defined for integers and dates. For
 dates, the lesser value occurs temporally earlier.
 
 #### Regular Expression
-- _expr_ ~ /_re_/
+- _expr_` ~ /`_re_`/`
 
 Check whether _expr_, which must be a string, must matches the provided regular
 expression.
