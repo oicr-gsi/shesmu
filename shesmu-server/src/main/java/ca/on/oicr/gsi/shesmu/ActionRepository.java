@@ -14,6 +14,6 @@ public interface ActionRepository extends LoadedConfiguration {
 	 *
 	 * @return a stream of definitions for actions the compiler can use
 	 */
-	Stream<ActionDefinition> query();
+	Stream<ActionDefinition> queryActions();
 
 }

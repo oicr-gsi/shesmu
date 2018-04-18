@@ -72,7 +72,7 @@ public class JiraActionRepository implements ActionRepository {
 	}
 
 	@Override
-	public Stream<ActionDefinition> query() {
+	public Stream<ActionDefinition> queryActions() {
 		lastRead.setToCurrentTime();
 		configuration.clear();
 		return RuntimeSupport.dataFiles(Configuration.class, ".jira")//

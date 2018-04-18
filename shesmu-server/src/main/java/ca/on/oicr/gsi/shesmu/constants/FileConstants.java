@@ -86,7 +86,7 @@ public class FileConstants implements ConstantSource {
 	}
 
 	@Override
-	public Stream<Constant> stream() {
+	public Stream<Constant> queryConstants() {
 		return files.stream().flatMap(ConstantsFile::stream);
 	}
 

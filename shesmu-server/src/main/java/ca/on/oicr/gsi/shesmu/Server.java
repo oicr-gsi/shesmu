@@ -46,11 +46,11 @@ public final class Server {
 	}
 
 	private final CachedRepository<ActionRepository, ActionDefinition> actionRepository = new CachedRepository<>(
-			ActionRepository.class, 15, ActionRepository::query);
+			ActionRepository.class, 15, ActionRepository::queryActions);
 	private final CompiledGenerator compiler = new CompiledGenerator(Paths.get(System.getenv("SHESMU_SCRIPT")),
 			this::lookups, this::actionDefinitions, ConstantSource::all);
 	private final CachedRepository<LookupRepository, Lookup> lookupRepository = new CachedRepository<>(
-			LookupRepository.class, 15, LookupRepository::query);
+			LookupRepository.class, 15, LookupRepository::queryLookups);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
 

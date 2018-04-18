@@ -13,6 +13,6 @@ public interface LookupRepository extends LoadedConfiguration {
 	 * @return a stream of pairs containing the name of the lookup and the lookup
 	 *         itself
 	 */
-	Stream<Lookup> query();
+	Stream<Lookup> queryLookups();
 
 }

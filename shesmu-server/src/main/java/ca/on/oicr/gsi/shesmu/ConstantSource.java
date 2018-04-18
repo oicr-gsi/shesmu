@@ -15,7 +15,7 @@ public interface ConstantSource extends LoadedConfiguration {
 	 * Get all the constants available
 	 */
 	public static Stream<Constant> all() {
-		return sources().flatMap(ConstantSource::stream);
+		return sources().flatMap(ConstantSource::queryConstants);
 	}
 
 	/**
@@ -28,5 +28,5 @@ public interface ConstantSource extends LoadedConfiguration {
 	/**
 	 * Provide all constants know by this service
 	 */
-	Stream<Constant> stream();
+	Stream<Constant> queryConstants();
 }

@@ -41,7 +41,7 @@ public final class RemoteActionRepository implements ActionRepository {
 	}
 
 	@Override
-	public Stream<ActionDefinition> query() {
+	public Stream<ActionDefinition> queryActions() {
 		return roots().flatMap(this::queryActionsCatalog);
 	}
 

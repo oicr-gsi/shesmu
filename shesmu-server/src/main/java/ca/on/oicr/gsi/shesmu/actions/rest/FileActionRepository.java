@@ -43,7 +43,7 @@ public final class FileActionRepository implements ActionRepository {
 	}
 
 	@Override
-	public Stream<ActionDefinition> query() {
+	public Stream<ActionDefinition> queryActions() {
 		return of(roots.stream());
 	}
 
