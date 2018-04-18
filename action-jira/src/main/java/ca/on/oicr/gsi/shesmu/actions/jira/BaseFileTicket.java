@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.Throttler;
 import io.prometheus.client.Counter;
 
 public abstract class BaseFileTicket extends Action {
@@ -50,17 +50,23 @@ public abstract class BaseFileTicket extends Action {
 	@RuntimeInterop
 	public String summary;
 
-	public BaseFileTicket(String name, String url, String token, String projectKey) throws URISyntaxException {
+	public BaseFileTicket(String name, String url, String token, String projectKey) {
 		this.name = name;
 		this.projectKey = projectKey;
-		client = new AsynchronousJiraRestClientFactory().create(new URI(url), new AuthenticationHandler() {
+		JiraRestClient client;
+		try {
+			client = new AsynchronousJiraRestClientFactory().create(new URI(url), new AuthenticationHandler() {
 
-			@Override
-			public void configure(Builder builder) {
-				builder.setHeader("Authorization", "Bearer " + token);
-			}
-		});
-
+				@Override
+				public void configure(Builder builder) {
+					builder.setHeader("Authorization", "Bearer " + token);
+				}
+			});
+		} catch (final Exception e) {
+			client = null;
+			e.printStackTrace();
+		}
+		this.client = client;
 	}
 
 	protected final ActionState badIssue() {
@@ -141,10 +147,19 @@ public abstract class BaseFileTicket extends Action {
 
 	@Override
 	public ActionState perform() {
+		if (client == null) {
+			return ActionState.FAILED;
+		}
+		if (Throttler.anyOverloaded("jira", projectKey)) {
+			return ActionState.THROTTLED;
+		}
 		requests.labels(name).inc();
 		try {
 			final SearchResult results = client.getSearchClient()
-					.searchJql(String.format("summary = '%s'", summary.replace("'", "\\'")), 2, 0, null).claim();
+					.searchJql(
+							String.format("summary = '%s' AND project = '%s'", summary.replace("'", "\\'"), projectKey),
+							null, null, null)
+					.claim();
 			return perform(results);
 		} catch (final Exception e) {
 			failure.labels(name).inc();

@@ -307,8 +307,16 @@ public final class RuntimeSupport {
 				.map(Entry::getKey);
 	}
 
+	public static <T> Stream<T> stream(Iterable<T> iterable) {
+		return stream(iterable.spliterator());
+	}
+
 	public static <T> Stream<T> stream(Iterator<T> iterator) {
-		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
+		return stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED));
+	}
+
+	public static <T> Stream<T> stream(Spliterator<T> spliterator) {
+		return StreamSupport.stream(spliterator, false);
 	}
 
 	private RuntimeSupport() {
