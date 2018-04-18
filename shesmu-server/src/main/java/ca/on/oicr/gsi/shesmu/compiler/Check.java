@@ -43,7 +43,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 public final class Check extends Compiler {
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
-	private static Stream<ObjectNode> fetch(String remote, String slug) {
+	public static Stream<ObjectNode> fetch(String remote, String slug) {
 		final HttpGet request = new HttpGet(String.format("%s/%s", remote, slug));
 		try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
 			return Arrays
