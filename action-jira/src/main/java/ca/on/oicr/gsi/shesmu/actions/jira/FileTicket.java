@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
-import java.net.URISyntaxException;
-
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
@@ -14,7 +12,7 @@ public class FileTicket extends BaseFileTicket {
 	@RuntimeInterop
 	public String description;
 
-	public FileTicket(String name, String url, String token, String projectKey) throws URISyntaxException {
+	public FileTicket(String name, String url, String token, String projectKey) {
 		super(name, url, token, projectKey);
 	}
 
