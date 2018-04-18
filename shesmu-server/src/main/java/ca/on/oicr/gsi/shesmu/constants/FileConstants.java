@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.constants;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +13,7 @@ import org.kohsuke.MetaInfServices;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ca.on.oicr.gsi.shesmu.AutoUpdatingFile;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Pair;
@@ -27,11 +26,11 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 @MetaInfServices(ConstantSource.class)
 public class FileConstants implements ConstantSource {
 
-	private class ConstantsFile extends AutoUpdatingFile {
+	private class ConstantsFile extends AutoUpdatingJsonFile<ObjectNode> {
 		private List<Constant> constants = Collections.emptyList();
 
 		public ConstantsFile(Path fileName) {
-			super(fileName);
+			super(fileName, ObjectNode.class);
 		}
 
 		public Stream<Pair<String, String>> pairs() {
@@ -43,19 +42,11 @@ public class FileConstants implements ConstantSource {
 		}
 
 		@Override
-		protected void update() {
-			try {
-				constants = RuntimeSupport
-						.stream(RuntimeSupport.MAPPER.readValue(Files.readAllBytes(fileName()), ObjectNode.class)
-								.fields())//
-						.map(FileConstants::convert)//
-						.filter(Objects::nonNull)//
-						.collect(Collectors.toList());
-			} catch (final Exception e) {
-				e.printStackTrace();
-				constants = Collections.emptyList();
-			}
-
+		protected void update(ObjectNode node) {
+			constants = RuntimeSupport.stream(node.fields())//
+					.map(FileConstants::convert)//
+					.filter(Objects::nonNull)//
+					.collect(Collectors.toList());
 		}
 	}
 

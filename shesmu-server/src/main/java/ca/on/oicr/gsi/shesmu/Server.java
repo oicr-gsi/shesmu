@@ -259,6 +259,13 @@ public final class Server {
 	public void start() {
 		System.out.println("Starting server...");
 		server.start();
+		System.out.println("Waiting for files to be scanned...");
+		ConstantSource.sources().count();
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// Meh.
+		}
 		System.out.println("Finding actions...");
 		final long actionCount = actionRepository.stream().count();
 		System.out.printf("Found %d actions\n", actionCount);
