@@ -90,7 +90,7 @@ public class FakeActionSource implements ActionRepository {
 	}
 
 	@Override
-	public Stream<ActionDefinition> query() {
+	public Stream<ActionDefinition> queryActions() {
 		return instances.stream().flatMap(RemoteInstance::stream);
 	}
 

@@ -28,7 +28,7 @@ public class PredefinedLookupSource implements LookupRepository {
 	}
 
 	@Override
-	public Stream<Lookup> query() {
+	public Stream<Lookup> queryLookups() {
 		return StreamSupport.stream(loader.spliterator(), false);
 	}
 

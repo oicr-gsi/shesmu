@@ -129,7 +129,7 @@ public class TsvLookupRepository implements LookupRepository {
 	}
 
 	@Override
-	public Stream<Lookup> query() {
+	public Stream<Lookup> queryLookups() {
 		lastRead.setToCurrentTime();
 		configuration.clear();
 		return of(RuntimeSupport.environmentVariable())//

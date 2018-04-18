@@ -53,7 +53,7 @@ public class ReportActionRepository implements ActionRepository {
 	}
 
 	@Override
-	public Stream<ActionDefinition> query() {
+	public Stream<ActionDefinition> queryActions() {
 		return configuration.stream().flatMap(ReportActionRepository::queryCatalog);
 	}
 }
