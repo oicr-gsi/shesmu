@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
 import java.util.stream.Stream;
+import static org.objectweb.asm.Type.LONG_TYPE;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -16,27 +17,22 @@ public class ReportDefinition extends ActionDefinition {
 	private static final Type ACTION_TYPE = Type.getType(RunReport.class);
 
 	private static final Method CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] { A_STRING_TYPE, A_STRING_TYPE,
-			A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE });
+			A_STRING_TYPE, A_STRING_TYPE, LONG_TYPE });
 
-	private final String category;
 	private final String drmaaPsk;
 	private final String drmaaUrl;
-	private final String name;
-
-	private final String rootDirectory;
-	private final String version;
 	private final String 观音Url;
+	private long reportId;
+	private String script;
 
-	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String rootDirectory, String category,
+	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId,
 			String name, String version, Stream<ParameterDefinition> parameters) {
 		super(name + "_" + version.replaceAll("[^A-Za-z0-9_]", "_"), ACTION_TYPE, parameters);
 		this.观音Url = 观音Url;
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;
-		this.rootDirectory = rootDirectory;
-		this.category = category;
-		this.name = name;
-		this.version = version;
+		this.script = script;
+		this.reportId = reportId;
 	}
 
 	@Override
@@ -46,10 +42,8 @@ public class ReportDefinition extends ActionDefinition {
 		methodGen.push(观音Url);
 		methodGen.push(drmaaUrl);
 		methodGen.push(drmaaPsk);
-		methodGen.push(rootDirectory);
-		methodGen.push(category);
-		methodGen.push(name);
-		methodGen.push(version);
+		methodGen.push(script);
+		methodGen.push(reportId);
 		methodGen.invokeConstructor(ACTION_TYPE, CTOR);
 	}
 

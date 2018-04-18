@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Comparator;
@@ -44,106 +45,75 @@ public class RunReport extends Action implements JsonParameterised {
 	private static final LatencyHistogram 观音RequestTime = new LatencyHistogram("shesmu_guanyin_request_time",
 			"The request time latency to launch a remote action.", "target");
 
-	private final String category;
+	private final long reportId;
 	private final String drmaaPsk;
 	private final String drmaaUrl;
-	private final String name;
 	private final ObjectNode rootParameters = RuntimeSupport.MAPPER.createObjectNode();
 	private final ObjectNode parameters;
 	private OptionalLong reportRecordId = OptionalLong.empty();
-	private final String rootDirectory;
-	private final String version;
+	private final String script;
 	private final String 观音Url;
 
-	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String rootDirectory, String category, String name,
-			String version) {
+	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId) {
 		super();
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;
 		this.观音Url = 观音Url;
-		this.rootDirectory = rootDirectory;
-		this.category = category;
-		this.name = name;
-		this.version = version;
+		this.script = script;
+		this.reportId = reportId;
 		parameters = rootParameters.putObject("parameters");
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final RunReport other = (RunReport) obj;
-		if (category == null) {
-			if (other.category != null) {
-				return false;
-			}
-		} else if (!category.equals(other.category)) {
-			return false;
-		}
-		if (drmaaUrl == null) {
-			if (other.drmaaUrl != null) {
-				return false;
-			}
-		} else if (!drmaaUrl.equals(other.drmaaUrl)) {
-			return false;
-		}
-		if (观音Url == null) {
-			if (other.观音Url != null) {
-				return false;
-			}
-		} else if (!观音Url.equals(other.观音Url)) {
-			return false;
-		}
-		if (name == null) {
-			if (other.name != null) {
-				return false;
-			}
-		} else if (!name.equals(other.name)) {
-			return false;
-		}
-		if (parameters == null) {
-			if (other.parameters != null) {
-				return false;
-			}
-		} else if (!parameters.equals(other.parameters)) {
-			return false;
-		}
-		if (rootDirectory == null) {
-			if (other.rootDirectory != null) {
-				return false;
-			}
-		} else if (!rootDirectory.equals(other.rootDirectory)) {
-			return false;
-		}
-		if (version == null) {
-			if (other.version != null) {
-				return false;
-			}
-		} else if (!version.equals(other.version)) {
-			return false;
-		}
-		return true;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (category == null ? 0 : category.hashCode());
-		result = prime * result + (drmaaUrl == null ? 0 : drmaaUrl.hashCode());
-		result = prime * result + (观音Url == null ? 0 : 观音Url.hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (parameters == null ? 0 : parameters.hashCode());
-		result = prime * result + (rootDirectory == null ? 0 : rootDirectory.hashCode());
-		result = prime * result + (version == null ? 0 : version.hashCode());
+		result = prime * result + ((drmaaPsk == null) ? 0 : drmaaPsk.hashCode());
+		result = prime * result + ((drmaaUrl == null) ? 0 : drmaaUrl.hashCode());
+		result = prime * result + ((parameters == null) ? 0 : parameters.hashCode());
+		result = prime * result + Long.hashCode(reportId);
+		result = prime * result + ((script == null) ? 0 : script.hashCode());
+		result = prime * result + ((观音Url == null) ? 0 : 观音Url.hashCode());
 		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RunReport other = (RunReport) obj;
+		if (drmaaPsk == null) {
+			if (other.drmaaPsk != null)
+				return false;
+		} else if (!drmaaPsk.equals(other.drmaaPsk))
+			return false;
+		if (drmaaUrl == null) {
+			if (other.drmaaUrl != null)
+				return false;
+		} else if (!drmaaUrl.equals(other.drmaaUrl))
+			return false;
+		if (parameters == null) {
+			if (other.parameters != null)
+				return false;
+		} else if (!parameters.equals(other.parameters))
+			return false;
+		if (reportId != other.reportId)
+			return false;
+		if (script == null) {
+			if (other.script != null)
+				return false;
+		} else if (!script.equals(other.script))
+			return false;
+		if (观音Url == null) {
+			if (other.观音Url != null)
+				return false;
+		} else if (!观音Url.equals(other.观音Url))
+			return false;
+		return true;
 	}
 
 	@Override
@@ -156,48 +126,86 @@ public class RunReport extends Action implements JsonParameterised {
 		if (Throttler.anyOverloaded("all", "guanyin", "drmaa")) {
 			return ActionState.THROTTLED;
 		}
-		final HttpPost request = new HttpPost(
-				String.format("%s/reportdb/record_parameters?name=%s&version=%s", 观音Url, name, version));
-		request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
+
+		// Query Guanyin to see if the record already exists
+		StringEntity body;
 		try {
-			request.setEntity(new StringEntity(RuntimeSupport.MAPPER.writeValueAsString(rootParameters),
-					ContentType.APPLICATION_JSON));
+			body = new StringEntity(RuntimeSupport.MAPPER.writeValueAsString(rootParameters),
+					ContentType.APPLICATION_JSON);
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return ActionState.FAILED;
 		}
+
+		boolean create = false;
+		final HttpPost request = new HttpPost(
+				String.format("%s/reportdb/record_parameters?report=%d", 观音Url, reportId));
+		request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
+		request.setEntity(body);
 		try (AutoCloseable timer = 观音RequestTime.start(观音Url);
 				CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(request)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
+				showError(response, "Error from Guanyin: ");
 				观音RequestErrors.labels(观音Url).inc();
 				return ActionState.FAILED;
 			}
 			final RecordDto[] results = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
 					RecordDto[].class);
 			if (results.length > 0) {
-				reportRecordId = Stream.of(results).sorted(Comparator.comparing(RecordDto::getGenerated).reversed())
-						.mapToLong(RecordDto::getId).findFirst();
-				return ActionState.SUCCEEDED;
+				RecordDto record = Stream.of(results).sorted(Comparator.comparing(RecordDto::getGenerated).reversed())
+						.findFirst().get();
+				reportRecordId = OptionalLong.of(record.getId());
+				if (record.isFinished()) {
+					return ActionState.SUCCEEDED;
+				}
+			} else {
+				create = true;
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
 			观音RequestErrors.labels(观音Url).inc();
 			return ActionState.FAILED;
 		}
+		// At this point, either it exists and isn't complete or it doesn't exist.
+		// Create it if it doesn't exist
+		if (create) {
+			final HttpPost createRequest = new HttpPost(
+					String.format("%s/reportdb/record_start?report=%d", 观音Url, reportId));
+			createRequest.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
+			createRequest.setEntity(body);
+			try (AutoCloseable timer = 观音RequestTime.start(观音Url);
+					CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(createRequest)) {
+				if (response.getStatusLine().getStatusCode() != 200) {
+					showError(response, "Error from Guanyin: ");
+					观音RequestErrors.labels(观音Url).inc();
+					return ActionState.FAILED;
+				}
+				reportRecordId = OptionalLong.of(
+						RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), CreateDto.class).getId());
+			} catch (final Exception e) {
+				e.printStackTrace();
+				观音RequestErrors.labels(观音Url).inc();
+				return ActionState.FAILED;
+			}
+		}
+		// Now that exists, try to run it via DRMAA
 		final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", drmaaUrl));
 		try {
 			final ObjectNode drmaaParameters = RuntimeSupport.MAPPER.createObjectNode();
-			drmaaParameters.put("drmaa_remote_command",
-					String.format("%s/reports/%s/%s-%s", rootDirectory, category, name, version));
-			drmaaParameters.putArray("drmaa_v_argv").add(RuntimeSupport.MAPPER.writeValueAsString(parameters));
-			drmaaParameters.putArray("drmaa_v_env").add("GUANYIN=" + 观音Url);
-			final byte[] body = RuntimeSupport.MAPPER.writeValueAsBytes(drmaaParameters);
+			drmaaParameters.put("drmaa_remote_command", script);
+			drmaaParameters.putArray("drmaa_v_argv")
+					.add(String.format("%s/reportdb/record/%d", 观音Url, reportRecordId.getAsLong()));
+			drmaaParameters.put("drmaa_output_path",
+					String.format(":$drmaa_hd_ph$/logs/reports/report%d-%d.out", reportId, reportRecordId.getAsLong()));
+			drmaaParameters.put("drmaa_error_path",
+					String.format(":$drmaa_hd_ph$/logs/reports/report%d-%d.err", reportId, reportRecordId.getAsLong()));
+			final byte[] drmaaBody = RuntimeSupport.MAPPER.writeValueAsBytes(drmaaParameters);
 			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
 			digest.update(drmaaPsk.getBytes(StandardCharsets.UTF_8));
-			digest.update(body);
+			digest.update(drmaaBody);
 			drmaaRequest.setHeader("Accept", "application/json");
 			drmaaRequest.addHeader("Authorization", "signed " + DatatypeConverter.printHexBinary(digest.digest()));
-			drmaaRequest.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+			drmaaRequest.setEntity(new ByteArrayEntity(drmaaBody, ContentType.APPLICATION_JSON));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return ActionState.FAILED;
@@ -205,15 +213,9 @@ public class RunReport extends Action implements JsonParameterised {
 		try (AutoCloseable timer = drmaaRequestTime.start(drmaaUrl);
 				CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(drmaaRequest)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
-				try (Scanner s = new Scanner(response.getEntity().getContent())) {
-					s.useDelimiter("\\A");
-					if (s.hasNext()) {
-						System.err.print("Error from DRMAA: ");
-						System.err.println(s.next());
-					}
-					drmaaRequestErrors.labels(drmaaUrl).inc();
-					return ActionState.FAILED;
-				}
+				showError(response, "Error from DRMAA: ");
+				drmaaRequestErrors.labels(drmaaUrl).inc();
+				return ActionState.FAILED;
 			}
 			final String result = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), String.class);
 			final ActionState state = ActionState.valueOf(result);
@@ -230,6 +232,17 @@ public class RunReport extends Action implements JsonParameterised {
 		return 0;
 	}
 
+	private void showError(CloseableHttpResponse response, String prefix)
+			throws UnsupportedOperationException, IOException {
+		try (Scanner s = new Scanner(response.getEntity().getContent())) {
+			s.useDelimiter("\\A");
+			if (s.hasNext()) {
+				System.err.print(prefix);
+				System.err.println(s.next());
+			}
+		}
+	}
+
 	@Override
 	public long retryMinutes() {
 		return 10;
@@ -239,9 +252,8 @@ public class RunReport extends Action implements JsonParameterised {
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
 		node.put("type", "guanyin-report");
-		node.put("name", name);
-		node.put("category", category);
-		node.put("version", version);
+		node.put("reportId", reportId);
+		node.put("script", script);
 		node.set("parameters", parameters);
 		reportRecordId.ifPresent(id -> node.put("url", String.format("%s/reportdb/record/%d", 观音Url, id)));
 		return node;

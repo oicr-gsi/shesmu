@@ -7,7 +7,7 @@ public class Configuration {
 	private String drmaa;
 	private String drmaaPsk;
 	private String guanyin;
-	private String rootDirectory;
+	private String script;
 
 	public String getDrmaa() {
 		return drmaa;
@@ -21,8 +21,8 @@ public class Configuration {
 		return guanyin;
 	}
 
-	public String getRootDirectory() {
-		return rootDirectory;
+	public String getScript() {
+		return script;
 	}
 
 	public void setDrmaa(String drmaa) {
@@ -37,7 +37,7 @@ public class Configuration {
 		this.guanyin = guanyin;
 	}
 
-	public void setRootDirectory(String rootDirectory) {
-		this.rootDirectory = rootDirectory;
+	public void setScript(String script) {
+		this.script = script;
 	}
 }
