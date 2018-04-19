@@ -34,10 +34,6 @@ public final class Server {
 	private static final LatencyHistogram responseTime = new LatencyHistogram("shesmu_http_request_time",
 			"The time to respond to an HTTP request.", "url");
 
-	private static String htmlEscape(Imyhat type) {
-		return type.name().replace("<", "&lt;").replace(">", "&gt;");
-	}
-
 	public static void main(String[] args) throws Exception {
 		DefaultExports.initialize();
 
@@ -106,7 +102,7 @@ public final class Server {
 					writeBlock(writer, lookup.name());
 					writeRow(writer, "Return", lookup.returnType().name());
 					lookup.types().map(Pair.number()).forEach(p -> writeRow(writer,
-							"Argument " + Integer.toString(p.first() + 1), htmlEscape(p.second())));
+							"Argument " + Integer.toString(p.first() + 1), p.second().name()));
 
 				});
 				writeFinish(writer);
@@ -115,20 +111,20 @@ public final class Server {
 				actionRepository.stream().sorted(Comparator.comparing(ActionDefinition::name)).forEach(action -> {
 					writeBlock(writer, action.name());
 					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
-							.forEach(p -> writeRow(writer, p.name(), htmlEscape(p.type())));
+							.forEach(p -> writeRow(writer, p.name(), p.type().name()));
 
 				});
 				writeFinish(writer);
 
 				writeHeader(writer, "Variables");
 				NameDefinitions.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
-					writeRow(writer, variable.name(), htmlEscape(variable.type()));
+					writeRow(writer, variable.name(), variable.type().name());
 				});
 				writeFinish(writer);
 
 				writeHeader(writer, "Constants");
 				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
-					writeRow(writer, constant.name(), htmlEscape(constant.type()));
+					writeRow(writer, constant.name(), constant.type().name());
 				});
 				writeFinish(writer);
 
