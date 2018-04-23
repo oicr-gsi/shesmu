@@ -8,7 +8,7 @@ import java.util.function.Function;
 import org.objectweb.asm.Type;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeListTransform extends ExpressionNode {
 
@@ -49,7 +49,7 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return source.resolveLookups(definedLookups, errorHandler)
 				& collector.resolveLookups(definedLookups, errorHandler) & transforms.stream()
 						.filter(t -> t.resolveLookups(definedLookups, errorHandler)).count() == transforms.size();

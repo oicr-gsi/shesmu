@@ -70,13 +70,6 @@ public class Renderer {
 	}
 
 	/**
-	 * Find a known lookup and load it on the stack.
-	 */
-	public final void loadLookup(String name, GeneratorAdapter methodGen) {
-		rootBuilder.loadLookup(name, methodGen);
-	}
-
-	/**
 	 * Load the current stream value on the stack
 	 *
 	 * This cannot be used in the contexts where the stream hasn't started.

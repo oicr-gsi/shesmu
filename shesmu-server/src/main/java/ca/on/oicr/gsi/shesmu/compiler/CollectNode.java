@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 
 public abstract class CollectNode {
@@ -119,7 +119,8 @@ public abstract class CollectNode {
 	/**
 	 * Resolve all lookup definitions in this expression
 	 */
-	public abstract boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler);
+	public abstract boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+			Consumer<String> errorHandler);
 
 	public abstract Imyhat type();
 

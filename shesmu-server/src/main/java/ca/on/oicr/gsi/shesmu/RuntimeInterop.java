@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  * changes in the code generator.
  */
 @Retention(SOURCE)
-@Target({METHOD, FIELD})
+@Target({ METHOD, FIELD })
 public @interface RuntimeInterop {
 
 }

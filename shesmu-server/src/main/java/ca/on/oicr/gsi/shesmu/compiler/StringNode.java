@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 /**
  * A “part” in a string literal
@@ -74,7 +74,8 @@ public abstract class StringNode {
 
 	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
-	public abstract boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler);
+	public abstract boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+			Consumer<String> errorHandler);
 
 	public abstract String text();
 

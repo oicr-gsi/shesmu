@@ -24,7 +24,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
@@ -80,7 +80,7 @@ public final class Build extends Compiler implements AutoCloseable {
 			System.exit(1);
 			return;
 		}
-		try (Build compiler = new Build(new NameLoader<>(TsvLookupRepository.of(dataDirectory), Lookup::name),
+		try (Build compiler = new Build(new NameLoader<>(TsvLookupRepository.of(dataDirectory), LookupDefinition::name),
 				new NameLoader<>(FileActionRepository.of(dataDirectory), ActionDefinition::name), skipCompute, true)) {
 			if (dump) {
 				compiler.dump();
@@ -98,7 +98,7 @@ public final class Build extends Compiler implements AutoCloseable {
 
 	private final boolean dataFlowAnalysis;
 
-	private final NameLoader<Lookup> lookups;
+	private final NameLoader<LookupDefinition> lookups;
 
 	private final Printer printer = new Textifier();
 
@@ -106,7 +106,7 @@ public final class Build extends Compiler implements AutoCloseable {
 
 	private final PrintWriter writer = new PrintWriter(System.out);
 
-	private Build(NameLoader<Lookup> lookups, NameLoader<ActionDefinition> actions, boolean skipCompute,
+	private Build(NameLoader<LookupDefinition> lookups, NameLoader<ActionDefinition> actions, boolean skipCompute,
 			boolean dataFlowAnalysis) {
 		super(false);
 		this.lookups = lookups;
@@ -163,7 +163,7 @@ public final class Build extends Compiler implements AutoCloseable {
 	}
 
 	@Override
-	protected Lookup getLookup(String lookup) {
+	protected LookupDefinition getLookup(String lookup) {
 		return lookups.get(lookup);
 	}
 

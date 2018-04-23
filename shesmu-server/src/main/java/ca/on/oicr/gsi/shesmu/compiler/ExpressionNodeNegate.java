@@ -8,7 +8,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeNegate extends ExpressionNode {
 	private final ExpressionNode inner;
@@ -36,7 +36,7 @@ public class ExpressionNodeNegate extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return inner.resolveLookups(definedLookups, errorHandler);
 	}
 

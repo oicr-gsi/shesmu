@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeInteger extends ExpressionNode {
 
@@ -34,7 +34,7 @@ public class ExpressionNodeInteger extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return true;
 	}
 

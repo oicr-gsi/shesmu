@@ -45,12 +45,12 @@ public class RunReport extends Action implements JsonParameterised {
 	private static final LatencyHistogram 观音RequestTime = new LatencyHistogram("shesmu_guanyin_request_time",
 			"The request time latency to launch a remote action.", "target");
 
-	private final long reportId;
 	private final String drmaaPsk;
 	private final String drmaaUrl;
-	private final ObjectNode rootParameters = RuntimeSupport.MAPPER.createObjectNode();
 	private final ObjectNode parameters;
+	private final long reportId;
 	private OptionalLong reportRecordId = OptionalLong.empty();
+	private final ObjectNode rootParameters = RuntimeSupport.MAPPER.createObjectNode();
 	private final String script;
 	private final String 观音Url;
 
@@ -65,55 +65,69 @@ public class RunReport extends Action implements JsonParameterised {
 	}
 
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((drmaaPsk == null) ? 0 : drmaaPsk.hashCode());
-		result = prime * result + ((drmaaUrl == null) ? 0 : drmaaUrl.hashCode());
-		result = prime * result + ((parameters == null) ? 0 : parameters.hashCode());
-		result = prime * result + Long.hashCode(reportId);
-		result = prime * result + ((script == null) ? 0 : script.hashCode());
-		result = prime * result + ((观音Url == null) ? 0 : 观音Url.hashCode());
-		return result;
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final RunReport other = (RunReport) obj;
+		if (drmaaPsk == null) {
+			if (other.drmaaPsk != null) {
+				return false;
+			}
+		} else if (!drmaaPsk.equals(other.drmaaPsk)) {
+			return false;
+		}
+		if (drmaaUrl == null) {
+			if (other.drmaaUrl != null) {
+				return false;
+			}
+		} else if (!drmaaUrl.equals(other.drmaaUrl)) {
+			return false;
+		}
+		if (parameters == null) {
+			if (other.parameters != null) {
+				return false;
+			}
+		} else if (!parameters.equals(other.parameters)) {
+			return false;
+		}
+		if (reportId != other.reportId) {
+			return false;
+		}
+		if (script == null) {
+			if (other.script != null) {
+				return false;
+			}
+		} else if (!script.equals(other.script)) {
+			return false;
+		}
+		if (观音Url == null) {
+			if (other.观音Url != null) {
+				return false;
+			}
+		} else if (!观音Url.equals(other.观音Url)) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		RunReport other = (RunReport) obj;
-		if (drmaaPsk == null) {
-			if (other.drmaaPsk != null)
-				return false;
-		} else if (!drmaaPsk.equals(other.drmaaPsk))
-			return false;
-		if (drmaaUrl == null) {
-			if (other.drmaaUrl != null)
-				return false;
-		} else if (!drmaaUrl.equals(other.drmaaUrl))
-			return false;
-		if (parameters == null) {
-			if (other.parameters != null)
-				return false;
-		} else if (!parameters.equals(other.parameters))
-			return false;
-		if (reportId != other.reportId)
-			return false;
-		if (script == null) {
-			if (other.script != null)
-				return false;
-		} else if (!script.equals(other.script))
-			return false;
-		if (观音Url == null) {
-			if (other.观音Url != null)
-				return false;
-		} else if (!观音Url.equals(other.观音Url))
-			return false;
-		return true;
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (drmaaPsk == null ? 0 : drmaaPsk.hashCode());
+		result = prime * result + (drmaaUrl == null ? 0 : drmaaUrl.hashCode());
+		result = prime * result + (parameters == null ? 0 : parameters.hashCode());
+		result = prime * result + Long.hashCode(reportId);
+		result = prime * result + (script == null ? 0 : script.hashCode());
+		result = prime * result + (观音Url == null ? 0 : 观音Url.hashCode());
+		return result;
 	}
 
 	@Override
@@ -152,8 +166,8 @@ public class RunReport extends Action implements JsonParameterised {
 			final RecordDto[] results = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
 					RecordDto[].class);
 			if (results.length > 0) {
-				RecordDto record = Stream.of(results).sorted(Comparator.comparing(RecordDto::getGenerated).reversed())
-						.findFirst().get();
+				final RecordDto record = Stream.of(results)
+						.sorted(Comparator.comparing(RecordDto::getGenerated).reversed()).findFirst().get();
 				reportRecordId = OptionalLong.of(record.getId());
 				if (record.isFinished()) {
 					return ActionState.SUCCEEDED;
@@ -232,6 +246,11 @@ public class RunReport extends Action implements JsonParameterised {
 		return 0;
 	}
 
+	@Override
+	public long retryMinutes() {
+		return 10;
+	}
+
 	private void showError(CloseableHttpResponse response, String prefix)
 			throws UnsupportedOperationException, IOException {
 		try (Scanner s = new Scanner(response.getEntity().getContent())) {
@@ -241,11 +260,6 @@ public class RunReport extends Action implements JsonParameterised {
 				System.err.println(s.next());
 			}
 		}
-	}
-
-	@Override
-	public long retryMinutes() {
-		return 10;
 	}
 
 	@Override

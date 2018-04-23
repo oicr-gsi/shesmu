@@ -25,11 +25,6 @@ public abstract class ActionGenerator {
 	public static final ActionGenerator NULL = new ActionGenerator() {
 
 		@Override
-		public void populateLookups(NameLoader<Lookup> loader) {
-			// Do nothing.
-		}
-
-		@Override
 		public void run(Consumer<Action> consumer, Supplier<Stream<Variables>> input) {
 			// Do nothing.
 		}
@@ -55,17 +50,6 @@ public abstract class ActionGenerator {
 		collectors.add(g);
 		return g;
 	}
-
-	/**
-	 * Gather the instances of any lookups required by this action generator.
-	 *
-	 * The lookup instances provided must match those defined when compiled.
-	 *
-	 * @param loader
-	 *            source of lookup instances
-	 */
-	@RuntimeInterop
-	public abstract void populateLookups(NameLoader<Lookup> loader);
 
 	/**
 	 * Add all Prometheus monitoring for this program.

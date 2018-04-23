@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Bean of record responses from Guanyin
- * 
+ *
  * This does not map all fields: only the ones actually consume by Shesmu
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

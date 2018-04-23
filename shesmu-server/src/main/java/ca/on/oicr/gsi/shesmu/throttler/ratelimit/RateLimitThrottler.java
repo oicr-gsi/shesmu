@@ -31,7 +31,7 @@ public class RateLimitThrottler implements Throttler {
 
 		public TokenBucket(Path fileName) {
 			super(fileName, Configuration.class);
-			String serviceWithExtension = fileName.getFileName().toString();
+			final String serviceWithExtension = fileName.getFileName().toString();
 			service = serviceWithExtension.substring(0, serviceWithExtension.length() - EXTENTION.length());
 		}
 
@@ -39,7 +39,7 @@ public class RateLimitThrottler implements Throttler {
 			if (!services.contains(service)) {
 				return true;
 			}
-			int newTokens = (int) (Duration.between(lastTime, Instant.now()).toMillis() / delay);
+			final int newTokens = (int) (Duration.between(lastTime, Instant.now()).toMillis() / delay);
 			lastTime = lastTime.plusMillis(delay * newTokens);
 			tokens = Math.min(tokens + newTokens, capacity);
 			tokenCount.labels(service).set(tokens);
@@ -47,7 +47,7 @@ public class RateLimitThrottler implements Throttler {
 		}
 
 		public Pair<String, Map<String, String>> configuration() {
-			Map<String, String> properties = new TreeMap<>();
+			final Map<String, String> properties = new TreeMap<>();
 			properties.put("capacity", Integer.toString(capacity));
 			properties.put("regeneration delay (ms)", Integer.toString(delay));
 			return new Pair<>(String.format("%s Rate Limiter", service), properties);

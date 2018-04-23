@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 /**
  * An olive stanza declaration
@@ -120,7 +120,7 @@ public abstract class OliveNode {
 	 *            returned
 	 * @param constants
 	 */
-	public static boolean validate(List<OliveNode> olives, Function<String, Lookup> definedLookups,
+	public static boolean validate(List<OliveNode> olives, Function<String, LookupDefinition> definedLookups,
 			Function<String, ActionDefinition> definedActions, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants) {
 
@@ -206,7 +206,7 @@ public abstract class OliveNode {
 	 * {@link #resolveDefinitionsExtra(Map, Function, Function, Consumer)}
 	 */
 	public final boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Consumer<String> errorHandler) {
 		final boolean clausesOk = clauses.stream().filter(clause -> clause.resolveDefinitions(definedOlives,
 				definedLookups, definedActions, metricNames, errorHandler)).count() == clauses.size();
@@ -217,7 +217,7 @@ public abstract class OliveNode {
 	 * Do any further non-variable definition resolution specific to this class
 	 */
 	protected abstract boolean resolveDefinitionsExtra(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler);
 
 	/**

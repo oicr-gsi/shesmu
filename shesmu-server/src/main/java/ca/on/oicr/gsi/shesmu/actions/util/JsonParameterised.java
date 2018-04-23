@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.shesmu.Action;
 public interface JsonParameterised {
 	/**
 	 * The JSON object to mutate when writing parameters.
-	 * 
+	 *
 	 * This must not return null.
 	 */
 	public ObjectNode parameters();

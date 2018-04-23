@@ -67,9 +67,9 @@ public final class HotloadingCompiler {
 
 	private final List<String> errors = new ArrayList<>();
 
-	private final Supplier<Stream<Lookup>> lookups;
+	private final Supplier<Stream<LookupDefinition>> lookups;
 
-	public HotloadingCompiler(Supplier<Stream<Lookup>> lookups, Supplier<Stream<ActionDefinition>> actions,
+	public HotloadingCompiler(Supplier<Stream<LookupDefinition>> lookups, Supplier<Stream<ActionDefinition>> actions,
 			Supplier<Stream<Constant>> constants) {
 		this.lookups = lookups;
 		this.actions = actions;
@@ -82,7 +82,8 @@ public final class HotloadingCompiler {
 			final Compiler compiler = new Compiler(false) {
 				private final NameLoader<ActionDefinition> actionCache = new NameLoader<>(actions.get(),
 						ActionDefinition::name);
-				private final NameLoader<Lookup> lookupCache = new NameLoader<>(lookups.get(), Lookup::name);
+				private final NameLoader<LookupDefinition> lookupCache = new NameLoader<>(lookups.get(),
+						LookupDefinition::name);
 
 				@Override
 				protected ClassVisitor createClassVisitor() {
@@ -101,7 +102,7 @@ public final class HotloadingCompiler {
 				}
 
 				@Override
-				protected Lookup getLookup(String lookup) {
+				protected LookupDefinition getLookup(String lookup) {
 					return lookupCache.get(lookup);
 				}
 			};

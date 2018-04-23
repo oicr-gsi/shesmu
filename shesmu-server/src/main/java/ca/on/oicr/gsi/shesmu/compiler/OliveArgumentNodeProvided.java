@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
 /**
@@ -64,7 +64,7 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 	 * Resolve lookups in this argument
 	 */
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return expression.resolveLookups(definedLookups, errorHandler);
 
 	}
