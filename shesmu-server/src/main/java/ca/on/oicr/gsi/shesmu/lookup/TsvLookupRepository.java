@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.lookup;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,15 +21,16 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Gauge;
 
 /**
  * Converts a TSV file into a lookup
- * 
+ *
  * The row must be a Shesmu base type for the data in that column. The last
  * column will be treated as the return value and the first columns will be the
  * parameters to match. Every subsequent row is a set of parameters to check,
@@ -41,7 +45,18 @@ public class TsvLookupRepository implements LookupRepository {
 
 	private static final Pattern TAB = Pattern.compile("\t");
 
-	private static Lookup makeLookup(String name, List<String> lines) {
+	@RuntimeInterop
+	private static Object lookup(List<Function<Object[], Optional<Object>>> attempts, Object defaultValue,
+			Object... parameters) {
+		return attempts.stream()//
+				.map(attempt -> attempt.apply(parameters))//
+				.filter(Optional::isPresent)//
+				.findFirst()//
+				.orElse(Optional.empty())//
+				.orElse(defaultValue);
+	}
+
+	private static LookupDefinition makeLookup(String name, List<String> lines) {
 		if (lines.size() < 2) {
 			return null;
 		}
@@ -74,39 +89,25 @@ public class TsvLookupRepository implements LookupRepository {
 					return parameters -> predicate.test(parameters) ? Optional.of(result) : Optional.empty();
 				}).collect(Collectors.toList());
 
-		return new Lookup() {
-			@Override
-			public Object lookup(Object... parameters) {
-				return attempts.stream()//
-						.map(attempt -> attempt.apply(parameters))//
-						.filter(Optional::isPresent)//
-						.findFirst()//
-						.orElse(Optional.empty())//
-						.orElse(types.get(types.size() - 1).defaultValue());
+		return LookupForInstance.bind(TsvLookupRepository.class, mt -> {
+			try {
+				final MethodHandle lookupMethod = MethodHandles.lookup().findStatic(TsvLookupRepository.class, "lookup",
+						MethodType.methodType(Object.class, List.class, Object.class, Object[].class));
+				return lookupMethod.bindTo(attempts).bindTo(types.get(types.size() - 1).defaultValue())
+						.asVarargsCollector(Object[].class).asType(mt);
+			} catch (NoSuchMethodException | IllegalAccessException e) {
+				return MethodHandles.throwException(types.get(types.size() - 1).javaType(),
+						UnsupportedOperationException.class);
 			}
-
-			@Override
-			public String name() {
-				return name;
-			}
-
-			@Override
-			public Imyhat returnType() {
-				return types.get(types.size() - 1);
-			}
-
-			@Override
-			public Stream<Imyhat> types() {
-				return types.stream().limit(types.size() - 1).map(x -> x);
-			}
-		};
+		}, name, types.get(types.size() - 1),
+				types.stream().limit(types.size() - 1).map(x -> x).toArray(Imyhat[]::new));
 	}
 
-	public static Stream<Lookup> of(Optional<String> source) {
+	public static Stream<LookupDefinition> of(Optional<String> source) {
 		return RuntimeSupport.dataFilesForPath(source, ".lookup").map(TsvLookupRepository::readLookup);
 	}
 
-	private static Lookup readLookup(Path lookupFile) {
+	private static LookupDefinition readLookup(Path lookupFile) {
 		try {
 			final List<String> lines = Files.readAllLines(lookupFile);
 			final String fileName = lookupFile.getFileName().toString();
@@ -117,7 +118,7 @@ public class TsvLookupRepository implements LookupRepository {
 		}
 	}
 
-	private final List<Lookup> configuration = new ArrayList<>();
+	private final List<LookupDefinition> configuration = new ArrayList<>();
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
@@ -129,7 +130,7 @@ public class TsvLookupRepository implements LookupRepository {
 	}
 
 	@Override
-	public Stream<Lookup> queryLookups() {
+	public Stream<LookupDefinition> queryLookups() {
 		lastRead.setToCurrentTime();
 		configuration.clear();
 		return of(RuntimeSupport.environmentVariable())//

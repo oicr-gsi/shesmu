@@ -16,7 +16,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 
 /**
@@ -404,7 +404,8 @@ public abstract class ExpressionNode {
 	/**
 	 * Resolve all lookup definitions in this expression
 	 */
-	public abstract boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler);
+	public abstract boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+			Consumer<String> errorHandler);
 
 	/**
 	 * The type of this expression

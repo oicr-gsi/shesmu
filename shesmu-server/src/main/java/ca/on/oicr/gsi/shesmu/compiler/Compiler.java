@@ -11,7 +11,7 @@ import org.objectweb.asm.ClassVisitor;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 /**
  * A shell of a compiler that can output bytecode
@@ -41,7 +41,7 @@ public abstract class Compiler {
 
 	/**
 	 * Create a new instance of this compiler
-	 * 
+	 *
 	 * @param skipRender
 	 *            if true, no bytecode will be generated when compiler is called;
 	 *            only parsing and checking
@@ -115,5 +115,5 @@ public abstract class Compiler {
 	 *            the name of the lookup
 	 * @return the lookup or null if no lookup is available
 	 */
-	protected abstract Lookup getLookup(String name);
+	protected abstract LookupDefinition getLookup(String name);
 }

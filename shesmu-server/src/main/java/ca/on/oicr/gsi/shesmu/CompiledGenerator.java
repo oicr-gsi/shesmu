@@ -29,9 +29,9 @@ public class CompiledGenerator extends AutoUpdatingFile {
 
 	private ActionGenerator generator = ActionGenerator.NULL;
 
-	private final Supplier<Stream<Lookup>> lookups;
+	private final Supplier<Stream<LookupDefinition>> lookups;
 
-	public CompiledGenerator(Path fileName, Supplier<Stream<Lookup>> lookups,
+	public CompiledGenerator(Path fileName, Supplier<Stream<LookupDefinition>> lookups,
 			Supplier<Stream<ActionDefinition>> actions, Supplier<Stream<Constant>> constants) {
 		super(fileName);
 		this.lookups = lookups;

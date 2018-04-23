@@ -11,7 +11,7 @@ public abstract class AutoUpdatingJsonFile<T> extends AutoUpdatingFile {
 			.build("shesmu_auto_update_good_json", "Whether a JSON configuration file is valid.").labelNames("filename")
 			.register();
 
-	private Class<T> clazz;
+	private final Class<T> clazz;
 
 	public AutoUpdatingJsonFile(Path fileName, Class<T> clazz) {
 		super(fileName);

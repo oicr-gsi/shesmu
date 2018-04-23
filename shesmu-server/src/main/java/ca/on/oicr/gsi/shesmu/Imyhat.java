@@ -95,6 +95,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Class<?> javaType() {
+			return Set.class;
+		}
+
+		@Override
 		public String name() {
 			return "[" + inner.name() + "]";
 		}
@@ -161,6 +166,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Class<?> javaType() {
+			return Tuple.class;
+		}
+
+		@Override
 		public String name() {
 			return Arrays.stream(types).map(Imyhat::name).collect(Collectors.joining(",", "{", "}"));
 		}
@@ -215,6 +225,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Class<?> javaType() {
+			return Object.class;
+		}
+
+		@Override
 		public String name() {
 			return "💩";
 		}
@@ -256,6 +271,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return false;
+		}
+
+		@Override
+		public Class<?> javaType() {
+			return boolean.class;
 		}
 
 		@Override
@@ -303,6 +323,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Class<?> javaType() {
+			return Instant.class;
+		}
+
+		@Override
 		public String name() {
 			return "date";
 		}
@@ -319,7 +344,7 @@ public abstract class Imyhat {
 
 		@Override
 		public Object parse(String s) {
-			return ZonedDateTime.parse(s);
+			return ZonedDateTime.parse(s).toInstant();
 		}
 
 		@Override
@@ -348,6 +373,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return true;
+		}
+
+		@Override
+		public Class<?> javaType() {
+			return long.class;
 		}
 
 		@Override
@@ -391,6 +421,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return false;
+		}
+
+		@Override
+		public Class<?> javaType() {
+			return String.class;
 		}
 
 		@Override
@@ -575,6 +610,8 @@ public abstract class Imyhat {
 	 * equivalent.
 	 */
 	public abstract boolean isSame(Imyhat other);
+
+	public abstract Class<?> javaType();
 
 	/**
 	 * Create a human-friendly string describing this type.

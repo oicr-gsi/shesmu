@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.actions.jira;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,61 +16,37 @@ import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.LookupRepository;
+import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Tuple;
+import ca.on.oicr.gsi.shesmu.lookup.LookupForInstance;
 
 @MetaInfServices(LookupRepository.class)
-public final class JiraLookupRepository extends BaseJiraRepository<Lookup> implements LookupRepository {
+public final class JiraLookupRepository extends BaseJiraRepository<LookupDefinition> implements LookupRepository {
 
-	private static abstract class JiraLookup implements Lookup {
+	private static abstract class JiraLookup extends LookupForInstance {
 		private final JiraRestClient client;
-		private final Object errorResult;
-		private final String name;
 		private final String projectKey;
-		private final Imyhat returnType;
 
-		public JiraLookup(JiraRestClient client, String projectKey, String name, Imyhat returnType,
-				Object errorResult) {
-			super();
+		public JiraLookup(JiraRestClient client, String projectKey, String name, Imyhat returnType)
+				throws NoSuchMethodException, IllegalAccessException {
+			super("lookup", name, returnType, Imyhat.STRING);
 			this.client = client;
 			this.projectKey = projectKey;
-			this.name = name;
-			this.returnType = returnType;
-			this.errorResult = errorResult;
 		}
 
-		protected abstract Object process(SearchResult searchResult) throws Exception;
-
-		@Override
-		public final Object lookup(Object... parameters) {
-			final String jql = (String) parameters[0];
+		protected final Optional<SearchResult> search(String jql) {
 			try {
-				return process(client.getSearchClient()
+				return Optional.of(client.getSearchClient()
 						.searchJql(String.format("(%s) AND project ='%s'", jql, projectKey)).claim());
 			} catch (final Exception e) {
 				e.printStackTrace();
-				return errorResult;
+				return Optional.empty();
 			}
 
 		}
-
-		@Override
-		public final String name() {
-			return name;
-		}
-
-		@Override
-		public final Imyhat returnType() {
-			return returnType;
-		}
-
-		@Override
-		public final Stream<Imyhat> types() {
-			return Stream.of(Imyhat.STRING);
-		}
-
 	}
 
 	private static final Imyhat QUERY_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING).asList();
@@ -78,7 +56,7 @@ public final class JiraLookupRepository extends BaseJiraRepository<Lookup> imple
 	}
 
 	@Override
-	protected Stream<Lookup> create(Configuration config) {
+	protected Stream<LookupDefinition> create(Configuration config) {
 		try {
 			final JiraRestClient client = new AsynchronousJiraRestClientFactory().create(new URI(config.getUrl()),
 					new AuthenticationHandler() {
@@ -89,20 +67,24 @@ public final class JiraLookupRepository extends BaseJiraRepository<Lookup> imple
 						}
 					});
 
-			return Stream.<Lookup>of(new JiraLookup(client, config.getProjectKey(),
-					String.format("count_tickets_%s", config.getName()), Imyhat.INTEGER, -1L) {
+			return Stream.<LookupDefinition>of(new JiraLookup(client, config.getProjectKey(),
+					String.format("count_tickets_%s", config.getName()), Imyhat.INTEGER) {
 
-				@Override
-				protected Object process(SearchResult results) throws Exception {
-					return (long) results.getMaxResults();
+				@RuntimeInterop
+				public long lookup(String jql) {
+					return search(jql).map(x -> (long) x.getMaxResults()).orElse(-1L);
 				}
 			}, new JiraLookup(client, config.getProjectKey(), String.format("query_tickets_%s", config.getName()),
-					QUERY_TYPE, Collections.emptySet()) {
+					QUERY_TYPE) {
 
-				@Override
-				protected Object process(SearchResult results) throws Exception {
+				public Set<Tuple> convertResults(SearchResult results) {
 					return RuntimeSupport.stream(results.getIssues())
 							.map(issue -> new Tuple(issue.getKey(), issue.getSummary())).collect(Collectors.toSet());
+				}
+
+				@RuntimeInterop
+				public Set<Tuple> lookup(String jql) {
+					return search(jql).map(this::convertResults).orElseGet(Collections::emptySet);
 				}
 			});
 		} catch (final Exception e) {
@@ -112,7 +94,7 @@ public final class JiraLookupRepository extends BaseJiraRepository<Lookup> imple
 	}
 
 	@Override
-	public Stream<Lookup> queryLookups() {
+	public Stream<LookupDefinition> queryLookups() {
 		return stream();
 	}
 

@@ -45,14 +45,14 @@ public final class Server {
 			ActionRepository.class, 15, ActionRepository::queryActions);
 	private final CompiledGenerator compiler = new CompiledGenerator(Paths.get(System.getenv("SHESMU_SCRIPT")),
 			this::lookups, this::actionDefinitions, ConstantSource::all);
-	private final CachedRepository<LookupRepository, Lookup> lookupRepository = new CachedRepository<>(
+	private final CachedRepository<LookupRepository, LookupDefinition> lookupRepository = new CachedRepository<>(
 			LookupRepository.class, 15, LookupRepository::queryLookups);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
 
 	private final Instant startTime = Instant.now();
 
-	private final MasterRunner z_master = new MasterRunner(compiler::generator, lookupRepository::stream, processor);
+	private final MasterRunner z_master = new MasterRunner(compiler::generator, processor);
 
 	public Server(int port) throws IOException {
 		server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -98,11 +98,11 @@ public final class Server {
 				writePageHeader(writer);
 
 				writeHeader(writer, "Lookups");
-				lookupRepository.stream().sorted(Comparator.comparing(Lookup::name)).forEach(lookup -> {
+				lookupRepository.stream().sorted(Comparator.comparing(LookupDefinition::name)).forEach(lookup -> {
 					writeBlock(writer, lookup.name());
 					writeRow(writer, "Return", lookup.returnType().name());
-					lookup.types().map(Pair.number()).forEach(p -> writeRow(writer,
-							"Argument " + Integer.toString(p.first() + 1), p.second().name()));
+					lookup.types().map(Pair.number()).forEach(
+							p -> writeRow(writer, "Argument " + Integer.toString(p.first() + 1), p.second().name()));
 
 				});
 				writeFinish(writer);
@@ -248,7 +248,7 @@ public final class Server {
 		});
 	}
 
-	private Stream<Lookup> lookups() {
+	private Stream<LookupDefinition> lookups() {
 		return lookupRepository.stream();
 	}
 
@@ -259,7 +259,7 @@ public final class Server {
 		ConstantSource.sources().count();
 		try {
 			Thread.sleep(5000);
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			// Meh.
 		}
 		System.out.println("Finding actions...");

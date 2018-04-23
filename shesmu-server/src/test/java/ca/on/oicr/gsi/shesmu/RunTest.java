@@ -91,12 +91,7 @@ public class RunTest {
 					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
 					"pointy", Instant.EPOCH, "test") };
 
-	private static final Lookup INT2DATE = new Lookup() {
-
-		@Override
-		public Object lookup(Object... parameters) {
-			return Instant.ofEpochSecond(((Long) parameters[0]).longValue());
-		}
+	private static final LookupDefinition INT2DATE = new LookupDefinition() {
 
 		@Override
 		public String name() {
@@ -112,13 +107,15 @@ public class RunTest {
 		public Stream<Imyhat> types() {
 			return Stream.of(Imyhat.INTEGER);
 		}
-	};
-	private static final Lookup INT2STR = new Lookup() {
 
 		@Override
-		public Object lookup(Object... parameters) {
-			return parameters[0].toString();
+		public void render(GeneratorAdapter methodGen) {
+			methodGen.invokeStatic(Type.getType(Instant.class),
+					new Method("ofEpochSecond", Type.getType(Instant.class), new Type[] { Type.LONG_TYPE }));
+
 		}
+	};
+	private static final LookupDefinition INT2STR = new LookupDefinition() {
 
 		@Override
 		public String name() {
@@ -133,6 +130,13 @@ public class RunTest {
 		@Override
 		public Stream<Imyhat> types() {
 			return Stream.of(Imyhat.INTEGER);
+		}
+
+		@Override
+		public void render(GeneratorAdapter methodGen) {
+			methodGen.invokeStatic(Type.getType(Long.class),
+					new Method("toString", Type.getType(String.class), new Type[] { Type.LONG_TYPE }));
+
 		}
 	};
 
@@ -155,7 +159,7 @@ public class RunTest {
 		return Arrays.stream(DATA);
 	}
 
-	private Stream<Lookup> lookups() {
+	private Stream<LookupDefinition> lookups() {
 		return Stream.of(INT2STR, INT2DATE);
 	}
 
@@ -178,7 +182,6 @@ public class RunTest {
 			final HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions, CONSTANTS::stream);
 			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			final ActionChecker checker = new ActionChecker();
-			generator.populateLookups(new NameLoader<>(lookups(), Lookup::name));
 			generator.run(checker, this::data);
 			if (checker.ok()) {
 				System.err.printf("OK %s\n", file.getFileName());

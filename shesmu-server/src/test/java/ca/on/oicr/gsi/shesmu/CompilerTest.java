@@ -55,7 +55,7 @@ public class CompilerTest {
 		}
 
 		@Override
-		protected Lookup getLookup(String name) {
+		protected LookupDefinition getLookup(String name) {
 			return lookups.get(name);
 		}
 
@@ -71,8 +71,8 @@ public class CompilerTest {
 	private final NameLoader<ActionDefinition> actions = new NameLoader<>(
 			FileActionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())),
 			ActionDefinition::name);
-	private final NameLoader<Lookup> lookups = new NameLoader<>(
-			TsvLookupRepository.of(Optional.of(this.getClass().getResource("/data").getPath())), Lookup::name);
+	private final NameLoader<LookupDefinition> lookups = new NameLoader<>(
+			TsvLookupRepository.of(Optional.of(this.getClass().getResource("/data").getPath())), LookupDefinition::name);
 
 	@Test
 	public void testBad() throws IOException {

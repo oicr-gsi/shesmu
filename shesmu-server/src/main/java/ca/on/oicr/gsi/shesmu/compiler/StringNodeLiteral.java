@@ -7,7 +7,7 @@ import java.util.function.Function;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class StringNodeLiteral extends StringNode {
 
@@ -47,7 +47,7 @@ public class StringNodeLiteral extends StringNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return true;
 	}
 

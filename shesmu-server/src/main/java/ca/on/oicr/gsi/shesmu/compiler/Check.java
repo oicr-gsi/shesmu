@@ -28,14 +28,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 /**
  * The command-line checker for Shesmu scripts
- * 
+ *
  * This talks to a running Shesmu server and uses the actions, lookups, and
  * constants it knows to validate a script. This cannot compile the script, so
  * no bytecode generation is attempted.
@@ -93,8 +93,8 @@ public final class Check extends Compiler {
 					}
 				})//
 				.collect(Collectors.toList());
-		final NameLoader<Lookup> lookups = new NameLoader<>(fetch(remote, "lookups").map(Check::makeLookup),
-				Lookup::name);
+		final NameLoader<LookupDefinition> lookups = new NameLoader<>(fetch(remote, "lookups").map(Check::makeLookup),
+				LookupDefinition::name);
 		final NameLoader<ActionDefinition> actions = new NameLoader<>(fetch(remote, "actions").map(Check::makeAction),
 				ActionDefinition::name);
 
@@ -120,21 +120,21 @@ public final class Check extends Compiler {
 
 	}
 
-	private static Lookup makeLookup(ObjectNode node) {
+	private static LookupDefinition makeLookup(ObjectNode node) {
 		final String name = node.get("name").asText();
 		final Imyhat returnType = Imyhat.parse(node.get("return").asText());
 		final Imyhat[] types = RuntimeSupport.stream(node.get("types").elements()).map(JsonNode::asText)
 				.map(Imyhat::parse).toArray(Imyhat[]::new);
-		return new Lookup() {
-
-			@Override
-			public Object lookup(Object... parameters) {
-				throw new UnsupportedOperationException();
-			}
+		return new LookupDefinition() {
 
 			@Override
 			public String name() {
 				return name;
+			}
+
+			@Override
+			public void render(GeneratorAdapter methodGen) {
+				throw new UnsupportedOperationException();
 			}
 
 			@Override
@@ -179,9 +179,9 @@ public final class Check extends Compiler {
 
 	private final NameLoader<ActionDefinition> actions;
 
-	private final NameLoader<Lookup> lookups;
+	private final NameLoader<LookupDefinition> lookups;
 
-	private Check(NameLoader<Lookup> lookups, NameLoader<ActionDefinition> actions) {
+	private Check(NameLoader<LookupDefinition> lookups, NameLoader<ActionDefinition> actions) {
 		super(true);
 		this.lookups = lookups;
 		this.actions = actions;
@@ -203,7 +203,7 @@ public final class Check extends Compiler {
 	}
 
 	@Override
-	protected Lookup getLookup(String lookup) {
+	protected LookupDefinition getLookup(String lookup) {
 		return lookups.get(lookup);
 	}
 

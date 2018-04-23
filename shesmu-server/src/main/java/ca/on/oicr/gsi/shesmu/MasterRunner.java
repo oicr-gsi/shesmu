@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
@@ -12,26 +11,22 @@ import io.prometheus.client.Gauge;
  * {@link VariablesSource}
  */
 public class MasterRunner {
+	private static final Gauge duplicates = Gauge
+			.build("shesmu_action_duplicate_count", "The number of repeated actions from the last run.").register();
 	private static final Counter errors = Counter
 			.build("shesmu_run_errors", "The number of times processing the input has thrown.").register();
 	private static final Gauge lastRun = Gauge.build("shesmu_run_last_run", "The last time the input was run.")
-			.register();
-	private static final Gauge duplicates = Gauge.build("shesmu_action_duplicate_count", "The number of repeated actions from the last run.")
 			.register();
 	private static final LatencyHistogram runTime = new LatencyHistogram("shesmu_run_time",
 			"The time the script takes to run on all the input.");
 	private final Supplier<ActionGenerator> actionGeneratorSource;
 	private final ActionProcessor actionSink;
 
-	private final Supplier<Stream<Lookup>> lookupSource;
-
 	private volatile boolean running;
 	private final Thread thread = new Thread(this::run, "master_runner");
 
-	public MasterRunner(Supplier<ActionGenerator> actionGeneratorSource, Supplier<Stream<Lookup>> lookupSource,
-			ActionProcessor actionSink) {
+	public MasterRunner(Supplier<ActionGenerator> actionGeneratorSource, ActionProcessor actionSink) {
 		this.actionGeneratorSource = actionGeneratorSource;
-		this.lookupSource = lookupSource;
 		this.actionSink = actionSink;
 	}
 
@@ -41,7 +36,6 @@ public class MasterRunner {
 			try (AutoCloseable timer = runTime.start()) {
 				final AtomicInteger currentDuplicates = new AtomicInteger();
 				final ActionGenerator generator = actionGeneratorSource.get();
-				generator.populateLookups(new NameLoader<>(lookupSource.get(), Lookup::name));
 				generator.run(action -> {
 					if (actionSink.accept(action)) {
 						currentDuplicates.incrementAndGet();

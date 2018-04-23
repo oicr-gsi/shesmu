@@ -8,25 +8,22 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
+import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeLookup extends ExpressionNode {
-	private static final Type A_LOOKUP_TYPE = Type.getType(Lookup.class);
-	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-	private static final Lookup BROKEN_LOOKUP = new Lookup() {
-
-		@Override
-		public Object lookup(Object... parameters) {
-			return null;
-		}
+	private static final LookupDefinition BROKEN_LOOKUP = new LookupDefinition() {
 
 		@Override
 		public String name() {
 			return "💔";
+		}
+
+		@Override
+		public void render(GeneratorAdapter methodGen) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
@@ -39,12 +36,10 @@ public class ExpressionNodeLookup extends ExpressionNode {
 			return Stream.empty();
 		}
 	};
-	private static final Method METHOD_LOOKUP__LOOKUP = new Method("lookup", A_OBJECT_TYPE,
-			new Type[] { Type.getType(Object[].class) });
 
 	private final List<ExpressionNode> arguments;
 
-	private Lookup lookup;
+	private LookupDefinition lookup;
 
 	private final String name;
 
@@ -61,19 +56,8 @@ public class ExpressionNodeLookup extends ExpressionNode {
 
 	@Override
 	public void render(Renderer renderer) {
-		renderer.loadLookup(name, renderer.methodGen());
-		renderer.methodGen().push(arguments.size());
-		renderer.methodGen().newArray(A_OBJECT_TYPE);
-		for (int index = 0; index < arguments.size(); index++) {
-			renderer.methodGen().dup();
-			renderer.methodGen().push(index);
-			arguments.get(index).render(renderer);
-			renderer.methodGen().box(arguments.get(index).type().asmType());
-			renderer.methodGen().arrayStore(A_OBJECT_TYPE);
-		}
-
-		renderer.methodGen().invokeInterface(A_LOOKUP_TYPE, METHOD_LOOKUP__LOOKUP);
-		renderer.methodGen().unbox(lookup.returnType().asmType());
+		arguments.forEach(argument -> argument.render(renderer));
+		lookup.render(renderer.methodGen());
 	}
 
 	@Override
@@ -82,7 +66,7 @@ public class ExpressionNodeLookup extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		boolean ok = true;
 		lookup = definedLookups.apply(name);
 		if (lookup == null) {

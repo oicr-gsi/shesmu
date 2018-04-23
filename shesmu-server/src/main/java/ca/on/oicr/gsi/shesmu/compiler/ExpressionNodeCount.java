@@ -8,7 +8,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeCount extends ExpressionNode {
 	private static final Method A_SET__SIZE = new Method("size", Type.INT_TYPE, new Type[] {});
@@ -43,7 +43,7 @@ public class ExpressionNodeCount extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return inner.resolveLookups(definedLookups, errorHandler);
 	}
 

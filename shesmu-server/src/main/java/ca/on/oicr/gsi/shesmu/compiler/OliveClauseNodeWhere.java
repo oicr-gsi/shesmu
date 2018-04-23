@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
 public class OliveClauseNodeWhere extends OliveClauseNode {
@@ -54,7 +54,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Consumer<String> errorHandler) {
 		return expression.resolveLookups(definedLookups, errorHandler);
 	}

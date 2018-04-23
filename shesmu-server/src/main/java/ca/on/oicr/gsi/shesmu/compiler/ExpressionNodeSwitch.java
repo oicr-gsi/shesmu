@@ -10,7 +10,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 
 public class ExpressionNodeSwitch extends ExpressionNode {
@@ -81,7 +81,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return test.resolveLookups(definedLookups, errorHandler)
 				& cases.stream()
 						.filter(c -> c.first().resolveLookups(definedLookups, errorHandler)

@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 
 public final class CollectNodeOptima extends CollectNodeWithDefault {
@@ -78,7 +78,8 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 	}
 
 	@Override
-	protected boolean resolveLookupsExtra(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	protected boolean resolveLookupsExtra(Function<String, LookupDefinition> definedLookups,
+			Consumer<String> errorHandler) {
 		return selector.resolveLookups(definedLookups, errorHandler);
 	}
 

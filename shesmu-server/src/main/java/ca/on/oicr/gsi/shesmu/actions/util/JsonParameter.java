@@ -13,10 +13,10 @@ import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 
 /**
  * A parameter definition for a parameter in a JSON object
- * 
+ *
  * This assumes that the {@link Action} implements {@link JsonParameterised} and
  * will set a property in that JSON object.
- * 
+ *
  * @author amasella
  *
  */
@@ -38,10 +38,13 @@ public final class JsonParameter implements ParameterDefinition {
 
 	/**
 	 * The name of the JSON field
-	 * 
-	 * @param name the JSON property name
-	 * @param type the type to use
-	 * @param required whether this parameter is required
+	 *
+	 * @param name
+	 *            the JSON property name
+	 * @param type
+	 *            the type to use
+	 * @param required
+	 *            whether this parameter is required
 	 */
 	public JsonParameter(String name, Imyhat type, boolean required) {
 		this.name = name;

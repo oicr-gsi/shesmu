@@ -9,7 +9,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.Tuple;
 
 public class ExpressionNodeTuple extends ExpressionNode {
@@ -61,7 +61,7 @@ public class ExpressionNodeTuple extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, Lookup> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
 		return items.stream().filter(item -> item.resolveLookups(definedLookups, errorHandler)).count() == items.size();
 	}
 

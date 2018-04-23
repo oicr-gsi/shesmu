@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Lookup;
+import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 /**
  * A collection action in a “Group” clause
@@ -52,7 +52,7 @@ public final class GroupNode extends ByChildNode {
 
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, Lookup> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler) {
 		return expression.resolveLookups(definedLookups, errorHandler);
 	}

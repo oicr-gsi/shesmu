@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Bean of record responses from Guanyin
- * 
+ *
  * This does not map all fields: only the ones actually consume by Shesmu
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -14,7 +14,6 @@ public class RecordDto {
 	private String generated;
 	private long id;
 	private long report;
-	
 
 	@JsonProperty("date_generated")
 	public String getGenerated() {

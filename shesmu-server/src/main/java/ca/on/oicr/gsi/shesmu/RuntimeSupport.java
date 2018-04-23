@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,7 +45,6 @@ import io.prometheus.client.Gauge;
  * Utilities for making bytecode generation easier
  */
 public final class RuntimeSupport {
-
 	private static class Holder<T> {
 
 		private final BiPredicate<T, T> equals;
@@ -320,5 +320,22 @@ public final class RuntimeSupport {
 	}
 
 	private RuntimeSupport() {
+	}
+
+	@RuntimeInterop
+	public String file_name(String input) {
+		return Paths.get(input).getFileName().toString();
+
+	}
+
+	@RuntimeInterop
+	public String lookup(String input) {
+		final Path path = Paths.get(input).getParent();
+		return path == null ? "" : path.toString();
+	}
+
+	@RuntimeInterop
+	public Instant start_of_day(Instant input) {
+		return input.truncatedTo(ChronoUnit.DAYS);
 	}
 }
