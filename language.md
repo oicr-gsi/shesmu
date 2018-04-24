@@ -333,13 +333,17 @@ A subexpression.
 An integer literal. Integer may be suffixed by one of the following multipliers:
 
 | Unit  | Multiplier |
-|--- |---     |
-| G  | 1000^3 |
-| Gi | 1024^3 |
-| M  | 1000^2 |
-| Mi | 1024^2 |
-| k  | 1000   |
-| ki | 1024   |
+|---    |---     |
+| G     | 1000^3 |
+| Gi    | 1024^3 |
+| M     | 1000^2 |
+| Mi    | 1024^2 |
+| k     | 1000   |
+| ki    | 1024   |
+| mins  | 60     |
+| hours | 3600   |
+| days  | 86400  |
+| weeks | 604800 |
 
 #### Boolean Literals
 - `True`
