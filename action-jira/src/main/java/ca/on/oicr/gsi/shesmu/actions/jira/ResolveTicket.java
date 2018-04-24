@@ -1,8 +1,9 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
+import java.util.stream.Stream;
+
 import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 
 import ca.on.oicr.gsi.shesmu.ActionState;
@@ -13,22 +14,24 @@ public class ResolveTicket extends BaseFileTicket {
 	@RuntimeInterop
 	public String comment;
 
-	public ResolveTicket(String name, String url, String token, String projectKey) {
-		super(name, url, token, projectKey);
+	public ResolveTicket(String id) {
+		super(id);
 	}
 
 	@Override
-	protected ActionState perform(SearchResult results) {
+	protected ActionState perform(Stream<Issue> results) {
 
-		for (final Issue issue : results.getIssues()) {
-			if (!issue.getStatus().getName().equalsIgnoreCase("CLOSED")
-					&& !issue.getStatus().getName().equalsIgnoreCase("RESOLVED")) {
-				final TransitionInput transition = new TransitionInput(5,
-						comment == null ? null : Comment.valueOf(comment));
-				updateIssue(issue, transition);
+		return results.reduce(ActionState.SUCCEEDED, (state, issue) -> {
+			if (issue.getStatus().getName().equalsIgnoreCase("CLOSED")
+					|| issue.getStatus().getName().equalsIgnoreCase("RESOLVED")) {
+				return ActionState.SUCCEEDED;
 			}
-		}
-		return ActionState.SUCCEEDED;
+			final TransitionInput transition = new TransitionInput(5,
+					comment == null ? null : Comment.valueOf(comment));
+			final ActionState updated = updateIssue(issue, transition);
+			return state == ActionState.SUCCEEDED ? updated : state;
+
+		}, (a, b) -> a == ActionState.SUCCEEDED ? b : a);
 	}
 
 }

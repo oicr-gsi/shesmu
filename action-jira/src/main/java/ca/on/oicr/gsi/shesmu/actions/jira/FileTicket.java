@@ -1,7 +1,10 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 
 import ca.on.oicr.gsi.shesmu.ActionState;
@@ -12,8 +15,8 @@ public class FileTicket extends BaseFileTicket {
 	@RuntimeInterop
 	public String description;
 
-	public FileTicket(String name, String url, String token, String projectKey) {
-		super(name, url, token, projectKey);
+	public FileTicket(String id) {
+		super(id);
 	}
 
 	private ActionState checkIssue(Issue issue) {
@@ -25,12 +28,13 @@ public class FileTicket extends BaseFileTicket {
 	}
 
 	@Override
-	protected ActionState perform(SearchResult results) {
-		switch (results.getMaxResults()) {
+	protected ActionState perform(Stream<Issue> results) {
+		final List<Issue> matches = results.collect(Collectors.toList());
+		switch (matches.size()) {
 		case 0:
 			return createIssue(description);
 		case 1:
-			return checkIssue(results.getIssues().iterator().next());
+			return checkIssue(matches.get(0));
 		default:
 			return badIssue();
 		}
