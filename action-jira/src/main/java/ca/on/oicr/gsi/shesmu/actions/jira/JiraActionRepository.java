@@ -16,11 +16,11 @@ import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 public final class JiraActionRepository extends BaseJiraRepository<ActionDefinition> implements ActionRepository {
 
 	private static class TicketActionDefinition extends ActionDefinition {
-		private final Configuration config;
+		private final JiraConfig config;
 
-		public TicketActionDefinition(Configuration config, String prefix, Type type,
+		public TicketActionDefinition(JiraConfig config, String prefix, Type type,
 				Stream<ParameterDefinition> parameters) {
-			super(String.format("%s_%s", prefix, config.getName()), type, Stream.concat(parameters,
+			super(String.format("%s_%s", prefix, config.instance()), type, Stream.concat(parameters,
 					Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "summary", Imyhat.STRING, true))));
 			this.config = config;
 		}
@@ -29,10 +29,7 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 		public void initialize(GeneratorAdapter methodGen) {
 			methodGen.newInstance(type());
 			methodGen.dup();
-			methodGen.push(config.getName());
-			methodGen.push(config.getUrl());
-			methodGen.push(config.getToken());
-			methodGen.push(config.getProjectKey());
+			methodGen.push(config.id());
 			methodGen.invokeConstructor(type(), CTOR_FILE_TICKET);
 		}
 
@@ -42,21 +39,25 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 	private static final Type A_RESOLVE_TICKET_TYPE = Type.getType(ResolveTicket.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
-	private static final Method CTOR_FILE_TICKET = new Method("<init>", Type.VOID_TYPE,
-			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE });
+	private static final Method CTOR_FILE_TICKET = new Method("<init>", Type.VOID_TYPE, new Type[] { A_STRING_TYPE });
 
 	public JiraActionRepository() {
 		super("JIRA Action Repository");
 	}
 
 	@Override
-	protected Stream<ActionDefinition> create(Configuration config) {
+	protected Stream<ActionDefinition> create(JiraConfig config) {
 		return Stream.of(
 				new TicketActionDefinition(config, "ticket", A_FILE_TICKET_TYPE,
 						Stream.of(
 								ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, true))),
 				new TicketActionDefinition(config, "resolve_ticket", A_RESOLVE_TICKET_TYPE, Stream
 						.of(ParameterDefinition.forField(A_RESOLVE_TICKET_TYPE, "comment", Imyhat.STRING, false))));
+	}
+
+	@Override
+	protected String purpose() {
+		return "action";
 	}
 
 	@Override

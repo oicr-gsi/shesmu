@@ -1,19 +1,17 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import com.atlassian.httpclient.api.Request.Builder;
-import com.atlassian.jira.rest.client.api.AuthenticationHandler;
-import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.SearchResult;
+import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
 import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
-import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -39,55 +37,38 @@ public abstract class BaseFileTicket extends Action {
 			.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.").labelNames("v")
 			.register();
 
-	private final JiraRestClient client;
+	private final JiraConnection config;
 
 	private URI issueUrl;
-
-	private final String name;
-
-	private final String projectKey;
 
 	@RuntimeInterop
 	public String summary;
 
-	public BaseFileTicket(String name, String url, String token, String projectKey) {
-		this.name = name;
-		this.projectKey = projectKey;
-		JiraRestClient client;
-		try {
-			client = new AsynchronousJiraRestClientFactory().create(new URI(url), new AuthenticationHandler() {
-
-				@Override
-				public void configure(Builder builder) {
-					builder.setHeader("Authorization", "Bearer " + token);
-				}
-			});
-		} catch (final Exception e) {
-			client = null;
-			e.printStackTrace();
-		}
-		this.client = client;
+	public BaseFileTicket(String id) {
+		config = BaseJiraRepository.get(id);
 	}
 
 	protected final ActionState badIssue() {
-		issueBad.labels(name).inc();
+		issueBad.labels(config.instance()).inc();
 		issueUrl = null;
 		return ActionState.FAILED;
 	}
 
 	protected final ActionState createIssue(String description) {
-		issueCreates.labels(name).inc();
+		issueCreates.labels(config.instance()).inc();
 
 		final Map<String, Object> project = new HashMap<>();
-		project.put("key", projectKey);
+		project.put("key", config.projectKey());
 		final Map<String, Object> issueType = new HashMap<>();
 		issueType.put("name", "Bug");
 		final IssueInput input = IssueInput.createWithFields(
-				new FieldInput("project", new ComplexIssueInputFieldValue(project)), new FieldInput("summary", summary),
-				new FieldInput("description", description),
-				new FieldInput("issuetype", new ComplexIssueInputFieldValue(issueType)));
+				new FieldInput(IssueFieldId.PROJECT_FIELD, new ComplexIssueInputFieldValue(project)), //
+				new FieldInput(IssueFieldId.SUMMARY_FIELD, summary), //
+				new FieldInput(IssueFieldId.DESCRIPTION_FIELD, description), //
+				new FieldInput(IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)), //
+				new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot")));
 
-		issueUrl = client.getIssueClient().createIssue(input).claim().getSelf();
+		issueUrl = config.client().getIssueClient().createIssue(input).claim().getSelf();
 		return ActionState.SUCCEEDED;
 	}
 
@@ -110,18 +91,11 @@ public abstract class BaseFileTicket extends Action {
 		} else if (!issueUrl.equals(other.issueUrl)) {
 			return false;
 		}
-		if (name == null) {
-			if (other.name != null) {
+		if (config == null) {
+			if (other.config != null) {
 				return false;
 			}
-		} else if (!name.equals(other.name)) {
-			return false;
-		}
-		if (projectKey == null) {
-			if (other.projectKey != null) {
-				return false;
-			}
-		} else if (!projectKey.equals(other.projectKey)) {
+		} else if (!config.equals(other.config)) {
 			return false;
 		}
 		if (summary == null) {
@@ -139,35 +113,29 @@ public abstract class BaseFileTicket extends Action {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (issueUrl == null ? 0 : issueUrl.hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (projectKey == null ? 0 : projectKey.hashCode());
+		result = prime * result + (config == null ? 0 : config.hashCode());
 		result = prime * result + (summary == null ? 0 : summary.hashCode());
 		return result;
 	}
 
 	@Override
 	public ActionState perform() {
-		if (client == null) {
+		if (config == null) {
 			return ActionState.FAILED;
 		}
-		if (Throttler.anyOverloaded("jira", projectKey)) {
+		if (Throttler.anyOverloaded("jira", config.projectKey())) {
 			return ActionState.THROTTLED;
 		}
-		requests.labels(name).inc();
+		requests.labels(config.instance()).inc();
 		try {
-			final SearchResult results = client.getSearchClient()
-					.searchJql(
-							String.format("summary = '%s' AND project = '%s'", summary.replace("'", "\\'"), projectKey),
-							null, null, null)
-					.claim();
-			return perform(results);
+			return perform(config.issues().filter(issue -> issue.getSummary().equals(summary)));
 		} catch (final Exception e) {
-			failure.labels(name).inc();
+			failure.labels(config.instance()).inc();
 			return ActionState.UNKNOWN;
 		}
 	}
 
-	protected abstract ActionState perform(SearchResult results);
+	protected abstract ActionState perform(Stream<Issue> results);
 
 	@Override
 	public int priority() {
@@ -183,16 +151,16 @@ public abstract class BaseFileTicket extends Action {
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
 		node.put("action", "jira-issue");
-		node.put("instanceName", name);
+		node.put("instanceName", config.instance());
 		node.put("summary", summary);
 		node.put("url", issueUrl == null ? null : issueUrl.toString());
 		return node;
 	}
 
 	protected final ActionState updateIssue(Issue issue, TransitionInput transition) {
-		issueUpdates.labels(name).inc();
+		issueUpdates.labels(config.instance()).inc();
 		issueUrl = issue.getSelf();
-		client.getIssueClient().transition(issue, transition).claim();
+		config.client().getIssueClient().transition(issue, transition).claim();
 		return ActionState.SUCCEEDED;
 	}
 
