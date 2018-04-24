@@ -50,6 +50,10 @@ public abstract class ExpressionNode {
 		INT_SUFFIX.addKeyword("G", just(1000 * 1000 * 1000));
 		INT_SUFFIX.addKeyword("M", just(1000 * 1000));
 		INT_SUFFIX.addKeyword("k", just(1000));
+		INT_SUFFIX.addKeyword("weeks", just(3600 * 24 * 7));
+		INT_SUFFIX.addKeyword("days", just(3600 * 24));
+		INT_SUFFIX.addKeyword("hours", just(3600));
+		INT_SUFFIX.addKeyword("mins", just(60));
 		INT_SUFFIX.addKeyword("", just(1));
 
 		LOGICAL_DISJUNCTION.addSymbol("||", just(ExpressionNodeLogicalOr::new));
