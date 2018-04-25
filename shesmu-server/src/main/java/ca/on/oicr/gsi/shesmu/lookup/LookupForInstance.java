@@ -36,10 +36,10 @@ public class LookupForInstance implements LookupDefinition {
 
 	}
 
-	public static <T> LookupForInstance bind(Class<T> owner, T instance, String methodName, String name,
+	public static <T> LookupForInstance bind(Lookup lookup,Class<T> owner, T instance, String methodName, String name,
 			Imyhat returnType, Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
 		return new LookupForInstance(
-				new ConstantCallSite(findVirtualFor(owner, methodName, returnType, parameterTypes).bindTo(instance)),
+				new ConstantCallSite(findVirtualFor(lookup, owner, methodName, returnType, parameterTypes).bindTo(instance)),
 				name, returnType, parameterTypes);
 
 	}
@@ -48,10 +48,9 @@ public class LookupForInstance implements LookupDefinition {
 		return lookups.get(methodName);
 	}
 
-	public static MethodHandle findVirtualFor(Class<?> clazz, String methodName, Imyhat returnType,
+	public static MethodHandle findVirtualFor(Lookup lookup, Class<?> clazz, String methodName, Imyhat returnType,
 			Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
-		return MethodHandles.publicLookup().findVirtual(clazz, methodName,
-				methodTypeByImyhat(returnType, parameterTypes));
+		return lookup.findVirtual(clazz, methodName, methodTypeByImyhat(returnType, parameterTypes));
 	}
 
 	public static MethodType methodTypeByImyhat(Imyhat returnType, Imyhat... parameterTypes) {
@@ -76,15 +75,15 @@ public class LookupForInstance implements LookupDefinition {
 		lookups.put(token, callsite);
 	}
 
-	public LookupForInstance(String methodName, String name, Imyhat returnType, Imyhat... parameterTypes)
+	public LookupForInstance(Lookup lookup, String methodName, String name, Imyhat returnType, Imyhat... parameterTypes)
 			throws NoSuchMethodException, IllegalAccessException {
 		super();
 		this.name = name;
 		this.returnType = returnType;
 		this.parameterTypes = parameterTypes;
 		token = String.format("i%d", TOKEN_SOURCE.getAndIncrement());
-		lookups.put(token,
-				new ConstantCallSite(findVirtualFor(getClass(), methodName, returnType, parameterTypes).bindTo(this)));
+		lookups.put(token, new ConstantCallSite(
+				findVirtualFor(lookup, getClass(), methodName, returnType, parameterTypes).bindTo(this)));
 	}
 
 	@Override

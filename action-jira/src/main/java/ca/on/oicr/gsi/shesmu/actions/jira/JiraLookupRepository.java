@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.actions.jira;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,17 +49,17 @@ public final class JiraLookupRepository extends BaseJiraRepository<LookupDefinit
 	@Override
 	protected Stream<LookupDefinition> create(JiraConfig config) {
 		try {
-
+			Lookup lookup = MethodHandles.lookup();
 			return Stream.<LookupDefinition>of(
-					new LookupForInstance("lookup", String.format("count_tickets_%s", config.instance()),
+					new LookupForInstance(lookup, "lookup", String.format("count_tickets_%s", config.instance()),
 							Imyhat.INTEGER, Imyhat.STRING, Imyhat.BOOLEAN) {
 
 						@RuntimeInterop
 						public long lookup(String keyword, boolean open) {
 							return config.issues().filter(new IssueFilter(keyword, open)).count();
 						}
-					}, new LookupForInstance("lookup", String.format("query_tickets_%s", config.instance()), QUERY_TYPE,
-							Imyhat.STRING, Imyhat.BOOLEAN) {
+					}, new LookupForInstance(lookup, "lookup", String.format("query_tickets_%s", config.instance()),
+							QUERY_TYPE, Imyhat.STRING, Imyhat.BOOLEAN) {
 
 						@RuntimeInterop
 						public Set<Tuple> lookup(String keyword, boolean open) {

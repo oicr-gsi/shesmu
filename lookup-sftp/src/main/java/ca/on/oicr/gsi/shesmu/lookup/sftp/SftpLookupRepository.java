@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.lookup.sftp;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -80,12 +82,13 @@ public class SftpLookupRepository implements LookupRepository {
 			service = filePart.substring(0, filePart.length() - EXTENSION.length());
 
 			try {
-				definitions.add(LookupForInstance.bind(SftpServer.class, this, "size",
+				Lookup lookup = MethodHandles.lookup();
+				definitions.add(LookupForInstance.bind(lookup, SftpServer.class, this, "size",
 						String.format("%s_size", service), Imyhat.INTEGER, Imyhat.STRING, Imyhat.INTEGER));
-				definitions.add(LookupForInstance.bind(SftpServer.class, this, "exists",
-						String.format("%s_exists", service), Imyhat.INTEGER, Imyhat.STRING));
-				definitions.add(LookupForInstance.bind(SftpServer.class, this, "mtime",
-						String.format("%s_mtime", service), Imyhat.INTEGER, Imyhat.STRING, Imyhat.INTEGER));
+				definitions.add(LookupForInstance.bind(lookup, SftpServer.class, this, "exists",
+						String.format("%s_exists", service), Imyhat.BOOLEAN, Imyhat.STRING));
+				definitions.add(LookupForInstance.bind(lookup, SftpServer.class, this, "mtime",
+						String.format("%s_mtime", service), Imyhat.DATE, Imyhat.STRING, Imyhat.DATE));
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				e.printStackTrace();
 			}
