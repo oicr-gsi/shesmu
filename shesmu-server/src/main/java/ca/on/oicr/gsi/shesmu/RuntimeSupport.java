@@ -208,8 +208,20 @@ public final class RuntimeSupport {
 		return Duration.between(right, left).getSeconds();
 	}
 
+	@RuntimeInterop
+	public static String dir_name(String input) {
+		final Path path = Paths.get(input).getParent();
+		return path == null ? "" : path.toString();
+	}
+
 	public static Optional<String> environmentVariable() {
 		return Optional.ofNullable(System.getenv("SHESMU_DATA"));
+	}
+
+	@RuntimeInterop
+	public static String file_name(String input) {
+		return Paths.get(input).getFileName().toString();
+
 	}
 
 	/**
@@ -307,6 +319,11 @@ public final class RuntimeSupport {
 				.map(Entry::getKey);
 	}
 
+	@RuntimeInterop
+	public static Instant start_of_day(Instant input) {
+		return input.truncatedTo(ChronoUnit.DAYS);
+	}
+
 	public static <T> Stream<T> stream(Iterable<T> iterable) {
 		return stream(iterable.spliterator());
 	}
@@ -320,22 +337,5 @@ public final class RuntimeSupport {
 	}
 
 	private RuntimeSupport() {
-	}
-
-	@RuntimeInterop
-	public String file_name(String input) {
-		return Paths.get(input).getFileName().toString();
-
-	}
-
-	@RuntimeInterop
-	public String lookup(String input) {
-		final Path path = Paths.get(input).getParent();
-		return path == null ? "" : path.toString();
-	}
-
-	@RuntimeInterop
-	public Instant start_of_day(Instant input) {
-		return input.truncatedTo(ChronoUnit.DAYS);
 	}
 }
