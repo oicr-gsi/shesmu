@@ -88,15 +88,15 @@ public class RateLimitThrottler implements Throttler {
 	}
 
 	@Override
-	public boolean isOverloaded(Set<String> services) {
+	public synchronized boolean isOverloaded(Set<String> services) {
 		if (buckets.isEmpty()) {
 			return false;
 		}
 		if (buckets.stream().allMatch(bucket -> bucket.checkCapacity(services))) {
 			buckets.forEach(TokenBucket::decrement);
-			return true;
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 	@Override
