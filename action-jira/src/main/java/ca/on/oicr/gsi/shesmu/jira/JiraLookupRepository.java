@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -49,7 +49,7 @@ public final class JiraLookupRepository extends BaseJiraRepository<LookupDefinit
 	@Override
 	protected Stream<LookupDefinition> create(JiraConfig config) {
 		try {
-			Lookup lookup = MethodHandles.lookup();
+			final Lookup lookup = MethodHandles.lookup();
 			return Stream.<LookupDefinition>of(
 					new LookupForInstance(lookup, "lookup", String.format("count_tickets_%s", config.instance()),
 							Imyhat.INTEGER, Imyhat.STRING, Imyhat.BOOLEAN) {

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -21,7 +21,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import io.prometheus.client.Counter;
 
-public abstract class BaseFileTicket extends Action {
+public abstract class BaseTicketAction extends Action {
 	private static final Counter failure = Counter
 			.build("shesmu_jira_client_failures", "Number of failed requests to the JIRA web service.")
 			.labelNames("name").register();
@@ -41,10 +41,12 @@ public abstract class BaseFileTicket extends Action {
 
 	private URI issueUrl;
 
+	private final String jsonName;
 	@RuntimeInterop
 	public String summary;
 
-	public BaseFileTicket(String id) {
+	public BaseTicketAction(String id, String jsonName) {
+		this.jsonName = jsonName;
 		config = BaseJiraRepository.get(id);
 	}
 
@@ -55,6 +57,9 @@ public abstract class BaseFileTicket extends Action {
 	}
 
 	protected final ActionState createIssue(String description) {
+		if (Throttler.anyOverloaded("jira", config.projectKey())) {
+			return ActionState.THROTTLED;
+		}
 		issueCreates.labels(config.instance()).inc();
 
 		final Map<String, Object> project = new HashMap<>();
@@ -83,7 +88,7 @@ public abstract class BaseFileTicket extends Action {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final BaseFileTicket other = (BaseFileTicket) obj;
+		final BaseTicketAction other = (BaseTicketAction) obj;
 		if (issueUrl == null) {
 			if (other.issueUrl != null) {
 				return false;
@@ -123,9 +128,6 @@ public abstract class BaseFileTicket extends Action {
 		if (config == null) {
 			return ActionState.FAILED;
 		}
-		if (Throttler.anyOverloaded("jira", config.projectKey())) {
-			return ActionState.THROTTLED;
-		}
 		requests.labels(config.instance()).inc();
 		try {
 			return perform(config.issues().filter(issue -> issue.getSummary().equals(summary)));
@@ -150,7 +152,7 @@ public abstract class BaseFileTicket extends Action {
 	@Override
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("action", "jira-issue");
+		node.put("type", jsonName);
 		node.put("instanceName", config.instance());
 		node.put("summary", summary);
 		node.put("url", issueUrl == null ? null : issueUrl.toString());
@@ -158,6 +160,9 @@ public abstract class BaseFileTicket extends Action {
 	}
 
 	protected final ActionState updateIssue(Issue issue, TransitionInput transition) {
+		if (Throttler.anyOverloaded("jira", config.projectKey())) {
+			return ActionState.THROTTLED;
+		}
 		issueUpdates.labels(config.instance()).inc();
 		issueUrl = issue.getSelf();
 		config.client().getIssueClient().transition(issue, transition).claim();

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import java.util.stream.Stream;
 
@@ -9,13 +9,13 @@ import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 
-public class ResolveTicket extends BaseFileTicket {
+public class ResolveTicket extends BaseTicketAction {
 
 	@RuntimeInterop
 	public String comment;
 
 	public ResolveTicket(String id) {
-		super(id);
+		super(id, "jira-close-ticket");
 	}
 
 	@Override
