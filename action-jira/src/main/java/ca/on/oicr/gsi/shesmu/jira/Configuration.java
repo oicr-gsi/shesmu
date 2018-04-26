@@ -1,14 +1,9 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 public final class Configuration {
-	private String name;
 	private String projectKey;
 	private String token;
 	private String url;
-
-	public String getName() {
-		return name;
-	}
 
 	public String getProjectKey() {
 		return projectKey;
@@ -20,10 +15,6 @@ public final class Configuration {
 
 	public String getUrl() {
 		return url;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public void setProjectKey(String projectKey) {

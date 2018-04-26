@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import java.util.stream.Stream;
 
@@ -20,8 +20,8 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 
 		public TicketActionDefinition(JiraConfig config, String prefix, Type type,
 				Stream<ParameterDefinition> parameters) {
-			super(String.format("%s_%s", prefix, config.instance()), type, Stream.concat(parameters,
-					Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "summary", Imyhat.STRING, true))));
+			super(String.format("%s_%s", prefix, config.instance()), type, Stream.concat(parameters, Stream
+					.of(ParameterDefinition.forField(A_BASE_TICKET_ACTION_TYPE, "summary", Imyhat.STRING, true))));
 			this.config = config;
 		}
 
@@ -35,6 +35,7 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 
 	}
 
+	private static final Type A_BASE_TICKET_ACTION_TYPE = Type.getType(BaseTicketAction.class);
 	private static final Type A_FILE_TICKET_TYPE = Type.getType(FileTicket.class);
 	private static final Type A_RESOLVE_TICKET_TYPE = Type.getType(ResolveTicket.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,13 +10,13 @@ import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 
-public class FileTicket extends BaseFileTicket {
+public class FileTicket extends BaseTicketAction {
 
 	@RuntimeInterop
 	public String description;
 
 	public FileTicket(String id) {
-		super(id);
+		super(id, "jira-open-ticket");
 	}
 
 	private ActionState checkIssue(Issue issue) {

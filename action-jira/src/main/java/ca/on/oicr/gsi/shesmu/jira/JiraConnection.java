@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.actions.jira;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import java.util.stream.Stream;
 
