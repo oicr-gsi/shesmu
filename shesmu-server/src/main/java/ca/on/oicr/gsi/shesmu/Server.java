@@ -306,6 +306,8 @@ public final class Server {
 		System.out.printf("Found %d lookups\n", lookupCount);
 		final long constantCount = ConstantSource.all().count();
 		System.out.printf("Found %d constants\n", constantCount);
+		final long throttlerCount = Throttler.services().count();
+		System.out.printf("Found %d throttler\n", throttlerCount);
 		System.out.println("Compiling script...");
 		compiler.start();
 		System.out.println("Starting action processor...");
