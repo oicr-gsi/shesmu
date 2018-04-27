@@ -23,6 +23,7 @@ public class StandardLookups implements LookupRepository {
 
 	private static final LookupDefinition[] LOOKUPS = new LookupDefinition[] {
 			LookupDefinition.staticMethod(RuntimeSupport.class, "start_of_day", Imyhat.DATE, Imyhat.DATE),
+			LookupDefinition.staticMethod(RuntimeSupport.class, "join_path", Imyhat.STRING, Imyhat.STRING),
 			LookupDefinition.staticMethod(RuntimeSupport.class, "file_name", Imyhat.STRING, Imyhat.STRING),
 			LookupDefinition.staticMethod(RuntimeSupport.class, "dir_name", Imyhat.STRING, Imyhat.STRING) };
 

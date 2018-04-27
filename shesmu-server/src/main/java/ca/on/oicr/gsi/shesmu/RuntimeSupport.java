@@ -224,6 +224,11 @@ public final class RuntimeSupport {
 
 	}
 
+	@RuntimeInterop
+	public static String join_path(String dir, String file) {
+		return Paths.get(dir).resolve(file).toString();
+	}
+
 	/**
 	 * Add Prometheus monitoring to a stream.
 	 *
