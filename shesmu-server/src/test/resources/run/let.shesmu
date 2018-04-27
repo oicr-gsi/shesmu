@@ -1,0 +1,3 @@
+Run ok
+ Let x = workflow
+ With { ok = x == "SlowA" }

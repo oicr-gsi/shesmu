@@ -99,6 +99,36 @@ Often, the same data is duplicated and there needs to be grouping that uses the
         paths = paths
       }
 
+After complicated regrouping, it's often helpful to transform and rename
+things. The `Let` clause provides this:
+
+    Run lane_completeness_report
+      # Get all the sample provenance and workflows that have produced FASTQs
+      Where source == "sample_provenance" || metatype == "chemical/seq-na-fastq-gzip"
+      Group
+          workflows = workflow,
+          paths = {source == "sample_provenance", path},
+          sources = source,
+          timestamps = timestamps
+        By ius
+      Let
+        # A lane is processed if there was a LIMS record and at least one FASTQ produced
+        lane_was_processed = "sample_provenance" In sources && Count workflows > 1,
+        sequencer_run = ius@0,
+        lane_number = ius@1,
+        path = paths $ Filter(x) x@0 First "",
+        timestamp = (timestamps $ Max(x) x Default epoch)
+      # Now regroup by sequencer run
+      Group
+          lanes_were_processed = lane_was_processed,
+          lanes = lane_number,
+          timestamps = timestamp
+        By sequencer_run, path
+      With {
+        run = sequencer_run,
+        path = path
+      }
+
 To make reusable logic, the _Define_ olive can be used:
 
     Define standard_fastq()

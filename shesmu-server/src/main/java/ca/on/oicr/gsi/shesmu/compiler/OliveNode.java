@@ -21,7 +21,7 @@ import ca.on.oicr.gsi.shesmu.LookupDefinition;
  */
 public abstract class OliveNode {
 	protected enum ClauseStreamOrder {
-		BAD, GROUPED, PURE
+		BAD, PURE, TRANSFORMED
 	}
 
 	private static final Parser.ParseDispatch<OliveNode> ROOTS = new Parser.ParseDispatch<>();

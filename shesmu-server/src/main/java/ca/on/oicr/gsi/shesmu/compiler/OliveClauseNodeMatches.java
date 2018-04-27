@@ -35,13 +35,13 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 		switch (state) {
 		case BAD:
 			return ClauseStreamOrder.BAD;
-		case GROUPED:
+		case TRANSFORMED:
 			errorHandler.accept(
 					String.format("%d:%d: “Matches” clause cannot be applied to grouped result.", line, column));
 			return ClauseStreamOrder.BAD;
 
 		case PURE:
-			return target.isRoot() ? ClauseStreamOrder.PURE : ClauseStreamOrder.GROUPED;
+			return target.isRoot() ? ClauseStreamOrder.PURE : ClauseStreamOrder.TRANSFORMED;
 		default:
 			return ClauseStreamOrder.BAD;
 		}
