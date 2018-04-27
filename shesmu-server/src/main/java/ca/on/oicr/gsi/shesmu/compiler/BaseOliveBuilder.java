@@ -67,6 +67,7 @@ public abstract class BaseOliveBuilder {
 
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
+	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
 
 	private Type currentType;
 
@@ -134,6 +135,40 @@ public abstract class BaseOliveBuilder {
 	 */
 	public final RegroupVariablesBuilder group(LoadableValue... capturedVariables) {
 		return regroup("Group", "group", false, capturedVariables);
+	}
+
+	public final LetBuilder let(LoadableValue... capturedVariables) {
+		final String className = String.format("shesmu/dyn/Let%d$%d", oliveId, steps.size());
+
+		final Type oldType = currentType;
+		final Type newType = Type.getObjectType(className);
+		currentType = newType;
+
+		final Method createMethod = new Method(String.format("let_%d_%d", oliveId, steps.size()), newType,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
+						.toArray(Type[]::new));
+
+		steps.add(renderer -> {
+			final Type[] captureTypes = Stream
+					.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
+					.toArray(Type[]::new);
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen()
+					.invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
+							LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+									createMethod.getName(), createMethod.getDescriptor(), false),
+							Type.getMethodType(newType, oldType));
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
+		});
+
+		final Renderer createMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, createMethod, null, null, owner.classVisitor),
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
+
+		return new LetBuilder(owner, newType, createMethodGen);
 	}
 
 	public void line(int line) {

@@ -111,6 +111,19 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
+		final Parser letParser = input.keyword("Let");
+		if (letParser.isGood()) {
+			final AtomicReference<List<LetArgumentNode>> arguments = new AtomicReference<>();
+			final Parser result = letParser//
+					.whitespace()//
+					.listEmpty(arguments::set, LetArgumentNode::parse, ',')//
+					.whitespace();
+
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeLet(arguments.get()));
+			}
+			return result;
+		}
 		final AtomicReference<Boolean> direction = new AtomicReference<>();
 		final Parser pickParser = input.regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.");
 		if (pickParser.isGood()) {

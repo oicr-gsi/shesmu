@@ -72,7 +72,7 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 
 	@Override
 	public final ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
-		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.GROUPED : state;
+		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
 	}
 
 	@Override
