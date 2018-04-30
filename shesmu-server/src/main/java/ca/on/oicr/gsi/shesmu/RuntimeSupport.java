@@ -119,7 +119,7 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
 		final String result = Long.toString(value);
-		for (int padding = width = result.length(); padding > 0; padding--) {
+		for (int padding = width - result.length(); padding > 0; padding--) {
 			builder.append("0");
 		}
 		return builder.append(result);

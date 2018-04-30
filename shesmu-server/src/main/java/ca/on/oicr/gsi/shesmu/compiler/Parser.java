@@ -374,8 +374,7 @@ public abstract class Parser {
 	public final <T> Parser list(Consumer<List<T>> output, Rule<T> childParser) {
 		Parser last = this;
 		final List<T> list = new ArrayList<>();
-		for (Parser current = whitespace(); current
-				.isGood(); current = childParser.parse(current.whitespace(), list::add)) {
+		for (Parser current = this; current.isGood(); current = childParser.parse(current, list::add)) {
 			last = current;
 		}
 		output.accept(list);

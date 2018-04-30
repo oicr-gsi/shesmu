@@ -42,7 +42,7 @@ public abstract class ListNode {
 	}
 
 	public static Parser parse(Parser parser, Consumer<ListNode> output) {
-		return parser.dispatch(DISPATCH, output);
+		return parser.whitespace().dispatch(DISPATCH, output).whitespace();
 	}
 
 	private final int column;
