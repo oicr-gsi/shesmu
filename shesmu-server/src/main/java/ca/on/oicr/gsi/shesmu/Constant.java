@@ -1,6 +1,10 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -18,8 +22,40 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
  */
 public abstract class Constant extends Target {
 
+	public static abstract class ConstantList<T> extends Constant {
+
+		private final List<T> values;
+
+		public ConstantList(String name, Imyhat type, Stream<T> values) {
+			super(name, type.asList());
+			this.values = values.collect(Collectors.toList());
+		}
+
+		@Override
+		protected final void load(GeneratorAdapter methodGen) {
+			methodGen.newInstance(A_HASH_SET_TYPE);
+			methodGen.dup();
+			methodGen.invokeConstructor(A_HASH_SET_TYPE, DEFAULT_CTOR);
+			for (T value : values) {
+				methodGen.dup();
+				write(methodGen, value);
+				methodGen.invokeVirtual(A_HASH_SET_TYPE, SET__ADD);
+			}
+		}
+
+		protected abstract void write(GeneratorAdapter methodGen, T value);
+
+	}
+
+	private static final Type A_HASH_SET_TYPE = Type.getType(HashSet.class);
+
+	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
+
 	private static Method INSTANT_CTOR = new Method("ofEpochMilli", Imyhat.DATE.asmType(),
 			new Type[] { Type.LONG_TYPE });
+
+	private static final Method SET__ADD = new Method("add", Type.BOOLEAN_TYPE,
+			new Type[] { Type.getType(Object.class) });
 
 	/**
 	 * Define a boolean constant
@@ -86,6 +122,38 @@ public abstract class Constant extends Target {
 		};
 	}
 
+	public static Constant ofBooleans(String name, Stream<Boolean> stream) {
+		return new ConstantList<Boolean>(name, Imyhat.BOOLEAN, stream) {
+
+			@Override
+			protected void write(GeneratorAdapter methodGen, Boolean value) {
+				methodGen.push(value);
+				methodGen.box(Type.BOOLEAN_TYPE);
+			}
+		};
+	}
+
+	public static Constant ofLongs(String name, Stream<Long> stream) {
+		return new ConstantList<Long>(name, Imyhat.INTEGER, stream) {
+
+			@Override
+			protected void write(GeneratorAdapter methodGen, Long value) {
+				methodGen.push(value);
+				methodGen.box(Type.LONG_TYPE);
+			}
+		};
+	}
+
+	public static Constant ofStrings(String name, Stream<String> stream) {
+		return new ConstantList<String>(name, Imyhat.STRING, stream) {
+
+			@Override
+			protected void write(GeneratorAdapter methodGen, String value) {
+				methodGen.push(value);
+			}
+		};
+	}
+
 	private final LoadableValue loadable = new LoadableValue() {
 
 		@Override
@@ -107,7 +175,6 @@ public abstract class Constant extends Target {
 	private final String name;
 
 	private final Imyhat type;
-
 	/**
 	 * Create a new constant
 	 *
@@ -121,7 +188,6 @@ public abstract class Constant extends Target {
 		this.name = name;
 		this.type = type;
 	}
-
 	/**
 	 * Convert the constant into a form that can be used during bytecode generation
 	 */
