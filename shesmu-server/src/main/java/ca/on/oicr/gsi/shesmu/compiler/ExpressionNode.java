@@ -248,8 +248,8 @@ public abstract class ExpressionNode {
 					parse(switchParser.whitespace(), test::set).whitespace().list(cases::set, (cp, co) -> {
 						final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
 						final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-						final Parser cresult = parse(parse(cp.keyword("When").whitespace(), condition::set).whitespace()
-								.keyword("Then").whitespace(), value::set);
+						final Parser cresult = parse(parse(cp.whitespace().keyword("When").whitespace(), condition::set)
+								.whitespace().keyword("Then").whitespace(), value::set);
 						if (cresult.isGood()) {
 							co.accept(new Pair<>(condition.get(), value.get()));
 						}

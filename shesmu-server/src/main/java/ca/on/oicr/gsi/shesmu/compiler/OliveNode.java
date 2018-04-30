@@ -78,7 +78,7 @@ public abstract class OliveNode {
 	 * Parse a single olive node stanza
 	 */
 	public static Parser parse(Parser input, Consumer<OliveNode> output) {
-		return input.dispatch(ROOTS, output);
+		return input.dispatch(ROOTS, output).whitespace();
 	}
 
 	/**

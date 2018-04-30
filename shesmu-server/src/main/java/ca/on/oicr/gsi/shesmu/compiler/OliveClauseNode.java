@@ -23,7 +23,7 @@ public abstract class OliveClauseNode {
 	private static final Pattern OPTIMA = Pattern.compile("^(Min|Max)");
 
 	public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
-
+		input = input.whitespace();
 		final Parser whereParser = input.keyword("Where");
 		if (whereParser.isGood()) {
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();

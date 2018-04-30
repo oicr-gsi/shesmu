@@ -31,12 +31,12 @@ public abstract class StringNode {
 			}
 			if (result.lookAhead(':')) {
 				final AtomicLong width = new AtomicLong();
-				final Parser widthResult = result.integer(width::set, 10);
+				final Parser widthResult = result.symbol(":").integer(width::set, 10);
 				if (widthResult.isGood()) {
 					o.accept(new StringNodeInteger(p.line(), p.column(), expression.get(), (int) width.get()));
 					result = widthResult;
 				} else {
-					result = result.regex(DATE_FORMAT,
+					result = result.symbol(":").regex(DATE_FORMAT,
 							m -> o.accept(new StringNodeDate(p.line(), p.column(), expression.get(), m.group(0))),
 							"Expected date format code.");
 				}
