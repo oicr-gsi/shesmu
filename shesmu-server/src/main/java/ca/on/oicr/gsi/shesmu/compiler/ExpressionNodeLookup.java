@@ -90,8 +90,9 @@ public class ExpressionNodeLookup extends ExpressionNode {
 		if (ok) {
 			final List<Imyhat> argumentTypes = lookup.types().collect(Collectors.toList());
 			if (arguments.size() != argumentTypes.size()) {
-				errorHandler.accept(String.format("%d:%d: Wrong number of arguments to lookup. Expected %d, got %d.",
-						line(), column(), arguments.size(), argumentTypes.size()));
+				errorHandler
+						.accept(String.format("%d:%d: Wrong number of arguments to lookup “%s”. Expected %d, got %d.",
+								line(), column(), lookup.name(), argumentTypes.size(), arguments.size()));
 			}
 			ok = IntStream.range(0, argumentTypes.size()).filter(index -> {
 				final boolean isSame = argumentTypes.get(index).isSame(arguments.get(index).type());
