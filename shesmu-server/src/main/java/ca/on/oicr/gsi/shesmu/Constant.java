@@ -40,6 +40,7 @@ public abstract class Constant extends Target {
 				methodGen.dup();
 				write(methodGen, value);
 				methodGen.invokeVirtual(A_HASH_SET_TYPE, SET__ADD);
+				methodGen.pop();
 			}
 		}
 
@@ -175,6 +176,7 @@ public abstract class Constant extends Target {
 	private final String name;
 
 	private final Imyhat type;
+
 	/**
 	 * Create a new constant
 	 *
@@ -188,6 +190,7 @@ public abstract class Constant extends Target {
 		this.name = name;
 		this.type = type;
 	}
+
 	/**
 	 * Convert the constant into a form that can be used during bytecode generation
 	 */
