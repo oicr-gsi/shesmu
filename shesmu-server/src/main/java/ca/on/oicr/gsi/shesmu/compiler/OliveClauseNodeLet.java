@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
@@ -17,9 +18,13 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 public class OliveClauseNodeLet extends OliveClauseNode {
 
 	private final List<LetArgumentNode> arguments;
+	private final int column;
+	private final int line;
 
-	public OliveClauseNodeLet(List<LetArgumentNode> arguments) {
+	public OliveClauseNodeLet(int line, int column, List<LetArgumentNode> arguments) {
 		super();
+		this.line = line;
+		this.column = column;
 		this.arguments = arguments;
 	}
 
@@ -51,8 +56,17 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Consumer<String> errorHandler) {
-		return arguments.stream().filter(argument -> argument.resolveLookups(definedLookups, errorHandler))
+		boolean ok = arguments.stream().filter(argument -> argument.resolveLookups(definedLookups, errorHandler))
 				.count() == arguments.size();
+		if (arguments.stream().map(LetArgumentNode::name).distinct().count() != arguments.size()) {
+			ok = false;
+			Set<String> allItems = new HashSet<>();
+			errorHandler.accept(String.format("%d:%d: Duplicate variables in “Let” clause: %s", line, column,
+					arguments.stream().map(LetArgumentNode::name).filter(n -> !allItems.add(n)).sorted()
+							.collect(Collectors.joining(", "))));
+		}
+
+		return ok;
 	}
 
 	@Override
