@@ -14,6 +14,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.kohsuke.MetaInfServices;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -29,6 +30,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.lookup.LookupForInstance;
 import io.prometheus.client.Counter;
 
+@MetaInfServices
 public class RunScannerLookupRepository implements LookupRepository {
 	private class RunScannerClient extends AutoUpdatingJsonFile<Configuration> {
 
