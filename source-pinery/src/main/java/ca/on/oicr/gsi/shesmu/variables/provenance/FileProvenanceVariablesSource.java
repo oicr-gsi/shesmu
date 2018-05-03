@@ -140,6 +140,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 				final AtomicInteger badVersions = new AtomicInteger();
 				final Map<String, Integer> badSetCounts = new TreeMap<>();
 				cache = Utils.stream(client.getFileProvenance(PROVENANCE_FILTER))//
+						.filter(fp -> fp.getSkip() == null || fp.getSkip().equals("false"))//
 						.map(fp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final Set<String> badSetInRecord = new TreeSet<>();
