@@ -120,7 +120,7 @@ public abstract class OliveClauseNode {
 					.whitespace();
 
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeLet(arguments.get()));
+				output.accept(new OliveClauseNodeLet(input.line(), input.column(),arguments.get()));
 			}
 			return result;
 		}
