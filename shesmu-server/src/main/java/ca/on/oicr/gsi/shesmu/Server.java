@@ -15,6 +15,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -193,40 +196,52 @@ public final class Server {
 			return node;
 		});
 
-		addJson("/input", mapper -> {
-			final ArrayNode array = mapper.createArrayNode();
-			VariablesSource.all().forEach(variable -> {
-				ObjectNode node = array.addObject();
-				node.put("accession", variable.accession());
-				node.put("donor", variable.donor());
-				node.put("file_size", variable.file_size());
-				node.put("group_desc", variable.group_desc());
-				node.put("group_id", variable.group_id());
-				node.put("ius_0", (String) variable.ius().get(0));
-				node.put("ius_1", (Long) variable.ius().get(1));
-				node.put("ius_2", (String) variable.ius().get(2));
-				node.put("library_design", variable.library_design());
-				node.put("library_name", variable.library_name());
-				node.put("library_size", variable.library_size());
-				node.put("library_type", variable.library_type());
-				node.put("md5", variable.md5());
-				node.put("metatype", variable.metatype());
-				node.put("path", variable.path());
-				node.put("project", variable.project());
-				node.put("source", variable.source());
-				node.put("targeted_resequencing", variable.targeted_resequencing());
-				node.put("timestamp", variable.timestamp().toEpochMilli());
-				node.put("tissue_origin", variable.tissue_origin());
-				node.put("tissue_prep", variable.tissue_prep());
-				node.put("tissue_region", variable.tissue_region());
-				node.put("tissue_type", variable.tissue_type());
-				node.put("workflow", variable.workflow());
-				node.put("workflow_accession", variable.workflow_accession());
-				node.put("workflow_version_0", (Long) variable.workflow_version().get(0));
-				node.put("workflow_version_1", (Long) variable.workflow_version().get(1));
-				node.put("workflow_version_2", (Long) variable.workflow_version().get(2));
-			});
-			return array;
+		add("/input", t -> {
+			t.getResponseHeaders().set("Content-type", "application/json");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				JsonFactory jfactory = new JsonFactory();
+				JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8);
+				jGenerator.writeStartArray();
+				VariablesSource.all().forEach(variable -> {
+					try {
+						jGenerator.writeStartObject();
+						jGenerator.writeStringField("accession", variable.accession());
+						jGenerator.writeStringField("donor", variable.donor());
+						jGenerator.writeNumberField("file_size", variable.file_size());
+						jGenerator.writeStringField("group_desc", variable.group_desc());
+						jGenerator.writeStringField("group_id", variable.group_id());
+						jGenerator.writeStringField("ius_0", (String) variable.ius().get(0));
+						jGenerator.writeNumberField("ius_1", (Long) variable.ius().get(1));
+						jGenerator.writeStringField("ius_2", (String) variable.ius().get(2));
+						jGenerator.writeStringField("library_design", variable.library_design());
+						jGenerator.writeStringField("library_name", variable.library_name());
+						jGenerator.writeNumberField("library_size", variable.library_size());
+						jGenerator.writeStringField("library_type", variable.library_type());
+						jGenerator.writeStringField("md5", variable.md5());
+						jGenerator.writeStringField("metatype", variable.metatype());
+						jGenerator.writeStringField("path", variable.path());
+						jGenerator.writeStringField("project", variable.project());
+						jGenerator.writeStringField("source", variable.source());
+						jGenerator.writeStringField("targeted_resequencing", variable.targeted_resequencing());
+						jGenerator.writeNumberField("timestamp", variable.timestamp().toEpochMilli());
+						jGenerator.writeStringField("tissue_origin", variable.tissue_origin());
+						jGenerator.writeStringField("tissue_prep", variable.tissue_prep());
+						jGenerator.writeStringField("tissue_region", variable.tissue_region());
+						jGenerator.writeStringField("tissue_type", variable.tissue_type());
+						jGenerator.writeStringField("workflow", variable.workflow());
+						jGenerator.writeStringField("workflow_accession", variable.workflow_accession());
+						jGenerator.writeNumberField("workflow_version_0", (Long) variable.workflow_version().get(0));
+						jGenerator.writeNumberField("workflow_version_1", (Long) variable.workflow_version().get(1));
+						jGenerator.writeNumberField("workflow_version_2", (Long) variable.workflow_version().get(2));
+						jGenerator.writeEndObject();
+					} catch (IOException e) {
+						throw new IllegalStateException(e);
+					}
+				});
+				jGenerator.writeEndArray();
+				jGenerator.close();
+			}
 		});
 
 		add("/main.css", "text/css");
