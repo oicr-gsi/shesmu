@@ -32,7 +32,7 @@ Some parameters can be optionally specified:
       With {
         memory = 4Gi,
         input = path,
-        bed_file = bedfile[study] If study In ["PCSI", "TEST", "OCT"]
+        bed_file = bedfile(study) If study In ["PCSI", "TEST", "OCT"]
       }
 
 The `Where` line is an _olive clause_. The clauses are: where, group, matches, and monitor.
@@ -113,10 +113,10 @@ things. The `Let` clause provides this:
         By ius
       Let
         # A lane is processed if there was a LIMS record and at least one FASTQ produced
-        lane_was_processed = "sample_provenance" In sources && Count workflows > 1,
-        sequencer_run = ius@0,
-        lane_number = ius@1,
-        path = paths $ Filter(x) x@0 First "",
+        lane_was_processed = "sample_provenance" In sources && workflows $ Count > 1,
+        sequencer_run = ius[0],
+        lane_number = ius[1],
+        path = paths $ Filter(x) x[0] First "",
         timestamp = (timestamps $ Max(x) x Default epoch)
       # Now regroup by sequencer run
       Group
@@ -290,12 +290,6 @@ Compute the logical complement of the expression, which must be a boolean.
 
 Computes the arithmetic additive inverse of the expression, which must be an integer.
 
-#### List Cardinality
-- `Count` _expr_
-
-Computes the number of unique items in the expression, which must be a list.
-
-
 ### Suffix Operators
 #### List Membership
 - _needle_ `In` _haystack_
@@ -305,7 +299,7 @@ returns the result as a boolean. _needle_ may be any type, but _haystack_ must
 be a list of the same type.
 
 #### Tuple Access
-- _expr_ `@` _n_
+- _expr_ `[` _n_ `]`
 
 Extracts an element from a tuple. _n_ is an integer that specifies the
 zero-based index of the item in the tuple. The result type will be based on the
@@ -381,10 +375,11 @@ An integer literal. Integer may be suffixed by one of the following multipliers:
 
 The boolean true and false values, respectively.
 
-#### Lookup Access
-- _lookup_`[`_expr_`,` _expr_`,` ...`]`
+#### Function Call
+- _function_`(`_expr_`,` _expr_`,` ...`)`
 
-Performs a lookup in a table. Lookup tables are provided by external services to Shesmu.
+Call a function. Functions are provided by external services to Shesmu and some
+are provided as tables of values.
 
 #### Variables
 - _var_
@@ -449,11 +444,11 @@ For every item, _expr_ is evaluated with _a_ set the the previously returned
 value.
 
 ## Identifiers
-All identifier is Shesmu, including olive definitions, lookup names, action
+All identifier is Shesmu, including olive definitions, function names, action
 names, and variables must begin with a lowercase letter a-z, followed by an
 number of underscores, lowercase letters a-z, and decimal digits.
 
-Olive definitions, lookup names, action names, and variables exist in different
+Olive definitions, function names, action names, and variables exist in different
 name spaces. It is possible to create a parameter with the same name as an
 action, though this is not recommended.
 

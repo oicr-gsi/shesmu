@@ -7,8 +7,8 @@ import java.util.function.Function;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
 /**
@@ -79,12 +79,13 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 	}
 
 	/**
-	 * Resolve lookups in this argument
+	 * Resolve functions in this argument
 	 */
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler)
-				& condition.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return expression.resolveFunctions(definedFunctions, errorHandler)
+				& condition.resolveFunctions(definedFunctions, errorHandler);
 
 	}
 

@@ -6,8 +6,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public abstract class ListNode {
 	private interface ListNodeConstructor {
@@ -136,11 +136,11 @@ public abstract class ListNode {
 	}
 
 	/**
-	 * Resolve all lookup definitions in this expression
+	 * Resolve all functions definitions in this expression
 	 */
-	public final boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler);
+		return expression.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {

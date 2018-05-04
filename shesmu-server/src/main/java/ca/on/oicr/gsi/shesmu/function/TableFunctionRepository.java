@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup;
+package ca.on.oicr.gsi.shesmu.function;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
@@ -19,17 +19,17 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
-import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Gauge;
 
 /**
- * Converts a TSV file into a lookup
+ * Converts a TSV file into a function
  *
  * The row must be a Shesmu base type for the data in that column. The last
  * column will be treated as the return value and the first columns will be the
@@ -38,9 +38,9 @@ import io.prometheus.client.Gauge;
  * return value. If no rows match, the default value for that type is returned.
  */
 @MetaInfServices
-public class TsvLookupRepository implements LookupRepository {
+public class TableFunctionRepository implements FunctionRepository {
 
-	private static final Gauge lastRead = Gauge.build("shesmu_lookup_tsv_config_last_read",
+	private static final Gauge lastRead = Gauge.build("shesmu_table_function_config_last_read",
 			"The last time, in seconds since the epoch, that the configuration was read.").register();
 
 	private static final Pattern TAB = Pattern.compile("\t");
@@ -56,7 +56,7 @@ public class TsvLookupRepository implements LookupRepository {
 				.orElse(defaultValue);
 	}
 
-	private static LookupDefinition makeLookup(String name, List<String> lines) {
+	private static FunctionDefinition makeLookup(String name, List<String> lines) {
 		if (lines.size() < 2) {
 			return null;
 		}
@@ -89,10 +89,10 @@ public class TsvLookupRepository implements LookupRepository {
 					return parameters -> predicate.test(parameters) ? Optional.of(result) : Optional.empty();
 				}).collect(Collectors.toList());
 
-		return LookupForInstance.bind(TsvLookupRepository.class, mt -> {
+		return FunctionForInstance.bind(TableFunctionRepository.class, mt -> {
 			try {
-				final MethodHandle lookupMethod = MethodHandles.lookup().findStatic(TsvLookupRepository.class, "lookup",
-						MethodType.methodType(Object.class, List.class, Object.class, Object[].class));
+				final MethodHandle lookupMethod = MethodHandles.lookup().findStatic(TableFunctionRepository.class,
+						"lookup", MethodType.methodType(Object.class, List.class, Object.class, Object[].class));
 				return lookupMethod.bindTo(attempts).bindTo(types.get(types.size() - 1).defaultValue())
 						.asVarargsCollector(Object[].class).asType(mt);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
@@ -103,11 +103,11 @@ public class TsvLookupRepository implements LookupRepository {
 				types.stream().limit(types.size() - 1).map(x -> x).toArray(Imyhat[]::new));
 	}
 
-	public static Stream<LookupDefinition> of(Optional<String> source) {
-		return RuntimeSupport.dataFilesForPath(source, ".lookup").map(TsvLookupRepository::readLookup);
+	public static Stream<FunctionDefinition> of(Optional<String> source) {
+		return RuntimeSupport.dataFilesForPath(source, ".lookup").map(TableFunctionRepository::readLookup);
 	}
 
-	private static LookupDefinition readLookup(Path lookupFile) {
+	private static FunctionDefinition readLookup(Path lookupFile) {
 		try {
 			final List<String> lines = Files.readAllLines(lookupFile);
 			final String fileName = lookupFile.getFileName().toString();
@@ -118,19 +118,19 @@ public class TsvLookupRepository implements LookupRepository {
 		}
 	}
 
-	private final List<LookupDefinition> configuration = new ArrayList<>();
+	private final List<FunctionDefinition> configuration = new ArrayList<>();
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		return RuntimeSupport.environmentVariable().map(path -> {
 			final Map<String, String> map = new TreeMap<>();
 			map.put("path", path);
-			return Stream.of(new Pair<>("TSV Lookups", map));
+			return Stream.of(new Pair<>("Table Functions", map));
 		}).orElse(Stream.empty());
 	}
 
 	@Override
-	public Stream<LookupDefinition> queryLookups() {
+	public Stream<FunctionDefinition> queryFunctions() {
 		lastRead.setToCurrentTime();
 		configuration.clear();
 		return of(RuntimeSupport.environmentVariable())//

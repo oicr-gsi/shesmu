@@ -27,20 +27,20 @@ public class CompiledGenerator extends AutoUpdatingFile {
 
 	private String errors = "Not yet compiled or exception during compilation.";
 
+	private final Supplier<Stream<FunctionDefinition>> functions;
+
 	private ActionGenerator generator = ActionGenerator.NULL;
 
-	private final Supplier<Stream<LookupDefinition>> lookups;
-
-	public CompiledGenerator(Path fileName, Supplier<Stream<LookupDefinition>> lookups,
+	public CompiledGenerator(Path fileName, Supplier<Stream<FunctionDefinition>> functions,
 			Supplier<Stream<ActionDefinition>> actions, Supplier<Stream<Constant>> constants) {
 		super(fileName);
-		this.lookups = lookups;
+		this.functions = functions;
 		this.actions = actions;
 		this.constants = constants;
 	}
 
 	private void compile() {
-		final HotloadingCompiler compiler = new HotloadingCompiler(lookups, actions, constants);
+		final HotloadingCompiler compiler = new HotloadingCompiler(functions, actions, constants);
 		final Optional<ActionGenerator> result = compiler.compile(fileName());
 		sourceValid.labels(fileName().toString()).set(result.isPresent() ? 1 : 0);
 		result.ifPresent(x -> {

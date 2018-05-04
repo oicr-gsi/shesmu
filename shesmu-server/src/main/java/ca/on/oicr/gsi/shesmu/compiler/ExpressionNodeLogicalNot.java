@@ -4,8 +4,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeLogicalNot extends ExpressionNode {
 	private final ExpressionNode inner;
@@ -33,8 +33,9 @@ public class ExpressionNodeLogicalNot extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return inner.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return inner.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override

@@ -11,15 +11,15 @@ import org.kohsuke.MetaInfServices;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
-import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.Tuple;
-import ca.on.oicr.gsi.shesmu.lookup.LookupForInstance;
+import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
 
-@MetaInfServices(LookupRepository.class)
-public final class JiraLookupRepository extends BaseJiraRepository<LookupDefinition> implements LookupRepository {
+@MetaInfServices(FunctionRepository.class)
+public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDefinition> implements FunctionRepository {
 
 	private static class IssueFilter implements Predicate<Issue> {
 		private final String keyword;
@@ -42,27 +42,27 @@ public final class JiraLookupRepository extends BaseJiraRepository<LookupDefinit
 
 	private static final Imyhat QUERY_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING).asList();
 
-	public JiraLookupRepository() {
-		super("JIRA Lookup Repository");
+	public JiraFunctionRepository() {
+		super("JIRA Function Repository");
 	}
 
 	@Override
-	protected Stream<LookupDefinition> create(JiraConfig config) {
+	protected Stream<FunctionDefinition> create(JiraConfig config) {
 		try {
 			final Lookup lookup = MethodHandles.lookup();
-			return Stream.<LookupDefinition>of(
-					new LookupForInstance(lookup, "lookup", String.format("count_tickets_%s", config.instance()),
+			return Stream.<FunctionDefinition>of(
+					new FunctionForInstance(lookup, "count", String.format("count_tickets_%s", config.instance()),
 							Imyhat.INTEGER, Imyhat.STRING, Imyhat.BOOLEAN) {
 
 						@RuntimeInterop
-						public long lookup(String keyword, boolean open) {
+						public long count(String keyword, boolean open) {
 							return config.issues().filter(new IssueFilter(keyword, open)).count();
 						}
-					}, new LookupForInstance(lookup, "lookup", String.format("query_tickets_%s", config.instance()),
+					}, new FunctionForInstance(lookup, "fetch", String.format("query_tickets_%s", config.instance()),
 							QUERY_TYPE, Imyhat.STRING, Imyhat.BOOLEAN) {
 
 						@RuntimeInterop
-						public Set<Tuple> lookup(String keyword, boolean open) {
+						public Set<Tuple> fetch(String keyword, boolean open) {
 							return config.issues().filter(new IssueFilter(keyword, open))
 									.map(issue -> new Tuple(issue.getKey(), issue.getSummary()))
 									.collect(Collectors.toSet());
@@ -76,11 +76,11 @@ public final class JiraLookupRepository extends BaseJiraRepository<LookupDefinit
 
 	@Override
 	protected String purpose() {
-		return "lookup";
+		return "function";
 	}
 
 	@Override
-	public Stream<LookupDefinition> queryLookups() {
+	public Stream<FunctionDefinition> queryFunctions() {
 		return stream();
 	}
 

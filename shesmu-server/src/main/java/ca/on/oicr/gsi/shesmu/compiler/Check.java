@@ -27,8 +27,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
@@ -36,7 +36,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 /**
  * The command-line checker for Shesmu scripts
  *
- * This talks to a running Shesmu server and uses the actions, lookups, and
+ * This talks to a running Shesmu server and uses the actions, functions, and
  * constants it knows to validate a script. This cannot compile the script, so
  * no bytecode generation is attempted.
  */
@@ -57,7 +57,7 @@ public final class Check extends Compiler {
 	public static void main(String[] args) {
 		final Options options = new Options();
 		options.addOption("h", "help", false, "This dreck.");
-		options.addOption("r", "remote", true, "The remote instance with all the actions/lookups/etc.");
+		options.addOption("r", "remote", true, "The remote instance with all the actions/functions/etc.");
 		final CommandLineParser parser = new DefaultParser();
 		String file;
 		String remote = "http://localhost:8081/";
@@ -93,13 +93,13 @@ public final class Check extends Compiler {
 					}
 				})//
 				.collect(Collectors.toList());
-		final NameLoader<LookupDefinition> lookups = new NameLoader<>(fetch(remote, "lookups").map(Check::makeLookup),
-				LookupDefinition::name);
+		final NameLoader<FunctionDefinition> functions = new NameLoader<>(
+				fetch(remote, "functions").map(Check::makeFunction), FunctionDefinition::name);
 		final NameLoader<ActionDefinition> actions = new NameLoader<>(fetch(remote, "actions").map(Check::makeAction),
 				ActionDefinition::name);
 
 		try {
-			final boolean ok = new Check(lookups, actions).compile(Files.readAllBytes(Paths.get(file)),
+			final boolean ok = new Check(functions, actions).compile(Files.readAllBytes(Paths.get(file)),
 					"dyn/shesmu/Program", file, () -> constants.stream());
 			System.exit(ok ? 0 : 1);
 		} catch (final IOException e) {
@@ -120,12 +120,12 @@ public final class Check extends Compiler {
 
 	}
 
-	private static LookupDefinition makeLookup(ObjectNode node) {
+	private static FunctionDefinition makeFunction(ObjectNode node) {
 		final String name = node.get("name").asText();
 		final Imyhat returnType = Imyhat.parse(node.get("return").asText());
 		final Imyhat[] types = RuntimeSupport.stream(node.get("types").elements()).map(JsonNode::asText)
 				.map(Imyhat::parse).toArray(Imyhat[]::new);
-		return new LookupDefinition() {
+		return new FunctionDefinition() {
 
 			@Override
 			public String name() {
@@ -179,11 +179,11 @@ public final class Check extends Compiler {
 
 	private final NameLoader<ActionDefinition> actions;
 
-	private final NameLoader<LookupDefinition> lookups;
+	private final NameLoader<FunctionDefinition> functions;
 
-	private Check(NameLoader<LookupDefinition> lookups, NameLoader<ActionDefinition> actions) {
+	private Check(NameLoader<FunctionDefinition> functions, NameLoader<ActionDefinition> actions) {
 		super(true);
-		this.lookups = lookups;
+		this.functions = functions;
 		this.actions = actions;
 	}
 
@@ -203,8 +203,8 @@ public final class Check extends Compiler {
 	}
 
 	@Override
-	protected LookupDefinition getLookup(String lookup) {
-		return lookups.get(lookup);
+	protected FunctionDefinition getFunction(String function) {
+		return functions.get(function);
 	}
 
 }

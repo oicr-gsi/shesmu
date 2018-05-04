@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 /**
  * The arguments defined in “Monitor” clause.
@@ -84,10 +84,11 @@ public final class MonitorArgumentNode {
 	}
 
 	/**
-	 * Resolve lookups in this argument
+	 * Resolve functions in this argument
 	 */
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return expression.resolveFunctions(definedFunctions, errorHandler);
 
 	}
 

@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class LetArgumentNode extends Target {
 	public static Parser parse(Parser input, Consumer<LetArgumentNode> output) {
@@ -59,8 +59,9 @@ public class LetArgumentNode extends Target {
 		return expression.resolve(defs, errorHandler);
 	}
 
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return expression.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override

@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
 /**
@@ -120,7 +120,7 @@ public abstract class OliveClauseNode {
 					.whitespace();
 
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeLet(input.line(), input.column(),arguments.get()));
+				output.accept(new OliveClauseNodeLet(input.line(), input.column(), arguments.get()));
 			}
 			return result;
 		}
@@ -179,7 +179,7 @@ public abstract class OliveClauseNode {
 	 * Resolve all non-variable definitions
 	 */
 	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Consumer<String> errorHandler);
 
 	/**

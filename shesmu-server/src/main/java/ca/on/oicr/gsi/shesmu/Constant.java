@@ -36,7 +36,7 @@ public abstract class Constant extends Target {
 			methodGen.newInstance(A_HASH_SET_TYPE);
 			methodGen.dup();
 			methodGen.invokeConstructor(A_HASH_SET_TYPE, DEFAULT_CTOR);
-			for (T value : values) {
+			for (final T value : values) {
 				methodGen.dup();
 				write(methodGen, value);
 				methodGen.invokeVirtual(A_HASH_SET_TYPE, SET__ADD);

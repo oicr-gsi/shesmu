@@ -1,11 +1,11 @@
 Define standard_execution()
   Where file_size > 5
-  Where Switch workflow_version@2 When 5 Then True When 7 Then True Else False;
+  Where Switch workflow_version[2] When 5 Then True When 7 Then True Else False;
  
 Define standard_fastq(string s)
-  Where workflow == {"BamQC 2.7+", 3 }@0
+  Where workflow == {"BamQC 2.7+", 3 }[0]
   Where metatype == "chemical/fastq-gzip"
-  Where path == foo[file_size];
+  Where path == foo(file_size);
  
 Define standard_bam()
   Where metatype == "application/bam"
@@ -13,7 +13,7 @@ Define standard_bam()
  
 Define standard_bamqc()
   Where metatype == "txt/json"
-  Where workflow == {"BamQC 2.7+"}@0;
+  Where workflow == {"BamQC 2.7+"}[0];
  
 Run fastqc
   Matches standard_fastq("a")

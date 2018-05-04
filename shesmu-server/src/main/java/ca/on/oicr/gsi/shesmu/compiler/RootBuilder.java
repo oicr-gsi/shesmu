@@ -18,7 +18,6 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
-import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.Variables;
 import io.prometheus.client.Gauge;
 
@@ -30,7 +29,6 @@ public abstract class RootBuilder {
 	private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
 	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
-	private static final Type A_NAME_LOADER_TYPE = Type.getType(NameLoader.class);
 	private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
@@ -41,8 +39,6 @@ public abstract class RootBuilder {
 
 	private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE = new Method("clearGauge", VOID_TYPE,
 			new Type[] {});
-	private static final Method METHOD_ACTION_GENERATOR__POPULATE_LOOKUPS = new Method("populateLookups", VOID_TYPE,
-			new Type[] { A_NAME_LOADER_TYPE });
 	private static final Method METHOD_ACTION_GENERATOR__RUN = new Method("run", VOID_TYPE,
 			new Type[] { A_CONSUMER_TYPE, A_SUPPLIER_TYPE });
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
@@ -77,7 +73,6 @@ public abstract class RootBuilder {
 	private final Set<String> gauges = new HashSet<>();
 	private int oliveId = 0;
 	private final String path;
-	private final GeneratorAdapter populateLookupsMethod;
 
 	private final GeneratorAdapter runMethod;
 
@@ -106,10 +101,6 @@ public abstract class RootBuilder {
 		runMethod.visitCode();
 		runMethod.loadThis();
 		runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__CLEAR_GAUGE);
-
-		populateLookupsMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__POPULATE_LOOKUPS,
-				null, null, classVisitor);
-		populateLookupsMethod.visitCode();
 
 		classInitMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, CTOR_CLASS, null, null, classVisitor);
 		classInitMethod.visitCode();
@@ -145,10 +136,6 @@ public abstract class RootBuilder {
 		ctor.visitInsn(Opcodes.RETURN);
 		ctor.visitMaxs(0, 0);
 		ctor.visitEnd();
-
-		populateLookupsMethod.visitInsn(Opcodes.RETURN);
-		populateLookupsMethod.visitMaxs(0, 0);
-		populateLookupsMethod.visitEnd();
 
 		classInitMethod.visitInsn(Opcodes.RETURN);
 		classInitMethod.visitMaxs(0, 0);

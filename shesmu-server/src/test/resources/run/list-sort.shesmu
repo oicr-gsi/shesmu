@@ -1,2 +1,2 @@
 Run ok
- With { ok = ([ {True,1}, {False,2} ] $ Sort(x) x@1 First {False,0})@0 }
+ With { ok = ([ {True,1}, {False,2} ] $ Sort(x) x[1] First {False,0})[0] }

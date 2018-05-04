@@ -19,7 +19,7 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.lookup.TsvLookupRepository;
+import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
 
 public class CompilerTest {
 	public final class CompilerHarness extends Compiler {
@@ -55,8 +55,8 @@ public class CompilerTest {
 		}
 
 		@Override
-		protected LookupDefinition getLookup(String name) {
-			return lookups.get(name);
+		protected FunctionDefinition getFunction(String name) {
+			return functions.get(name);
 		}
 
 		public boolean ok() {
@@ -71,8 +71,8 @@ public class CompilerTest {
 	private final NameLoader<ActionDefinition> actions = new NameLoader<>(
 			FileActionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())),
 			ActionDefinition::name);
-	private final NameLoader<LookupDefinition> lookups = new NameLoader<>(
-			TsvLookupRepository.of(Optional.of(this.getClass().getResource("/data").getPath())), LookupDefinition::name);
+	private final NameLoader<FunctionDefinition> functions = new NameLoader<>(
+			TableFunctionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())), FunctionDefinition::name);
 
 	@Test
 	public void testBad() throws IOException {

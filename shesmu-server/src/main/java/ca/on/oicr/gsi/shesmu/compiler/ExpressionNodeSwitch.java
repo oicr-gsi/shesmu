@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 
 public class ExpressionNodeSwitch extends ExpressionNode {
@@ -81,13 +81,14 @@ public class ExpressionNodeSwitch extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return test.resolveLookups(definedLookups, errorHandler)
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return test.resolveFunctions(definedFunctions, errorHandler)
 				& cases.stream()
-						.filter(c -> c.first().resolveLookups(definedLookups, errorHandler)
-								& c.second().resolveLookups(definedLookups, errorHandler))
+						.filter(c -> c.first().resolveFunctions(definedFunctions, errorHandler)
+								& c.second().resolveFunctions(definedFunctions, errorHandler))
 						.count() == cases.size()
-				& alternative.resolveLookups(definedLookups, errorHandler);
+				& alternative.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override

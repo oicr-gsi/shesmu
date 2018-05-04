@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
 /**
@@ -76,9 +76,9 @@ public abstract class OliveArgumentNode {
 	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
-	 * Resolve lookups in this argument
+	 * Resolve functions in this argument
 	 */
-	public abstract boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+	public abstract boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler);
 
 	/**

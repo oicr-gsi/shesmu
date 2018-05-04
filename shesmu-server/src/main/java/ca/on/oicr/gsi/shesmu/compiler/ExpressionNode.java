@@ -15,8 +15,8 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 
 /**
@@ -89,7 +89,6 @@ public abstract class ExpressionNode {
 
 		UNARY.addSymbol("!", just(ExpressionNodeLogicalNot::new));
 		UNARY.addSymbol("-", just(ExpressionNodeNegate::new));
-		UNARY.addKeyword("Count", just(ExpressionNodeCount::new));
 
 		SUFFIX.addKeyword("In", (p, o) -> {
 			final AtomicReference<ExpressionNode> collection = new AtomicReference<>();
@@ -100,9 +99,9 @@ public abstract class ExpressionNode {
 			}
 			return result;
 		});
-		SUFFIX.addSymbol("@", (p, o) -> {
+		SUFFIX.addSymbol("[", (p, o) -> {
 			final AtomicLong index = new AtomicLong();
-			final Parser result = p.whitespace().integer(index::set, 10);
+			final Parser result = p.whitespace().integer(index::set, 10).whitespace().symbol("]");
 			if (result.isGood()) {
 				final int i = (int) index.get();
 				o.accept(node -> new ExpressionNodeTupleGet(p.line(), p.column(), node, i));
@@ -194,20 +193,20 @@ public abstract class ExpressionNode {
 			o.accept(new ExpressionNodeBoolean(p.line(), p.column(), false));
 			return p;
 		});
-		TERMINAL.addRaw("lookup, variable", (p, o) -> {
+		TERMINAL.addRaw("function call, variable", (p, o) -> {
 			final AtomicReference<String> name = new AtomicReference<>();
 			Parser result = p.identifier(name::set).whitespace();
 			if (result.isGood()) {
-				if (result.lookAhead('[')) {
+				if (result.lookAhead('(')) {
 					final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
-					result = result.symbol("[")//
+					result = result.symbol("(")//
 							.whitespace()//
 							.list(items::set, (cp, co) -> parse(cp.whitespace(), co).whitespace(), ',')//
 							.whitespace()//
-							.symbol("]")//
+							.symbol(")")//
 							.whitespace();
 					if (p.isGood()) {
-						o.accept(new ExpressionNodeLookup(p.line(), p.column(), name.get(), items.get()));
+						o.accept(new ExpressionNodeFunctionCall(p.line(), p.column(), name.get(), items.get()));
 					}
 				} else {
 					o.accept(new ExpressionNodeVariable(p.line(), p.column(), name.get()));
@@ -406,9 +405,9 @@ public abstract class ExpressionNode {
 	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
-	 * Resolve all lookup definitions in this expression
+	 * Resolve all function definitions in this expression
 	 */
-	public abstract boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+	public abstract boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler);
 
 	/**

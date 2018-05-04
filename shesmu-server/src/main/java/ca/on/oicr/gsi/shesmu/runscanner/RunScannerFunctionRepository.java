@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup.runscanner;
+package ca.on.oicr.gsi.shesmu.runscanner;
 
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
@@ -20,23 +20,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
-import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.lookup.LookupForInstance;
+import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
 import io.prometheus.client.Counter;
 
 @MetaInfServices
-public class RunScannerLookupRepository implements LookupRepository {
+public class RunScannerFunctionRepository implements FunctionRepository {
 	private class RunScannerClient extends AutoUpdatingJsonFile<Configuration> {
 
 		private final Pair<String, Map<String, String>> configurationPair;
 		private final String instance;
-		private final LookupDefinition laneCount;
+		private final FunctionDefinition laneCount;
 		private final Map<String, Long> laneCountCache = new HashMap<>();
 		private final Map<String, String> properties = new TreeMap<>();
 		private Optional<String> url = Optional.empty();
@@ -45,10 +45,10 @@ public class RunScannerLookupRepository implements LookupRepository {
 			super(fileName, Configuration.class);
 			final String fileNamePart = fileName.getFileName().toString();
 			instance = fileNamePart.substring(0, fileNamePart.length() - EXTENSION.length());
-			configurationPair = new Pair<>(String.format("RunScanner Lookup for %s", instance), properties);
-			LookupDefinition laneCount;
+			configurationPair = new Pair<>(String.format("RunScanner Function for %s", instance), properties);
+			FunctionDefinition laneCount;
 			try {
-				laneCount = LookupForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "laneCount",
+				laneCount = FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "laneCount",
 						String.format("%s_lane_count", instance), Imyhat.INTEGER, Imyhat.STRING);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				laneCount = null;
@@ -59,6 +59,10 @@ public class RunScannerLookupRepository implements LookupRepository {
 
 		public Pair<String, Map<String, String>> configuration() {
 			return configurationPair;
+		}
+
+		public Stream<FunctionDefinition> functions() {
+			return laneCount == null ? Stream.empty() : Stream.of(laneCount);
 		}
 
 		@RuntimeInterop
@@ -93,10 +97,6 @@ public class RunScannerLookupRepository implements LookupRepository {
 			}).orElse(-1L);
 		}
 
-		public Stream<LookupDefinition> lookups() {
-			return laneCount == null ? Stream.empty() : Stream.of(laneCount);
-		}
-
 		@Override
 		protected void update(Configuration value) {
 			url = Optional.ofNullable(value.getUrl());
@@ -116,7 +116,7 @@ public class RunScannerLookupRepository implements LookupRepository {
 
 	private final List<RunScannerClient> clients;
 
-	public RunScannerLookupRepository() {
+	public RunScannerFunctionRepository() {
 		clients = RuntimeSupport.dataFiles(EXTENSION).map(RunScannerClient::new).collect(Collectors.toList());
 	}
 
@@ -126,8 +126,8 @@ public class RunScannerLookupRepository implements LookupRepository {
 	}
 
 	@Override
-	public Stream<LookupDefinition> queryLookups() {
-		return clients.stream().flatMap(RunScannerClient::lookups);
+	public Stream<FunctionDefinition> queryFunctions() {
+		return clients.stream().flatMap(RunScannerClient::functions);
 	}
 
 }

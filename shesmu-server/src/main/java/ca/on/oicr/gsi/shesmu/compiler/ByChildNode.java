@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 
 /**
  * A collection action in a “Group” clause
@@ -45,7 +45,7 @@ public abstract class ByChildNode extends Target {
 	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
 	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler);
 
 	public abstract boolean typeCheck(Consumer<String> errorHandler);

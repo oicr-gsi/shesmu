@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup;
+package ca.on.oicr.gsi.shesmu.function;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -17,35 +17,37 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
-public class LookupForInstance implements LookupDefinition {
+public class FunctionForInstance implements FunctionDefinition {
 
 	private static final String BSM_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(CallSite.class),
 			Type.getType(MethodHandles.Lookup.class), Type.getType(String.class), Type.getType(MethodType.class));
-	private static Map<String, CallSite> lookups = new WeakHashMap<>();
+	private static Map<String, CallSite> callsites = new WeakHashMap<>();
 
-	private static final String SELF_NAME = Type.getType(LookupForInstance.class).getInternalName();
+	private static final String SELF_NAME = Type.getType(FunctionForInstance.class).getInternalName();
 	private static final AtomicInteger TOKEN_SOURCE = new AtomicInteger();
 
-	public static <T> LookupForInstance bind(Class<?> owner, Function<MethodType, MethodHandle> find, String name,
+	public static <T> FunctionForInstance bind(Class<?> owner, Function<MethodType, MethodHandle> find, String name,
 			Imyhat returnType, Imyhat... parameterTypes) {
-		return new LookupForInstance(new ConstantCallSite(find.apply(methodTypeByImyhat(returnType, parameterTypes))),
+		return new FunctionForInstance(new ConstantCallSite(find.apply(methodTypeByImyhat(returnType, parameterTypes))),
 				name, returnType, parameterTypes);
 
 	}
 
-	public static <T> LookupForInstance bind(Lookup lookup,Class<T> owner, T instance, String methodName, String name,
-			Imyhat returnType, Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
-		return new LookupForInstance(
-				new ConstantCallSite(findVirtualFor(lookup, owner, methodName, returnType, parameterTypes).bindTo(instance)),
+	public static <T> FunctionForInstance bind(Lookup lookup, Class<T> owner, T instance, String methodName,
+			String name, Imyhat returnType, Imyhat... parameterTypes)
+			throws NoSuchMethodException, IllegalAccessException {
+		return new FunctionForInstance(
+				new ConstantCallSite(
+						findVirtualFor(lookup, owner, methodName, returnType, parameterTypes).bindTo(instance)),
 				name, returnType, parameterTypes);
 
 	}
 
 	public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
-		return lookups.get(methodName);
+		return callsites.get(methodName);
 	}
 
 	public static MethodHandle findVirtualFor(Lookup lookup, Class<?> clazz, String methodName, Imyhat returnType,
@@ -66,23 +68,23 @@ public class LookupForInstance implements LookupDefinition {
 
 	private final String token;
 
-	public LookupForInstance(CallSite callsite, String name, Imyhat returnType, Imyhat... parameterTypes) {
+	public FunctionForInstance(CallSite callsite, String name, Imyhat returnType, Imyhat... parameterTypes) {
 		super();
 		this.name = name;
 		this.returnType = returnType;
 		this.parameterTypes = parameterTypes;
 		token = String.format("i%d", TOKEN_SOURCE.getAndIncrement());
-		lookups.put(token, callsite);
+		callsites.put(token, callsite);
 	}
 
-	public LookupForInstance(Lookup lookup, String methodName, String name, Imyhat returnType, Imyhat... parameterTypes)
-			throws NoSuchMethodException, IllegalAccessException {
+	public FunctionForInstance(Lookup lookup, String methodName, String name, Imyhat returnType,
+			Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
 		super();
 		this.name = name;
 		this.returnType = returnType;
 		this.parameterTypes = parameterTypes;
 		token = String.format("i%d", TOKEN_SOURCE.getAndIncrement());
-		lookups.put(token, new ConstantCallSite(
+		callsites.put(token, new ConstantCallSite(
 				findVirtualFor(lookup, getClass(), methodName, returnType, parameterTypes).bindTo(this)));
 	}
 

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup.sftp;
+package ca.on.oicr.gsi.shesmu.sftp;
 
 public class Configuration {
 	private String host;

@@ -19,7 +19,7 @@ public final class MaxInFlight {
 
 	/**
 	 * Create a new action
-	 * 
+	 *
 	 * This should be called exactly once per action. When the
 	 * {@link Action#perform()} method is called, it should return the value of
 	 * {@link Supplier#get()}. If there are already too many in-flight actions,
@@ -27,7 +27,7 @@ public final class MaxInFlight {
 	 * an action will receive in an in-flight lock which it will hold until the
 	 * action returns either {@link ActionState#SUCCEEDED} or
 	 * {@link ActionState#FAILED}.
-	 * 
+	 *
 	 * @param protectedCode
 	 *            the block of code to run while holding a lock
 	 */
@@ -44,13 +44,13 @@ public final class MaxInFlight {
 					inflight++;
 				}
 				try {
-					ActionState result = protectedCode.call();
+					final ActionState result = protectedCode.call();
 					if (result == ActionState.SUCCEEDED || result == ActionState.FAILED) {
 						hasLock = false;
 						inflight--;
 					}
 					return result;
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					e.printStackTrace();
 					hasLock = false;
 					inflight--;
