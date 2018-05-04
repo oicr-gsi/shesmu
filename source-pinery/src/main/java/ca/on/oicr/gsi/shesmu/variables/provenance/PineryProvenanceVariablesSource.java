@@ -66,7 +66,7 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 								"", //
 								"", //
 								"", //
-								new Tuple(lp.getSequencerRunName(), Utils.parseLaneNumber(lp.getLaneNumber()), ""), //
+								new Tuple(lp.getSequencerRunName(), Utils.parseLaneNumber(lp.getLaneNumber()), "NoIndex"), //
 								"", //
 								"", //
 								"", //
