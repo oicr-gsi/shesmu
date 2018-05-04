@@ -91,7 +91,7 @@ public class RunTest {
 					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
 					"pointy", Instant.EPOCH, "test") };
 
-	private static final LookupDefinition INT2DATE = new LookupDefinition() {
+	private static final FunctionDefinition INT2DATE = new FunctionDefinition() {
 
 		@Override
 		public String name() {
@@ -115,7 +115,7 @@ public class RunTest {
 
 		}
 	};
-	private static final LookupDefinition INT2STR = new LookupDefinition() {
+	private static final FunctionDefinition INT2STR = new FunctionDefinition() {
 
 		@Override
 		public String name() {
@@ -159,7 +159,7 @@ public class RunTest {
 		return Arrays.stream(DATA);
 	}
 
-	private Stream<LookupDefinition> lookups() {
+	private Stream<FunctionDefinition> functions() {
 		return Stream.of(INT2STR, INT2DATE);
 	}
 
@@ -179,7 +179,7 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			final HotloadingCompiler compiler = new HotloadingCompiler(this::lookups, this::actions, CONSTANTS::stream);
+			final HotloadingCompiler compiler = new HotloadingCompiler(this::functions, this::actions, CONSTANTS::stream);
 			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			final ActionChecker checker = new ActionChecker();
 			generator.run(checker, this::data);

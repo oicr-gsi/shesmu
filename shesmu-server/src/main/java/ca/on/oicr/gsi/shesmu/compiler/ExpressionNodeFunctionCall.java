@@ -10,11 +10,11 @@ import java.util.stream.Stream;
 
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
-public class ExpressionNodeLookup extends ExpressionNode {
-	private static final LookupDefinition BROKEN_LOOKUP = new LookupDefinition() {
+public class ExpressionNodeFunctionCall extends ExpressionNode {
+	private static final FunctionDefinition BROKEN_FUCNTION = new FunctionDefinition() {
 
 		@Override
 		public String name() {
@@ -39,11 +39,11 @@ public class ExpressionNodeLookup extends ExpressionNode {
 
 	private final List<ExpressionNode> arguments;
 
-	private LookupDefinition lookup;
+	private FunctionDefinition function;
 
 	private final String name;
 
-	public ExpressionNodeLookup(int line, int column, String name, List<ExpressionNode> arguments) {
+	public ExpressionNodeFunctionCall(int line, int column, String name, List<ExpressionNode> arguments) {
 		super(line, column);
 		this.name = name;
 		this.arguments = arguments;
@@ -57,7 +57,7 @@ public class ExpressionNodeLookup extends ExpressionNode {
 	@Override
 	public void render(Renderer renderer) {
 		arguments.forEach(argument -> argument.render(renderer));
-		lookup.render(renderer.methodGen());
+		function.render(renderer.methodGen());
 	}
 
 	@Override
@@ -66,21 +66,22 @@ public class ExpressionNodeLookup extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
 		boolean ok = true;
-		lookup = definedLookups.apply(name);
-		if (lookup == null) {
-			lookup = BROKEN_LOOKUP;
-			errorHandler.accept(String.format("%d:%d: Undefined lookup “%s”.", line(), column(), name));
+		function = definedFunctions.apply(name);
+		if (function == null) {
+			function = BROKEN_FUCNTION;
+			errorHandler.accept(String.format("%d:%d: Undefined function “%s”.", line(), column(), name));
 			ok = false;
 		}
-		return ok & arguments.stream().filter(argument -> argument.resolveLookups(definedLookups, errorHandler))
+		return ok & arguments.stream().filter(argument -> argument.resolveFunctions(definedFunctions, errorHandler))
 				.count() == arguments.size();
 	}
 
 	@Override
 	public Imyhat type() {
-		return lookup.returnType();
+		return function.returnType();
 	}
 
 	@Override
@@ -88,11 +89,11 @@ public class ExpressionNodeLookup extends ExpressionNode {
 		boolean ok = arguments.stream().filter(argument -> argument.typeCheck(errorHandler)).count() == arguments
 				.size();
 		if (ok) {
-			final List<Imyhat> argumentTypes = lookup.types().collect(Collectors.toList());
+			final List<Imyhat> argumentTypes = function.types().collect(Collectors.toList());
 			if (arguments.size() != argumentTypes.size()) {
 				errorHandler
-						.accept(String.format("%d:%d: Wrong number of arguments to lookup “%s”. Expected %d, got %d.",
-								line(), column(), lookup.name(), argumentTypes.size(), arguments.size()));
+						.accept(String.format("%d:%d: Wrong number of arguments to function “%s”. Expected %d, got %d.",
+								line(), column(), function.name(), argumentTypes.size(), arguments.size()));
 			}
 			ok = IntStream.range(0, argumentTypes.size()).filter(index -> {
 				final boolean isSame = argumentTypes.get(index).isSame(arguments.get(index).type());

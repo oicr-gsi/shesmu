@@ -6,8 +6,8 @@ import java.util.function.Function;
 
 import org.objectweb.asm.Label;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeComparison extends ExpressionNode {
 
@@ -59,8 +59,10 @@ public class ExpressionNodeComparison extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return left.resolveLookups(definedLookups, errorHandler) & right.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return left.resolveFunctions(definedFunctions, errorHandler)
+				& right.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override

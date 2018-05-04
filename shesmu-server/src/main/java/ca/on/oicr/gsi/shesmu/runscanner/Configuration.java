@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup.runscanner;
+package ca.on.oicr.gsi.shesmu.runscanner;
 
 public class Configuration {
 	private String url;

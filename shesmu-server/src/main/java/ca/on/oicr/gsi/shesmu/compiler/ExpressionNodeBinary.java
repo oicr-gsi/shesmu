@@ -4,8 +4,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public abstract class ExpressionNodeBinary extends ExpressionNode {
 
@@ -36,9 +36,10 @@ public abstract class ExpressionNodeBinary extends ExpressionNode {
 	}
 
 	@Override
-	public final boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		return left.resolveLookups(definedLookups, errorHandler) & right.resolveLookups(definedLookups, errorHandler);
+		return left.resolveFunctions(definedFunctions, errorHandler)
+				& right.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	public ExpressionNode right() {

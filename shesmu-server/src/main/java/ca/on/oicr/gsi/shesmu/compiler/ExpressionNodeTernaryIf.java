@@ -7,8 +7,8 @@ import java.util.function.Function;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class ExpressionNodeTernaryIf extends ExpressionNode {
 
@@ -53,10 +53,11 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return testExpression.resolveLookups(definedLookups, errorHandler)
-				& trueExpression.resolveLookups(definedLookups, errorHandler)
-				& falseExpression.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return testExpression.resolveFunctions(definedFunctions, errorHandler)
+				& trueExpression.resolveFunctions(definedFunctions, errorHandler)
+				& falseExpression.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override

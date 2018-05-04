@@ -11,8 +11,8 @@ import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class OliveNodeDefinition extends OliveNode {
@@ -101,7 +101,7 @@ public final class OliveNodeDefinition extends OliveNode {
 
 	@Override
 	protected boolean resolveDefinitionsExtra(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler) {
 		return true;
 	}

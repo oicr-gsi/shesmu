@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup.sftp;
+package ca.on.oicr.gsi.shesmu.sftp;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -11,7 +11,7 @@ import io.prometheus.client.Counter;
 
 public abstract class Cache<T> {
 	private class Record {
-		private Instant fetchTime = Instant.now();
+		private final Instant fetchTime = Instant.now();
 		private final String filename;
 		private Optional<T> value;
 
@@ -20,7 +20,7 @@ public abstract class Cache<T> {
 			Optional<T> value;
 			try {
 				value = Optional.ofNullable(fetch(filename));
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				e.printStackTrace();
 				value = Optional.empty();
 			}
@@ -28,11 +28,11 @@ public abstract class Cache<T> {
 		}
 
 		public Optional<T> refresh() {
-			Instant now = Instant.now();
+			final Instant now = Instant.now();
 			if (Duration.between(fetchTime, now).toMinutes() > 10) {
 				try {
 					value = Optional.ofNullable(fetch(filename));
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					e.printStackTrace();
 					staleRefreshError.labels(name).inc();
 				}

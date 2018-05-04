@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.lookup.sftp;
+package ca.on.oicr.gsi.shesmu.sftp;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -17,19 +17,19 @@ import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
-import ca.on.oicr.gsi.shesmu.LookupRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.lookup.LookupForInstance;
+import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
 import io.prometheus.client.Counter;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.sftp.SFTPClient;
 
 @MetaInfServices
-public class SftpLookupRepository implements LookupRepository {
+public class SftpFunctionRepository implements FunctionRepository {
 	private class SftpServer extends AutoUpdatingJsonFile<Configuration> {
 		private Instant backoff = Instant.EPOCH;
 
@@ -37,9 +37,9 @@ public class SftpLookupRepository implements LookupRepository {
 
 		private Optional<Configuration> configuration = Optional.empty();
 
-		private final List<LookupDefinition> definitions = new ArrayList<>();
+		private final List<FunctionDefinition> definitions = new ArrayList<>();
 
-		private Cache<Boolean> exists = new Cache<Boolean>("fileexists") {
+		private final Cache<Boolean> exists = new Cache<Boolean>("fileexists") {
 
 			@Override
 			protected Boolean fetch(String fileName) throws IOException {
@@ -47,7 +47,7 @@ public class SftpLookupRepository implements LookupRepository {
 			}
 		};
 
-		private Cache<Instant> mtime = new Cache<Instant>("modificationtime") {
+		private final Cache<Instant> mtime = new Cache<Instant>("modificationtime") {
 
 			@Override
 			protected Instant fetch(String fileName) throws IOException {
@@ -61,7 +61,7 @@ public class SftpLookupRepository implements LookupRepository {
 
 		private volatile SFTPClient sftp;
 
-		private Cache<Long> size = new Cache<Long>("filesize") {
+		private final Cache<Long> size = new Cache<Long>("filesize") {
 
 			@Override
 			protected Long fetch(String fileName) throws IOException {
@@ -74,20 +74,20 @@ public class SftpLookupRepository implements LookupRepository {
 			super(fileName, Configuration.class);
 			try {
 				client.loadKnownHosts();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				e.printStackTrace();
 			}
 			properties.put("path", fileName.toString());
-			String filePart = fileName.getFileName().toString();
+			final String filePart = fileName.getFileName().toString();
 			service = filePart.substring(0, filePart.length() - EXTENSION.length());
 
 			try {
-				Lookup lookup = MethodHandles.lookup();
-				definitions.add(LookupForInstance.bind(lookup, SftpServer.class, this, "size",
+				final Lookup lookup = MethodHandles.lookup();
+				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "size",
 						String.format("%s_size", service), Imyhat.INTEGER, Imyhat.STRING, Imyhat.INTEGER));
-				definitions.add(LookupForInstance.bind(lookup, SftpServer.class, this, "exists",
+				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "exists",
 						String.format("%s_exists", service), Imyhat.BOOLEAN, Imyhat.STRING));
-				definitions.add(LookupForInstance.bind(lookup, SftpServer.class, this, "mtime",
+				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "mtime",
 						String.format("%s_mtime", service), Imyhat.DATE, Imyhat.STRING, Imyhat.DATE));
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				e.printStackTrace();
@@ -107,7 +107,7 @@ public class SftpLookupRepository implements LookupRepository {
 					client.authPublickey(configuration.get().getUser());
 					sftp = client.newSFTPClient();
 					return true;
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					sftp = null;
 					e.printStackTrace();
 					connectionErrors
@@ -123,7 +123,7 @@ public class SftpLookupRepository implements LookupRepository {
 			return new Pair<>(String.format("SFTP “%s”", service), properties);
 		}
 
-		public Stream<LookupDefinition> definitions() {
+		public Stream<FunctionDefinition> definitions() {
 			return definitions.stream();
 		}
 
@@ -161,7 +161,7 @@ public class SftpLookupRepository implements LookupRepository {
 				if (client.isConnected()) {
 					client.disconnect();
 				}
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				sftp = null;
 				e.printStackTrace();
 			}
@@ -177,7 +177,7 @@ public class SftpLookupRepository implements LookupRepository {
 
 	private final List<SftpServer> configurations;
 
-	public SftpLookupRepository() {
+	public SftpFunctionRepository() {
 		configurations = RuntimeSupport.dataFiles(EXTENSION).map(SftpServer::new).collect(Collectors.toList());
 	}
 
@@ -187,7 +187,7 @@ public class SftpLookupRepository implements LookupRepository {
 	}
 
 	@Override
-	public Stream<LookupDefinition> queryLookups() {
+	public Stream<FunctionDefinition> queryFunctions() {
 		return configurations.stream().flatMap(SftpServer::definitions);
 	}
 

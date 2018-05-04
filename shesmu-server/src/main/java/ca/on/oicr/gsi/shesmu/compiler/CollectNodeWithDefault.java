@@ -5,8 +5,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public abstract class CollectNodeWithDefault extends CollectNode {
 	protected final ExpressionNode expression;
@@ -60,16 +60,16 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 	protected abstract boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
-	 * Resolve all lookup definitions in this expression
+	 * Resolve all functions definitions in this expression
 	 */
 	@Override
-	public final boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler)
-				& resolveLookupsExtra(definedLookups, errorHandler);
+		return expression.resolveFunctions(definedFunctions, errorHandler)
+				& resolveFunctionsExtra(definedFunctions, errorHandler);
 	}
 
-	protected abstract boolean resolveLookupsExtra(Function<String, LookupDefinition> definedLookups,
+	protected abstract boolean resolveFunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler);
 
 	@Override

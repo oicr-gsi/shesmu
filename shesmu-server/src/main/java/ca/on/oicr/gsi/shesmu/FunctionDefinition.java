@@ -7,13 +7,13 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /**
- * A multi-keyed map that lookups a value based on rules/tables
+ * A multi-keyed map that functions a value based on rules/tables
  */
-public interface LookupDefinition {
+public interface FunctionDefinition {
 
-	public static LookupDefinition staticMethod(Class<?> owner, String methodName, Imyhat returnType,
+	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, Imyhat returnType,
 			Imyhat... argumentTypes) {
-		return new LookupDefinition() {
+		return new FunctionDefinition() {
 
 			@Override
 			public String name() {
@@ -39,12 +39,12 @@ public interface LookupDefinition {
 	}
 
 	/**
-	 * The name of the lookup.
+	 * The name of the function.
 	 */
 	String name();
 
 	/**
-	 * Create bytecode for this lookup.
+	 * Create bytecode for this function.
 	 */
 	void render(GeneratorAdapter methodGen);
 

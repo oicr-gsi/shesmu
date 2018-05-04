@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 
 public abstract class CollectNode {
@@ -117,9 +117,9 @@ public abstract class CollectNode {
 	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
-	 * Resolve all lookup definitions in this expression
+	 * Resolve all functions definitions in this expression
 	 */
-	public abstract boolean resolveLookups(Function<String, LookupDefinition> definedLookups,
+	public abstract boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler);
 
 	public abstract Imyhat type();

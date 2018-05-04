@@ -65,13 +65,16 @@ public class FileConstants implements ConstantSource {
 				return null;
 			}
 			if (entry.getValue().get(0).isBoolean()) {
-				return Constant.ofBooleans(entry.getKey(), RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asBoolean));
+				return Constant.ofBooleans(entry.getKey(),
+						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asBoolean));
 			}
 			if (entry.getValue().get(0).isIntegralNumber()) {
-				return Constant.ofLongs(entry.getKey(), RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asLong));
+				return Constant.ofLongs(entry.getKey(),
+						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asLong));
 			}
 			if (entry.getValue().get(0).isTextual()) {
-				return Constant.ofStrings(entry.getKey(), RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asText));
+				return Constant.ofStrings(entry.getKey(),
+						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asText));
 			}
 		}
 		return null;

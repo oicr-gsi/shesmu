@@ -10,8 +10,8 @@ import java.util.function.Function;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 public class StringNodeInteger extends StringNode {
@@ -59,8 +59,9 @@ public class StringNodeInteger extends StringNode {
 	}
 
 	@Override
-	public boolean resolveLookups(Function<String, LookupDefinition> definedLookups, Consumer<String> errorHandler) {
-		return expression.resolveLookups(definedLookups, errorHandler);
+	public boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return expression.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override

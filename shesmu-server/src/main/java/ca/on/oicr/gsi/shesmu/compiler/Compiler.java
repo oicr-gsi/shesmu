@@ -11,7 +11,7 @@ import org.objectweb.asm.ClassVisitor;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 
 /**
  * A shell of a compiler that can output bytecode
@@ -71,8 +71,8 @@ public abstract class Compiler {
 		if (!parseOk) {
 			maxParseError.write();
 		}
-		if (parseOk
-				&& OliveNode.validate(program.get(), this::getLookup, this::getAction, this::errorHandler, constants)) {
+		if (parseOk && OliveNode.validate(program.get(), this::getFunction, this::getAction, this::errorHandler,
+				constants)) {
 			if (skipRender) {
 				return true;
 			}
@@ -109,11 +109,11 @@ public abstract class Compiler {
 	protected abstract ActionDefinition getAction(String name);
 
 	/**
-	 * Get a lookup by name.
+	 * Get a function by name.
 	 *
 	 * @param name
-	 *            the name of the lookup
-	 * @return the lookup or null if no lookup is available
+	 *            the name of the function
+	 * @return the function or null if no function is available
 	 */
-	protected abstract LookupDefinition getLookup(String name);
+	protected abstract FunctionDefinition getFunction(String name);
 }

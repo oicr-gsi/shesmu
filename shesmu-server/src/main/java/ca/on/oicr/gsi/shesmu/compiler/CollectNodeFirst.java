@@ -4,8 +4,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 
 public class CollectNodeFirst extends CollectNodeWithDefault {
 
@@ -33,7 +33,7 @@ public class CollectNodeFirst extends CollectNodeWithDefault {
 	}
 
 	@Override
-	protected boolean resolveLookupsExtra(Function<String, LookupDefinition> definedLookups,
+	protected boolean resolveFunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
 		return true;
 	}

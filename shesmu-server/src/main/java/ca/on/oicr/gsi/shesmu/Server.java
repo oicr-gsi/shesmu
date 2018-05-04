@@ -47,9 +47,9 @@ public final class Server {
 	private final CachedRepository<ActionRepository, ActionDefinition> actionRepository = new CachedRepository<>(
 			ActionRepository.class, 15, ActionRepository::queryActions);
 	private final CompiledGenerator compiler = new CompiledGenerator(Paths.get(System.getenv("SHESMU_SCRIPT")),
-			this::lookups, this::actionDefinitions, ConstantSource::all);
-	private final CachedRepository<LookupRepository, LookupDefinition> lookupRepository = new CachedRepository<>(
-			LookupRepository.class, 15, LookupRepository::queryLookups);
+			this::functions, this::actionDefinitions, ConstantSource::all);
+	private final CachedRepository<FunctionRepository, FunctionDefinition> functionpRepository = new CachedRepository<>(
+			FunctionRepository.class, 15, FunctionRepository::queryFunctions);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
 
@@ -78,7 +78,7 @@ public final class Server {
 				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
 						VariablesSource::sources, //
 						actionRepository::implementations, //
-						lookupRepository::implementations, //
+						functionpRepository::implementations, //
 						Throttler::services, //
 						ConstantSource::sources)//
 						.flatMap(Supplier::get)//
@@ -100,14 +100,15 @@ public final class Server {
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
 
-				writeHeader(writer, "Lookups");
-				lookupRepository.stream().sorted(Comparator.comparing(LookupDefinition::name)).forEach(lookup -> {
-					writeBlock(writer, lookup.name());
-					writeRow(writer, "Return", lookup.returnType().name());
-					lookup.types().map(Pair.number()).forEach(
-							p -> writeRow(writer, "Argument " + Integer.toString(p.first() + 1), p.second().name()));
+				writeHeader(writer, "Functions");
+				functionpRepository.stream().sorted(Comparator.comparing(FunctionDefinition::name))
+						.forEach(function -> {
+							writeBlock(writer, function.name());
+							writeRow(writer, "Return", function.returnType().name());
+							function.types().map(Pair.number()).forEach(p -> writeRow(writer,
+									"Argument " + Integer.toString(p.first() + 1), p.second().name()));
 
-				});
+						});
 				writeFinish(writer);
 
 				writeHeader(writer, "Actions");
@@ -161,13 +162,13 @@ public final class Server {
 			return array;
 		});
 
-		addJson("/lookups", mapper -> {
+		addJson("/functions", mapper -> {
 			final ArrayNode array = mapper.createArrayNode();
-			lookupRepository.stream().forEach(lookup -> {
+			functionpRepository.stream().forEach(function -> {
 				final ObjectNode obj = array.addObject();
-				obj.put("name", lookup.name());
-				obj.put("return", lookup.returnType().signature());
-				lookup.types().map(Imyhat::signature).forEach(obj.putArray("types")::add);
+				obj.put("name", function.name());
+				obj.put("return", function.returnType().signature());
+				function.types().map(Imyhat::signature).forEach(obj.putArray("types")::add);
 			});
 			return array;
 		});
@@ -200,8 +201,8 @@ public final class Server {
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
-				JsonFactory jfactory = new JsonFactory();
-				JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8);
+				final JsonFactory jfactory = new JsonFactory();
+				final JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8);
 				jGenerator.writeStartArray();
 				VariablesSource.all().forEach(variable -> {
 					try {
@@ -235,7 +236,7 @@ public final class Server {
 						jGenerator.writeNumberField("workflow_version_1", (Long) variable.workflow_version().get(1));
 						jGenerator.writeNumberField("workflow_version_2", (Long) variable.workflow_version().get(2));
 						jGenerator.writeEndObject();
-					} catch (IOException e) {
+					} catch (final IOException e) {
 						throw new IllegalStateException(e);
 					}
 				});
@@ -299,8 +300,8 @@ public final class Server {
 		});
 	}
 
-	private Stream<LookupDefinition> lookups() {
-		return lookupRepository.stream();
+	private Stream<FunctionDefinition> functions() {
+		return functionpRepository.stream();
 	}
 
 	public void start() {
@@ -316,9 +317,9 @@ public final class Server {
 		System.out.println("Finding actions...");
 		final long actionCount = actionRepository.stream().count();
 		System.out.printf("Found %d actions\n", actionCount);
-		System.out.println("Finding lookups...");
-		final long lookupCount = lookupRepository.stream().count();
-		System.out.printf("Found %d lookups\n", lookupCount);
+		System.out.println("Finding functions...");
+		final long functionCount = functionpRepository.stream().count();
+		System.out.printf("Found %d functions\n", functionCount);
 		final long constantCount = ConstantSource.all().count();
 		System.out.printf("Found %d constants\n", constantCount);
 		final long throttlerCount = Throttler.services().count();

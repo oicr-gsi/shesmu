@@ -14,7 +14,7 @@ import org.objectweb.asm.Opcodes;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
 public final class OliveNodeRun extends OliveNode {
@@ -79,9 +79,9 @@ public final class OliveNodeRun extends OliveNode {
 
 	@Override
 	protected boolean resolveDefinitionsExtra(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, LookupDefinition> definedLookups, Function<String, ActionDefinition> definedActions,
+			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Consumer<String> errorHandler) {
-		boolean ok = arguments.stream().filter(arg -> arg.resolveLookups(definedLookups, errorHandler))
+		boolean ok = arguments.stream().filter(arg -> arg.resolveFunctions(definedFunctions, errorHandler))
 				.count() == arguments.size();
 
 		final Set<String> argumentNames = arguments.stream().map(OliveArgumentNode::name).distinct()

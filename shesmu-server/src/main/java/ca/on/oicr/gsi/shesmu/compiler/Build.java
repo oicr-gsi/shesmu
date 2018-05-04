@@ -23,12 +23,12 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.LookupDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
-import ca.on.oicr.gsi.shesmu.lookup.TsvLookupRepository;
+import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
 
 /**
  * The command-line compiler for Shesmu scripts
@@ -40,9 +40,9 @@ public final class Build extends Compiler implements AutoCloseable {
 		options.addOption("h", "help", false, "This dreck.");
 		options.addOption("x", "nocompute", false, "Don't automatically compute MAXS and FRAMES.");
 		options.addOption("v", "variables", false, "List all the variables known in the base stream.");
-		options.addOption("d", "dump", false, "Dump loaded actions and lookups in output.");
+		options.addOption("d", "dump", false, "Dump loaded actions and functions in output.");
 		options.addOption("D", "data", true,
-				"The directory containing the JSON and TSV files for lookups and actions. If not supplied, the path in the environment variable SHESMU_DATA is used.");
+				"The directory containing the JSON and TSV files for functions and actions. If not supplied, the path in the environment variable SHESMU_DATA is used.");
 		final CommandLineParser parser = new DefaultParser();
 		String file;
 		boolean dump;
@@ -80,7 +80,8 @@ public final class Build extends Compiler implements AutoCloseable {
 			System.exit(1);
 			return;
 		}
-		try (Build compiler = new Build(new NameLoader<>(TsvLookupRepository.of(dataDirectory), LookupDefinition::name),
+		try (Build compiler = new Build(
+				new NameLoader<>(TableFunctionRepository.of(dataDirectory), FunctionDefinition::name),
 				new NameLoader<>(FileActionRepository.of(dataDirectory), ActionDefinition::name), skipCompute, true)) {
 			if (dump) {
 				compiler.dump();
@@ -98,7 +99,7 @@ public final class Build extends Compiler implements AutoCloseable {
 
 	private final boolean dataFlowAnalysis;
 
-	private final NameLoader<LookupDefinition> lookups;
+	private final NameLoader<FunctionDefinition> functions;
 
 	private final Printer printer = new Textifier();
 
@@ -106,10 +107,10 @@ public final class Build extends Compiler implements AutoCloseable {
 
 	private final PrintWriter writer = new PrintWriter(System.out);
 
-	private Build(NameLoader<LookupDefinition> lookups, NameLoader<ActionDefinition> actions, boolean skipCompute,
+	private Build(NameLoader<FunctionDefinition> functions, NameLoader<ActionDefinition> actions, boolean skipCompute,
 			boolean dataFlowAnalysis) {
 		super(false);
-		this.lookups = lookups;
+		this.functions = functions;
 		this.actions = actions;
 		this.skipCompute = skipCompute;
 		this.dataFlowAnalysis = dataFlowAnalysis;
@@ -137,9 +138,9 @@ public final class Build extends Compiler implements AutoCloseable {
 	}
 
 	private void dump() {
-		lookups.all().forEach(lookup -> {
-			System.out.printf("Lookup: %s[%s] %s\n", lookup.name(),
-					lookup.types().map(Imyhat::name).collect(Collectors.joining(", ")), lookup.returnType().name());
+		functions.all().forEach(function -> {
+			System.out.printf("Function: %s(%s) %s\n", function.name(),
+					function.types().map(Imyhat::name).collect(Collectors.joining(", ")), function.returnType().name());
 
 			System.out.println();
 		});
@@ -163,8 +164,8 @@ public final class Build extends Compiler implements AutoCloseable {
 	}
 
 	@Override
-	protected LookupDefinition getLookup(String lookup) {
-		return lookups.get(lookup);
+	protected FunctionDefinition getFunction(String function) {
+		return functions.get(function);
 	}
 
 }
