@@ -5,8 +5,8 @@ import java.util.function.Consumer;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeSort extends ListNode {
-	public ListNodeSort(int line, int column, String name, ExpressionNode expression) {
-		super(line, column, name, expression);
+	public ListNodeSort(int line, int column, ExpressionNode expression) {
+		super(line, column, expression);
 	}
 
 	@Override
@@ -16,7 +16,12 @@ public class ListNodeSort extends ListNode {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.sort(name, expression.type(), loadables);
+		return builder.sort(name(), expression.type(), loadables);
+	}
+
+	@Override
+	public String nextName() {
+		return name();
 	}
 
 	@Override

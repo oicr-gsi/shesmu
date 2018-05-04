@@ -1,3 +1,3 @@
 Run ok
  Group a = accession By workflow
- With { ok = (a $ Count) == 2 }
+ With { ok = (For x In a Count) == 2 }

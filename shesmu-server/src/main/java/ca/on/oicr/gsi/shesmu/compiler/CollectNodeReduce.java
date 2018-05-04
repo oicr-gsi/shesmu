@@ -30,7 +30,7 @@ public class CollectNodeReduce extends CollectNode {
 	};
 	private final String accumulatorName;
 	private final ExpressionNode initial;
-	private final String name;
+	private String name;
 
 	private final Target parameter = new Target() {
 
@@ -55,10 +55,9 @@ public class CollectNodeReduce extends CollectNode {
 
 	Imyhat type;
 
-	public CollectNodeReduce(int line, int column, String name, String accumulatorName, ExpressionNode reducer,
+	public CollectNodeReduce(int line, int column, String accumulatorName, ExpressionNode reducer,
 			ExpressionNode initial) {
 		super(line, column);
-		this.name = name;
 		this.accumulatorName = accumulatorName;
 		this.reducer = reducer;
 		this.initial = initial;
@@ -95,7 +94,8 @@ public class CollectNodeReduce extends CollectNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
+		this.name = name;
 		return initial.resolve(defs, errorHandler)
 				& reducer.resolve(defs.bind(parameter).bind(accumulator), errorHandler);
 	}

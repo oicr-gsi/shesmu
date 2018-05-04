@@ -6,8 +6,11 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeMap extends ListNode {
 
-	public ListNodeMap(int line, int column, String name, ExpressionNode expression) {
-		super(line, column, name, expression);
+	private final String nextName;
+
+	public ListNodeMap(int line, int column, String nextName, ExpressionNode expression) {
+		super(line, column, expression);
+		this.nextName = nextName;
 	}
 
 	@Override
@@ -17,7 +20,12 @@ public class ListNodeMap extends ListNode {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.map(name, expression.type().asmType(), loadables);
+		return builder.map(name(), expression.type().asmType(), loadables);
+	}
+
+	@Override
+	public String nextName() {
+		return nextName;
 	}
 
 	@Override

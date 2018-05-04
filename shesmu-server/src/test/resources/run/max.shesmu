@@ -1,4 +1,4 @@
 Run ok
  Max library_size By project
  Group samples = donor By project, library_size
- With { ok = library_size == 307 && (samples $ Count) == 1 }
+ With { ok = library_size == 307 && (For x In samples Count) == 1 }

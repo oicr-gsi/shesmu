@@ -15,10 +15,13 @@ public class ListNodeFlatten extends ListNode {
 
 	private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
 	private static final Method METHOD_SET__STREAM = new Method("stream", A_STREAM_TYPE, new Type[] {});
+	private final String nextName;
+
 	private Imyhat type;
 
-	public ListNodeFlatten(int line, int column, String name, ExpressionNode expression) {
-		super(line, column, name, expression);
+	public ListNodeFlatten(int line, int column, String nextName, ExpressionNode expression) {
+		super(line, column, expression);
+		this.nextName = nextName;
 	}
 
 	@Override
@@ -28,7 +31,12 @@ public class ListNodeFlatten extends ListNode {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.flatten(name, type.asmType(), loadables);
+		return builder.flatten(name(), type.asmType(), loadables);
+	}
+
+	@Override
+	public String nextName() {
+		return nextName;
 	}
 
 	@Override

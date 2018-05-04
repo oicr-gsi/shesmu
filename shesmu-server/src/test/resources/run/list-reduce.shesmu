@@ -1,2 +1,2 @@
 Run ok
- With { ok = ([ 1, 2 ] $ Reduce(x, a = 0) x + a) == 3 }
+ With { ok = (For x In [ 1, 2 ] Reduce(a = 0) x + a) == 3 }

@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -14,13 +15,15 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 
 	private final CollectNode collector;
 	private Type initialType;
-	private final ExpressionNode source;
+	private final String name;
 
+	private final ExpressionNode source;
 	private final List<ListNode> transforms;
 
-	public ExpressionNodeListTransform(int line, int column, ExpressionNode source, List<ListNode> transforms,
-			CollectNode collector) {
+	public ExpressionNodeListTransform(int line, int column, String name, ExpressionNode source,
+			List<ListNode> transforms, CollectNode collector) {
 		super(line, column);
+		this.name = name;
 		this.source = source;
 		this.transforms = transforms;
 		this.collector = collector;
@@ -44,8 +47,15 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 
 	@Override
 	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return source.resolve(defs, errorHandler) & collector.resolve(defs, errorHandler)
-				& transforms.stream().filter(t -> t.resolve(defs, errorHandler)).count() == transforms.size();
+		boolean ok = source.resolve(defs, errorHandler);
+
+		final Optional<String> nextName = transforms.stream().reduce(Optional.of(name),
+				(n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)), (a, b) -> {
+					throw new UnsupportedOperationException();
+				});
+
+		ok &= nextName.map(name -> collector.resolve(name, defs, errorHandler)).orElse(false);
+		return ok;
 	}
 
 	@Override

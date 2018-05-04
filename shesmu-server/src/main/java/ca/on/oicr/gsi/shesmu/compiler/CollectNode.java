@@ -10,6 +10,10 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 
 public abstract class CollectNode {
+	private interface DefaultContructor {
+		CollectNode create(int line, int column, ExpressionNode selector, ExpressionNode alternative);
+	}
+
 	private static final Parser.ParseDispatch<CollectNode> DISPATCH = new Parser.ParseDispatch<>();
 	static {
 		DISPATCH.addKeyword("List", (p, o) -> {
@@ -20,27 +24,15 @@ public abstract class CollectNode {
 			o.accept(new CollectNodeCount(p.line(), p.column()));
 			return p;
 		});
-		DISPATCH.addKeyword("First", (p, o) -> {
-			final AtomicReference<ExpressionNode> defaultExpression = new AtomicReference<>();
-			final Parser result = p.whitespace().then(ExpressionNode::parse, defaultExpression::set);
-			if (result.isGood()) {
-				o.accept(new CollectNodeFirst(p.line(), p.column(), defaultExpression.get()));
-			}
-			return result;
-		});
+		DISPATCH.addKeyword("First", withDefault(CollectNodeFirst::new));
 		DISPATCH.addKeyword("Max", optima(true));
 		DISPATCH.addKeyword("Min", optima(false));
 		DISPATCH.addKeyword("Reduce", (p, o) -> {
-			final AtomicReference<String> name = new AtomicReference<>();
 			final AtomicReference<String> accumulatorName = new AtomicReference<>();
 			final AtomicReference<ExpressionNode> defaultExpression = new AtomicReference<>();
 			final AtomicReference<ExpressionNode> initialExpression = new AtomicReference<>();
 			final Parser result = p.whitespace()//
 					.symbol("(")//
-					.whitespace()//
-					.identifier(name::set)//
-					.whitespace()//
-					.symbol(",")//
 					.whitespace()//
 					.identifier(accumulatorName::set)//
 					.whitespace()//
@@ -51,38 +43,35 @@ public abstract class CollectNode {
 					.whitespace()//
 					.then(ExpressionNode::parse, defaultExpression::set);
 			if (result.isGood()) {
-				o.accept(new CollectNodeReduce(p.line(), p.column(), name.get(), accumulatorName.get(),
-						defaultExpression.get(), initialExpression.get()));
+				o.accept(new CollectNodeReduce(p.line(), p.column(), accumulatorName.get(), defaultExpression.get(),
+						initialExpression.get()));
 			}
 			return result;
 		});
 	}
 
 	private static Rule<CollectNode> optima(boolean max) {
+		return withDefault((l, c, s, a) -> new CollectNodeOptima(l, c, max, s, a));
+	}
+
+	public static Parser parse(Parser parser, Consumer<CollectNode> output) {
+		return parser.dispatch(DISPATCH, output);
+	}
+
+	private static Rule<CollectNode> withDefault(DefaultContructor constructor) {
 		return (p, o) -> {
-			final AtomicReference<String> name = new AtomicReference<>();
 			final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
 			final AtomicReference<ExpressionNode> defaultExpression = new AtomicReference<>();
 			final Parser result = p.whitespace()//
-					.symbol("(")//
-					.whitespace()//
-					.identifier(name::set)//
-					.whitespace()//
-					.symbol(")").whitespace()//
 					.then(ExpressionNode::parse, selectExpression::set)//
 					.keyword("Default")//
 					.whitespace()//
 					.then(ExpressionNode::parse, defaultExpression::set);
 			if (result.isGood()) {
-				o.accept(new CollectNodeOptima(p.line(), p.column(), max, name.get(), selectExpression.get(),
-						defaultExpression.get()));
+				o.accept(constructor.create(p.line(), p.column(), selectExpression.get(), defaultExpression.get()));
 			}
 			return result;
 		};
-	}
-
-	public static Parser parse(Parser parser, Consumer<CollectNode> output) {
-		return parser.dispatch(DISPATCH, output);
 	}
 
 	private final int column;
@@ -114,7 +103,7 @@ public abstract class CollectNode {
 	/**
 	 * Resolve all variable definitions in this expression and its children.
 	 */
-	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
+	public abstract boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
 	 * Resolve all functions definitions in this expression

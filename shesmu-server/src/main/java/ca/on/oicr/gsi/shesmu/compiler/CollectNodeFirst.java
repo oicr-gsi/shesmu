@@ -1,21 +1,19 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Pair;
 
 public class CollectNodeFirst extends CollectNodeWithDefault {
 
-	protected CollectNodeFirst(int line, int column, ExpressionNode expression) {
-		super(line, column, expression);
+	protected CollectNodeFirst(int line, int column, ExpressionNode selector, ExpressionNode alternative) {
+		super(line, column, selector, alternative);
 	}
 
 	@Override
-	protected void collectFreeVariablesExtra(Set<String> names) {
-		// No free variables.
+	protected boolean checkConsistent(Imyhat incomingType, Imyhat selectorType, Imyhat alternativeType) {
+		return selectorType.isSame(alternativeType);
 	}
 
 	@Override
@@ -23,29 +21,15 @@ public class CollectNodeFirst extends CollectNodeWithDefault {
 	}
 
 	@Override
-	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.first(type().asmType(), loadables);
+	protected Pair<Renderer, Renderer> makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
+		final Renderer map = builder.map(name(), incomingType().asmType(), loadables);
+		final Renderer alternative = builder.first(type().asmType(), loadables);
+		return new Pair<>(map, alternative);
 	}
 
 	@Override
-	protected boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler) {
+	protected boolean typeCheckExtra(Consumer<String> errorHandler) {
 		return true;
-	}
-
-	@Override
-	protected boolean resolveFunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
-			Consumer<String> errorHandler) {
-		return true;
-	}
-
-	@Override
-	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
-		if (incoming.isSame(type())) {
-			return true;
-		}
-		errorHandler.accept(String.format("%d:%d: Iterating over %s, but default value is %s.", line(), column(),
-				incoming.name(), type().name()));
-		return false;
 	}
 
 }

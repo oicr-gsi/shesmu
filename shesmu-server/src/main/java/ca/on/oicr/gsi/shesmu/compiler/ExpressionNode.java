@@ -108,19 +108,6 @@ public abstract class ExpressionNode {
 			}
 			return result;
 		});
-		SUFFIX.addSymbol("$", (p, o) -> {
-			final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-			final AtomicReference<CollectNode> collector = new AtomicReference<>();
-			final Parser result = p.whitespace()//
-					.list(transforms::set, ListNode::parse)//
-					.then(CollectNode::parse, collector::set)//
-					.whitespace();
-			if (result.isGood()) {
-				o.accept(node -> new ExpressionNodeListTransform(p.line(), p.column(), node, transforms.get(),
-						collector.get()));
-			}
-			return result;
-		});
 
 		TERMINAL.addKeyword("Date", (p, o) -> p.whitespace().regex(DATE, m -> {
 			ZonedDateTime date;
@@ -260,6 +247,30 @@ public abstract class ExpressionNode {
 			}
 			return result;
 		}
+
+		final Parser forParser = input.keyword("For");
+		if (forParser.isGood()) {
+			final AtomicReference<String> name = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> source = new AtomicReference<>();
+			final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
+			final AtomicReference<CollectNode> collector = new AtomicReference<>();
+			final Parser result = forParser.whitespace()//
+					.identifier(name::set)//
+					.whitespace()//
+					.keyword("In")//
+					.whitespace()//
+					.then(ExpressionNode::parse, source::set)//
+					.whitespace()//
+					.list(transforms::set, ListNode::parse)//
+					.then(CollectNode::parse, collector::set)//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(new ExpressionNodeListTransform(input.line(), input.column(), name.get(), source.get(),
+						transforms.get(), collector.get()));
+			}
+			return result;
+		}
+
 		final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
 		final Parser parserResult = parse1(input, expression::set);
 		if (!parserResult.isGood()) {
