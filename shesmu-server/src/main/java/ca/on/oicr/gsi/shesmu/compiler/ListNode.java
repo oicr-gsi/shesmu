@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -11,27 +12,41 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public abstract class ListNode {
 	private interface ListNodeConstructor {
-		public ListNode build(int line, int column, String parameter, ExpressionNode expression);
+		public ListNode build(int line, int column, ExpressionNode expression);
+	}
+
+	private interface ListNodeNamedConstructor {
+		public ListNode build(int line, int column, String name, ExpressionNode expression);
 	}
 
 	private static final Parser.ParseDispatch<ListNode> DISPATCH = new Parser.ParseDispatch<>();
 	static {
-		DISPATCH.addKeyword("Map", handler(ListNodeMap::new));
-		DISPATCH.addKeyword("Flatten", handler(ListNodeFlatten::new));
-		DISPATCH.addKeyword("Filter", handler(ListNodeFilter::new));
+		DISPATCH.addKeyword("Let", handler(ListNodeMap::new, p -> p.symbol("=")));
+		DISPATCH.addKeyword("Flatten", handler(ListNodeFlatten::new, p -> p.keyword("In")));
+		DISPATCH.addKeyword("Where", handler(ListNodeFilter::new));
 		DISPATCH.addKeyword("Sort", handler(ListNodeSort::new));
 	}
 
 	private static Parser.Rule<ListNode> handler(ListNodeConstructor constructor) {
 		return (p, o) -> {
-			final AtomicReference<String> name = new AtomicReference<>();
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
 			final Parser result = p.whitespace()//
-					.symbol("(")//
-					.whitespace()//
+					.then(ExpressionNode::parse, expression::set);
+			if (result.isGood()) {
+				o.accept(constructor.build(p.line(), p.column(), expression.get()));
+			}
+			return result;
+		};
+	}
+
+	private static Parser.Rule<ListNode> handler(ListNodeNamedConstructor constructor,
+			Function<Parser, Parser> linker) {
+		return (p, o) -> {
+			final AtomicReference<String> name = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final Parser result = linker.apply(p.whitespace()//
 					.identifier(name::set)//
-					.whitespace()//
-					.symbol(")")//
+					.whitespace())//
 					.whitespace()//
 					.then(ExpressionNode::parse, expression::set);
 			if (result.isGood()) {
@@ -53,7 +68,7 @@ public abstract class ListNode {
 
 	private final int line;
 
-	protected final String name;
+	private String name;
 
 	protected final Target parameter = new Target() {
 
@@ -74,10 +89,9 @@ public abstract class ListNode {
 
 	};
 
-	protected ListNode(int line, int column, String name, ExpressionNode expression) {
+	protected ListNode(int line, int column, ExpressionNode expression) {
 		this.line = line;
 		this.column = column;
-		this.name = name;
 		this.expression = expression;
 
 	}
@@ -107,6 +121,12 @@ public abstract class ListNode {
 
 	protected abstract Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables);
 
+	public final String name() {
+		return name;
+	}
+
+	public abstract String nextName();
+
 	/**
 	 * The type of the returned stream
 	 *
@@ -131,8 +151,9 @@ public abstract class ListNode {
 	/**
 	 * Resolve all variable definitions in this expression and its children.
 	 */
-	public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return expression.resolve(defs.bind(parameter), errorHandler);
+	public final Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
+		this.name = name;
+		return expression.resolve(defs.bind(parameter), errorHandler) ? Optional.of(nextName()) : Optional.empty();
 	}
 
 	/**

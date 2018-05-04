@@ -26,7 +26,7 @@ public class CollectNodeCollect extends CollectNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
 		return true;
 	}
 

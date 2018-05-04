@@ -7,15 +7,40 @@ import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Pair;
 
 public abstract class CollectNodeWithDefault extends CollectNode {
-	protected final ExpressionNode expression;
+	protected final ExpressionNode alternative;
+	private String name;
+	private final Target parameter = new Target() {
 
-	protected CollectNodeWithDefault(int line, int column, ExpressionNode expression) {
+		@Override
+		public Flavour flavour() {
+			return Flavour.LAMBDA;
+		}
+
+		@Override
+		public String name() {
+			return name;
+		}
+
+		@Override
+		public Imyhat type() {
+			return type;
+		}
+	};
+
+	protected final ExpressionNode selector;
+	private Imyhat type;
+
+	protected CollectNodeWithDefault(int line, int column, ExpressionNode selector, ExpressionNode alternative) {
 		super(line, column);
-		this.expression = expression;
+		this.selector = selector;
+		this.alternative = alternative;
 
 	}
+
+	protected abstract boolean checkConsistent(Imyhat incomingType, Imyhat selectorType, Imyhat alternativeType);
 
 	/**
 	 * Add all free variable names to the set provided.
@@ -24,40 +49,55 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 	 */
 	@Override
 	public final void collectFreeVariables(Set<String> names) {
-		expression.collectFreeVariables(names);
-		collectFreeVariablesExtra(names);
+		alternative.collectFreeVariables(names);
+		final boolean remove = !names.contains(name);
+		selector.collectFreeVariables(names);
+		if (remove) {
+			names.remove(name);
+		}
 	}
-
-	protected abstract void collectFreeVariablesExtra(Set<String> names);
 
 	protected abstract void finishMethod(Renderer renderer);
 
-	protected abstract Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables);
+	protected final Imyhat incomingType() {
+		return type;
+	}
+
+	protected abstract Pair<Renderer, Renderer> makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables);
+
+	protected final String name() {
+		return name;
+	}
 
 	@Override
 	public final void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
 		collectFreeVariables(freeVariables);
-		final Renderer method = makeMethod(builder, builder.renderer().allValues()
+		final Pair<Renderer, Renderer> renderers = makeMethod(builder, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 
-		method.methodGen().visitCode();
-		expression.render(method);
-		finishMethod(method);
-		method.methodGen().returnValue();
-		method.methodGen().visitMaxs(0, 0);
-		method.methodGen().visitEnd();
+		renderers.first().methodGen().visitCode();
+		selector.render(renderers.first());
+		finishMethod(renderers.first());
+		renderers.first().methodGen().returnValue();
+		renderers.first().methodGen().visitMaxs(0, 0);
+		renderers.first().methodGen().visitEnd();
+
+		renderers.second().methodGen().visitCode();
+		alternative.render(renderers.second());
+		renderers.second().methodGen().returnValue();
+		renderers.second().methodGen().visitMaxs(0, 0);
+		renderers.second().methodGen().visitEnd();
 	}
 
 	/**
 	 * Resolve all variable definitions in this expression and its children.
 	 */
 	@Override
-	public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return expression.resolve(defs, errorHandler) & resolveExtra(defs, errorHandler);
+	public final boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
+		this.name = name;
+		return alternative.resolve(defs, errorHandler) & selector.resolve(defs.bind(parameter), errorHandler);
 	}
-
-	protected abstract boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
 	 * Resolve all functions definitions in this expression
@@ -65,21 +105,28 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 	@Override
 	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		return expression.resolveFunctions(definedFunctions, errorHandler)
-				& resolveFunctionsExtra(definedFunctions, errorHandler);
+		return alternative.resolveFunctions(definedFunctions, errorHandler)
+				& selector.resolveFunctions(definedFunctions, errorHandler);
 	}
-
-	protected abstract boolean resolveFunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
-			Consumer<String> errorHandler);
 
 	@Override
 	public final Imyhat type() {
-		return expression.type();
+		return alternative.type();
 	}
 
 	@Override
 	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-		return expression.typeCheck(errorHandler) && typeCheckExtra(incoming, errorHandler);
+		type = incoming;
+		if (selector.typeCheck(errorHandler) & alternative.typeCheck(errorHandler)) {
+			if (checkConsistent(incoming, selector.type(), alternative.type())) {
+				return typeCheckExtra(errorHandler);
+			} else {
+				errorHandler.accept(String.format("%d:%d: Iterating over %s, selecting by %s, and default value is %s.",
+						line(), column(), incoming.name(), selector.type().name(), alternative.type().name()));
+			}
+
+		}
+		return false;
 	}
 
 	/**
@@ -87,6 +134,6 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 	 *
 	 * @param errorHandler
 	 */
-	protected abstract boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler);
+	protected abstract boolean typeCheckExtra(Consumer<String> errorHandler);
 
 }

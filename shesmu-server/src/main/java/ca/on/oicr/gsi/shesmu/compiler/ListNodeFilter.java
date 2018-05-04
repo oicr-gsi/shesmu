@@ -6,8 +6,8 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeFilter extends ListNode {
 
-	public ListNodeFilter(int line, int column, String name, ExpressionNode expression) {
-		super(line, column, name, expression);
+	public ListNodeFilter(int line, int column, ExpressionNode expression) {
+		super(line, column, expression);
 	}
 
 	@Override
@@ -17,7 +17,12 @@ public class ListNodeFilter extends ListNode {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.filter(name, loadables);
+		return builder.filter(name(), loadables);
+	}
+
+	@Override
+	public String nextName() {
+		return name();
 	}
 
 	@Override

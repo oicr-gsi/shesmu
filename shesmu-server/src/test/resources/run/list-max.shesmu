@@ -1,2 +1,2 @@
 Run ok
- With { ok = ([ {False,1}, {True,2} ] $ Max(x) x[1] Default {False,0})[0] }
+ With { ok = (For x In [ {False,1}, {True,2} ] Max x[1] Default {False,0})[0] }
