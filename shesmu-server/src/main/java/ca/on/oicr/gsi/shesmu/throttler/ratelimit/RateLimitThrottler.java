@@ -31,8 +31,7 @@ public class RateLimitThrottler implements Throttler {
 
 		public TokenBucket(Path fileName) {
 			super(fileName, Configuration.class);
-			final String serviceWithExtension = fileName.getFileName().toString();
-			service = serviceWithExtension.substring(0, serviceWithExtension.length() - EXTENTION.length());
+			service = RuntimeSupport.removeExtension(fileName, EXTENSION);
 		}
 
 		public synchronized boolean checkCapacity(Set<String> services) {
@@ -71,7 +70,7 @@ public class RateLimitThrottler implements Throttler {
 	private static final Gauge bucketCapacity = Gauge
 			.build("shesmu_throttler_ratelimit_capacity", "The maximum number of tokens in the bucket.")
 			.labelNames("service").register();
-	private static final String EXTENTION = ".ratelimit";
+	private static final String EXTENSION = ".ratelimit";
 	private static final Gauge rechargeDelay = Gauge
 			.build("shesmu_throttler_ratelimit_recharge_delay", "The number of milliseconds to generate a new token.")
 			.labelNames("service").register();
@@ -83,7 +82,7 @@ public class RateLimitThrottler implements Throttler {
 	private final List<TokenBucket> buckets;
 
 	public RateLimitThrottler() {
-		buckets = RuntimeSupport.dataFiles(EXTENTION).map(TokenBucket::new).peek(TokenBucket::start)
+		buckets = RuntimeSupport.dataFiles(EXTENSION).map(TokenBucket::new).peek(TokenBucket::start)
 				.collect(Collectors.toList());
 	}
 

@@ -43,8 +43,7 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 
 		public RunScannerClient(Path fileName) {
 			super(fileName, Configuration.class);
-			final String fileNamePart = fileName.getFileName().toString();
-			instance = fileNamePart.substring(0, fileNamePart.length() - EXTENSION.length());
+			instance = RuntimeSupport.removeExtension(fileName, EXTENSION);
 			configurationPair = new Pair<>(String.format("RunScanner Function for %s", instance), properties);
 			FunctionDefinition laneCount;
 			try {
