@@ -324,6 +324,11 @@ public final class RuntimeSupport {
 				.map(Entry::getKey);
 	}
 
+	public static String removeExtension(Path fileName, String extension) {
+		final String fileNamePart = fileName.getFileName().toString();
+		return fileNamePart.substring(0, fileNamePart.length() - extension.length());
+	}
+
 	@RuntimeInterop
 	public static Instant start_of_day(Instant input) {
 		return input.truncatedTo(ChronoUnit.DAYS);

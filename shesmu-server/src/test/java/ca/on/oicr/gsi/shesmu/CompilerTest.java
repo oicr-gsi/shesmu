@@ -72,7 +72,7 @@ public class CompilerTest {
 			FileActionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())),
 			ActionDefinition::name);
 	private final NameLoader<FunctionDefinition> functions = new NameLoader<>(
-			TableFunctionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())), FunctionDefinition::name);
+			TableFunctionRepository.of(this.getClass().getResource("/data").getPath()), FunctionDefinition::name);
 
 	@Test
 	public void testBad() throws IOException {

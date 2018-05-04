@@ -6,11 +6,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -19,6 +17,7 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingFile;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -26,7 +25,6 @@ import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
-import io.prometheus.client.Gauge;
 
 /**
  * Converts a TSV file into a function
@@ -39,9 +37,33 @@ import io.prometheus.client.Gauge;
  */
 @MetaInfServices
 public class TableFunctionRepository implements FunctionRepository {
+	private class Table extends AutoUpdatingFile {
 
-	private static final Gauge lastRead = Gauge.build("shesmu_table_function_config_last_read",
-			"The last time, in seconds since the epoch, that the configuration was read.").register();
+		private Optional<FunctionDefinition> function = Optional.empty();
+
+		private final String name;
+
+		public Table(Path fileName) {
+			super(fileName);
+			name = RuntimeSupport.removeExtension(fileName, EXTENSION);
+		}
+
+		public String configuration() {
+			return function.map(f -> f.types().map(Imyhat::name)
+					.collect(Collectors.joining(", ", "(", ") " + f.returnType().name()))).orElse("none");
+		}
+
+		public Stream<FunctionDefinition> stream() {
+			return function.map(Stream::of).orElseGet(Stream::empty);
+		}
+
+		@Override
+		protected void update() {
+			function = readLookup(fileName(), name);
+		}
+	}
+
+	private static final String EXTENSION = ".lookup";
 
 	private static final Pattern TAB = Pattern.compile("\t");
 
@@ -56,85 +78,89 @@ public class TableFunctionRepository implements FunctionRepository {
 				.orElse(defaultValue);
 	}
 
-	private static FunctionDefinition makeLookup(String name, List<String> lines) {
-		if (lines.size() < 2) {
-			return null;
-		}
-
-		final List<BaseImyhat> types = TAB.splitAsStream(lines.get(0)).map(Imyhat::forName)
-				.collect(Collectors.toList());
-		if (types.size() < 2) {
-			return null;
-		}
-
-		final List<String[]> grid = lines.stream().skip(1).map(TAB::split).collect(Collectors.toList());
-
-		if (grid.stream().anyMatch(columns -> columns.length != types.size())) {
-			return null;
-		}
-
-		final List<Function<Object[], Optional<Object>>> attempts = grid.stream()//
-				.<Function<Object[], Optional<Object>>>map(columns -> {
-					Predicate<Object[]> combiningPredicates = x -> true;
-					for (int index = 0; index < columns.length - 1; index++) {
-						if (!columns[index].equals("*")) {
-							final Object match = types.get(index).parse(columns[index]);
-							final int i = index;
-							combiningPredicates = combiningPredicates.and(parameters -> parameters[i].equals(match));
-						}
-					}
-
-					final Predicate<Object[]> predicate = combiningPredicates;
-					final Object result = types.get(types.size() - 1).parse(columns[columns.length - 1]);
-					return parameters -> predicate.test(parameters) ? Optional.of(result) : Optional.empty();
-				}).collect(Collectors.toList());
-
-		return FunctionForInstance.bind(TableFunctionRepository.class, mt -> {
-			try {
-				final MethodHandle lookupMethod = MethodHandles.lookup().findStatic(TableFunctionRepository.class,
-						"lookup", MethodType.methodType(Object.class, List.class, Object.class, Object[].class));
-				return lookupMethod.bindTo(attempts).bindTo(types.get(types.size() - 1).defaultValue())
-						.asVarargsCollector(Object[].class).asType(mt);
-			} catch (NoSuchMethodException | IllegalAccessException e) {
-				return MethodHandles.throwException(types.get(types.size() - 1).javaType(),
-						UnsupportedOperationException.class);
-			}
-		}, name, types.get(types.size() - 1),
-				types.stream().limit(types.size() - 1).map(x -> x).toArray(Imyhat[]::new));
+	public static Stream<FunctionDefinition> of(String path) {
+		return RuntimeSupport.dataFilesForPath(Optional.of(path), EXTENSION)
+				.map(f -> readLookup(f, RuntimeSupport.removeExtension(f, EXTENSION))).filter(Optional::isPresent)
+				.map(Optional::get);
 	}
 
-	public static Stream<FunctionDefinition> of(Optional<String> source) {
-		return RuntimeSupport.dataFilesForPath(source, ".lookup").map(TableFunctionRepository::readLookup);
-	}
-
-	private static FunctionDefinition readLookup(Path lookupFile) {
+	private static Optional<FunctionDefinition> readLookup(Path filename, String name) {
 		try {
-			final List<String> lines = Files.readAllLines(lookupFile);
-			final String fileName = lookupFile.getFileName().toString();
-			return makeLookup(fileName.substring(0, fileName.length() - 7), lines);
+			final List<String> lines = Files.readAllLines(filename);
+
+			if (lines.size() < 2) {
+				return Optional.empty();
+			}
+
+			final List<BaseImyhat> types = TAB.splitAsStream(lines.get(0)).map(Imyhat::forName)
+					.collect(Collectors.toList());
+			if (types.size() < 2) {
+				return Optional.empty();
+			}
+
+			final List<String[]> grid = lines.stream().skip(1).map(TAB::split).collect(Collectors.toList());
+
+			if (grid.stream().anyMatch(columns -> columns.length != types.size())) {
+				return Optional.empty();
+			}
+
+			final List<Function<Object[], Optional<Object>>> attempts = grid.stream()//
+					.<Function<Object[], Optional<Object>>>map(columns -> {
+						Predicate<Object[]> combiningPredicates = x -> true;
+						for (int index = 0; index < columns.length - 1; index++) {
+							if (!columns[index].equals("*")) {
+								final Object match = types.get(index).parse(columns[index]);
+								final int i = index;
+								combiningPredicates = combiningPredicates
+										.and(parameters -> parameters[i].equals(match));
+							}
+						}
+
+						final Predicate<Object[]> predicate = combiningPredicates;
+						final Object result = types.get(types.size() - 1).parse(columns[columns.length - 1]);
+						return parameters -> predicate.test(parameters) ? Optional.of(result) : Optional.empty();
+					}).collect(Collectors.toList());
+
+			return Optional.of(FunctionForInstance.bind(TableFunctionRepository.class, mt -> {
+				try {
+					final MethodHandle lookupMethod = MethodHandles.lookup().findStatic(TableFunctionRepository.class,
+							"lookup", MethodType.methodType(Object.class, List.class, Object.class, Object[].class));
+					return lookupMethod.bindTo(attempts).bindTo(types.get(types.size() - 1).defaultValue())
+							.asVarargsCollector(Object[].class).asType(mt);
+				} catch (NoSuchMethodException | IllegalAccessException e) {
+					return MethodHandles.throwException(types.get(types.size() - 1).javaType(),
+							UnsupportedOperationException.class);
+				}
+			}, name, types.get(types.size() - 1),
+					types.stream().limit(types.size() - 1).map(x -> x).toArray(Imyhat[]::new)));
 		} catch (final IOException e) {
 			e.printStackTrace();
-			return null;
+			return Optional.empty();
 		}
+
 	}
 
-	private final List<FunctionDefinition> configuration = new ArrayList<>();
+	private final List<Table> configuration;
+
+	public TableFunctionRepository() {
+		this(RuntimeSupport.dataDirectory());
+	}
+
+	public TableFunctionRepository(Optional<Path> source) {
+		configuration = RuntimeSupport.dataFiles(source, EXTENSION).map(Table::new).peek(Table::start)
+				.collect(Collectors.toList());
+	}
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return RuntimeSupport.environmentVariable().map(path -> {
-			final Map<String, String> map = new TreeMap<>();
-			map.put("path", path);
-			return Stream.of(new Pair<>("Table Functions", map));
-		}).orElse(Stream.empty());
+		final Map<String, String> map = configuration.stream()
+				.collect(Collectors.toMap(t -> t.fileName().toString(), Table::configuration));
+		return Stream.of(new Pair<>("Table Functions", map));
 	}
 
 	@Override
 	public Stream<FunctionDefinition> queryFunctions() {
-		lastRead.setToCurrentTime();
-		configuration.clear();
-		return of(RuntimeSupport.environmentVariable())//
-				.peek(configuration::add);
+		return configuration.stream().flatMap(Table::stream);
 	}
 
 }

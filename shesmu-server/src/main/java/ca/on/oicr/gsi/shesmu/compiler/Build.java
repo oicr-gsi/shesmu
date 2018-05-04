@@ -81,7 +81,8 @@ public final class Build extends Compiler implements AutoCloseable {
 			return;
 		}
 		try (Build compiler = new Build(
-				new NameLoader<>(TableFunctionRepository.of(dataDirectory), FunctionDefinition::name),
+				new NameLoader<>(new TableFunctionRepository(dataDirectory.map(Paths::get)).queryFunctions(),
+						FunctionDefinition::name),
 				new NameLoader<>(FileActionRepository.of(dataDirectory), ActionDefinition::name), skipCompute, true)) {
 			if (dump) {
 				compiler.dump();
