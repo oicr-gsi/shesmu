@@ -213,6 +213,7 @@ public class RunReport extends Action implements JsonParameterised {
 					String.format(":$drmaa_hd_ph$/logs/reports/report%d-%d.out", reportId, reportRecordId.getAsLong()));
 			drmaaParameters.put("drmaa_error_path",
 					String.format(":$drmaa_hd_ph$/logs/reports/report%d-%d.err", reportId, reportRecordId.getAsLong()));
+			drmaaParameters.put("drmaa_native_specification", "-l h_vmem=2g");
 			final byte[] drmaaBody = RuntimeSupport.MAPPER.writeValueAsBytes(drmaaParameters);
 			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
 			digest.update(drmaaPsk.getBytes(StandardCharsets.UTF_8));
