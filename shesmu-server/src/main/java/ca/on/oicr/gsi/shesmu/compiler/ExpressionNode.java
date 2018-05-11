@@ -148,7 +148,7 @@ public abstract class ExpressionNode {
 		});
 		TERMINAL.addSymbol("\"", (p, o) -> {
 			final AtomicReference<List<StringNode>> items = new AtomicReference<>();
-			final Parser result = p.whitespace().list(items::set, StringNode::parse).symbol("\"").whitespace();
+			final Parser result = p.list(items::set, StringNode::parse).symbol("\"").whitespace();
 			if (p.isGood()) {
 				o.accept(new ExpressionNodeString(p.line(), p.column(), items.get()));
 			}
