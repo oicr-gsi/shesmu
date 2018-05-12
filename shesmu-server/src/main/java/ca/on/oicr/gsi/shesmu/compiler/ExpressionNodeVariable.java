@@ -83,7 +83,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
 
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
-		return true;
+		return !target.type().isBad();
 	}
 
 }
