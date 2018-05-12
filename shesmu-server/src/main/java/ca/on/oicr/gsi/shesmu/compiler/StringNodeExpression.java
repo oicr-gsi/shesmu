@@ -5,6 +5,7 @@ import static org.objectweb.asm.Type.LONG_TYPE;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -74,16 +75,16 @@ public class StringNodeExpression extends StringNode {
 
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
-		final boolean ok = expression.typeCheck(errorHandler);
-		if (ok) {
+		if (expression.typeCheck(errorHandler)) {
 			final Imyhat innerType = expression.type();
-			if (!innerType.isSame(Imyhat.INTEGER) && !innerType.isSame(Imyhat.DATE)
-					&& !innerType.isSame(Imyhat.STRING)) {
-				errorHandler.accept(
-						String.format("%d:%d: Cannot convert type %s to string in interpolation.", innerType.name()));
+			if (Stream.of(Imyhat.INTEGER, Imyhat.DATE, Imyhat.STRING).noneMatch(innerType::isSame)) {
+				errorHandler.accept(String.format("%d:%d: Cannot convert type %s to string in interpolation.",
+						expression.line(), expression.column(), innerType.name()));
+				return false;
 			}
+			return true;
 		}
-		return ok;
+		return false;
 	}
 
 }

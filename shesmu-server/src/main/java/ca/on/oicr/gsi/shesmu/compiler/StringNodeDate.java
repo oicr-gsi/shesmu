@@ -70,10 +70,11 @@ public class StringNodeDate extends StringNode {
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		if (expression.typeCheck(errorHandler)) {
-			final boolean ok = expression.type().isSame(Imyhat.DATE);
+			boolean ok = expression.type().isSame(Imyhat.DATE);
 			if (!ok) {
 				errorHandler.accept(String.format("%d:%d: Date expected in date-formatted interpolation, but got %s.",
 						line, column, expression.type().name()));
+				ok = false;
 			}
 			return ok;
 		} else {
