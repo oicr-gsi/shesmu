@@ -33,6 +33,21 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
  * Helper to build bytecode for “olives” (decision-action stanzas)
  */
 public final class JavaStreamBuilder {
+	public enum Match {
+		NONE("noneMatch", "None"), ALL("allMatch", "All"), ANY("anyMatch", "Any");
+		private final Method method;
+		private final String syntax;
+
+		private Match(String methodName, String syntax) {
+			this.syntax = syntax;
+			this.method = new Method(methodName, Type.BOOLEAN_TYPE, new Type[] { A_PREDICATE_TYPE });
+		}
+
+		public String syntax() {
+			return syntax;
+		}
+	}
+
 	private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
 	private static final Type A_BINARY_OPERATOR_TYPE = Type.getType(BinaryOperator.class);
 	private static final Type A_COLLECTOR_TYPE = Type.getType(Collector.class);
@@ -156,6 +171,28 @@ public final class JavaStreamBuilder {
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, filterType));
+	}
+
+	public final Renderer match(Match matchType, String name, LoadableValue... capturedVariables) {
+		finish();
+		final Method method = new Method(String.format("chain_%d_match", streamId), BOOLEAN_TYPE, Stream
+				.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(streamType, currentType))
+				.toArray(Type[]::new));
+		renderer.methodGen().loadThis();
+		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+		renderer.loadStream();
+		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
+				method.getDescriptor(), false);
+		renderer.methodGen().invokeDynamic("test",
+				Type.getMethodDescriptor(A_PREDICATE_TYPE, Stream
+						.concat(Stream.concat(Stream.of(owner.selfType()),
+								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
+						.toArray(Type[]::new)),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(BOOLEAN_TYPE, currentType));
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, matchType.method);
+		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
+				capturedVariables.length, streamType, parameters(capturedVariables, name, currentType));
 	}
 
 	private final void finish() {

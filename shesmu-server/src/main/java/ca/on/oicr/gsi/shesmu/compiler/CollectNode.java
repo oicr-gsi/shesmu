@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.JavaStreamBuilder.Match;
 import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 
 public abstract class CollectNode {
@@ -48,6 +49,18 @@ public abstract class CollectNode {
 			}
 			return result;
 		});
+		for (Match matchType : Match.values()) {
+			DISPATCH.addKeyword(matchType.syntax(), (p, o) -> {
+				final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
+				final Parser result = p.whitespace()//
+						.then(ExpressionNode::parse, selectExpression::set)//
+						.whitespace();
+				if (result.isGood()) {
+					o.accept(new CollectNodeMatches(p.line(), p.column(), matchType, selectExpression.get()));
+				}
+				return result;
+			});
+		}
 	}
 
 	private static Rule<CollectNode> optima(boolean max) {
