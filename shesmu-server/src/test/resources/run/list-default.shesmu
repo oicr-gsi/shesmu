@@ -1,2 +1,2 @@
 Run ok
- With { ok = (For x In [ 7 ] Where x > 10 First x Default 3) == 3 }
+ With { ok = (For x In [ 7 ]: Where x > 10 First x Default 3) == 3 }
