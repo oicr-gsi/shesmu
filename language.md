@@ -436,6 +436,14 @@ Finds the minimum or maximum item in a list, based on the _sortexpr_,
 which must be an integer or date. If the list is empty, _defaultexpr_ is
 returned.
 
+#### Item Matches
+- `None` _expr_
+- `All` _expr_
+- `Any` _expr_
+
+Checks whether none, all, or any (some) of the items in the list meet the
+condition specified in _expr_, which must return a Boolean.
+
 #### Reduce
 - `Reduce(`_a_ `=` _initialexpr_ `)` _expr_
 
