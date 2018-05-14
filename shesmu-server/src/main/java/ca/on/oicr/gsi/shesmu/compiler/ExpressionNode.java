@@ -261,6 +261,8 @@ public abstract class ExpressionNode {
 					.whitespace()//
 					.then(ExpressionNode::parse, source::set)//
 					.whitespace()//
+					.symbol(":")//
+					.whitespace()//
 					.list(transforms::set, ListNode::parse)//
 					.then(CollectNode::parse, collector::set)//
 					.whitespace();

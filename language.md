@@ -113,11 +113,11 @@ things. The `Let` clause provides this:
         By ius
       Let
         # A lane is processed if there was a LIMS record and at least one FASTQ produced
-        lane_was_processed = "sample_provenance" In sources && (For x In workflows Count) > 1,
+        lane_was_processed = "sample_provenance" In sources && (For x In workflows: Count) > 1,
         sequencer_run = ius[0],
         lane_number = ius[1],
-        path = For x In paths Where x[0] First x Default "",
-        timestamp = For x In timestamps Max x Default epoch
+        path = For x In paths: Where x[0] First x Default "",
+        timestamp = For x In timestamps: Max x Default epoch
       # Now regroup by sequencer run
       Group
           lanes_were_processed = lane_was_processed,
@@ -207,7 +207,7 @@ _valueexpr_.
 Evaluates _testexpr_ and if true, returns _trueexpr_; if false, returns _falseexpr_.
 _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the same type.
 
-- `For` _var_ `In` _expr_ `modifications... collector
+- `For` _var_ `In` _expr_`:` modifications... collector
 
 Takes the elements in a list and process them using the supplied modifications
 and then computes a result using the collector. The modifications and
