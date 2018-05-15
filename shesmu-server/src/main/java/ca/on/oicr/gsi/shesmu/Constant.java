@@ -1,14 +1,22 @@
 package ca.on.oicr.gsi.shesmu;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.compiler.LoadableValue;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
@@ -21,6 +29,46 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
  * the program is recompiled even if the {@link ConstantSource}
  */
 public abstract class Constant extends Target {
+
+	private class ConstantCompiler extends BaseHotloadingCompiler {
+
+		public ConstantLoader compile() {
+			final ClassVisitor classVisitor = createClassVisitor();
+			classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "dyn/shesmu/Constant", null,
+					A_OBJECT_TYPE.getInternalName(), new String[] { A_CONSTANT_LOADER_TYPE.getInternalName() });
+
+			final GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null,
+					classVisitor);
+			ctor.visitCode();
+			ctor.loadThis();
+			ctor.invokeConstructor(A_OBJECT_TYPE, DEFAULT_CTOR);
+			ctor.visitInsn(Opcodes.RETURN);
+			ctor.visitMaxs(0, 0);
+			ctor.visitEnd();
+
+			final GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null,
+					classVisitor);
+			handle.visitCode();
+			handle.invokeDynamic(type.signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+			handle.loadArg(0);
+			handle.push("value");
+			Constant.this.load(handle);
+			handle.box(type.asmType());
+			handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__PACK_JSON);
+			handle.visitInsn(Opcodes.RETURN);
+			handle.visitMaxs(0, 0);
+			handle.visitEnd();
+
+			classVisitor.visitEnd();
+
+			try {
+				return load(ConstantLoader.class, "dyn.shesmu.Constant");
+			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+				e.printStackTrace();
+				return o -> o.put("error", e.getMessage());
+			}
+		}
+	}
 
 	public static abstract class ConstantList<T> extends Constant {
 
@@ -48,12 +96,41 @@ public abstract class Constant extends Target {
 
 	}
 
+	public interface ConstantLoader {
+		@RuntimeInterop
+		public void load(ObjectNode target);
+	}
+
+	private static final Type A_CONSTANT_LOADER_TYPE = Type.getType(ConstantLoader.class);
+
 	private static final Type A_HASH_SET_TYPE = Type.getType(HashSet.class);
+
+	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+
+	private static final Type A_JSON_OBJECT_TYPE = Type.getType(ObjectNode.class);
+
+	private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
+
+	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+
+	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
 
+	private static final Handle HANDLER_IMYHAT = new Handle(Opcodes.H_INVOKESTATIC, A_IMYHAT_TYPE.getInternalName(),
+			"bootstrap", Type.getMethodDescriptor(Type.getType(CallSite.class),
+					Type.getType(MethodHandles.Lookup.class), A_STRING_TYPE, Type.getType(MethodType.class)),
+			false);
+
 	private static Method INSTANT_CTOR = new Method("ofEpochMilli", Imyhat.DATE.asmType(),
 			new Type[] { Type.LONG_TYPE });
+
+	private static final Method LOAD_METHOD = new Method("load", Type.VOID_TYPE, new Type[] { A_JSON_OBJECT_TYPE });
+
+	private static final Method METHOD_IMYHAT__PACK_JSON = new Method("packJson", Type.VOID_TYPE,
+			new Type[] { A_OBJECT_NODE_TYPE, A_STRING_TYPE, A_OBJECT_TYPE });
+
+	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
 
 	private static final Method SET__ADD = new Method("add", Type.BOOLEAN_TYPE,
 			new Type[] { Type.getType(Object.class) });
@@ -156,7 +233,6 @@ public abstract class Constant extends Target {
 	}
 
 	private final String description;
-
 	private final LoadableValue loadable = new LoadableValue() {
 
 		@Override
@@ -174,7 +250,6 @@ public abstract class Constant extends Target {
 			return type.asmType();
 		}
 	};
-
 	private final String name;
 
 	private final Imyhat type;
@@ -199,6 +274,10 @@ public abstract class Constant extends Target {
 	 */
 	public final LoadableValue asLoadable() {
 		return loadable;
+	}
+
+	public final ConstantLoader compile() {
+		return new ConstantCompiler().compile();
 	}
 
 	public final String description() {
