@@ -43,22 +43,23 @@ public class FileConstants implements ConstantSource {
 
 		@Override
 		protected void update(ObjectNode node) {
+			String description = String.format("User-defined value specified in %s.", fileName());
 			constants = RuntimeSupport.stream(node.fields())//
-					.map(FileConstants::convert)//
+					.map(e -> convert(e, description))//
 					.filter(Objects::nonNull)//
 					.collect(Collectors.toList());
 		}
 	}
 
-	private static Constant convert(Map.Entry<String, JsonNode> entry) {
+	private static Constant convert(Map.Entry<String, JsonNode> entry, String description) {
 		if (entry.getValue().isBoolean()) {
-			return Constant.of(entry.getKey(), entry.getValue().asBoolean());
+			return Constant.of(entry.getKey(), entry.getValue().asBoolean(), description);
 		}
 		if (entry.getValue().isIntegralNumber()) {
-			return Constant.of(entry.getKey(), entry.getValue().asLong());
+			return Constant.of(entry.getKey(), entry.getValue().asLong(), description);
 		}
 		if (entry.getValue().isTextual()) {
-			return Constant.of(entry.getKey(), entry.getValue().asText());
+			return Constant.of(entry.getKey(), entry.getValue().asText(), description);
 		}
 		if (entry.getValue().isArray()) {
 			if (entry.getValue().size() == 0) {
@@ -66,15 +67,15 @@ public class FileConstants implements ConstantSource {
 			}
 			if (entry.getValue().get(0).isBoolean()) {
 				return Constant.ofBooleans(entry.getKey(),
-						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asBoolean));
+						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asBoolean), description);
 			}
 			if (entry.getValue().get(0).isIntegralNumber()) {
 				return Constant.ofLongs(entry.getKey(),
-						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asLong));
+						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asLong), description);
 			}
 			if (entry.getValue().get(0).isTextual()) {
 				return Constant.ofStrings(entry.getKey(),
-						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asText));
+						RuntimeSupport.stream(entry.getValue().elements()).map(JsonNode::asText), description);
 			}
 		}
 		return null;

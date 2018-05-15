@@ -48,7 +48,9 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 			FunctionDefinition laneCount;
 			try {
 				laneCount = FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "laneCount",
-						String.format("%s_lane_count", instance), Imyhat.INTEGER, Imyhat.STRING);
+						String.format("%s_lane_count", instance),
+						String.format("Get the number of lanes detected by the Run Scanner defined in %s", fileName),
+						Imyhat.INTEGER, Imyhat.STRING);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				laneCount = null;
 				e.printStackTrace();

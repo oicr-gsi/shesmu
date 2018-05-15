@@ -126,7 +126,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 
 		@Override
 		protected void update(Configuration config) {
-			value = create(this).collect(Collectors.toList());
+			value = create(this, fileName()).collect(Collectors.toList());
 			properties.put("project", config.getProjectKey());
 			properties.put("url", config.getUrl());
 			try {
@@ -200,7 +200,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 				.collect(Collectors.toList());
 	}
 
-	protected abstract Stream<T> create(JiraConfig config);
+	protected abstract Stream<T> create(JiraConfig config, Path filename);
 
 	@Override
 	public final Stream<Pair<String, Map<String, String>>> listConfiguration() {

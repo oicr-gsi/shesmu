@@ -131,7 +131,7 @@ public class TableFunctionRepository implements FunctionRepository {
 					return MethodHandles.throwException(types.get(types.size() - 1).javaType(),
 							UnsupportedOperationException.class);
 				}
-			}, name, types.get(types.size() - 1),
+			}, name, String.format("Table-defined lookup from %s.", filename), types.get(types.size() - 1),
 					types.stream().limit(types.size() - 1).map(x -> x).toArray(Imyhat[]::new)));
 		} catch (final IOException e) {
 			e.printStackTrace();

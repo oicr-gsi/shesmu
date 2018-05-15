@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
@@ -47,7 +48,7 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 	}
 
 	@Override
-	protected Stream<ActionDefinition> create(JiraConfig config) {
+	protected Stream<ActionDefinition> create(JiraConfig config, Path filename) {
 		return Stream.of(
 				new TicketActionDefinition(config, "ticket", A_FILE_TICKET_TYPE,
 						Stream.of(

@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.jira;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,18 +48,25 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 	}
 
 	@Override
-	protected Stream<FunctionDefinition> create(JiraConfig config) {
+	protected Stream<FunctionDefinition> create(JiraConfig config, Path filename) {
 		try {
 			final Lookup lookup = MethodHandles.lookup();
 			return Stream.<FunctionDefinition>of(
 					new FunctionForInstance(lookup, "count", String.format("count_tickets_%s", config.instance()),
+							String.format(
+									"Count the number of open or closed tickets from the JIRA project defined in %s.",
+									filename),
 							Imyhat.INTEGER, Imyhat.STRING, Imyhat.BOOLEAN) {
 
 						@RuntimeInterop
 						public long count(String keyword, boolean open) {
 							return config.issues().filter(new IssueFilter(keyword, open)).count();
 						}
-					}, new FunctionForInstance(lookup, "fetch", String.format("query_tickets_%s", config.instance()),
+					},
+					new FunctionForInstance(lookup, "fetch", String.format("query_tickets_%s", config.instance()),
+							String.format(
+									"Get the ticket summary and descriptions from the JIRA project defined in %s.",
+									filename),
 							QUERY_TYPE, Imyhat.STRING, Imyhat.BOOLEAN) {
 
 						@RuntimeInterop

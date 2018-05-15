@@ -17,8 +17,10 @@ import org.objectweb.asm.commons.Method;
 @MetaInfServices(ConstantSource.class)
 public class StandardConstants implements ConstantSource {
 	private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
-	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("epoch", Instant.EPOCH),
-			new Constant("now", Imyhat.DATE) {
+	private static final List<Constant> CONSTANTS = Arrays.asList(
+			Constant.of("epoch", Instant.EPOCH, "The date at UNIX timestamp 0: 1970-01-01T00:00:00Z"),
+			new Constant("now", Imyhat.DATE,
+					"The current timestamp. This is fetched every time this constant is referenced, so now != now.") {
 
 				@Override
 				protected void load(GeneratorAdapter methodGen) {

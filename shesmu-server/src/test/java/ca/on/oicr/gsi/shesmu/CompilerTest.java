@@ -65,8 +65,9 @@ public class CompilerTest {
 
 	}
 
-	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("alwaystrue", true),
-			Constant.of("notpi", 3));
+	private static final List<Constant> CONSTANTS = Arrays.asList(
+			Constant.of("alwaystrue", true, "It's true. I swear."),
+			Constant.of("notpi", 3, "Any value which is not pi."));
 
 	private final NameLoader<ActionDefinition> actions = new NameLoader<>(
 			FileActionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())),
