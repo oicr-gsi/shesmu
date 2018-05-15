@@ -53,7 +53,8 @@ public class FakeActionSource implements ActionRepository {
 			allow = configuration.getAllow();
 			final Pattern allow = Pattern.compile(configuration.getAllow());
 			items = Check.fetch(configuration.getUrl(), "actions")//
-					.filter(obj -> allow.matcher(obj.get("name").asText()).matches())//
+					.filter(obj -> !obj.get("name").asText().equals("nothing")
+							&& allow.matcher(obj.get("name").asText()).matches())//
 					.map(obj -> new FakeActionDefinition(obj.get("name").asText(),
 							RuntimeSupport.stream(obj.get("parameters").elements())
 									.<ParameterDefinition>map(p -> new JsonParameter(p.get("name").asText(), //

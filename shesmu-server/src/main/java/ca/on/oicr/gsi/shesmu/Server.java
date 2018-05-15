@@ -11,8 +11,11 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -25,6 +28,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import ca.on.oicr.gsi.shesmu.Constant.ConstantLoader;
 import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import io.prometheus.client.CollectorRegistry;
@@ -52,6 +56,8 @@ public final class Server {
 			FunctionRepository.class, 15, FunctionRepository::queryFunctions);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
+	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
+	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
 
 	private final Instant startTime = Instant.now();
 
@@ -105,8 +111,15 @@ public final class Server {
 						.forEach(function -> {
 							writeBlock(writer, function.name());
 							writeRow(writer, "Return", function.returnType().name());
-							function.types().map(Pair.number()).forEach(p -> writeRow(writer,
-									"Argument " + Integer.toString(p.first() + 1), p.second().name()));
+							function.types().map(Pair.number())
+									.forEach(p -> writeRow(writer, "Argument " + Integer.toString(p.first() + 1),
+											String.format("%s <input type=\"text\" id=\"%s$%d\"></input>",
+													p.second().name(), function.name(), p.first())));
+							writeRow(writer, "Result",
+									String.format(
+											"<span class=\"load\" onclick=\"runFunction('%s', this, %s)\">Fetch</span>",
+											function.name(), function.types().map(Imyhat::javaScriptParser)
+													.collect(Collectors.joining(",", "[", "]"))));
 							writeDescription(writer, function.description());
 
 						});
@@ -130,6 +143,9 @@ public final class Server {
 				writeHeader(writer, "Constants");
 				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
 					writeRow(writer, constant.name(), constant.type().name());
+					writeRow(writer, "Value",
+							String.format("<span class=\"load\" onclick=\"fetchConstant('%s', this)\">Fetch</span>",
+									constant.name()));
 					writeDescription(writer, constant.description());
 				});
 				writeFinish(writer);
@@ -193,6 +209,51 @@ public final class Server {
 			}
 		});
 
+		add("/constant", t -> {
+			final String query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+			ConstantLoader loader;
+			if (constantLoaders.containsKey(query)) {
+				loader = constantLoaders.get(query);
+			} else {
+				loader = ConstantSource.all()//
+						.filter(c -> c.name().equals(query))//
+						.findFirst()//
+						.map(Constant::compile)//
+						.orElseGet(() -> target -> target.put("error", String.format("No such constant.", query)));
+				constantLoaders.put(query, loader);
+			}
+			t.getResponseHeaders().set("Content-type", "application/json");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+				loader.load(node);
+				RuntimeSupport.MAPPER.writeValue(os, node);
+			}
+		});
+
+		add("/function", t -> {
+			final FunctionRequest query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FunctionRequest.class);
+			FunctionRunner runner;
+			if (functionRunners.containsKey(query.getName())) {
+				runner = functionRunners.get(query.getName());
+			} else {
+				runner = functionpRepository.stream()//
+						.filter(f -> f.name().equals(query.getName()))//
+						.findFirst()//
+						.map(FunctionRunnerCompiler::compile)//
+						.orElseGet(
+								() -> (args, target) -> target.put("error", String.format("No such function.", query)));
+				functionRunners.put(query.getName(), runner);
+			}
+			t.getResponseHeaders().set("Content-type", "application/json");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+				runner.run(query.getArgs(), node);
+				RuntimeSupport.MAPPER.writeValue(os, node);
+			}
+		});
+
 		addJson("/variables", mapper -> {
 			final ObjectNode node = mapper.createObjectNode();
 			NameDefinitions.baseStreamVariables().forEach(variable -> {
@@ -250,6 +311,7 @@ public final class Server {
 		});
 
 		add("/main.css", "text/css");
+		add("/shesmu.js", "text/javascript");
 		add("/shesmu.svg", "image/svg+xml");
 		add("/favicon.png", "image/png");
 	}
@@ -365,7 +427,7 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"text/javascript\" src=\"shesmu.js\"></script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
 	}
 
 	private void writeRow(PrintStream writer, String key, String value) {

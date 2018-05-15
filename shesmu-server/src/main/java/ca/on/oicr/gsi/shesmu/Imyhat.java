@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -95,6 +96,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String javaScriptParser() {
+			return "parseList(" + inner.javaScriptParser() + ")";
+		}
+
+		@Override
 		public Class<?> javaType() {
 			return Set.class;
 		}
@@ -119,6 +125,11 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return "a" + inner.signature();
+		}
+
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return RuntimeSupport.stream(node.elements()).map(inner::unpackJson).collect(Collectors.toSet());
 		}
 	}
 
@@ -166,6 +177,12 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String javaScriptParser() {
+			return Stream.of(types).map(Imyhat::javaScriptParser)
+					.collect(Collectors.joining(",", "parseTuple([", "])"));
+		}
+
+		@Override
 		public Class<?> javaType() {
 			return Tuple.class;
 		}
@@ -194,6 +211,15 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return Arrays.stream(types).map(Imyhat::signature).collect(Collectors.joining("", "t" + types.length, ""));
+		}
+
+		@Override
+		public Object unpackJson(JsonNode node) {
+			final Object[] elements = new Object[types.length];
+			for (int it = 0; it < types.length; it++) {
+				elements[it] = types[it].unpackJson(node.get(it));
+			}
+			return new Tuple(elements);
 		}
 	}
 
@@ -225,6 +251,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String javaScriptParser() {
+			return "x=>{throw 'Cannot parse bad type.';}";
+		}
+
+		@Override
 		public Class<?> javaType() {
 			return Object.class;
 		}
@@ -249,6 +280,11 @@ public abstract class Imyhat {
 			return "$";
 		}
 
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return null;
+		}
+
 	};
 
 	public static final BaseImyhat BOOLEAN = new BaseImyhat() {
@@ -271,6 +307,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return false;
+		}
+
+		@Override
+		public String javaScriptParser() {
+			return "x=>x==='true'";
 		}
 
 		@Override
@@ -303,6 +344,11 @@ public abstract class Imyhat {
 			return "b";
 		}
 
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return node.asBoolean();
+		}
+
 	};
 	private static final Map<String, CallSite> callsites = new HashMap<>();
 	public static final BaseImyhat DATE = new BaseImyhat() {
@@ -320,6 +366,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return true;
+		}
+
+		@Override
+		public String javaScriptParser() {
+			return "x=>Date.parse(x)";
 		}
 
 		@Override
@@ -352,6 +403,11 @@ public abstract class Imyhat {
 			return "d";
 		}
 
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return Instant.ofEpochMilli(node.asLong());
+		}
+
 	};
 	public static final BaseImyhat INTEGER = new BaseImyhat() {
 
@@ -373,6 +429,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return true;
+		}
+
+		@Override
+		public String javaScriptParser() {
+			return "x=>parseInt(x)";
 		}
 
 		@Override
@@ -405,6 +466,11 @@ public abstract class Imyhat {
 			return "i";
 		}
 
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return node.asLong();
+		}
+
 	};
 	public static final BaseImyhat STRING = new BaseImyhat() {
 
@@ -421,6 +487,11 @@ public abstract class Imyhat {
 		@Override
 		public boolean isOrderable() {
 			return false;
+		}
+
+		@Override
+		public String javaScriptParser() {
+			return "x=>x";
 		}
 
 		@Override
@@ -451,6 +522,11 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return "s";
+		}
+
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return node.asText();
 		}
 	};
 
@@ -611,6 +687,8 @@ public abstract class Imyhat {
 	 */
 	public abstract boolean isSame(Imyhat other);
 
+	public abstract String javaScriptParser();
+
 	public abstract Class<?> javaType();
 
 	/**
@@ -643,4 +721,6 @@ public abstract class Imyhat {
 	public final String toString() {
 		return signature();
 	}
+
+	public abstract Object unpackJson(JsonNode node);
 }

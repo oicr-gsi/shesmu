@@ -3,16 +3,12 @@ package ca.on.oicr.gsi.shesmu;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 
@@ -20,48 +16,9 @@ import ca.on.oicr.gsi.shesmu.compiler.Compiler;
  * Compiles a user-specified file into a usable program and updates it as
  * necessary
  */
-public final class HotloadingCompiler {
-	final class WritingClassVisitor extends ClassVisitor {
-
-		private String className;
-
-		private final ClassWriter writer;
-
-		private WritingClassVisitor(ClassWriter writer) {
-			super(Opcodes.ASM5, writer);
-			this.writer = writer;
-		}
-
-		@Override
-		public void visit(int version, int access, String className, String signature, String super_name,
-				String[] interfaces) {
-			this.className = className;
-			super.visit(version, access, className, signature, super_name, interfaces);
-		}
-
-		@Override
-		public void visitEnd() {
-			super.visitEnd();
-			bytecode.put(className.replace('/', '.'), writer.toByteArray());
-		}
-	}
+public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
 	private final Supplier<Stream<ActionDefinition>> actions;
-
-	private final Map<String, byte[]> bytecode = new HashMap<>();
-
-	private final ClassLoader classloader = new ClassLoader() {
-
-		@Override
-		protected Class<?> findClass(String name) throws ClassNotFoundException {
-			if (bytecode.containsKey(name)) {
-				final byte[] contents = bytecode.get(name);
-				return defineClass(name, contents, 0, contents.length);
-			}
-			return super.findClass(name);
-		}
-
-	};
 
 	private final Supplier<Stream<Constant>> constants;
 
@@ -87,8 +44,7 @@ public final class HotloadingCompiler {
 
 				@Override
 				protected ClassVisitor createClassVisitor() {
-					return new WritingClassVisitor(
-							new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
+					return HotloadingCompiler.this.createClassVisitor();
 				}
 
 				@Override
@@ -107,10 +63,8 @@ public final class HotloadingCompiler {
 				}
 			};
 
-			bytecode.clear();
 			if (compiler.compile(Files.readAllBytes(fileName), "dyn/shesmu/Program", fileName.toString(), constants)) {
-				return Optional.of(
-						classloader.loadClass("dyn.shesmu.Program").asSubclass(ActionGenerator.class).newInstance());
+				return Optional.of(load(ActionGenerator.class, "dyn.shesmu.Program"));
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
