@@ -18,6 +18,8 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.Dumper;
+import ca.on.oicr.gsi.shesmu.DumperSource;
 import ca.on.oicr.gsi.shesmu.Variables;
 import io.prometheus.client.Gauge;
 
@@ -28,6 +30,8 @@ public abstract class RootBuilder {
 
 	private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
 	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
+	private static final Type A_DUMPER_SOURCE_TYPE = Type.getType(DumperSource.class);
+	private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 	private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -43,8 +47,12 @@ public abstract class RootBuilder {
 			new Type[] { A_CONSUMER_TYPE, A_SUPPLIER_TYPE });
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
-	private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
+	private final static Method METHOD_DUMPER__FIND = new Method("find", A_DUMPER_TYPE, new Type[] { A_STRING_TYPE });
 
+	private final static Method METHOD_DUMPER__START = new Method("start", VOID_TYPE, new Type[] {  });
+
+	private final static Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {  });
+	private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
 	public static Stream<LoadableValue> proxyCaptured(int offset, LoadableValue... capturedVariables) {
 		return IntStream.range(0, capturedVariables.length).boxed().map(index -> new LoadableValue() {
 
@@ -64,19 +72,23 @@ public abstract class RootBuilder {
 			}
 		});
 	}
-
 	private final GeneratorAdapter classInitMethod;
 	final ClassVisitor classVisitor;
 	private final GeneratorAdapter clearGaugeMethod;
 	private final Supplier<Stream<Constant>> constants;
 	private final GeneratorAdapter ctor;
+
+	private final Set<String> dumpers = new HashSet<>();
+
 	private final Set<String> gauges = new HashSet<>();
 	private int oliveId = 0;
+
 	private final String path;
 
 	private final GeneratorAdapter runMethod;
 
 	private final Type selfType;
+
 	private int streamId;
 
 	public RootBuilder(String name, String path, Supplier<Stream<Constant>> constants) {
@@ -140,6 +152,17 @@ public abstract class RootBuilder {
 		classInitMethod.visitInsn(Opcodes.RETURN);
 		classInitMethod.visitMaxs(0, 0);
 		classInitMethod.visitEnd();
+		
+		dumpers.forEach(dumper -> {
+			clearGaugeMethod.loadThis();
+			clearGaugeMethod.getField(selfType, dumper, A_DUMPER_TYPE);
+			clearGaugeMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__START);
+
+			runMethod.loadThis();
+			runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
+			runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
+			
+		});
 
 		runMethod.visitInsn(Opcodes.RETURN);
 		runMethod.visitMaxs(0, 0);
@@ -155,6 +178,21 @@ public abstract class RootBuilder {
 		clearGaugeMethod.visitEnd();
 
 		classVisitor.visitEnd();
+	}
+
+	public void loadDumper(String dumper, GeneratorAdapter methodGen) {
+		final String fieldName = "d$" + dumper;
+		if (!dumpers.contains(fieldName)) {
+			classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, A_DUMPER_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+			ctor.loadThis();
+			ctor.push(dumper);
+			ctor.invokeStatic(A_DUMPER_SOURCE_TYPE, METHOD_DUMPER__FIND);
+			ctor.putField(selfType, fieldName, A_DUMPER_TYPE);
+
+		}
+		methodGen.loadThis();
+		methodGen.getField(selfType, fieldName, A_DUMPER_TYPE);
 	}
 
 	public final void loadGauge(String metricName, String help, List<String> labelNames, GeneratorAdapter methodGen) {
@@ -180,11 +218,10 @@ public abstract class RootBuilder {
 		methodGen.loadThis();
 		methodGen.getField(selfType, fieldName, A_GAUGE_TYPE);
 	}
-
+	
 	int nextStreamId() {
 		return streamId++;
 	}
-
 	/**
 	 * Get the renderer for {@link ActionGenerator#run(Consumer, Supplier)}
 	 *
@@ -193,7 +230,6 @@ public abstract class RootBuilder {
 	public final Renderer rootRenderer() {
 		return new Renderer(this, runMethod, -1, null, Stream.empty());
 	}
-
 	/**
 	 * Get the type of the class being generated
 	 */
