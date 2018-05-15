@@ -118,7 +118,8 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 	private final List<RunScannerClient> clients;
 
 	public RunScannerFunctionRepository() {
-		clients = RuntimeSupport.dataFiles(EXTENSION).map(RunScannerClient::new).collect(Collectors.toList());
+		clients = RuntimeSupport.dataFiles(EXTENSION).map(RunScannerClient::new).peek(RunScannerClient::start)
+				.collect(Collectors.toList());
 	}
 
 	@Override
