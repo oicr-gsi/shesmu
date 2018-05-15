@@ -133,3 +133,12 @@ external criteria. The following throttlers are available:
   called `AutoInhibit`. If an alert is firing with no `environment` label or an
   `environment` label that matches the supplied `environment` string, then
   actions will be paused.
+
+## Dumpers
+When debugging Shesmu olives, it is possible to log all output passing through
+an olive to a dumper. Dumping to a non-existent dumper simply discards the
+debugging output.
+
+- TSV dumper. Write all data to a TSV file. Create a JSON file ending in
+  `.tsvdump` containing an object where the keys are the dumper names and the
+  values are the files to write. The file will be truncated with each olive pass.

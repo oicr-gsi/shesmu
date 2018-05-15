@@ -1,0 +1,102 @@
+package ca.on.oicr.gsi.shesmu.dumper;
+
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.kohsuke.MetaInfServices;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.Dumper;
+import ca.on.oicr.gsi.shesmu.DumperSource;
+import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+
+@MetaInfServices
+public class TsvDumperSource implements DumperSource {
+
+	private class DumperConfiguration extends AutoUpdatingJsonFile<ObjectNode> {
+		private Map<String, Path> paths = Collections.emptyMap();
+
+		public DumperConfiguration(Path fileName) {
+			super(fileName, ObjectNode.class);
+		}
+
+		public Pair<String, Map<String, String>> configuration() {
+			return new Pair<>(String.format("TSV Dumpers from %s", fileName()),
+					paths.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().toString())));
+		}
+
+		public Dumper get(String name) {
+			Path path = paths.get(name);
+			return path == null ? null : new Dumper() {
+				private Optional<PrintStream> output = Optional.empty();
+
+				@Override
+				public void start() {
+					try {
+						output = Optional.of(new PrintStream(path.toFile()));
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+						output = Optional.empty();
+					}
+				}
+
+				@Override
+				public void stop() {
+					output.ifPresent(PrintStream::close);
+				}
+
+				@Override
+				public void write(Object[] values) {
+					output.ifPresent(o -> {
+						for (int it = 0; it < values.length; it++) {
+							if (it > 0) {
+								o.print("\t");
+							}
+							o.print(values[it]);
+						}
+						o.println();
+					});
+				}
+			};
+		}
+
+		@Override
+		protected void update(ObjectNode value) {
+			paths = RuntimeSupport.stream(value.fields())
+					.collect(Collectors.toMap(Entry::getKey, e -> Paths.get(e.getValue().asText())));
+
+		}
+	}
+
+	private static final String EXTENSION = ".tsvdump";
+	private final List<DumperConfiguration> configurations;
+
+	public TsvDumperSource() {
+		configurations = RuntimeSupport.dataFiles(EXTENSION).map(DumperConfiguration::new)
+				.peek(DumperConfiguration::start).collect(Collectors.toList());
+	}
+
+	@Override
+	public Optional<Dumper> findDumper(String name) {
+		return configurations.stream().map(c -> c.get(name)).filter(Objects::nonNull).findFirst();
+	}
+
+	@Override
+	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+		return configurations.stream().map(DumperConfiguration::configuration);
+	}
+
+}

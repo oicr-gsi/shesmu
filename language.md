@@ -161,7 +161,6 @@ Because grouping changes variables, `Matches` must appear before `Group` clauses
 Once a Shesmu program is running, debugging is rather difficult, so Prometheus
 monitoring is built into the language using the `Monitor` clause:
 
-
     Run fastqc
       Where workflow == "BamQC 2.7+"
       Monitor fastqc "The number of records for FastQC execution." { metatype = metatype }
@@ -174,6 +173,21 @@ The number of hits to each monitoring clause will be output via Prometheus. The
 name, which will be exported as `shesmu_user_fastqc`, must be unique in the
 program. After the name is the help text. Inside the braces, labels can be
 specified; the values must be strings.
+
+Additionally, for more serious debugging, the data passing through an olive can be dumped:
+
+    Run fastqc
+      Where workflow == "BamQC 2.7+"
+      Dump metatype, ius To some_file
+      With {
+        memory = 4Gi,
+        input = path
+      }
+
+The specified expressions will be dumped to a file. The file is defined by a
+dumper. If no dumper exists, the output is sent nowhere. This makes it possible
+to leave `Dump` clauses in production systems without configuring them and
+without a performance penalty.
 
 ## Types
 There are a small number of types in the language, listed below. Each has

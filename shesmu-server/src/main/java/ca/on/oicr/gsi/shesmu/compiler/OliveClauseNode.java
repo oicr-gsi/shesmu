@@ -124,6 +124,24 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
+		final Parser dumpParser = input.keyword("Dump");
+		if (dumpParser.isGood()) {
+			final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
+			final AtomicReference<String> dumper = new AtomicReference<>();
+			final Parser result = dumpParser//
+					.whitespace()//
+					.listEmpty(columns::set, ExpressionNode::parse, ',')//
+					.whitespace()//
+					.keyword("To")//
+					.whitespace()//
+					.identifier(dumper::set)//
+					.whitespace();
+
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeDump(dumper.get(), columns.get()));
+			}
+			return result;
+		}
 		final AtomicReference<Boolean> direction = new AtomicReference<>();
 		final Parser pickParser = input.regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.");
 		if (pickParser.isGood()) {
