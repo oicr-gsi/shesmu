@@ -17,6 +17,11 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 	private static final FunctionDefinition BROKEN_FUCNTION = new FunctionDefinition() {
 
 		@Override
+		public String description() {
+			return "Undefined function";
+		}
+
+		@Override
 		public String name() {
 			return "💔";
 		}

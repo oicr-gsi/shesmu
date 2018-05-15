@@ -30,19 +30,19 @@ public class FunctionForInstance implements FunctionDefinition {
 	private static final AtomicInteger TOKEN_SOURCE = new AtomicInteger();
 
 	public static <T> FunctionForInstance bind(Class<?> owner, Function<MethodType, MethodHandle> find, String name,
-			Imyhat returnType, Imyhat... parameterTypes) {
+			String description, Imyhat returnType, Imyhat... parameterTypes) {
 		return new FunctionForInstance(new ConstantCallSite(find.apply(methodTypeByImyhat(returnType, parameterTypes))),
-				name, returnType, parameterTypes);
+				name, description, returnType, parameterTypes);
 
 	}
 
 	public static <T> FunctionForInstance bind(Lookup lookup, Class<T> owner, T instance, String methodName,
-			String name, Imyhat returnType, Imyhat... parameterTypes)
+			String name, String description, Imyhat returnType, Imyhat... parameterTypes)
 			throws NoSuchMethodException, IllegalAccessException {
 		return new FunctionForInstance(
 				new ConstantCallSite(
 						findVirtualFor(lookup, owner, methodName, returnType, parameterTypes).bindTo(instance)),
-				name, returnType, parameterTypes);
+				name, description, returnType, parameterTypes);
 
 	}
 
@@ -67,20 +67,24 @@ public class FunctionForInstance implements FunctionDefinition {
 	private final Imyhat returnType;
 
 	private final String token;
+	private final String description;
 
-	public FunctionForInstance(CallSite callsite, String name, Imyhat returnType, Imyhat... parameterTypes) {
+	public FunctionForInstance(CallSite callsite, String name, String description, Imyhat returnType,
+			Imyhat... parameterTypes) {
 		super();
 		this.name = name;
+		this.description = description;
 		this.returnType = returnType;
 		this.parameterTypes = parameterTypes;
 		token = String.format("i%d", TOKEN_SOURCE.getAndIncrement());
 		callsites.put(token, callsite);
 	}
 
-	public FunctionForInstance(Lookup lookup, String methodName, String name, Imyhat returnType,
+	public FunctionForInstance(Lookup lookup, String methodName, String name, String description, Imyhat returnType,
 			Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
 		super();
 		this.name = name;
+		this.description = description;
 		this.returnType = returnType;
 		this.parameterTypes = parameterTypes;
 		token = String.format("i%d", TOKEN_SOURCE.getAndIncrement());
@@ -110,5 +114,10 @@ public class FunctionForInstance implements FunctionDefinition {
 	@Override
 	public final Stream<Imyhat> types() {
 		return Stream.of(parameterTypes);
+	}
+
+	@Override
+	public String description() {
+		return description;
 	}
 }

@@ -85,7 +85,8 @@ public final class Check extends Compiler {
 			return;
 		}
 		final List<Constant> constants = fetch(remote, "constants")//
-				.map(o -> new Constant(o.get("name").asText(), Imyhat.parse(o.get("type").asText())) {
+				.map(o -> new Constant(o.get("name").asText(), Imyhat.parse(o.get("type").asText()),
+						o.get("description").asText()) {
 
 					@Override
 					protected void load(GeneratorAdapter methodGen) {
@@ -122,6 +123,7 @@ public final class Check extends Compiler {
 
 	private static FunctionDefinition makeFunction(ObjectNode node) {
 		final String name = node.get("name").asText();
+		final String description = node.get("description").asText();
 		final Imyhat returnType = Imyhat.parse(node.get("return").asText());
 		final Imyhat[] types = RuntimeSupport.stream(node.get("types").elements()).map(JsonNode::asText)
 				.map(Imyhat::parse).toArray(Imyhat[]::new);
@@ -145,6 +147,11 @@ public final class Check extends Compiler {
 			@Override
 			public Stream<Imyhat> types() {
 				return Arrays.stream(types);
+			}
+
+			@Override
+			public String description() {
+				return description;
 			}
 		};
 	}

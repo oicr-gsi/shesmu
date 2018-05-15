@@ -84,11 +84,22 @@ public class SftpFunctionRepository implements FunctionRepository {
 			try {
 				final Lookup lookup = MethodHandles.lookup();
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "size",
-						String.format("%s_size", service), Imyhat.INTEGER, Imyhat.STRING, Imyhat.INTEGER));
+						String.format("%s_size", service),
+						String.format("Get the size of a file, in bytes, living on the SFTP server described in %s.",
+								fileName),
+						Imyhat.INTEGER, Imyhat.STRING, Imyhat.INTEGER));
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "exists",
-						String.format("%s_exists", service), Imyhat.BOOLEAN, Imyhat.STRING));
+						String.format("%s_exists", service),
+						String.format(
+								"Returns true if the file or directory exists on the SFTP server described in %s.",
+								fileName),
+						Imyhat.BOOLEAN, Imyhat.STRING));
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "mtime",
-						String.format("%s_mtime", service), Imyhat.DATE, Imyhat.STRING, Imyhat.DATE));
+						String.format("%s_mtime", service),
+						String.format(
+								"Gets the last modification timestamp of a file or directory living on the SFTP server described in %s.",
+								fileName),
+						Imyhat.DATE, Imyhat.STRING, Imyhat.DATE));
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				e.printStackTrace();
 			}

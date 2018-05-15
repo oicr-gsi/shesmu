@@ -79,7 +79,7 @@ public class RunTest {
 
 	private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
 
-	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("project_constant", "the_foo_study"));
+	private static final List<Constant> CONSTANTS = Arrays.asList(Constant.of("project_constant", "the_foo_study", "Testing constant"));
 
 	private static Variables[] DATA = new Variables[] {
 			new Variables("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA", "aaa1",
@@ -92,6 +92,10 @@ public class RunTest {
 					"pointy", Instant.EPOCH, "test") };
 
 	private static final FunctionDefinition INT2DATE = new FunctionDefinition() {
+		@Override
+		public String description() {
+			return "Testing function";
+		}
 
 		@Override
 		public String name() {
@@ -116,6 +120,11 @@ public class RunTest {
 		}
 	};
 	private static final FunctionDefinition INT2STR = new FunctionDefinition() {
+
+		@Override
+		public String description() {
+			return "Testing function";
+		}
 
 		@Override
 		public String name() {

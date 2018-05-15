@@ -26,8 +26,8 @@ public abstract class Constant extends Target {
 
 		private final List<T> values;
 
-		public ConstantList(String name, Imyhat type, Stream<T> values) {
-			super(name, type.asList());
+		public ConstantList(String name, Imyhat type, Stream<T> values, String description) {
+			super(name, type.asList(), description);
 			this.values = values.collect(Collectors.toList());
 		}
 
@@ -64,8 +64,8 @@ public abstract class Constant extends Target {
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
-	public static Constant of(String name, boolean value) {
-		return new Constant(name, Imyhat.BOOLEAN) {
+	public static Constant of(String name, boolean value, String description) {
+		return new Constant(name, Imyhat.BOOLEAN, description) {
 
 			@Override
 			protected void load(GeneratorAdapter methodGen) {
@@ -80,8 +80,8 @@ public abstract class Constant extends Target {
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
-	public static Constant of(String name, Instant value) {
-		return new Constant(name, Imyhat.DATE) {
+	public static Constant of(String name, Instant value, String description) {
+		return new Constant(name, Imyhat.DATE, description) {
 
 			@Override
 			protected void load(GeneratorAdapter methodGen) {
@@ -97,8 +97,8 @@ public abstract class Constant extends Target {
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
-	public static Constant of(String name, long value) {
-		return new Constant(name, Imyhat.INTEGER) {
+	public static Constant of(String name, long value, String description) {
+		return new Constant(name, Imyhat.INTEGER, description) {
 
 			@Override
 			protected void load(GeneratorAdapter methodGen) {
@@ -113,8 +113,8 @@ public abstract class Constant extends Target {
 	 * @param name
 	 *            the name, which must be a valid Shesmu identifier
 	 */
-	public static Constant of(String name, String value) {
-		return new Constant(name, Imyhat.STRING) {
+	public static Constant of(String name, String value, String description) {
+		return new Constant(name, Imyhat.STRING, description) {
 
 			@Override
 			protected void load(GeneratorAdapter methodGen) {
@@ -123,8 +123,8 @@ public abstract class Constant extends Target {
 		};
 	}
 
-	public static Constant ofBooleans(String name, Stream<Boolean> stream) {
-		return new ConstantList<Boolean>(name, Imyhat.BOOLEAN, stream) {
+	public static Constant ofBooleans(String name, Stream<Boolean> stream, String description) {
+		return new ConstantList<Boolean>(name, Imyhat.BOOLEAN, stream, description) {
 
 			@Override
 			protected void write(GeneratorAdapter methodGen, Boolean value) {
@@ -134,8 +134,8 @@ public abstract class Constant extends Target {
 		};
 	}
 
-	public static Constant ofLongs(String name, Stream<Long> stream) {
-		return new ConstantList<Long>(name, Imyhat.INTEGER, stream) {
+	public static Constant ofLongs(String name, Stream<Long> stream, String description) {
+		return new ConstantList<Long>(name, Imyhat.INTEGER, stream, description) {
 
 			@Override
 			protected void write(GeneratorAdapter methodGen, Long value) {
@@ -145,8 +145,8 @@ public abstract class Constant extends Target {
 		};
 	}
 
-	public static Constant ofStrings(String name, Stream<String> stream) {
-		return new ConstantList<String>(name, Imyhat.STRING, stream) {
+	public static Constant ofStrings(String name, Stream<String> stream, String description) {
+		return new ConstantList<String>(name, Imyhat.STRING, stream, description) {
 
 			@Override
 			protected void write(GeneratorAdapter methodGen, String value) {
@@ -154,6 +154,8 @@ public abstract class Constant extends Target {
 			}
 		};
 	}
+
+	private final String description;
 
 	private final LoadableValue loadable = new LoadableValue() {
 
@@ -185,10 +187,11 @@ public abstract class Constant extends Target {
 	 * @param type
 	 *            the Shemsu type of the constant
 	 */
-	public Constant(String name, Imyhat type) {
+	public Constant(String name, Imyhat type, String description) {
 		super();
 		this.name = name;
 		this.type = type;
+		this.description = description;
 	}
 
 	/**
@@ -196,6 +199,10 @@ public abstract class Constant extends Target {
 	 */
 	public final LoadableValue asLoadable() {
 		return loadable;
+	}
+
+	public final String description() {
+		return description;
 	}
 
 	@Override

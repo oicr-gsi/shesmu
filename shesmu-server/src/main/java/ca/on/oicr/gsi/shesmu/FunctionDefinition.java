@@ -11,9 +11,14 @@ import org.objectweb.asm.commons.Method;
  */
 public interface FunctionDefinition {
 
-	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, Imyhat returnType,
-			Imyhat... argumentTypes) {
+	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, String description,
+			Imyhat returnType, Imyhat... argumentTypes) {
 		return new FunctionDefinition() {
+
+			@Override
+			public String description() {
+				return description;
+			}
 
 			@Override
 			public String name() {
@@ -37,6 +42,11 @@ public interface FunctionDefinition {
 			}
 		};
 	}
+
+	/**
+	 * Documentation about how this function works
+	 */
+	String description();
 
 	/**
 	 * The name of the function.

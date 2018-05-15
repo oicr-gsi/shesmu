@@ -107,6 +107,7 @@ public final class Server {
 							writeRow(writer, "Return", function.returnType().name());
 							function.types().map(Pair.number()).forEach(p -> writeRow(writer,
 									"Argument " + Integer.toString(p.first() + 1), p.second().name()));
+							writeDescription(writer, function.description());
 
 						});
 				writeFinish(writer);
@@ -129,6 +130,7 @@ public final class Server {
 				writeHeader(writer, "Constants");
 				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
 					writeRow(writer, constant.name(), constant.type().name());
+					writeDescription(writer, constant.description());
 				});
 				writeFinish(writer);
 
@@ -154,10 +156,11 @@ public final class Server {
 
 		addJson("/constants", mapper -> {
 			final ArrayNode array = mapper.createArrayNode();
-			ConstantSource.all().forEach(actionDefinition -> {
+			ConstantSource.all().forEach(constant -> {
 				final ObjectNode obj = array.addObject();
-				obj.put("name", actionDefinition.name());
-				obj.put("type", actionDefinition.type().signature());
+				obj.put("name", constant.name());
+				obj.put("description", constant.description());
+				obj.put("type", constant.type().signature());
 			});
 			return array;
 		});
@@ -167,6 +170,7 @@ public final class Server {
 			functionpRepository.stream().forEach(function -> {
 				final ObjectNode obj = array.addObject();
 				obj.put("name", function.name());
+				obj.put("description", function.description());
 				obj.put("return", function.returnType().signature());
 				function.types().map(Imyhat::signature).forEach(obj.putArray("types")::add);
 			});
@@ -336,6 +340,12 @@ public final class Server {
 		writer.print("<tr><th colspan=\"2\">");
 		writer.print(title);
 		writer.print("</th></tr>");
+	}
+
+	private void writeDescription(PrintStream writer, String info) {
+		writer.print("<tr><td colspan=\"2\">");
+		writer.print(info);
+		writer.print("</td></tr>");
 	}
 
 	private void writeFinish(PrintStream writer) {
