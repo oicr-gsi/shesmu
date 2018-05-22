@@ -36,7 +36,8 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 		public boolean test(Issue issue) {
 			return (issue.getStatus().getName().equals("CLOSED")
 					|| issue.getStatus().getName().equals("RESOLVED")) != open
-					&& (issue.getSummary().contains(keyword) || issue.getDescription().contains(keyword));
+					&& (issue.getSummary() != null && issue.getSummary().contains(keyword)
+							|| issue.getDescription() != null && issue.getDescription().contains(keyword));
 		}
 
 	}
