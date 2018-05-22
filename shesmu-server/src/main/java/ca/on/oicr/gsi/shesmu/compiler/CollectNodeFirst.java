@@ -22,7 +22,7 @@ public class CollectNodeFirst extends CollectNodeWithDefault {
 
 	@Override
 	protected Pair<Renderer, Renderer> makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		final Renderer map = builder.map(name(), incomingType().asmType(), loadables);
+		final Renderer map = builder.map(name(), type().asmType(), loadables);
 		final Renderer alternative = builder.first(type().asmType(), loadables);
 		return new Pair<>(map, alternative);
 	}
