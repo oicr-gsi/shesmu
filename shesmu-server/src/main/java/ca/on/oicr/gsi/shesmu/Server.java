@@ -224,9 +224,13 @@ public final class Server {
 			}
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody()) {
-				ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+			ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+			try {
 				loader.load(node);
+			} catch (Exception e) {
+				node.put("error", e.getMessage());
+			}
+			try (OutputStream os = t.getResponseBody()) {
 				RuntimeSupport.MAPPER.writeValue(os, node);
 			}
 		});
@@ -247,9 +251,13 @@ public final class Server {
 			}
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody()) {
-				ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+			ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+			try {
 				runner.run(query.getArgs(), node);
+			} catch (Exception e) {
+				node.put("error", e.getMessage());
+			}
+			try (OutputStream os = t.getResponseBody()) {
 				RuntimeSupport.MAPPER.writeValue(os, node);
 			}
 		});
