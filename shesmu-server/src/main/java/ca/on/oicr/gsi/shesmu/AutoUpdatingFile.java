@@ -7,6 +7,7 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.concurrent.TimeUnit;
 
 import io.prometheus.client.Gauge;
 
@@ -23,6 +24,8 @@ public abstract class AutoUpdatingFile {
 
 	private volatile boolean running = true;
 
+	private long timeout = 0;
+
 	private final Thread watching = new Thread(this::run, "file-watcher");
 
 	public AutoUpdatingFile(Path fileName) {
@@ -38,6 +41,20 @@ public abstract class AutoUpdatingFile {
 		return fileName;
 	}
 
+	/**
+	 * If set to a non-zero value, the file will be “updated” after the specified
+	 * number of minutes even if the contents on disk hasn't been changed.
+	 * 
+	 * This is reset when {{@link #update()} is called, so if the update needs to be
+	 * tried again, it must call this method every time.
+	 * 
+	 * @param timeout
+	 *            the number of minutes to wait
+	 */
+	protected void retry(long timeout) {
+		this.timeout = timeout;
+	}
+
 	private void run() {
 		lastUpdated.labels(fileName.toString()).setToCurrentTime();
 		update();
@@ -45,15 +62,22 @@ public abstract class AutoUpdatingFile {
 			fileName.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
 			while (running) {
 				try {
-					final WatchKey wk = watchService.take();
-					for (final WatchEvent<?> event : wk.pollEvents()) {
-						final Path changed = (Path) event.context();
-						if (changed.getFileName().equals(fileName.getFileName())) {
-							lastUpdated.labels(fileName.toString()).setToCurrentTime();
-							update();
+					final WatchKey wk = timeout > 0 ? watchService.poll(timeout, TimeUnit.MINUTES)
+							: watchService.take();
+					timeout = 0;
+					if (wk == null) {
+						lastUpdated.labels(fileName.toString()).setToCurrentTime();
+						update();
+					} else {
+						for (final WatchEvent<?> event : wk.pollEvents()) {
+							final Path changed = (Path) event.context();
+							if (changed.getFileName().equals(fileName.getFileName())) {
+								lastUpdated.labels(fileName.toString()).setToCurrentTime();
+								update();
+							}
 						}
+						wk.reset();
 					}
-					wk.reset();
 				} catch (final InterruptedException e) {
 				}
 			}

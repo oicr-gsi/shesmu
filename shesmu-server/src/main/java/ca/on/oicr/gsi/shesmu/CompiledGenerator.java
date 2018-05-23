@@ -50,6 +50,9 @@ public class CompiledGenerator extends AutoUpdatingFile {
 				generator = x;
 			}
 		});
+		if (!result.isPresent()) {
+			retry(2);
+		}
 		errors = compiler.errors().collect(Collectors.joining("<br/>"));
 	}
 
