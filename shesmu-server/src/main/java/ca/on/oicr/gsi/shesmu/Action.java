@@ -56,6 +56,8 @@ public abstract class Action {
 
 	/**
 	 * Render the action to JSON for display by the front end.
+	 * 
+	 * It should set the <tt>type</tt> property.
 	 */
 	public abstract ObjectNode toJson(ObjectMapper mapper);
 

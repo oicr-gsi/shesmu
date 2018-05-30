@@ -56,6 +56,11 @@ public class CompiledGenerator extends AutoUpdatingFile {
 		errors = compiler.errors().collect(Collectors.joining("<br/>"));
 	}
 
+	/**
+	 * Get all the error messages from the last compilation as an HTML blob.
+	 * 
+	 * @return
+	 */
 	public String errorHtml() {
 		return errors;
 	}

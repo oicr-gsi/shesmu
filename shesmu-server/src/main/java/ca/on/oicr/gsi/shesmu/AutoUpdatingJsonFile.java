@@ -5,6 +5,10 @@ import java.nio.file.Path;
 
 import io.prometheus.client.Gauge;
 
+/**
+ * Creates a watched JSON file that will be notified when the file changes on
+ * disk and parsed
+ */
 public abstract class AutoUpdatingJsonFile<T> extends AutoUpdatingFile {
 
 	private static final Gauge goodJson = Gauge
@@ -13,6 +17,11 @@ public abstract class AutoUpdatingJsonFile<T> extends AutoUpdatingFile {
 
 	private final Class<T> clazz;
 
+	/**
+	 * Creates a new monitor
+	 * @param fileName the file to monitor
+	 * @param clazz the class to parse the JSON file as
+	 */
 	public AutoUpdatingJsonFile(Path fileName, Class<T> clazz) {
 		super(fileName);
 		this.clazz = clazz;
@@ -30,6 +39,10 @@ public abstract class AutoUpdatingJsonFile<T> extends AutoUpdatingFile {
 		}
 	}
 
+	/**
+	 * Called when the underlying file has been parsed
+	 * @param value the parsed file contents
+	 */
 	protected abstract void update(T value);
 
 }

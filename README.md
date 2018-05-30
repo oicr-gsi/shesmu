@@ -21,7 +21,8 @@ the provenance data.
 
 ## Running an Instance
 
-Setting up Shesmu involves collecting all the necessary bits and putting them into one place. It will discover most of the configuration from there.
+Setting up Shesmu involves collecting all the necessary bits and putting them
+into one place. It will discover most of the configuration from there.
 
 First, compile the main server using Maven with Java 8:
 
@@ -89,12 +90,19 @@ The following are available:
   (usually a short collection of capital letters), `token` is the JIRA
   application token, and `url` is the address of the JIRA server.
 - Guyanyin+DRMAA launch report actions (currently very OICR-specific)
+- Fake actions. Copy actions from an existing Shesmu instance, but don't do
+  anything with them. This is useful for setting up a development server.
+  Create a JSON file ending in `.fakeactions` with
+	`{"url":..., "allow":...}` where `url` is the Shesmu server to copy and
+  `allow` is a regular expression of which actions to copy.
 
 ### Variable Sources
 This is where Shesmu gets provenance data for olives to ingest. The following are available:
 
 - Pinery+SeqWare (in the `source-pinery` directory). Set `PROVENANCE_SETTINGS`
   to the file containing the provenance settings.
+- JSON files. Create a JSON file ending in `.variables` containing an array of
+  objects. This can be copied from a running Shesmu instance at `/input`.
 
 ### Constant Sources
 Variables with constant values can also be included in a Shesmu script. The
@@ -104,16 +112,23 @@ following are available:
    should contain an object where the property names are the variable names to
    use and the values are the constant values to use.
 
-### Lookup Sources
-Lookups are functions or tables available to olives. For instance, suppose a
-BED file is needed for different projects. It is convenient to turn this into a
-lookup. The following are available:
+### Function Sources
+Function sources provide functions (or lookup tables) available to olives. For
+instance, suppose a BED file is needed for different projects. It is convenient
+to turn this into a function. The following are available:
 
+- Built-in. There are built-in functions for common data manipulation
+- JIRA. This provides commands to count tickets matching certain words and to
+  retrieve ticket summaries and descriptions.
+- SFTP (in `lookup-sftp` directory). Create a JSON file ending in `.sftp`
+  containing `{"host":..., "port":22, "user":...}` to access file metadata via SFTP.
+- RunScanner. Create a JSON file ending in `.runscanner` containing
+  `{"url":...}` to access run information from [MISO RunScanner](http://github.com/TGAC/miso-lims).
 - Tab-separated value file. Create a file called `.lookup` that contains
   tab-separated values. The first row defines the types of the columns using a
   Shesmu type signature. Each subsequent row contains a value for each column, or
   `*` for a wild card match. The final column, which cannot be a wild card, is the
-  result value. 
+  result value.
 
 ## Throttlers
 When Shesmu has actions to perform, it will perform them as as quickly as
@@ -133,6 +148,10 @@ external criteria. The following throttlers are available:
   called `AutoInhibit`. If an alert is firing with no `environment` label or an
   `environment` label that matches the supplied `environment` string, then
   actions will be paused.
+- Rate limit throttler. Limits the rate using a token bucket rate limiter.
+  Create a JSON file ending in `.ratelimit` containing `{"capacity":..., "delay":...}`
+	where `capacity` is the maximum number of tokens that be held in the bucket
+  and `delay` is the number of milliseconds to generate a new token.
 
 ## Dumpers
 When debugging Shesmu olives, it is possible to log all output passing through

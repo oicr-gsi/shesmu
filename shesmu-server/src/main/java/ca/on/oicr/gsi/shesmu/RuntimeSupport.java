@@ -208,6 +208,9 @@ public final class RuntimeSupport {
 		return Duration.between(right, left).getSeconds();
 	}
 
+	/**
+	 * Get the directory name of a path
+	 */
 	@RuntimeInterop
 	public static String dir_name(String input) {
 		final Path path = Paths.get(input).getParent();
@@ -218,12 +221,18 @@ public final class RuntimeSupport {
 		return Optional.ofNullable(System.getenv("SHESMU_DATA"));
 	}
 
+	/**
+	 * Get the file name (basename) of a path
+	 */
 	@RuntimeInterop
 	public static String file_name(String input) {
 		return Paths.get(input).getFileName().toString();
 
 	}
 
+	/**
+	 * Join two paths
+	 */
 	@RuntimeInterop
 	public static String join_path(String dir, String file) {
 		return Paths.get(dir).resolve(file).toString();
@@ -324,20 +333,32 @@ public final class RuntimeSupport {
 				.map(Entry::getKey);
 	}
 
+	/**
+	 * Clip the extension off a file path and return just the filename
+	 */
 	public static String removeExtension(Path fileName, String extension) {
 		final String fileNamePart = fileName.getFileName().toString();
 		return fileNamePart.substring(0, fileNamePart.length() - extension.length());
 	}
 
+	/**
+	 * Truncate a time stamp to midnight
+	 */
 	@RuntimeInterop
 	public static Instant start_of_day(Instant input) {
 		return input.truncatedTo(ChronoUnit.DAYS);
 	}
 
+	/**
+	 * Stream an iterable object
+	 */
 	public static <T> Stream<T> stream(Iterable<T> iterable) {
 		return stream(iterable.spliterator());
 	}
 
+	/**
+	 * Convert an iterator to a stream
+	 */
 	public static <T> Stream<T> stream(Iterator<T> iterator) {
 		return stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED));
 	}

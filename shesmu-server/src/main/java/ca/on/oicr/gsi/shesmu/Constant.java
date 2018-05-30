@@ -27,6 +27,11 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
  *
  * Constant values get written into the program, so they are not updated until
  * the program is recompiled even if the {@link ConstantSource}
+ * 
+ * They aren't constant in the sense that they can be arbitrary bytecode, so
+ * <tt>now</tt> is considered a constant even though it varies. All that matters
+ * is that it has no direct interaction with any other part of the Shesmu
+ * script.
  */
 public abstract class Constant extends Target {
 
@@ -96,6 +101,10 @@ public abstract class Constant extends Target {
 
 	}
 
+	/**
+	 * Write the value of a constant into the <tt>value</tt> property of a JSON
+	 * object.
+	 */
 	public interface ConstantLoader {
 		@RuntimeInterop
 		public void load(ObjectNode target);
@@ -276,10 +285,16 @@ public abstract class Constant extends Target {
 		return loadable;
 	}
 
+	/**
+	 * Generate a class that write the constant to JSON when called.
+	 */
 	public final ConstantLoader compile() {
 		return new ConstantCompiler().compile();
 	}
 
+	/**
+	 * The documentation text for a constant.
+	 */
 	public final String description() {
 		return description;
 	}
@@ -298,11 +313,22 @@ public abstract class Constant extends Target {
 	 */
 	protected abstract void load(GeneratorAdapter methodGen);
 
+	/**
+	 * The name of the constant.
+	 * 
+	 * This must be a valid identifer.
+	 */
 	@Override
 	public final String name() {
 		return name;
 	}
 
+	/**
+	 * The type of the constant.
+	 * 
+	 * Although a constant can have any type, there isn't a straight-forward
+	 * implementation for arbitrary types, so only simple types are provided here.
+	 */
 	@Override
 	public final Imyhat type() {
 		return type;
