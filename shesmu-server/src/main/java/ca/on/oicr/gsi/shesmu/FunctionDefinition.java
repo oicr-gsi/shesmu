@@ -11,6 +11,22 @@ import org.objectweb.asm.commons.Method;
  */
 public interface FunctionDefinition {
 
+	/**
+	 * Define a function that binds to a static method
+	 * 
+	 * @param owner
+	 *            the class containing the static method
+	 * @param methodName
+	 *            the name of the static method
+	 * @param description
+	 *            the help text for the method
+	 * @param returnType
+	 *            the return type of the method (the appropriate Java type will be
+	 *            matched)
+	 * @param argumentTypes
+	 *            the types of the arguments to the method (the appropriate Java
+	 *            types will be matched)
+	 */
 	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, String description,
 			Imyhat returnType, Imyhat... argumentTypes) {
 		return new FunctionDefinition() {

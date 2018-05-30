@@ -15,6 +15,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+/**
+ * Compile a {@link FunctionDefinition} to a {@link FunctionRunner} so that it
+ * can be used via the REST interface
+ */
 public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 
 	private static final Type A_FUNCTION_RUNNER_TYPE = Type.getType(FunctionRunner.class);
@@ -43,6 +47,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 	private static final Method METHOD_IMYHAT__UNPACK_JSON = new Method("unpackJson", A_OBJECT_TYPE,
 			new Type[] { A_JSON_NODE_TYPE });
 	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
+
 	public static FunctionRunner compile(FunctionDefinition function) {
 		return new FunctionRunnerCompiler(function).compile();
 	}

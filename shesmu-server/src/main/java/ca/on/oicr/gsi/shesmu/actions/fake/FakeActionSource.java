@@ -21,6 +21,12 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.util.JsonParameter;
 import ca.on.oicr.gsi.shesmu.compiler.Check;
 
+/**
+ * Create actions that mirror the actions of an existing Shesmu instance, but do
+ * nothing when executed
+ * 
+ * This is for preparation of development servers
+ */
 @MetaInfServices
 public class FakeActionSource implements ActionRepository {
 

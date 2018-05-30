@@ -52,10 +52,23 @@ public abstract class BaseHotloadingCompiler {
 
 	};
 
+	/**
+	 * Create a new class that will be registered with this loader
+	 */
 	protected final ClassVisitor createClassVisitor() {
 		return new WritingClassVisitor(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
 	}
 
+	/**
+	 * Create an instantiate a new instance of a just compiled class.
+	 * 
+	 * This requires a zero-arguments constructor.
+	 * 
+	 * @param clazz
+	 *            a super class of the target class
+	 * @param className
+	 *            the internal name of the target class
+	 */
 	protected final <T> T load(Class<T> clazz, String className)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		return classloader.loadClass(className).asSubclass(clazz).newInstance();

@@ -19,6 +19,9 @@ import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
+/**
+ * Converts Guanyin reports into actions
+ */
 @MetaInfServices(ActionRepository.class)
 public class ReportActionRepository implements ActionRepository {
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();

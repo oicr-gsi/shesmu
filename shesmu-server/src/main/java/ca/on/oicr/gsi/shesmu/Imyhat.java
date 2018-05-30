@@ -687,8 +687,16 @@ public abstract class Imyhat {
 	 */
 	public abstract boolean isSame(Imyhat other);
 
+	/**
+	 * Produce a string containing JavaScript code capable of parsing this type in the UI.
+	 */
 	public abstract String javaScriptParser();
 
+	/**
+	 * Get the matching Java type for this type
+	 * 
+	 * The Java type will be less descriptive than this type due to erasure.
+	 */
 	public abstract Class<?> javaType();
 
 	/**
@@ -722,5 +730,8 @@ public abstract class Imyhat {
 		return signature();
 	}
 
+	/**
+	 * Extract a value stored in a JSON document into the matching Java object for this type
+	 */
 	public abstract Object unpackJson(JsonNode node);
 }
