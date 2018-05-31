@@ -10,6 +10,7 @@ import org.objectweb.asm.Type;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 
 public class ExpressionNodeListTransform extends ExpressionNode {
 
@@ -78,15 +79,20 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 		}
 		final Imyhat type = source.type();
 		if (type instanceof Imyhat.ListImyhat) {
+			Ordering ordering = Ordering.RANDOM;
 			Imyhat incoming = ((Imyhat.ListImyhat) type).inner();
 			initialType = incoming.asmType();
 			for (final ListNode transform : transforms) {
+				ordering = transform.order(ordering, errorHandler);
 				if (!transform.typeCheck(incoming, errorHandler)) {
 					return false;
 				}
 				incoming = transform.nextType();
 			}
-			return collector.typeCheck(incoming, errorHandler);
+			if ( collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
+				return collector.orderingCheck(ordering, errorHandler);
+			}
+			return false;
 		} else {
 			typeError("list", type, errorHandler);
 			return false;

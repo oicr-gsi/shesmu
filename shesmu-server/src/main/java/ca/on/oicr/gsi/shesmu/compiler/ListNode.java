@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -14,9 +13,12 @@ public abstract class ListNode {
 	private interface ListNodeConstructor {
 		public ListNode build(int line, int column, ExpressionNode expression);
 	}
-
 	private interface ListNodeNamedConstructor {
 		public ListNode build(int line, int column, String name, ExpressionNode expression);
+	}
+
+	public enum Ordering {
+		BAD, RANDOM, REQESTED
 	}
 
 	private static final Parser.ParseDispatch<ListNode> DISPATCH = new Parser.ParseDispatch<>();
@@ -25,6 +27,10 @@ public abstract class ListNode {
 		DISPATCH.addKeyword("Flatten", handler(ListNodeFlatten::new, p -> p.keyword("In")));
 		DISPATCH.addKeyword("Where", handler(ListNodeFilter::new));
 		DISPATCH.addKeyword("Sort", handler(ListNodeSort::new));
+		DISPATCH.addKeyword("Reverse", (p, o) -> {
+			o.accept(new ListNodeReverse(p.line(), p.column()));
+			return p.whitespace();
+		});
 	}
 
 	private static Parser.Rule<ListNode> handler(ListNodeConstructor constructor) {
@@ -62,68 +68,23 @@ public abstract class ListNode {
 
 	private final int column;
 
-	protected final ExpressionNode expression;
-
-	private Imyhat incomingType;
-
 	private final int line;
-
-	private String name;
-
-	protected final Target parameter = new Target() {
-
-		@Override
-		public Flavour flavour() {
-			return Flavour.LAMBDA;
-		}
-
-		@Override
-		public String name() {
-			return name;
-		}
-
-		@Override
-		public Imyhat type() {
-			return incomingType;
-		}
-
-	};
-
-	protected ListNode(int line, int column, ExpressionNode expression) {
+	
+	protected ListNode(int line, int column) {
 		this.line = line;
 		this.column = column;
-		this.expression = expression;
 
-	}
-
-	/**
-	 * Add all free variable names to the set provided.
-	 *
-	 * @param names
-	 */
-	public final void collectFreeVariables(Set<String> names) {
-		final boolean remove = !names.contains(name);
-		expression.collectFreeVariables(names);
-		if (remove) {
-			names.remove(name);
-		}
 	}
 
 	public int column() {
 		return column;
 	}
 
-	protected abstract void finishMethod(Renderer renderer);
-
 	public int line() {
 		return line;
 	}
 
-	protected abstract Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables);
-
-	public final String name() {
-		return name;
-	}
+	public abstract String name() ;
 
 	public abstract String nextName();
 
@@ -134,46 +95,23 @@ public abstract class ListNode {
 	 */
 	public abstract Imyhat nextType();
 
-	public final void render(JavaStreamBuilder builder) {
-		final Set<String> freeVariables = new HashSet<>();
-		collectFreeVariables(freeVariables);
-		final Renderer method = makeMethod(builder, builder.renderer().allValues()
-				.filter(v -> freeVariables.contains(v.name()) && !name.equals(v.name())).toArray(LoadableValue[]::new));
+	public abstract Ordering order(Ordering previous, Consumer<String> errorHandler);
 
-		method.methodGen().visitCode();
-		expression.render(method);
-		finishMethod(method);
-		method.methodGen().returnValue();
-		method.methodGen().visitMaxs(0, 0);
-		method.methodGen().visitEnd();
-	}
-
+	public abstract void render(JavaStreamBuilder builder) ;
 	/**
 	 * Resolve all variable definitions in this expression and its children.
 	 */
-	public final Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-		this.name = name;
-		return expression.resolve(defs.bind(parameter), errorHandler) ? Optional.of(nextName()) : Optional.empty();
-	}
+	public abstract Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) ;
 
 	/**
 	 * Resolve all functions definitions in this expression
 	 */
-	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
-			Consumer<String> errorHandler) {
-		return expression.resolveFunctions(definedFunctions, errorHandler);
-	}
+	public abstract boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) ;
 
-	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-		incomingType = incoming;
-		return expression.typeCheck(errorHandler) && typeCheckExtra(incoming, errorHandler);
-	}
+	public abstract boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler);
 
-	/**
-	 * Perform type checking on this expression.
-	 *
-	 * @param errorHandler
-	 */
-	protected abstract boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler);
+	public abstract void collectFreeVariables(Set<String> names) ;
+
 
 }

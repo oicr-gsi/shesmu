@@ -7,7 +7,9 @@ import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatentationType;
 import ca.on.oicr.gsi.shesmu.compiler.JavaStreamBuilder.Match;
+import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 
 public abstract class CollectNode {
@@ -49,7 +51,7 @@ public abstract class CollectNode {
 			}
 			return result;
 		});
-		for (Match matchType : Match.values()) {
+		for (final Match matchType : Match.values()) {
 			DISPATCH.addKeyword(matchType.syntax(), (p, o) -> {
 				final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
 				final Parser result = p.whitespace()//
@@ -60,6 +62,23 @@ public abstract class CollectNode {
 				}
 				return result;
 			});
+		}
+		for (final ConcatentationType concatType : ConcatentationType.values()) {
+			DISPATCH.addKeyword(concatType.syntax(), (p, o) -> {
+				final AtomicReference<ExpressionNode> getterExpression = new AtomicReference<>();
+				final AtomicReference<ExpressionNode> delimiterExpression = new AtomicReference<>();
+				final Parser result = p.whitespace()//
+						.then(ExpressionNode::parse, getterExpression::set)//
+						.keyword("With")//
+						.whitespace()//
+						.then(ExpressionNode::parse, delimiterExpression::set);
+				if (result.isGood()) {
+					o.accept(new CollectNodeConcatenate(p.line(), p.column(), concatType, getterExpression.get(),
+							delimiterExpression.get()));
+				}
+				return result;
+			});
+
 		}
 	}
 
@@ -111,6 +130,10 @@ public abstract class CollectNode {
 		return line;
 	}
 
+	public boolean orderingCheck(Ordering ordering, Consumer<String> errorHandler) {
+		return true;
+	}
+
 	public abstract void render(JavaStreamBuilder builder);
 
 	/**
@@ -127,5 +150,4 @@ public abstract class CollectNode {
 	public abstract Imyhat type();
 
 	public abstract boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler);
-
 }

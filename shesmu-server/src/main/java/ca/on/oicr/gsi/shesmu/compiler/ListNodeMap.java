@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
-public class ListNodeMap extends ListNode {
+public class ListNodeMap extends ListNodeWithExpression {
 
 	private final String nextName;
 
@@ -31,6 +31,11 @@ public class ListNodeMap extends ListNode {
 	@Override
 	public Imyhat nextType() {
 		return expression.type();
+	}
+
+	@Override
+	public Ordering order(Ordering previous, Consumer<String> errorHandler) {
+		return previous;
 	}
 
 	@Override

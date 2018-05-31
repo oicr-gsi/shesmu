@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
-public class ListNodeFilter extends ListNode {
+public class ListNodeFilter extends ListNodeWithExpression {
 
 	public ListNodeFilter(int line, int column, ExpressionNode expression) {
 		super(line, column, expression);
@@ -28,6 +28,11 @@ public class ListNodeFilter extends ListNode {
 	@Override
 	public Imyhat nextType() {
 		return parameter.type();
+	}
+
+	@Override
+	public Ordering order(Ordering previous, Consumer<String> errorHandler) {
+		return previous;
 	}
 
 	@Override
