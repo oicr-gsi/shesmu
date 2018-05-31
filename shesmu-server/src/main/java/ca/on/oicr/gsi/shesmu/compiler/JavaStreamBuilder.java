@@ -34,7 +34,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
  */
 public final class JavaStreamBuilder {
 	public enum Match {
-		NONE("noneMatch", "None"), ALL("allMatch", "All"), ANY("anyMatch", "Any");
+		ALL("allMatch", "All"), ANY("anyMatch", "Any"), NONE("noneMatch", "None");
 		private final Method method;
 		private final String syntax;
 
@@ -73,7 +73,7 @@ public final class JavaStreamBuilder {
 	private static final Method METHOD_OPTIONAL__OR_ELSE_GET = new Method("orElseGet", A_OBJECT_TYPE,
 			new Type[] { A_SUPPLIER_TYPE });
 	private static final Method METHOD_SET__STREAM = new Method("stream", A_STREAM_TYPE, new Type[] {});
-	private static final Method METHOD_STREAM__COLLECT = new Method("collect", Type.VOID_TYPE,
+	private static final Method METHOD_STREAM__COLLECT = new Method("collect", A_OBJECT_TYPE,
 			new Type[] { A_COLLECTOR_TYPE });
 	private static final Method METHOD_STREAM__COUNT = new Method("count", Type.LONG_TYPE, new Type[] {});
 	private static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
@@ -91,6 +91,8 @@ public final class JavaStreamBuilder {
 			new Type[] { A_OBJECT_TYPE, A_BIFUNCTION_TYPE, A_BINARY_OPERATOR_TYPE });
 	private static final Method METHOD_STREAM__SORTED = new Method("sorted", A_STREAM_TYPE,
 			new Type[] { A_COMPARATOR_TYPE });
+	private static final Method METHOD_STREAM__REVERSE = new Method("reverse", A_STREAM_TYPE,
+			new Type[] {A_STREAM_TYPE });
 
 	private Type currentType;
 	private final RootBuilder owner;
@@ -117,6 +119,14 @@ public final class JavaStreamBuilder {
 		renderer.methodGen().invokeStatic(A_COLLECTORS_TYPE, METHOD_COLLECTORS__TO_SET);
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
 		renderer.methodGen().checkCast(A_SET_TYPE);
+	}
+
+	public void collector(Type resultType, Consumer<Renderer> loadCollector) {
+		finish();
+		loadCollector.accept(renderer);
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
+		renderer.methodGen().checkCast(resultType);
+
 	}
 
 	private final Renderer comparator(String name, Imyhat targetType, LoadableValue... capturedVariables) {
@@ -171,28 +181,6 @@ public final class JavaStreamBuilder {
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, filterType));
-	}
-
-	public final Renderer match(Match matchType, String name, LoadableValue... capturedVariables) {
-		finish();
-		final Method method = new Method(String.format("chain_%d_match", streamId), BOOLEAN_TYPE, Stream
-				.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(streamType, currentType))
-				.toArray(Type[]::new));
-		renderer.methodGen().loadThis();
-		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-		renderer.loadStream();
-		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
-				method.getDescriptor(), false);
-		renderer.methodGen().invokeDynamic("test",
-				Type.getMethodDescriptor(A_PREDICATE_TYPE, Stream
-						.concat(Stream.concat(Stream.of(owner.selfType()),
-								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
-						.toArray(Type[]::new)),
-				LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
-				Type.getMethodType(BOOLEAN_TYPE, currentType));
-		renderer.methodGen().invokeInterface(A_STREAM_TYPE, matchType.method);
-		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, parameters(capturedVariables, name, currentType));
 	}
 
 	private final void finish() {
@@ -257,6 +245,28 @@ public final class JavaStreamBuilder {
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType));
+	}
+
+	public final Renderer match(Match matchType, String name, LoadableValue... capturedVariables) {
+		finish();
+		final Method method = new Method(String.format("chain_%d_match", streamId), BOOLEAN_TYPE, Stream
+				.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(streamType, currentType))
+				.toArray(Type[]::new));
+		renderer.methodGen().loadThis();
+		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+		renderer.loadStream();
+		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
+				method.getDescriptor(), false);
+		renderer.methodGen().invokeDynamic("test",
+				Type.getMethodDescriptor(A_PREDICATE_TYPE, Stream
+						.concat(Stream.concat(Stream.of(owner.selfType()),
+								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
+						.toArray(Type[]::new)),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(BOOLEAN_TYPE, currentType));
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, matchType.method);
+		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
+				capturedVariables.length, streamType, parameters(capturedVariables, name, currentType));
 	}
 
 	public Pair<Renderer, Renderer> optima(boolean max, String name, Imyhat targetType,
@@ -390,5 +400,11 @@ public final class JavaStreamBuilder {
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
 		});
 		return sortMethod;
+	}
+
+	public void reverse() {
+		steps.add(renderer -> {
+			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
+		});		
 	}
 }

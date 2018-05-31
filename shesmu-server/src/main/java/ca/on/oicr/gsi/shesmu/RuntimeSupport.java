@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -341,6 +342,12 @@ public final class RuntimeSupport {
 		return fileNamePart.substring(0, fileNamePart.length() - extension.length());
 	}
 
+	public static <T> Stream<T> reverse(Stream<T> input) {
+		List<T> data = input.collect(Collectors.toList());
+		Collections.reverse(data);
+		return data.stream();
+	}
+
 	/**
 	 * Truncate a time stamp to midnight
 	 */
@@ -366,7 +373,7 @@ public final class RuntimeSupport {
 	public static <T> Stream<T> stream(Spliterator<T> spliterator) {
 		return StreamSupport.stream(spliterator, false);
 	}
-
+	
 	private RuntimeSupport() {
 	}
 }

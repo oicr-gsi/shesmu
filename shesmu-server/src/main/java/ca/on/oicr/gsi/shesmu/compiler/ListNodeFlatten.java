@@ -9,7 +9,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
-public class ListNodeFlatten extends ListNode {
+public class ListNodeFlatten extends ListNodeWithExpression {
 
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 
@@ -45,6 +45,10 @@ public class ListNodeFlatten extends ListNode {
 	}
 
 	@Override
+	public Ordering order(Ordering previous, Consumer<String> errorHandler) {
+		return previous == Ordering.BAD ? Ordering.BAD : Ordering.RANDOM;
+	}
+	@Override
 	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
 		if (incoming instanceof Imyhat.ListImyhat) {
 			type = ((Imyhat.ListImyhat) incoming).inner();
@@ -54,5 +58,4 @@ public class ListNodeFlatten extends ListNode {
 				String.format("%d:%d: Expected list for flattenting but got %s.", line(), column(), incoming.name()));
 		return false;
 	}
-
 }

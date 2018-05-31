@@ -412,19 +412,27 @@ Only stream variables may be used as discriminators in `Group` clauses.
 Replaces each item in the list with the value computed by _expr_. The values
 will be named _x_ in the downstream operations.
 
+#### Flatten
 - `Flatten` _x_ `In` _expr_
 
 For each item in the list _expr_ computes a matching list and the items in this
 list are presented to the downstream operations. The variable name available in
 the downstream operations is _x_.
 
+#### Filter
 - `Where` _expr_
 
 Eliminates any item in the list where _expr_ evaluates to false.
 
+#### Sort
 - `Sort` _expr_
 
 Sorts the items in a list based on an integer or date returned by _expr_.
+
+#### Reverse
+- `Reverse`
+
+Reverses the items in a list. The list must already be sorted.
 
 ### Collectors
 #### Count
@@ -436,6 +444,17 @@ Returns the number of items in the list.
 - `First` _expr_ `Default` _defaultexpr_
 
 Returns the first _expr_ in the list or _defaultexpr_ if no items are present.
+
+#### Concatenate Strings
+- `LexicalConcat` _expr_ `With` _delimexpr_
+- `FixedConcat` _expr_ `With` _delimexpr_
+
+Creates a string from _expr_, which must return a string, for each item in the
+list separated by the value of _delimexpr_, which must also be a string.
+
+- `LexicalConcat` sorts the strings lexicographically before joining.
+- `FixedConcat` assumes the strings are sorted by a `Sort` operation before
+  joining.
 
 #### List
 - `List`
