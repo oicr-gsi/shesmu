@@ -183,7 +183,7 @@ public final class JavaStreamBuilder {
 				capturedVariables.length, streamType, parameters(capturedVariables, name, filterType));
 	}
 
-	private final void finish() {
+	public final void finish() {
 		renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
 
 		steps.forEach(step -> step.accept(renderer));

@@ -93,7 +93,11 @@ public abstract class ListNodeWithExpression extends ListNode {
 	 */
 	public final Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
 		this.name = name;
-		return expression.resolve(defs.bind(parameter), errorHandler) ? Optional.of(nextName()) : Optional.empty();
+		return expression.resolve(defs.bind(parameter), errorHandler) && resolveExtra(defs, errorHandler) ? Optional.of(nextName()) : Optional.empty();
+	}
+
+	protected boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler) {
+		return true;
 	}
 
 	/**
@@ -101,7 +105,12 @@ public abstract class ListNodeWithExpression extends ListNode {
 	 */
 	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		return expression.resolveFunctions(definedFunctions, errorHandler);
+		return expression.resolveFunctions(definedFunctions, errorHandler) & resolvefunctionsExtra(definedFunctions, errorHandler);
+	}
+
+	protected boolean resolvefunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return true;
 	}
 
 	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
