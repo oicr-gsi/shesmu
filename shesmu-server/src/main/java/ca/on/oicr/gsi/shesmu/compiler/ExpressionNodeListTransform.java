@@ -83,11 +83,11 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 			Imyhat incoming = ((Imyhat.ListImyhat) type).inner();
 			initialType = incoming.asmType();
 			for (final ListNode transform : transforms) {
-				ordering = transform.order(ordering, errorHandler);
 				if (!transform.typeCheck(incoming, errorHandler)) {
 					return false;
 				}
 				incoming = transform.nextType();
+				ordering = transform.order(ordering, errorHandler);
 			}
 			if ( collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
 				return collector.orderingCheck(ordering, errorHandler);

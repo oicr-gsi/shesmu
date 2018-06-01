@@ -1,32 +1,41 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
+import java.util.function.Function;
 
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeFlatten extends ListNodeWithExpression {
 
-	private static final Type A_SET_TYPE = Type.getType(Set.class);
+	private final String childName;
+	private Type initialType;
 
-	private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
-	private static final Method METHOD_SET__STREAM = new Method("stream", A_STREAM_TYPE, new Type[] {});
-	private final String nextName;
+	private String nextName;
+
+	private Ordering ordering = Ordering.RANDOM;
+
+	private final List<ListNode> transforms;
 
 	private Imyhat type;
 
-	public ListNodeFlatten(int line, int column, String nextName, ExpressionNode expression) {
+	public ListNodeFlatten(int line, int column, String childName, ExpressionNode expression,
+			List<ListNode> transforms) {
 		super(line, column, expression);
-		this.nextName = nextName;
+		this.childName = childName;
+		nextName = childName;
+		this.transforms = transforms;
 	}
 
 	@Override
 	protected void finishMethod(Renderer renderer) {
-		renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
+		final JavaStreamBuilder builder = renderer.buildStream(initialType);
+		transforms.forEach(t -> t.render(builder));
+		builder.finish();
 	}
 
 	@Override
@@ -46,12 +55,46 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 
 	@Override
 	public Ordering order(Ordering previous, Consumer<String> errorHandler) {
-		return previous == Ordering.BAD ? Ordering.BAD : Ordering.RANDOM;
+		if (previous == Ordering.BAD || ordering == Ordering.BAD) {
+			return Ordering.BAD;
+		}
+		if (previous == Ordering.REQESTED && ordering == Ordering.REQESTED) {
+			return Ordering.REQESTED;
+		}
+		return Ordering.RANDOM;
 	}
+
+	@Override
+	protected boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler) {
+
+		final Optional<String> nextName = transforms.stream().reduce(Optional.of(childName),
+				(n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)), (a, b) -> {
+					throw new UnsupportedOperationException();
+				});
+		nextName.ifPresent(n -> this.nextName = n);
+		return nextName.isPresent();
+	}
+
+	@Override
+	protected boolean resolvefunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
+			Consumer<String> errorHandler) {
+		return transforms.stream().filter(t -> t.resolveFunctions(definedFunctions, errorHandler)).count() == transforms
+				.size();
+	}
+
 	@Override
 	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
 		if (incoming instanceof Imyhat.ListImyhat) {
-			type = ((Imyhat.ListImyhat) incoming).inner();
+			Imyhat innerIncoming = ((Imyhat.ListImyhat) incoming).inner();
+			initialType = innerIncoming.asmType();
+			for (final ListNode transform : transforms) {
+				ordering = transform.order(ordering, errorHandler);
+				if (!transform.typeCheck(innerIncoming, errorHandler)) {
+					return false;
+				}
+				innerIncoming = transform.nextType();
+			}
+			type = innerIncoming;
 			return true;
 		}
 		errorHandler.accept(

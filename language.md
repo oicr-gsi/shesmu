@@ -221,7 +221,7 @@ _valueexpr_.
 Evaluates _testexpr_ and if true, returns _trueexpr_; if false, returns _falseexpr_.
 _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the same type.
 
-- `For` _var_ `In` _expr_`:` modifications... collector
+- `For` _var_ `In` _expr_`:` _modifications..._ _collector_
 
 Takes the elements in a list and process them using the supplied modifications
 and then computes a result using the collector. The modifications and
@@ -413,11 +413,12 @@ Replaces each item in the list with the value computed by _expr_. The values
 will be named _x_ in the downstream operations.
 
 #### Flatten
-- `Flatten` _x_ `In` _expr_
+- `Flatten (` _x_ `In` _expr_ _modifications_ `)`
 
 For each item in the list _expr_ computes a matching list and the items in this
 list are presented to the downstream operations. The variable name available in
-the downstream operations is _x_.
+the downstream operations is _x_. Additional list modification can also be
+applied.
 
 #### Filter
 - `Where` _expr_

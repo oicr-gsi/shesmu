@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -13,6 +14,7 @@ public abstract class ListNode {
 	private interface ListNodeConstructor {
 		public ListNode build(int line, int column, ExpressionNode expression);
 	}
+
 	private interface ListNodeNamedConstructor {
 		public ListNode build(int line, int column, String name, ExpressionNode expression);
 	}
@@ -24,7 +26,27 @@ public abstract class ListNode {
 	private static final Parser.ParseDispatch<ListNode> DISPATCH = new Parser.ParseDispatch<>();
 	static {
 		DISPATCH.addKeyword("Let", handler(ListNodeMap::new, p -> p.symbol("=")));
-		DISPATCH.addKeyword("Flatten", handler(ListNodeFlatten::new, p -> p.keyword("In")));
+		DISPATCH.addKeyword("Flatten", (p, o) -> {
+			final AtomicReference<String> name = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
+			final Parser result = p//
+					.whitespace()//
+					.symbol("(")//
+					.whitespace()//
+					.identifier(name::set)//
+					.whitespace()//
+					.keyword("In")//
+					.whitespace()//
+					.then(ExpressionNode::parse, expression::set)//
+					.list(transforms::set, ListNode::parse)//
+					.symbol(")")//
+					.whitespace();
+			if (result.isGood()) {
+				o.accept(new ListNodeFlatten(p.line(), p.column(), name.get(), expression.get(), transforms.get()));
+			}
+			return result;
+		});
 		DISPATCH.addKeyword("Where", handler(ListNodeFilter::new));
 		DISPATCH.addKeyword("Sort", handler(ListNodeSort::new));
 		DISPATCH.addKeyword("Reverse", (p, o) -> {
@@ -69,7 +91,7 @@ public abstract class ListNode {
 	private final int column;
 
 	private final int line;
-	
+
 	protected ListNode(int line, int column) {
 		this.line = line;
 		this.column = column;
@@ -84,7 +106,7 @@ public abstract class ListNode {
 		return line;
 	}
 
-	public abstract String name() ;
+	public abstract String name();
 
 	public abstract String nextName();
 
@@ -97,21 +119,21 @@ public abstract class ListNode {
 
 	public abstract Ordering order(Ordering previous, Consumer<String> errorHandler);
 
-	public abstract void render(JavaStreamBuilder builder) ;
+	public abstract void render(JavaStreamBuilder builder);
+
 	/**
 	 * Resolve all variable definitions in this expression and its children.
 	 */
-	public abstract Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) ;
+	public abstract Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler);
 
 	/**
 	 * Resolve all functions definitions in this expression
 	 */
 	public abstract boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
-			Consumer<String> errorHandler) ;
+			Consumer<String> errorHandler);
 
 	public abstract boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler);
 
-	public abstract void collectFreeVariables(Set<String> names) ;
-
+	public abstract void collectFreeVariables(Set<String> names);
 
 }
