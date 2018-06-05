@@ -71,6 +71,17 @@ lookups available to the script and the provenance variables and their types.
 To start doing something, write some olives. A description for olives is found
 in [the language guide](language.md).
 
+### Static Actions
+Due to the imperfect nature of reality, it might be useful to launch bespoke
+actions not defined by olives. To do this, create a JSON file that ends in
+`.actnow` containing a list of JSON objects with two properties: `name`
+containing the action name and `parameters` containing an object with all the
+parameters to the action in the JSON-equivalent representation of the
+appropriate Shesmu type.
+
+Shesmu will add these actions to its queue and attempt to run them as if they
+were produced by an olive.
+
 ## Plugins
 ### Action Repositories
 For Shesmu to know what actions it can perform, it uses an action repository. A

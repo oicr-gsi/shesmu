@@ -58,6 +58,7 @@ public final class Server {
 	private final HttpServer server;
 	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
 	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
+	private final StaticActions staticActions = new StaticActions(processor::accept, this::actionDefinitions);
 
 	private final Instant startTime = Instant.now();
 
@@ -86,7 +87,9 @@ public final class Server {
 						actionRepository::implementations, //
 						functionpRepository::implementations, //
 						Throttler::services, //
-						ConstantSource::sources)//
+						ConstantSource::sources, //
+						() -> Stream.of(staticActions)//
+				)//
 						.flatMap(Supplier::get)//
 						.flatMap(LoadedConfiguration::listConfiguration)//
 						.sorted(Comparator.comparing(Pair::first))//
@@ -400,6 +403,7 @@ public final class Server {
 		System.out.printf("Found %d throttler\n", throttlerCount);
 		System.out.println("Compiling script...");
 		compiler.start();
+		staticActions.start();
 		System.out.println("Starting action processor...");
 		processor.start();
 		System.out.println("Starting scheduler...");
