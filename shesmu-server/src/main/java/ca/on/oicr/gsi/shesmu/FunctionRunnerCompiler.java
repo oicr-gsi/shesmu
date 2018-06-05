@@ -29,7 +29,6 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 
 	private static final Type A_JSON_NODE_TYPE = Type.getType(JsonNode.class);
 	private static final Type A_JSON_OBJECT_TYPE = Type.getType(ObjectNode.class);
-	private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
@@ -43,7 +42,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 			new Type[] { A_JSON_ARRAY_TYPE, A_JSON_OBJECT_TYPE });
 
 	private static final Method METHOD_IMYHAT__PACK_JSON = new Method("packJson", Type.VOID_TYPE,
-			new Type[] { A_OBJECT_NODE_TYPE, A_STRING_TYPE, A_OBJECT_TYPE });
+			new Type[] { A_JSON_OBJECT_TYPE, A_STRING_TYPE, A_OBJECT_TYPE });
 	private static final Method METHOD_IMYHAT__UNPACK_JSON = new Method("unpackJson", A_OBJECT_TYPE,
 			new Type[] { A_JSON_NODE_TYPE });
 	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
