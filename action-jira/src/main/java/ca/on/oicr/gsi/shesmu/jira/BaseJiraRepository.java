@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -25,10 +26,10 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
@@ -125,7 +126,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		}
 
 		@Override
-		protected void update(Configuration config) {
+		public Optional<Integer> update(Configuration config) {
 			value = create(this, fileName()).collect(Collectors.toList());
 			properties.put("project", config.getProjectKey());
 			properties.put("url", config.getUrl());
@@ -138,6 +139,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
+			return Optional.empty();
 		}
 	}
 
@@ -188,7 +190,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		return clients.get(id);
 	}
 
-	private final List<JiraConfig> configurations;
+	private final AutoUpdatingDirectory<JiraConfig> configurations;
 
 	private int counter;
 
@@ -196,8 +198,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 
 	public BaseJiraRepository(String name) {
 		this.name = name;
-		configurations = RuntimeSupport.dataFiles(EXTENSION).map(JiraConfig::new).peek(JiraConfig::start)
-				.collect(Collectors.toList());
+		configurations = new AutoUpdatingDirectory<>(EXTENSION,JiraConfig::new);
 	}
 
 	protected abstract Stream<T> create(JiraConfig config, Path filename);

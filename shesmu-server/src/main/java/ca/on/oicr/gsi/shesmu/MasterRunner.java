@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
@@ -19,14 +18,14 @@ public class MasterRunner {
 			.register();
 	private static final LatencyHistogram runTime = new LatencyHistogram("shesmu_run_time",
 			"The time the script takes to run on all the input.");
-	private final Supplier<ActionGenerator> actionGeneratorSource;
+	private final ActionGenerator actionGenerator;
 	private final ActionProcessor actionSink;
 
 	private volatile boolean running;
 	private final Thread thread = new Thread(this::run, "master_runner");
 
-	public MasterRunner(Supplier<ActionGenerator> actionGeneratorSource, ActionProcessor actionSink) {
-		this.actionGeneratorSource = actionGeneratorSource;
+	public MasterRunner(ActionGenerator actionGenerator, ActionProcessor actionSink) {
+		this.actionGenerator = actionGenerator;
 		this.actionSink = actionSink;
 	}
 
@@ -35,8 +34,7 @@ public class MasterRunner {
 			lastRun.setToCurrentTime();
 			try (AutoCloseable timer = runTime.start()) {
 				final AtomicInteger currentDuplicates = new AtomicInteger();
-				final ActionGenerator generator = actionGeneratorSource.get();
-				generator.run(action -> {
+				actionGenerator.run(action -> {
 					if (actionSink.accept(action)) {
 						currentDuplicates.incrementAndGet();
 					}

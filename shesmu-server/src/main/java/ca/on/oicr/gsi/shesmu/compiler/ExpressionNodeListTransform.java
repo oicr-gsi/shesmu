@@ -89,7 +89,7 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 				incoming = transform.nextType();
 				ordering = transform.order(ordering, errorHandler);
 			}
-			if ( collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
+			if (collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
 				return collector.orderingCheck(ordering, errorHandler);
 			}
 			return false;

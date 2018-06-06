@@ -32,7 +32,7 @@ public enum ActionState {
 	UNKNOWN,
 	/**
 	 * The action cannot be started due to a resource being unavailable
-	 * 
+	 *
 	 * This is slightly different from {@link #THROTTLED}, which indicates this
 	 * action could be run if there were capacity, while this indicates that the
 	 * action can't be run right now even if capacity is available. This might be

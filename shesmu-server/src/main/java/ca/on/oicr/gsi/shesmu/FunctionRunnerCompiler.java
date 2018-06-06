@@ -58,11 +58,11 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 	}
 
 	public FunctionRunner compile() {
-		ClassVisitor classVisitor = createClassVisitor();
+		final ClassVisitor classVisitor = createClassVisitor();
 		classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "dyn/shesmu/Function", null,
 				A_OBJECT_TYPE.getInternalName(), new String[] { A_FUNCTION_RUNNER_TYPE.getInternalName() });
 
-		GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
+		final GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
 		ctor.visitCode();
 		ctor.loadThis();
 		ctor.invokeConstructor(A_OBJECT_TYPE, DEFAULT_CTOR);
@@ -70,7 +70,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 		ctor.visitMaxs(0, 0);
 		ctor.visitEnd();
 
-		GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
+		final GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
 		handle.visitCode();
 		handle.invokeDynamic(function.returnType().signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 		handle.loadArg(1);

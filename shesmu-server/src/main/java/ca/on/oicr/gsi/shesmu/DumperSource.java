@@ -12,7 +12,7 @@ public interface DumperSource extends LoadedConfiguration {
 
 	/**
 	 * Find a dumper for the provided name
-	 * 
+	 *
 	 * @param name
 	 *            the dumper to find
 	 * @return a dumper to write to; if one is not defined, a dumper that discards
@@ -20,8 +20,8 @@ public interface DumperSource extends LoadedConfiguration {
 	 */
 	@RuntimeInterop
 	public static Dumper find(String name) {
-		for (DumperSource source : LOADER) {
-			Optional<Dumper> dumper = source.findDumper(name);
+		for (final DumperSource source : LOADER) {
+			final Optional<Dumper> dumper = source.findDumper(name);
 			if (dumper.isPresent()) {
 				return dumper.get();
 			}
@@ -29,7 +29,7 @@ public interface DumperSource extends LoadedConfiguration {
 		return new Dumper() {
 
 			@Override
-			public void write(Object[] values) {
+			public void start() {
 				// Do nothing.
 			}
 
@@ -39,7 +39,7 @@ public interface DumperSource extends LoadedConfiguration {
 			}
 
 			@Override
-			public void start() {
+			public void write(Object[] values) {
 				// Do nothing.
 			}
 		};
@@ -47,7 +47,7 @@ public interface DumperSource extends LoadedConfiguration {
 
 	/**
 	 * Find a dumper
-	 * 
+	 *
 	 * @param name
 	 *            the dumper to find
 	 * @return the dumper if found, or an empty optional if none is available

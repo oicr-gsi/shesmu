@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -13,6 +14,7 @@ import org.kohsuke.MetaInfServices;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
@@ -42,12 +44,13 @@ public class FileConstants implements ConstantSource {
 		}
 
 		@Override
-		protected void update(ObjectNode node) {
-			String description = String.format("User-defined value specified in %s.", fileName());
+		protected Optional<Integer> update(ObjectNode node) {
+			final String description = String.format("User-defined value specified in %s.", fileName());
 			constants = RuntimeSupport.stream(node.fields())//
 					.map(e -> convert(e, description))//
 					.filter(Objects::nonNull)//
 					.collect(Collectors.toList());
+			return Optional.empty();
 		}
 	}
 
@@ -81,11 +84,10 @@ public class FileConstants implements ConstantSource {
 		return null;
 	}
 
-	private final List<ConstantsFile> files;
+	private final AutoUpdatingDirectory<ConstantsFile> files;
 
 	public FileConstants() {
-		files = RuntimeSupport.dataFiles(".constants").map(ConstantsFile::new).peek(ConstantsFile::start)
-				.collect(Collectors.toList());
+		files = new AutoUpdatingDirectory<>(".constants", ConstantsFile::new);
 	}
 
 	@Override

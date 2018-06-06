@@ -3,11 +3,9 @@ package ca.on.oicr.gsi.shesmu.runscanner;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -19,6 +17,7 @@ import org.kohsuke.MetaInfServices;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
@@ -99,9 +98,11 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 		}
 
 		@Override
-		protected void update(Configuration value) {
+		protected Optional<Integer> update(Configuration value) {
 			url = Optional.ofNullable(value.getUrl());
 			properties.put("url", value.getUrl());
+			return Optional.empty();
+
 		}
 	}
 
@@ -115,11 +116,10 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 	private static final LatencyHistogram requestTime = new LatencyHistogram("shesmu_runscanner_request_time",
 			"The request time latency to access run information.", "target");
 
-	private final List<RunScannerClient> clients;
+	private final AutoUpdatingDirectory<RunScannerClient> clients;
 
 	public RunScannerFunctionRepository() {
-		clients = RuntimeSupport.dataFiles(EXTENSION).map(RunScannerClient::new).peek(RunScannerClient::start)
-				.collect(Collectors.toList());
+		clients = new AutoUpdatingDirectory<>(EXTENSION, RunScannerClient::new);
 	}
 
 	@Override

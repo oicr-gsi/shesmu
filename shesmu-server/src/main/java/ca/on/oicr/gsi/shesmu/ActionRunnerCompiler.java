@@ -34,6 +34,7 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 
 	private static final Method METHOD_IMYHAT__UNPACK_JSON = new Method("unpackJson", A_OBJECT_TYPE,
 			new Type[] { A_JSON_NODE_TYPE });
+
 	public static ActionRunner compile(ActionDefinition function) {
 		return new ActionRunnerCompiler(function).compile();
 	}
@@ -45,11 +46,11 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 	}
 
 	public ActionRunner compile() {
-		ClassVisitor classVisitor = createClassVisitor();
+		final ClassVisitor classVisitor = createClassVisitor();
 		classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "dyn/shesmu/Action", null, A_OBJECT_TYPE.getInternalName(),
 				new String[] { A_ACTION_RUNNER_TYPE.getInternalName() });
 
-		GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
+		final GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
 		ctor.visitCode();
 		ctor.loadThis();
 		ctor.invokeConstructor(A_OBJECT_TYPE, DEFAULT_CTOR);
@@ -57,9 +58,9 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 		ctor.visitMaxs(0, 0);
 		ctor.visitEnd();
 
-		GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
+		final GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
 		handle.visitCode();
-		int actionLocal = handle.newLocal(action.type());
+		final int actionLocal = handle.newLocal(action.type());
 		action.initialize(handle);
 		handle.storeLocal(actionLocal);
 		action.parameters().forEach(parameter -> {

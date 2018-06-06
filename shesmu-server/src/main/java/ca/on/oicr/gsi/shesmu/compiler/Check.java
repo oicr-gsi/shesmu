@@ -130,6 +130,11 @@ public final class Check extends Compiler {
 		return new FunctionDefinition() {
 
 			@Override
+			public String description() {
+				return description;
+			}
+
+			@Override
 			public String name() {
 				return name;
 			}
@@ -147,11 +152,6 @@ public final class Check extends Compiler {
 			@Override
 			public Stream<Imyhat> types() {
 				return Arrays.stream(types);
-			}
-
-			@Override
-			public String description() {
-				return description;
 			}
 		};
 	}

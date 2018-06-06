@@ -9,8 +9,22 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeReverse extends ListNode {
+	private Imyhat incoming;
+
+	private String name;
+
 	public ListNodeReverse(int line, int column) {
 		super(line, column);
+	}
+
+	@Override
+	public void collectFreeVariables(Set<String> names) {
+		// Do nothing.
+	}
+
+	@Override
+	public String name() {
+		return name;
 	}
 
 	@Override
@@ -34,17 +48,9 @@ public class ListNodeReverse extends ListNode {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public void render(JavaStreamBuilder builder) {
 		builder.reverse();
 	}
-
-	private String name;
-	private Imyhat incoming;
 
 	@Override
 	public Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
@@ -62,11 +68,6 @@ public class ListNodeReverse extends ListNode {
 	public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
 		this.incoming = incoming;
 		return true;
-	}
-
-	@Override
-	public void collectFreeVariables(Set<String> names) {
-		// Do nothing.
 	}
 
 }

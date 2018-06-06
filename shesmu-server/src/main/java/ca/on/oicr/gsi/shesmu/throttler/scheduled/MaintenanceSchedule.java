@@ -18,10 +18,10 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.AutoUpdatingFile;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Throttler;
+import ca.on.oicr.gsi.shesmu.WatchedFileListener;
 
 /**
  * Reads <tt>maintenance.tsv</tt> which is a schedule or maintenance windows
@@ -30,12 +30,13 @@ import ca.on.oicr.gsi.shesmu.Throttler;
 @MetaInfServices(Throttler.class)
 public class MaintenanceSchedule implements Throttler {
 
-	private static class ScheduleReader extends AutoUpdatingFile {
+	private static class ScheduleReader implements WatchedFileListener {
 
+		private final Path fileName;
 		private List<Instant[]> windows = Collections.emptyList();
 
 		public ScheduleReader(Path fileName) {
-			super(fileName);
+			this.fileName = fileName;
 		}
 
 		public boolean inMaintenanceWindow() {
@@ -44,9 +45,19 @@ public class MaintenanceSchedule implements Throttler {
 		}
 
 		@Override
-		protected void update() {
+		public void start() {
+			update();
+		}
+
+		@Override
+		public void stop() {
+
+		}
+
+		@Override
+		public Optional<Integer> update() {
 			try {
-				windows = Files.readAllLines(fileName()).stream()//
+				windows = Files.readAllLines(fileName).stream()//
 						.map(line -> BLANK.splitAsStream(line)//
 								.limit(2)//
 								.map(str -> ZonedDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME).toInstant())//
@@ -57,6 +68,7 @@ public class MaintenanceSchedule implements Throttler {
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
+			return Optional.empty();
 		}
 	}
 
@@ -74,7 +86,7 @@ public class MaintenanceSchedule implements Throttler {
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		return schedule.map(s -> {
 			final Map<String, String> properties = new HashMap<>();
-			properties.put("file", s.fileName().toString());
+			properties.put("file", s.fileName.toString());
 			properties.put("state", s.inMaintenanceWindow() ? "throttled" : "permit");
 			for (int i = 0; i < s.windows.size(); i++) {
 				properties.put(String.format("Window %d", i),

@@ -60,14 +60,14 @@ public class FunctionForInstance implements FunctionDefinition {
 				Stream.of(parameterTypes).map(Imyhat::javaType).toArray(Class[]::new));
 	}
 
+	private final String description;
+
 	private final String name;
 
 	private final Imyhat[] parameterTypes;
 
 	private final Imyhat returnType;
-
 	private final String token;
-	private final String description;
 
 	public FunctionForInstance(CallSite callsite, String name, String description, Imyhat returnType,
 			Imyhat... parameterTypes) {
@@ -93,6 +93,11 @@ public class FunctionForInstance implements FunctionDefinition {
 	}
 
 	@Override
+	public String description() {
+		return description;
+	}
+
+	@Override
 	public final String name() {
 		return name;
 	}
@@ -114,10 +119,5 @@ public class FunctionForInstance implements FunctionDefinition {
 	@Override
 	public final Stream<Imyhat> types() {
 		return Stream.of(parameterTypes);
-	}
-
-	@Override
-	public String description() {
-		return description;
 	}
 }

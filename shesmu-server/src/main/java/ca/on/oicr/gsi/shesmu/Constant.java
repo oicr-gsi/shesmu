@@ -27,7 +27,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
  *
  * Constant values get written into the program, so they are not updated until
  * the program is recompiled even if the {@link ConstantSource}
- * 
+ *
  * They aren't constant in the sense that they can be arbitrary bytecode, so
  * <tt>now</tt> is considered a constant even though it varies. All that matters
  * is that it has no direct interaction with any other part of the Shesmu
@@ -315,7 +315,7 @@ public abstract class Constant extends Target {
 
 	/**
 	 * The name of the constant.
-	 * 
+	 *
 	 * This must be a valid identifer.
 	 */
 	@Override
@@ -325,7 +325,7 @@ public abstract class Constant extends Target {
 
 	/**
 	 * The type of the constant.
-	 * 
+	 *
 	 * Although a constant can have any type, there isn't a straight-forward
 	 * implementation for arbitrary types, so only simple types are provided here.
 	 */

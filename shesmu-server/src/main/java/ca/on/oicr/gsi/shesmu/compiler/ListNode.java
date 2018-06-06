@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -98,6 +98,8 @@ public abstract class ListNode {
 
 	}
 
+	public abstract void collectFreeVariables(Set<String> names);
+
 	public int column() {
 		return column;
 	}
@@ -133,7 +135,5 @@ public abstract class ListNode {
 			Consumer<String> errorHandler);
 
 	public abstract boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler);
-
-	public abstract void collectFreeVariables(Set<String> names);
 
 }

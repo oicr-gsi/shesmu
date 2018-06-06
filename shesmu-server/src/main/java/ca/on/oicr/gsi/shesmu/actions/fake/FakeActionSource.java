@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
@@ -24,7 +26,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Check;
 /**
  * Create actions that mirror the actions of an existing Shesmu instance, but do
  * nothing when executed
- * 
+ *
  * This is for preparation of development servers
  */
 @MetaInfServices
@@ -54,7 +56,7 @@ public class FakeActionSource implements ActionRepository {
 		}
 
 		@Override
-		protected void update(Configuration configuration) {
+		protected Optional<Integer> update(Configuration configuration) {
 			url = configuration.getUrl();
 			allow = configuration.getAllow();
 			final Pattern allow = Pattern.compile(configuration.getAllow());
@@ -67,14 +69,14 @@ public class FakeActionSource implements ActionRepository {
 											Imyhat.parse(p.get("type").asText()), //
 											p.get("required").asBoolean()))))
 					.collect(Collectors.toList());
+			return Optional.empty();
 		}
 	}
 
-	private final List<RemoteInstance> instances;
+	private final AutoUpdatingDirectory<RemoteInstance> instances;
 
 	public FakeActionSource() {
-		instances = RuntimeSupport.dataFiles(".fakeactions").map(RemoteInstance::new).peek(RemoteInstance::start)
-				.collect(Collectors.toList());
+		instances = new AutoUpdatingDirectory<>(".fakeactions", RemoteInstance::new);
 	}
 
 	@Override

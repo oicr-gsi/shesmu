@@ -61,9 +61,9 @@ public abstract class BaseHotloadingCompiler {
 
 	/**
 	 * Create an instantiate a new instance of a just compiled class.
-	 * 
+	 *
 	 * This requires a zero-arguments constructor.
-	 * 
+	 *
 	 * @param clazz
 	 *            a super class of the target class
 	 * @param className
