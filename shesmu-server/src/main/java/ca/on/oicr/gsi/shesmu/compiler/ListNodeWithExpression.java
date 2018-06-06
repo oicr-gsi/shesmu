@@ -35,7 +35,7 @@ public abstract class ListNodeWithExpression extends ListNode {
 		}
 
 	};
-	
+
 	protected ListNodeWithExpression(int line, int column, ExpressionNode expression) {
 		super(line, column);
 		this.expression = expression;
@@ -47,6 +47,7 @@ public abstract class ListNodeWithExpression extends ListNode {
 	 *
 	 * @param names
 	 */
+	@Override
 	public final void collectFreeVariables(Set<String> names) {
 		final boolean remove = !names.contains(name);
 		expression.collectFreeVariables(names);
@@ -59,10 +60,12 @@ public abstract class ListNodeWithExpression extends ListNode {
 
 	protected abstract Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables);
 
+	@Override
 	public final String name() {
 		return name;
 	}
 
+	@Override
 	public abstract String nextName();
 
 	/**
@@ -70,10 +73,13 @@ public abstract class ListNodeWithExpression extends ListNode {
 	 *
 	 * This should return {@link Imyhat#BAD} if no type can be determined
 	 */
+	@Override
 	public abstract Imyhat nextType();
 
+	@Override
 	public abstract Ordering order(Ordering previous, Consumer<String> errorHandler);
 
+	@Override
 	public final void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
 		collectFreeVariables(freeVariables);
@@ -91,9 +97,12 @@ public abstract class ListNodeWithExpression extends ListNode {
 	/**
 	 * Resolve all variable definitions in this expression and its children.
 	 */
+	@Override
 	public final Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
 		this.name = name;
-		return expression.resolve(defs.bind(parameter), errorHandler) && resolveExtra(defs, errorHandler) ? Optional.of(nextName()) : Optional.empty();
+		return expression.resolve(defs.bind(parameter), errorHandler) && resolveExtra(defs, errorHandler)
+				? Optional.of(nextName())
+				: Optional.empty();
 	}
 
 	protected boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler) {
@@ -103,9 +112,11 @@ public abstract class ListNodeWithExpression extends ListNode {
 	/**
 	 * Resolve all functions definitions in this expression
 	 */
+	@Override
 	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		return expression.resolveFunctions(definedFunctions, errorHandler) & resolvefunctionsExtra(definedFunctions, errorHandler);
+		return expression.resolveFunctions(definedFunctions, errorHandler)
+				& resolvefunctionsExtra(definedFunctions, errorHandler);
 	}
 
 	protected boolean resolvefunctionsExtra(Function<String, FunctionDefinition> definedFunctions,
@@ -113,6 +124,7 @@ public abstract class ListNodeWithExpression extends ListNode {
 		return true;
 	}
 
+	@Override
 	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
 		incomingType = incoming;
 		return expression.typeCheck(errorHandler) && typeCheckExtra(incoming, errorHandler);

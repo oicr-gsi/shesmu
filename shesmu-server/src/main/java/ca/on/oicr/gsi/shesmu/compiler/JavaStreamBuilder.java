@@ -40,7 +40,7 @@ public final class JavaStreamBuilder {
 
 		private Match(String methodName, String syntax) {
 			this.syntax = syntax;
-			this.method = new Method(methodName, Type.BOOLEAN_TYPE, new Type[] { A_PREDICATE_TYPE });
+			method = new Method(methodName, Type.BOOLEAN_TYPE, new Type[] { A_PREDICATE_TYPE });
 		}
 
 		public String syntax() {
@@ -89,10 +89,10 @@ public final class JavaStreamBuilder {
 			new Type[] { A_COMPARATOR_TYPE });
 	private static final Method METHOD_STREAM__REDUCE = new Method("reduce", A_OBJECT_TYPE,
 			new Type[] { A_OBJECT_TYPE, A_BIFUNCTION_TYPE, A_BINARY_OPERATOR_TYPE });
+	private static final Method METHOD_STREAM__REVERSE = new Method("reverse", A_STREAM_TYPE,
+			new Type[] { A_STREAM_TYPE });
 	private static final Method METHOD_STREAM__SORTED = new Method("sorted", A_STREAM_TYPE,
 			new Type[] { A_COMPARATOR_TYPE });
-	private static final Method METHOD_STREAM__REVERSE = new Method("reverse", A_STREAM_TYPE,
-			new Type[] {A_STREAM_TYPE });
 
 	private Type currentType;
 	private final RootBuilder owner;
@@ -394,17 +394,17 @@ public final class JavaStreamBuilder {
 		return renderer;
 	}
 
+	public void reverse() {
+		steps.add(renderer -> {
+			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
+		});
+	}
+
 	public final Renderer sort(String name, Imyhat targetType, LoadableValue... capturedVariables) {
 		final Renderer sortMethod = comparator(name, targetType, capturedVariables);
 		steps.add(renderer -> {
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
 		});
 		return sortMethod;
-	}
-
-	public void reverse() {
-		steps.add(renderer -> {
-			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
-		});		
 	}
 }

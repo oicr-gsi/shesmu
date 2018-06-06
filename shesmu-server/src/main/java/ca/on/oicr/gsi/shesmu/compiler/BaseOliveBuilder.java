@@ -68,9 +68,9 @@ public abstract class BaseOliveBuilder {
 
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
+	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
 	protected static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
-	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
 
 	private Type currentType;
 
@@ -244,6 +244,28 @@ public abstract class BaseOliveBuilder {
 					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
 					Type.getMethodType(A_OBJECT_TYPE, type));
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_MONITOR);
+		});
+		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
+				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
+	}
+
+	public Renderer peek(LoadableValue[] capturedVariables) {
+		final Type type = currentType;
+		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), VOID_TYPE,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
+						.toArray(Type[]::new));
+		steps.add(renderer -> {
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+					method.getName(), method.getDescriptor(), false);
+			renderer.methodGen().invokeDynamic("accept",
+					Type.getMethodDescriptor(A_CONSUMER_TYPE,
+							Stream.concat(Stream.of(owner.selfType()),
+									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE), handle,
+					Type.getMethodType(VOID_TYPE, type));
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__PEEK);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
@@ -435,27 +457,5 @@ public abstract class BaseOliveBuilder {
 	 */
 	public RegroupVariablesBuilder smash(LoadableValue[] capturedVariables) {
 		return regroup("Smash", "smash", true, capturedVariables);
-	}
-
-	public Renderer peek(LoadableValue[] capturedVariables) {
-		final Type type = currentType;
-		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), VOID_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
-						.toArray(Type[]::new));
-		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("accept",
-					Type.getMethodDescriptor(A_CONSUMER_TYPE,
-							Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(VOID_TYPE, type));
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__PEEK);
-		});
-		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 }

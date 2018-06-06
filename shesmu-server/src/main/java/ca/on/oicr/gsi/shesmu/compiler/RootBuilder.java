@@ -49,10 +49,11 @@ public abstract class RootBuilder {
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
 	private final static Method METHOD_DUMPER__FIND = new Method("find", A_DUMPER_TYPE, new Type[] { A_STRING_TYPE });
 
-	private final static Method METHOD_DUMPER__START = new Method("start", VOID_TYPE, new Type[] {  });
+	private final static Method METHOD_DUMPER__START = new Method("start", VOID_TYPE, new Type[] {});
 
-	private final static Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {  });
+	private final static Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
 	private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
+
 	public static Stream<LoadableValue> proxyCaptured(int offset, LoadableValue... capturedVariables) {
 		return IntStream.range(0, capturedVariables.length).boxed().map(index -> new LoadableValue() {
 
@@ -72,6 +73,7 @@ public abstract class RootBuilder {
 			}
 		});
 	}
+
 	private final GeneratorAdapter classInitMethod;
 	final ClassVisitor classVisitor;
 	private final GeneratorAdapter clearGaugeMethod;
@@ -152,7 +154,7 @@ public abstract class RootBuilder {
 		classInitMethod.visitInsn(Opcodes.RETURN);
 		classInitMethod.visitMaxs(0, 0);
 		classInitMethod.visitEnd();
-		
+
 		dumpers.forEach(dumper -> {
 			clearGaugeMethod.loadThis();
 			clearGaugeMethod.getField(selfType, dumper, A_DUMPER_TYPE);
@@ -161,7 +163,7 @@ public abstract class RootBuilder {
 			runMethod.loadThis();
 			runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
 			runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
-			
+
 		});
 
 		runMethod.visitInsn(Opcodes.RETURN);
@@ -218,10 +220,11 @@ public abstract class RootBuilder {
 		methodGen.loadThis();
 		methodGen.getField(selfType, fieldName, A_GAUGE_TYPE);
 	}
-	
+
 	int nextStreamId() {
 		return streamId++;
 	}
+
 	/**
 	 * Get the renderer for {@link ActionGenerator#run(Consumer, Supplier)}
 	 *
@@ -230,6 +233,7 @@ public abstract class RootBuilder {
 	public final Renderer rootRenderer() {
 		return new Renderer(this, runMethod, -1, null, Stream.empty());
 	}
+
 	/**
 	 * Get the type of the class being generated
 	 */

@@ -39,9 +39,9 @@ public class CollectNodeConcatenate extends CollectNode {
 
 	private static final Method METHOD_STREAM__SORTED = new Method("sorted", A_STREAM_TYPE, new Type[] {});
 
+	private final ConcatentationType concatentation;
 	private final ExpressionNode delimiter;
 	private final ExpressionNode getter;
-	private final ConcatentationType concatentation;
 
 	private String name;
 	private boolean needsSort;
@@ -66,7 +66,8 @@ public class CollectNodeConcatenate extends CollectNode {
 
 	private Imyhat type;
 
-	public CollectNodeConcatenate(int line, int column, ConcatentationType concatentation, ExpressionNode getter, ExpressionNode delimiter) {
+	public CollectNodeConcatenate(int line, int column, ConcatentationType concatentation, ExpressionNode getter,
+			ExpressionNode delimiter) {
 		super(line, column);
 		this.concatentation = concatentation;
 		this.getter = getter;
@@ -87,8 +88,9 @@ public class CollectNodeConcatenate extends CollectNode {
 			return true;
 		case PROVIDED:
 			if (ordering == Ordering.RANDOM) {
-				errorHandler.accept(String.format(
-						"%d:%d: String concatenation is based on a random order. That is a bad idea.", line(), column()));
+				errorHandler.accept(
+						String.format("%d:%d: String concatenation is based on a random order. That is a bad idea.",
+								line(), column()));
 				return false;
 			}
 			return true;

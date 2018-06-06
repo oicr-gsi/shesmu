@@ -3,15 +3,15 @@ package ca.on.oicr.gsi.shesmu.throttler.ratelimit;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
@@ -57,12 +57,13 @@ public class RateLimitThrottler implements Throttler {
 		}
 
 		@Override
-		protected synchronized void update(Configuration value) {
+		protected synchronized Optional<Integer> update(Configuration value) {
 			capacity = Math.max(0, value.getCapacity());
 			delay = Math.max(1, value.getDelay());
 			tokens = Math.min(tokens, capacity);
 			bucketCapacity.labels(service).set(capacity);
 			rechargeDelay.labels(service).set(delay);
+			return Optional.empty();
 		}
 
 	}
@@ -79,11 +80,10 @@ public class RateLimitThrottler implements Throttler {
 			.build("shesmu_throttler_ratelimit_tokens", "The number of tokens in the bucket.").labelNames("service")
 			.register();
 
-	private final List<TokenBucket> buckets;
+	private final AutoUpdatingDirectory<TokenBucket> buckets;
 
 	public RateLimitThrottler() {
-		buckets = RuntimeSupport.dataFiles(EXTENSION).map(TokenBucket::new).peek(TokenBucket::start)
-				.collect(Collectors.toList());
+		buckets = new AutoUpdatingDirectory<>(EXTENSION, TokenBucket::new);
 	}
 
 	@Override
@@ -92,7 +92,7 @@ public class RateLimitThrottler implements Throttler {
 			return false;
 		}
 		if (buckets.stream().allMatch(bucket -> bucket.checkCapacity(services))) {
-			buckets.forEach(TokenBucket::decrement);
+			buckets.stream().forEach(TokenBucket::decrement);
 			return false;
 		}
 		return true;

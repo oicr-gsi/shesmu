@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import io.prometheus.client.Gauge;
 
@@ -9,7 +10,7 @@ import io.prometheus.client.Gauge;
  * Creates a watched JSON file that will be notified when the file changes on
  * disk and parsed
  */
-public abstract class AutoUpdatingJsonFile<T> extends AutoUpdatingFile {
+public abstract class AutoUpdatingJsonFile<T> implements WatchedFileListener {
 
 	private static final Gauge goodJson = Gauge
 			.build("shesmu_auto_update_good_json", "Whether a JSON configuration file is valid.").labelNames("filename")
@@ -17,32 +18,54 @@ public abstract class AutoUpdatingJsonFile<T> extends AutoUpdatingFile {
 
 	private final Class<T> clazz;
 
+	private final Path fileName;
+
 	/**
 	 * Creates a new monitor
-	 * @param fileName the file to monitor
-	 * @param clazz the class to parse the JSON file as
+	 *
+	 * @param fileName
+	 *            the file to monitor
+	 * @param clazz
+	 *            the class to parse the JSON file as
 	 */
 	public AutoUpdatingJsonFile(Path fileName, Class<T> clazz) {
-		super(fileName);
+		this.fileName = fileName;
 		this.clazz = clazz;
 	}
 
+	public final Path fileName() {
+		return fileName;
+	}
+
 	@Override
-	protected final void update() {
+	public void start() {
+		update();
+	}
+
+	@Override
+	public void stop() {
+		// Do nothing.
+	}
+
+	@Override
+	public final Optional<Integer> update() {
 		try {
 			final T value = RuntimeSupport.MAPPER.readValue(Files.readAllBytes(fileName()), clazz);
 			goodJson.labels(fileName().toString()).set(1);
-			update(value);
+			return update(value);
 		} catch (final Exception e) {
 			e.printStackTrace();
 			goodJson.labels(fileName().toString()).set(0);
+			return Optional.empty();
 		}
 	}
 
 	/**
 	 * Called when the underlying file has been parsed
-	 * @param value the parsed file contents
+	 *
+	 * @param value
+	 *            the parsed file contents
 	 */
-	protected abstract void update(T value);
+	protected abstract Optional<Integer> update(T value);
 
 }

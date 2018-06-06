@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -13,9 +14,9 @@ import org.kohsuke.MetaInfServices;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.Variables;
 import ca.on.oicr.gsi.shesmu.VariablesSource;
@@ -32,7 +33,7 @@ public class JsonFileRepository implements VariablesSource {
 		}
 
 		@Override
-		protected void update(ObjectNode[] values) {
+		protected Optional<Integer> update(ObjectNode[] values) {
 			Stream.of(values).map(node -> new Variables(node.get("accession").asText(), //
 					node.get("path").asText(), //
 					node.get("metatype").asText(), //
@@ -58,6 +59,7 @@ public class JsonFileRepository implements VariablesSource {
 					node.get("library_type").asText(), //
 					Instant.ofEpochMilli(node.get("timestamp").asLong()), //
 					node.get("source").asText())).collect(Collectors.toList());
+			return Optional.empty();
 		}
 
 		public Stream<Variables> variables() {
@@ -65,14 +67,15 @@ public class JsonFileRepository implements VariablesSource {
 		}
 	}
 
-	private final Pair<String, Map<String, String>> configuration;
-	private final List<JsonFile> files;
+	private final AutoUpdatingDirectory<JsonFile> files;
 
 	public JsonFileRepository() {
-		files = RuntimeSupport.dataFiles(".variables").map(JsonFile::new).peek(JsonFile::start)
-				.collect(Collectors.toList());
+		files = new AutoUpdatingDirectory<>(".variables", JsonFile::new);
+	}
 
-		configuration = new Pair<>("Variables from Files",
+	@Override
+	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+		return Stream.of(new Pair<>("Variables from Files",
 				files.stream().sorted().collect(Collectors.toMap(new Function<JsonFile, String>() {
 					int i;
 
@@ -80,12 +83,7 @@ public class JsonFileRepository implements VariablesSource {
 					public String apply(JsonFile t) {
 						return Integer.toString(i++);
 					}
-				}, f -> f.fileName().toString())));
-	}
-
-	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return files.size() > 0 ? Stream.of(configuration) : Stream.empty();
+				}, f -> f.fileName().toString()))));
 	}
 
 	@Override

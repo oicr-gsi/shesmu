@@ -5,7 +5,6 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -17,6 +16,7 @@ import org.kohsuke.MetaInfServices;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
@@ -39,7 +39,7 @@ public class TsvDumperSource implements DumperSource {
 		}
 
 		public Dumper get(String name) {
-			Path path = paths.get(name);
+			final Path path = paths.get(name);
 			return path == null ? null : new Dumper() {
 				private Optional<PrintStream> output = Optional.empty();
 
@@ -47,7 +47,7 @@ public class TsvDumperSource implements DumperSource {
 				public void start() {
 					try {
 						output = Optional.of(new PrintStream(path.toFile()));
-					} catch (FileNotFoundException e) {
+					} catch (final FileNotFoundException e) {
 						e.printStackTrace();
 						output = Optional.empty();
 					}
@@ -74,19 +74,18 @@ public class TsvDumperSource implements DumperSource {
 		}
 
 		@Override
-		protected void update(ObjectNode value) {
+		protected Optional<Integer> update(ObjectNode value) {
 			paths = RuntimeSupport.stream(value.fields())
 					.collect(Collectors.toMap(Entry::getKey, e -> Paths.get(e.getValue().asText())));
-
+			return Optional.empty();
 		}
 	}
 
 	private static final String EXTENSION = ".tsvdump";
-	private final List<DumperConfiguration> configurations;
+	private final AutoUpdatingDirectory<DumperConfiguration> configurations;
 
 	public TsvDumperSource() {
-		configurations = RuntimeSupport.dataFiles(EXTENSION).map(DumperConfiguration::new)
-				.peek(DumperConfiguration::start).collect(Collectors.toList());
+		configurations = new AutoUpdatingDirectory<>(EXTENSION, DumperConfiguration::new);
 	}
 
 	@Override

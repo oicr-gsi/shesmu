@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.AutoUpdatingFile;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -25,6 +24,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.WatchedFileListener;
 
 /**
  * Converts a TSV file into a function
@@ -37,14 +37,16 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
  */
 @MetaInfServices
 public class TableFunctionRepository implements FunctionRepository {
-	private class Table extends AutoUpdatingFile {
+	private class Table implements WatchedFileListener {
+
+		private final Path fileName;
 
 		private Optional<FunctionDefinition> function = Optional.empty();
 
 		private final String name;
 
 		public Table(Path fileName) {
-			super(fileName);
+			this.fileName = fileName;
 			name = RuntimeSupport.removeExtension(fileName, EXTENSION);
 		}
 
@@ -53,13 +55,25 @@ public class TableFunctionRepository implements FunctionRepository {
 					.collect(Collectors.joining(", ", "(", ") " + f.returnType().name()))).orElse("none");
 		}
 
+		@Override
+		public void start() {
+			update();
+		}
+
+		@Override
+		public void stop() {
+
+		}
+
 		public Stream<FunctionDefinition> stream() {
 			return function.map(Stream::of).orElseGet(Stream::empty);
 		}
 
 		@Override
-		protected void update() {
-			function = readLookup(fileName(), name);
+		public Optional<Integer> update() {
+			function = readLookup(fileName, name);
+			return Optional.empty();
+
 		}
 	}
 
@@ -154,7 +168,7 @@ public class TableFunctionRepository implements FunctionRepository {
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		final Map<String, String> map = configuration.stream()
-				.collect(Collectors.toMap(t -> t.fileName().toString(), Table::configuration));
+				.collect(Collectors.toMap(t -> t.fileName.toString(), Table::configuration));
 		return Stream.of(new Pair<>("Table Functions", map));
 	}
 

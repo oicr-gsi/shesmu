@@ -13,7 +13,7 @@ public interface FunctionDefinition {
 
 	/**
 	 * Define a function that binds to a static method
-	 * 
+	 *
 	 * @param owner
 	 *            the class containing the static method
 	 * @param methodName

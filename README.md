@@ -46,7 +46,6 @@ On a Linux server, create a systemd configuration in `/lib/system/shesmu.service
     Environment=CLASSPATH=/srv/shesmu/*
     #Environment=SHESMU_ACTION_URLS=
     Environment=SHESMU_DATA=/srv/shesmu
-    Environment=SHESMU_SCRIPT=/srv/shesmu/main.shesmu
     ExecStart=/usr/bin/java ca.on.oicr.gsi.shesmu.Server
     KillMode=process
 
@@ -54,9 +53,9 @@ On a Linux server, create a systemd configuration in `/lib/system/shesmu.service
     WantedBy=multi-user.target
 
 Now create `/srv/shesmu`. In this directory, the other configuration files will
-be placed (see below). A script containing all the olives should be created as
-`/srv/shesmu/main.shesmu`. If you don't know how to write them, just create an
-empty file and Shesmu will start with that.
+be placed (see below). Shesmu can read many `.shesmu` scripts containing
+multiple olives from `/srv/shesmu`. If you don't know how to write them, just
+create an empty file and Shesmu will start with that.
 
 Start the server using:
 

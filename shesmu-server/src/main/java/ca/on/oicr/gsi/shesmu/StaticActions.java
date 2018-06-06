@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,7 +21,7 @@ public class StaticActions implements LoadedConfiguration {
 		}
 
 		@Override
-		protected void update(StaticAction[] actions) {
+		protected Optional<Integer> update(StaticAction[] actions) {
 			lastCount = actions.length;
 			int success = 0;
 			boolean retry = false;
@@ -56,9 +55,7 @@ public class StaticActions implements LoadedConfiguration {
 			}
 			totalCount.labels(fileName().toString()).set(lastCount);
 			processedCount.labels(fileName().toString()).set(success);
-			if (retry) {
-				retry(15);
-			}
+			return retry ? Optional.of(15) : Optional.empty();
 		}
 	}
 
@@ -70,7 +67,7 @@ public class StaticActions implements LoadedConfiguration {
 			.build("shesmu_static_actions_total_count", "The number of static actions defined in a file.")
 			.labelNames("filename").register();
 
-	private final List<StaticActionFile> configuration;
+	private AutoUpdatingDirectory<StaticActionFile> configuration;
 	private final Supplier<Stream<ActionDefinition>> definitions;
 	private final Map<String, ActionRunner> runners = new HashMap<>();
 	private final Consumer<Action> sink;
@@ -78,17 +75,17 @@ public class StaticActions implements LoadedConfiguration {
 	public StaticActions(Consumer<Action> sink, Supplier<Stream<ActionDefinition>> definitions) {
 		this.sink = sink;
 		this.definitions = definitions;
-		configuration = RuntimeSupport.dataFiles(".actnow").map(StaticActionFile::new)
-				.collect(Collectors.toList());
-	}
-
-	public void start() {
-		configuration.forEach(StaticActionFile::start);
 	}
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
 		return Stream.of(new Pair<>("Static Configuration", configuration.stream()
 				.collect(Collectors.toMap(f -> f.fileName().toString(), f -> Integer.toString(f.lastCount)))));
+	}
+
+	public void start() {
+		if (configuration == null) {
+			configuration = new AutoUpdatingDirectory<>(".actnow", StaticActionFile::new);
+		}
 	}
 }

@@ -7,7 +7,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -50,19 +49,19 @@ public final class Server {
 
 	private final CachedRepository<ActionRepository, ActionDefinition> actionRepository = new CachedRepository<>(
 			ActionRepository.class, 15, ActionRepository::queryActions);
-	private final CompiledGenerator compiler = new CompiledGenerator(Paths.get(System.getenv("SHESMU_SCRIPT")),
-			this::functions, this::actionDefinitions, ConstantSource::all);
+	private final CompiledGenerator compiler = new CompiledGenerator(this::functions, this::actionDefinitions,
+			ConstantSource::all);
+	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
 	private final CachedRepository<FunctionRepository, FunctionDefinition> functionpRepository = new CachedRepository<>(
 			FunctionRepository.class, 15, FunctionRepository::queryFunctions);
+	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
-	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
-	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
-	private final StaticActions staticActions = new StaticActions(processor::accept, this::actionDefinitions);
-
 	private final Instant startTime = Instant.now();
 
-	private final MasterRunner z_master = new MasterRunner(compiler::generator, processor);
+	private final StaticActions staticActions = new StaticActions(processor::accept, this::actionDefinitions);
+
+	private final MasterRunner z_master = new MasterRunner(compiler, processor);
 
 	public Server(int port) throws IOException {
 		server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -227,10 +226,10 @@ public final class Server {
 			}
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
-			ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+			final ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
 			try {
 				loader.load(node);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				node.put("error", e.getMessage());
 			}
 			try (OutputStream os = t.getResponseBody()) {
@@ -254,10 +253,10 @@ public final class Server {
 			}
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
-			ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
+			final ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
 			try {
 				runner.run(query.getArgs(), node);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				node.put("error", e.getMessage());
 			}
 			try (OutputStream os = t.getResponseBody()) {
@@ -385,7 +384,10 @@ public final class Server {
 		System.out.println("Starting server...");
 		server.start();
 		System.out.println("Waiting for files to be scanned...");
+		actionRepository.implementations().count();
 		ConstantSource.sources().count();
+		functionpRepository.implementations().count();
+		Throttler.services().count();
 		try {
 			Thread.sleep(5000);
 		} catch (final InterruptedException e) {

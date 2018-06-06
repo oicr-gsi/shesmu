@@ -343,7 +343,7 @@ public final class RuntimeSupport {
 	}
 
 	public static <T> Stream<T> reverse(Stream<T> input) {
-		List<T> data = input.collect(Collectors.toList());
+		final List<T> data = input.collect(Collectors.toList());
 		Collections.reverse(data);
 		return data.stream();
 	}
@@ -373,7 +373,7 @@ public final class RuntimeSupport {
 	public static <T> Stream<T> stream(Spliterator<T> spliterator) {
 		return StreamSupport.stream(spliterator, false);
 	}
-	
+
 	private RuntimeSupport() {
 	}
 }

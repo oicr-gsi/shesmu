@@ -11,18 +11,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
 import io.prometheus.client.Counter;
 import net.schmizz.sshj.SSHClient;
@@ -163,7 +162,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 		}
 
 		@Override
-		protected synchronized void update(Configuration configuration) {
+		public synchronized Optional<Integer> update(Configuration configuration) {
 			properties.put("host", configuration.getHost());
 			properties.put("port", Integer.toString(configuration.getPort()));
 			properties.put("user", configuration.getUser());
@@ -177,6 +176,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 				e.printStackTrace();
 			}
 			attemptConnect();
+			return Optional.empty();
 		}
 	}
 
@@ -186,10 +186,10 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 	private static final String EXTENSION = ".sftp";
 
-	private final List<SftpServer> configurations;
+	private final AutoUpdatingDirectory<SftpServer> configurations;
 
 	public SftpFunctionRepository() {
-		configurations = RuntimeSupport.dataFiles(EXTENSION).map(SftpServer::new).collect(Collectors.toList());
+		configurations = new AutoUpdatingDirectory<>(EXTENSION,SftpServer::new);
 	}
 
 	@Override

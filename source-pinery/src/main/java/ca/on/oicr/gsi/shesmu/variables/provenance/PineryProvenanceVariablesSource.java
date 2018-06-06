@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.provenance.PineryProvenanceProvider;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
@@ -66,7 +67,8 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 								"", //
 								"", //
 								"", //
-								new Tuple(lp.getSequencerRunName(), Utils.parseLaneNumber(lp.getLaneNumber()), "NoIndex"), //
+								new Tuple(lp.getSequencerRunName(), Utils.parseLaneNumber(lp.getLaneNumber()),
+										"NoIndex"), //
 								"", //
 								"", //
 								"", //
@@ -157,11 +159,12 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 		}
 
 		@Override
-		protected void update(ObjectNode value) {
+		public Optional<Integer> update(ObjectNode value) {
 			properties = RuntimeSupport.stream(value.fields())
 					.collect(Collectors.toMap(Entry::getKey, e -> e.getValue().asText()));
 			properties.put("file", fileName().toString());
 			provider = Optional.of(new PineryProvenanceProvider(properties));
+			return Optional.empty();
 		}
 	}
 
@@ -194,11 +197,10 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 		return Utils.singleton(sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
 	}
 
-	private final List<PinerySource> sources;
+	private final AutoUpdatingDirectory<PinerySource> sources;
 
 	public PineryProvenanceVariablesSource() {
-		sources = RuntimeSupport.dataFiles(EXTENSION).map(PinerySource::new).peek(PinerySource::start)
-				.collect(Collectors.toList());
+		sources = new AutoUpdatingDirectory<>(EXTENSION, PinerySource::new);
 	}
 
 	@Override
