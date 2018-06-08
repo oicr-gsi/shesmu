@@ -1,11 +1,11 @@
 package ca.on.oicr.gsi.shesmu.actions.rest;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.http.client.ClientProtocolException;
@@ -17,48 +17,65 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 @MetaInfServices
 public final class RemoteActionRepository implements ActionRepository {
 
+	private class Remote extends AutoUpdatingJsonFile<Configuration> {
+
+		private String url = null;
+
+		public Remote(Path fileName) {
+			super(fileName, Configuration.class);
+		}
+
+		private Pair<String, Map<String, String>> configuration() {
+			final Map<String, String> map = new TreeMap<>();
+			map.put("url", url);
+			map.put("file", fileName().toString());
+			return new Pair<>("Remote Action Repository", map);
+		}
+
+		private Stream<ActionDefinition> queryActionsCatalog() {
+			if (url == null) {
+				return Stream.empty();
+			}
+			try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(url + "/actioncatalog"))) {
+				return Arrays
+						.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), Definition[].class))
+						.map(def -> def.toDefinition(url));
+			} catch (final ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+			return Stream.empty();
+		}
+
+		@Override
+		protected Optional<Integer> update(Configuration value) {
+			url = value.getUrl();
+			return Optional.empty();
+		}
+
+	}
+
 	private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
-	private static final Pattern SEMICOLON = Pattern.compile(";");
-
-	public Optional<String> environmentVariable() {
-		return Optional.ofNullable(System.getenv("SHESMU_ACTION_URLS"));
-	}
+	private final AutoUpdatingDirectory<Remote> configurations = new AutoUpdatingDirectory<>(".remote", Remote::new);
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return environmentVariable().map(url -> {
-			final Map<String, String> map = new TreeMap<>();
-			map.put("url", url);
-			return Stream.of(new Pair<>("Remote Action Repositories", map));
-		}).orElse(Stream.empty());
+		return configurations.stream().map(Remote::configuration);
 	}
 
 	@Override
 	public Stream<ActionDefinition> queryActions() {
-		return roots().flatMap(this::queryActionsCatalog);
-	}
-
-	private Stream<ActionDefinition> queryActionsCatalog(String url) {
-		try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(url + "/actioncatalog"))) {
-			return Arrays.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), Definition[].class))
-					.map(def -> def.toDefinition(url));
-		} catch (final ClientProtocolException e) {
-			e.printStackTrace();
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
-		return Stream.empty();
-	}
-
-	private Stream<String> roots() {
-		return environmentVariable().map(SEMICOLON::splitAsStream).orElse(Stream.empty());
+		return configurations.stream().flatMap(Remote::queryActionsCatalog);
 	}
 
 }
