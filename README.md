@@ -44,7 +44,6 @@ On a Linux server, create a systemd configuration in `/lib/system/shesmu.service
 
     [Service]
     Environment=CLASSPATH=/srv/shesmu/*
-    #Environment=SHESMU_ACTION_URLS=
     Environment=SHESMU_DATA=/srv/shesmu
     ExecStart=/usr/bin/java ca.on.oicr.gsi.shesmu.Server
     KillMode=process
@@ -87,8 +86,9 @@ For Shesmu to know what actions it can perform, it uses an action repository. A
 new action repository can be created using the `ActionRepository` interface.
 The following are available:
 
-- JSON-over-HTTP interface. To define, add to the `SHESMU_ACTION_URLS`
-  environment variable. See [the remote action repository specification](api.md).
+- JSON-over-HTTP interface. To add one, create a JSON file ending in `.remote`,
+  in the `SHESMU_DATA` directory, containing `{ "url": ... }`. See
+  [the remote action repository specification](api.md).
 - JSON-over-HTTP using a local repository definition. To define, create a JSON
 	file ending in `.actions` in the `SHESMU_DATA` directory with
 	`{"definitions":[...], "url": ...}`, where `url` is the URL to the HTTP
