@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -29,11 +30,13 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
+	private static final Method JSON_OBJECT__HAS = new Method("has", Type.BOOLEAN_TYPE, new Type[] { A_STRING_TYPE });
 	private static final Method JSON_OBJECT__GET = new Method("get", A_JSON_NODE_TYPE, new Type[] { A_STRING_TYPE });
 	private static final Method LOAD_METHOD = new Method("run", Type.VOID_TYPE, new Type[] { A_JSON_OBJECT_TYPE });
 
 	private static final Method METHOD_IMYHAT__UNPACK_JSON = new Method("unpackJson", A_OBJECT_TYPE,
 			new Type[] { A_JSON_NODE_TYPE });
+
 	public static ActionRunner compile(ActionDefinition function) {
 		return new ActionRunnerCompiler(function).compile();
 	}
@@ -63,6 +66,14 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 		action.initialize(handle);
 		handle.storeLocal(actionLocal);
 		action.parameters().forEach(parameter -> {
+			Label end = null;
+			if (!parameter.required()) {
+				end = handle.newLabel();
+				handle.loadArg(0);
+				handle.push(parameter.name());
+				handle.invokeVirtual(A_JSON_OBJECT_TYPE, JSON_OBJECT__HAS);
+				handle.ifZCmp(GeneratorAdapter.EQ, end);
+			}
 			parameter.store(new Renderer(null, handle, 0, null, Stream.empty()), actionLocal, r -> {
 				r.loadImyhat(parameter.type().signature());
 				r.methodGen().loadArg(0);
@@ -71,6 +82,9 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 				handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__UNPACK_JSON);
 				handle.unbox(parameter.type().asmType());
 			});
+			if (end != null) {
+				handle.mark(end);
+			}
 		});
 		handle.loadLocal(actionLocal);
 		handle.visitInsn(Opcodes.RETURN);
