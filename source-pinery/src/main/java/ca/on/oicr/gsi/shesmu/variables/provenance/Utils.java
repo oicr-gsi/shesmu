@@ -42,7 +42,7 @@ public final class Utils {
 		}
 	}
 
-	public static Optional<String> singleton(Collection<String> items, Consumer<String> isBad, boolean required) {
+	public static <T> Optional<T> singleton(Collection<T> items, Consumer<String> isBad, boolean required) {
 		if (items == null) {
 			if (required) {
 				isBad.accept("null");

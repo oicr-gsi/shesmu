@@ -80,6 +80,8 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 								0L, //
 								"", //
 								lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(), //
+								new Tuple(lp.getLaneProvenanceId(), lp.getVersion(),
+										properties.getOrDefault("provider", "unknown")), //
 								"lane_provenance");
 
 						if (badSetInRecord.isEmpty()) {
@@ -120,6 +122,8 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 								.orElse(0L), //
 						limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
 						sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
+						new Tuple(sp.getSampleProvenanceId(), sp.getVersion(),
+								properties.getOrDefault("provider", "unknown")), //
 						"sample_provenance");
 
 				if (badSetInRecord.isEmpty()) {

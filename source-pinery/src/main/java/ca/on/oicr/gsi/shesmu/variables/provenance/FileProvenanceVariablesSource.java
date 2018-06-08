@@ -28,6 +28,8 @@ import org.kohsuke.MetaInfServices;
 import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
+import ca.on.oicr.gsi.provenance.model.IusLimsKey;
+import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
@@ -144,6 +146,9 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 						.map(fp -> {
 							final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
 							final Set<String> badSetInRecord = new TreeSet<>();
+							final Optional<LimsKey> limsKey = Utils.singleton(fp.getIusLimsKeys(),
+									reason -> badSetInRecord.add("limskey:" + reason), true)
+									.map(IusLimsKey::getLimsKey);
 							final Variables result = new Variables(//
 									fp.getFileSWID().toString(), //
 									fp.getFilePath(), //
@@ -176,6 +181,9 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 											.map(Utils::parseLong).orElse(0L), //
 									limsAttr(fp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
 									fp.getLastModified().toInstant(), //
+									new Tuple(limsKey.map(LimsKey::getId).orElse(""),
+											limsKey.map(LimsKey::getVersion).orElse(""),
+											limsKey.map(LimsKey::getProvider).orElse("")), //
 									"file_provenance");
 
 							if (!badSetInRecord.isEmpty()) {

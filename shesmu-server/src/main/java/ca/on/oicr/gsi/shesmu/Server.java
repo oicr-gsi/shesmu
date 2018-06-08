@@ -294,6 +294,9 @@ public final class Server {
 						jGenerator.writeStringField("library_name", variable.library_name());
 						jGenerator.writeNumberField("library_size", variable.library_size());
 						jGenerator.writeStringField("library_type", variable.library_type());
+						jGenerator.writeStringField("lims_id",(String) variable.lims().get(0));
+						jGenerator.writeStringField("lims_version",(String) variable.lims().get(1));
+						jGenerator.writeStringField("lims_provider", (String)variable.lims().get(2));
 						jGenerator.writeStringField("md5", variable.md5());
 						jGenerator.writeStringField("metatype", variable.metatype());
 						jGenerator.writeStringField("path", variable.path());
