@@ -61,6 +61,7 @@ public final class OliveNodeRun extends OliveNode {
 			parameter.render(action, local);
 		});
 		action.methodGen().visitLineNumber(line, action.methodGen().mark());
+		definition.finalize(action.methodGen(), local);
 		oliveBuilder.emitAction(action.methodGen(), local);
 		action.methodGen().visitInsn(Opcodes.RETURN);
 		action.methodGen().visitMaxs(0, 0);

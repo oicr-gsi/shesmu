@@ -25,6 +25,13 @@ public abstract class ActionDefinition {
 	}
 
 	/**
+	 * Write bytecode to finish preparing a new instance of an action
+	 */
+	public void finalize(GeneratorAdapter methodGen, int actionLocal) {
+		// Do nothing
+	}
+
+	/**
 	 * Write the bytecode to create a new instance of the action.
 	 *
 	 * This method should create an new instance of the action and leave it on the

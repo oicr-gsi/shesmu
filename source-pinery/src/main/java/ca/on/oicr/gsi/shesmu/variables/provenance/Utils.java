@@ -3,7 +3,9 @@ package ca.on.oicr.gsi.shesmu.variables.provenance;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,6 +42,10 @@ public final class Utils {
 		} catch (final NumberFormatException e) {
 			return 0;
 		}
+	}
+
+	static <T> void setProvider(Map<String, T> source, BiConsumer<String, T> consumer) {
+		source.entrySet().stream().forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
 	}
 
 	public static <T> Optional<T> singleton(Collection<T> items, Consumer<String> isBad, boolean required) {
