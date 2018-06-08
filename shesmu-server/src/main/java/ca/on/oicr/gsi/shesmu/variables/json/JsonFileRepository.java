@@ -58,6 +58,8 @@ public class JsonFileRepository implements VariablesSource {
 					node.get("library_size").asLong(), //
 					node.get("library_type").asText(), //
 					Instant.ofEpochMilli(node.get("timestamp").asLong()), //
+					new Tuple(node.get("lims_id").asText(), node.get("lims_version").asText(),
+							node.get("lims_provider").asText()), //
 					node.get("source").asText())).collect(Collectors.toList());
 			return Optional.empty();
 		}

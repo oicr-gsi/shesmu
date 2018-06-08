@@ -19,6 +19,7 @@ public final class Variables {
 	private final String library_name;
 	private final long library_size;
 	private final String library_type;
+	private final Tuple lims;
 	private final String md5;
 	private final String metatype;
 	private final String path;
@@ -38,7 +39,8 @@ public final class Variables {
 			String workflow_accession, Tuple workflow_version, String project, String library_name, String donor,
 			Tuple ius, String library_design, String tissue_type, String tissue_origin, String tissue_prep,
 			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
-			String library_type, Instant timestamp, String source) {
+			String library_type, Instant timestamp, Tuple lims,
+			String source) {
 		super();
 		this.accession = accession;
 		this.path = path;
@@ -63,6 +65,7 @@ public final class Variables {
 		this.library_size = library_size;
 		this.library_type = library_type;
 		this.timestamp = timestamp;
+		this.lims = lims;
 		this.source = source;
 	}
 
@@ -320,6 +323,11 @@ public final class Variables {
 	@Export(type = "s")
 	public String library_type() {
 		return library_type;
+	}
+
+	@Export(type = "t3sss")
+	public Tuple lims() {
+		return lims;
 	}
 
 	@Export(type = "s")
