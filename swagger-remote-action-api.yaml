@@ -1,85 +1,89 @@
-swagger: "2.0"
+openapi: 3.0.0
+servers: []
 info:
-  description: "This API is implemented by action repositories connected to [Shesmu](https://github.com/oicr-gsi/shesmu). Shesmu itself does not implement the API."
-  version: "1.0.0"
-  title: "Shesmu Action Repository"
+  description: >-
+    This API is implemented by action repositories connected to
+    [Shesmu](https://github.com/oicr-gsi/shesmu). Shesmu itself does not
+    implement the API.
+  version: 1.0.0
+  title: Shesmu Action Repository
   contact:
-    email: "apiteam@swagger.io"
+    email: andre.masella@oicr.on.ca
   license:
-    name: "Apache 2.0"
-    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-schemes:
-- "http"
+    name: MIT
+    url: 'https://opensource.org/licenses/MIT'
 paths:
   /actioncatalog:
     get:
-      summary: "Get a list of actions that can be performed by this server."
-      description: ""
-      operationId: "getCatalog"
-      produces:
-      - "application/json"
+      summary: Get a list of actions that can be performed by this server.
+      description: ''
+      operationId: getCatalog
       responses:
-        200:
-          description: "Action catalog transmitted"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/ActionDefinition"
+        '200':
+          description: Action catalog transmitted
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  : '#/components/schemas/ActionDefinition'
   /launchaction:
     post:
-      summary: "Run an action or check its status"
-      description: ""
-      operationId: "launchAction"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "Causes an action to be launched. The status code indicates whether the job has successfully finished running. If completed successfully, an optional URL may be provided where the result may be viewed."
-        required: true
-        schema:
-          $ref: "#/definitions/ActionRequest"
+      summary: Run an action or check its status
+      description: ''
+      operationId: launchAction
       responses:
-        200:
-          description: "The action has been completed and the results are available"
-          schema:
-            $ref: "#/definitions/ActionResult"
-        202:
-          description: "The action has been started but is still in progress"
-        400:
-          description: "The names of the parameters or the types do not match."
-        503:
-          description: "The server has a backlog of requests and cannot queue the action for execution."
-definitions:
-  ActionDefinition:
-    type: "object"
-    properties:
-      name:
-        type: "string"
-      parameters:
-        type: "object"
-        additionalProperties:
-          type: "object"
-          properties:
-            type:
-              type: "string"
-              format: "signature"
-            required:
-              type: "boolean"
-  ActionRequest:
-    type: "object"
-    properties:
-      arguments:
-        type: "object"
-      name:
-        type: "string"
-    xml:
-      name: "Category"
-  ActionResult:
-    type: "object"
-    properties:
-      url:
-        type: "string"
-        format: "url"
+        '200':
+          description: The action has been completed and the results are available
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ActionResult'
+        '202':
+          description: The action has been started but is still in progress
+        '400':
+          description: The names of the parameters or the types do not match.
+        '503':
+          description: >-
+            The server has a backlog of requests and cannot queue the action for
+            execution.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              : '#/components/schemas/ActionRequest'
+        description: >-
+          Causes an action to be launched. The status code indicates whether the
+          job has successfully finished running. If completed successfully, an
+          optional URL may be provided where the result may be viewed.
+        required: true
+components:
+  schemas:
+    ActionDefinition:
+      type: object
+      properties:
+        name:
+          type: string
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              type:
+                type: string
+                format: signature
+              required:
+                type: boolean
+    ActionRequest:
+      type: object
+      properties:
+        arguments:
+          type: object
+        name:
+          type: string
+    ActionResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: url
