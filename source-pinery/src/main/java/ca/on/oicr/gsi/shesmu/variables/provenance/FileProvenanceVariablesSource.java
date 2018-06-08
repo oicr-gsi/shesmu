@@ -16,7 +16,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -106,10 +105,6 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 		return new Tuple(0L, 0L, 0L);
 	}
 
-	private static <T> void setProvider(Map<String, T> source, BiConsumer<String, T> consumer) {
-		source.entrySet().stream().forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
-	}
-
 	private List<Variables> cache = Collections.emptyList();
 
 	private final DefaultProvenanceClient client = new DefaultProvenanceClient();
@@ -120,9 +115,9 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 
 	public FileProvenanceVariablesSource() throws IOException {
 		Utils.LOADER.ifPresent(loader -> {
-			setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
-			setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
-			setProvider(loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
+			Utils.setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
+			Utils.setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
+			Utils.setProvider(loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
 			properties.put("analyis providers", Integer.toString(loader.getAnalysisProvenanceProviders().size()));
 			properties.put("lane providers", Integer.toString(loader.getLaneProvenanceProviders().size()));
 			properties.put("sample providers", Integer.toString(loader.getSampleProvenanceProviders().size()));

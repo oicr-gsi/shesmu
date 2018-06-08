@@ -103,8 +103,7 @@ public final class RuntimeSupport {
 	 */
 	@RuntimeInterop
 	public static StringBuilder appendFormatted(StringBuilder builder, Instant instant, String format) {
-		return builder
-				.append(DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC)));
+		return builder.append(toString(instant, format));
 	}
 
 	/**
@@ -372,6 +371,11 @@ public final class RuntimeSupport {
 
 	public static <T> Stream<T> stream(Spliterator<T> spliterator) {
 		return StreamSupport.stream(spliterator, false);
+	}
+
+	@RuntimeInterop
+	public static String toString(Instant instant, String format) {
+		return DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
 	}
 
 	private RuntimeSupport() {
