@@ -17,6 +17,7 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.Cache;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -38,7 +39,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		private final List<FunctionDefinition> definitions = new ArrayList<>();
 
-		private final Cache<Boolean> exists = new Cache<Boolean>("fileexists") {
+		private final Cache<String, Boolean> exists = new Cache<String, Boolean>("sftp-fileexists", 10) {
 
 			@Override
 			protected Boolean fetch(String fileName) throws IOException {
@@ -46,7 +47,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 			}
 		};
 
-		private final Cache<Instant> mtime = new Cache<Instant>("modificationtime") {
+		private final Cache<String, Instant> mtime = new Cache<String, Instant>("sftp-modificationtime", 10) {
 
 			@Override
 			protected Instant fetch(String fileName) throws IOException {
@@ -60,7 +61,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		private volatile SFTPClient sftp;
 
-		private final Cache<Long> size = new Cache<Long>("filesize") {
+		private final Cache<String,Long> size = new Cache<String,Long>("sftp-filesize", 10) {
 
 			@Override
 			protected Long fetch(String fileName) throws IOException {
