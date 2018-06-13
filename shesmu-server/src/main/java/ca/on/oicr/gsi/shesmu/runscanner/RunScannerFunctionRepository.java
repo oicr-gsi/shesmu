@@ -2,7 +2,10 @@ package ca.on.oicr.gsi.shesmu.runscanner;
 
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -35,8 +38,8 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 
 		private final Pair<String, Map<String, String>> configurationPair;
 		private final String instance;
-		private final FunctionDefinition laneCount;
-		private final Map<String, Long> laneCountCache = new HashMap<>();
+		private final List<FunctionDefinition> functions;
+		private final Map<String, ObjectNode> runCache = new HashMap<>();
 		private final Map<String, String> properties = new TreeMap<>();
 		private Optional<String> url = Optional.empty();
 
@@ -44,17 +47,31 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 			super(fileName, Configuration.class);
 			instance = RuntimeSupport.removeExtension(fileName, EXTENSION);
 			configurationPair = new Pair<>(String.format("RunScanner Function for %s", instance), properties);
-			FunctionDefinition laneCount;
+			List<FunctionDefinition> functions;
 			try {
-				laneCount = FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "laneCount",
-						String.format("%s_lane_count", instance),
-						String.format("Get the number of lanes detected by the Run Scanner defined in %s", fileName),
-						Imyhat.INTEGER, Imyhat.STRING);
+				functions = Arrays.asList(//
+						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "laneCount",
+								String.format("%s_lane_count", instance),
+								String.format("Get the number of lanes detected by the Run Scanner defined in %s",
+										fileName),
+								Imyhat.INTEGER, Imyhat.STRING), //
+						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "readEnds",
+								String.format("%s_read_ends", instance),
+								String.format("Get the number of reads detected by the Run Scanner defined in %s",
+										fileName),
+								Imyhat.INTEGER, Imyhat.STRING), //
+						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "flowcell",
+								String.format("%s_flowcell", instance),
+								String.format(
+										"Get the serial number of the flowcell detected by the Run Scanner defined in %s",
+										fileName),
+								Imyhat.INTEGER, Imyhat.STRING)//
+				);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
-				laneCount = null;
+				functions = Collections.emptyList();
 				e.printStackTrace();
 			}
-			this.laneCount = laneCount;
+			this.functions = functions;
 		}
 
 		public Pair<String, Map<String, String>> configuration() {
@@ -62,39 +79,70 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 		}
 
 		public Stream<FunctionDefinition> functions() {
-			return laneCount == null ? Stream.empty() : Stream.of(laneCount);
+			return functions.stream();
 		}
 
-		@RuntimeInterop
-		public long laneCount(String runName) {
-			if (laneCountCache.containsKey(runName)) {
-				return laneCountCache.get(runName);
+		private Optional<ObjectNode> fetch(String runName) {
+			if (runCache.containsKey(runName)) {
+				return Optional.of(runCache.get(runName));
 			}
-			return url.<Long>map(u -> {
+			return url.flatMap(u -> {
 				final HttpGet request = new HttpGet(String.format("%s/run/%s", u, runName));
 				try (AutoCloseable timer = requestTime.start(u);
 						CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
 					if (response.getStatusLine().getStatusCode() != 200) {
 						requestErrors.labels(u).inc();
-						return -1L;
+						return Optional.empty();
 					}
-					final ObjectNode result = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
+					ObjectNode run = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
 							ObjectNode.class);
-					if (result.has("laneCount")) {
-						final JsonNode laneCount = result.get("laneCount");
-						if (laneCount.isIntegralNumber()) {
-							final long count = laneCount.asLong();
-							laneCountCache.put(runName, count);
-							return count;
-						}
-					}
-					return -1L;
+					runCache.put(runName, run);
+					return Optional.of(run);
 				} catch (final Exception e) {
 					e.printStackTrace();
 					requestErrors.labels(u).inc();
-					return -1L;
+					return Optional.empty();
 				}
+			});
+
+		}
+
+		@RuntimeInterop
+		public long laneCount(String runName) {
+			return fetch(runName).map(run -> {
+				if (run.has("laneCount")) {
+					final JsonNode laneCount = run.get("laneCount");
+					if (laneCount.isIntegralNumber()) {
+						final long count = laneCount.asLong();
+						return count;
+					}
+				}
+				return -1L;
 			}).orElse(-1L);
+		}
+
+		@RuntimeInterop
+		public long readEnds(String runName) {
+			return fetch(runName).map(run -> {
+				if (run.has("numReads")) {
+					final JsonNode laneCount = run.get("numReads");
+					if (laneCount.isIntegralNumber()) {
+						final long count = laneCount.asLong();
+						return count;
+					}
+				}
+				return -1L;
+			}).orElse(-1L);
+		}
+
+		@RuntimeInterop
+		public String flowcell(String runName) {
+			return fetch(runName).map(run -> {
+				if (run.has("containerSerialNumber")) {
+					return run.get("containerSerialNumber").asText();
+				}
+				return "";
+			}).orElse("");
 		}
 
 		@Override
