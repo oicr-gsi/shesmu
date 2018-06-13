@@ -15,6 +15,7 @@ public final class Variables {
 	private final String group_desc;
 	private final String group_id;
 	private final Tuple ius;
+	private final String kit;
 	private final String library_design;
 	private final String library_name;
 	private final long library_size;
@@ -39,8 +40,7 @@ public final class Variables {
 			String workflow_accession, Tuple workflow_version, String project, String library_name, String donor,
 			Tuple ius, String library_design, String tissue_type, String tissue_origin, String tissue_prep,
 			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
-			String library_type, Instant timestamp, Tuple lims,
-			String source) {
+			String library_type, String kit, Instant timestamp, Tuple lims, String source) {
 		super();
 		this.accession = accession;
 		this.path = path;
@@ -64,6 +64,7 @@ public final class Variables {
 		this.group_desc = group_desc;
 		this.library_size = library_size;
 		this.library_type = library_type;
+		this.kit = kit;
 		this.timestamp = timestamp;
 		this.lims = lims;
 		this.source = source;
@@ -303,6 +304,11 @@ public final class Variables {
 	@Export(type = "t3sis")
 	public Tuple ius() {
 		return ius;
+	}
+
+	@Export(type = "s")
+	public String kit() {
+		return kit;
 	}
 
 	@Export(type = "s")
