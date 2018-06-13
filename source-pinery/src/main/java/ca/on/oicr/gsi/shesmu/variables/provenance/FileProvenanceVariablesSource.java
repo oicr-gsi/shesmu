@@ -180,6 +180,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 									limsAttr(fp, "geo_library_size_code", badSetInRecord::add, false)
 											.map(Utils::parseLong).orElse(0L), //
 									limsAttr(fp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
+									limsAttr(fp, "geo_prep_kit", badSetInRecord::add, false).orElse(""), //
 									fp.getLastModified().toInstant(), //
 									new Tuple(limsKey.map(LimsKey::getId).orElse(""),
 											limsKey.map(LimsKey::getVersion).orElse(""),

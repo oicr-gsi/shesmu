@@ -290,13 +290,14 @@ public final class Server {
 						jGenerator.writeStringField("ius_0", (String) variable.ius().get(0));
 						jGenerator.writeNumberField("ius_1", (Long) variable.ius().get(1));
 						jGenerator.writeStringField("ius_2", (String) variable.ius().get(2));
+						jGenerator.writeStringField("kit", variable.kit());
 						jGenerator.writeStringField("library_design", variable.library_design());
 						jGenerator.writeStringField("library_name", variable.library_name());
 						jGenerator.writeNumberField("library_size", variable.library_size());
 						jGenerator.writeStringField("library_type", variable.library_type());
-						jGenerator.writeStringField("lims_id",(String) variable.lims().get(0));
-						jGenerator.writeStringField("lims_version",(String) variable.lims().get(1));
-						jGenerator.writeStringField("lims_provider", (String)variable.lims().get(2));
+						jGenerator.writeStringField("lims_id", (String) variable.lims().get(0));
+						jGenerator.writeStringField("lims_version", (String) variable.lims().get(1));
+						jGenerator.writeStringField("lims_provider", (String) variable.lims().get(2));
 						jGenerator.writeStringField("md5", variable.md5());
 						jGenerator.writeStringField("metatype", variable.metatype());
 						jGenerator.writeStringField("path", variable.path());
