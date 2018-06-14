@@ -14,7 +14,7 @@ public class DoNothing extends Action implements JsonParameterised {
 	private final ObjectNode parameters = RuntimeSupport.MAPPER.createObjectNode();
 
 	public DoNothing(String name) {
-		super();
+		super("fake");
 		this.name = name;
 	}
 
@@ -79,7 +79,6 @@ public class DoNothing extends Action implements JsonParameterised {
 	@Override
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("type", "fake");
 		node.put("name", name);
 		node.set("parameters", parameters);
 		return node;

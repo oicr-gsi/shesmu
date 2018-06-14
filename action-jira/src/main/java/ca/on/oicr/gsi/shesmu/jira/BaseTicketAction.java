@@ -41,12 +41,11 @@ public abstract class BaseTicketAction extends Action {
 
 	private URI issueUrl;
 
-	private final String jsonName;
 	@RuntimeInterop
 	public String summary;
 
 	public BaseTicketAction(String id, String jsonName) {
-		this.jsonName = jsonName;
+		super(jsonName);
 		config = BaseJiraRepository.get(id);
 	}
 
@@ -152,7 +151,6 @@ public abstract class BaseTicketAction extends Action {
 	@Override
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("type", jsonName);
 		node.put("instanceName", config.instance());
 		node.put("summary", summary);
 		node.put("url", issueUrl == null ? null : issueUrl.toString());

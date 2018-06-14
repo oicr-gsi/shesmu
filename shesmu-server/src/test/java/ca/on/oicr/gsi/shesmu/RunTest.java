@@ -43,6 +43,10 @@ public class RunTest {
 
 	public static class OkAction extends Action {
 
+		public OkAction() {
+			super("ok");
+		}
+
 		public boolean ok;
 
 		@Override

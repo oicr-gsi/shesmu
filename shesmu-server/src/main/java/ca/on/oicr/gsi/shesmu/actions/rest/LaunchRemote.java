@@ -38,6 +38,7 @@ public final class LaunchRemote extends Action implements JsonParameterised {
 	private String resultUrl;
 
 	private LaunchRemote(String launchUrl, String name) {
+		super("remote-action");
 		this.launchUrl = launchUrl;
 		request.put("name", name);
 		request.set("parameters", parameters);
