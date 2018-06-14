@@ -55,7 +55,7 @@ public class RunReport extends Action implements JsonParameterised {
 	private final String 观音Url;
 
 	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId) {
-		super();
+		super("guanyin-report");
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;
 		this.观音Url = 观音Url;

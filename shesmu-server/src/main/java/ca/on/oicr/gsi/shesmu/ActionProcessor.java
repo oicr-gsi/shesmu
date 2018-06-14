@@ -7,7 +7,9 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +28,7 @@ public final class ActionProcessor {
 	 * A filter all the actions based on some criteria
 	 */
 	public static abstract class Filter {
-		protected abstract boolean check(Information info);
+		protected abstract boolean check(Action action, Information info);
 
 		/**
 		 * Produce a filter that selects the opposite output of this filter.
@@ -36,8 +38,8 @@ public final class ActionProcessor {
 			return new Filter() {
 
 				@Override
-				protected boolean check(Information info) {
-					return !owner.check(info);
+				protected boolean check(Action action, Information info) {
+					return !owner.check(action, info);
 				}
 
 			};
@@ -73,8 +75,26 @@ public final class ActionProcessor {
 		return new Filter() {
 
 			@Override
-			protected boolean check(Information info) {
+			protected boolean check(Action action, Information info) {
 				return set.contains(info.lastState);
+			}
+
+		};
+	}
+
+	/**
+	 * Check that a filter has been updated in after the timestamp specified.
+	 *
+	 * @param instant
+	 *            the exclusive cut-off timestamp
+	 */
+	public static Filter type(String... types) {
+		final Set<String> set = Stream.of(types).collect(Collectors.toSet());
+		return new Filter() {
+
+			@Override
+			protected boolean check(Action action, Information info) {
+				return set.contains(action.type());
 			}
 
 		};
@@ -90,7 +110,7 @@ public final class ActionProcessor {
 		return new Filter() {
 
 			@Override
-			protected boolean check(Information info) {
+			protected boolean check(Action action, Information info) {
 				return info.lastChecked.isAfter(instant);
 			}
 
@@ -132,8 +152,8 @@ public final class ActionProcessor {
 	}
 
 	private Stream<Entry<Action, Information>> startStream(Filter... filters) {
-		return actions.entrySet().stream()
-				.filter(entry -> Arrays.stream(filters).allMatch(filter -> filter.check(entry.getValue())));
+		return actions.entrySet().stream().filter(
+				entry -> Arrays.stream(filters).allMatch(filter -> filter.check(entry.getKey(), entry.getValue())));
 	}
 
 	/**
@@ -168,6 +188,7 @@ public final class ActionProcessor {
 			final ObjectNode node = entry.getKey().toJson(mapper);
 			node.put("state", entry.getValue().lastState.name());
 			node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
+			node.put("type", entry.getKey().type());
 			return node;
 		});
 	}

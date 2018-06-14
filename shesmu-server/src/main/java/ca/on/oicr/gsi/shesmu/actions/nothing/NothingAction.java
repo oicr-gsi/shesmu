@@ -9,6 +9,10 @@ import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 
 public class NothingAction extends Action {
 
+	public NothingAction() {
+		super("nothing");
+	}
+
 	@RuntimeInterop
 	public String value = "";
 

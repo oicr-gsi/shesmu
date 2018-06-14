@@ -37,7 +37,9 @@ public class Query {
 
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 	@JsonSubTypes({ //
-			@Type(value = FilterStatus.class, name = "status"), @Type(value = FilterAfter.class, name = "after") })
+			@Type(value = FilterStatus.class, name = "status"), //
+			@Type(value = FilterAfter.class, name = "after"), //
+			@Type(value = FilterType.class, name = "type") })
 	public static abstract class FilterJson {
 		public abstract Filter convert();
 	}
@@ -57,6 +59,24 @@ public class Query {
 		public void setState(ActionState[] states) {
 			this.states = states;
 		}
+	}
+
+	public static class FilterType extends FilterJson {
+		private String[] types;
+
+		@Override
+		public Filter convert() {
+			return ActionProcessor.type(types);
+		}
+
+		public String[] getTypes() {
+			return types;
+		}
+
+		public void setTypes(String[] types) {
+			this.types = types;
+		}
+
 	}
 
 	FilterJson[] filters;

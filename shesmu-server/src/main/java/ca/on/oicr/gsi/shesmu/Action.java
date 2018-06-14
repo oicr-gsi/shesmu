@@ -19,6 +19,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * information must be baked into its constructor.
  */
 public abstract class Action {
+	private final String type;
+
+	public Action(String type) {
+		super();
+		this.type = type;
+	}
+
 	@Override
 	public abstract boolean equals(Object other);
 
@@ -60,5 +67,12 @@ public abstract class Action {
 	 * It should set the <tt>type</tt> property.
 	 */
 	public abstract ObjectNode toJson(ObjectMapper mapper);
+
+	/**
+	 * The action's name as it will appear in the JSON.
+	 */
+	public final String type() {
+		return type;
+	}
 
 }
