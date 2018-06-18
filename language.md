@@ -189,6 +189,21 @@ dumper. If no dumper exists, the output is sent nowhere. This makes it possible
 to leave `Dump` clauses in production systems without configuring them and
 without a performance penalty.
 
+Since life revolves around inevitably bad data, it's nice to be able to filter
+out data, similar to `Where`, but collect information about the rejection via
+monitoring or dumping. The `Reject` clause does this:
+
+    Run fastqc
+      Where workflow == "BamQC 2.7+"
+      Reject file_size == 0 {
+         Monitor bad_bam_qc_results "The number of bad BamQC results in production" {},
+         Dump ius, path To junk_bamqc_results
+      }
+      With {
+        memory = 4Gi,
+        input = path
+      }
+
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a signature that is used for
