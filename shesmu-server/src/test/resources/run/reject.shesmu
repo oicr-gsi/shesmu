@@ -1,0 +1,5 @@
+Run ok
+ Reject path != "/foo1" {
+   Dump ius To somefile
+ }
+ With { ok = path == "/foo1" }

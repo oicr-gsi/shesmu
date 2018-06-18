@@ -24,6 +24,14 @@ public abstract class OliveClauseNode {
 
 	public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
 		input = input.whitespace();
+		Parser inner = parseMonitor(input, output);
+		if (inner != null) {
+			return inner;
+		}
+		inner = parseDump(input, output);
+		if (inner != null) {
+			return inner;
+		}
 		final Parser whereParser = input.keyword("Where");
 		if (whereParser.isGood()) {
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
@@ -88,29 +96,6 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
-		final Parser monitorParser = input.keyword("Monitor");
-		if (monitorParser.isGood()) {
-			final AtomicReference<String> metricName = new AtomicReference<>();
-			final AtomicReference<String> help = new AtomicReference<>();
-			final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
-
-			final Parser result = monitorParser//
-					.whitespace()//
-					.identifier(metricName::set)//
-					.whitespace()//
-					.regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")//
-					.whitespace()//
-					.symbol("{")//
-					.listEmpty(labels::set, MonitorArgumentNode::parse, ',')//
-					.symbol("}")//
-					.whitespace();
-
-			if (result.isGood()) {
-				output.accept(new OliveClauseNodeMonitor(input.line(), input.column(), metricName.get(), help.get(),
-						labels.get()));
-			}
-			return result;
-		}
 		final Parser letParser = input.keyword("Let");
 		if (letParser.isGood()) {
 			final AtomicReference<List<LetArgumentNode>> arguments = new AtomicReference<>();
@@ -124,21 +109,23 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
-		final Parser dumpParser = input.keyword("Dump");
-		if (dumpParser.isGood()) {
-			final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
-			final AtomicReference<String> dumper = new AtomicReference<>();
-			final Parser result = dumpParser//
+		final Parser rejectParser = input.keyword("Reject");
+		if (rejectParser.isGood()) {
+			final AtomicReference<List<RejectNode>> handlers = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> clause = new AtomicReference<>();
+			final Parser result = rejectParser//
 					.whitespace()//
-					.listEmpty(columns::set, ExpressionNode::parse, ',')//
+					.then(ExpressionNode::parse, clause::set)//
 					.whitespace()//
-					.keyword("To")//
+					.symbol("{")//
 					.whitespace()//
-					.identifier(dumper::set)//
+					.listEmpty(handlers::set, OliveClauseNode::parseReject, ',')//
+					.whitespace()//
+					.symbol("}")//
 					.whitespace();
 
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeDump(dumper.get(), columns.get()));
+				output.accept(new OliveClauseNodeReject(clause.get(), handlers.get()));
 			}
 			return result;
 		}
@@ -162,7 +149,67 @@ public abstract class OliveClauseNode {
 			return result;
 		}
 		return input.raise("Expected olive clause.");
+	}
 
+	private static Parser parseDump(Parser input, Consumer<? super OliveClauseNodeDump> output) {
+		final Parser dumpParser = input.keyword("Dump");
+		if (dumpParser.isGood()) {
+			final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
+			final AtomicReference<String> dumper = new AtomicReference<>();
+			final Parser result = dumpParser//
+					.whitespace()//
+					.listEmpty(columns::set, ExpressionNode::parse, ',')//
+					.whitespace()//
+					.keyword("To")//
+					.whitespace()//
+					.identifier(dumper::set)//
+					.whitespace();
+
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeDump(dumper.get(), columns.get()));
+			}
+			return result;
+		}
+		return null;
+	}
+
+	private static Parser parseMonitor(Parser input, Consumer<? super OliveClauseNodeMonitor> output) {
+		final Parser monitorParser = input.keyword("Monitor");
+		if (monitorParser.isGood()) {
+			final AtomicReference<String> metricName = new AtomicReference<>();
+			final AtomicReference<String> help = new AtomicReference<>();
+			final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
+
+			final Parser result = monitorParser//
+					.whitespace()//
+					.identifier(metricName::set)//
+					.whitespace()//
+					.regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")//
+					.whitespace()//
+					.symbol("{")//
+					.listEmpty(labels::set, MonitorArgumentNode::parse, ',')//
+					.symbol("}")//
+					.whitespace();
+
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeMonitor(input.line(), input.column(), metricName.get(), help.get(),
+						labels.get()));
+			}
+			return result;
+		}
+		return null;
+	}
+
+	public static Parser parseReject(Parser input, Consumer<RejectNode> output) {
+		Parser inner = parseMonitor(input, output);
+		if (inner != null) {
+			return inner;
+		}
+		inner = parseDump(input, output);
+		if (inner != null) {
+			return inner;
+		}
+		return input.raise("Expected olive clause.");
 	}
 
 	/**

@@ -19,7 +19,7 @@ import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
-public final class OliveClauseNodeDump extends OliveClauseNode {
+public final class OliveClauseNodeDump extends OliveClauseNode implements RejectNode {
 
 	private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
@@ -35,6 +35,11 @@ public final class OliveClauseNodeDump extends OliveClauseNode {
 	}
 
 	@Override
+	public void collectFreeVariables(Set<String> freeVariables) {
+		columns.forEach(column -> column.collectFreeVariables(freeVariables));
+	}
+
+	@Override
 	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
 		return state;
 	}
@@ -47,6 +52,14 @@ public final class OliveClauseNodeDump extends OliveClauseNode {
 		final Renderer renderer = oliveBuilder.peek(oliveBuilder.loadableValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
+		render(builder, renderer);
+		renderer.methodGen().visitInsn(Opcodes.RETURN);
+		renderer.methodGen().visitMaxs(0, 0);
+		renderer.methodGen().visitEnd();
+	}
+
+	@Override
+	public void render(RootBuilder builder, Renderer renderer) {
 		builder.loadDumper(dumper, renderer.methodGen());
 		renderer.methodGen().push(columns.size());
 		renderer.methodGen().newArray(A_OBJECT_TYPE);
@@ -58,9 +71,6 @@ public final class OliveClauseNodeDump extends OliveClauseNode {
 			renderer.methodGen().arrayStore(A_OBJECT_TYPE);
 		}
 		renderer.methodGen().invokeInterface(A_DUMPER_TYPE, DUMPER__WRITE);
-		renderer.methodGen().visitInsn(Opcodes.RETURN);
-		renderer.methodGen().visitMaxs(0, 0);
-		renderer.methodGen().visitEnd();
 	}
 
 	@Override
