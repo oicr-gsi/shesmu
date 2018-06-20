@@ -129,9 +129,12 @@ public abstract class RootBuilder {
 
 	/**
 	 * Create a new “Run” olive
+	 * 
+	 * @param line
+	 *            the line in the source file this olive starts on
 	 */
-	public final OliveBuilder buildRunOlive() {
-		return new OliveBuilder(this, oliveId++, A_VARIABLES_TYPE);
+	public final OliveBuilder buildRunOlive(int line) {
+		return new OliveBuilder(this, oliveId++, A_VARIABLES_TYPE, line);
 	}
 
 	public Stream<LoadableValue> constants() {
