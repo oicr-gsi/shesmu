@@ -19,6 +19,11 @@ import io.prometheus.client.Gauge;
  */
 public abstract class ActionGenerator {
 
+	@RuntimeInterop
+	public static final Gauge OLIVE_RUN_TIME = Gauge
+			.build("shesmu_olive_run_time", "The runtime of an olive in seconds.").labelNames("filename", "line")
+			.register();
+	
 	/**
 	 * An action generator which ignores the input.
 	 */

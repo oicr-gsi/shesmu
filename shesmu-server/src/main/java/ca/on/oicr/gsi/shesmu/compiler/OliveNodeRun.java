@@ -47,7 +47,7 @@ public final class OliveNodeRun extends OliveNode {
 
 	@Override
 	public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
-		final OliveBuilder oliveBuilder = builder.buildRunOlive();
+		final OliveBuilder oliveBuilder = builder.buildRunOlive(line);
 		clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
 		oliveBuilder.line(line);
 		final Renderer action = oliveBuilder.finish();
