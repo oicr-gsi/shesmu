@@ -17,6 +17,8 @@ tags:
     description: "Functions"
   - name: "inputdata"
     description: "Olive Input Data"
+  - name: "misc"
+    description: "Miscellaneous"
 
 paths:
   /actions:
@@ -232,6 +234,28 @@ paths:
                     $ref: "#/components/schemas/AnyValue"
                   error:
                     type: "string"
+  /type:
+    post:
+      summary: "Convert a Shesmu type signature into a human-readable form"
+      description: ""
+      operationId: "prettyType"
+      tags:
+        - misc
+      requestBody:
+        required: true
+        content:
+            "application/json":
+              schema:
+                type: "string"
+      responses:
+        200:
+          description: "The human readable type"
+          content:
+            "application/json":
+              schema:
+                type: "string"
+        400:
+          description: "The type signature provided is not valid."
 components:
   schemas:
     AnyValue:

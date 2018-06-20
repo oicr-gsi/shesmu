@@ -108,6 +108,12 @@ public final class Server {
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
 
+				writeHeader(writer, "Type");
+				writeRow(writer, "Signature",
+						"<input type=\"text\" id=\"uglySignature\"></input> <span class=\"load\" onclick=\"prettyType();\">Beautify</span>");
+				writeRow(writer, "Pretty Type", "<span id=\"prettyType\"></span>");
+				writeFinish(writer);
+
 				writeHeader(writer, "Functions");
 				functionpRepository.stream().sorted(Comparator.comparing(FunctionDefinition::name))
 						.forEach(function -> {
@@ -321,6 +327,21 @@ public final class Server {
 				});
 				jGenerator.writeEndArray();
 				jGenerator.close();
+			}
+		});
+
+		add("/type", t -> {
+			final Imyhat type = Imyhat.parse(RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class));
+			t.getResponseHeaders().set("Content-type", "application/json");
+			if (type.isBad()) {
+				t.sendResponseHeaders(400, 0);
+				try (OutputStream os = t.getResponseBody()) {
+				}
+			} else {
+				t.sendResponseHeaders(200, 0);
+				try (OutputStream os = t.getResponseBody()) {
+					RuntimeSupport.MAPPER.writeValue(os, type.name());
+				}
 			}
 		});
 
