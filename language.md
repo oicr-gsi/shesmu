@@ -440,6 +440,18 @@ applied.
 
 Eliminates any item in the list where _expr_ evaluates to false.
 
+#### Limit
+- `Limit` _expr_
+
+Truncates the list after the number of items specified by _expr_, which must
+return an integer. The list must already be sorted.
+
+#### Skip
+- `Skip` _expr_
+
+Discards the number of items specified by _expr_, which must return an integer,
+from the beginning of the list. The list must already be sorted.
+
 #### Sort
 - `Sort` _expr_
 

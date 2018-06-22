@@ -47,6 +47,8 @@ public abstract class ListNode {
 			}
 			return result;
 		});
+		DISPATCH.addKeyword("Limit", handler(ListNodeLimit::new));
+		DISPATCH.addKeyword("Skip", handler(ListNodeSkip::new));
 		DISPATCH.addKeyword("Where", handler(ListNodeFilter::new));
 		DISPATCH.addKeyword("Sort", handler(ListNodeSort::new));
 		DISPATCH.addKeyword("Reverse", (p, o) -> {
