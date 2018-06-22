@@ -82,6 +82,8 @@ public final class JavaStreamBuilder {
 	private static final Method METHOD_STREAM__FLAT_MAP = new Method("flatMap", A_STREAM_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
 
+	private static final Method METHOD_STREAM__LIMIT = new Method("limit", A_STREAM_TYPE,
+			new Type[] { Type.LONG_TYPE });
 	private static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
 	private static final Method METHOD_STREAM__MAX = new Method("max", A_OPTIONAL_TYPE,
 			new Type[] { A_COMPARATOR_TYPE });
@@ -91,6 +93,7 @@ public final class JavaStreamBuilder {
 			new Type[] { A_OBJECT_TYPE, A_BIFUNCTION_TYPE, A_BINARY_OPERATOR_TYPE });
 	private static final Method METHOD_STREAM__REVERSE = new Method("reverse", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE });
+	private static final Method METHOD_STREAM__SKIP = new Method("skip", A_STREAM_TYPE, new Type[] { Type.LONG_TYPE });
 	private static final Method METHOD_STREAM__SORTED = new Method("sorted", A_STREAM_TYPE,
 			new Type[] { A_COMPARATOR_TYPE });
 
@@ -219,6 +222,13 @@ public final class JavaStreamBuilder {
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType));
+	}
+
+	public void limit(Consumer<Renderer> limitProducer) {
+		steps.add(renderer -> {
+			limitProducer.accept(renderer);
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__LIMIT);
+		});
 	}
 
 	public final Renderer map(String name, Type newType, LoadableValue... capturedVariables) {
@@ -397,6 +407,13 @@ public final class JavaStreamBuilder {
 	public void reverse() {
 		steps.add(renderer -> {
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
+		});
+	}
+
+	public void skip(Consumer<Renderer> limitProducer) {
+		steps.add(renderer -> {
+			limitProducer.accept(renderer);
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SKIP);
 		});
 	}
 

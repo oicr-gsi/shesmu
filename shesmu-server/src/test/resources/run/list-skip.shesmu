@@ -1,0 +1,2 @@
+Run ok
+ With { ok = (For x In [ {1, False}, {2, True}, {3, True} ]: Sort x[0] Skip 1 All x[1]) }
