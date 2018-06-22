@@ -257,7 +257,7 @@ public class SeqWareWorkflowAction extends Action {
 
 	public SeqWareWorkflowAction(long workflowAccession, long[] previousAccessions, String jarPath,
 			String settingsPath) {
-		super();
+		super("seqware");
 		this.workflowAccession = workflowAccession;
 		this.previousAccessions = previousAccessions;
 		this.jarPath = jarPath;
