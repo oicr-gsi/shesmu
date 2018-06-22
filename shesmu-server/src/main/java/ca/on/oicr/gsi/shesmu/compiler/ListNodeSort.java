@@ -40,7 +40,7 @@ public class ListNodeSort extends ListNodeWithExpression {
 			return true;
 		}
 		errorHandler.accept(String.format("%d:%d: Expected date or integer for sorting but got %s.", line(), column(),
-				incoming.name()));
+				expression.type().name()));
 		return false;
 	}
 
