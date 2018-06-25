@@ -1,0 +1,2 @@
+Run ok
+ With { ok = metatype In ["text/x-nothing"]}
