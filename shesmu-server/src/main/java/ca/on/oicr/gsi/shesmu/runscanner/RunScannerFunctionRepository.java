@@ -65,7 +65,7 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 								String.format(
 										"Get the serial number of the flowcell detected by the Run Scanner defined in %s",
 										fileName),
-								Imyhat.INTEGER, Imyhat.STRING)//
+								Imyhat.STRING, Imyhat.STRING)//
 				);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				functions = Collections.emptyList();
