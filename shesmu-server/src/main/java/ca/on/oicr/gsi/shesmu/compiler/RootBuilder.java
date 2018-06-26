@@ -219,6 +219,7 @@ public abstract class RootBuilder {
 			}
 			ctor.invokeVirtual(selfType, METHOD_BUILD_GAUGE);
 			ctor.putField(selfType, fieldName, A_GAUGE_TYPE);
+			gauges.add(fieldName);
 		}
 		methodGen.loadThis();
 		methodGen.getField(selfType, fieldName, A_GAUGE_TYPE);
