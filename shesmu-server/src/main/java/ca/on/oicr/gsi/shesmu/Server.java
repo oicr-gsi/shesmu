@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -58,6 +60,7 @@ public final class Server {
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
 	private final Instant startTime = Instant.now();
+	private final Semaphore inputDownloadSemaphore = new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
 
 	private final StaticActions staticActions = new StaticActions(processor::accept, this::actionDefinitions);
 
@@ -65,7 +68,7 @@ public final class Server {
 
 	public Server(int port) throws IOException {
 		server = HttpServer.create(new InetSocketAddress(port), 0);
-		server.setExecutor(null);
+		server.setExecutor(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 
 		add("/", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -279,6 +282,12 @@ public final class Server {
 		});
 
 		add("/input", t -> {
+			if (!inputDownloadSemaphore.tryAcquire()) {
+				t.sendResponseHeaders(503, 0);
+				try (OutputStream os = t.getResponseBody()) {
+				}
+				return;
+			}
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
@@ -327,6 +336,8 @@ public final class Server {
 				});
 				jGenerator.writeEndArray();
 				jGenerator.close();
+			} finally {
+				inputDownloadSemaphore.release();
 			}
 		});
 
