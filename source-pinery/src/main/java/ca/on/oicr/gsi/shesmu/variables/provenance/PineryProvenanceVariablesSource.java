@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +33,8 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.Variables;
 import ca.on.oicr.gsi.shesmu.VariablesSource;
+import ca.on.oicr.pinery.client.PineryClient;
+import ca.on.oicr.ws.dto.RunDto;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
@@ -50,14 +54,19 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 			return new Pair<>("Sample/Lane Provenance Variable Source", properties);
 		}
 
-		private Stream<Variables> lanes(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts) {
-			return Utils.stream(provider.getLaneProvenance()).filter(lp -> lp.getSkip() == null || lp.getSkip())//
+		private Stream<Variables> lanes(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
+				Map<String, String> runDirectories, Predicate<String> goodRun) {
+			return Utils.stream(provider.getLaneProvenance())//
+					.filter(lp -> goodRun.test(lp.getSequencerRunName()))//
+					.filter(lp -> lp.getSkip() == null || !lp.getSkip())//
 					.map(lp -> {
 						final Set<String> badSetInRecord = new TreeSet<>();
+						final String runDirectory = Utils.singleton(lp.getSequencerRunAttributes().get("run_dir"),
+								reason -> badSetInRecord.add("run_dir:" + reason), true).orElse("");
+						runDirectories.put(lp.getSequencerRunName(), runDirectory);
 						final Variables result = new Variables(//
 								lp.getLaneProvenanceId(), //
-								Utils.singleton(lp.getSequencerRunAttributes().get("run_dir"),
-										reason -> badSetInRecord.add("run_dir:" + reason), true).orElse(""), //
+								runDirectory, //
 								"inode/directory", //
 								"0000000000000000000000000000000", //
 								0, //
@@ -95,46 +104,50 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 					.filter(Objects::nonNull);
 		}
 
-		private Stream<Variables> samples(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts) {
-			return Utils.stream(provider.getSampleProvenance()).map(sp -> {
-				final Set<String> badSetInRecord = new TreeSet<>();
-				final Variables result = new Variables(//
-						sp.getSampleProvenanceId(), //
-						"", //
-						"inode/directory", //
-						"0000000000000000000000000000000", //
-						0, //
-						"Sequencer", //
-						sp.getSequencerRunName(), //
-						VERSION, //
-						sp.getStudyTitle(), //
-						sp.getSampleName(), //
-						sp.getRootSampleName(), //
-						new Tuple(sp.getSequencerRunName(), Utils.parseLaneNumber(sp.getLaneNumber()), sp.getIusTag()), //
-						limsAttr(sp, "geo_library_source_template_type", badSetInRecord::add, true).orElse(""), //
-						limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""), //
-						limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""), //
-						limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false).orElse(""), //
-						limsAttr(sp, "geo_targeted_resequencing", badSetInRecord::add, false).orElse(""), //
-						limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false).orElse(""), //
-						limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""), //
-						limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false).orElse(""), //
-						limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false).map(Utils::parseLong)
-								.orElse(0L), //
-						limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
-						limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""), //
-						sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
-						new Tuple(sp.getSampleProvenanceId(), sp.getVersion(),
-								properties.getOrDefault("provider", "unknown")), //
-						"sample_provenance");
+		private Stream<Variables> samples(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
+				Map<String, String> runDirectories, Predicate<String> goodRun) {
+			return Utils.stream(provider.getSampleProvenance())//
+					.filter(sp -> goodRun.test(sp.getSequencerRunName()))//
+					.map(sp -> {
+						final Set<String> badSetInRecord = new TreeSet<>();
+						final Variables result = new Variables(//
+								sp.getSampleProvenanceId(), //
+								runDirectories.getOrDefault(sp.getSequencerRunName(), ""), //
+								"inode/directory", //
+								"0000000000000000000000000000000", //
+								0, //
+								"Sequencer", //
+								sp.getSequencerRunName(), //
+								VERSION, //
+								sp.getStudyTitle(), //
+								sp.getSampleName(), //
+								sp.getRootSampleName(), //
+								new Tuple(sp.getSequencerRunName(), Utils.parseLaneNumber(sp.getLaneNumber()),
+										sp.getIusTag()), //
+								limsAttr(sp, "geo_library_source_template_type", badSetInRecord::add, true).orElse(""), //
+								limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""), //
+								limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""), //
+								limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false).orElse(""), //
+								limsAttr(sp, "geo_targeted_resequencing", badSetInRecord::add, false).orElse(""), //
+								limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false).orElse(""), //
+								limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""), //
+								limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false).orElse(""), //
+								limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false).map(Utils::parseLong)
+										.orElse(0L), //
+								limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
+								limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""), //
+								sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
+								new Tuple(sp.getSampleProvenanceId(), sp.getVersion(),
+										properties.getOrDefault("provider", "unknown")), //
+								"sample_provenance");
 
-				if (badSetInRecord.isEmpty()) {
-					return result;
-				} else {
-					badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
-					return null;
-				}
-			})//
+						if (badSetInRecord.isEmpty()) {
+							return result;
+						} else {
+							badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
+							return null;
+						}
+					})//
 					.filter(Objects::nonNull);
 
 		}
@@ -144,8 +157,17 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 				provider.ifPresent(provider -> {
 					try (AutoCloseable timer = fetchLatency.start()) {
 						final Map<String, Integer> badSetCounts = new TreeMap<>();
-
-						cache = Stream.concat(lanes(provider, badSetCounts), samples(provider, badSetCounts))
+						final Map<String, String> runDirectories = new HashMap<>();
+						final Set<String> completeRuns;
+						try (PineryClient client = new PineryClient(properties.get("url"), true)) {
+							completeRuns = client.getSequencerRun()
+									.all().stream()//
+									.filter(run -> run.getState().equals("Completed"))//
+									.map(RunDto::getName)//
+									.collect(Collectors.toSet());
+						}
+						cache = Stream.concat(lanes(provider, badSetCounts, runDirectories, completeRuns::contains), //
+								samples(provider, badSetCounts, runDirectories, completeRuns::contains))//
 								.collect(Collectors.toList());
 						count.labels(fileName().toString()).set(cache.size());
 						lastUpdated = Instant.now();
