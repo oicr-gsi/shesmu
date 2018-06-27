@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.atlassian.jira.rest.client.api.domain.BasicIssue;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
 import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
@@ -69,10 +70,14 @@ public abstract class BaseTicketAction extends Action {
 				new FieldInput(IssueFieldId.PROJECT_FIELD, new ComplexIssueInputFieldValue(project)), //
 				new FieldInput(IssueFieldId.SUMMARY_FIELD, summary), //
 				new FieldInput(IssueFieldId.DESCRIPTION_FIELD, description), //
-				new FieldInput(IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)), //
-				new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot")));
+				new FieldInput(IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)));
 
-		issueUrl = config.client().getIssueClient().createIssue(input).claim().getSelf();
+		BasicIssue result = config.client().getIssueClient().createIssue(input).claim();
+		issueUrl = result.getSelf();
+		config.client().getIssueClient()
+				.updateIssue(result.getKey(), IssueInput
+						.createWithFields(new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot"))))
+				.claim();
 		return ActionState.SUCCEEDED;
 	}
 
@@ -132,6 +137,7 @@ public abstract class BaseTicketAction extends Action {
 			return perform(config.issues().filter(issue -> issue.getSummary().equals(summary)));
 		} catch (final Exception e) {
 			failure.labels(config.instance()).inc();
+			e.printStackTrace();
 			return ActionState.UNKNOWN;
 		}
 	}
