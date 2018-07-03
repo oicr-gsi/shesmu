@@ -90,12 +90,12 @@ The following are available:
   in the `SHESMU_DATA` directory, containing `{ "url": ... }`. See
   [the remote action repository specification](api.md).
 - JSON-over-HTTP using a local repository definition. To define, create a JSON
-	file ending in `.actions` in the `SHESMU_DATA` directory with
-	`{"definitions":[...], "url": ...}`, where `url` is the URL to the HTTP
+  file ending in `.actions` in the `SHESMU_DATA` directory with
+  `{"definitions":[...], "url": ...}`, where `url` is the URL to the HTTP
   server and `defintions` is as per the remote repository specification.
 - JIRA file-a-ticket actions (in the `action-jira` directory). To use this,
   create a JSON file ending in `.jira` in the `SHESMU_DATA` directory with
-	`{"name":.., "projectKey":..., "token":.., "url": ...}` where `name` is the
+  `{"name":.., "projectKey":..., "token":.., "url": ...}` where `name` is the
   name that will appear in olives, `projectKey` is the JIRA project identifier
   (usually a short collection of capital letters), `token` is the JIRA
   application token, and `url` is the address of the JIRA server.
@@ -103,7 +103,7 @@ The following are available:
 - Fake actions. Copy actions from an existing Shesmu instance, but don't do
   anything with them. This is useful for setting up a development server.
   Create a JSON file ending in `.fakeactions` with
-	`{"url":..., "allow":...}` where `url` is the Shesmu server to copy and
+  `{"url":..., "allow":...}` where `url` is the Shesmu server to copy and
   `allow` is a regular expression of which actions to copy.
 
 ### Variable Sources
@@ -136,9 +136,9 @@ to turn this into a function. The following are available:
   `{"url":...}` to access run information from [MISO RunScanner](http://github.com/TGAC/miso-lims).
 - Tab-separated value file. Create a file called `.lookup` that contains
   tab-separated values. The first row defines the types of the columns using a
-  Shesmu type signature. Each subsequent row contains a value for each column, or
-  `*` for a wild card match. The final column, which cannot be a wild card, is the
-  result value.
+  Shesmu type name (`string`, `boolean`, `integer`, `date`). Each subsequent
+  row contains a value for each column, or `*` for a wild card match. The final
+  column, which cannot be a wild card, is the result value.
 
 ## Throttlers
 When Shesmu has actions to perform, it will perform them as as quickly as
@@ -154,13 +154,13 @@ external criteria. The following throttlers are available:
   Prometheus alerting can be used. Create a JSON file ending with `.alertman`
   in the `SHESMU_DATA` directory containing `{ "alertmanager":..., "environment": }`
   where `alertmanager` is the URL to the Prometheus Alert Manager and `environment`
-	is a string. This throttler will scan the Alert Manager for any alerts firing
+  is a string. This throttler will scan the Alert Manager for any alerts firing
   called `AutoInhibit`. If an alert is firing with no `environment` label or an
   `environment` label that matches the supplied `environment` string, then
   actions will be paused.
 - Rate limit throttler. Limits the rate using a token bucket rate limiter.
   Create a JSON file ending in `.ratelimit` containing `{"capacity":..., "delay":...}`
-	where `capacity` is the maximum number of tokens that be held in the bucket
+  where `capacity` is the maximum number of tokens that be held in the bucket
   and `delay` is the number of milliseconds to generate a new token.
 
 ## Dumpers
