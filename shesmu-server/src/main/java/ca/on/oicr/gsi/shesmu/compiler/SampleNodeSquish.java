@@ -9,6 +9,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.SampleNode.Consumption;
 import ca.on.oicr.gsi.shesmu.subsample.Squish;
 import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
 
@@ -29,6 +30,22 @@ public class SampleNodeSquish extends SampleNode {
 	public void collectFreeVariables(Set<String> names) {
 		expression.collectFreeVariables(names);
 
+	}
+
+	@Override
+	public Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler) {
+		switch (previous) {
+		case LIMITED:
+			return Consumption.GREEDY;
+		case GREEDY:
+			errorHandler.accept(
+					String.format("%d:%d: No items will be left to subsample.", expression.line(), expression.column()));
+			return Consumption.BAD;
+		case BAD:
+		default:
+			return Consumption.BAD;
+
+		}
 	}
 
 	@Override
@@ -61,5 +78,4 @@ public class SampleNodeSquish extends SampleNode {
 		}
 		return true;
 	}
-
 }

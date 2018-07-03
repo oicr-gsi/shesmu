@@ -19,6 +19,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.SampleNode.Consumption;
 import ca.on.oicr.gsi.shesmu.subsample.FixedWithConditions;
 import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
 
@@ -72,6 +73,22 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 		conditionExpression.collectFreeVariables(names);
 		if (remove) {
 			names.remove(name);
+		}
+	}
+
+	@Override
+	public Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler) {
+		switch (previous) {
+		case LIMITED:
+			return Consumption.LIMITED;
+		case GREEDY:
+			errorHandler.accept(String.format("%d:%d: No items will be left to subsample.",
+					limitExpression.line(), limitExpression.column()));
+			return Consumption.BAD;
+		case BAD:
+		default:
+			return Consumption.BAD;
+
 		}
 	}
 
@@ -143,5 +160,4 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 		}
 		return limitok & conditionok;
 	}
-
 }

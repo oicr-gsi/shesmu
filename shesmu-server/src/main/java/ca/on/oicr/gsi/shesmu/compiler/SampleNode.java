@@ -12,7 +12,12 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public abstract class SampleNode {
 
+	public enum Consumption {
+		BAD, LIMITED, GREEDY
+	}
+
 	private static final Parser.ParseDispatch<SampleNode> DISPATCH = new Parser.ParseDispatch<>();
+
 	static {
 		DISPATCH.addKeyword("Squish", (p, o) -> {
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
@@ -56,6 +61,8 @@ public abstract class SampleNode {
 	}
 
 	public abstract void collectFreeVariables(Set<String> names);
+
+	public abstract Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler);
 
 	public abstract void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType);
 
