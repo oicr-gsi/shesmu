@@ -14,15 +14,31 @@ import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
 
 public class SampleNodeFixed extends SampleNode {
 
-	private final ExpressionNode expression;
-	
 	private static final Type A_FIXED_TYPE = Type.getType(Fixed.class);
-	
+
 	private static final Method CTOR = new Method("<init>", Type.VOID_TYPE,
-			new Type[] { Type.getType(Subsampler.class), Type.LONG_TYPE});
+			new Type[] { Type.getType(Subsampler.class), Type.LONG_TYPE });
+
+	private final ExpressionNode expression;
 
 	public SampleNodeFixed(ExpressionNode expression) {
 		this.expression = expression;
+	}
+
+	@Override
+	public void collectFreeVariables(Set<String> names) {
+		expression.collectFreeVariables(names);
+
+	}
+
+	@Override
+	public void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType) {
+		renderer.methodGen().newInstance(A_FIXED_TYPE);
+		renderer.methodGen().dup();
+		renderer.methodGen().loadLocal(previousLocal);
+		expression.render(renderer);
+		renderer.methodGen().invokeConstructor(A_FIXED_TYPE, CTOR);
+		renderer.methodGen().storeLocal(previousLocal);
 	}
 
 	@Override
@@ -37,12 +53,6 @@ public class SampleNodeFixed extends SampleNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		expression.collectFreeVariables(names);
-
-	}
-
-	@Override
 	public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
 		final boolean ok = expression.typeCheck(errorHandler);
 		if (ok && !expression.type().isSame(Imyhat.INTEGER)) {
@@ -50,16 +60,6 @@ public class SampleNodeFixed extends SampleNode {
 			return false;
 		}
 		return true;
-	}
-
-	@Override
-	public void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType) {
-		renderer.methodGen().newInstance(A_FIXED_TYPE);
-		renderer.methodGen().dup();
-		renderer.methodGen().loadLocal(previousLocal);
-		expression.render(renderer);
-		renderer.methodGen().invokeConstructor(A_FIXED_TYPE, CTOR);
-		renderer.methodGen().storeLocal(previousLocal);
 	}
 
 }

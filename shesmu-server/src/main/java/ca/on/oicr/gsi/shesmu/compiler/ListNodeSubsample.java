@@ -12,9 +12,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeSubsample extends ListNode {
 
-	private final List<SampleNode> samplers;
 	private Imyhat incoming;
 	private String name;
+	private final List<SampleNode> samplers;
 
 	public ListNodeSubsample(int line, int column, List<SampleNode> samplers) {
 		super(line, column);
@@ -44,8 +44,8 @@ public class ListNodeSubsample extends ListNode {
 	@Override
 	public final Ordering order(Ordering previous, Consumer<String> errorHandler) {
 		if (previous == Ordering.RANDOM) {
-			errorHandler.accept(
-					String.format("%d:%d: Cannot apply subsampling to an unordered stream.", line(), column()));
+			errorHandler
+					.accept(String.format("%d:%d: Cannot apply subsampling to an unordered stream.", line(), column()));
 			return Ordering.BAD;
 		}
 		return previous;
@@ -53,27 +53,31 @@ public class ListNodeSubsample extends ListNode {
 
 	@Override
 	public final void render(JavaStreamBuilder builder) {
-		builder.subsample(samplers.stream().<JavaStreamBuilder.RenderSubsampler>map(s->s::render).collect(Collectors.toList()));
+		builder.subsample(
+				samplers.stream().<JavaStreamBuilder.RenderSubsampler>map(s -> s::render).collect(Collectors.toList()));
 	}
 
 	@Override
 	public final Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
 		this.name = name;
-		boolean ok = samplers.stream().filter(sampler -> sampler.resolve(name, defs, errorHandler)).count() == samplers.size();
+		final boolean ok = samplers.stream().filter(sampler -> sampler.resolve(name, defs, errorHandler))
+				.count() == samplers.size();
 		return ok ? Optional.of(name) : Optional.empty();
 	}
 
 	@Override
 	public final boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler) {
-		boolean ok = samplers.stream().filter(sampler -> sampler.resolveFunctions(definedFunctions, errorHandler)).count() == samplers.size();
+		final boolean ok = samplers.stream().filter(sampler -> sampler.resolveFunctions(definedFunctions, errorHandler))
+				.count() == samplers.size();
 		return ok;
 	}
 
 	@Override
 	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
 		this.incoming = incoming;
-		boolean ok = samplers.stream().filter(sampler -> sampler.typeCheck(incoming, errorHandler)).count() == samplers.size();
+		final boolean ok = samplers.stream().filter(sampler -> sampler.typeCheck(incoming, errorHandler))
+				.count() == samplers.size();
 		return ok;
 	}
 

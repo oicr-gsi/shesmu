@@ -15,6 +15,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 
 /**
@@ -111,7 +112,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		runMethod.loadLocal(startTime);
 		runMethod.math(GeneratorAdapter.SUB, LONG_TYPE);
 		runMethod.cast(LONG_TYPE, DOUBLE_TYPE);
-		runMethod.push(Gauge.NANOSECONDS_PER_SECOND);
+		runMethod.push(Collector.NANOSECONDS_PER_SECOND);
 		runMethod.math(GeneratorAdapter.DIV, DOUBLE_TYPE);
 		runMethod.invokeVirtual(A_CHILD_TYPE, METHOD_CHILD__SET);
 
