@@ -32,6 +32,22 @@ public class SampleNodeFixed extends SampleNode {
 	}
 
 	@Override
+	public Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler) {
+		switch (previous) {
+		case LIMITED:
+			return Consumption.LIMITED;
+		case GREEDY:
+			errorHandler.accept(String.format("%d:%d: No items will be left to subsample.",
+					expression.line(), expression.column()));
+			return Consumption.BAD;
+		case BAD:
+		default:
+			return Consumption.BAD;
+
+		}
+	}
+
+	@Override
 	public void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType) {
 		renderer.methodGen().newInstance(A_FIXED_TYPE);
 		renderer.methodGen().dup();

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.SampleNode.Consumption;
 
 public class ListNodeSubsample extends ListNode {
 
@@ -78,7 +79,11 @@ public class ListNodeSubsample extends ListNode {
 		this.incoming = incoming;
 		final boolean ok = samplers.stream().filter(sampler -> sampler.typeCheck(incoming, errorHandler))
 				.count() == samplers.size();
-		return ok;
+		Consumption consumption = Consumption.LIMITED;
+		for (final SampleNode sampler : samplers) {
+			consumption = sampler.consumptionCheck(consumption, errorHandler);
+		}
+		return ok && consumption != Consumption.BAD;
 	}
 
 }
