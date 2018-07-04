@@ -129,7 +129,7 @@ public abstract class RootBuilder {
 
 	/**
 	 * Create a new “Run” olive
-	 * 
+	 *
 	 * @param line
 	 *            the line in the source file this olive starts on
 	 */

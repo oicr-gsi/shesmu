@@ -86,6 +86,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 		renderer.methodGen().visitMaxs(0, 0);
 		renderer.methodGen().visitEnd();
 	}
+
 	@Override
 	public void render(RootBuilder builder, Renderer renderer) {
 		builder.loadGauge(metricName, help, labelNames(), renderer.methodGen());
@@ -94,11 +95,13 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 		renderer.methodGen().checkCast(A_CHILD_TYPE);
 		renderer.methodGen().invokeVirtual(A_CHILD_TYPE, METHOD_CHILD__INC);
 	}
+
 	@Override
 	public NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
 			Consumer<String> errorHandler) {
 		return defs.fail(labels.stream().filter(arg -> arg.resolve(defs, errorHandler)).count() == labels.size());
 	}
+
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,

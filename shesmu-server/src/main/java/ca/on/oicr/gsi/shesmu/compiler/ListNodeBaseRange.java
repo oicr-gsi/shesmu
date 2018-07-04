@@ -49,12 +49,12 @@ public abstract class ListNodeBaseRange extends ListNode {
 		return previous;
 	}
 
-	protected abstract void render(JavaStreamBuilder builder, Consumer<Renderer> expression);
-
 	@Override
 	public final void render(JavaStreamBuilder builder) {
 		render(builder, expression::render);
 	}
+
+	protected abstract void render(JavaStreamBuilder builder, Consumer<Renderer> expression);
 
 	@Override
 	public final Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
