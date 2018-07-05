@@ -55,6 +55,21 @@ public abstract class ListNode {
 			o.accept(new ListNodeReverse(p.line(), p.column()));
 			return p.whitespace();
 		});
+		DISPATCH.addKeyword("Subsample", (p, o) -> {
+			final AtomicReference<List<SampleNode>> samplers = new AtomicReference<>();
+			final Parser result = p//
+					.whitespace()//
+					.symbol("(")//
+					.whitespace()//
+					.list(samplers::set, SampleNode::parse, ',')//
+					.whitespace()//
+					.symbol(")")//
+					.whitespace();
+			if (result.isGood()) {
+				o.accept(new ListNodeSubsample(p.line(), p.column(), samplers.get()));
+			}
+			return result;
+		});
 	}
 
 	private static Parser.Rule<ListNode> handler(ListNodeConstructor constructor) {

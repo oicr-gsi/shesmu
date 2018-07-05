@@ -28,6 +28,8 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.subsample.Start;
+import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
 
 /**
  * Helper to build bytecode for “olives” (decision-action stanzas)
@@ -48,6 +50,10 @@ public final class JavaStreamBuilder {
 		}
 	}
 
+	public interface RenderSubsampler {
+		void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType);
+	}
+
 	private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
 	private static final Type A_BINARY_OPERATOR_TYPE = Type.getType(BinaryOperator.class);
 	private static final Type A_COLLECTOR_TYPE = Type.getType(Collector.class);
@@ -59,13 +65,16 @@ public final class JavaStreamBuilder {
 	private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
 	private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
+	private static final Type A_START_TYPE = Type.getType(Start.class);
 	private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
+	private static final Type A_SUBSAMPLER_TYPE = Type.getType(Subsampler.class);
 	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
+
+	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
 	private static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
 			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
 			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
 			false);
-
 	private static final Method METHOD_COLLECTORS__TO_SET = new Method("toSet", A_COLLECTOR_TYPE, new Type[] {});
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
@@ -97,7 +106,32 @@ public final class JavaStreamBuilder {
 	private static final Method METHOD_STREAM__SORTED = new Method("sorted", A_STREAM_TYPE,
 			new Type[] { A_COMPARATOR_TYPE });
 
+	private static final Method METHOD_SUBSAMPLER__SUBSAMPLE = new Method("subsample", A_STREAM_TYPE,
+			new Type[] { A_STREAM_TYPE });
+
+	public static Stream<LoadableValue> parameters(LoadableValue[] capturedVariables, String name, Type type) {
+		final int index = capturedVariables.length + 1;
+		return Stream.concat(RootBuilder.proxyCaptured(0, capturedVariables), Stream.of(new LoadableValue() {
+
+			@Override
+			public void accept(Renderer renderer) {
+				renderer.methodGen().loadArg(index);
+			}
+
+			@Override
+			public String name() {
+				return name;
+			}
+
+			@Override
+			public Type type() {
+				return type;
+			}
+		}));
+	}
+
 	private Type currentType;
+
 	private final RootBuilder owner;
 
 	private final Renderer renderer;
@@ -314,27 +348,6 @@ public final class JavaStreamBuilder {
 				capturedVariables.length, streamType, RootBuilder.proxyCaptured(0, capturedVariables));
 	}
 
-	private Stream<LoadableValue> parameters(LoadableValue[] capturedVariables, String name, Type type) {
-		final int index = capturedVariables.length + 1;
-		return Stream.concat(RootBuilder.proxyCaptured(0, capturedVariables), Stream.of(new LoadableValue() {
-
-			@Override
-			public void accept(Renderer renderer) {
-				renderer.methodGen().loadArg(index);
-			}
-
-			@Override
-			public String name() {
-				return name;
-			}
-
-			@Override
-			public Type type() {
-				return type;
-			}
-		}));
-	}
-
 	public Renderer reduce(String name, Type accumulatorType, String accumulatorName, Consumer<Renderer> initial,
 			LoadableValue... capturedVariables) {
 
@@ -423,5 +436,23 @@ public final class JavaStreamBuilder {
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
 		});
 		return sortMethod;
+	}
+
+	public final void subsample(List<RenderSubsampler> renderers) {
+		final String prefix = String.format("chain_%d_%d_", streamId, steps.size());
+		steps.add(renderer -> {
+			final int local = renderer.methodGen().newLocal(A_SUBSAMPLER_TYPE);
+			renderer.methodGen().newInstance(A_START_TYPE);
+			renderer.methodGen().dup();
+			renderer.methodGen().invokeConstructor(A_START_TYPE, DEFAULT_CTOR);
+			renderer.methodGen().storeLocal(local);
+			int index = 0;
+			for (final RenderSubsampler subsample : renderers) {
+				subsample.render(renderer, local, prefix, index++, renderer.streamType());
+			}
+			renderer.methodGen().loadLocal(local);
+			renderer.methodGen().swap();
+			renderer.methodGen().invokeVirtual(A_SUBSAMPLER_TYPE, METHOD_SUBSAMPLER__SUBSAMPLE);
+		});
 	}
 }

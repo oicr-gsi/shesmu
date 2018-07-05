@@ -462,6 +462,28 @@ Sorts the items in a list based on an integer or date returned by _expr_.
 
 Reverses the items in a list. The list must already be sorted.
 
+#### Subsample
+- `Subsample`(_subsampler_, _subsampler_, _subsampler_, ...)
+
+Perform sampling on items in a list based on the given _subsamplers_ (the order matters). The list must already be sorted.
+For example: `Subsample(Fixed 1, Squish 5)` will first select the first item and then randomly select five more items in the rest of the list.
+
+### Subsamplers
+#### Fixed
+- `Fixed` _integer_
+
+Select the first _integer_ items in a sorted list.
+
+#### FixedWithCondition
+- `Fixed` _integer_ `While` _condition_ 
+
+Select the first _integer_ items in a sorted list while _condition_ is evaluated to be _true_.
+
+#### Squish
+- `Squish` _integer_
+
+Randomly select _integer_ items from a sorted list.  
+
 ### Collectors
 #### Count
 - `Count`
