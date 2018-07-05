@@ -30,18 +30,19 @@ import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.InputRepository;
 import ca.on.oicr.gsi.shesmu.Tuple;
-import ca.on.oicr.gsi.shesmu.Variables;
-import ca.on.oicr.gsi.shesmu.VariablesSource;
+import ca.on.oicr.gsi.shesmu.GsiStdValue;
+import ca.on.oicr.gsi.shesmu.GsiStdRepository;
 import ca.on.oicr.pinery.client.PineryClient;
 import ca.on.oicr.ws.dto.RunDto;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
-@MetaInfServices(VariablesSource.class)
-public class PineryProvenanceVariablesSource implements VariablesSource {
+@MetaInfServices(InputRepository.class)
+public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 	private class PinerySource extends AutoUpdatingJsonFile<ObjectNode> {
-		private List<Variables> cache = Collections.emptyList();
+		private List<GsiStdValue> cache = Collections.emptyList();
 		private Instant lastUpdated = Instant.EPOCH;
 		private Map<String, String> properties = Collections.emptyMap();
 		private Optional<PineryProvenanceProvider> provider = Optional.empty();
@@ -54,7 +55,7 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 			return new Pair<>("Sample/Lane Provenance Variable Source", properties);
 		}
 
-		private Stream<Variables> lanes(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
+		private Stream<GsiStdValue> lanes(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
 				Map<String, String> runDirectories, Predicate<String> goodRun) {
 			return Utils.stream(provider.getLaneProvenance())//
 					.filter(lp -> goodRun.test(lp.getSequencerRunName()))//
@@ -64,7 +65,7 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 						final String runDirectory = Utils.singleton(lp.getSequencerRunAttributes().get("run_dir"),
 								reason -> badSetInRecord.add("run_dir:" + reason), true).orElse("");
 						runDirectories.put(lp.getSequencerRunName(), runDirectory);
-						final Variables result = new Variables(//
+						final GsiStdValue result = new GsiStdValue(//
 								lp.getLaneProvenanceId(), //
 								runDirectory, //
 								"inode/directory", //
@@ -104,13 +105,13 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 					.filter(Objects::nonNull);
 		}
 
-		private Stream<Variables> samples(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
+		private Stream<GsiStdValue> samples(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
 				Map<String, String> runDirectories, Predicate<String> goodRun) {
 			return Utils.stream(provider.getSampleProvenance())//
 					.filter(sp -> goodRun.test(sp.getSequencerRunName()))//
 					.map(sp -> {
 						final Set<String> badSetInRecord = new TreeSet<>();
-						final Variables result = new Variables(//
+						final GsiStdValue result = new GsiStdValue(//
 								sp.getSampleProvenanceId(), //
 								runDirectories.getOrDefault(sp.getSequencerRunName(), ""), //
 								"inode/directory", //
@@ -152,7 +153,7 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 
 		}
 
-		public Stream<Variables> stream() {
+		public Stream<GsiStdValue> stream() {
 			if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
 				provider.ifPresent(provider -> {
 					try (AutoCloseable timer = fetchLatency.start()) {
@@ -227,7 +228,7 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 
 	private final AutoUpdatingDirectory<PinerySource> sources;
 
-	public PineryProvenanceVariablesSource() {
+	public PineryProvenanceGsiStdRepository() {
 		sources = new AutoUpdatingDirectory<>(EXTENSION, PinerySource::new);
 	}
 
@@ -237,7 +238,7 @@ public class PineryProvenanceVariablesSource implements VariablesSource {
 	}
 
 	@Override
-	public Stream<Variables> stream() {
+	public Stream<GsiStdValue> stream() {
 		return sources.stream().flatMap(PinerySource::stream);
 	}
 

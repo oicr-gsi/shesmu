@@ -1,2 +1,4 @@
+Input gsi_std;
+
 Run ok
  With { ok = int_to_str(12) == "12" }

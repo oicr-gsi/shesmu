@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
 /**
@@ -232,13 +233,16 @@ public abstract class OliveClauseNode {
 
 	/**
 	 * Resolve all variable definitions in this clause
-	 *
+	 * 
+	 * @param inputFormatDefinition
+	 *            TODO
 	 * @param defs
 	 *            the variable definitions available to this clause
+	 *
 	 * @return the variable definitions available to the next clause
 	 */
-	public abstract NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
-			Consumer<String> errorHandler);
+	public abstract NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler);
 
 	/**
 	 * Resolve all non-variable definitions

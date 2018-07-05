@@ -9,8 +9,19 @@ specified. The list of possible actions are provided externally.
 
 ## Olives and Clauses
 Each decision-action stanza is called an _olive_. There are two: _define_ and
-_run_. Each is processing a _stream_ of input from provenance. Information from
-provenance is available as variables.
+_run_.
+
+First, we need to specify the type of information to be processed. All the
+olives in a file share the same _input format_. At the top of the file:
+
+    Input gsi_std;
+
+This doesn't specify where the data comes from, but what kind of data will be
+provided. Analysis provenance coupled with LIMS data is known as `gsi_std`.
+
+Shesmu will find sources that can provide data in this format. Imagine this as
+a large table: the columns will be _variables_ available and the olive will
+_stream_ over the rows.
 
 A _run_ olive specifies an action to run if the conditions are met. For example:
 
@@ -412,10 +423,11 @@ are provided as tables of values.
 #### Variables
 - _var_
 
-The value of a variable. There are three kinds of variables in Shesmu:
+The value of a variable. There are different kinds of variables in Shesmu:
 
 - stream variables, attached to the data being processed (or the grouped versions of it)
 - parameters, as specified in `Define` olives
+- constants, provided by plugins
 - lambda variables, as specified in list operations (_e.g._, `Map`, `Reduce`, `Filter`)
 
 Only stream variables may be used as discriminators in `Group` clauses.
@@ -545,9 +557,10 @@ name spaces. It is possible to create a parameter with the same name as an
 action, though this is not recommended.
 
 ## Variables
-The default variables available in the Shesmu language can be seen on the status page, or:
+The input formats and their variables available in the Shesmu language can be
+seen on the status page, or:
 
-    curl http://localhost:8081/variables | js -S .
+    curl http://localhost:8081/variables | jq -S .
 
 or:
 

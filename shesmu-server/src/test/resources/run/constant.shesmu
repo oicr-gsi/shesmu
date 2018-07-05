@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Define foo()
  Where project == project_constant;
 

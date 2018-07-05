@@ -1,3 +1,5 @@
+Input gsi_std;
+
 # this a comment
 Define standard_fastq(string s)
   Where workflow == { "BamQC 2.7+" ,3} [ 0 ] 

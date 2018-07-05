@@ -27,7 +27,6 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.Variables;
 import io.prometheus.client.Gauge;
 
 /**
@@ -46,7 +45,6 @@ public abstract class BaseOliveBuilder {
 	protected static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 	protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
 	protected static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
-	protected static final Type A_VARIABLES_TYPE = Type.getType(Variables.class);
 	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
 			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
 			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
@@ -74,15 +72,17 @@ public abstract class BaseOliveBuilder {
 
 	private Type currentType;
 
+	protected final Type initialType;
+
 	protected final int oliveId;
 
 	protected final RootBuilder owner;
-
 	protected final List<Consumer<Renderer>> steps = new ArrayList<>();
 
 	public BaseOliveBuilder(RootBuilder owner, int oliveId, Type initialType) {
 		this.owner = owner;
 		this.oliveId = oliveId;
+		this.initialType = initialType;
 		currentType = initialType;
 
 	}
@@ -198,7 +198,7 @@ public abstract class BaseOliveBuilder {
 					String.format("Invalid number of arguments for matcher. Got %d, expected %d.", arglist.size(),
 							matcher.parameters()));
 		}
-		if (!currentType.equals(A_VARIABLES_TYPE)) {
+		if (!currentType.equals(owner.inputFormatDefinition().type())) {
 			throw new IllegalArgumentException("Cannot start matcher on non-initial variable type.");
 		}
 		steps.add(renderer -> {

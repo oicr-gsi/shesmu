@@ -10,7 +10,7 @@ import io.prometheus.client.Gauge;
 /**
  * Load variables incrementally from a remote source
  */
-public abstract class CachedVariablesSource implements VariablesSource {
+public abstract class CachedVariablesSource<T> implements InputRepository<T> {
 
 	private static final Counter errors = Counter
 			.build("shesmu_cache_source_errors", "The number of times refreshing the cache throws an error.")
@@ -24,7 +24,7 @@ public abstract class CachedVariablesSource implements VariablesSource {
 	private static final LatencyHistogram updateTime = new LatencyHistogram("shesmu_cache_source_update_time",
 			"The time it takes to fetch more input.", "name");
 
-	private final Set<Variables> cache = new HashSet<>();
+	private final Set<T> cache = new HashSet<>();
 
 	private final String name;
 	private final int refreshInterval;
@@ -55,7 +55,7 @@ public abstract class CachedVariablesSource implements VariablesSource {
 	 * be called continuously. If no new data is available, it should return an
 	 * empty stream.
 	 */
-	protected abstract Stream<Variables> more() throws Exception;
+	protected abstract Stream<T> more() throws Exception;
 
 	/**
 	 * Start the thread to pull from the remote source
@@ -73,7 +73,7 @@ public abstract class CachedVariablesSource implements VariablesSource {
 	}
 
 	@Override
-	public final Stream<Variables> stream() {
+	public final Stream<T> stream() {
 		return cache.stream();
 	}
 

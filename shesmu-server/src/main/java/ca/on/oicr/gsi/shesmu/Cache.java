@@ -63,7 +63,7 @@ public abstract class Cache<K, V> {
 
 	/**
 	 * Create a new cache
-	 * 
+	 *
 	 * @param name
 	 *            the name, as presented to Prometheus
 	 * @param ttl
@@ -77,7 +77,7 @@ public abstract class Cache<K, V> {
 
 	/**
 	 * Fetch an item from the remote service (or generate it)
-	 * 
+	 *
 	 * @param key
 	 *            the item to be requested
 	 * @return the cached value
@@ -88,7 +88,7 @@ public abstract class Cache<K, V> {
 
 	/**
 	 * Get an item from cache
-	 * 
+	 *
 	 * @param key
 	 *            the key to use
 	 * @return the value, if it was possible to fetch; the value may be stale if the

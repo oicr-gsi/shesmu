@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -12,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 /**
  * A shell of a compiler that can output bytecode
@@ -64,25 +64,25 @@ public abstract class Compiler {
 	 * @return whether compilation was successful
 	 */
 	public final boolean compile(byte[] input, String name, String path, Supplier<Stream<Constant>> constants) {
-		final AtomicReference<List<OliveNode>> program = new AtomicReference<>();
+		final AtomicReference<ProgramNode> program = new AtomicReference<>();
 		final MaxParseError maxParseError = new MaxParseError();
-		final boolean parseOk = OliveNode.parseFile(new String(input, StandardCharsets.UTF_8), program::set,
+		final boolean parseOk = ProgramNode.parseFile(new String(input, StandardCharsets.UTF_8), program::set,
 				maxParseError);
 		if (!parseOk) {
 			maxParseError.write();
 		}
-		if (parseOk && OliveNode.validate(program.get(), this::getFunction, this::getAction, this::errorHandler,
-				constants)) {
+		if (parseOk && program.get().validate(this::getInputFormats, this::getFunction, this::getAction,
+				this::errorHandler, constants)) {
 			if (skipRender) {
 				return true;
 			}
-			final RootBuilder builder = new RootBuilder(name, path, constants) {
+			final RootBuilder builder = new RootBuilder(name, path, program.get().inputFormatDefinition(), constants) {
 				@Override
 				protected ClassVisitor createClassVisitor() {
 					return Compiler.this.createClassVisitor();
 				}
 			};
-			OliveNode.render(builder, program.get());
+			program.get().render(builder);
 			builder.finish();
 			return true;
 		}
@@ -116,4 +116,14 @@ public abstract class Compiler {
 	 * @return the function or null if no function is available
 	 */
 	protected abstract FunctionDefinition getFunction(String name);
+
+	/**
+	 * Get a format by name as specified by the “Input” statement at the start of
+	 * the source file.
+	 *
+	 * @param name
+	 *            the name of the input format
+	 * @return the format definition, or null if no format is available
+	 */
+	protected abstract InputFormatDefinition getInputFormats(String name);
 }

@@ -16,6 +16,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import io.prometheus.client.Gauge;
 
@@ -97,8 +98,8 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	}
 
 	@Override
-	public NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
-			Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		return defs.fail(labels.stream().filter(arg -> arg.resolve(defs, errorHandler)).count() == labels.size());
 	}
 

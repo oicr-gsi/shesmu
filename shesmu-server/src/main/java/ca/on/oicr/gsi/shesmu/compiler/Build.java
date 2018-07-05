@@ -25,6 +25,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
@@ -59,10 +60,14 @@ public final class Build extends Compiler implements AutoCloseable {
 			}
 			if (cmd.hasOption('v')) {
 				System.out.println("Stream variables:");
-				NameDefinitions.baseStreamVariables()//
-						.sorted((a, b) -> a.name().compareTo(b.name()))//
-						.forEach(variable -> System.out.printf("\t%s :: %s (%s)\n", variable.name(),
-								variable.type().name(), variable.type().signature()));
+				InputFormatDefinition.formats().forEach(format -> {
+					System.out.printf("\t%s :: %s\n", format.name(), format.itemClass().getCanonicalName());
+					format.baseStreamVariables()//
+							.sorted((a, b) -> a.name().compareTo(b.name()))//
+							.forEach(variable -> System.out.printf("\t%s :: %s (%s)\n", variable.name(),
+									variable.type().name(), variable.type().signature()));
+				});
+
 			}
 			if (cmd.hasOption('D')) {
 				dataDirectory = Optional.ofNullable(cmd.getOptionValue('D'));
@@ -80,7 +85,7 @@ public final class Build extends Compiler implements AutoCloseable {
 			System.exit(1);
 			return;
 		}
-		try (Build compiler = new Build(
+		try (Build compiler = new Build(new NameLoader<>(InputFormatDefinition.formats(), InputFormatDefinition::name),
 				new NameLoader<>(new TableFunctionRepository(dataDirectory.map(Paths::get)).queryFunctions(),
 						FunctionDefinition::name),
 				new NameLoader<>(FileActionRepository.of(dataDirectory), ActionDefinition::name), skipCompute, true)) {
@@ -101,6 +106,7 @@ public final class Build extends Compiler implements AutoCloseable {
 	private final boolean dataFlowAnalysis;
 
 	private final NameLoader<FunctionDefinition> functions;
+	private final NameLoader<InputFormatDefinition> inputFormats;
 
 	private final Printer printer = new Textifier();
 
@@ -108,9 +114,10 @@ public final class Build extends Compiler implements AutoCloseable {
 
 	private final PrintWriter writer = new PrintWriter(System.out);
 
-	private Build(NameLoader<FunctionDefinition> functions, NameLoader<ActionDefinition> actions, boolean skipCompute,
-			boolean dataFlowAnalysis) {
+	private Build(NameLoader<InputFormatDefinition> inputFormats, NameLoader<FunctionDefinition> functions,
+			NameLoader<ActionDefinition> actions, boolean skipCompute, boolean dataFlowAnalysis) {
 		super(false);
+		this.inputFormats = inputFormats;
 		this.functions = functions;
 		this.actions = actions;
 		this.skipCompute = skipCompute;
@@ -167,6 +174,11 @@ public final class Build extends Compiler implements AutoCloseable {
 	@Override
 	protected FunctionDefinition getFunction(String function) {
 		return functions.get(function);
+	}
+
+	@Override
+	protected InputFormatDefinition getInputFormats(String name) {
+		return inputFormats.get(name);
 	}
 
 }

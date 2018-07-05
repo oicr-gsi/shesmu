@@ -63,6 +63,11 @@ public class CompilerTest {
 			return !dirty;
 		}
 
+		@Override
+		protected InputFormatDefinition getInputFormats(String name) {
+			return new GsiStdFormatDefinition();
+		}
+
 	}
 
 	private static final List<Constant> CONSTANTS = Arrays.asList(

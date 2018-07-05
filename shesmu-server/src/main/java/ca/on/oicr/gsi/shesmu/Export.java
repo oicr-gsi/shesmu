@@ -7,8 +7,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to indicate that a method in {@link Variables} is exported to the
- * Shesmu compiler
+ * Annotation to indicate that a method in a value class is exported to the
+ * Shesmu compiler via {@link InputFormatDefinition}
  *
  * The name of the method must be a valid Shesmu identifier
  */

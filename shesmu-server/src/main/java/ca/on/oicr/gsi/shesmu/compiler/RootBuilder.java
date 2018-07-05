@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -20,7 +21,7 @@ import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
-import ca.on.oicr.gsi.shesmu.Variables;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import io.prometheus.client.Gauge;
 
 /**
@@ -32,11 +33,10 @@ public abstract class RootBuilder {
 	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
 	private static final Type A_DUMPER_SOURCE_TYPE = Type.getType(DumperSource.class);
 	private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
+	private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 	private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
-	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
-	private static final Type A_VARIABLES_TYPE = Type.getType(Variables.class);
 
 	private static final Method CTOR_CLASS = new Method("<clinit>", VOID_TYPE, new Type[] {});
 	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
@@ -44,7 +44,7 @@ public abstract class RootBuilder {
 	private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE = new Method("clearGauge", VOID_TYPE,
 			new Type[] {});
 	private static final Method METHOD_ACTION_GENERATOR__RUN = new Method("run", VOID_TYPE,
-			new Type[] { A_CONSUMER_TYPE, A_SUPPLIER_TYPE });
+			new Type[] { A_CONSUMER_TYPE, A_FUNCTION_TYPE });
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
 	private final static Method METHOD_DUMPER__FIND = new Method("find", A_DUMPER_TYPE, new Type[] { A_STRING_TYPE });
@@ -83,6 +83,8 @@ public abstract class RootBuilder {
 	private final Set<String> dumpers = new HashSet<>();
 
 	private final Set<String> gauges = new HashSet<>();
+	private final InputFormatDefinition inputFormatDefinition;
+
 	private int oliveId = 0;
 
 	private final String path;
@@ -90,11 +92,12 @@ public abstract class RootBuilder {
 	private final GeneratorAdapter runMethod;
 
 	private final Type selfType;
-
 	private int streamId;
 
-	public RootBuilder(String name, String path, Supplier<Stream<Constant>> constants) {
+	public RootBuilder(String name, String path, InputFormatDefinition inputFormatDefinition,
+			Supplier<Stream<Constant>> constants) {
 		this.path = path;
+		this.inputFormatDefinition = inputFormatDefinition;
 		this.constants = constants;
 		selfType = Type.getObjectType(name);
 
@@ -134,7 +137,7 @@ public abstract class RootBuilder {
 	 *            the line in the source file this olive starts on
 	 */
 	public final OliveBuilder buildRunOlive(int line) {
-		return new OliveBuilder(this, oliveId++, A_VARIABLES_TYPE, line);
+		return new OliveBuilder(this, oliveId++, inputFormatDefinition.type(), line);
 	}
 
 	public Stream<LoadableValue> constants() {
@@ -183,6 +186,10 @@ public abstract class RootBuilder {
 		clearGaugeMethod.visitEnd();
 
 		classVisitor.visitEnd();
+	}
+
+	public InputFormatDefinition inputFormatDefinition() {
+		return inputFormatDefinition;
 	}
 
 	public void loadDumper(String dumper, GeneratorAdapter methodGen) {

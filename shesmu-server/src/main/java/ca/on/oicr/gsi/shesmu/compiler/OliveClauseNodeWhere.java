@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
 public class OliveClauseNodeWhere extends OliveClauseNode {
@@ -47,8 +48,8 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
-			Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		return defs.fail(expression.resolve(defs, errorHandler));
 	}
 

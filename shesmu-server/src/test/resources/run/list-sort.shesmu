@@ -1,2 +1,4 @@
+Input gsi_std;
+
 Run ok
  With { ok = (For x In [ {True,1}, {False,2} ]: Sort x[1] First x Default {False,0})[0] }

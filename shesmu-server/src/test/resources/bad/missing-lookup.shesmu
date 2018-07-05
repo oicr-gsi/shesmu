@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Define standard_fastq(string s)
   Where workflow == {"BamQC 2.7+", 3 }[0]
   Where metatype == "chemical/fastq-gzip"

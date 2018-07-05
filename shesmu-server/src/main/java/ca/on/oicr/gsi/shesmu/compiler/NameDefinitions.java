@@ -1,15 +1,13 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ca.on.oicr.gsi.shesmu.Export;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Variables;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
@@ -18,7 +16,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
  * Also tracks if the program has resolved all variables so far.
  */
 public class NameDefinitions {
-	private static class DefaultStreamTarget extends Target {
+	public static class DefaultStreamTarget extends Target {
 		private final String name;
 		private final Imyhat type;
 
@@ -44,29 +42,19 @@ public class NameDefinitions {
 
 	}
 
-	private static final Target[] BASE_VARIABLES = Arrays.stream(Variables.class.getMethods()).flatMap(method -> {
-		final Export[] exports = method.getAnnotationsByType(Export.class);
-		if (exports.length == 1) {
-			return Stream.of(new DefaultStreamTarget(method.getName(), Imyhat.parse(exports[0].type())));
-		}
-		return Stream.empty();
-	}).toArray(Target[]::new);
-
-	public static Stream<Target> baseStreamVariables() {
-		return Arrays.stream(BASE_VARIABLES);
-	}
-
 	/**
 	 * Create a new collection of variables from the parameters provided.
 	 *
 	 * @param parameters
 	 *            the parameters for this environment
 	 */
-	public static NameDefinitions root(Stream<? extends Target> parameters) {
-		return new NameDefinitions(Stream.concat(
-				parameters.filter(
+	public static NameDefinitions root(InputFormatDefinition inputFormatDefinition,
+			Stream<? extends Target> parameters) {
+		return new NameDefinitions(Stream
+				.concat(parameters.filter(
 						variable -> variable.flavour() == Flavour.PARAMETER || variable.flavour() == Flavour.CONSTANT),
-				baseStreamVariables()).collect(Collectors.toMap(Target::name, Function.identity())), true);
+						inputFormatDefinition.baseStreamVariables())
+				.collect(Collectors.toMap(Target::name, Function.identity())), true);
 	}
 
 	private final boolean isGood;

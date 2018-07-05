@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Define standard_execution()
   Where (accession > 5
   Where Switch workflow_version[2] When 5 Then True When 7 Then True Else False;

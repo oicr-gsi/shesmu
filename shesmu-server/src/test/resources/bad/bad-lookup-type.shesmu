@@ -1,2 +1,4 @@
+Input gsi_std;
+
 Define standard_fastq(string s)
   Where path == foo(s);

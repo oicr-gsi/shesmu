@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Run ok
  Monitor foo "The foos." { x = metatype }
  With { ok = True }

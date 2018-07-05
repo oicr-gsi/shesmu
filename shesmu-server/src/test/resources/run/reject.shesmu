@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Run ok
  Reject path != "/foo1" {
    Dump ius To somefile

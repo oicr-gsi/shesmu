@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class OliveNodeDefinition extends OliveNode {
@@ -57,9 +58,9 @@ public final class OliveNodeDefinition extends OliveNode {
 		return clauses().stream().noneMatch(OliveClauseNodeGroup.class::isInstance);
 	}
 
-	public Optional<Stream<Target>> outputStreamVariables(Consumer<String> errorHandler,
-			Supplier<Stream<Constant>> constants) {
-		if (outputStreamVariables != null || resolve(errorHandler, constants)) {
+	public Optional<Stream<Target>> outputStreamVariables(InputFormatDefinition inputFormatDefinition,
+			Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
+		if (outputStreamVariables != null || resolve(inputFormatDefinition, errorHandler, constants)) {
 			return Optional.of(outputStreamVariables.stream());
 		}
 		return Optional.empty();
@@ -81,7 +82,8 @@ public final class OliveNodeDefinition extends OliveNode {
 	}
 
 	@Override
-	public boolean resolve(Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
+	public boolean resolve(InputFormatDefinition inputFormatDefinition, Consumer<String> errorHandler,
+			Supplier<Stream<Constant>> constants) {
 		if (resolveLock) {
 			errorHandler.accept(
 					String.format("%d:%d: Olive definition %s includes itself via “Matches”.", line, column, name));
@@ -89,8 +91,8 @@ public final class OliveNodeDefinition extends OliveNode {
 		}
 		resolveLock = true;
 		final NameDefinitions result = clauses().stream().reduce(
-				NameDefinitions.root(Stream.concat(parameters.stream(), constants.get())),
-				(defs, clause) -> clause.resolve(defs, constants, errorHandler), (a, b) -> {
+				NameDefinitions.root(inputFormatDefinition, Stream.concat(parameters.stream(), constants.get())),
+				(defs, clause) -> clause.resolve(inputFormatDefinition, defs, constants, errorHandler), (a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		outputStreamVariables = result.stream().filter(target -> target.flavour() == Flavour.STREAM)

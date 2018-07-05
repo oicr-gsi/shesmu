@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,6 +23,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -29,6 +31,8 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
@@ -44,13 +48,16 @@ public final class Check extends Compiler {
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
 	public static Stream<ObjectNode> fetch(String remote, String slug) {
+		return fetch(remote, slug, ObjectNode[].class).map(Stream::of).orElse(Stream.empty());
+	}
+
+	public static <T> Optional<T> fetch(String remote, String slug, Class<T> clazz) {
 		final HttpGet request = new HttpGet(String.format("%s/%s", remote, slug));
 		try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-			return Arrays
-					.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ObjectNode[].class));
+			return Optional.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), clazz));
 		} catch (final Exception e) {
 			e.printStackTrace();
-			return Stream.empty();
+			return Optional.empty();
 		}
 	}
 
@@ -94,13 +101,16 @@ public final class Check extends Compiler {
 					}
 				})//
 				.collect(Collectors.toList());
+		final NameLoader<InputFormatDefinition> inputFormats = new NameLoader<>(
+				fetch(remote, "variables", ObjectNode.class).map(Check::makeInputFormat).orElse(Stream.empty()),
+				InputFormatDefinition::name);
 		final NameLoader<FunctionDefinition> functions = new NameLoader<>(
 				fetch(remote, "functions").map(Check::makeFunction), FunctionDefinition::name);
 		final NameLoader<ActionDefinition> actions = new NameLoader<>(fetch(remote, "actions").map(Check::makeAction),
 				ActionDefinition::name);
 
 		try {
-			final boolean ok = new Check(functions, actions).compile(Files.readAllBytes(Paths.get(file)),
+			final boolean ok = new Check(inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
 					"dyn/shesmu/Program", file, () -> constants.stream());
 			System.exit(ok ? 0 : 1);
 		} catch (final IOException e) {
@@ -118,7 +128,6 @@ public final class Check extends Compiler {
 				throw new UnsupportedOperationException();
 			}
 		};
-
 	}
 
 	private static FunctionDefinition makeFunction(ObjectNode node) {
@@ -156,6 +165,61 @@ public final class Check extends Compiler {
 		};
 	}
 
+	private static Stream<InputFormatDefinition> makeInputFormat(ObjectNode node) {
+		return RuntimeSupport.stream(node.fields()).map(pair -> {
+			final List<Target> targets = RuntimeSupport.stream(pair.getValue().fields()).map(field -> {
+				final String name = field.getKey();
+				final Imyhat type = Imyhat.parse(field.getValue().asText());
+				return new Target() {
+
+					@Override
+					public Flavour flavour() {
+						return Flavour.STREAM;
+					}
+
+					@Override
+					public String name() {
+						return name;
+					}
+
+					@Override
+					public Imyhat type() {
+						return type;
+					}
+				};
+			}).collect(Collectors.toList());
+
+			return new InputFormatDefinition(pair.getKey()) {
+
+				@Override
+				public Stream<Target> baseStreamVariables() {
+					return targets.stream();
+				}
+
+				@Override
+				public Stream<LoadedConfiguration> configuration() {
+					return Stream.empty();
+				}
+
+				@Override
+				public <T> Stream<T> input(Class<T> clazz) {
+					return Stream.empty();
+				}
+
+				@Override
+				public Class<?> itemClass() {
+					return Object.class;
+				}
+
+				@Override
+				public void write(JsonGenerator generator) throws IOException {
+					throw new UnsupportedOperationException();
+				}
+			};
+		});
+
+	}
+
 	private static ParameterDefinition makeParameter(JsonNode node) {
 		final String name = node.get("name").asText();
 		final Imyhat type = Imyhat.parse(node.get("type").asText());
@@ -187,9 +251,12 @@ public final class Check extends Compiler {
 	private final NameLoader<ActionDefinition> actions;
 
 	private final NameLoader<FunctionDefinition> functions;
+	private final NameLoader<InputFormatDefinition> inputFormats;
 
-	private Check(NameLoader<FunctionDefinition> functions, NameLoader<ActionDefinition> actions) {
+	private Check(NameLoader<InputFormatDefinition> inputFormats, NameLoader<FunctionDefinition> functions,
+			NameLoader<ActionDefinition> actions) {
 		super(true);
+		this.inputFormats = inputFormats;
 		this.functions = functions;
 		this.actions = actions;
 	}
@@ -212,6 +279,11 @@ public final class Check extends Compiler {
 	@Override
 	protected FunctionDefinition getFunction(String function) {
 		return functions.get(function);
+	}
+
+	@Override
+	protected InputFormatDefinition getInputFormats(String name) {
+		return inputFormats.get(name);
 	}
 
 }

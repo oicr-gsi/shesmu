@@ -106,15 +106,42 @@ The following are available:
   `{"url":..., "allow":...}` where `url` is the Shesmu server to copy and
   `allow` is a regular expression of which actions to copy.
 
-### Variable Sources
-This is where Shesmu gets provenance data for olives to ingest. The following are available:
+### Input Definitions
+A _input format_ is the type of data that Shesmu olives process--that is, the
+variables that are available to Shesmu programs. The actual data comes from a
+matching _input data repository_ and many repositories can provide the same format.
+
+- `gsi_std` is the default format. It contains a mix of analysis provenance
+  information tied back to LIMS provenance data.
+
+Creating a new source format is meant to be easy, but convoluted in order to be
+type safe. To create a new source format:
+
+1. Create a class, _V_, that will hold all the data for a “row” in the incoming
+data. It must be a class and not an interface.
+1. Create a parameterless method in _V_ for every variable to be exposed. The
+method names must be valid Shemsu names (lowercase with underscores) and
+decorated with `@Export` annotations with the correct type signature. All
+methods must return `boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple`
+(and `Set` and `Tuple` may only contain more of the same).
+1. Create a new interface, _R_, extending `InputRepository<`_V_`>`.
+1. Create a new class that extends `BaseInputFormatDefinition<`_V_`,`_R_`> and
+provides those types to the constructor as well as a name that will be used in
+the `Input` instruction. This class must be annotated with
+`@MetaInfServices(InputFormatDefinition)`.
+1. Create new classes that provide data which implement _R_ and are annotated
+with `@MetaInfServices(`_R_`)`.
+
+### Inputs Repositories (_gsi_std_)
+This is where Shesmu gets provenance data for olives to ingest. The following
+are available:
 
 - Pinery+SeqWare (in the `source-pinery` directory). Set `PROVENANCE_SETTINGS`
   to the file containing the provenance settings.
 - JSON files. Create a JSON file ending in `.variables` containing an array of
   objects. This can be copied from a running Shesmu instance at `/input`.
 
-### Constant Sources
+### Constant Inputs
 Variables with constant values can also be included in a Shesmu script. The
 following are available:
 
@@ -122,7 +149,7 @@ following are available:
    should contain an object where the property names are the variable names to
    use and the values are the constant values to use.
 
-### Function Sources
+### Function Inputs
 Function sources provide functions (or lookup tables) available to olives. For
 instance, suppose a BED file is needed for different projects. It is convenient
 to turn this into a function. The following are available:
