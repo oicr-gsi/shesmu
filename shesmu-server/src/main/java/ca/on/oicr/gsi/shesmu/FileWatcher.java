@@ -26,10 +26,6 @@ import java.util.stream.Stream;
 import io.prometheus.client.Gauge;
 
 public abstract class FileWatcher {
-	private static final Gauge updateTime = Gauge
-			.build("shesmu_auto_update_timestamp", "The UNIX time when a file or directory was last updated.")
-			.labelNames("filename").register();
-
 	public static final FileWatcher DATA_DIRECTORY = RuntimeSupport.dataDirectory()
 			.<FileWatcher>map(directory -> new FileWatcher() {
 				private final Map<Path, List<WatchedFileListener>> active = new ConcurrentHashMap<>();
@@ -152,6 +148,10 @@ public abstract class FileWatcher {
 				}
 
 			});
+
+	private static final Gauge updateTime = Gauge
+			.build("shesmu_auto_update_timestamp", "The UNIX time when a file or directory was last updated.")
+			.labelNames("filename").register();
 
 	public abstract void register(String extension, Function<Path, WatchedFileListener> ctor);
 }

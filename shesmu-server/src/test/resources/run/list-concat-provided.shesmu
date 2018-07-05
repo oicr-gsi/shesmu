@@ -1,2 +1,4 @@
+Input gsi_std;
+
 Run ok
  With { ok = (For x In [ {"a",2}, {"b",1} ]: Sort x[1] FixedConcat x[0] With "x") == "bxa" }

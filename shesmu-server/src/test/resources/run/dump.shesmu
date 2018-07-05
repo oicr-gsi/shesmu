@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Run ok
  Dump ius To somefile
  With { ok = True }

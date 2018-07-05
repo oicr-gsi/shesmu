@@ -1,2 +1,3 @@
+Input gsi_std;
 Run ok
  With { ok = (For x In [ {False,1}, {True,2} ]: Sort x[1] Subsample(Fixed 1) Count) == 1 }

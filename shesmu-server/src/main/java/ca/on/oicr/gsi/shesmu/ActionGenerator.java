@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.prometheus.client.Collector;
@@ -19,22 +19,22 @@ import io.prometheus.client.Gauge;
  */
 public abstract class ActionGenerator {
 
-	@RuntimeInterop
-	public static final Gauge OLIVE_RUN_TIME = Gauge
-			.build("shesmu_olive_run_time", "The runtime of an olive in seconds.").labelNames("filename", "line")
-			.register();
-	
 	/**
 	 * An action generator which ignores the input.
 	 */
 	public static final ActionGenerator NULL = new ActionGenerator() {
 
 		@Override
-		public void run(Consumer<Action> consumer, Supplier<Stream<Variables>> input) {
+		public <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
 			// Do nothing.
 		}
 
 	};
+
+	@RuntimeInterop
+	public static final Gauge OLIVE_RUN_TIME = Gauge
+			.build("shesmu_olive_run_time", "The runtime of an olive in seconds.").labelNames("filename", "line")
+			.register();
 
 	private final List<Collector> collectors = new ArrayList<>();
 
@@ -80,12 +80,12 @@ public abstract class ActionGenerator {
 	 *            maybe called multiple times; the contents of the stream should
 	 *            remain the value-equivalent for each call. The order of the input
 	 *            and reference-equivalence are not required. That is, multiple
-	 *            calls do not have return the same {@link Variables} objects, but
-	 *            should return ones with the same content. Duplicate items are
-	 *            permitted, but might be a problem for the Shesmu script.
+	 *            calls do not have return the same objects, but should return ones
+	 *            with the same content. Duplicate items are permitted, but might be
+	 *            a problem for the Shesmu script.
 	 */
 	@RuntimeInterop
-	public abstract void run(Consumer<Action> consumer, Supplier<Stream<Variables>> input);
+	public abstract <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input);
 
 	/**
 	 * Remove all Prometheus monitoring for this program.

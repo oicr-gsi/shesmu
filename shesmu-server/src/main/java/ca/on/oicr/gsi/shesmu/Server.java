@@ -30,7 +30,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import ca.on.oicr.gsi.shesmu.Constant.ConstantLoader;
-import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
@@ -57,10 +56,10 @@ public final class Server {
 	private final CachedRepository<FunctionRepository, FunctionDefinition> functionpRepository = new CachedRepository<>(
 			FunctionRepository.class, 15, FunctionRepository::queryFunctions);
 	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
+	private final Semaphore inputDownloadSemaphore = new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
 	private final ActionProcessor processor = new ActionProcessor();
 	private final HttpServer server;
 	private final Instant startTime = Instant.now();
-	private final Semaphore inputDownloadSemaphore = new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
 
 	private final StaticActions staticActions = new StaticActions(processor::accept, this::actionDefinitions);
 
@@ -85,7 +84,7 @@ public final class Server {
 					writer.print("</p>");
 				}
 				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
-						VariablesSource::sources, //
+						InputFormatDefinition::allConfiguration, //
 						actionRepository::implementations, //
 						functionpRepository::implementations, //
 						Throttler::services, //
@@ -145,11 +144,13 @@ public final class Server {
 				});
 				writeFinish(writer);
 
-				writeHeader(writer, "Variables");
-				NameDefinitions.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
-					writeRow(writer, variable.name(), variable.type().name());
+				InputFormatDefinition.formats().forEach(format -> {
+					writeHeader(writer, "Variables: " + format.name());
+					format.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
+						writeRow(writer, variable.name(), variable.type().name());
+					});
+					writeFinish(writer);
 				});
-				writeFinish(writer);
 
 				writeHeader(writer, "Constants");
 				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
@@ -275,8 +276,12 @@ public final class Server {
 
 		addJson("/variables", mapper -> {
 			final ObjectNode node = mapper.createObjectNode();
-			NameDefinitions.baseStreamVariables().forEach(variable -> {
-				node.put(variable.name(), variable.type().signature());
+			InputFormatDefinition.formats().forEach(source -> {
+				final ObjectNode sourceNode = node.putObject(source.name());
+
+				source.baseStreamVariables().forEach(variable -> {
+					sourceNode.put(variable.name(), variable.type().signature());
+				});
 			});
 			return node;
 		});
@@ -293,48 +298,17 @@ public final class Server {
 			try (OutputStream os = t.getResponseBody()) {
 				final JsonFactory jfactory = new JsonFactory();
 				final JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8);
-				jGenerator.writeStartArray();
-				VariablesSource.all().forEach(variable -> {
+				jGenerator.writeStartObject();
+				InputFormatDefinition.formats().forEach(source -> {
 					try {
-						jGenerator.writeStartObject();
-						jGenerator.writeStringField("accession", variable.accession());
-						jGenerator.writeStringField("donor", variable.donor());
-						jGenerator.writeNumberField("file_size", variable.file_size());
-						jGenerator.writeStringField("group_desc", variable.group_desc());
-						jGenerator.writeStringField("group_id", variable.group_id());
-						jGenerator.writeStringField("ius_0", (String) variable.ius().get(0));
-						jGenerator.writeNumberField("ius_1", (Long) variable.ius().get(1));
-						jGenerator.writeStringField("ius_2", (String) variable.ius().get(2));
-						jGenerator.writeStringField("kit", variable.kit());
-						jGenerator.writeStringField("library_design", variable.library_design());
-						jGenerator.writeStringField("library_name", variable.library_name());
-						jGenerator.writeNumberField("library_size", variable.library_size());
-						jGenerator.writeStringField("library_type", variable.library_type());
-						jGenerator.writeStringField("lims_id", (String) variable.lims().get(0));
-						jGenerator.writeStringField("lims_version", (String) variable.lims().get(1));
-						jGenerator.writeStringField("lims_provider", (String) variable.lims().get(2));
-						jGenerator.writeStringField("md5", variable.md5());
-						jGenerator.writeStringField("metatype", variable.metatype());
-						jGenerator.writeStringField("path", variable.path());
-						jGenerator.writeStringField("project", variable.project());
-						jGenerator.writeStringField("source", variable.source());
-						jGenerator.writeStringField("targeted_resequencing", variable.targeted_resequencing());
-						jGenerator.writeNumberField("timestamp", variable.timestamp().toEpochMilli());
-						jGenerator.writeStringField("tissue_origin", variable.tissue_origin());
-						jGenerator.writeStringField("tissue_prep", variable.tissue_prep());
-						jGenerator.writeStringField("tissue_region", variable.tissue_region());
-						jGenerator.writeStringField("tissue_type", variable.tissue_type());
-						jGenerator.writeStringField("workflow", variable.workflow());
-						jGenerator.writeStringField("workflow_accession", variable.workflow_accession());
-						jGenerator.writeNumberField("workflow_version_0", (Long) variable.workflow_version().get(0));
-						jGenerator.writeNumberField("workflow_version_1", (Long) variable.workflow_version().get(1));
-						jGenerator.writeNumberField("workflow_version_2", (Long) variable.workflow_version().get(2));
-						jGenerator.writeEndObject();
+						jGenerator.writeArrayFieldStart(source.name());
+						source.write(jGenerator);
+						jGenerator.writeEndArray();
 					} catch (final IOException e) {
-						throw new IllegalStateException(e);
+						e.printStackTrace();
 					}
 				});
-				jGenerator.writeEndArray();
+				jGenerator.writeEndObject();
 				jGenerator.close();
 			} finally {
 				inputDownloadSemaphore.release();

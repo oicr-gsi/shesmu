@@ -7,7 +7,7 @@ import io.prometheus.client.Gauge;
 
 /**
  * Periodically run an {@link ActionGenerator} on all available variables from
- * {@link VariablesSource}
+ * {@link InputRepository}
  */
 public class MasterRunner {
 	private static final Gauge duplicates = Gauge
@@ -38,7 +38,7 @@ public class MasterRunner {
 					if (actionSink.accept(action)) {
 						currentDuplicates.incrementAndGet();
 					}
-				}, VariablesSource::all);
+				}, InputFormatDefinition::all);
 				duplicates.set(currentDuplicates.get());
 			} catch (final Exception e) {
 				e.printStackTrace();

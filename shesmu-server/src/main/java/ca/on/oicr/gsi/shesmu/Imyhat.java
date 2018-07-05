@@ -16,8 +16,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.objectweb.asm.Type;
+import javax.swing.text.html.HTMLDocument.Iterator;
 
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
+
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -128,6 +134,31 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void streamJson(GeneratorAdapter method) {
+			final int jsonLocal = method.newLocal(A_JSON_GENERATOR_TYPE);
+			final int iteratorLocal = method.newLocal(A_ITERATOR_TYPE);
+			method.invokeInterface(A_SET_TYPE, METHOD_SET__ITERATOR);
+			method.storeLocal(iteratorLocal);
+			method.storeLocal(jsonLocal);
+			method.loadLocal(jsonLocal);
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__ARRAY_START);
+			final Label start = method.mark();
+			final Label end = method.newLabel();
+			method.loadLocal(iteratorLocal);
+			method.invokeInterface(A_ITERATOR_TYPE, METHOD_ITERATOR__HAS_NEXT);
+			method.ifZCmp(GeneratorAdapter.EQ, end);
+			method.loadLocal(jsonLocal);
+			method.loadLocal(iteratorLocal);
+			method.invokeInterface(A_ITERATOR_TYPE, METHOD_ITERATOR__NEXT);
+			method.unbox(inner.asmType());
+			inner.streamJson(method);
+			method.goTo(start);
+			method.mark(end);
+			method.loadLocal(jsonLocal);
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__ARRAY_END);
+		}
+
+		@Override
 		public Object unpackJson(JsonNode node) {
 			return RuntimeSupport.stream(node.elements()).map(inner::unpackJson).collect(Collectors.toSet());
 		}
@@ -214,6 +245,24 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void streamJson(GeneratorAdapter method) {
+			final int local = method.newLocal(A_TUPLE_TYPE);
+			method.storeLocal(local);
+			method.dup();
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__ARRAY_START);
+
+			for (int i = 0; i < types.length; i++) {
+				method.dup();
+				method.loadLocal(local);
+				method.push(i);
+				method.invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
+				method.unbox(types[i].asmType());
+				types[i].streamJson(method);
+			}
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__ARRAY_END);
+		}
+
+		@Override
 		public Object unpackJson(JsonNode node) {
 			final Object[] elements = new Object[types.length];
 			for (int it = 0; it < types.length; it++) {
@@ -223,10 +272,13 @@ public abstract class Imyhat {
 		}
 	}
 
+	private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
+	private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
+	private static final Type A_JSON_GENERATOR_TYPE = Type.getType(JsonGenerator.class);
+
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
-
 	private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
 	public static final Imyhat BAD = new Imyhat() {
 
@@ -278,6 +330,12 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return "$";
+		}
+
+		@Override
+		public void streamJson(GeneratorAdapter method) {
+			method.pop();
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_NULL);
 		}
 
 		@Override
@@ -345,17 +403,24 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void streamJson(GeneratorAdapter method) {
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_BOOLEAN);
+		}
+
+		@Override
 		public Object unpackJson(JsonNode node) {
 			return node.asBoolean();
 		}
 
 	};
+
 	private static final Map<String, CallSite> callsites = new HashMap<>();
+
 	public static final BaseImyhat DATE = new BaseImyhat() {
 
 		@Override
 		public Type asmType() {
-			return Type.getType(Instant.class);
+			return A_INSTANT_TYPE;
 		}
 
 		@Override
@@ -404,11 +469,18 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void streamJson(GeneratorAdapter method) {
+			method.invokeVirtual(A_INSTANT_TYPE, METHOD_INSTANT__TO_EPOCH_MILLI);
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_NUMBER);
+		}
+
+		@Override
 		public Object unpackJson(JsonNode node) {
 			return Instant.ofEpochMilli(node.asLong());
 		}
 
 	};
+
 	public static final BaseImyhat INTEGER = new BaseImyhat() {
 
 		@Override
@@ -467,11 +539,38 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void streamJson(GeneratorAdapter method) {
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_NUMBER);
+		}
+
+		@Override
 		public Object unpackJson(JsonNode node) {
 			return node.asLong();
 		}
 
 	};
+	protected static final Method METHOD_INSTANT__TO_EPOCH_MILLI = new Method("toEpochMilli", Type.LONG_TYPE,
+			new Type[] {});
+
+	private static final Method METHOD_ITERATOR__HAS_NEXT = new Method("hasNext", Type.BOOLEAN_TYPE, new Type[] {});
+
+	private static final Method METHOD_ITERATOR__NEXT = new Method("next", Type.getType(Object.class), new Type[] {});
+	private static final Method METHOD_JSON_GENERATOR__ARRAY_END = new Method("writeArrayEnd", Type.VOID_TYPE,
+			new Type[] {});
+
+	private static final Method METHOD_JSON_GENERATOR__ARRAY_START = new Method("writeArrayStart", Type.VOID_TYPE,
+			new Type[] {});
+	private static final Method METHOD_JSON_GENERATOR__WRITE_BOOLEAN = new Method("writeBoolean", Type.VOID_TYPE,
+			new Type[] { Type.BOOLEAN_TYPE });
+	private static final Method METHOD_JSON_GENERATOR__WRITE_NULL = new Method("writeNull", Type.VOID_TYPE,
+			new Type[] {});
+	private static final Method METHOD_JSON_GENERATOR__WRITE_NUMBER = new Method("writeNumber", Type.VOID_TYPE,
+			new Type[] { Type.LONG_TYPE });
+	private static final Method METHOD_JSON_GENERATOR__WRITE_STRING = new Method("writeString", Type.VOID_TYPE,
+			new Type[] { A_STRING_TYPE });
+	private static final Method METHOD_SET__ITERATOR = new Method("iterator", A_ITERATOR_TYPE, new Type[] {});
+	private static final Method METHOD_TUPLE__GET = new Method("get", Type.getType(Object.class),
+			new Type[] { Type.INT_TYPE });
 	public static final BaseImyhat STRING = new BaseImyhat() {
 
 		@Override
@@ -522,6 +621,11 @@ public abstract class Imyhat {
 		@Override
 		public String signature() {
 			return "s";
+		}
+
+		@Override
+		public void streamJson(GeneratorAdapter method) {
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_STRING);
 		}
 
 		@Override
@@ -725,6 +829,8 @@ public abstract class Imyhat {
 	 * @see #parse(CharSequence)
 	 */
 	public abstract String signature();
+
+	public abstract void streamJson(GeneratorAdapter method);
 
 	@Override
 	public final String toString() {

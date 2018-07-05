@@ -1,2 +1,4 @@
+Input gsi_std;
+
 Run ok
  With { ok = "x" ~ /x/ }

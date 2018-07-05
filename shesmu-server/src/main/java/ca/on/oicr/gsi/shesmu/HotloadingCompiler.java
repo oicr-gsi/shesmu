@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -26,8 +27,12 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
 	private final Supplier<Stream<FunctionDefinition>> functions;
 
-	public HotloadingCompiler(Supplier<Stream<FunctionDefinition>> functions,
-			Supplier<Stream<ActionDefinition>> actions, Supplier<Stream<Constant>> constants) {
+	private final Function<String, InputFormatDefinition> inputFormats;
+
+	public HotloadingCompiler(Function<String, InputFormatDefinition> inputFormats,
+			Supplier<Stream<FunctionDefinition>> functions, Supplier<Stream<ActionDefinition>> actions,
+			Supplier<Stream<Constant>> constants) {
+		this.inputFormats = inputFormats;
 		this.functions = functions;
 		this.actions = actions;
 		this.constants = constants;
@@ -60,6 +65,11 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 				@Override
 				protected FunctionDefinition getFunction(String function) {
 					return functionCache.get(function);
+				}
+
+				@Override
+				protected InputFormatDefinition getInputFormats(String name) {
+					return inputFormats.apply(name);
 				}
 			};
 

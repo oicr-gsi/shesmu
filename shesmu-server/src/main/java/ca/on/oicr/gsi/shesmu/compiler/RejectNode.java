@@ -10,13 +10,15 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 public interface RejectNode {
 	void collectFreeVariables(Set<String> freeVariables);
 
 	void render(RootBuilder builder, Renderer renderer);
 
-	NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler);
+	NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler);
 
 	boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,

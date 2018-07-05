@@ -86,15 +86,17 @@ public class RunTest {
 	private static final List<Constant> CONSTANTS = Arrays
 			.asList(Constant.of("project_constant", "the_foo_study", "Testing constant"));
 
-	private static Variables[] DATA = new Variables[] {
-			new Variables("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA", "aaa1",
+	private static GsiStdValue[] DATA = new GsiStdValue[] {
+			new GsiStdValue("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA", "aaa1",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
 					new Tuple("RUN", 1L, "AACCGGTT"), "EX", "Fresh", "An", "Frozen", "", "Inside", "", "", 307L,
-					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"), "test"),
-			new Variables("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA", "aaa2",
+					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"),
+					"test"),
+			new GsiStdValue("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA", "aaa2",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
 					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
-					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"), "test") };
+					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"),
+					"test") };
 
 	private static final FunctionDefinition INT2DATE = new FunctionDefinition() {
 		@Override
@@ -169,8 +171,8 @@ public class RunTest {
 		return Stream.of(OK_ACTION_DEFINITION);
 	}
 
-	private Stream<Variables> data() {
-		return Arrays.stream(DATA);
+	private <T> Stream<T> data(Class<T> clazz) {
+		return Arrays.stream(DATA).map(clazz::cast);
 	}
 
 	private Stream<FunctionDefinition> functions() {
@@ -193,8 +195,8 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			final HotloadingCompiler compiler = new HotloadingCompiler(this::functions, this::actions,
-					CONSTANTS::stream);
+			final HotloadingCompiler compiler = new HotloadingCompiler(x -> new GsiStdFormatDefinition(), this::functions,
+					this::actions, CONSTANTS::stream);
 			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			final ActionChecker checker = new ActionChecker();
 			generator.run(checker, this::data);

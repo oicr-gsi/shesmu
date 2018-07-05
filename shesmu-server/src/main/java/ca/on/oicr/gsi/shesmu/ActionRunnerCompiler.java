@@ -30,8 +30,8 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
-	private static final Method JSON_OBJECT__HAS = new Method("has", Type.BOOLEAN_TYPE, new Type[] { A_STRING_TYPE });
 	private static final Method JSON_OBJECT__GET = new Method("get", A_JSON_NODE_TYPE, new Type[] { A_STRING_TYPE });
+	private static final Method JSON_OBJECT__HAS = new Method("has", Type.BOOLEAN_TYPE, new Type[] { A_STRING_TYPE });
 	private static final Method LOAD_METHOD = new Method("run", Type.VOID_TYPE, new Type[] { A_JSON_OBJECT_TYPE });
 
 	private static final Method METHOD_IMYHAT__UNPACK_JSON = new Method("unpackJson", A_OBJECT_TYPE,

@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Run ok
  Max library_size By project
  Group samples = donor By project, library_size

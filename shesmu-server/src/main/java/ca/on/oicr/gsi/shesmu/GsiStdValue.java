@@ -8,7 +8,7 @@ import java.time.Instant;
  * This is one “row” in the information being fed into Shesmu
  *
  */
-public final class Variables {
+public final class GsiStdValue {
 	private final String accession;
 	private final String donor;
 	private final long file_size;
@@ -36,7 +36,7 @@ public final class Variables {
 	private final String workflow_accession;
 	private final Tuple workflow_version;
 
-	public Variables(String accession, String path, String metatype, String md5, long file_size, String workflow,
+	public GsiStdValue(String accession, String path, String metatype, String md5, long file_size, String workflow,
 			String workflow_accession, Tuple workflow_version, String project, String library_name, String donor,
 			Tuple ius, String library_design, String tissue_type, String tissue_origin, String tissue_prep,
 			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
@@ -91,7 +91,7 @@ public final class Variables {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final Variables other = (Variables) obj;
+		final GsiStdValue other = (GsiStdValue) obj;
 		if (accession == null) {
 			if (other.accession != null) {
 				return false;

@@ -15,6 +15,7 @@ import org.objectweb.asm.Opcodes;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 
 public final class OliveNodeRun extends OliveNode {
@@ -69,9 +70,11 @@ public final class OliveNodeRun extends OliveNode {
 	}
 
 	@Override
-	public boolean resolve(Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
-		final NameDefinitions defs = clauses().stream().reduce(NameDefinitions.root(constants.get()),
-				(d, clause) -> clause.resolve(d, constants, errorHandler), (a, b) -> {
+	public boolean resolve(InputFormatDefinition inputFormatDefinition, Consumer<String> errorHandler,
+			Supplier<Stream<Constant>> constants) {
+		final NameDefinitions defs = clauses().stream().reduce(
+				NameDefinitions.root(inputFormatDefinition, constants.get()),
+				(d, clause) -> clause.resolve(inputFormatDefinition, d, constants, errorHandler), (a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		return defs.isGood() & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler))

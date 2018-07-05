@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
 public class OliveClauseNodeMatches extends OliveClauseNode {
@@ -57,12 +58,13 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(NameDefinitions defs, Supplier<Stream<Constant>> constants,
-			Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
 		boolean good = arguments.stream().filter(argument -> argument.resolve(limitedDefs, errorHandler))
 				.count() == arguments.size();
-		final Optional<Stream<Target>> replacements = target.outputStreamVariables(errorHandler, constants);
+		final Optional<Stream<Target>> replacements = target.outputStreamVariables(inputFormatDefinition, errorHandler,
+				constants);
 		good &= replacements.isPresent();
 		return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
 

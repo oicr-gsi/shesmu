@@ -32,13 +32,13 @@ import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
-import ca.on.oicr.gsi.shesmu.Variables;
-import ca.on.oicr.gsi.shesmu.VariablesSource;
+import ca.on.oicr.gsi.shesmu.GsiStdValue;
+import ca.on.oicr.gsi.shesmu.GsiStdRepository;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
 @MetaInfServices
-public class FileProvenanceVariablesSource implements VariablesSource {
+public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 
 	private static final Gauge badSetError = Gauge.build("shesmu_file_provenance_bad_set_size",
 			"The number of records where a set contained not exactly one item.").register();
@@ -105,7 +105,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 		return new Tuple(0L, 0L, 0L);
 	}
 
-	private List<Variables> cache = Collections.emptyList();
+	private List<GsiStdValue> cache = Collections.emptyList();
 
 	private final DefaultProvenanceClient client = new DefaultProvenanceClient();
 
@@ -113,7 +113,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 
 	private final Map<String, String> properties = new TreeMap<>();
 
-	public FileProvenanceVariablesSource() throws IOException {
+	public FileProvenanceGsiStdRepository() throws IOException {
 		Utils.LOADER.ifPresent(loader -> {
 			Utils.setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
 			Utils.setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
@@ -130,7 +130,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 	}
 
 	@Override
-	public Stream<Variables> stream() {
+	public Stream<GsiStdValue> stream() {
 		if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
 			try (AutoCloseable timer = fetchLatency.start()) {
 				final AtomicInteger badSets = new AtomicInteger();
@@ -144,7 +144,7 @@ public class FileProvenanceVariablesSource implements VariablesSource {
 							final Optional<LimsKey> limsKey = Utils.singleton(fp.getIusLimsKeys(),
 									reason -> badSetInRecord.add("limskey:" + reason), true)
 									.map(IusLimsKey::getLimsKey);
-							final Variables result = new Variables(//
+							final GsiStdValue result = new GsiStdValue(//
 									fp.getFileSWID().toString(), //
 									fp.getFilePath(), //
 									fp.getFileMetaType(), //

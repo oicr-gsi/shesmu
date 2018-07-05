@@ -1,3 +1,5 @@
+Input gsi_std;
+
 Run optional
   Let x = path, y = workflow
   With {

@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 /**
  * An olive stanza declaration
@@ -81,69 +80,6 @@ public abstract class OliveNode {
 		return input.dispatch(ROOTS, output).whitespace();
 	}
 
-	/**
-	 * Parse a file of olive nodes
-	 */
-	public static boolean parseFile(CharSequence input, Consumer<List<OliveNode>> output, ErrorConsumer errorHandler) {
-		final Parser result = Parser.start(input, errorHandler).whitespace().list(output, OliveNode::parse)
-				.whitespace();
-		if (result.isGood()) {
-			if (result.isEmpty()) {
-				return true;
-			} else {
-				errorHandler.raise(result.line(), result.column(), "Junk at end of file.");
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Generate bytecode for this definition
-	 */
-	public static void render(RootBuilder builder, List<OliveNode> program) {
-		final Map<String, OliveDefineBuilder> definitions = new HashMap<>();
-		program.forEach(olive -> olive.build(builder, definitions));
-		program.forEach(olive -> olive.render(builder, definitions));
-	}
-
-	/**
-	 * Check that a collection of olives, assumed to be a self-contained program, is
-	 * well-formed.
-	 *
-	 * @param olives
-	 *            the olives that make up the program
-	 * @param definedFunctions
-	 *            the functions available; if a function is not found, null should
-	 *            be returned
-	 * @param definedActions
-	 *            the actions available; if an action is not found, null should be
-	 *            returned
-	 * @param constants
-	 */
-	public static boolean validate(List<OliveNode> olives, Function<String, FunctionDefinition> definedFunctions,
-			Function<String, ActionDefinition> definedActions, Consumer<String> errorHandler,
-			Supplier<Stream<Constant>> constants) {
-
-		// Find and resolve olive “Define” and “Matches”
-		final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
-		final Set<String> metricNames = new HashSet<>();
-		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
-				.count() == olives.size();
-		ok &= olives.stream().filter(olive -> olive.resolveDefinitions(definedOlives, definedFunctions, definedActions,
-				metricNames, errorHandler)).count() == olives.size();
-
-		// Resolve variables
-		if (ok) {
-			ok = olives.stream().filter(olive -> olive.resolve(errorHandler, constants)).count() == olives.size();
-		}
-
-		// Type check the resolved structure
-		if (ok) {
-			ok = olives.stream().filter(olive -> olive.typeCheck(errorHandler)).count() == olives.size();
-		}
-		return ok;
-	}
-
 	private final List<OliveClauseNode> clauses;
 
 	public OliveNode(List<OliveClauseNode> clauses) {
@@ -194,10 +130,9 @@ public abstract class OliveNode {
 
 	/**
 	 * Resolve all variable definitions
-	 *
-	 * @param constants
 	 */
-	public abstract boolean resolve(Consumer<String> errorHandler, Supplier<Stream<Constant>> constants);
+	public abstract boolean resolve(InputFormatDefinition inputFormatDefinition, Consumer<String> errorHandler,
+			Supplier<Stream<Constant>> constants);
 
 	/**
 	 * Resolve all non-variable definitions

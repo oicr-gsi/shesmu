@@ -71,7 +71,11 @@ public abstract class BaseHotloadingCompiler {
 	 */
 	protected final <T> T load(Class<T> clazz, String className)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		return classloader.loadClass(className).asSubclass(clazz).newInstance();
+		return loadClass(clazz, className).newInstance();
+	}
+
+	public <T> Class<? extends T> loadClass(Class<T> clazz, String className) throws ClassNotFoundException {
+		return classloader.loadClass(className).asSubclass(clazz);
 	}
 
 }

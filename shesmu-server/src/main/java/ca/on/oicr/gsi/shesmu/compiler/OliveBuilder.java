@@ -5,7 +5,6 @@ import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Handle;
@@ -32,18 +31,18 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
-	private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
 	private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
 	private static final Method METHOD_CHILD__SET = new Method("set", VOID_TYPE, new Type[] { DOUBLE_TYPE });
 	private static final Method METHOD_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE, new Type[] { A_OBJECT_TYPE });
+
+	private static final Method METHOD_FUNCTION__APPLY = new Method("apply", A_OBJECT_TYPE,
+			new Type[] { A_OBJECT_TYPE });
 
 	private static final Method METHOD_GAUGE__LABELS = new Method("labels", Type.getType(Object.class),
 			new Type[] { Type.getType(String[].class) });
 
 	private static final Method METHOD_STREAM__FOR_EACH = new Method("forEach", VOID_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
-
-	private static final Method METHOD_SUPPLIER__GET = new Method("get", A_OBJECT_TYPE, new Type[] {});
 
 	private static final Method METHOD_SYSTEM__NANO_TIME = new Method("nanoTime", LONG_TYPE, new Type[] {});
 
@@ -79,7 +78,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		runMethod.storeLocal(startTime);
 
 		runMethod.loadArg(1);
-		runMethod.invokeInterface(A_SUPPLIER_TYPE, METHOD_SUPPLIER__GET);
+		runMethod.push(initialType);
+		runMethod.invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
 		runMethod.checkCast(A_STREAM_TYPE);
 
 		steps.forEach(step -> step.accept(owner.rootRenderer()));

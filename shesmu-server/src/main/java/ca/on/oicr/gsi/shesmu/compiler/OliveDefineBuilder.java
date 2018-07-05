@@ -50,7 +50,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 	private final List<LoadableValue> parameters;
 
 	public OliveDefineBuilder(RootBuilder owner, int oliveId, Stream<? extends Target> parameters) {
-		super(owner, oliveId, A_VARIABLES_TYPE);
+		super(owner, oliveId, owner.inputFormatDefinition().type());
 		this.parameters = parameters.map(Pair.number()).map(Pair.transform(LoadParameter::new))
 				.collect(Collectors.toList());
 		method = new Method(String.format("olive_matcher_%d", oliveId), A_STREAM_TYPE,

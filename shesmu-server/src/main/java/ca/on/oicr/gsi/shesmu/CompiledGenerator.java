@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +43,7 @@ public class CompiledGenerator extends ActionGenerator {
 		@Override
 		public Optional<Integer> update() {
 			try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
-				final HotloadingCompiler compiler = new HotloadingCompiler(functions, actions, constants);
+				final HotloadingCompiler compiler = new HotloadingCompiler(SOURCES::get, functions, actions, constants);
 				final Optional<ActionGenerator> result = compiler.compile(fileName);
 				sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
 				result.ifPresent(x -> {
@@ -61,6 +62,9 @@ public class CompiledGenerator extends ActionGenerator {
 	private static final Gauge compileTime = Gauge
 			.build("shesmu_source_compile_time", "The number of seconds the last compilation took to perform.")
 			.labelNames("filename").register();
+
+	private static final NameLoader<InputFormatDefinition> SOURCES = new NameLoader<>(InputFormatDefinition.formats(),
+			InputFormatDefinition::name);
 
 	private static final Gauge sourceValid = Gauge
 			.build("shesmu_source_valid", "Whether the source file has been successfully compiled.")
@@ -97,7 +101,7 @@ public class CompiledGenerator extends ActionGenerator {
 	}
 
 	@Override
-	public void run(Consumer<Action> consumer, Supplier<Stream<Variables>> input) {
+	public <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
 		scripts.values().forEach(script -> script.generator.run(consumer, input));
 	}
 
