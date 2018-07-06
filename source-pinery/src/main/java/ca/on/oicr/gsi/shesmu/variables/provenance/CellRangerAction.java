@@ -61,8 +61,8 @@ public class CellRangerAction extends SeqWareWorkflowAction {
 
 	private List<LimsKey> limsKeys;
 
-	public CellRangerAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath) {
-		super(workflowAccession, previousAccessions, jarPath, settingsPath);
+	public CellRangerAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath, String[] services) {
+		super(workflowAccession, previousAccessions, jarPath, settingsPath, services);
 	}
 
 	@RuntimeInterop
