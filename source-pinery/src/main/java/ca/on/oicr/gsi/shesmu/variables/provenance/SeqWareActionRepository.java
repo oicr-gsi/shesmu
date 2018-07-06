@@ -43,7 +43,7 @@ public class SeqWareActionRepository implements ActionRepository {
 			actionDefinitions = Stream.of(value.getWorkflows())//
 					.<ActionDefinition>map(wc -> SeqWareWorkflowAction.create(wc.getName(), wc.getType().type(),
 							wc.getAccession(), wc.getPreviousAccessions(), value.getJar(), value.getSettings(),
-							wc.getType().parameters()))//
+							wc.getServices(), wc.getType().parameters()))//
 					.collect(Collectors.toList());
 			return Optional.empty();
 		}

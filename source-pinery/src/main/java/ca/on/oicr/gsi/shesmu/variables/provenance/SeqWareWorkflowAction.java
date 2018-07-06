@@ -40,6 +40,7 @@ import ca.on.oicr.gsi.shesmu.Cache;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import io.prometheus.client.Gauge;
 import net.sourceforge.seqware.common.metadata.Metadata;
@@ -105,8 +106,8 @@ public class SeqWareWorkflowAction extends Action {
 			.build("shesmu_seqware_run_failed", "The number of workflow runs that failed to be launched.")
 			.labelNames("target", "workflow").create();
 
-	private static final Method SQWACTION__CTOR = new Method("<init>", Type.VOID_TYPE,
-			new Type[] { Type.LONG_TYPE, A_LONG_ARRAY_TYPE, A_STRING_TYPE, A_STRING_TYPE });
+	private static final Method SQWACTION__CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] { Type.LONG_TYPE,
+			A_LONG_ARRAY_TYPE, A_STRING_TYPE, A_STRING_TYPE, Type.getType(String[].class) });
 	private static final Method SQWACTION__PREPARE = new Method("prepare", Type.VOID_TYPE, new Type[] {});
 
 	static {
@@ -132,11 +133,13 @@ public class SeqWareWorkflowAction extends Action {
 	 *            the path to the SeqWare distribution JAR
 	 * @param settingsPath
 	 *            the path to the SeqWare settings file
+	 * @param services
+	 *            the throttler services to engage for this workflow
 	 * @param parameters
 	 *            the parameters accepted by this workflow
 	 */
 	public static ActionDefinition create(String name, Type type, long workflowAccession, long[] previousAccessions,
-			String jarPath, String settingsPath, Stream<SeqWareParameterDefinition> parameters) {
+			String jarPath, String settingsPath, String[] services, Stream<SeqWareParameterDefinition> parameters) {
 		return new ActionDefinition(name, type,
 				Stream.concat(Stream.of(ParameterDefinition.forField(A_SQWACTION_TYPE, "magic", Imyhat.STRING, false)),
 						parameters.map(p -> p.generate(type)))) {
@@ -163,6 +166,14 @@ public class SeqWareWorkflowAction extends Action {
 				}
 				methodGen.push(jarPath);
 				methodGen.push(settingsPath);
+				methodGen.push(services.length);
+				methodGen.newArray(A_STRING_TYPE);
+				for (int i = 0; i < services.length; i++) {
+					methodGen.dup();
+					methodGen.push(i);
+					methodGen.push(services[i]);
+					methodGen.arrayStore(A_STRING_TYPE);
+				}
 				methodGen.invokeConstructor(type, SQWACTION__CTOR);
 			}
 		};
@@ -247,21 +258,23 @@ public class SeqWareWorkflowAction extends Action {
 
 	private String inputFiles;
 
-	private Set<Integer> inputSwids = new TreeSet<>();
+	private final Set<Integer> inputSwids = new TreeSet<>();
 	protected final String jarPath;
 
 	private final String settingsPath;
 
 	private final long workflowAccession;
-	private long[] previousAccessions;
+	private final long[] previousAccessions;
+	private final Set<String> services;
 
-	public SeqWareWorkflowAction(long workflowAccession, long[] previousAccessions, String jarPath,
-			String settingsPath) {
+	public SeqWareWorkflowAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath,
+			String[] services) {
 		super("seqware");
 		this.workflowAccession = workflowAccession;
 		this.previousAccessions = previousAccessions;
 		this.jarPath = jarPath;
 		this.settingsPath = settingsPath;
+		this.services = Stream.of(services).collect(Collectors.toSet());
 	}
 
 	@RuntimeInterop
@@ -363,6 +376,9 @@ public class SeqWareWorkflowAction extends Action {
 
 	@Override
 	public final ActionState perform() {
+		if (Throttler.anyOverloaded(services)) {
+			return ActionState.THROTTLED;
+		}
 		try {
 			// Read the FPR cache to determine if this workflow has already been run
 			final Optional<ActionState> current = CACHE.get(settingsPath)//

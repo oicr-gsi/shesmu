@@ -4,6 +4,7 @@ public class WorkflowConfiguration {
 	private long accession;
 	private String name;
 	private long[] previousAccessions;
+	private String[] services;
 	private WorkflowType type;
 
 	public long getAccession() {
@@ -16,6 +17,10 @@ public class WorkflowConfiguration {
 
 	public long[] getPreviousAccessions() {
 		return previousAccessions;
+	}
+
+	public String[] getServices() {
+		return services;
 	}
 
 	public WorkflowType getType() {
@@ -32,6 +37,10 @@ public class WorkflowConfiguration {
 
 	public void setPreviousAccessions(long[] previousAccessions) {
 		this.previousAccessions = previousAccessions;
+	}
+
+	public void setServices(String[] services) {
+		this.services = services;
 	}
 
 	public void setType(WorkflowType type) {
