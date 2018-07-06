@@ -1,0 +1,5 @@
+addon: shesmu-syntax
+description: Addon to highlight Shesmu
+files:
+ - ftdetect/shesmu.vim
+ - syntax/shesmu.vim
