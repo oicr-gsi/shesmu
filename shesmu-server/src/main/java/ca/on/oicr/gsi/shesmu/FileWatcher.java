@@ -26,121 +26,138 @@ import java.util.stream.Stream;
 import io.prometheus.client.Gauge;
 
 public abstract class FileWatcher {
-	public static final FileWatcher DATA_DIRECTORY = RuntimeSupport.dataDirectory()
-			.<FileWatcher>map(directory -> new FileWatcher() {
-				private final Map<Path, List<WatchedFileListener>> active = new ConcurrentHashMap<>();
+	private static final class RealFileWatcher extends FileWatcher {
+		private final Path directory;
+		private final Map<Path, List<WatchedFileListener>> active = new ConcurrentHashMap<>();
+		private final Map<String, List<Function<Path, WatchedFileListener>>> ctors = new ConcurrentHashMap<>();
+		private volatile boolean running = true;
+		private final Thread watchThread = new Thread(this::run, "file-watcher");
 
-				private final Map<String, List<Function<Path, WatchedFileListener>>> ctors = new ConcurrentHashMap<>();
-				private volatile boolean running = true;
-
-				private final Thread watchThread = new Thread(this::run, "file-watcher");
-
-				{
-					watchThread.start();
-				}
+		private RealFileWatcher(Path directory) {
+			this.directory = directory;
+			watchThread.start();
+			Runtime.getRuntime().addShutdownHook(new Thread() {
 
 				@Override
-				public synchronized void register(String extension, Function<Path, WatchedFileListener> ctor) {
-					List<Function<Path, WatchedFileListener>> holder;
-					if (!ctors.containsKey(extension)) {
-						holder = Collections.synchronizedList(new ArrayList<>());
-						ctors.put(extension, holder);
-					} else {
-						holder = ctors.get(extension);
+				public void run() {
+					running = false;
+					try {
+						watchThread.interrupt();
+						watchThread.join();
+					} catch (InterruptedException e) {
 					}
-					holder.add(ctor);
-					try (Stream<Path> stream = Files.walk(directory, 1)) {
-						stream.filter(path -> path.getFileName().toString().endsWith(extension))//
-								.forEach(path -> {
-									final WatchedFileListener file = ctor.apply(path);
-									List<WatchedFileListener> fileHolder;
-									if (active.containsKey(path)) {
-										fileHolder = active.get(path);
-									} else {
-										fileHolder = Collections.synchronizedList(new ArrayList<>());
-										active.put(path, fileHolder);
-									}
-									fileHolder.add(file);
-									updateTime.labels(path.toString()).setToCurrentTime();
-									file.start();
-								});
-					} catch (final IOException e) {
-						e.printStackTrace();
-					}
-
 				}
 
-				private void run() {
-					try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
-						directory.getParent().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY,
-								StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
-						while (running) {
-							try {
-								List<Pair<Instant, WatchedFileListener>> retry = new ArrayList<>();
-								final Instant now = Instant.now();
-								final OptionalLong timeout = retry.stream()
-										.mapToLong(p -> Duration.between(p.first(), now).toMillis()).min();
-								final WatchKey wk = timeout.isPresent()
-										? timeout.getAsLong() < 0 ? null
-												: watchService.poll(timeout.getAsLong(), TimeUnit.MILLISECONDS)
-										: watchService.take();
-								if (wk == null) {
-									retry = Stream.concat(//
-											retry.stream()//
-													.filter(p -> Duration.between(p.first(), now).toMillis() > 0), //
-											retry.stream()//
-													.filter(p -> Duration.between(p.first(), now).toMillis() <= 0)//
-													.<Optional<Pair<Instant, WatchedFileListener>>>map(
-															listener -> listener.second().update()
-																	.map(retryTimeout -> new Pair<>(
-																			now.plus(retryTimeout, ChronoUnit.MINUTES),
-																			listener.second())))//
-													.filter(Optional::isPresent)//
-													.map(Optional::get))
-											.collect(Collectors.toList());
-								} else {
-									for (final WatchEvent<?> event : wk.pollEvents()) {
-										final Path path = directory.resolve((Path) event.context());
-										if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-											final String fileName = path.getFileName().toString();
-											active.put(path, ctors.entrySet().stream()//
-													.filter(entry -> fileName.endsWith(entry.getKey()))//
-													.flatMap(entry -> entry.getValue().stream())//
-													.map(ctor -> ctor.apply(path)).collect(Collectors.toList()));
-											updateTime.labels(path.toString()).setToCurrentTime();
-										} else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
-											final List<WatchedFileListener> listeners = active.remove(path);
-											if (listeners != null) {
-												listeners.forEach(WatchedFileListener::stop);
-												updateTime.labels(path.toString()).setToCurrentTime();
-											}
-										} else if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
-											final List<WatchedFileListener> listeners = active.get(path);
-											if (listeners != null) {
-												listeners.stream()//
-														.map(listener -> listener.update()//
-																.map(retryTimeout -> new Pair<>(
-																		now.plus(retryTimeout, ChronoUnit.MINUTES),
-																		listener)))//
-														.filter(Optional::isPresent)//
-														.map(Optional::get)//
-														.forEach(retry::add);
-												updateTime.labels(path.toString()).setToCurrentTime();
-											}
-										}
+			});
+		}
 
-									}
-									wk.reset();
-								}
-							} catch (final InterruptedException e) {
+		@Override
+		public synchronized void register(String extension, Function<Path, WatchedFileListener> ctor) {
+			List<Function<Path, WatchedFileListener>> holder;
+			if (!ctors.containsKey(extension)) {
+				holder = Collections.synchronizedList(new ArrayList<>());
+				ctors.put(extension, holder);
+			} else {
+				holder = ctors.get(extension);
+			}
+			holder.add(ctor);
+			try (Stream<Path> stream = Files.walk(directory, 1)) {
+				stream.filter(path -> path.getFileName().toString().endsWith(extension))//
+						.forEach(path -> {
+							final WatchedFileListener file = ctor.apply(path);
+							List<WatchedFileListener> fileHolder;
+							if (active.containsKey(path)) {
+								fileHolder = active.get(path);
+							} else {
+								fileHolder = Collections.synchronizedList(new ArrayList<>());
+								active.put(path, fileHolder);
 							}
+							fileHolder.add(file);
+							updateTime.labels(path.toString()).setToCurrentTime();
+							file.start();
+						});
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		private void run() {
+			try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
+				directory.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY,
+						StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
+				while (running) {
+					try {
+						List<Pair<Instant, WatchedFileListener>> retry = new ArrayList<>();
+						final Instant now = Instant.now();
+						final OptionalLong timeout = retry.stream()
+								.mapToLong(p -> Duration.between(p.first(), now).toMillis()).min();
+						final WatchKey wk = timeout.isPresent()
+								? timeout.getAsLong() < 0 ? null
+										: watchService.poll(timeout.getAsLong(), TimeUnit.MILLISECONDS)
+								: watchService.take();
+						if (wk == null) {
+							System.out.println("Data directory is stale. Reloading all files...");
+							retry = Stream.concat(//
+									retry.stream()//
+											.filter(p -> Duration.between(p.first(), now).toMillis() > 0), //
+									retry.stream()//
+											.filter(p -> Duration.between(p.first(), now).toMillis() <= 0)//
+											.<Optional<Pair<Instant, WatchedFileListener>>>map(
+													listener -> listener.second().update()
+															.map(retryTimeout -> new Pair<>(
+																	now.plus(retryTimeout, ChronoUnit.MINUTES),
+																	listener.second())))//
+											.filter(Optional::isPresent)//
+											.map(Optional::get))
+									.collect(Collectors.toList());
+						} else {
+							for (final WatchEvent<?> event : wk.pollEvents()) {
+								final Path path = directory.resolve((Path) event.context());
+								if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
+									System.out.printf("New file %s detected.\n", path.toString());
+									final String fileName = path.getFileName().toString();
+									active.put(path, ctors.entrySet().stream()//
+											.filter(entry -> fileName.endsWith(entry.getKey()))//
+											.flatMap(entry -> entry.getValue().stream())//
+											.map(ctor -> ctor.apply(path)).collect(Collectors.toList()));
+									updateTime.labels(path.toString()).setToCurrentTime();
+								} else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
+									System.out.printf("File %s deleted.\n", path.toString());
+									final List<WatchedFileListener> listeners = active.remove(path);
+									if (listeners != null) {
+										listeners.forEach(WatchedFileListener::stop);
+										updateTime.labels(path.toString()).setToCurrentTime();
+									}
+								} else if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+									System.out.printf("File %s updated.\n", path.toString());
+									final List<WatchedFileListener> listeners = active.get(path);
+									if (listeners != null) {
+										listeners.stream()//
+												.map(listener -> listener.update()//
+														.map(retryTimeout -> new Pair<>(
+																now.plus(retryTimeout, ChronoUnit.MINUTES), listener)))//
+												.filter(Optional::isPresent)//
+												.map(Optional::get)//
+												.forEach(retry::add);
+										updateTime.labels(path.toString()).setToCurrentTime();
+									}
+								}
+
+							}
+							wk.reset();
 						}
-					} catch (final IOException e) {
-						e.printStackTrace();
+					} catch (final InterruptedException e) {
 					}
 				}
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-			}).orElseGet(() -> new FileWatcher() {
+	public static final FileWatcher DATA_DIRECTORY = RuntimeSupport.dataDirectory()
+			.<FileWatcher>map(directory -> new RealFileWatcher(directory)).orElseGet(() -> new FileWatcher() {
 
 				@Override
 				public void register(String extension, Function<Path, WatchedFileListener> ctor) {
