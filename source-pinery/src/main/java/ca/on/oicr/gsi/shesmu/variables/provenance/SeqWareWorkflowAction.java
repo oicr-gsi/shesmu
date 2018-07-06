@@ -10,13 +10,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,6 +59,9 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
  * will still be considered the same.</b>
  */
 public class SeqWareWorkflowAction extends Action {
+
+	static final Map<Long, Semaphore> MAX_IN_FLIGHT = new HashMap<>();
+
 	private static class AnalysisState {
 		private final String fileSWIDSToRun;
 		private final List<LimsKey> limsKeys;
@@ -251,6 +257,8 @@ public class SeqWareWorkflowAction extends Action {
 
 	private boolean dirty = false;
 
+	private boolean first = true;
+
 	private long id;
 
 	@RuntimeInterop
@@ -374,6 +382,8 @@ public class SeqWareWorkflowAction extends Action {
 
 	private static final Pattern RUN_SWID_LINE = Pattern.compile("Created workflow run with SWID: (\\d+)");
 
+	private boolean inflight = false;
+
 	@Override
 	public final ActionState perform() {
 		if (Throttler.anyOverloaded(services)) {
@@ -381,15 +391,44 @@ public class SeqWareWorkflowAction extends Action {
 		}
 		try {
 			// Read the FPR cache to determine if this workflow has already been run
-			final Optional<ActionState> current = CACHE.get(settingsPath)//
+			final Optional<AnalysisState> current = CACHE.get(settingsPath)//
 					.flatMap(l -> l.stream()//
 							.filter(this::compare)//
-							.map(state -> state.state)//
 							.findFirst());
 			if (current.isPresent()) {
 				dirty = false;
-				return current.get();
+				ActionState state = current.get().state;
+				boolean isDone = state == ActionState.SUCCEEDED || state == ActionState.FAILED;
+				if (inflight && isDone) {
+					inflight = false;
+					MAX_IN_FLIGHT.get(workflowAccession).release();
+				} else if (!inflight && !isDone) {
+					// This is the case where the server has restarted and we find our SeqWare job
+					// is already running, but we haven't counted in our max-in-flight, so, we keep
+					// trying to acquire the lock. To prevent other jobs from acquiring all the
+					// locks, no SeqWare job will start until the others have been queried at least
+					// once.
+					// We can overrun the max-in-flight by r*m where r is the number of Shesmu
+					// restarts since any workflow last finished and m is the max-in-flight, but we
+					// work hard to make this a worst-case scenario.
+					if (MAX_IN_FLIGHT.get(workflowAccession).tryAcquire()) {
+						inflight = true;
+					}
+				}
+				return state;
 			}
+
+			// This is to avoid overruning the max-in-flight after a restart by giving all
+			// actions a chance to check if they are already running and acquire a lock.
+			if (first) {
+				first = false;
+				return ActionState.WAITING;
+			}
+
+			if (!MAX_IN_FLIGHT.get(workflowAccession).tryAcquire()) {
+				return ActionState.WAITING;
+			}
+
 			// Read the settings
 			final Properties settings = new Properties();
 			try (InputStream settingsInput = new FileInputStream(settingsPath)) {

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,8 @@ public class SeqWareActionRepository implements ActionRepository {
 		protected Optional<Integer> update(Configuration value) {
 			properties.put("settings", value.getSettings());
 			actionDefinitions = Stream.of(value.getWorkflows())//
+					.peek(wc -> SeqWareWorkflowAction.MAX_IN_FLIGHT.putIfAbsent(wc.getAccession(),
+							new Semaphore(wc.getMaxInFlight())))//
 					.<ActionDefinition>map(wc -> SeqWareWorkflowAction.create(wc.getName(), wc.getType().type(),
 							wc.getAccession(), wc.getPreviousAccessions(), value.getJar(), value.getSettings(),
 							wc.getServices(), wc.getType().parameters()))//

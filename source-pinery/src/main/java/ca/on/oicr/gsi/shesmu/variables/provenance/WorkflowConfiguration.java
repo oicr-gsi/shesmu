@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.variables.provenance;
 
 public class WorkflowConfiguration {
 	private long accession;
+	private int maxInFlight;
 	private String name;
 	private long[] previousAccessions;
 	private String[] services;
@@ -9,6 +10,10 @@ public class WorkflowConfiguration {
 
 	public long getAccession() {
 		return accession;
+	}
+
+	public int getMaxInFlight() {
+		return maxInFlight;
 	}
 
 	public String getName() {
@@ -29,6 +34,10 @@ public class WorkflowConfiguration {
 
 	public void setAccession(long accession) {
 		this.accession = accession;
+	}
+
+	public void setMaxInFlight(int maxInFlight) {
+		this.maxInFlight = maxInFlight;
 	}
 
 	public void setName(String name) {
