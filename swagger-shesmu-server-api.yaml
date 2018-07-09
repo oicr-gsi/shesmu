@@ -103,8 +103,13 @@ paths:
                     types:
                       type: "array"
                       items:
-                        type: "string"
-                        format: "signature"
+                        type: "object"
+                        properties:
+                          name:
+                            type: "string"
+                          type:
+                            type: "string"
+                            format: "signature"
   /input:
     get:
       summary: "Get a list of olive input data known by this server."

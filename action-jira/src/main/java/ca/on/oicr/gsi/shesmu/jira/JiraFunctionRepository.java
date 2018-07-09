@@ -13,6 +13,7 @@ import org.kohsuke.MetaInfServices;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
@@ -52,31 +53,29 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 	protected Stream<FunctionDefinition> create(JiraConfig config, Path filename) {
 		try {
 			final Lookup lookup = MethodHandles.lookup();
-			return Stream.<FunctionDefinition>of(
-					new FunctionForInstance(lookup, "count", String.format("count_tickets_%s", config.instance()),
-							String.format(
-									"Count the number of open or closed tickets from the JIRA project defined in %s.",
-									filename),
-							Imyhat.INTEGER, Imyhat.STRING, Imyhat.BOOLEAN) {
+			return Stream.<FunctionDefinition>of(new FunctionForInstance(lookup, "count",
+					String.format("count_tickets_%s", config.instance()),
+					String.format("Count the number of open or closed tickets from the JIRA project defined in %s.",
+							filename),
+					Imyhat.INTEGER, new FunctionParameter("search_test", Imyhat.STRING),
+					new FunctionParameter("is_open", Imyhat.BOOLEAN)) {
 
-						@RuntimeInterop
-						public long count(String keyword, boolean open) {
-							return config.issues().filter(new IssueFilter(keyword, open)).count();
-						}
-					},
-					new FunctionForInstance(lookup, "fetch", String.format("query_tickets_%s", config.instance()),
-							String.format(
-									"Get the ticket summary and descriptions from the JIRA project defined in %s.",
-									filename),
-							QUERY_TYPE, Imyhat.STRING, Imyhat.BOOLEAN) {
+				@RuntimeInterop
+				public long count(String keyword, boolean open) {
+					return config.issues().filter(new IssueFilter(keyword, open)).count();
+				}
+			}, new FunctionForInstance(lookup, "fetch", String.format("query_tickets_%s", config.instance()),
+					String.format("Get the ticket summary and descriptions from the JIRA project defined in %s.",
+							filename),
+					QUERY_TYPE, new FunctionParameter("search_test", Imyhat.STRING),
+					new FunctionParameter("is_open", Imyhat.BOOLEAN)) {
 
-						@RuntimeInterop
-						public Set<Tuple> fetch(String keyword, boolean open) {
-							return config.issues().filter(new IssueFilter(keyword, open))
-									.map(issue -> new Tuple(issue.getKey(), issue.getSummary()))
-									.collect(Collectors.toSet());
-						}
-					});
+				@RuntimeInterop
+				public Set<Tuple> fetch(String keyword, boolean open) {
+					return config.issues().filter(new IssueFilter(keyword, open))
+							.map(issue -> new Tuple(issue.getKey(), issue.getSummary())).collect(Collectors.toSet());
+				}
+			});
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return Stream.empty();

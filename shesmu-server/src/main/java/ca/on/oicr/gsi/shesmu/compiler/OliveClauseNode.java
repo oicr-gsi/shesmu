@@ -233,7 +233,7 @@ public abstract class OliveClauseNode {
 
 	/**
 	 * Resolve all variable definitions in this clause
-	 * 
+	 *
 	 * @param inputFormatDefinition
 	 *            TODO
 	 * @param defs

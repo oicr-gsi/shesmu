@@ -121,14 +121,15 @@ public final class Server {
 						.forEach(function -> {
 							writeBlock(writer, function.name());
 							writeRow(writer, "Return", function.returnType().name());
-							function.types().map(Pair.number())
-									.forEach(p -> writeRow(writer, "Argument " + Integer.toString(p.first() + 1),
+							function.parameters().map(Pair.number())
+									.forEach(p -> writeRow(writer,
+											"Argument " + Integer.toString(p.first() + 1) + ": " + p.second().name(),
 											String.format("%s <input type=\"text\" id=\"%s$%d\"></input>",
-													p.second().name(), function.name(), p.first())));
+													p.second().type().name(), function.name(), p.first())));
 							writeRow(writer, "Result",
 									String.format(
 											"<span class=\"load\" onclick=\"runFunction('%s', this, %s)\">Fetch</span>",
-											function.name(), function.types().map(Imyhat::javaScriptParser)
+											function.name(), function.parameters().map(p -> p.type().javaScriptParser())
 													.collect(Collectors.joining(",", "[", "]"))));
 							writeDescription(writer, function.description());
 
@@ -200,7 +201,12 @@ public final class Server {
 				obj.put("name", function.name());
 				obj.put("description", function.description());
 				obj.put("return", function.returnType().signature());
-				function.types().map(Imyhat::signature).forEach(obj.putArray("types")::add);
+				final ArrayNode parameters = obj.putArray("parameters");
+				function.parameters().forEach(p-> {
+					final ObjectNode parameter = parameters.addObject();
+					parameter.put("type", p.type().signature());
+					parameter.put("name", p.name());
+				});
 			});
 			return array;
 		});

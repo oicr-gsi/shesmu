@@ -18,6 +18,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class FunctionForInstance implements FunctionDefinition {
@@ -30,14 +31,14 @@ public class FunctionForInstance implements FunctionDefinition {
 	private static final AtomicInteger TOKEN_SOURCE = new AtomicInteger();
 
 	public static <T> FunctionForInstance bind(Class<?> owner, Function<MethodType, MethodHandle> find, String name,
-			String description, Imyhat returnType, Imyhat... parameterTypes) {
+			String description, Imyhat returnType, FunctionParameter... parameterTypes) {
 		return new FunctionForInstance(new ConstantCallSite(find.apply(methodTypeByImyhat(returnType, parameterTypes))),
 				name, description, returnType, parameterTypes);
 
 	}
 
 	public static <T> FunctionForInstance bind(Lookup lookup, Class<T> owner, T instance, String methodName,
-			String name, String description, Imyhat returnType, Imyhat... parameterTypes)
+			String name, String description, Imyhat returnType, FunctionParameter... parameterTypes)
 			throws NoSuchMethodException, IllegalAccessException {
 		return new FunctionForInstance(
 				new ConstantCallSite(
@@ -51,26 +52,26 @@ public class FunctionForInstance implements FunctionDefinition {
 	}
 
 	public static MethodHandle findVirtualFor(Lookup lookup, Class<?> clazz, String methodName, Imyhat returnType,
-			Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
+			FunctionParameter... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
 		return lookup.findVirtual(clazz, methodName, methodTypeByImyhat(returnType, parameterTypes));
 	}
 
-	public static MethodType methodTypeByImyhat(Imyhat returnType, Imyhat... parameterTypes) {
+	public static MethodType methodTypeByImyhat(Imyhat returnType, FunctionParameter... parameterTypes) {
 		return MethodType.methodType(returnType.javaType(),
-				Stream.of(parameterTypes).map(Imyhat::javaType).toArray(Class[]::new));
+				Stream.of(parameterTypes).map(p -> p.type().javaType()).toArray(Class[]::new));
 	}
 
 	private final String description;
 
 	private final String name;
 
-	private final Imyhat[] parameterTypes;
+	private final FunctionParameter[] parameterTypes;
 
 	private final Imyhat returnType;
 	private final String token;
 
 	public FunctionForInstance(CallSite callsite, String name, String description, Imyhat returnType,
-			Imyhat... parameterTypes) {
+			FunctionParameter... parameterTypes) {
 		super();
 		this.name = name;
 		this.description = description;
@@ -81,7 +82,7 @@ public class FunctionForInstance implements FunctionDefinition {
 	}
 
 	public FunctionForInstance(Lookup lookup, String methodName, String name, String description, Imyhat returnType,
-			Imyhat... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
+			FunctionParameter... parameterTypes) throws NoSuchMethodException, IllegalAccessException {
 		super();
 		this.name = name;
 		this.description = description;
@@ -103,10 +104,15 @@ public class FunctionForInstance implements FunctionDefinition {
 	}
 
 	@Override
+	public final Stream<FunctionParameter> parameters() {
+		return Stream.of(parameterTypes);
+	}
+
+	@Override
 	public void render(GeneratorAdapter methodGen) {
 		methodGen.invokeDynamic(token,
 				Type.getMethodDescriptor(returnType.asmType(),
-						Stream.of(parameterTypes).map(Imyhat::asmType).toArray(Type[]::new)),
+						Stream.of(parameterTypes).map(p -> p.type().asmType()).toArray(Type[]::new)),
 				new Handle(Opcodes.H_INVOKESTATIC, SELF_NAME, "bootstrap", BSM_DESCRIPTOR, false));
 
 	}
@@ -114,10 +120,5 @@ public class FunctionForInstance implements FunctionDefinition {
 	@Override
 	public final Imyhat returnType() {
 		return returnType;
-	}
-
-	@Override
-	public final Stream<Imyhat> types() {
-		return Stream.of(parameterTypes);
 	}
 }

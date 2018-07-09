@@ -43,11 +43,11 @@ public class RunTest {
 
 	public static class OkAction extends Action {
 
+		public boolean ok;
+
 		public OkAction() {
 			super("ok");
 		}
-
-		public boolean ok;
 
 		@Override
 		public boolean equals(Object other) {
@@ -110,6 +110,11 @@ public class RunTest {
 		}
 
 		@Override
+		public Stream<FunctionParameter> parameters() {
+			return Stream.of(new FunctionParameter("arg", Imyhat.INTEGER));
+		}
+
+		@Override
 		public void render(GeneratorAdapter methodGen) {
 			methodGen.invokeStatic(Type.getType(Instant.class),
 					new Method("ofEpochSecond", Type.getType(Instant.class), new Type[] { Type.LONG_TYPE }));
@@ -119,11 +124,6 @@ public class RunTest {
 		@Override
 		public Imyhat returnType() {
 			return Imyhat.DATE;
-		}
-
-		@Override
-		public Stream<Imyhat> types() {
-			return Stream.of(Imyhat.INTEGER);
 		}
 	};
 	private static final FunctionDefinition INT2STR = new FunctionDefinition() {
@@ -139,6 +139,11 @@ public class RunTest {
 		}
 
 		@Override
+		public Stream<FunctionParameter> parameters() {
+			return Stream.of(new FunctionParameter("arg", Imyhat.INTEGER));
+		}
+
+		@Override
 		public void render(GeneratorAdapter methodGen) {
 			methodGen.invokeStatic(Type.getType(Long.class),
 					new Method("toString", Type.getType(String.class), new Type[] { Type.LONG_TYPE }));
@@ -148,11 +153,6 @@ public class RunTest {
 		@Override
 		public Imyhat returnType() {
 			return Imyhat.STRING;
-		}
-
-		@Override
-		public Stream<Imyhat> types() {
-			return Stream.of(Imyhat.INTEGER);
 		}
 	};
 
@@ -195,8 +195,8 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			final HotloadingCompiler compiler = new HotloadingCompiler(x -> new GsiStdFormatDefinition(), this::functions,
-					this::actions, CONSTANTS::stream);
+			final HotloadingCompiler compiler = new HotloadingCompiler(x -> new GsiStdFormatDefinition(),
+					this::functions, this::actions, CONSTANTS::stream);
 			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			final ActionChecker checker = new ActionChecker();
 			generator.run(checker, this::data);

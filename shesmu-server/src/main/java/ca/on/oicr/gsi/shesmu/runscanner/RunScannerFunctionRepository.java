@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
@@ -54,18 +55,18 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 								String.format("%s_lane_count", instance),
 								String.format("Get the number of lanes detected by the Run Scanner defined in %s",
 										fileName),
-								Imyhat.INTEGER, Imyhat.STRING), //
+								Imyhat.INTEGER, new FunctionParameter("run_id", Imyhat.STRING)), //
 						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "readEnds",
 								String.format("%s_read_ends", instance),
 								String.format("Get the number of reads detected by the Run Scanner defined in %s",
 										fileName),
-								Imyhat.INTEGER, Imyhat.STRING), //
+								Imyhat.INTEGER, new FunctionParameter("run_id", Imyhat.STRING)), //
 						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "flowcell",
 								String.format("%s_flowcell", instance),
 								String.format(
 										"Get the serial number of the flowcell detected by the Run Scanner defined in %s",
 										fileName),
-								Imyhat.STRING, Imyhat.STRING)//
+								Imyhat.STRING, new FunctionParameter("run_id", Imyhat.STRING))//
 				);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				functions = Collections.emptyList();
