@@ -24,7 +24,6 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
@@ -148,7 +147,8 @@ public final class Build extends Compiler implements AutoCloseable {
 	private void dump() {
 		functions.all().forEach(function -> {
 			System.out.printf("Function: %s(%s) %s\n", function.name(),
-					function.types().map(Imyhat::name).collect(Collectors.joining(", ")), function.returnType().name());
+					function.parameters().map(p -> p.type().name()).collect(Collectors.joining(", ")),
+					function.returnType().name());
 
 			System.out.println();
 		});

@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Imyhat.BaseImyhat;
@@ -51,7 +52,7 @@ public class TableFunctionRepository implements FunctionRepository {
 		}
 
 		public String configuration() {
-			return function.map(f -> f.types().map(Imyhat::name)
+			return function.map(f -> f.parameters().map(p -> p.type().name())
 					.collect(Collectors.joining(", ", "(", ") " + f.returnType().name()))).orElse("none");
 		}
 
@@ -134,7 +135,6 @@ public class TableFunctionRepository implements FunctionRepository {
 						final Object result = types.get(types.size() - 1).parse(columns[columns.length - 1]);
 						return parameters -> predicate.test(parameters) ? Optional.of(result) : Optional.empty();
 					}).collect(Collectors.toList());
-
 			return Optional.of(FunctionForInstance.bind(TableFunctionRepository.class, mt -> {
 				try {
 					final MethodHandle lookupMethod = MethodHandles.lookup().findStatic(TableFunctionRepository.class,
@@ -146,7 +146,14 @@ public class TableFunctionRepository implements FunctionRepository {
 							UnsupportedOperationException.class);
 				}
 			}, name, String.format("Table-defined lookup from %s.", filename), types.get(types.size() - 1),
-					types.stream().limit(types.size() - 1).map(x -> x).toArray(Imyhat[]::new)));
+					types.stream().limit(types.size() - 1).map(new Function<Imyhat, FunctionParameter>() {
+						int index;
+
+						@Override
+						public FunctionParameter apply(Imyhat type) {
+							return new FunctionParameter(String.format("arg%d", ++index), type);
+						}
+					}).toArray(FunctionParameter[]::new)));
 		} catch (final IOException e) {
 			e.printStackTrace();
 			return Optional.empty();

@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
@@ -134,8 +135,9 @@ public final class Check extends Compiler {
 		final String name = node.get("name").asText();
 		final String description = node.get("description").asText();
 		final Imyhat returnType = Imyhat.parse(node.get("return").asText());
-		final Imyhat[] types = RuntimeSupport.stream(node.get("types").elements()).map(JsonNode::asText)
-				.map(Imyhat::parse).toArray(Imyhat[]::new);
+		final FunctionParameter[] parameters = RuntimeSupport.stream(node.get("parameters").elements())
+				.map(p -> new FunctionParameter(p.get("name").asText(), Imyhat.parse(p.get("type").asText())))
+				.toArray(FunctionParameter[]::new);
 		return new FunctionDefinition() {
 
 			@Override
@@ -149,6 +151,11 @@ public final class Check extends Compiler {
 			}
 
 			@Override
+			public Stream<FunctionParameter> parameters() {
+				return Arrays.stream(parameters);
+			}
+
+			@Override
 			public void render(GeneratorAdapter methodGen) {
 				throw new UnsupportedOperationException();
 			}
@@ -156,11 +163,6 @@ public final class Check extends Compiler {
 			@Override
 			public Imyhat returnType() {
 				return returnType;
-			}
-
-			@Override
-			public Stream<Imyhat> types() {
-				return Arrays.stream(types);
 			}
 		};
 	}

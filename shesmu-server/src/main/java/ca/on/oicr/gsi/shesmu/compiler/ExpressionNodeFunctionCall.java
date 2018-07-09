@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ExpressionNodeFunctionCall extends ExpressionNode {
@@ -27,6 +28,11 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 		}
 
 		@Override
+		public Stream<FunctionParameter> parameters() {
+			return Stream.empty();
+		}
+
+		@Override
 		public void render(GeneratorAdapter methodGen) {
 			throw new UnsupportedOperationException();
 		}
@@ -34,11 +40,6 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 		@Override
 		public Imyhat returnType() {
 			return Imyhat.BAD;
-		}
-
-		@Override
-		public Stream<Imyhat> types() {
-			return Stream.empty();
 		}
 	};
 
@@ -94,7 +95,8 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 		boolean ok = arguments.stream().filter(argument -> argument.typeCheck(errorHandler)).count() == arguments
 				.size();
 		if (ok) {
-			final List<Imyhat> argumentTypes = function.types().collect(Collectors.toList());
+			final List<Imyhat> argumentTypes = function.parameters().map(FunctionParameter::type)
+					.collect(Collectors.toList());
 			if (arguments.size() != argumentTypes.size()) {
 				errorHandler
 						.accept(String.format("%d:%d: Wrong number of arguments to function “%s”. Expected %d, got %d.",

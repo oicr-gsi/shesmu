@@ -75,7 +75,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 		handle.invokeDynamic(function.returnType().signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 		handle.loadArg(1);
 		handle.push("value");
-		function.types().map(Pair.number()).forEach(type -> {
+		function.parameters().map(FunctionParameter::type).map(Pair.number()).forEach(type -> {
 			handle.invokeDynamic(type.second().signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 			handle.loadArg(0);
 			handle.push(type.first());

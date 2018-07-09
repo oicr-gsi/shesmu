@@ -19,6 +19,7 @@ import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Cache;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
@@ -44,8 +45,16 @@ public class SftpFunctionRepository implements FunctionRepository {
 		private final Cache<String, FileAttributes> fileAttributes = new Cache<String, FileAttributes>("sftp", 10) {
 
 			@Override
-			protected FileAttributes fetch(String fileName) throws IOException {
-				return sftp.statExistence(fileName);
+			protected Boolean fetch(String fileName) throws IOException {
+				return sftp.statExistence(fileName) != null;
+			}
+		};
+
+		private final Cache<String, Instant> mtime = new Cache<String, Instant>("sftp-modificationtime", 10) {
+
+			@Override
+			protected Instant fetch(String fileName) throws IOException {
+				return Instant.ofEpochSecond(sftp.mtime(fileName));
 			}
 		};
 
@@ -67,19 +76,20 @@ public class SftpFunctionRepository implements FunctionRepository {
 						String.format("%s_size", service),
 						String.format("Get the size of a file, in bytes, living on the SFTP server described in %s.",
 								fileName),
-						Imyhat.INTEGER, Imyhat.STRING, Imyhat.INTEGER));
+						Imyhat.INTEGER, new FunctionParameter("file_name", Imyhat.STRING),
+						new FunctionParameter("size_if_not_exists", Imyhat.INTEGER)));
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "exists",
 						String.format("%s_exists", service),
 						String.format(
 								"Returns true if the file or directory exists on the SFTP server described in %s.",
 								fileName),
-						Imyhat.BOOLEAN, Imyhat.STRING));
+						Imyhat.BOOLEAN, new FunctionParameter("file_name", Imyhat.STRING)));
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "mtime",
 						String.format("%s_mtime", service),
 						String.format(
 								"Gets the last modification timestamp of a file or directory living on the SFTP server described in %s.",
 								fileName),
-						Imyhat.DATE, Imyhat.STRING, Imyhat.DATE));
+						Imyhat.DATE, new FunctionParameter("file_name", Imyhat.STRING), new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				e.printStackTrace();
 			}

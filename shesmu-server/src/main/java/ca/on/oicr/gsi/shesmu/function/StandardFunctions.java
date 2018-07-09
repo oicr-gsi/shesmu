@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
@@ -24,15 +25,17 @@ public final class StandardFunctions implements FunctionRepository {
 
 	private static final FunctionDefinition[] FUNCTIONS = new FunctionDefinition[] {
 			FunctionDefinition.staticMethod(RuntimeSupport.class, "start_of_day",
-					"Rounds a date-time to the previous midnight.", Imyhat.DATE, Imyhat.DATE),
+					"Rounds a date-time to the previous midnight.", Imyhat.DATE,
+					new FunctionParameter("raw_date", Imyhat.DATE)),
 			FunctionDefinition.staticMethod(RuntimeSupport.class, "join_path",
 					"Combines two well-formed paths. If the second path is absolute, the first is discarded; if not, they are combined.",
-					Imyhat.STRING, Imyhat.STRING, Imyhat.STRING),
+					Imyhat.STRING, new FunctionParameter("working_directory", Imyhat.STRING),
+					new FunctionParameter("child path", Imyhat.STRING)),
 			FunctionDefinition.staticMethod(RuntimeSupport.class, "file_name", "Extracts the last element in a path.",
-					Imyhat.STRING, Imyhat.STRING),
+					Imyhat.STRING, new FunctionParameter("input path", Imyhat.STRING)),
 			FunctionDefinition.staticMethod(RuntimeSupport.class, "dir_name",
 					"Extracts all but the last elements in a path (i.e., the containing directory).", Imyhat.STRING,
-					Imyhat.STRING) };
+					new FunctionParameter("input path", Imyhat.STRING)) };
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {

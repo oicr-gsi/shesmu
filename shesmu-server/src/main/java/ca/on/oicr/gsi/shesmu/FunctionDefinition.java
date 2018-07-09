@@ -27,8 +27,9 @@ public interface FunctionDefinition {
 	 *            the types of the arguments to the method (the appropriate Java
 	 *            types will be matched)
 	 */
+	@SafeVarargs
 	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, String description,
-			Imyhat returnType, Imyhat... argumentTypes) {
+			Imyhat returnType, FunctionParameter... parameters) {
 		return new FunctionDefinition() {
 
 			@Override
@@ -42,19 +43,19 @@ public interface FunctionDefinition {
 			}
 
 			@Override
+			public Stream<FunctionParameter> parameters() {
+				return Stream.of(parameters);
+			}
+
+			@Override
 			public void render(GeneratorAdapter methodGen) {
 				methodGen.invokeStatic(Type.getType(owner), new Method(methodName, returnType.asmType(),
-						Stream.of(argumentTypes).map(Imyhat::asmType).toArray(Type[]::new)));
+						Stream.of(parameters).map(p -> p.type().asmType()).toArray(Type[]::new)));
 			}
 
 			@Override
 			public Imyhat returnType() {
 				return returnType;
-			}
-
-			@Override
-			public Stream<Imyhat> types() {
-				return Stream.of(argumentTypes);
 			}
 		};
 	}
@@ -70,6 +71,11 @@ public interface FunctionDefinition {
 	String name();
 
 	/**
+	 * The parameters of the function, in order
+	 */
+	Stream<FunctionParameter> parameters();
+
+	/**
 	 * Create bytecode for this function.
 	 */
 	void render(GeneratorAdapter methodGen);
@@ -78,9 +84,4 @@ public interface FunctionDefinition {
 	 * The return type of the map
 	 */
 	Imyhat returnType();
-
-	/**
-	 * The types of the parameters
-	 */
-	Stream<Imyhat> types();
 }

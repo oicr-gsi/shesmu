@@ -234,7 +234,7 @@ public abstract class OliveClauseNode {
 
 	/**
 	 * Resolve all variable definitions in this clause
-	 * 
+	 *
 	 * @param inputFormatDefinition
 	 *            the input format for this olive
 	 * @param defs
