@@ -15,4 +15,6 @@ public interface JiraConnection {
 
 	String projectKey();
 
+	void invalidate();
+
 }

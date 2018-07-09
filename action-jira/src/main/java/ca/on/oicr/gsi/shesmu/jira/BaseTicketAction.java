@@ -78,6 +78,7 @@ public abstract class BaseTicketAction extends Action {
 				.updateIssue(result.getKey(), IssueInput
 						.createWithFields(new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot"))))
 				.claim();
+		config.invalidate();
 		return ActionState.SUCCEEDED;
 	}
 
@@ -128,7 +129,7 @@ public abstract class BaseTicketAction extends Action {
 	}
 
 	@Override
-	public ActionState perform() {
+	public final ActionState perform() {
 		if (config == null) {
 			return ActionState.FAILED;
 		}

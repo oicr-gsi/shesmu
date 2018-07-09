@@ -141,6 +141,11 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 			}
 			return Optional.empty();
 		}
+
+		@Override
+		public void invalidate() {
+			lastFetch = Instant.EPOCH;
+		}
 	}
 
 	private static final String ACCOUNT_NAME;
@@ -198,7 +203,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 
 	public BaseJiraRepository(String name) {
 		this.name = name;
-		configurations = new AutoUpdatingDirectory<>(EXTENSION,JiraConfig::new);
+		configurations = new AutoUpdatingDirectory<>(EXTENSION, JiraConfig::new);
 	}
 
 	protected abstract Stream<T> create(JiraConfig config, Path filename);

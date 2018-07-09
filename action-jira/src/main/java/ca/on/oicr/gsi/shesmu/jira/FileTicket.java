@@ -22,7 +22,7 @@ public class FileTicket extends BaseTicketAction {
 	private ActionState checkIssue(Issue issue) {
 		if (issue.getStatus().getName().equalsIgnoreCase("CLOSED")
 				|| issue.getStatus().getName().equalsIgnoreCase("RESOLVED")) {
-			updateIssue(issue, new TransitionInput(3));
+			return updateIssue(issue, new TransitionInput(3));
 		}
 		return ActionState.SUCCEEDED;
 	}
@@ -30,14 +30,13 @@ public class FileTicket extends BaseTicketAction {
 	@Override
 	protected ActionState perform(Stream<Issue> results) {
 		final List<Issue> matches = results.collect(Collectors.toList());
-		switch (matches.size()) {
-		case 0:
+		if (matches.isEmpty()) {
 			return createIssue(description);
-		case 1:
-			return checkIssue(matches.get(0));
-		default:
-			return badIssue();
 		}
+		if (matches.stream().anyMatch(issue -> !issue.getStatus().getName().equalsIgnoreCase("CLOSED")
+				&& !issue.getStatus().getName().equalsIgnoreCase("RESOLVED")))
+			return ActionState.SUCCEEDED;
+		return checkIssue(matches.get(0));
 	}
 
 }
