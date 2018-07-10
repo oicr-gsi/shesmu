@@ -19,11 +19,15 @@ public class ExpressionNodeDate extends ExpressionNode {
 	private static final Method METHOD_OF_EPOCH_MILLI = new Method("ofEpochMilli", A_INSTANT_TYPE,
 			new Type[] { Type.LONG_TYPE });
 
-	private final ZonedDateTime value;
+	private final Instant value;
 
-	public ExpressionNodeDate(int line, int column, ZonedDateTime value) {
+	public ExpressionNodeDate(int line, int column, Instant value) {
 		super(line, column);
 		this.value = value;
+	}
+
+	public ExpressionNodeDate(int line, int column, ZonedDateTime value) {
+		this(line, column, value.toInstant());
 	}
 
 	@Override
@@ -35,7 +39,7 @@ public class ExpressionNodeDate extends ExpressionNode {
 	public void render(Renderer renderer) {
 		renderer.mark(line());
 
-		renderer.methodGen().push(value.toInstant().toEpochMilli());
+		renderer.methodGen().push(value.toEpochMilli());
 		renderer.methodGen().invokeStatic(A_INSTANT_TYPE, METHOD_OF_EPOCH_MILLI);
 	}
 

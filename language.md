@@ -358,6 +358,8 @@ tuple, an error occurs.
 - `Date` _YYYY_`-`_mm_`-`_dd_`T`_HH_`:`_MM_`:`_SS_`Z`
 - `Date` _YYYY_`-`_mm_`-`_dd_`T`_HH_`:`_MM_`:`_SS_`+`_zz_
 - `Date` _YYYY_`-`_mm_`-`_dd_`T`_HH_`:`_MM_`:`_SS_`-`_zz_
+- `EpochSecond` _s_
+- `EpochMilli` _m_
 
 Specifies a date and time. If the time is not specified, it is assumed to be midnight UTC.
 
