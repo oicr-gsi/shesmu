@@ -25,6 +25,7 @@ import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
 import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.sftp.SFTPClient;
 
@@ -61,7 +62,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		private volatile SFTPClient sftp;
 
-		private final Cache<String,Long> size = new Cache<String,Long>("sftp-filesize", 10) {
+		private final Cache<String, Long> size = new Cache<String, Long>("sftp-filesize", 10) {
 
 			@Override
 			protected Long fetch(String fileName) throws IOException {
@@ -117,6 +118,9 @@ public class SftpFunctionRepository implements FunctionRepository {
 					client.connect(configuration.get().getHost(), configuration.get().getPort());
 					client.authPublickey(configuration.get().getUser());
 					sftp = client.newSFTPClient();
+					connectionConnected
+							.labels(configuration.get().getHost(), Integer.toString(configuration.get().getPort()))
+							.set(1);
 					return true;
 				} catch (final Exception e) {
 					sftp = null;
@@ -124,6 +128,10 @@ public class SftpFunctionRepository implements FunctionRepository {
 					connectionErrors
 							.labels(configuration.get().getHost(), Integer.toString(configuration.get().getPort()))
 							.inc();
+					connectionConnected
+							.labels(configuration.get().getHost(), Integer.toString(configuration.get().getPort()))
+							.set(0);
+
 				}
 			}
 			backoff = Instant.now();
@@ -171,6 +179,8 @@ public class SftpFunctionRepository implements FunctionRepository {
 			try {
 				if (client.isConnected()) {
 					client.disconnect();
+					connectionConnected.labels(configuration.getHost(), Integer.toString(configuration.getPort()))
+							.set(0);
 				}
 			} catch (final Exception e) {
 				sftp = null;
@@ -181,6 +191,10 @@ public class SftpFunctionRepository implements FunctionRepository {
 		}
 	}
 
+	private static final Gauge connectionConnected = Gauge
+			.build("shesmu_sftp_connection_connected", "Whether the SFTP connection is connected or not.")
+			.labelNames("host", "port").register();
+
 	private static final Counter connectionErrors = Counter
 			.build("shesmu_sftp_connection_errors", "Number of SFTP errors encountered.").labelNames("host", "port")
 			.register();
@@ -190,7 +204,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 	private final AutoUpdatingDirectory<SftpServer> configurations;
 
 	public SftpFunctionRepository() {
-		configurations = new AutoUpdatingDirectory<>(EXTENSION,SftpServer::new);
+		configurations = new AutoUpdatingDirectory<>(EXTENSION, SftpServer::new);
 	}
 
 	@Override
