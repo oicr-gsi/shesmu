@@ -34,7 +34,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 	private class SftpServer extends AutoUpdatingJsonFile<Configuration> {
 		private Instant backoff = Instant.EPOCH;
 
-		private final SSHClient client = new SSHClient();
+		private SSHClient client;
 
 		private Optional<Configuration> configuration = Optional.empty();
 
@@ -73,11 +73,6 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		public SftpServer(Path fileName) {
 			super(fileName, Configuration.class);
-			try {
-				client.loadKnownHosts();
-			} catch (final IOException e) {
-				e.printStackTrace();
-			}
 			properties.put("path", fileName.toString());
 			final String filePart = fileName.getFileName().toString();
 			service = filePart.substring(0, filePart.length() - EXTENSION.length());
@@ -107,14 +102,25 @@ public class SftpFunctionRepository implements FunctionRepository {
 		}
 
 		private boolean attemptConnect() {
-			if (client.isAuthenticated() && sftp == null) {
+			if (client != null && client.isAuthenticated() && sftp == null) {
 				return true;
 			}
 			if (Duration.between(backoff, Instant.now()).toMinutes() < 2 || !configuration.isPresent()) {
 				return false;
 			}
 			for (int i = 0; i < 3; i++) {
+				if (client != null) {
+					try {
+						client.close();
+					} catch (final Exception e) {
+						e.printStackTrace();
+						client = null;
+					}
+				}
 				try {
+					client = new SSHClient();
+					client.loadKnownHosts();
+
 					client.connect(configuration.get().getHost(), configuration.get().getPort());
 					client.authPublickey(configuration.get().getUser());
 					sftp = client.newSFTPClient();
