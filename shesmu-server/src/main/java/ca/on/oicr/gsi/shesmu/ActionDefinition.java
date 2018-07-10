@@ -12,16 +12,26 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  */
 public abstract class ActionDefinition {
 
+	private final String description;
+
 	private final String name;
 
 	private final List<ParameterDefinition> parameters;
 
 	private final Type type;
 
-	public ActionDefinition(String name, Type type, Stream<ParameterDefinition> parameters) {
+	public ActionDefinition(String name, Type type, String description, Stream<ParameterDefinition> parameters) {
 		this.name = name;
 		this.type = type;
+		this.description = description;
 		this.parameters = parameters.collect(Collectors.toList());
+	}
+
+	/**
+	 * A human-readable explanation of what this action does and where it came from.
+	 */
+	public final String description() {
+		return description;
 	}
 
 	/**

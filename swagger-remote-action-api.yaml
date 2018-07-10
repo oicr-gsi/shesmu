@@ -64,6 +64,8 @@ components:
       properties:
         name:
           type: string
+        description:
+          type: string
         parameters:
           type: object
           additionalProperties:

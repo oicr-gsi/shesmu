@@ -17,10 +17,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.GsiStdRepository;
+import ca.on.oicr.gsi.shesmu.GsiStdValue;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
-import ca.on.oicr.gsi.shesmu.GsiStdValue;
-import ca.on.oicr.gsi.shesmu.GsiStdRepository;
 
 @MetaInfServices
 public class JsonFileGsiStdRepository implements GsiStdRepository {
@@ -36,9 +36,9 @@ public class JsonFileGsiStdRepository implements GsiStdRepository {
 		@Override
 		protected Optional<Integer> update(ObjectNode[] values) {
 			Stream.of(values).map(node -> {
-				JsonNode ius = node.get("ius");
-				JsonNode workflowVersion = node.get("workflow_version");
-				JsonNode lims = node.get("lims");
+				final JsonNode ius = node.get("ius");
+				final JsonNode workflowVersion = node.get("workflow_version");
+				final JsonNode lims = node.get("lims");
 				return new GsiStdValue(node.get("accession").asText(), //
 						node.get("path").asText(), //
 						node.get("metatype").asText(), //

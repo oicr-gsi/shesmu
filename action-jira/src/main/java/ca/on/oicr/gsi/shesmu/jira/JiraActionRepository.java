@@ -19,9 +19,9 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 	private static class TicketActionDefinition extends ActionDefinition {
 		private final JiraConfig config;
 
-		public TicketActionDefinition(JiraConfig config, String prefix, Type type,
+		public TicketActionDefinition(JiraConfig config, String prefix, Type type, String description,
 				Stream<ParameterDefinition> parameters) {
-			super(String.format("%s_%s", prefix, config.instance()), type, Stream.concat(parameters, Stream
+			super(String.format("%s_%s", prefix, config.instance()), type, description, Stream.concat(parameters, Stream
 					.of(ParameterDefinition.forField(A_BASE_TICKET_ACTION_TYPE, "summary", Imyhat.STRING, true))));
 			this.config = config;
 		}
@@ -49,12 +49,14 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 
 	@Override
 	protected Stream<ActionDefinition> create(JiraConfig config, Path filename) {
-		return Stream.of(
-				new TicketActionDefinition(config, "ticket", A_FILE_TICKET_TYPE,
+		return Stream.of(new TicketActionDefinition(config, "ticket", A_FILE_TICKET_TYPE,
+				String.format("Opens (or re-opens) a JIRA ticket in %s. Defined in %s.", config.projectKey(), filename),
+				Stream.of(ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, true))),
+				new TicketActionDefinition(config, "resolve_ticket", A_RESOLVE_TICKET_TYPE,
+						String.format("Closes any JIRA tickets in %s with a matching summary. Defined in %s.",
+								config.projectKey(), filename),
 						Stream.of(
-								ParameterDefinition.forField(A_FILE_TICKET_TYPE, "description", Imyhat.STRING, true))),
-				new TicketActionDefinition(config, "resolve_ticket", A_RESOLVE_TICKET_TYPE, Stream
-						.of(ParameterDefinition.forField(A_RESOLVE_TICKET_TYPE, "comment", Imyhat.STRING, false))));
+								ParameterDefinition.forField(A_RESOLVE_TICKET_TYPE, "comment", Imyhat.STRING, false))));
 	}
 
 	@Override

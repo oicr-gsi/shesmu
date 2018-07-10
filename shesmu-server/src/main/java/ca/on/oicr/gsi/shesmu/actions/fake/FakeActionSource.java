@@ -63,7 +63,7 @@ public class FakeActionSource implements ActionRepository {
 			items = Check.fetch(configuration.getUrl(), "actions")//
 					.filter(obj -> !obj.get("name").asText().equals("nothing")
 							&& allow.matcher(obj.get("name").asText()).matches())//
-					.map(obj -> new FakeActionDefinition(obj.get("name").asText(),
+					.map(obj -> new FakeActionDefinition(obj.get("name").asText(), obj.get("description").asText(),
 							RuntimeSupport.stream(obj.get("parameters").elements())
 									.<ParameterDefinition>map(p -> new JsonParameter(p.get("name").asText(), //
 											Imyhat.parse(p.get("type").asText()), //

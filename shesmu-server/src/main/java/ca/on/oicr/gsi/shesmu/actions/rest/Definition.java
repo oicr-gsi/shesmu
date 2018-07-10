@@ -17,9 +17,14 @@ public final class Definition {
 	private static final Method CTOR_LAUNCH_REMOTE = new Method("<init>", Type.VOID_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE });
 
+	private String description;
 	private String name;
 
 	private Map<String, ParameterInfo> parameters;
+
+	public String getDescription() {
+		return description;
+	}
 
 	public String getName() {
 		return name;
@@ -27,6 +32,10 @@ public final class Definition {
 
 	public Map<String, ParameterInfo> getParameters() {
 		return parameters;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public void setName(String name) {
@@ -38,10 +47,11 @@ public final class Definition {
 	}
 
 	public ActionDefinition toDefinition(String url) {
-		return new ActionDefinition(name, A_LAUNCH_REMOTE_TYPE, parameters.entrySet().stream().map(p -> {
-			final Imyhat type = Imyhat.parse(p.getValue().getType());
-			return new JsonParameter(p.getKey(), type, p.getValue().isRequired());
-		})) {
+		return new ActionDefinition(name, A_LAUNCH_REMOTE_TYPE,
+				getDescription() + String.format(" Defined on %s.", url), parameters.entrySet().stream().map(p -> {
+					final Imyhat type = Imyhat.parse(p.getValue().getType());
+					return new JsonParameter(p.getKey(), type, p.getValue().isRequired());
+				})) {
 
 			@Override
 			public void initialize(GeneratorAdapter methodGen) {
