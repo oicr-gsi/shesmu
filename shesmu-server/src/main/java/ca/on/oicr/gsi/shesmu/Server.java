@@ -91,7 +91,7 @@ public final class Server {
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
-				writeHeader(writer, "Core");
+				writeHeaderedTable(writer, "Core");
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
 				writeRow(writer, "Emergency Stop",
@@ -116,7 +116,7 @@ public final class Server {
 						.flatMap(LoadedConfiguration::listConfiguration)//
 						.sorted(Comparator.comparing(Pair::first))//
 						.forEach(config -> {
-							writeHeader(writer, config.first());
+							writeHeaderedTable(writer, config.first());
 							config.second().forEach((k, v) -> writeRow(writer, k, v));
 							writeFinish(writer);
 						});
@@ -131,43 +131,41 @@ public final class Server {
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
 
-				writeHeader(writer, "Type");
+				writeHeaderedTable(writer, "Type");
 				writeRow(writer, "Signature",
-						"<input type=\"text\" id=\"uglySignature\"></input> <span class=\"load\" onclick=\"prettyType();\">Beautify</span>");
+						"<input type=\"text\" id=\"uglySignature\"></input> <span class=\"load\" onclick=\"prettyType();\">💅 Beautify</span>");
 				writeRow(writer, "Pretty Type", "<span id=\"prettyType\"></span>");
 				writeFinish(writer);
 
 				writeHeader(writer, "Functions");
 				functionpRepository.stream().sorted(Comparator.comparing(FunctionDefinition::name))
 						.forEach(function -> {
-							writeBlock(writer, function.name());
-							writeRow(writer, "Return", function.returnType().name());
+							writeTable(writer, function.name());
 							function.parameters().map(Pair.number())
 									.forEach(p -> writeRow(writer,
 											"Argument " + Integer.toString(p.first() + 1) + ": " + p.second().name(),
 											String.format("%s <input type=\"text\" id=\"%s$%d\"></input>",
 													p.second().type().name(), function.name(), p.first())));
-							writeRow(writer, "Result",
-									String.format(
-											"<span class=\"load\" onclick=\"runFunction('%s', this, %s)\">Fetch</span>",
-											function.name(), function.parameters().map(p -> p.type().javaScriptParser())
-													.collect(Collectors.joining(",", "[", "]"))));
+							writeRow(writer, "Result: " + function.returnType().name(), String.format(
+									"<span class=\"load\" onclick=\"runFunction('%s', this, %s)\">▶ Run</span><span></span>",
+									function.name(), function.parameters().map(p -> p.type().javaScriptParser())
+											.collect(Collectors.joining(",", "[", "]"))));
 							writeDescription(writer, function.description());
 
+							writeFinish(writer);
 						});
-				writeFinish(writer);
 
 				writeHeader(writer, "Actions");
 				actionRepository.stream().sorted(Comparator.comparing(ActionDefinition::name)).forEach(action -> {
-					writeBlock(writer, action.name());
+					writeTable(writer, action.name());
 					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
 							.forEach(p -> writeRow(writer, p.name(), p.type().name()));
 					writeDescription(writer, action.description());
+					writeFinish(writer);
 				});
-				writeFinish(writer);
 
 				InputFormatDefinition.formats().forEach(format -> {
-					writeHeader(writer, "Variables: " + format.name());
+					writeHeaderedTable(writer, "Variables: " + format.name());
 					format.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
 						writeRow(writer, variable.name(), variable.type().name());
 					});
@@ -176,13 +174,14 @@ public final class Server {
 
 				writeHeader(writer, "Constants");
 				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
-					writeRow(writer, constant.name(), constant.type().name());
-					writeRow(writer, "Value",
-							String.format("<span class=\"load\" onclick=\"fetchConstant('%s', this)\">Fetch</span>",
-									constant.name()));
+					writeTable(writer, constant.name());
+					writeRow(writer, "Type", constant.type().name());
+					writeRow(writer, "Value", String.format(
+							"<span class=\"load\" onclick=\"fetchConstant('%s', this)\">▶ Get</span><span></span>",
+							constant.name()));
 					writeDescription(writer, constant.description());
+					writeFinish(writer);
 				});
-				writeFinish(writer);
 
 				writePageFooter(writer);
 			}
@@ -472,6 +471,12 @@ public final class Server {
 	private void writeHeader(PrintStream writer, String title) {
 		writer.print("<h1>");
 		writer.print(title);
+		writer.print("</h1>");
+	}
+
+	private void writeHeaderedTable(PrintStream writer, String title) {
+		writer.print("<h1>");
+		writer.print(title);
 		writer.print("</h1><table>");
 	}
 
@@ -491,5 +496,10 @@ public final class Server {
 		writer.print(value);
 		writer.print("</td></tr>");
 
+	}
+
+	private void writeTable(PrintStream writer, String title) {
+		writer.print("<table>");
+		writeBlock(writer, title);
 	}
 }

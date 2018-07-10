@@ -103,7 +103,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return "parseList(" + inner.javaScriptParser() + ")";
+			return "parser.a(" + inner.javaScriptParser() + ")";
 		}
 
 		@Override
@@ -210,7 +210,7 @@ public abstract class Imyhat {
 		@Override
 		public String javaScriptParser() {
 			return Stream.of(types).map(Imyhat::javaScriptParser)
-					.collect(Collectors.joining(",", "parseTuple([", "])"));
+					.collect(Collectors.joining(",", "parser.t([", "])"));
 		}
 
 		@Override
@@ -304,7 +304,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return "x=>{throw 'Cannot parse bad type.';}";
+			return "parser._";
 		}
 
 		@Override
@@ -369,7 +369,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return "x=>x==='true'";
+			return "parser.b";
 		}
 
 		@Override
@@ -435,7 +435,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return "x=>Date.parse(x)";
+			return "parser.d";
 		}
 
 		@Override
@@ -505,7 +505,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return "x=>parseInt(x)";
+			return "parser.i";
 		}
 
 		@Override
@@ -590,7 +590,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return "x=>x";
+			return "parser.s";
 		}
 
 		@Override
