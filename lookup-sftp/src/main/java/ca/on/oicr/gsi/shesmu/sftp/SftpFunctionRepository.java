@@ -27,6 +27,7 @@ import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 
 @MetaInfServices
@@ -40,19 +41,11 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		private final List<FunctionDefinition> definitions = new ArrayList<>();
 
-		private final Cache<String, Boolean> exists = new Cache<String, Boolean>("sftp-fileexists", 10) {
+		private final Cache<String, FileAttributes> fileAttributes = new Cache<String, FileAttributes>("sftp", 10) {
 
 			@Override
-			protected Boolean fetch(String fileName) throws IOException {
-				return sftp.statExistence(fileName) != null;
-			}
-		};
-
-		private final Cache<String, Instant> mtime = new Cache<String, Instant>("sftp-modificationtime", 10) {
-
-			@Override
-			protected Instant fetch(String fileName) throws IOException {
-				return Instant.ofEpochSecond(sftp.mtime(fileName));
+			protected FileAttributes fetch(String fileName) throws IOException {
+				return sftp.statExistence(fileName);
 			}
 		};
 
@@ -61,15 +54,6 @@ public class SftpFunctionRepository implements FunctionRepository {
 		private final String service;
 
 		private volatile SFTPClient sftp;
-
-		private final Cache<String, Long> size = new Cache<String, Long>("sftp-filesize", 10) {
-
-			@Override
-			protected Long fetch(String fileName) throws IOException {
-				return sftp.size(fileName);
-			}
-
-		};
 
 		public SftpServer(Path fileName) {
 			super(fileName, Configuration.class);
@@ -157,7 +141,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 			if (!attemptConnect()) {
 				return false;
 			}
-			return exists.get(fileName).orElse(false);
+			return fileAttributes.get(fileName).isPresent();
 		}
 
 		@RuntimeInterop
@@ -165,7 +149,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 			if (!attemptConnect()) {
 				return errorValue;
 			}
-			return mtime.get(fileName).orElse(errorValue);
+			return fileAttributes.get(fileName).map(a -> Instant.ofEpochSecond(a.getMtime())).orElse(errorValue);
 		}
 
 		@RuntimeInterop
@@ -173,7 +157,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 			if (!attemptConnect()) {
 				return errorValue;
 			}
-			return size.get(fileName).orElse(errorValue);
+			return fileAttributes.get(fileName).map(FileAttributes::getSize).orElse(errorValue);
 		}
 
 		@Override
