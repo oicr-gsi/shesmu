@@ -10,14 +10,14 @@ public class Fixed<T> extends Subsampler<T> {
 	public Fixed(Subsampler<T> parent, long numberOfItems) {
 		this.parent = parent;
 		this.numberOfItems = numberOfItems;
-		
+
 	}
 
 	@Override
 	protected int subsample(List<T> input, List<T> output) {
-		int position = parent.subsample(input, output);
+		final int position = parent.subsample(input, output);
 		int counter;
-		for(counter = 0; position + counter < input.size() && counter < numberOfItems; counter++) {
+		for (counter = 0; position + counter < input.size() && counter < numberOfItems; counter++) {
 			output.add(input.get(position + counter));
 		}
 		return position + counter;

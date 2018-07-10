@@ -37,10 +37,10 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 	private class RunScannerClient extends AutoUpdatingJsonFile<Configuration> {
 
 		private final Pair<String, Map<String, String>> configurationPair;
-		private final String instance;
 		private final List<FunctionDefinition> functions;
-		private final Map<String, ObjectNode> runCache = new HashMap<>();
+		private final String instance;
 		private final Map<String, String> properties = new TreeMap<>();
+		private final Map<String, ObjectNode> runCache = new HashMap<>();
 		private Optional<String> url = Optional.empty();
 
 		public RunScannerClient(Path fileName) {
@@ -78,10 +78,6 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 			return configurationPair;
 		}
 
-		public Stream<FunctionDefinition> functions() {
-			return functions.stream();
-		}
-
 		private Optional<ObjectNode> fetch(String runName) {
 			if (runCache.containsKey(runName)) {
 				return Optional.of(runCache.get(runName));
@@ -94,7 +90,7 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 						requestErrors.labels(u).inc();
 						return Optional.empty();
 					}
-					ObjectNode run = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
+					final ObjectNode run = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
 							ObjectNode.class);
 					runCache.put(runName, run);
 					return Optional.of(run);
@@ -105,6 +101,20 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 				}
 			});
 
+		}
+
+		@RuntimeInterop
+		public String flowcell(String runName) {
+			return fetch(runName).map(run -> {
+				if (run.has("containerSerialNumber")) {
+					return run.get("containerSerialNumber").asText();
+				}
+				return "";
+			}).orElse("");
+		}
+
+		public Stream<FunctionDefinition> functions() {
+			return functions.stream();
 		}
 
 		@RuntimeInterop
@@ -133,16 +143,6 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 				}
 				return -1L;
 			}).orElse(-1L);
-		}
-
-		@RuntimeInterop
-		public String flowcell(String runName) {
-			return fetch(runName).map(run -> {
-				if (run.has("containerSerialNumber")) {
-					return run.get("containerSerialNumber").asText();
-				}
-				return "";
-			}).orElse("");
 		}
 
 		@Override

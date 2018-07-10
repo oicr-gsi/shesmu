@@ -9,13 +9,13 @@ public abstract class Subsampler<T> {
 
 	public Subsampler() {
 	}
-	
+
+	protected abstract int subsample(List<T> input, List<T> output);
+
 	public Stream<T> subsample(Stream<T> input) {
-		List<T> output = new ArrayList<>();
+		final List<T> output = new ArrayList<>();
 		subsample(input.collect(Collectors.toList()), output);
 		return output.stream();
 	}
-	
-	protected abstract int subsample(List<T> input, List<T> output);
-	
+
 }
