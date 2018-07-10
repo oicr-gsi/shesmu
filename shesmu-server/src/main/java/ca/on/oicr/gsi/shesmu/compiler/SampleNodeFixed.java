@@ -37,8 +37,8 @@ public class SampleNodeFixed extends SampleNode {
 		case LIMITED:
 			return Consumption.LIMITED;
 		case GREEDY:
-			errorHandler.accept(String.format("%d:%d: No items will be left to subsample.",
-					expression.line(), expression.column()));
+			errorHandler.accept(String.format("%d:%d: No items will be left to subsample.", expression.line(),
+					expression.column()));
 			return Consumption.BAD;
 		case BAD:
 		default:

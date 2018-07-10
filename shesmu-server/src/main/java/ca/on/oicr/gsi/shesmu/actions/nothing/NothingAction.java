@@ -9,12 +9,12 @@ import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 
 public class NothingAction extends Action {
 
+	@RuntimeInterop
+	public String value = "";
+
 	public NothingAction() {
 		super("nothing");
 	}
-
-	@RuntimeInterop
-	public String value = "";
 
 	@Override
 	public boolean equals(Object obj) {

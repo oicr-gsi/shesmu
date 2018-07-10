@@ -27,9 +27,9 @@ import io.prometheus.client.Gauge;
 
 public abstract class FileWatcher {
 	private static final class RealFileWatcher extends FileWatcher {
-		private final Path directory;
 		private final Map<Path, List<WatchedFileListener>> active = new ConcurrentHashMap<>();
 		private final Map<String, List<Function<Path, WatchedFileListener>>> ctors = new ConcurrentHashMap<>();
+		private final Path directory;
 		private volatile boolean running = true;
 		private final Thread watchThread = new Thread(this::run, "file-watcher");
 
@@ -44,7 +44,7 @@ public abstract class FileWatcher {
 					try {
 						watchThread.interrupt();
 						watchThread.join();
-					} catch (InterruptedException e) {
+					} catch (final InterruptedException e) {
 					}
 				}
 

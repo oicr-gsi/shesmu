@@ -13,7 +13,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 public abstract class SampleNode {
 
 	public enum Consumption {
-		BAD, LIMITED, GREEDY
+		BAD, GREEDY, LIMITED
 	}
 
 	private static final Parser.ParseDispatch<SampleNode> DISPATCH = new Parser.ParseDispatch<>();

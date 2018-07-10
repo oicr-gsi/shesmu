@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.subsample;
 
 import java.util.List;
 
-public class Start<T> extends Subsampler<T>{
+public class Start<T> extends Subsampler<T> {
 
 	public Start() {
 	}
