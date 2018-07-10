@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -120,6 +121,12 @@ public abstract class ExpressionNode {
 			}
 			o.accept(new ExpressionNodeDate(p.line(), p.column(), date));
 		}, "Expected date.").whitespace());
+		TERMINAL.addKeyword("EpochMilli", (p, o) -> p.whitespace().integer(e -> {
+			o.accept(new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochMilli(e)));
+		}, 10).whitespace());
+		TERMINAL.addKeyword("EpochSecond", (p, o) -> p.whitespace().integer(e -> {
+			o.accept(new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochSecond(e)));
+		}, 10).whitespace());
 		TERMINAL.addSymbol("{", (p, o) -> {
 			final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
 			final Parser result = p//
