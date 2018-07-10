@@ -121,7 +121,7 @@ public final class Check extends Compiler {
 	}
 
 	private static ActionDefinition makeAction(ObjectNode node) {
-		return new ActionDefinition(node.get("name").asText(), null,
+		return new ActionDefinition(node.get("name").asText(), null, node.get("description").asText(),
 				RuntimeSupport.stream(node.get("parameters").elements()).map(Check::makeParameter)) {
 
 			@Override

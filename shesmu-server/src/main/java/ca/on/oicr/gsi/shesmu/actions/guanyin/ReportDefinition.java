@@ -28,7 +28,10 @@ public class ReportDefinition extends ActionDefinition {
 
 	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId, String name,
 			String version, Stream<ParameterDefinition> parameters) {
-		super(name + "_" + version.replaceAll("[^A-Za-z0-9_]", "_"), ACTION_TYPE, parameters);
+		super(name + "_" + version.replaceAll("[^A-Za-z0-9_]", "_"), ACTION_TYPE,
+				String.format("Runs report %s-%s (%d) in %s from %s using %s.", name, version, reportId, script, 观音Url,
+						drmaaUrl),
+				parameters);
 		this.观音Url = 观音Url;
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;

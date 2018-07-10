@@ -13,8 +13,8 @@ public class FakeActionDefinition extends ActionDefinition {
 	private static final Type A_DO_NOTHING = Type.getType(DoNothing.class);
 	private static final Method CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] { Type.getType(String.class) });
 
-	public FakeActionDefinition(String name, Stream<ParameterDefinition> parameters) {
-		super(name, A_DO_NOTHING, parameters);
+	public FakeActionDefinition(String name, String description, Stream<ParameterDefinition> parameters) {
+		super(name, A_DO_NOTHING, "Fake version of: " + description, parameters);
 	}
 
 	@Override

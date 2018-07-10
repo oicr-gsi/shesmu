@@ -21,6 +21,7 @@ public class NothingActionRepository implements ActionRepository {
 	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
 
 	private static final ActionDefinition NOTHING_ACTION = new ActionDefinition("nothing", A_NOTHING_ACTION_TYPE,
+			"Does absolutely nothing and ignores the value provided. Useful for debugging.",
 			Stream.of(ParameterDefinition.forField(A_NOTHING_ACTION_TYPE, "value", Imyhat.STRING, true))) {
 
 		@Override

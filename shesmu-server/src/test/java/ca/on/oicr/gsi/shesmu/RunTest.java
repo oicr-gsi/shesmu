@@ -157,7 +157,7 @@ public class RunTest {
 	};
 
 	private static final ActionDefinition OK_ACTION_DEFINITION = new ActionDefinition("ok", A_OK_ACTION_TYPE,
-			Stream.of(ParameterDefinition.forField(A_OK_ACTION_TYPE, "ok", Imyhat.BOOLEAN, true))) {
+			"For unit tests.", Stream.of(ParameterDefinition.forField(A_OK_ACTION_TYPE, "ok", Imyhat.BOOLEAN, true))) {
 
 		@Override
 		public void initialize(GeneratorAdapter methodGen) {

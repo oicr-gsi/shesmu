@@ -38,6 +38,8 @@ paths:
                 items:
                   type: "object"
                   properties:
+                    description:
+                      type: "string"
                     name:
                       type: "string"
                     parameters:

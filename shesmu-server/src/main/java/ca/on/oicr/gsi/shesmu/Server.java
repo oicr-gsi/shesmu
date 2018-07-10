@@ -162,7 +162,7 @@ public final class Server {
 					writeBlock(writer, action.name());
 					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
 							.forEach(p -> writeRow(writer, p.name(), p.type().name()));
-
+					writeDescription(writer, action.description());
 				});
 				writeFinish(writer);
 
@@ -193,6 +193,7 @@ public final class Server {
 			actionRepository.stream().forEach(actionDefinition -> {
 				final ObjectNode obj = array.addObject();
 				obj.put("name", actionDefinition.name());
+				obj.put("description", actionDefinition.description());
 				final ArrayNode parameters = obj.putArray("parameters");
 				actionDefinition.parameters().forEach(param -> {
 					final ObjectNode paramInfo = parameters.addObject();
@@ -223,7 +224,7 @@ public final class Server {
 				obj.put("description", function.description());
 				obj.put("return", function.returnType().signature());
 				final ArrayNode parameters = obj.putArray("parameters");
-				function.parameters().forEach(p-> {
+				function.parameters().forEach(p -> {
 					final ObjectNode parameter = parameters.addObject();
 					parameter.put("type", p.type().signature());
 					parameter.put("name", p.name());

@@ -23,6 +23,7 @@ import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
@@ -147,7 +148,13 @@ public class SeqWareWorkflowAction extends Action {
 	public static ActionDefinition create(String name, Type type, long workflowAccession, long[] previousAccessions,
 			String jarPath, String settingsPath, String[] services, Stream<SeqWareParameterDefinition> parameters) {
 		return new ActionDefinition(name, type,
+				String.format("Runs SeqWare workflow %d using %s with settings in %s.", workflowAccession, jarPath,
+						settingsPath)
+						+ (previousAccessions.length == 0 ? ""
+								: LongStream.of(previousAccessions).sorted().mapToObj(Long::toString).collect(
+										Collectors.joining(", ", " Considered equivalent to workflows: ", ""))),
 				Stream.concat(Stream.of(ParameterDefinition.forField(A_SQWACTION_TYPE, "magic", Imyhat.STRING, false)),
+
 						parameters.map(p -> p.generate(type)))) {
 
 			@Override
