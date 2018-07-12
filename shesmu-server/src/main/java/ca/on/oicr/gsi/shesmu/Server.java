@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
@@ -37,6 +38,22 @@ import io.prometheus.client.hotspot.DefaultExports;
 
 @SuppressWarnings("restriction")
 public final class Server {
+	private static class EmergencyThrottlerHandler implements HttpHandler {
+		private final boolean state;
+
+		public EmergencyThrottlerHandler(boolean state) {
+			super();
+			this.state = state;
+		}
+
+		@Override
+		public void handle(HttpExchange t) throws IOException {
+			EmergencyThrottler.set(state);
+			t.getResponseHeaders().set("Location", "/");
+			t.sendResponseHeaders(302, -1);
+		}
+
+	}
 
 	private static final LatencyHistogram responseTime = new LatencyHistogram("shesmu_http_request_time",
 			"The time to respond to an HTTP request.", "url");
@@ -77,6 +94,10 @@ public final class Server {
 				writeHeader(writer, "Core");
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
+				writeRow(writer, "Emergency Stop",
+						String.format("<a class=\"load\" href=\"%s\">%s</a>",
+								EmergencyThrottler.stopped() ? "/resume" : "/stopstopstop",
+								EmergencyThrottler.stopped() ? "▶ Resume" : "⏹ STOP ALL ACTIONS"));
 				writeFinish(writer);
 				if (!compiler.errorHtml().isEmpty()) {
 					writer.print("<h1>Compile Errors</h1><p>");
@@ -330,6 +351,8 @@ public final class Server {
 			}
 		});
 
+		add("/resume", new EmergencyThrottlerHandler(false));
+		add("/stopstopstop", new EmergencyThrottlerHandler(true));
 		add("/main.css", "text/css");
 		add("/shesmu.js", "text/javascript");
 		add("/shesmu.svg", "image/svg+xml");
