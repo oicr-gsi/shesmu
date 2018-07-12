@@ -19,11 +19,13 @@ public interface Dumper {
 	/**
 	 * This is called after all the olives have produced their output and the round
 	 * is complete.
+	 * 
+	 * This may be called multiple times for a single start.
 	 */
 	public void stop();
 
 	/**
 	 * Write the provided values to the output.
 	 */
-	public void write(Object[] values);
+	public void write(Object... values);
 }

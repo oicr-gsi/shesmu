@@ -39,7 +39,7 @@ public interface DumperSource extends LoadedConfiguration {
 			}
 
 			@Override
-			public void write(Object[] values) {
+			public void write(Object... values) {
 				// Do nothing.
 			}
 		};

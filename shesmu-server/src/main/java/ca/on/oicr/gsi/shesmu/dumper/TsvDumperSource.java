@@ -60,7 +60,7 @@ public class TsvDumperSource implements DumperSource {
 				}
 
 				@Override
-				public void write(Object[] values) {
+				public void write(Object... values) {
 					output.ifPresent(o -> {
 						for (int it = 0; it < values.length; it++) {
 							if (it > 0) {
