@@ -220,14 +220,14 @@ There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a signature that is used for
 machine-to-machine communication.
 
-| Name      | Underlying Type | Syntax                   | Signature  |
-|---        |---              |---                       |---         |
-| Integer   | long            | `integer`                | `i`	      |
-| String    | String          | `string`                 | `s`	      |
-| Boolean   | boolean         | `boolean`                | `b`	      |
-| Date      | Instant         | `date`                   | `d`        |
-| List      | Set             | `[`_inner_`]`            | `a`_inner_ |
-| Tuple     | Tuple (custom)  | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Name       | Syntax                   | Signature  |
+|---         |---                       |---         |
+| Integer    | `integer`                | `i`	      |
+| String     | `string`                 | `s`	      |
+| Boolean    | `boolean`                | `b`	      |
+| Date       | `date`                   | `d`        |
+| List       | `[`_inner_`]`            | `a`_inner_ |
+| Tuple      | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 
 
 ## Expressions

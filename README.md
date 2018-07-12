@@ -81,6 +81,11 @@ Shesmu will add these actions to its queue and attempt to run them as if they
 were produced by an olive.
 
 ## Plugins
+Shesmu is meant to be a pluggable system. The base system provides a few
+plugins that might be useful, but it is likely that custom plugins are needed.
+Please read the [plugin implementation guide](implementation.md) for
+information about how to extend the system.
+
 ### Action Repositories
 For Shesmu to know what actions it can perform, it uses an action repository. A
 new action repository can be created using the `ActionRepository` interface.
@@ -113,24 +118,6 @@ matching _input data repository_ and many repositories can provide the same form
 
 - `gsi_std` is the default format. It contains a mix of analysis provenance
   information tied back to LIMS provenance data.
-
-Creating a new source format is meant to be easy, but convoluted in order to be
-type safe. To create a new source format:
-
-1. Create a class, _V_, that will hold all the data for a “row” in the incoming
-data. It must be a class and not an interface.
-1. Create a parameterless method in _V_ for every variable to be exposed. The
-method names must be valid Shemsu names (lowercase with underscores) and
-decorated with `@Export` annotations with the correct type signature. All
-methods must return `boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple`
-(and `Set` and `Tuple` may only contain more of the same).
-1. Create a new interface, _R_, extending `InputRepository<`_V_`>`.
-1. Create a new class that extends `BaseInputFormatDefinition<`_V_`,`_R_`> and
-provides those types to the constructor as well as a name that will be used in
-the `Input` instruction. This class must be annotated with
-`@MetaInfServices(InputFormatDefinition)`.
-1. Create new classes that provide data which implement _R_ and are annotated
-with `@MetaInfServices(`_R_`)`.
 
 ### Inputs Repositories (_gsi_std_)
 This is where Shesmu gets provenance data for olives to ingest. The following
