@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -45,7 +46,6 @@ public abstract class RootBuilder {
 
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Method CTOR_CLASS = new Method("<clinit>", VOID_TYPE, new Type[] {});
-
 	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
 	private static final Handle HANDLER_IMYHAT = new Handle(Opcodes.H_INVOKESTATIC, A_IMYHAT_TYPE.getInternalName(),
 			"bootstrap", Type.getMethodDescriptor(Type.getType(CallSite.class),
@@ -58,12 +58,10 @@ public abstract class RootBuilder {
 
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
-
 	private final static Method METHOD_DUMPER__FIND = new Method("find", A_DUMPER_TYPE,
 			new Type[] { A_STRING_TYPE, Type.getType(Imyhat[].class) });
 	private final static Method METHOD_DUMPER__START = new Method("start", VOID_TYPE, new Type[] {});
 	private final static Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
-
 	private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
 
 	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
@@ -95,6 +93,7 @@ public abstract class RootBuilder {
 	private final Supplier<Stream<Constant>> constants;
 
 	private final GeneratorAdapter ctor;
+
 	private final Set<String> dumpers = new HashSet<>();
 
 	private final Set<String> gauges = new HashSet<>();
@@ -104,11 +103,13 @@ public abstract class RootBuilder {
 	private int oliveId = 0;
 
 	private final String path;
+
 	private final GeneratorAdapter runMethod;
 
 	private final Type selfType;
 
 	private int streamId;
+	private Label runStartLabel;
 
 	public RootBuilder(String name, String path, InputFormatDefinition inputFormatDefinition,
 			Supplier<Stream<Constant>> constants) {
@@ -134,6 +135,7 @@ public abstract class RootBuilder {
 		runMethod.visitCode();
 		runMethod.loadThis();
 		runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__CLEAR_GAUGE);
+		runStartLabel = runMethod.mark();
 
 		classInitMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, CTOR_CLASS, null, null, classVisitor);
 		classInitMethod.visitCode();
@@ -187,8 +189,21 @@ public abstract class RootBuilder {
 			runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
 
 		});
+		Label endOfRun = runMethod.mark();
 
 		runMethod.visitInsn(Opcodes.RETURN);
+
+		if (!dumpers.isEmpty()) {
+			// Generate a finally block to clean up all our dumpers
+			runMethod.catchException(runStartLabel, endOfRun, null);
+			dumpers.forEach(dumper -> {
+				runMethod.loadThis();
+				runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
+				runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
+
+			});
+			runMethod.throwException();
+		}
 		runMethod.visitMaxs(0, 0);
 		runMethod.visitEnd();
 
