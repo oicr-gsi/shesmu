@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 /**
@@ -142,9 +143,9 @@ public abstract class OliveNode {
 	 */
 	public final boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Consumer<String> errorHandler) {
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
 		final boolean clausesOk = clauses.stream().filter(clause -> clause.resolveDefinitions(definedOlives,
-				definedFunctions, definedActions, metricNames, errorHandler)).count() == clauses.size();
+				definedFunctions, definedActions, metricNames, dumpers, errorHandler)).count() == clauses.size();
 		return clausesOk & resolveDefinitionsExtra(definedOlives, definedFunctions, definedActions, errorHandler);
 	}
 
