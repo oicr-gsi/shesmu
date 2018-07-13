@@ -19,9 +19,9 @@ public interface DumperSource extends LoadedConfiguration {
 	 *         the output is provided
 	 */
 	@RuntimeInterop
-	public static Dumper find(String name) {
+	public static Dumper find(String name, Imyhat... types) {
 		for (final DumperSource source : LOADER) {
-			final Optional<Dumper> dumper = source.findDumper(name);
+			final Optional<Dumper> dumper = source.findDumper(name, types);
 			if (dumper.isPresent()) {
 				return dumper.get();
 			}
@@ -52,5 +52,5 @@ public interface DumperSource extends LoadedConfiguration {
 	 *            the dumper to find
 	 * @return the dumper if found, or an empty optional if none is available
 	 */
-	public Optional<Dumper> findDumper(String name);
+	public Optional<Dumper> findDumper(String name, Imyhat... types);
 }

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
@@ -28,9 +30,13 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 			new Type[] { Type.getType(Object[].class) });
 	private final List<ExpressionNode> columns;
 	private final String dumper;
+	private final int column;
+	private final int line;
 
-	public OliveClauseNodeDump(String dumper, List<ExpressionNode> columns) {
+	public OliveClauseNodeDump(int line, int column, String dumper, List<ExpressionNode> columns) {
 		super();
+		this.line = line;
+		this.column = column;
 		this.dumper = dumper;
 		this.columns = columns;
 	}
@@ -61,7 +67,8 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 
 	@Override
 	public void render(RootBuilder builder, Renderer renderer) {
-		builder.loadDumper(dumper, renderer.methodGen());
+		builder.loadDumper(dumper, renderer.methodGen(),
+				columns.stream().map(ExpressionNode::type).toArray(Imyhat[]::new));
 		renderer.methodGen().push(columns.size());
 		renderer.methodGen().newArray(A_OBJECT_TYPE);
 		for (int it = 0; it < columns.size(); it++) {
@@ -82,10 +89,19 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 				.count() == columns.size());
 	}
 
+	private List<Imyhat> dumperTypes;
+
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Consumer<String> errorHandler) {
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
+
+		if (dumpers.containsKey(dumper)) {
+			dumperTypes = dumpers.get(dumper);
+		} else {
+			dumperTypes = new ArrayList<>();
+		}
+
 		return columns.stream()//
 				.filter(e -> e.resolveFunctions(definedFunctions, errorHandler))//
 				.count() == columns.size();
@@ -93,9 +109,33 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
-		return columns.stream()//
+		if (columns.stream()//
 				.filter(e -> e.typeCheck(errorHandler))//
-				.count() == columns.size();
+				.count() != columns.size()) {
+			return false;
+		}
+		if (dumperTypes.isEmpty()) {
+			columns.stream().map(ExpressionNode::type).forEachOrdered(dumperTypes::add);
+			return true;
+		}
+		if (dumperTypes.size() != columns.size()) {
+			errorHandler.accept(
+					String.format("%d:%d: Number of arguments (%d) to dumper %s is different from previously (%d).",
+							line, column, columns.size(), dumper, dumperTypes.size()));
+			return false;
+		}
+		boolean ok = true;
+		for (int i = 0; i < dumperTypes.size(); i++) {
+			if (!dumperTypes.get(i).isSame(columns.get(i).type())) {
+				errorHandler
+						.accept(String.format("%d:%d: The %d argument to dumper %s is was previously %s and is now %s.",
+								line, column, i, dumper, dumperTypes.get(i).name(), columns.get(i).type().name()));
+				ok = false;
+
+			}
+		}
+		return ok;
+
 	}
 
 }

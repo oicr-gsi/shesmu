@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
@@ -167,7 +168,7 @@ public abstract class OliveClauseNode {
 					.whitespace();
 
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeDump(dumper.get(), columns.get()));
+				output.accept(new OliveClauseNodeDump(input.line(), input.column(), dumper.get(), columns.get()));
 			}
 			return result;
 		}
@@ -235,7 +236,7 @@ public abstract class OliveClauseNode {
 	 * Resolve all variable definitions in this clause
 	 * 
 	 * @param inputFormatDefinition
-	 *            TODO
+	 *            the input format for this olive
 	 * @param defs
 	 *            the variable definitions available to this clause
 	 *
@@ -249,7 +250,7 @@ public abstract class OliveClauseNode {
 	 */
 	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Consumer<String> errorHandler);
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler);
 
 	/**
 	 * Type any expression in the clause

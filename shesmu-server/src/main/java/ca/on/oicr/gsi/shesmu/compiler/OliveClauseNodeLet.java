@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
@@ -56,7 +57,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Consumer<String> errorHandler) {
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
 		boolean ok = arguments.stream().filter(argument -> argument.resolveFunctions(definedFunctions, errorHandler))
 				.count() == arguments.size();
 		if (arguments.stream().map(LetArgumentNode::name).distinct().count() != arguments.size()) {

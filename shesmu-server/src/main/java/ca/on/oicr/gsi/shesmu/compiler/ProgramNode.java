@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 public class ProgramNode {
@@ -93,10 +94,11 @@ public class ProgramNode {
 		// Find and resolve olive “Define” and “Matches”
 		final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
 		final Set<String> metricNames = new HashSet<>();
+		final Map<String, List<Imyhat>> dumpers = new HashMap<>();
 		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
 				.count() == olives.size();
 		ok &= olives.stream().filter(olive -> olive.resolveDefinitions(definedOlives, definedFunctions, definedActions,
-				metricNames, errorHandler)).count() == olives.size();
+				metricNames, dumpers, errorHandler)).count() == olives.size();
 
 		// Resolve variables
 		if (ok) {

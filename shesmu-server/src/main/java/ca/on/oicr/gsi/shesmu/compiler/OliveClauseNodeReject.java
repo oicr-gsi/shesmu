@@ -69,10 +69,10 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Consumer<String> errorHandler) {
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
 		return expression.resolveFunctions(definedFunctions, errorHandler)
 				& handlers.stream().filter(handler -> handler.resolveDefinitions(definedOlives, definedFunctions,
-						definedActions, metricNames, errorHandler)).count() == handlers.size();
+						definedActions, metricNames, dumpers, errorHandler)).count() == handlers.size();
 	}
 
 	@Override

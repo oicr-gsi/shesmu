@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -56,7 +57,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Consumer<String> errorHandler) {
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
 		return expression.resolveFunctions(definedFunctions, errorHandler);
 	}
 

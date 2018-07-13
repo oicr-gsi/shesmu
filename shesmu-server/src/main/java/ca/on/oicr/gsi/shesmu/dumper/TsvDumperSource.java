@@ -20,6 +20,7 @@ import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
@@ -89,7 +90,7 @@ public class TsvDumperSource implements DumperSource {
 	}
 
 	@Override
-	public Optional<Dumper> findDumper(String name) {
+	public Optional<Dumper> findDumper(String name, Imyhat... types) {
 		return configurations.stream().map(c -> c.get(name)).filter(Objects::nonNull).findFirst();
 	}
 
