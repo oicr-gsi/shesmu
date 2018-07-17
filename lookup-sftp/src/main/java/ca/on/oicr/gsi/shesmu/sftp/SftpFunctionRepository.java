@@ -45,16 +45,8 @@ public class SftpFunctionRepository implements FunctionRepository {
 		private final Cache<String, FileAttributes> fileAttributes = new Cache<String, FileAttributes>("sftp", 10) {
 
 			@Override
-			protected Boolean fetch(String fileName) throws IOException {
-				return sftp.statExistence(fileName) != null;
-			}
-		};
-
-		private final Cache<String, Instant> mtime = new Cache<String, Instant>("sftp-modificationtime", 10) {
-
-			@Override
-			protected Instant fetch(String fileName) throws IOException {
-				return Instant.ofEpochSecond(sftp.mtime(fileName));
+			protected FileAttributes fetch(String fileName) throws IOException {
+				return sftp.statExistence(fileName);
 			}
 		};
 
