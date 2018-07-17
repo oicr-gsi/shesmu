@@ -67,6 +67,10 @@ padding-right:0.2em;
 border:1px solid #888;
 }
 
+a.load {
+text-decoration:none;
+}
+
 .load:hover{
 color:#800;
 background-color:#ccc;
