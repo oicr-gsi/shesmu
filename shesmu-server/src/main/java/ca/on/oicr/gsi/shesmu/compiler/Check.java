@@ -67,7 +67,7 @@ public final class Check extends Compiler {
 		options.addOption("h", "help", false, "This dreck.");
 		options.addOption("r", "remote", true, "The remote instance with all the actions/functions/etc.");
 		final CommandLineParser parser = new DefaultParser();
-		String file;
+		String[] files;
 		String remote = "http://localhost:8081/";
 		try {
 			final CommandLine cmd = parser.parse(options, args);
@@ -81,12 +81,12 @@ public final class Check extends Compiler {
 			if (cmd.hasOption('r')) {
 				remote = cmd.getOptionValue('r');
 			}
-			if (cmd.getArgs().length != 1) {
-				System.err.println("Exactly one file must be specified to compile.");
+			if (cmd.getArgs().length == 0) {
+				System.err.println("At least one file must be specified to compile.");
 				System.exit(1);
 				return;
 			}
-			file = cmd.getArgs()[0];
+			files = cmd.getArgs();
 		} catch (final ParseException e) {
 			System.err.println(e.getMessage());
 			System.exit(1);
@@ -110,14 +110,16 @@ public final class Check extends Compiler {
 		final NameLoader<ActionDefinition> actions = new NameLoader<>(fetch(remote, "actions").map(Check::makeAction),
 				ActionDefinition::name);
 
-		try {
-			final boolean ok = new Check(inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
-					"dyn/shesmu/Program", file, () -> constants.stream());
-			System.exit(ok ? 0 : 1);
-		} catch (final IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+		final boolean ok = Stream.of(files).allMatch(file -> {
+			try {
+				return new Check(inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
+						"dyn/shesmu/Program", file, constants::stream);
+			} catch (final IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+		});
+		System.exit(ok ? 0 : 1);
 	}
 
 	private static ActionDefinition makeAction(ObjectNode node) {
