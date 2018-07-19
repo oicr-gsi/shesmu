@@ -359,6 +359,16 @@ public final class Server {
 		add("/shesmu.js", "text/javascript");
 		add("/shesmu.svg", "image/svg+xml");
 		add("/favicon.png", "image/png");
+		add("/swagger.json", "application/json");
+		add("/api-docs/favicon-16x16.png", "image/png");
+		add("/api-docs/favicon-32x32.png", "image/png");
+		add("/api-docs/index.html", "text/html");
+		add("/api-docs/oauth2-redirect.html", "text/html");
+		add("/api-docs/swagger-ui-bundle.js", "text/javascript");
+		add("/api-docs/swagger-ui-standalone-preset.js", "text/javascript");
+		add("/api-docs/swagger-ui.css", "text/css");
+		add("/api-docs/swagger-ui.js", "text/javascript");
+
 	}
 
 	private Stream<ActionDefinition> actionDefinitions() {
@@ -482,7 +492,7 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"text/javascript\" src=\"shesmu.js\"></script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"text/javascript\" src=\"shesmu.js\"></script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
 	}
 
 	private void writeRow(PrintStream writer, String key, String value) {
