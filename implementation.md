@@ -181,6 +181,15 @@ the `Input` instruction. This class must be annotated with
 1. Create new classes that provide data which implement _R_ and are annotated
 with `@MetaInfServices(`_R_`)`.
 
+#### Static JSON Repository
+This is an optional step. It allows reading input data from a live Shesmu
+instance, storing it as a JSON file, then using that on another instance.
+
+1. Create a class, _J_ that `extends BaseJsonFileRepository<`_V_`> implements `_R_.
+1. Create a no-argument constructor that calls `super("`_name_`");`.
+1. Annotate _J_ with `@MetaInfServices(`_R_`.class)`.
+1. Implement the `convert` method to generate the correct object from the JSON blob.
+
 ### Constants
 A constant is a value that can be generated with no input. It need not actually
 be constant (_e.g._, `now` is a constant). The Shesmu compiler will arbitrarily

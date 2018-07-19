@@ -125,8 +125,8 @@ are available:
 
 - Pinery+SeqWare (in the `source-pinery` directory). Set `PROVENANCE_SETTINGS`
   to the file containing the provenance settings.
-- JSON files. Create a JSON file ending in `.variables` containing an array of
-  objects. This can be copied from a running Shesmu instance at `/input`.
+- JSON files. Create a JSON file ending in `.gsi_std` containing an array of
+  objects. This can be copied from a running Shesmu instance at `/input/gsi_std`.
 
 ### Constant Inputs
 Variables with constant values can also be included in a Shesmu script. The

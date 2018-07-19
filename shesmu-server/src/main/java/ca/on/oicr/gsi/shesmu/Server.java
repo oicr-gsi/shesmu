@@ -313,33 +313,29 @@ public final class Server {
 			return node;
 		});
 
-		add("/input", t -> {
-			if (!inputDownloadSemaphore.tryAcquire()) {
-				t.sendResponseHeaders(503, 0);
-				try (OutputStream os = t.getResponseBody()) {
-				}
-				return;
-			}
-			t.getResponseHeaders().set("Content-type", "application/json");
-			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody()) {
-				final JsonFactory jfactory = new JsonFactory();
-				final JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8);
-				jGenerator.writeStartObject();
-				InputFormatDefinition.formats().forEach(source -> {
-					try {
-						jGenerator.writeArrayFieldStart(source.name());
-						source.write(jGenerator);
-						jGenerator.writeEndArray();
-					} catch (final IOException e) {
-						e.printStackTrace();
+		InputFormatDefinition.formats().forEach(format -> {
+			add(String.format("/input/%s", format.name()), t -> {
+				if (!inputDownloadSemaphore.tryAcquire()) {
+					t.sendResponseHeaders(503, 0);
+					try (OutputStream os = t.getResponseBody()) {
 					}
-				});
-				jGenerator.writeEndObject();
-				jGenerator.close();
-			} finally {
-				inputDownloadSemaphore.release();
-			}
+					return;
+				}
+				t.getResponseHeaders().set("Content-type", "application/json");
+				t.sendResponseHeaders(200, 0);
+				final JsonFactory jfactory = new JsonFactory();
+				try (OutputStream os = t.getResponseBody();
+						JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+					jGenerator.writeStartArray();
+					format.write(jGenerator);
+					jGenerator.writeEndArray();
+					jGenerator.close();
+				} catch (final IOException e) {
+					e.printStackTrace();
+				} finally {
+					inputDownloadSemaphore.release();
+				}
+			});
 		});
 
 		add("/type", t -> {

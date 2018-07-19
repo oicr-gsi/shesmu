@@ -112,24 +112,29 @@ paths:
                           type:
                             type: "string"
                             format: "signature"
-  /input:
+  /input/{format}:
     get:
       summary: "Get a list of olive input data known by this server."
       description: ""
       operationId: "getInputCatalog"
       tags:
         - inputdata
+      parameters:
+        - in: path
+          name: format
+          schema:
+            type: string
+          required: true
+          description: The name of the input format
       responses:
         200:
           description: "Input data catalog transmitted"
           content:
             "application/json":
               schema:
-                type: "object"
-                additionalProperties:
-                  type: "array"
-                  items:
-                    type: "object"
+                type: "array"
+                items:
+                  type: "object"
   /variables:
     get:
       summary: "Get the variables that can be use in olives on this server."
