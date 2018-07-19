@@ -163,7 +163,6 @@ public final class JavaStreamBuilder {
 		loadCollector.accept(renderer);
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
 		renderer.methodGen().checkCast(resultType);
-
 	}
 
 	private final Renderer comparator(String name, Imyhat targetType, LoadableValue... capturedVariables) {

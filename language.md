@@ -521,9 +521,9 @@ list separated by the value of _delimexpr_, which must also be a string.
   joining.
 
 #### List
-- `List`
+- `List` _expr_
 
-Collects all the items into a list.
+Evaluates _expr_ for every item and collects all the unique into a list.
 
 #### Optima
 - `Max` _sortexpr_ `Default` _defaultexpr_
