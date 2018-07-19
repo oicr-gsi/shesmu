@@ -32,7 +32,7 @@ public enum WorkflowType {
 			new IniParam("queue", false, STRING), //
 			new IniParam("readEnds", INTEGER), //
 			new IniParam("usebasesmask", false, STRING), //
-			new IniParam("bcl2fastqpath", STRING), //
+			new IniParam("bcl_to_fastqpath", "bcl2fastqpath", STRING), //
 			new IniParam("manual_output", "manualOutput", BOOLEAN));
 
 	private final SeqWareParameterDefinition[] definitions;
