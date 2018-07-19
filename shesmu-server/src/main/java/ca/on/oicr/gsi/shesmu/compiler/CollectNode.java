@@ -20,8 +20,13 @@ public abstract class CollectNode {
 	private static final Parser.ParseDispatch<CollectNode> DISPATCH = new Parser.ParseDispatch<>();
 	static {
 		DISPATCH.addKeyword("List", (p, o) -> {
-			o.accept(new CollectNodeCollect(p.line(), p.column()));
-			return p;
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final Parser result = p.whitespace()//
+					.then(ExpressionNode::parse, expression::set);
+			if (result.isGood()) {
+				o.accept(new CollectNodeList(p.line(), p.column(), expression.get()));
+			}
+			return result;
 		});
 		DISPATCH.addKeyword("Count", (p, o) -> {
 			o.accept(new CollectNodeCount(p.line(), p.column()));
