@@ -42,6 +42,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.Cache;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.Throttler;
@@ -59,7 +60,7 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
  * workflow accession. <b>The contents of the INI file can be different and they
  * will still be considered the same.</b>
  */
-public class SeqWareWorkflowAction extends Action {
+public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 	static final Map<Long, Semaphore> MAX_IN_FLIGHT = new HashMap<>();
 
@@ -328,7 +329,7 @@ public class SeqWareWorkflowAction extends Action {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final SeqWareWorkflowAction other = (SeqWareWorkflowAction) obj;
+		final SeqWareWorkflowAction<?> other = (SeqWareWorkflowAction<?>) obj;
 		if (inputFiles == null) {
 			if (other.inputFiles != null) {
 				return false;
@@ -383,7 +384,7 @@ public class SeqWareWorkflowAction extends Action {
 		return result;
 	}
 
-	protected List<LimsKey> limsKeys() {
+	protected List<K> limsKeys() {
 		return Collections.emptyList();
 	}
 
@@ -449,28 +450,14 @@ public class SeqWareWorkflowAction extends Action {
 			// Create any IUS accessions required and update the INI file based on those
 			final Metadata metadata = new MetadataWS(settings.getProperty("SW_REST_URL"),
 					settings.getProperty("SW_REST_USER"), settings.getProperty("SW_REST_PASS"));
-			final List<IusLimsKey> iusLimsKeys = limsKeys().stream()//
-					.map(key -> {
-						final int iusAccession = metadata.addIUS(metadata.addLimsKey(key.getProvider(), key.getId(),
-								key.getVersion(), key.getLastModified()), false);
-
-						return new IusLimsKey() {
-
-							@Override
-							public Integer getIusSWID() {
-								return iusAccession;
-							}
-
-							@Override
-							public LimsKey getLimsKey() {
-								return key;
-							}
-						};
-					})//
+			final List<Pair<Integer, K>> iusLimsKeys = limsKeys().stream()//
+					.map(key -> new Pair<>(metadata.addIUS(metadata.addLimsKey(key.getProvider(), key.getId(),
+							key.getVersion(), key.getLastModified()), false), key))//
 					.collect(Collectors.toList());
 			prepareIniForLimsKeys(iusLimsKeys.stream());
 			final String iusAccessions = iusLimsKeys.stream()//
-					.map(IusLimsKey::getIusSWID).sorted()//
+					.map(Pair::first)//
+					.sorted()//
 					.map(Object::toString)//
 					.collect(Collectors.joining(","));
 
@@ -556,7 +543,7 @@ public class SeqWareWorkflowAction extends Action {
 		inputFiles = inputSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
 	}
 
-	protected void prepareIniForLimsKeys(Stream<IusLimsKey> stream) {
+	protected void prepareIniForLimsKeys(Stream<Pair<Integer, K>> stream) {
 		// Do nothing.
 	}
 

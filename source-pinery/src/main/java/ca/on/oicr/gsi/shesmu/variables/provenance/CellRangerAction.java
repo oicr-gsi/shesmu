@@ -8,14 +8,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.Tuple;
 
-public class CellRangerAction extends SeqWareWorkflowAction {
+public class CellRangerAction extends SeqWareWorkflowAction<CellRangerAction.CellRangerLimsKey> {
 
-	private final class CellRangerLimsKey implements LimsKey {
+	final class CellRangerLimsKey implements LimsKey {
 		private final String groupId;
 		private final int ius_1;
 		private final String ius_2;
@@ -59,9 +59,10 @@ public class CellRangerAction extends SeqWareWorkflowAction {
 		}
 	}
 
-	private List<LimsKey> limsKeys;
+	private List<CellRangerLimsKey> limsKeys;
 
-	public CellRangerAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath, String[] services) {
+	public CellRangerAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath,
+			String[] services) {
 		super(workflowAccession, previousAccessions, jarPath, settingsPath, services);
 	}
 
@@ -72,18 +73,18 @@ public class CellRangerAction extends SeqWareWorkflowAction {
 	}
 
 	@Override
-	protected List<LimsKey> limsKeys() {
+	protected List<CellRangerLimsKey> limsKeys() {
 		return limsKeys;
 	}
 
 	@Override
-	protected void prepareIniForLimsKeys(Stream<IusLimsKey> stream) {
+	protected void prepareIniForLimsKeys(Stream<Pair<Integer, CellRangerLimsKey>> stream) {
 		ini.setProperty("lanes", stream.map(iusKey -> {
-			final CellRangerLimsKey limsKey = (CellRangerLimsKey) iusKey.getLimsKey();
+			final CellRangerLimsKey limsKey = iusKey.second();
 			return Stream.of(limsKey.ius_1, // lane
 					0, // lane SWID
 					limsKey.ius_2, // barcode
-					iusKey.getIusSWID(), // IUS SWID
+					iusKey.first(), // IUS SWID
 					limsKey.getId(), // sample name
 					limsKey.groupId)// group ID
 					.map(Object::toString)//
