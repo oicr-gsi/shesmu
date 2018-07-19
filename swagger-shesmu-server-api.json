@@ -1,0 +1,500 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "This API is implemented by [Shesmu](https://github.com/oicr-gsi/shesmu).",
+    "version": "1.0.0",
+    "title": "Shesmu Server",
+    "contact": {
+      "email": "andre.masella@oicr.on.ca"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "tags": [
+    {
+      "name": "actions",
+      "description": "Actions"
+    },
+    {
+      "name": "constants",
+      "description": "Constants/Predefined Values"
+    },
+    {
+      "name": "functions",
+      "description": "Functions"
+    },
+    {
+      "name": "inputdata",
+      "description": "Olive Input Data"
+    },
+    {
+      "name": "misc",
+      "description": "Miscellaneous"
+    }
+  ],
+  "paths": {
+    "/actions": {
+      "get": {
+        "summary": "Get a list of actions that can be performed by this server.",
+        "description": "",
+        "operationId": "getActionCatalog",
+        "tags": [
+          "actions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Action catalog transmitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "parameters": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string",
+                              "format": "signature"
+                            },
+                            "required": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/constants": {
+      "get": {
+        "summary": "Get a list of constants that can be use in olives on this server.",
+        "description": "",
+        "operationId": "getConstantsCatalog",
+        "tags": [
+          "constants"
+        ],
+        "responses": {
+          "200": {
+            "description": "Constants catalog transmitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string",
+                        "format": "signature"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/functions": {
+      "get": {
+        "summary": "Get a list of functions that can be use in olives on this server.",
+        "description": "",
+        "operationId": "getFunctionsCatalog",
+        "tags": [
+          "functions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Functions catalog transmitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "return": {
+                        "type": "string",
+                        "format": "signature"
+                      },
+                      "types": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string",
+                              "format": "signature"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/input/{format}": {
+      "get": {
+        "summary": "Get a list of olive input data known by this server.",
+        "description": "",
+        "operationId": "getInputCatalog",
+        "tags": [
+          "inputdata"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The name of the input format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Input data catalog transmitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/variables": {
+      "get": {
+        "summary": "Get the variables that can be use in olives on this server.",
+        "description": "",
+        "operationId": "getVariablesCatalog",
+        "tags": [
+          "inputdata"
+        ],
+        "responses": {
+          "200": {
+            "description": "Variables catalog transmitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "format": "signature"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/query": {
+      "post": {
+        "summary": "Get actions generated by olives",
+        "description": "",
+        "operationId": "queryActions",
+        "tags": [
+          "actions"
+        ],
+        "requestBody": {
+          "description": "Causes an action to be launched. The status code indicates whether the job has successfully finished running. If completed successfully, an optional URL may be provided where the result may be viewed.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "skip": {
+                    "type": "integer"
+                  },
+                  "filters": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Filter"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A list of actions that match the supplied filters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/constant": {
+      "post": {
+        "summary": "Get the value of a constant",
+        "description": "",
+        "operationId": "getConstant",
+        "tags": [
+          "constants"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The current value of the constant or an error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/function": {
+      "post": {
+        "summary": "Compute value of function",
+        "description": "",
+        "operationId": "runFunction",
+        "tags": [
+          "functions"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "args": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The current value of the constant or an error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/type": {
+      "post": {
+        "summary": "Convert a Shesmu type signature into a human-readable form",
+        "description": "",
+        "operationId": "prettyType",
+        "tags": [
+          "misc"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The human readable type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The type signature provided is not valid."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnyValue": {
+        "description": "Can be any value - string, number, boolean, array or object.",
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {}
+          }
+        ]
+      },
+      "Filter": {
+        "description": "Action filtering.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "after": "#/components/schemas/FilterAfter",
+            "status": "#/components/schemas/FilterStatus"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FilterAfter"
+          },
+          {
+            "$ref": "#/components/schemas/FilterStatus"
+          }
+        ]
+      },
+      "FilterAfter": {
+        "type": "object",
+        "properties": {
+          "epoch": {
+            "type": "integer",
+            "description": "UNIX timestamp"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "FilterStatus": {
+        "type": "object",
+        "properties": {
+          "states": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
