@@ -81,7 +81,8 @@ public class SftpFunctionRepository implements FunctionRepository {
 						String.format(
 								"Gets the last modification timestamp of a file or directory living on the SFTP server described in %s.",
 								fileName),
-						Imyhat.DATE, new FunctionParameter("file_name", Imyhat.STRING), new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
+						Imyhat.DATE, new FunctionParameter("file_name", Imyhat.STRING),
+						new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				e.printStackTrace();
 			}
@@ -169,7 +170,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 			properties.put("user", configuration.getUser());
 			this.configuration = Optional.of(configuration);
 			try {
-				if (client.isConnected()) {
+				if (client != null && client.isConnected()) {
 					client.disconnect();
 					connectionConnected.labels(configuration.getHost(), Integer.toString(configuration.getPort()))
 							.set(0);
