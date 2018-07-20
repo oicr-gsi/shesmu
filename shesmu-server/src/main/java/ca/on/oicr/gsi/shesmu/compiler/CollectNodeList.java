@@ -49,7 +49,7 @@ public class CollectNodeList extends CollectNode {
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
 		expression.collectFreeVariables(freeVariables);
-		Renderer renderer = builder.map(name, expression.type().asmType(), builder.renderer().allValues()
+		Renderer renderer = builder.map(name, expression.type(), builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		expression.render(renderer);

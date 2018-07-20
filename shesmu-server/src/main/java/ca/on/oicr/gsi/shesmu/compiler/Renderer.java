@@ -53,7 +53,7 @@ public class Renderer {
 		return loadables.values().stream();
 	}
 
-	public JavaStreamBuilder buildStream(Type initialType) {
+	public JavaStreamBuilder buildStream(Imyhat initialType) {
 		return new JavaStreamBuilder(rootBuilder, this, streamType, rootBuilder.nextStreamId(), initialType);
 	}
 

@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.objectweb.asm.Type;
-
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
@@ -15,7 +13,7 @@ import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 public class ExpressionNodeListTransform extends ExpressionNode {
 
 	private final CollectNode collector;
-	private Type initialType;
+	private Imyhat initialType;
 	private final String name;
 
 	private final ExpressionNode source;
@@ -81,7 +79,7 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 		if (type instanceof Imyhat.ListImyhat) {
 			Ordering ordering = Ordering.RANDOM;
 			Imyhat incoming = ((Imyhat.ListImyhat) type).inner();
-			initialType = incoming.asmType();
+			initialType = incoming;
 			for (final ListNode transform : transforms) {
 				if (!transform.typeCheck(incoming, errorHandler)) {
 					return false;

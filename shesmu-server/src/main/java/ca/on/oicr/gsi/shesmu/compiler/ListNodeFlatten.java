@@ -5,15 +5,13 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.objectweb.asm.Type;
-
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ListNodeFlatten extends ListNodeWithExpression {
 
 	private final String childName;
-	private Type initialType;
+	private Imyhat initialType;
 
 	private String nextName;
 
@@ -40,7 +38,7 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.flatten(name(), type.asmType(), loadables);
+		return builder.flatten(name(), type, loadables);
 	}
 
 	@Override
@@ -86,7 +84,7 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
 		if (incoming instanceof Imyhat.ListImyhat) {
 			Imyhat innerIncoming = ((Imyhat.ListImyhat) incoming).inner();
-			initialType = innerIncoming.asmType();
+			initialType = innerIncoming;
 			for (final ListNode transform : transforms) {
 				ordering = transform.order(ordering, errorHandler);
 				if (!transform.typeCheck(innerIncoming, errorHandler)) {
