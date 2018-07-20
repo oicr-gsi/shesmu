@@ -4,16 +4,16 @@ set -eu
 
 case "${JAVA_HOME}" in
 	*jdk8)
-		PINERY=source-pinery
+		PINERY=plugin/seqware+pinery
 		;;
 	*)
 		PINERY=
 		;;
 esac
 
-for dir in shesmu-server action-jira $PINERY
+ROOT_PATH="$(pwd)"
+for dir in shesmu-server plugin/jira plugin/sftp $PINERY
 do
-	cd $dir
+	cd "${ROOT_PATH}/$dir"
 	mvn clean install
-	cd ..
 done

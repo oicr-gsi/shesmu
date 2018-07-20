@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>ca.on.oicr.gsi</groupId>
-  <artifactId>shesmu-lookup-sftp</artifactId>
+  <artifactId>shesmu-plugin-jira</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Shesmu Decision-Action Server</name>
+  <name>Shesmu Decision-Action Server + JIRA integration</name>
   <url>https://github.com/oicr-gsi/shesmu</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,9 +18,19 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.hierynomus</groupId>
-      <artifactId>sshj</artifactId>
-      <version>0.24.0</version>
+      <groupId>com.atlassian.jira</groupId>
+      <artifactId>jira-rest-java-client-api</artifactId>
+      <version>4.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.atlassian.jira</groupId>
+      <artifactId>jira-rest-java-client-core</artifactId>
+      <version>4.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.atlassian.fugue</groupId>
+      <artifactId>fugue</artifactId>
+      <version>2.2.1</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -49,7 +59,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>shesmu-lookup-sftp</finalName>
+    <finalName>shesmu-plugin-jira</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -73,8 +83,12 @@
             <configuration>
               <relocations>
                 <relocation>
-                  <pattern>org.bouncycastle</pattern>
-                  <shadedPattern>com.hierynomus.org.bouncycastle</shadedPattern>
+                  <pattern>com.google</pattern>
+                  <shadedPattern>com.atlassian.com.google</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>javax.ws</pattern>
+                  <shadedPattern>com.atlassian.javax.ws</shadedPattern>
                 </relocation>
               </relocations>
                 <filters>
@@ -82,9 +96,6 @@
                         <artifact>*:*:*:*</artifact>
                         <excludes>
                             <exclude>log4j.properties</exclude>
-                            <exclude>META-INF/*.SF</exclude>
-                            <exclude>META-INF/*.DSA</exclude>
-                            <exclude>META-INF/*.RSA</exclude>
                         </excludes>
                     </filter>
                 </filters>
