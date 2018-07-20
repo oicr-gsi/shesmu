@@ -2,7 +2,16 @@
 
 set -eu
 
-for dir in shesmu-server action-jira source-pinery
+case "${JAVA_HOME}" in
+	*jdk8)
+		PINERY=source-pinery
+		;;
+	*)
+		PINERY=
+		;;
+esac
+
+for dir in shesmu-server action-jira $PINERY
 do
 	cd $dir
 	mvn clean install
