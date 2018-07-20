@@ -499,6 +499,7 @@ Select the first _integer_ items in a sorted list while _condition_ is evaluated
 Randomly select _integer_ items from a sorted list.  
 
 ### Collectors
+
 #### Count
 - `Count`
 
@@ -540,6 +541,12 @@ returned.
 
 Checks whether none, all, or any (some) of the items in the list meet the
 condition specified in _expr_, which must return a Boolean.
+
+#### Partitioned Counter
+- `PartitionCount` _expr_
+
+Produces a tuple with two elements: the first is the number of items for which
+_expr_ was true, the second is the number of items for which _expr_ was false.
 
 #### Reduce
 - `Reduce(`_a_ `=` _initialexpr_ `)` _expr_

@@ -28,6 +28,15 @@ public abstract class CollectNode {
 			}
 			return result;
 		});
+		DISPATCH.addKeyword("PartitionCount", (p, o) -> {
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final Parser result = p.whitespace()//
+					.then(ExpressionNode::parse, expression::set);
+			if (result.isGood()) {
+				o.accept(new CollectNodePartitionCount(p.line(), p.column(), expression.get()));
+			}
+			return result;
+		});
 		DISPATCH.addKeyword("Count", (p, o) -> {
 			o.accept(new CollectNodeCount(p.line(), p.column()));
 			return p;
