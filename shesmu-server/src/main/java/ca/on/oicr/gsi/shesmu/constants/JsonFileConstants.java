@@ -26,7 +26,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
  * change)
  */
 @MetaInfServices(ConstantSource.class)
-public class FileConstants implements ConstantSource {
+public class JsonFileConstants implements ConstantSource {
 
 	private class ConstantsFile extends AutoUpdatingJsonFile<ObjectNode> {
 		private List<Constant> constants = Collections.emptyList();
@@ -86,7 +86,7 @@ public class FileConstants implements ConstantSource {
 
 	private final AutoUpdatingDirectory<ConstantsFile> files;
 
-	public FileConstants() {
+	public JsonFileConstants() {
 		files = new AutoUpdatingDirectory<>(".constants", ConstantsFile::new);
 	}
 
@@ -97,7 +97,7 @@ public class FileConstants implements ConstantSource {
 	}
 
 	@Override
-	public Stream<Constant> queryConstants() {
+	public Stream<? extends Constant> queryConstants() {
 		return files.stream().flatMap(ConstantsFile::stream);
 	}
 

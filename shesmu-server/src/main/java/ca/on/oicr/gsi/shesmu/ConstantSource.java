@@ -28,5 +28,5 @@ public interface ConstantSource extends LoadedConfiguration {
 	/**
 	 * Provide all constants know by this service
 	 */
-	Stream<Constant> queryConstants();
+	Stream<? extends Constant> queryConstants();
 }

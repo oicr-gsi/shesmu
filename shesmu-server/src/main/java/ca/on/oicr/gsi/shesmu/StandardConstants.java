@@ -35,7 +35,7 @@ public class StandardConstants implements ConstantSource {
 	}
 
 	@Override
-	public Stream<Constant> queryConstants() {
+	public Stream<? extends Constant> queryConstants() {
 		return CONSTANTS.stream();
 	}
 
