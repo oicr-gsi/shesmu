@@ -137,7 +137,7 @@ public abstract class RootBuilder {
 		runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__CLEAR_GAUGE);
 		runStartLabel = runMethod.mark();
 
-		classInitMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, CTOR_CLASS, null, null, classVisitor);
+		classInitMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, CTOR_CLASS, null, null, classVisitor);
 		classInitMethod.visitCode();
 	}
 
@@ -238,7 +238,8 @@ public abstract class RootBuilder {
 				ctor.invokeDynamic(types[i].signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 				ctor.arrayStore(A_IMYHAT_TYPE);
 			}
-			ctor.invokeStatic(A_DUMPER_SOURCE_TYPE, METHOD_DUMPER__FIND);
+			ctor.visitMethodInsn(Opcodes.INVOKESTATIC, A_DUMPER_SOURCE_TYPE.getInternalName(), METHOD_DUMPER__FIND.getName(),
+					METHOD_DUMPER__FIND.getDescriptor(), true);
 			ctor.putField(selfType, fieldName, A_DUMPER_TYPE);
 
 		}

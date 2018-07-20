@@ -326,7 +326,7 @@ public abstract class BaseOliveBuilder {
 					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), extractMethod.getName(),
 							extractMethod.getDescriptor(), false),
 					Type.getMethodType(compareType.boxedAsmType(), streamType));
-			renderer.methodGen().invokeStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
+			renderer.invokeInterfaceStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
 			if (max) {
 				renderer.methodGen().invokeInterface(A_COMPARATOR_TYPE, METHOD_COMPARATOR__REVERSED);
 			}

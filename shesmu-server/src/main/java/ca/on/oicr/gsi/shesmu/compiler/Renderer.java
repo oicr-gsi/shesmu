@@ -12,6 +12,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
@@ -65,6 +66,11 @@ public class Renderer {
 		loadables.get(name).accept(this);
 	}
 
+	public void invokeInterfaceStatic(Type interfaceType, Method method) {
+		methodGen.visitMethodInsn(Opcodes.INVOKESTATIC, interfaceType.getInternalName(), method.getName(),
+				method.getDescriptor(), true);
+	}
+
 	public void loadImyhat(String signature) {
 		methodGen.invokeDynamic(signature, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 	}
@@ -110,5 +116,4 @@ public class Renderer {
 	public Type streamType() {
 		return streamType;
 	}
-
 }
