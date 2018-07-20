@@ -101,8 +101,8 @@ public abstract class BaseInputFormatDefinition<V, R extends InputRepository<V>>
 	private static final Method METHOD_ACCEPT = new Method("accept", Type.VOID_TYPE, new Type[] { A_OBJECT_TYPE });
 	private static final Method METHOD_WRITE_FIELD = new Method("writeFieldName", Type.VOID_TYPE,
 			new Type[] { A_STRING_TYPE });
-	private static final Method METHOD_WRITE_OBJ_END = new Method("writeObjectStart", Type.VOID_TYPE, new Type[] {});
-	private static final Method METHOD_WRITE_OBJ_START = new Method("writeObjectStart", Type.VOID_TYPE, new Type[] {});
+	private static final Method METHOD_WRITE_OBJ_END = new Method("writeEndObject", Type.VOID_TYPE, new Type[] {});
+	private static final Method METHOD_WRITE_OBJ_START = new Method("writeStartObject", Type.VOID_TYPE, new Type[] {});
 	private final Class<V> itemClass;
 	private final ServiceLoader<R> loader;
 	private final Target[] variables;
