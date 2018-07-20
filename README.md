@@ -24,7 +24,12 @@ the provenance data.
 Setting up Shesmu involves collecting all the necessary bits and putting them
 into one place. It will discover most of the configuration from there.
 
-First, compile the main server using Maven with Java 8:
+First create `/srv/shesmu`. In this directory, the other configuration files will
+be placed (see below). Shesmu can read many `.shesmu` scripts containing
+multiple olives from `/srv/shesmu`. If you don't know how to write them, just
+create an empty file and Shesmu will start with that.
+
+Now, compile the main server using Maven with Java 8:
 
     cd shesmu-server
     mvn install
@@ -37,7 +42,7 @@ The configuration for Shesmu is kept in a directory and will be automatically
 updated if it changes. This makes it easy to store the configuration in git and
 deploy automatically.
 
-On a Linux server, create a systemd configuration in `/lib/system/shesmu.service` as follows:
+On a Linux server, create a systemd configuration in `/lib/systemd/system/shesmu.service` as follows:
 
     [Unit]
     Description=Shesmu decision-action server
@@ -50,11 +55,6 @@ On a Linux server, create a systemd configuration in `/lib/system/shesmu.service
 
     [Install]
     WantedBy=multi-user.target
-
-Now create `/srv/shesmu`. In this directory, the other configuration files will
-be placed (see below). Shesmu can read many `.shesmu` scripts containing
-multiple olives from `/srv/shesmu`. If you don't know how to write them, just
-create an empty file and Shesmu will start with that.
 
 Start the server using:
 
@@ -129,12 +129,13 @@ are available:
   objects. This can be copied from a running Shesmu instance at `/input/gsi_std`.
 
 ### Constant Inputs
-Variables with constant values can also be included in a Shesmu script. The
-following are available:
+Constant values can also be included in a Shesmu script. The following are available:
 
- - Constant files (JSON files `SHESMU_DATA` named `.constants`). Each file
-   should contain an object where the property names are the variable names to
-   use and the values are the constant values to use.
+ - Constant key-value pair files (JSON files in `SHESMU_DATA` ending in `.constants`). 
+   Each file should contain an object where the property names are the variable 
+   names to use and the values are the constant values to use.
+ - Constant set of string files (text files in `SHESMU_DATA` ending in `.set`).
+   Each line is one entry in the set.
 
 ### Function Inputs
 Function sources provide functions (or lookup tables) available to olives. For
