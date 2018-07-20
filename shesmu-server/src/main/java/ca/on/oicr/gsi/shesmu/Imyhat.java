@@ -555,10 +555,10 @@ public abstract class Imyhat {
 	private static final Method METHOD_ITERATOR__HAS_NEXT = new Method("hasNext", Type.BOOLEAN_TYPE, new Type[] {});
 
 	private static final Method METHOD_ITERATOR__NEXT = new Method("next", Type.getType(Object.class), new Type[] {});
-	private static final Method METHOD_JSON_GENERATOR__ARRAY_END = new Method("writeArrayEnd", Type.VOID_TYPE,
+	private static final Method METHOD_JSON_GENERATOR__ARRAY_END = new Method("writeEndArray", Type.VOID_TYPE,
 			new Type[] {});
 
-	private static final Method METHOD_JSON_GENERATOR__ARRAY_START = new Method("writeArrayStart", Type.VOID_TYPE,
+	private static final Method METHOD_JSON_GENERATOR__ARRAY_START = new Method("writeStartArray", Type.VOID_TYPE,
 			new Type[] {});
 	private static final Method METHOD_JSON_GENERATOR__WRITE_BOOLEAN = new Method("writeBoolean", Type.VOID_TYPE,
 			new Type[] { Type.BOOLEAN_TYPE });
