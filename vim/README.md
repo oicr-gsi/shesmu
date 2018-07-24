@@ -1,4 +1,4 @@
-# VIm Snytax Highlighting
+# VIm Syntax Highlighting
 Now you can read your Shesmu scripts in glorious colour.
 
 Install by doing:
