@@ -1,13 +1,12 @@
 package ca.on.oicr.gsi.shesmu;
 
-import java.io.IOException;
+import java.io.File;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -23,7 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -83,6 +81,8 @@ public final class RuntimeSupport {
 
 	public static final ObjectMapper MAPPER = new ObjectMapper();
 
+	private static final Pattern PATH_SEPARATOR = Pattern.compile(Pattern.quote(File.pathSeparator));
+
 	public static final BinaryOperator<?> USELESS_BINARY_OPERATOR = new BinaryOperator<Object>() {
 
 		@Override
@@ -125,79 +125,8 @@ public final class RuntimeSupport {
 		return builder.append(result);
 	}
 
-	public static Optional<Path> dataDirectory() {
-		return dataDirectory(environmentVariable());
-	}
-
-	public static Optional<Path> dataDirectory(Optional<String> root) {
-		return root//
-				.map(Paths::get)//
-				.filter(d -> Files.isDirectory(d) && Files.isReadable(d));
-	}
-
-	public static <T> Optional<T> dataFile(Class<T> clazz, String name) {
-		return dataFile(dataDirectory(), name).flatMap(path -> {
-			try {
-				return Optional.of(RuntimeSupport.MAPPER.readValue(Files.readAllBytes(path), clazz));
-			} catch (final IOException e) {
-				e.printStackTrace();
-				return Optional.empty();
-			}
-		});
-	}
-
-	public static Optional<Path> dataFile(Optional<Path> dir, String name) {
-		return dir//
-				.map(root -> root.resolve(name))//
-				.filter(Files::isReadable);
-	}
-
-	public static Optional<Path> dataFile(String name) {
-		return dataFile(dataDirectory(), name);
-	}
-
-	public static <T> Stream<T> dataFiles(Class<T> clazz, String suffix) {
-		return dataFiles(dataDirectory(), clazz, suffix);
-	}
-
-	public static <T> Stream<T> dataFiles(Optional<Path> root, Class<T> clazz, String suffix) {
-		return dataFiles(root, suffix)//
-				.<T>map(file -> {
-					try {
-						return RuntimeSupport.MAPPER.readValue(Files.readAllBytes(file), clazz);
-					} catch (final IOException e) {
-						e.printStackTrace();
-						return null;
-					}
-				})//
-				.filter(Objects::nonNull);
-	}
-
-	public static Stream<Path> dataFiles(Optional<Path> root, String suffix) {
-		return root//
-				.<Stream<Path>>map(path -> {
-					try (Stream<Path> children = Files.walk(path, 1)) {
-						return children//
-								.filter(Files::isRegularFile)//
-								.filter(f -> f.getFileName().toString().toLowerCase().endsWith(suffix))//
-								.collect(Collectors.toList()).stream();
-					} catch (final IOException e) {
-						e.printStackTrace();
-						return Stream.empty();
-					}
-				}).orElseGet(Stream::empty);
-	}
-
-	public static Stream<Path> dataFiles(String extension) {
-		return dataFiles(dataDirectory(), extension);
-	}
-
-	public static <T> Stream<T> dataFilesForPath(Optional<String> root, Class<T> clazz, String suffix) {
-		return dataFiles(dataDirectory(root), clazz, suffix);
-	}
-
-	public static Stream<Path> dataFilesForPath(Optional<String> root, String suffix) {
-		return dataFiles(dataDirectory(root), suffix);
+	public static Optional<Stream<Path>> dataPaths() {
+		return environmentVariable().map(RuntimeSupport::parsePaths);
 	}
 
 	/**
@@ -252,6 +181,10 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static <T> Stream<T> monitor(Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
 		return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
+	}
+
+	public static Stream<Path> parsePaths(String pathVariable) {
+		return PATH_SEPARATOR.splitAsStream(pathVariable).map(Paths::get);
 	}
 
 	/**

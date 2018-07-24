@@ -26,8 +26,22 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 	 *            a constructor to create a new self-updating file for a path
 	 */
 	public AutoUpdatingDirectory(String extension, Function<Path, T> ctor) {
+		this(FileWatcher.DATA_DIRECTORY, extension, ctor);
+	}
+
+	/**
+	 * Creates a new automatically updating directory
+	 *
+	 * @param watcher
+	 *            the file watcher to use
+	 * @param extension
+	 *            the file extension for the files that should be loaded
+	 * @param ctor
+	 *            a constructor to create a new self-updating file for a path
+	 */
+	public AutoUpdatingDirectory(FileWatcher watcher, String extension, Function<Path, T> ctor) {
 		super();
-		FileWatcher.DATA_DIRECTORY.register(extension, path -> {
+		watcher.register(extension, path -> {
 			final T inner = ctor.apply(path);
 			return new WatchedFileListener() {
 

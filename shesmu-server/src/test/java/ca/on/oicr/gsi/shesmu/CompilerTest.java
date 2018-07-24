@@ -74,11 +74,13 @@ public class CompilerTest {
 			Constant.of("alwaystrue", true, "It's true. I swear."),
 			Constant.of("notpi", 3, "Any value which is not pi."));
 
+	private static final FileWatcher TEST_WATCHER = FileWatcher
+			.of(Paths.get(CompilerTest.class.getResource("/data").getPath()));
+
 	private final NameLoader<ActionDefinition> actions = new NameLoader<>(
-			FileActionRepository.of(Optional.of(this.getClass().getResource("/data").getPath())),
-			ActionDefinition::name);
+			new FileActionRepository(TEST_WATCHER).queryActions(), ActionDefinition::name);
 	private final NameLoader<FunctionDefinition> functions = new NameLoader<>(
-			TableFunctionRepository.of(this.getClass().getResource("/data").getPath()), FunctionDefinition::name);
+			new TableFunctionRepository(TEST_WATCHER).queryFunctions(), FunctionDefinition::name);
 
 	@Test
 	public void testBad() throws IOException {
