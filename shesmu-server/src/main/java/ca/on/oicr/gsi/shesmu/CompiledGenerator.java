@@ -63,6 +63,10 @@ public class CompiledGenerator extends ActionGenerator {
 			.build("shesmu_source_compile_time", "The number of seconds the last compilation took to perform.")
 			.labelNames("filename").register();
 
+	private static final Gauge inputRecords = Gauge
+			.build("shesmu_input_records", "The number of records for each input format.").labelNames("format")
+			.register();
+
 	private static final NameLoader<InputFormatDefinition> SOURCES = new NameLoader<>(InputFormatDefinition.formats(),
 			InputFormatDefinition::name);
 
@@ -102,6 +106,10 @@ public class CompiledGenerator extends ActionGenerator {
 
 	@Override
 	public <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
+		// Load all the input data in an attempt to cache it before any olives try to
+		// use it. This avoids making the first olive seem really slow.
+		InputFormatDefinition.formats()
+				.forEach(format -> inputRecords.labels(format.name()).set(format.input(format.itemClass()).count()));
 		scripts.values().forEach(script -> script.generator.run(consumer, input));
 	}
 
