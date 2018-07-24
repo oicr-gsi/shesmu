@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +30,19 @@ public abstract class FileWatcher {
 	private static final class RealFileWatcher extends FileWatcher {
 		private final Map<Path, List<WatchedFileListener>> active = new ConcurrentHashMap<>();
 		private final Map<String, List<Function<Path, WatchedFileListener>>> ctors = new ConcurrentHashMap<>();
-		private final Path directory;
+		private final List<Path> directories;
 		private volatile boolean running = true;
 		private final Thread watchThread = new Thread(this::run, "file-watcher");
 
-		private RealFileWatcher(Path directory) {
-			this.directory = directory;
+		private RealFileWatcher(Stream<Path> directory) {
+			directories = directory.map(t -> {
+				try {
+					return t.toRealPath();
+				} catch (final IOException e) {
+					e.printStackTrace();
+					return null;
+				}
+			}).filter(Objects::nonNull).collect(Collectors.toList());
 			watchThread.start();
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 
@@ -61,31 +69,34 @@ public abstract class FileWatcher {
 				holder = ctors.get(extension);
 			}
 			holder.add(ctor);
-			try (Stream<Path> stream = Files.walk(directory, 1)) {
-				stream.filter(path -> path.getFileName().toString().endsWith(extension))//
-						.forEach(path -> {
-							final WatchedFileListener file = ctor.apply(path);
-							List<WatchedFileListener> fileHolder;
-							if (active.containsKey(path)) {
-								fileHolder = active.get(path);
-							} else {
-								fileHolder = Collections.synchronizedList(new ArrayList<>());
-								active.put(path, fileHolder);
-							}
-							fileHolder.add(file);
-							updateTime.labels(path.toString()).setToCurrentTime();
-							file.start();
-						});
-			} catch (final IOException e) {
-				e.printStackTrace();
+			for (final Path directory : directories) {
+				try (Stream<Path> stream = Files.walk(directory, 1)) {
+					stream.filter(path -> path.getFileName().toString().endsWith(extension))//
+							.forEach(path -> {
+								final WatchedFileListener file = ctor.apply(path);
+								List<WatchedFileListener> fileHolder;
+								if (active.containsKey(path)) {
+									fileHolder = active.get(path);
+								} else {
+									fileHolder = Collections.synchronizedList(new ArrayList<>());
+									active.put(path, fileHolder);
+								}
+								fileHolder.add(file);
+								updateTime.labels(path.toString()).setToCurrentTime();
+								file.start();
+							});
+				} catch (final IOException e) {
+					e.printStackTrace();
+				}
 			}
-
 		}
 
 		private void run() {
 			try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
-				directory.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY,
-						StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
+				for (final Path directory : directories) {
+					directory.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY,
+							StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
+				}
 				while (running) {
 					try {
 						List<Pair<Instant, WatchedFileListener>> retry = new ArrayList<>();
@@ -113,7 +124,7 @@ public abstract class FileWatcher {
 									.collect(Collectors.toList());
 						} else {
 							for (final WatchEvent<?> event : wk.pollEvents()) {
-								final Path path = directory.resolve((Path) event.context());
+								final Path path = ((Path) wk.watchable()).resolve((Path) event.context());
 								if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
 									System.out.printf("New file %s detected.\n", path.toString());
 									final String fileName = path.getFileName().toString();
@@ -156,8 +167,8 @@ public abstract class FileWatcher {
 		}
 	}
 
-	public static final FileWatcher DATA_DIRECTORY = RuntimeSupport.dataDirectory()
-			.<FileWatcher>map(directory -> new RealFileWatcher(directory)).orElseGet(() -> new FileWatcher() {
+	public static final FileWatcher DATA_DIRECTORY = RuntimeSupport.dataPaths().<FileWatcher>map(RealFileWatcher::new)
+			.orElseGet(() -> new FileWatcher() {
 
 				@Override
 				public void register(String extension, Function<Path, WatchedFileListener> ctor) {
@@ -169,6 +180,14 @@ public abstract class FileWatcher {
 	private static final Gauge updateTime = Gauge
 			.build("shesmu_auto_update_timestamp", "The UNIX time when a file or directory was last updated.")
 			.labelNames("filename").register();
+
+	public static FileWatcher of(Path... paths) {
+		return of(Stream.of(paths));
+	}
+
+	public static FileWatcher of(Stream<Path> paths) {
+		return new RealFileWatcher(paths);
+	}
 
 	public abstract void register(String extension, Function<Path, WatchedFileListener> ctor);
 }

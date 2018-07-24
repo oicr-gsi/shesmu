@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -23,6 +24,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
+import ca.on.oicr.gsi.shesmu.FileWatcher;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
@@ -84,10 +86,12 @@ public final class Build extends Compiler implements AutoCloseable {
 			System.exit(1);
 			return;
 		}
+		FileWatcher watcher = FileWatcher
+				.of(dataDirectory.map(RuntimeSupport::parsePaths).orElseGet(() -> Stream.of(Paths.get("."))));
 		try (Build compiler = new Build(new NameLoader<>(InputFormatDefinition.formats(), InputFormatDefinition::name),
-				new NameLoader<>(new TableFunctionRepository(dataDirectory.map(Paths::get)).queryFunctions(),
-						FunctionDefinition::name),
-				new NameLoader<>(FileActionRepository.of(dataDirectory), ActionDefinition::name), skipCompute, true)) {
+				new NameLoader<>(new TableFunctionRepository(watcher).queryFunctions(), FunctionDefinition::name),
+				new NameLoader<>(new FileActionRepository(watcher).queryActions(), ActionDefinition::name), skipCompute,
+				true)) {
 			if (dump) {
 				compiler.dump();
 			}

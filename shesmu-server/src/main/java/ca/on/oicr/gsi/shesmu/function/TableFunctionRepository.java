@@ -17,6 +17,8 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.FileWatcher;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
@@ -93,12 +95,6 @@ public class TableFunctionRepository implements FunctionRepository {
 				.orElse(defaultValue);
 	}
 
-	public static Stream<FunctionDefinition> of(String path) {
-		return RuntimeSupport.dataFilesForPath(Optional.of(path), EXTENSION)
-				.map(f -> readLookup(f, RuntimeSupport.removeExtension(f, EXTENSION))).filter(Optional::isPresent)
-				.map(Optional::get);
-	}
-
 	private static Optional<FunctionDefinition> readLookup(Path filename, String name) {
 		try {
 			final List<String> lines = Files.readAllLines(filename);
@@ -161,15 +157,14 @@ public class TableFunctionRepository implements FunctionRepository {
 
 	}
 
-	private final List<Table> configuration;
+	private final AutoUpdatingDirectory<Table> configuration;
 
 	public TableFunctionRepository() {
-		this(RuntimeSupport.dataDirectory());
+		this(FileWatcher.DATA_DIRECTORY);
 	}
 
-	public TableFunctionRepository(Optional<Path> source) {
-		configuration = RuntimeSupport.dataFiles(source, EXTENSION).map(Table::new).peek(Table::start)
-				.collect(Collectors.toList());
+	public TableFunctionRepository(FileWatcher watcher) {
+		configuration = new AutoUpdatingDirectory<>(watcher, EXTENSION, Table::new);
 	}
 
 	@Override

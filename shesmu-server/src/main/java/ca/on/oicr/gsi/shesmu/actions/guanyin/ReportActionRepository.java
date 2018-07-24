@@ -1,9 +1,11 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,6 +18,8 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
@@ -24,39 +28,61 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
  */
 @MetaInfServices(ActionRepository.class)
 public class ReportActionRepository implements ActionRepository {
-	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+	private class GuanyinFile extends AutoUpdatingJsonFile<Configuration> {
+		private List<ActionDefinition> actions = Collections.emptyList();
 
-	private static Stream<ActionDefinition> queryCatalog(Configuration configuration) {
-		try (CloseableHttpResponse response = HTTP_CLIENT
-				.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
-			return Arrays.stream(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class))
-					.filter(ReportDto::isValid).map(def -> def.toDefinition(configuration.getGuanyin(),
-							configuration.getDrmaa(), configuration.getDrmaaPsk(), configuration.getScript()));
-		} catch (final IOException e) {
-			e.printStackTrace();
+		private final Map<String, String> map = new TreeMap<>();
+
+		public GuanyinFile(Path fileName) {
+			super(fileName, Configuration.class);
 		}
-		return Stream.empty();
+
+		public Pair<String, Map<String, String>> configuration() {
+			return new Pair<>("观音 Report Repository: " + fileName(), map);
+
+		}
+
+		public Stream<ActionDefinition> stream() {
+			return actions.stream();
+		}
+
+		@Override
+		protected Optional<Integer> update(Configuration configuration) {
+			map.put("drmaa", configuration.getDrmaa());
+			map.put("观音", configuration.getGuanyin());
+			map.put("script", configuration.getScript());
+			try (CloseableHttpResponse response = HTTP_CLIENT
+					.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
+				actions = Stream
+						.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class))//
+						.filter(ReportDto::isValid)//
+						.<ActionDefinition>map(def -> def.toDefinition(configuration.getGuanyin(),
+								configuration.getDrmaa(), configuration.getDrmaaPsk(), configuration.getScript()))//
+						.collect(Collectors.toList());
+				return Optional.empty();
+			} catch (final IOException e) {
+				e.printStackTrace();
+				return Optional.of(5);
+			}
+		}
+
 	}
 
-	private final List<Configuration> configuration;
+	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+
+	private final AutoUpdatingDirectory<GuanyinFile> configurations;
 
 	public ReportActionRepository() {
-		configuration = RuntimeSupport.dataFiles(Configuration.class, ".guanyin").collect(Collectors.toList());
+		configurations = new AutoUpdatingDirectory<>(".guanyin", GuanyinFile::new);
 	}
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return configuration.stream().map(configuration -> {
-			final Map<String, String> map = new TreeMap<>();
-			map.put("drmaa", configuration.getDrmaa());
-			map.put("观音", configuration.getGuanyin());
-			map.put("script", configuration.getScript());
-			return new Pair<>("观音 Report Repository", map);
-		});
+		return configurations.stream().map(GuanyinFile::configuration);
 	}
 
 	@Override
 	public Stream<ActionDefinition> queryActions() {
-		return configuration.stream().flatMap(ReportActionRepository::queryCatalog);
+		return configurations.stream().flatMap(GuanyinFile::stream);
 	}
 }

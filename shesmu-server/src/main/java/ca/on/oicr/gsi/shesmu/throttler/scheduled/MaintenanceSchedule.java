@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.WatchedFileListener;
 
@@ -37,6 +37,16 @@ public class MaintenanceSchedule implements Throttler {
 
 		public ScheduleReader(Path fileName) {
 			this.fileName = fileName;
+		}
+
+		public Pair<String, Map<String, String>> configuration() {
+			final Map<String, String> properties = new HashMap<>();
+			properties.put("state", inMaintenanceWindow() ? "throttled" : "permit");
+			for (int i = 0; i < windows.size(); i++) {
+				properties.put(String.format("Window %d", i),
+						String.format("%s - %s", windows.get(i)[0], windows.get(i)[1]));
+			}
+			return new Pair<>("Maintenance Window Throttler: " + fileName.toString(), properties);
 		}
 
 		public boolean inMaintenanceWindow() {
@@ -74,26 +84,17 @@ public class MaintenanceSchedule implements Throttler {
 
 	private static final Pattern BLANK = Pattern.compile("\\s+");
 
-	private final Optional<ScheduleReader> schedule = RuntimeSupport.dataFile("maintenance.tsv")//
-			.map(ScheduleReader::new);
+	private final AutoUpdatingDirectory<ScheduleReader> schedules = new AutoUpdatingDirectory<>(".schedule",
+			ScheduleReader::new);
 
 	@Override
 	public boolean isOverloaded(Set<String> services) {
-		return schedule.map(ScheduleReader::inMaintenanceWindow).orElse(false);
+		return schedules.stream().anyMatch(ScheduleReader::inMaintenanceWindow);
 	}
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return schedule.map(s -> {
-			final Map<String, String> properties = new HashMap<>();
-			properties.put("file", s.fileName.toString());
-			properties.put("state", s.inMaintenanceWindow() ? "throttled" : "permit");
-			for (int i = 0; i < s.windows.size(); i++) {
-				properties.put(String.format("Window %d", i),
-						String.format("%s - %s", s.windows.get(i)[0], s.windows.get(i)[1]));
-			}
-			return Stream.of(new Pair<>("Maintenance Window Throttler", properties));
-		}).orElseGet(Stream::empty);
+		return schedules.stream().map(ScheduleReader::configuration);
 	}
 
 }

@@ -161,7 +161,7 @@ possible. The JSON-over-HTTP interface can throttle Shesmu by responding that
 is overloaded. However, it may still be useful to throttle Shesmu based on
 external criteria. The following throttlers are available:
 
-- Maintenance schedule. Create a tab-separated file called `maintenance.tsv`
+- Maintenance schedule. Create a tab-separated file ending with `.schedule`
   with two columns, the start and end times of each maintenance window. When
   the system time is in this window, Shesmu will not perform any actions. The
   times must be formatted in a way that can be parsed by `ZonedDateTime.parse`.
