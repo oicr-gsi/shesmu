@@ -60,6 +60,11 @@ public abstract class FileWatcher {
 		}
 
 		@Override
+		public Stream<Path> paths() {
+			return directories.stream();
+		}
+
+		@Override
 		public synchronized void register(String extension, Function<Path, WatchedFileListener> ctor) {
 			List<Function<Path, WatchedFileListener>> holder;
 			if (!ctors.containsKey(extension)) {
@@ -171,6 +176,11 @@ public abstract class FileWatcher {
 			.orElseGet(() -> new FileWatcher() {
 
 				@Override
+				public Stream<Path> paths() {
+					return Stream.empty();
+				}
+
+				@Override
 				public void register(String extension, Function<Path, WatchedFileListener> ctor) {
 					// Do nothing
 				}
@@ -188,6 +198,8 @@ public abstract class FileWatcher {
 	public static FileWatcher of(Stream<Path> paths) {
 		return new RealFileWatcher(paths);
 	}
+
+	public abstract Stream<Path> paths();
 
 	public abstract void register(String extension, Function<Path, WatchedFileListener> ctor);
 }
