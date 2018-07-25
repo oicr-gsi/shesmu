@@ -82,8 +82,9 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 
 	@Override
 	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
-		if (incoming instanceof Imyhat.ListImyhat) {
-			Imyhat innerIncoming = ((Imyhat.ListImyhat) incoming).inner();
+		Imyhat flattened = expression.type();
+		if (flattened instanceof Imyhat.ListImyhat) {
+			Imyhat innerIncoming = ((Imyhat.ListImyhat) flattened).inner();
 			initialType = innerIncoming;
 			for (final ListNode transform : transforms) {
 				ordering = transform.order(ordering, errorHandler);
@@ -96,7 +97,7 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 			return true;
 		}
 		errorHandler.accept(
-				String.format("%d:%d: Expected list for flattenting but got %s.", line(), column(), incoming.name()));
+				String.format("%d:%d: Expected list for flattenting but got %s.", line(), column(), flattened.name()));
 		return false;
 	}
 }
