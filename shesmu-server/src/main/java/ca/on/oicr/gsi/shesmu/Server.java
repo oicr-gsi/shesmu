@@ -98,6 +98,7 @@ public final class Server {
 						String.format("<a class=\"load\" href=\"%s\">%s</a>",
 								EmergencyThrottler.stopped() ? "/resume" : "/stopstopstop",
 								EmergencyThrottler.stopped() ? "▶ Resume" : "⏹ STOP ALL ACTIONS"));
+				FileWatcher.DATA_DIRECTORY.paths().forEach(path -> writeRow(writer, "Data Directory", path.toString()));
 				writeFinish(writer);
 				if (!compiler.errorHtml().isEmpty()) {
 					writer.print("<h1>Compile Errors</h1><p>");
