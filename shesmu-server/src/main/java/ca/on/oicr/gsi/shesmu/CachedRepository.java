@@ -32,6 +32,9 @@ public final class CachedRepository<I, T> {
 			"The time, in seconds, the repository is locked.", "type");
 	private static final LatencyHistogram populationTime = new LatencyHistogram("cached_repository_population_time",
 			"The time, in seconds, the repository takes to repopulate.", "type");
+	private static final Gauge updateTime = Gauge
+			.build("cached_repository_update_time", "The UNIX time when the cache was last refreshed.")
+			.labelNames("type").register();
 
 	private final Function<I, Stream<T>> flatMapper;
 
@@ -87,6 +90,7 @@ public final class CachedRepository<I, T> {
 					items = implementations().flatMap(flatMapper).collect(Collectors.toList());
 				}
 				lastUpdated = Instant.now();
+				updateTime.labels(serviceClass.getCanonicalName()).set(lastUpdated.getEpochSecond());
 				cacheSize.labels(serviceClass.getCanonicalName()).set(items.size());
 			}
 			current = items;
