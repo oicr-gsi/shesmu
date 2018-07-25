@@ -51,7 +51,7 @@ public class MaintenanceSchedule implements Throttler {
 
 		public boolean inMaintenanceWindow() {
 			final Instant now = Instant.now();
-			return windows.stream().anyMatch(window -> now.isAfter(window[0]) && now.isBefore(window[2]));
+			return windows.stream().anyMatch(window -> now.isAfter(window[0]) && now.isBefore(window[1]));
 		}
 
 		@Override
