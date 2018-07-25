@@ -110,6 +110,7 @@ public final class Server {
 						functionpRepository::implementations, //
 						Throttler::services, //
 						ConstantSource::sources, //
+						DumperSource::sources, //
 						() -> Stream.of(staticActions)//
 				)//
 						.flatMap(Supplier::get)//

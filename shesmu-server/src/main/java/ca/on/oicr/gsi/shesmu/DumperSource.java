@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.stream.Stream;
 
 /**
  * A source to find dumpers by name
@@ -43,6 +44,10 @@ public interface DumperSource extends LoadedConfiguration {
 				// Do nothing.
 			}
 		};
+	}
+	
+	public static Stream<DumperSource> sources() {
+		return RuntimeSupport.stream(LOADER);
 	}
 
 	/**
