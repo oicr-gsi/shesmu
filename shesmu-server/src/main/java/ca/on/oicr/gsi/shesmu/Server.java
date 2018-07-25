@@ -384,6 +384,7 @@ public final class Server {
 			try (AutoCloseable timer = responseTime.start(url)) {
 				handler.handle(t);
 			} catch (final Exception e) {
+				e.printStackTrace();
 				throw new IOException(e);
 			}
 		});
