@@ -8,12 +8,7 @@ import ca.on.oicr.gsi.shesmu.Pair;
 public class CollectNodeFirst extends CollectNodeWithDefault {
 
 	protected CollectNodeFirst(int line, int column, ExpressionNode selector, ExpressionNode alternative) {
-		super(line, column, selector, alternative);
-	}
-
-	@Override
-	protected boolean checkConsistent(Imyhat incomingType, Imyhat selectorType, Imyhat alternativeType) {
-		return selectorType.isSame(alternativeType);
+		super("First", line, column, selector, alternative);
 	}
 
 	@Override
@@ -25,6 +20,11 @@ public class CollectNodeFirst extends CollectNodeWithDefault {
 		final Renderer map = builder.map(name(), type(), loadables);
 		final Renderer alternative = builder.first(type(), loadables);
 		return new Pair<>(map, alternative);
+	}
+
+	@Override
+	protected Imyhat returnType(Imyhat incomingType, Imyhat selectorType) {
+		return selectorType;
 	}
 
 	@Override

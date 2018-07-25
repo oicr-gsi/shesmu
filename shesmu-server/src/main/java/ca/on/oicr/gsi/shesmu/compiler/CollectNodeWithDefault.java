@@ -31,16 +31,17 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 	};
 
 	protected final ExpressionNode selector;
+	private final String syntax;
 	private Imyhat type;
 
-	protected CollectNodeWithDefault(int line, int column, ExpressionNode selector, ExpressionNode alternative) {
+	protected CollectNodeWithDefault(String syntax, int line, int column, ExpressionNode selector,
+			ExpressionNode alternative) {
 		super(line, column);
+		this.syntax = syntax;
 		this.selector = selector;
 		this.alternative = alternative;
 
 	}
-
-	protected abstract boolean checkConsistent(Imyhat incomingType, Imyhat selectorType, Imyhat alternativeType);
 
 	/**
 	 * Add all free variable names to the set provided.
@@ -109,6 +110,8 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 				& selector.resolveFunctions(definedFunctions, errorHandler);
 	}
 
+	protected abstract Imyhat returnType(Imyhat incomingType, Imyhat selectorType);
+
 	@Override
 	public final Imyhat type() {
 		return alternative.type();
@@ -118,11 +121,13 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 	public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
 		type = incoming;
 		if (selector.typeCheck(errorHandler) & alternative.typeCheck(errorHandler)) {
-			if (checkConsistent(incoming, selector.type(), alternative.type())) {
+			final Imyhat returnType = returnType(incoming, selector.type());
+			if (returnType.isSame(alternative.type())) {
 				return typeCheckExtra(errorHandler);
 			} else {
-				errorHandler.accept(String.format("%d:%d: Iterating over %s, selecting by %s, and default value is %s.",
-						line(), column(), incoming.name(), selector.type().name(), alternative.type().name()));
+				errorHandler.accept(
+						String.format("%d:%d: %s would return %s, but default value is %s. They must be the same",
+								line(), column(), syntax, returnType.name(), alternative.type().name()));
 			}
 
 		}

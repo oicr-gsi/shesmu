@@ -10,13 +10,8 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 	private final boolean max;
 
 	public CollectNodeOptima(int line, int column, boolean max, ExpressionNode selector, ExpressionNode alternate) {
-		super(line, column, selector, alternate);
+		super(max ? "Max" : "Min", line, column, selector, alternate);
 		this.max = max;
-	}
-
-	@Override
-	protected boolean checkConsistent(Imyhat incomingType, Imyhat selectorType, Imyhat alternativeType) {
-		return incomingType.isSame(alternativeType);
 	}
 
 	@Override
@@ -27,6 +22,11 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 	@Override
 	protected Pair<Renderer, Renderer> makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
 		return builder.optima(max, name(), selector.type(), loadables);
+	}
+
+	@Override
+	protected Imyhat returnType(Imyhat incomingType, Imyhat selectorType) {
+		return incomingType;
 	}
 
 	@Override
