@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -79,8 +80,10 @@ public class StaticActions implements LoadedConfiguration {
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>("Static Configuration", configuration.stream()
-				.collect(Collectors.toMap(f -> f.fileName().toString(), f -> Integer.toString(f.lastCount)))));
+		return Stream.of(new Pair<>("Static Configuration",
+				configuration == null ? Collections.emptyMap()
+						: configuration.stream().collect(
+								Collectors.toMap(f -> f.fileName().toString(), f -> Integer.toString(f.lastCount)))));
 	}
 
 	public void start() {
