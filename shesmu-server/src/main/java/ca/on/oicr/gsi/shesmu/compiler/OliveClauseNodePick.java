@@ -25,9 +25,9 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	private final ExpressionNode extractor;
 	private final int line;
 
-	private final Boolean max;
+	private final boolean max;
 
-	public OliveClauseNodePick(int line, int column, Boolean max, ExpressionNode extractor,
+	public OliveClauseNodePick(int line, int column, boolean max, ExpressionNode extractor,
 			List<String> discriminators) {
 		this.line = line;
 		this.column = column;

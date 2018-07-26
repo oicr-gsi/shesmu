@@ -368,7 +368,8 @@ public abstract class BaseOliveBuilder {
 				hashCodeGenerator.invokeVirtual(A_OBJECT_TYPE, METHOD_HASH_CODE);
 				break;
 			default:
-				hashCodeGenerator.cast(discriminator.type().asmType(), INT_TYPE);
+				hashCodeGenerator.invokeStatic(discriminator.type().boxedAsmType(),
+						new Method("hashCode", INT_TYPE, new Type[] { discriminator.type().asmType() }));
 				break;
 			}
 			hashCodeGenerator.math(GeneratorAdapter.ADD, INT_TYPE);

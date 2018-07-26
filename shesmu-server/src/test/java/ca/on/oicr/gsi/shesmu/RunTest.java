@@ -92,7 +92,7 @@ public class RunTest {
 					new Tuple("RUN", 1L, "AACCGGTT"), "EX", "Fresh", "An", "Frozen", "", "Inside", "", "", 307L,
 					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"),
 					"test"),
-			new GsiStdValue("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 4, "SlowA", "aaa2",
+			new GsiStdValue("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 3, "SlowA", "aaa2",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
 					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
 					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"),
