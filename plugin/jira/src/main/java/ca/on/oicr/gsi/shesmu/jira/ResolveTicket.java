@@ -24,7 +24,7 @@ public class ResolveTicket extends BaseTicketAction {
 		return results.reduce(ActionState.SUCCEEDED, (state, issue) -> {
 			if (issue.getStatus().getName().equalsIgnoreCase("CLOSED")
 					|| issue.getStatus().getName().equalsIgnoreCase("RESOLVED")) {
-				return ActionState.SUCCEEDED;
+				return state;
 			}
 			final TransitionInput transition = new TransitionInput(5,
 					comment == null ? null : Comment.valueOf(comment));

@@ -171,6 +171,7 @@ public abstract class BaseTicketAction extends Action {
 		issueUpdates.labels(config.instance()).inc();
 		issueUrl = issue.getSelf();
 		config.client().getIssueClient().transition(issue, transition).claim();
+		config.invalidate();
 		return ActionState.SUCCEEDED;
 	}
 
