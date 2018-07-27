@@ -74,6 +74,7 @@ public class ExpressionNodeList extends ExpressionNode {
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		if (items.size() == 0) {
 			errorHandler.accept(String.format("%d:%d: Cannot define empty list.", line(), column()));
+			return false;
 		}
 		boolean ok = items.stream().filter(item -> item.typeCheck(errorHandler)).count() == items.size();
 		if (ok) {

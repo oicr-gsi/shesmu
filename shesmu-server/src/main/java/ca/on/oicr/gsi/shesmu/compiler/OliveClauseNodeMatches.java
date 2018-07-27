@@ -95,10 +95,13 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		return IntStream.range(0, arguments.size()).filter(index -> {
+			if (!arguments.get(index).typeCheck(errorHandler)) {
+				return false;
+			}
 			final boolean isSame = arguments.get(index).type().isSame(target.parameterType(index));
 			if (!isSame) {
 				errorHandler.accept(String.format("%d:%d: Parameter %d to “Matches %s” expects %s, but got %s.", line,
-						column, name, index, target.parameterType(index).name(), arguments.get(index).type().name()));
+						column, index, name, target.parameterType(index).name(), arguments.get(index).type().name()));
 
 			}
 			return isSame;
