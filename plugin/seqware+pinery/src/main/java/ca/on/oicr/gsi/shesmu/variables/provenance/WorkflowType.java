@@ -30,9 +30,9 @@ public enum WorkflowType {
 			new IniParam("cellranger", STRING), //
 			new IniParam("memory", unitCorrectedInteger(1024 * 1024)), //
 			new IniParam("queue", false, STRING), //
-			new IniParam("readEnds", INTEGER), //
+			new IniParam("read_ends","readEnds", INTEGER), //
 			new IniParam("usebasesmask", false, STRING), //
-			new IniParam("bcl_to_fastqpath", "bcl2fastqpath", STRING), //
+			new IniParam("bcl_to_fastq_path", "bcl2fastqpath", STRING), //
 			new IniParam("manual_output", "manualOutput", BOOLEAN));
 
 	private final SeqWareParameterDefinition[] definitions;
