@@ -14,7 +14,7 @@ set cpo&vim
 syn case match
 
 syn match shesmuTrailingWhite "\s\+$" containedin=ALL
-syn keyword shesmuKeyword All Any By Count Default Define Dump Else EpochSecond EpochMilli First Fixed FixedConcat For Group In Input Let LexicalConcat Limit List Max Min Monitor None PartitionCount Reduce Reject Reverse Run Skip Smash Sort Squish Subsample Switch Then When Where While With
+syn keyword shesmuKeyword All Any By Count Default Define Dump Else EpochSecond EpochMilli First Fixed FixedConcat For Group In Input Let LexicalConcat Limit List Matches Max Min Monitor None PartitionCount Reduce Reject Reverse Run Skip Smash Sort Squish Subsample Switch Then When Where While With
 syn keyword shesmuBool False True
 syn match shesmuOperators '\(\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|\)' display
 syn keyword shesmuType boolean date integer string
