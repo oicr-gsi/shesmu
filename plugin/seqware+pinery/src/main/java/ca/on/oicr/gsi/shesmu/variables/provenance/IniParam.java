@@ -18,6 +18,7 @@ import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.Tuple;
+import ca.on.oicr.gsi.shesmu.compiler.Parser;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 
 /**
@@ -327,6 +328,10 @@ public final class IniParam implements SeqWareParameterDefinition {
 
 	public IniParam(String name, String realName, boolean required, Stringifier stringifier) {
 		super();
+		if (!Parser.IDENTIFIER.matcher(name).matches()) {
+			throw new IllegalArgumentException(
+					String.format("Argument “%s” for SeqWare workflow argument is not a valid Shesmu name.", name));
+		}
 		this.name = name;
 		this.realName = realName;
 		this.required = required;
