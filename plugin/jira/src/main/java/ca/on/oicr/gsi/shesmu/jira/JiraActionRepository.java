@@ -73,9 +73,9 @@ public final class JiraActionRepository extends BaseJiraRepository<ActionDefinit
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
 		writer.println(
-				"actionRender.set('jira-open-ticket', a => [title('Open Ticket in ${a.projectKey}'), link(a.instance, 'Go to Server'), text(`Summary: ${a.summary}`)]);");
+				"actionRender.set('jira-open-ticket', a => [title(a, 'Open Ticket in ${a.projectKey}'), link(a.instance, 'Go to Server'), text(`Summary: ${a.summary}`)]);");
 		writer.print(
-				"actionRender.set('jira-close-ticket', a => [title('Close Ticket in ${a.projectKey}'), link(a.instance, 'Go to Server'), text(`Summary: ${a.summary}`)]);");
+				"actionRender.set('jira-close-ticket', a => [title(a, 'Close Ticket in ${a.projectKey}'), link(a.instance, 'Go to Server'), text(`Summary: ${a.summary}`)]);");
 	}
 
 }

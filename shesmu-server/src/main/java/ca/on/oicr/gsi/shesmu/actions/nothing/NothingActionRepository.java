@@ -46,7 +46,7 @@ public class NothingActionRepository implements ActionRepository {
 
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
-		writer.print("actionRender.set('nothing', a => [title('Nothing'), text(`Value: ${a.value}`)]);");
+		writer.print("actionRender.set('nothing', a => [title(a, 'Nothing'), text(`Value: ${a.value}`)]);");
 	}
 
 }

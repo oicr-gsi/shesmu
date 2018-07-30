@@ -69,7 +69,7 @@ public class SeqWareActionRepository implements ActionRepository {
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
 		writer.println("actionRender.set('seqware', a => [");
-		writer.println("    title('SeqWare Workflow ${a.workflowAccession}'),");
+		writer.println("    title(a, 'SeqWare Workflow ${a.workflowAccession}'),");
 		writer.println("    text(`Magic: ${a.magic}`),");
 		writer.println("    text(`Input Files: ${a.inputFiles}`),");
 		writer.println("  ].concat(a.limsKeys.flatMap((k, i) => [");
