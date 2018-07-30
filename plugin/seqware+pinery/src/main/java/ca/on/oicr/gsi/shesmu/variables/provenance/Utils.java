@@ -29,6 +29,11 @@ public final class Utils {
 			});
 
 	public static long parseLaneNumber(String laneName) {
+		try {
+			return Long.parseUnsignedLong(laneName);
+		} catch (NumberFormatException e) {
+			// Try something else.
+		}
 		final Matcher laneMatcher = LANE_NUMBER.matcher(laneName);
 		if (laneMatcher.matches()) {
 			return parseLong(laneMatcher.group(1));
