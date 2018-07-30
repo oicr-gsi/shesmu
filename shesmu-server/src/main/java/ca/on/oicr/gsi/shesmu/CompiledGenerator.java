@@ -29,6 +29,10 @@ public class CompiledGenerator extends ActionGenerator {
 			this.fileName = fileName;
 		}
 
+		public synchronized <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
+			generator.run(consumer, input);
+		}
+
 		@Override
 		public void start() {
 			scripts.put(fileName, this);
@@ -41,7 +45,7 @@ public class CompiledGenerator extends ActionGenerator {
 		}
 
 		@Override
-		public Optional<Integer> update() {
+		public synchronized Optional<Integer> update() {
 			try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
 				final HotloadingCompiler compiler = new HotloadingCompiler(SOURCES::get, functions, actions, constants);
 				final Optional<ActionGenerator> result = compiler.compile(fileName);
@@ -55,6 +59,9 @@ public class CompiledGenerator extends ActionGenerator {
 				});
 				errors = compiler.errors().collect(Collectors.joining("<br/>"));
 				return result.isPresent() ? Optional.empty() : Optional.of(2);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return Optional.of(2);
 			}
 		}
 	}
@@ -111,7 +118,7 @@ public class CompiledGenerator extends ActionGenerator {
 		InputFormatDefinition.formats()
 				.forEach(format -> inputRecords.labels(format.name()).set(format.input(format.itemClass()).count()));
 		ActionGenerator.OLIVE_FLOW.clear();
-		scripts.values().forEach(script -> script.generator.run(consumer, input));
+		scripts.values().forEach(script -> script.run(consumer, input));
 	}
 
 	public void start() {
