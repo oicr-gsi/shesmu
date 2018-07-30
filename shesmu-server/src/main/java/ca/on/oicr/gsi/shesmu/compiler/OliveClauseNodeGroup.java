@@ -33,5 +33,7 @@ public class OliveClauseNodeGroup extends OliveClauseNodeBaseBy<GroupNode> {
 		});
 		children().forEach(group -> group.render(regroup, builder));
 		regroup.finish();
+
+		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
 	}
 }

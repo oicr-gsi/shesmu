@@ -110,6 +110,7 @@ public class CompiledGenerator extends ActionGenerator {
 		// use it. This avoids making the first olive seem really slow.
 		InputFormatDefinition.formats()
 				.forEach(format -> inputRecords.labels(format.name()).set(format.input(format.itemClass()).count()));
+		ActionGenerator.OLIVE_FLOW.clear();
 		scripts.values().forEach(script -> script.generator.run(consumer, input));
 	}
 

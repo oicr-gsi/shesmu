@@ -56,6 +56,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 		oliveBuilder.matches(definitions.get(name),
 				arguments.stream().map(argument -> renderer -> argument.render(renderer)));
 
+		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
 	}
 
 	@Override

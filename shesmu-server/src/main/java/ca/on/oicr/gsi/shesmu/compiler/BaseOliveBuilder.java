@@ -25,6 +25,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Gauge;
@@ -33,6 +34,7 @@ import io.prometheus.client.Gauge;
  * Helper to build bytecode for “olives” (decision-action stanzas)
  */
 public abstract class BaseOliveBuilder {
+	protected static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
 	private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
 	private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
 	protected static final Type A_COMPARATOR_TYPE = Type.getType(Comparator.class);
@@ -44,26 +46,29 @@ public abstract class BaseOliveBuilder {
 	protected static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
 	protected static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 	protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
+	protected static final Type A_STRING_TYPE = Type.getType(String.class);
+
 	protected static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
 	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
 			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
 			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
 			false);
-
+	private static final Method METHOD_ACTION_GENERATOR__MEASURE_FLOW = new Method("measureFlow", A_STREAM_TYPE,
+			new Type[] { A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE });
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
 	private static final Method METHOD_COMPARATOR__REVERSED = new Method("reversed", A_COMPARATOR_TYPE, new Type[] {});
+
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
+
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
+
 	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
-
 	protected static final Method METHOD_PICK = new Method("pick", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_TO_INT_FUNCTION_TYPE, A_BIPREDICATE_TYPE, A_COMPARATOR_TYPE });
-
 	protected static final Method METHOD_REGROUP = new Method("regroup", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
-
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
 	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
@@ -210,6 +215,19 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeVirtual(owner.selfType(), matcher.method());
 		});
 		currentType = matcher.currentType();
+	}
+
+	/**
+	 * Measure how much data goes through this olive clause.
+	 */
+	public final void measureFlow(String filename, int line, int column) {
+		steps.add(renderer -> {
+			renderer.methodGen().push(filename);
+			renderer.methodGen().push(line);
+			renderer.methodGen().push(column);
+			renderer.methodGen().invokeStatic(A_ACTION_GENERATOR_TYPE, METHOD_ACTION_GENERATOR__MEASURE_FLOW);
+		});
+
 	}
 
 	/**

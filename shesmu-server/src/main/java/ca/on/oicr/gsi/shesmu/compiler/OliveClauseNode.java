@@ -127,7 +127,7 @@ public abstract class OliveClauseNode {
 					.whitespace();
 
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeReject(clause.get(), handlers.get()));
+				output.accept(new OliveClauseNodeReject(input.line(), input.column(), clause.get(), handlers.get()));
 			}
 			return result;
 		}

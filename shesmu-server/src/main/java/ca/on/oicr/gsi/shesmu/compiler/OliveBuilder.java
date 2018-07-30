@@ -4,7 +4,6 @@ import static org.objectweb.asm.Type.DOUBLE_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Handle;
@@ -13,7 +12,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 
@@ -21,15 +19,10 @@ import io.prometheus.client.Gauge;
  * An olive that will result in an action being performed
  */
 public final class OliveBuilder extends BaseOliveBuilder {
-	private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
 
 	private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
 
-	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
-
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
-
-	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
 	private static final Method METHOD_CHILD__SET = new Method("set", VOID_TYPE, new Type[] { DOUBLE_TYPE });
