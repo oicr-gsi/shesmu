@@ -113,6 +113,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 			return false;
 		}
 		metricNames.add(metricName);
+		if (help.trim().isEmpty()) {
+			errorHandler.accept(String.format("%d:%d: Help text is required by Prometheus for monitoring metric “%s”.",
+					line, column, metricName));
+			return false;
+		}
 
 		if (labels.stream().map(MonitorArgumentNode::name).distinct().count() != labels.size()) {
 			errorHandler.accept(String.format("%d:%d: Duplicated labels.", line, column));
