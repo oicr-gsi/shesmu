@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -17,20 +19,60 @@ import ca.on.oicr.gsi.shesmu.ActionProcessor.Filter;
  * Translate JSON-formatted queries into Java objects and perform the query
  */
 public class Query {
-	public static class FilterAfter extends FilterJson {
-		private long epoch;
+	public static class FilterAdded extends FilterJson {
+		private Long end;
+
+		private Long start;
 
 		@Override
 		public Filter convert() {
-			return ActionProcessor.updatedAfter(Instant.ofEpochSecond(getEpoch()));
+			return ActionProcessor.added(Optional.ofNullable(start).map(Instant::ofEpochSecond),
+					Optional.ofNullable(end).map(Instant::ofEpochMilli));
 		}
 
-		public long getEpoch() {
-			return epoch;
+		public Long getEnd() {
+			return end;
 		}
 
-		public void setEpoch(long epoch) {
-			this.epoch = epoch;
+		public Long getStart() {
+			return start;
+		}
+
+		public void setEnd(Long end) {
+			this.end = end;
+		}
+
+		public void setStart(Long start) {
+			this.start = start;
+		}
+
+	}
+
+	public static class FilterChecked extends FilterJson {
+		private Long end;
+
+		private Long start;
+
+		@Override
+		public Filter convert() {
+			return ActionProcessor.checked(Optional.ofNullable(start).map(Instant::ofEpochSecond),
+					Optional.ofNullable(end).map(Instant::ofEpochMilli));
+		}
+
+		public Long getEnd() {
+			return end;
+		}
+
+		public Long getStart() {
+			return start;
+		}
+
+		public void setEnd(Long end) {
+			this.end = end;
+		}
+
+		public void setStart(Long start) {
+			this.start = start;
 		}
 
 	}
@@ -38,7 +80,8 @@ public class Query {
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 	@JsonSubTypes({ //
 			@Type(value = FilterStatus.class, name = "status"), //
-			@Type(value = FilterAfter.class, name = "after"), //
+			@Type(value = FilterAdded.class, name = "added"), //
+			@Type(value = FilterChecked.class, name = "checked"), //
 			@Type(value = FilterType.class, name = "type") })
 	public static abstract class FilterJson {
 		public abstract Filter convert();
@@ -114,7 +157,8 @@ public class Query {
 	}
 
 	public Response perform(ObjectMapper mapper, ActionProcessor processor) throws IOException {
-		final Filter[] filters = Arrays.stream(getFilters()).map(FilterJson::convert).toArray(Filter[]::new);
+		final Filter[] filters = Arrays.stream(getFilters()).filter(Objects::nonNull).map(FilterJson::convert)
+				.toArray(Filter[]::new);
 		final Response result = new Response();
 		final Limiter<ObjectNode> limiter = new Limiter<>(500);
 		result.setResults(processor.stream(mapper, filters)//

@@ -18,8 +18,12 @@
     <h1>Search</h1>
     <table>
       <tr>
-        <td>After</td>
-        <td><input type="text" id="epoch"></input></td>
+        <td>Added</td>
+        <td><input type="text" id="addedStart"> to <input type="text" id="addedEnd"></input></td>
+      </tr>
+      <tr>
+        <td>Checked</td>
+        <td><input type="text" id="checkedStart"> to <input type="text" id="checkedEnd"></input></td>
       </tr>
       <tr>
         <td>Status</td>
@@ -52,12 +56,14 @@
       <tr>
         <td></td>
         <td>
-          <span class="load" onclick="queryActions();">🔍 Query</span>
+          <span class="load" onclick="listActions();">🔍 List</span>
+          <span class="load" onclick="querySummary();">📈 Summary</span>
+          <span class="load" onclick="showQuery();">🛈 Show Request</span>
         </td>
       </tr>
     </table>
-    <h1>Results</h1>
-    <div id="results">Push the button!</div>
+    <div id="results"></div>
+    <p>Click any cell or heading in summary tables to view matching results.</p>
   </div>
 </body>
 </html>
