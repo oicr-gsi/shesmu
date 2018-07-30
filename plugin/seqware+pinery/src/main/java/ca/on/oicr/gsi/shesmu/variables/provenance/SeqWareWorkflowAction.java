@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -560,7 +561,18 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	@Override
 	public final ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("type", "seqware");
+		node.put("magic", magic);
+		node.put("inputFiles", inputFiles);
+		limsKeys().stream().map(k -> {
+			ObjectNode key = mapper.createObjectNode();
+			key.put("provider", k.getProvider());
+			key.put("id", k.getId());
+			key.put("version", k.getVersion());
+			key.put("lastModified", DateTimeFormatter.ISO_INSTANT.format(k.getLastModified()));
+			return key;
+		}).forEach(node.putArray("limsKeys")::add);
+		ObjectNode iniJson = node.putObject("ini");
+		ini.entrySet().stream().forEach(e -> iniJson.put(e.getKey().toString(), e.getValue().toString()));
 		node.put("workflowAccession", workflowAccession);
 		node.put("jarPath", jarPath);
 		node.put("settingsPath", settingsPath);

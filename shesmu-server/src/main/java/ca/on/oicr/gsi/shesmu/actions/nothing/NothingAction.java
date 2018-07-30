@@ -64,7 +64,6 @@ public class NothingAction extends Action {
 	@Override
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("type", "nothing");
 		node.put("value", value);
 		return node;
 	}

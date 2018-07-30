@@ -256,3 +256,272 @@ parser = {
     return true;
   }
 };
+
+const actionStates = [
+  "FAILED",
+  "INFLIGHT",
+  "QUEUED",
+  "SUCCEEDED",
+  "THROTTLED",
+  "UNKNOWN",
+  "WAITING"
+];
+const types = [];
+
+function clearActionStates() {
+  actionStates.forEach(s => {
+    document.getElementById(`include_${s}`).checked = false;
+  });
+}
+
+function drawTypes() {
+  const container = document.getElementById("types");
+  while (container.hasChildNodes()) {
+    container.removeChild(container.lastChild);
+  }
+
+  types.sort();
+  types.forEach(typeName => {
+    const element = document.createElement("SPAN");
+    element.innerText = typeName + " ";
+    const removeElement = document.createElement("SPAN");
+    removeElement.innerText = "✖";
+    removeElement.onclick = function() {
+      removeTypeName(typeName);
+    };
+
+    element.appendChild(removeElement);
+    container.appendChild(element);
+  });
+}
+
+function removeTypeName(typeName) {
+  const index = types.indexOf(typeName);
+  if (index > -1) {
+    types.splice(index, 1);
+    drawTypes();
+    const option = document.createElement("OPTION");
+    option.text = typeName;
+    document.getElementById("newType").add(option);
+  }
+}
+
+function clearTypes() {
+  while (types.length) {
+    types.pop();
+  }
+  drawTypes();
+  fillNewTypeSelect();
+}
+
+function addType(typeName) {
+  if (typeName && !types.includes(typeName)) {
+    types.push(typeName);
+    drawTypes();
+  }
+}
+
+function addTypeForm() {
+  const element = document.getElementById("newType");
+  addType(element.value.trim());
+  element.remove(element.selectedIndex);
+}
+
+function fillNewTypeSelect() {
+  const element = document.getElementById("newType");
+  while (element.length > 0) {
+    element.remove(0);
+  }
+  for (const typeName of actionRender.keys()) {
+    const option = document.createElement("OPTION");
+    option.text = typeName;
+    element.add(option);
+  }
+}
+
+function makeFilters() {
+  const filters = [];
+  const selectedStates = actionStates.filter(
+    s => document.getElementById(`include_${s}`).checked
+  );
+  if (selectedStates.length) {
+    filters.push({ type: "status", states: selectedStates });
+  }
+  const epochElement = document.getElementById("epoch");
+  const epochInput = epochElement.value.trim();
+  epochElement.className = null;
+  if (epochInput.match(/^[0-9]+$/)) {
+    filters.push({ type: "after", epoch: parseInt(epochInput) });
+  } else if (epochInput.length > 0) {
+    epochElement.className = "error";
+    return;
+  }
+  if (types.length > 0) {
+    filters.push({ type: "type", types: types });
+  }
+  return filters;
+}
+
+function results(container, slug, body, render) {
+  while (container.hasChildNodes()) {
+    container.removeChild(container.lastChild);
+  }
+  fetch(slug, {
+    body: body,
+    method: "POST"
+  })
+    .then(response => {
+      if (response.ok) {
+        return Promise.resolve(response);
+      } else {
+        return Promise.reject(new Error("Failed to load"));
+      }
+    })
+    .then(response => response.json())
+    .then(data => render(container, data))
+    .catch(function(error) {
+      const element = document.createElement("SPAN");
+      element.innerText = error.message;
+      element.className = "error";
+      container.appendChild(element);
+    });
+}
+
+function queryActions() {
+  const query = {
+    filters: makeFilters(),
+    limit: 25,
+    skip: 0
+  };
+  nextPage(query, document.getElementById("results"));
+}
+
+function text(t) {
+  const element = document.createElement("P");
+  if (t.length > 100) {
+    let visible = true;
+    element.title = "There's a lot to unpack here.";
+    element.onclick = function() {
+      visible = !visible;
+      element.innerText = visible ? t : t.substring(0, 98) + "...";
+    };
+    element.onclick();
+  } else {
+    element.innerText = t;
+  }
+  return element;
+}
+
+function link(url, t) {
+  const element = document.createElement("A");
+  element.innerText = t + " 🔗";
+  element.target = "_blank";
+  element.href = url;
+  return element;
+}
+
+function jsonParameters(action) {
+  return Object.entries(action.parameters).map(p =>
+    text(`Parameter ${p[0]} = ${JSON.stringify(p[1])}`)
+  );
+}
+
+function title(action, t) {
+  const element = action.url ? link(action.url, t) : text(t);
+  element.title = action.state;
+  return element;
+}
+
+function defaultRenderer(action) {
+  return [title(action, `Unknown Action: ${action.type}`)];
+}
+
+function nextPage(query, targetElement) {
+  results(
+    targetElement,
+    "/query",
+    JSON.stringify(query),
+    (container, data) => {
+      const jumble = document.createElement("DIV");
+      if (data.results.length == 0) {
+        jumble.innerText = "No actions found.";
+      }
+
+      data.results.forEach(action => {
+        const tile = document.createElement("DIV");
+        tile.className = `action state_${action.state.toLowerCase()}`;
+        (actionRender.get(action.type) || defaultRenderer)(action).forEach(
+          element => tile.appendChild(element)
+        );
+        const updateDate = new Date(action.lastUpdated * 1000).toString();
+        const addedDate = new Date(action.lastAdded * 1000).toString();
+        tile.appendChild(
+          text(`Last Updated: ${updateDate} (${action.lastUpdated})`)
+        );
+        tile.appendChild(
+          text(`Last Added: ${addedDate} (${action.lastAdded})`)
+        );
+        const showHide = document.createElement("P");
+        const json = document.createElement("PRE");
+        json.innerText = JSON.stringify(action, null, 2);
+        tile.appendChild(showHide);
+        tile.appendChild(json);
+        let visible = true;
+        showHide.onclick = () => {
+          visible = !visible;
+          showHide.innerText = visible ? "⊟ JSON" : "⊞ JSON";
+          json.style = visible ? "display: block" : "display: none";
+        };
+        showHide.onclick();
+        jumble.appendChild(tile);
+      });
+
+      container.appendChild(jumble);
+      if (data.total == data.results.length) {
+        const size = document.createElement("DIV");
+        size.innerText = `${data.total} actions.`;
+        container.appendChild(size);
+      } else {
+        const size = document.createElement("DIV");
+        size.innerText = `${data.results.length} of ${data.total} actions.`;
+        container.appendChild(size);
+        const pager = document.createElement("DIV");
+        const numButtons = Math.ceil(data.total / query.limit);
+        const current = Math.floor(query.skip / query.limit);
+
+        let rendering = true;
+        for (let i = 0; i < numButtons; i++) {
+          if (
+            i <= 2 ||
+            i >= numButtons - 2 ||
+            (i >= current - 2 && i <= current + 2)
+          ) {
+            rendering = true;
+            const page = document.createElement("SPAN");
+            const skip = i * query.limit;
+            page.innerText = `${i + 1}`;
+            if (skip != query.skip) {
+              page.className = "load";
+            }
+            page.onclick = () =>
+              nextPage(
+                {
+                  filters: query.filters,
+                  skip: skip,
+                  limit: query.limit
+                },
+                targetElement
+              );
+            pager.appendChild(page);
+          } else if (rendering) {
+            const ellipsis = document.createElement("SPAN");
+            ellipsis.innerText = "...";
+            pager.appendChild(ellipsis);
+            rendering = false;
+          }
+        }
+        container.appendChild(pager);
+      }
+    }
+  );
+}

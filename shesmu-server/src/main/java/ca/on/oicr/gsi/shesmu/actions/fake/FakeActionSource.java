@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.actions.fake;
 
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -87,6 +88,11 @@ public class FakeActionSource implements ActionRepository {
 	@Override
 	public Stream<ActionDefinition> queryActions() {
 		return instances.stream().flatMap(RemoteInstance::stream);
+	}
+
+	@Override
+	public void writeJavaScriptRenderer(PrintStream writer) {
+		writer.print("actionRender.set('fake', a => [title(`Fake ${a.name}`)]);");
 	}
 
 }

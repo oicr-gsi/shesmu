@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -84,5 +85,10 @@ public class ReportActionRepository implements ActionRepository {
 	@Override
 	public Stream<ActionDefinition> queryActions() {
 		return configurations.stream().flatMap(GuanyinFile::stream);
+	}
+
+	@Override
+	public void writeJavaScriptRenderer(PrintStream writer) {
+		writer.print("actionRender.set('guanyin-report', a => [title(a, 'Run Report ${a.reportId}')].concat(jsonParameters(a)));");
 	}
 }

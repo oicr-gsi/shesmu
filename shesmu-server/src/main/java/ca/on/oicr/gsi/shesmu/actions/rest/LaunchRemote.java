@@ -141,6 +141,9 @@ public final class LaunchRemote extends Action implements JsonParameterised {
 	public ObjectNode toJson(ObjectMapper mapper) {
 		try {
 			final ObjectNode node = mapper.readValue(mapper.writeValueAsString(request), ObjectNode.class);
+			node.put("target", launchUrl);
+			node.set("name", request.get("name"));
+			node.set("parameters", request.get("parameters"));
 			if (resultUrl != null) {
 				node.put("url", resultUrl);
 			}

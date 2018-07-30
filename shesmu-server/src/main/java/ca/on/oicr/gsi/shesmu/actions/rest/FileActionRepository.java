@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.actions.rest;
 
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -66,6 +67,11 @@ public final class FileActionRepository implements ActionRepository {
 	@Override
 	public Stream<ActionDefinition> queryActions() {
 		return roots.stream().flatMap(FileDefinitions::stream);
+	}
+
+	@Override
+	public void writeJavaScriptRenderer(PrintStream writer) {
+		// Do nothing. The actions are the same as RemoteActionRepository
 	}
 
 }

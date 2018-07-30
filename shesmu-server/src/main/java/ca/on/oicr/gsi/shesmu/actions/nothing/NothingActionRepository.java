@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.actions.nothing;
 
+import java.io.PrintStream;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -41,6 +42,11 @@ public class NothingActionRepository implements ActionRepository {
 	@Override
 	public Stream<ActionDefinition> queryActions() {
 		return Stream.of(NOTHING_ACTION);
+	}
+
+	@Override
+	public void writeJavaScriptRenderer(PrintStream writer) {
+		writer.print("actionRender.set('nothing', a => [title('Nothing'), text(`Value: ${a.value}`)]);");
 	}
 
 }

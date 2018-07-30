@@ -1,0 +1,64 @@
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="main.css">
+  <link rel="icon" href="favicon.png" sizes="16x16" type="image/png">
+  <script type="text/javascript" src="shesmu.js"></script>
+  <script type="text/javascript" src="actions.js"></script>
+  <title>Shesmu</title>
+</head>
+<body>
+  <nav>
+    <img src="shesmu.svg">
+    <a href="/">Status</a>
+    <a href="/definitions">Definitions</a>
+    <a href="/actiondash">Actions</a>
+    <a href="/api-docs/index.html">API Docs</a>
+  </nav>
+  <div>
+    <h1>Search</h1>
+    <table>
+      <tr>
+        <td>After</td>
+        <td><input type="text" id="epoch"></input></td>
+      </tr>
+      <tr>
+        <td>Status</td>
+        <td>
+          <label class="state_failed"><input type="checkbox" id="include_FAILED">Failed</input></label>
+          <label class="state_inflight"><input type="checkbox" id="include_INFLIGHT">Inflight</input></label>
+          <label class="state_queued"><input type="checkbox" id="include_QUEUED">Queued</input></label>
+          <label class="state_succeeded"><input type="checkbox" id="include_SUCCEEDED">Succeeded</input></label>
+          <label class="state_throttled"><input type="checkbox" id="include_THROTTLED">Throttled</input></label>
+          <label class="state_unknown"><input type="checkbox" id="include_UNKNOWN">Unknown</input></label>
+          <label class="state_waiting"><input type="checkbox" id="include_WAITING">Waiting</input></label>
+          <span class="load" onclick="clearActionStates();">⌫</span>
+        </td>
+      </tr>
+      <tr>
+        <td>Type</td>
+        <td>
+          <span id="types"></span>
+          <span class="load" onclick="clearTypes();">⌫</span>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <select id="newType"></select></span>
+          <span class="load" onclick="addTypeForm();">+</span>
+          <script type="text/javascript">fillNewTypeSelect();</script>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <span class="load" onclick="queryActions();">🔍 Query</span>
+        </td>
+      </tr>
+    </table>
+    <h1>Results</h1>
+    <div id="results">Push the button!</div>
+  </div>
+</body>
+</html>
+

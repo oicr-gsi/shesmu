@@ -49,6 +49,7 @@ public final class ActionProcessor {
 
 	private static class Information {
 		Instant lastChecked = Instant.EPOCH;
+		Instant lastAdded = Instant.now();
 		ActionState lastState = ActionState.UNKNOWN;
 		boolean thrown;
 	}
@@ -140,6 +141,7 @@ public final class ActionProcessor {
 			stateCount.labels(ActionState.UNKNOWN.name()).inc();
 			return false;
 		} else {
+      actions.get(action).lastAdded = Instant.now();
 			return true;
 		}
 	}
@@ -187,6 +189,7 @@ public final class ActionProcessor {
 		return startStream(filters).map(entry -> {
 			final ObjectNode node = entry.getKey().toJson(mapper);
 			node.put("state", entry.getValue().lastState.name());
+			node.put("lastAdded", entry.getValue().lastAdded.getEpochSecond());
 			node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
 			node.put("type", entry.getKey().type());
 			return node;
