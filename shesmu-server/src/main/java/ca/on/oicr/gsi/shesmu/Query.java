@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -79,6 +79,22 @@ public class Query {
 
 	}
 
+	private class Limiter<T> implements Predicate<T> {
+		private long count;
+		private final long limit;
+
+		public Limiter(long hardLimit) {
+			super();
+			this.limit = Math.max(1, Math.min(getLimit(), hardLimit)) + Math.max(0, getSkip());
+		}
+
+		@Override
+		public boolean test(T t) {
+			return ++count < limit;
+		}
+
+	}
+
 	FilterJson[] filters;
 
 	long limit = 100;
@@ -97,13 +113,16 @@ public class Query {
 		return skip;
 	}
 
-	public void perform(OutputStream os, ObjectMapper mapper, ActionProcessor processor) throws IOException {
+	public Response perform(ObjectMapper mapper, ActionProcessor processor) throws IOException {
 		final Filter[] filters = Arrays.stream(getFilters()).map(FilterJson::convert).toArray(Filter[]::new);
-		mapper.writeValue(os, processor.stream(mapper, filters)//
+		final Response result = new Response();
+		final Limiter<ObjectNode> limiter = new Limiter<>(500);
+		result.setResults(processor.stream(mapper, filters)//
+				.filter(limiter)//
 				.skip(Math.max(0, getSkip()))//
-				.limit(Math.max(1, Math.min(getLimit(), 500)))//
 				.toArray(ObjectNode[]::new));
-
+		result.setTotal(limiter.count);
+		return result;
 	}
 
 	public void setFilters(FilterJson[] filters) {

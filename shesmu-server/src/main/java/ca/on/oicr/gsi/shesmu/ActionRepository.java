@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu;
 
+import java.io.PrintStream;
 import java.util.stream.Stream;
 
 /**
@@ -15,5 +16,10 @@ public interface ActionRepository extends LoadedConfiguration {
 	 * @return a stream of definitions for actions the compiler can use
 	 */
 	Stream<ActionDefinition> queryActions();
+
+	/**
+	 * Write all the JavaScript code needed to pretty print this action.
+	 */
+	void writeJavaScriptRenderer(PrintStream writer);
 
 }

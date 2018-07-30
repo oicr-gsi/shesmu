@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.variables.provenance;
 
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +64,20 @@ public class SeqWareActionRepository implements ActionRepository {
 	@Override
 	public Stream<ActionDefinition> queryActions() {
 		return configurations.stream().flatMap(SeqWareInstance::queryActions);
+	}
+
+	@Override
+	public void writeJavaScriptRenderer(PrintStream writer) {
+		writer.println("actionRender.set('seqware', a => [");
+		writer.println("    title('SeqWare Workflow ${a.workflowAccession}'),");
+		writer.println("    text(`Magic: ${a.magic}`),");
+		writer.println("    text(`Input Files: ${a.inputFiles}`),");
+		writer.println("  ].concat(a.limsKeys.flatMap((k, i) => [");
+		writer.println("    text(`LIMS Key ${i} Provider: ${k.provider}`),");
+		writer.println("    text(`LIMS Key ${i} ID: ${k.id}`),");
+		writer.println("    text(`LIMS Key ${i} Version: ${k.version}`),");
+		writer.println("    text(`LIMS Key ${i} Last Update: ${k.lastModified}`),");
+		writer.println("  ])).concat(Object.entries(a.ini).map(i => text(`INI ${i[0]} = ${i[1]}`))));");
 	}
 
 }

@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.actions.rest;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
@@ -76,6 +77,11 @@ public final class RemoteActionRepository implements ActionRepository {
 	@Override
 	public Stream<ActionDefinition> queryActions() {
 		return configurations.stream().flatMap(Remote::queryActionsCatalog);
+	}
+
+	@Override
+	public void writeJavaScriptRenderer(PrintStream writer) {
+		writer.print("actionRender.set('remote-action', a => [title(`${a.name} on ${a.target}`)].concat(jsonParameters(a)));");
 	}
 
 }

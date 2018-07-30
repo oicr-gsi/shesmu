@@ -61,7 +61,8 @@ background-color:#f5f5f5;
 .load{
 font-weight:700;
 color:#888;
-margin-right:1em;
+margin-left:0.5em;
+margin-right:0.5em;
 padding-left:0.2em;
 padding-right:0.2em;
 border:1px solid #888;
@@ -91,4 +92,51 @@ color:#000;
 .error{
 font-weight:700;
 color:#f03;
+}
+
+.action {
+padding: 0.2em;
+}
+
+.action :first-child {
+font-weight: bold;
+}
+
+.state_failed { border: 1px solid #a00; background-color: #fdd }
+.state_inflight { border: 1px solid #00a; background-color: #ddf; }
+.state_queued { border: 1px dashed #00a; background-color: #ddf; }
+.state_succeeded { border: 1px solid #000; background-color: #ddd; }
+.state_throttled { border: 1px dashed #f80; background-color: #fed; }
+.state_unknown { border: 1px dashed #000; background-color: #fdd; }
+.state_waiting { border: 1px solid #f80; background-color: #fed; }
+
+.action a {
+text-decoration: none;
+}
+
+.action.state_unknown a:link, .actionstate_failed a.:link { color: #300; }
+.action.state_unknown a:visited, .actionstate_failed a.:visited { color: #500; }
+.action.state_unknown a:active, .actionstate_failed a.:active { color: #800; }
+.action.state_unknown a:hover, .actionstate_failed a.:hover { color: #A00; }
+
+.action.state_queued a:link, .action.state_inflight a:link { color: #033; }
+.action.state_queued a:visited, .action.state_inflight a:visited { color: #055; }
+.action.state_queued a:active, .action.state_inflight a:active { color: #088; }
+.action.state_queued a:hover, .action.state_inflight a:hover { color: #0AA; }
+
+.action.state_throttled a:link, .action.state_waiting a:link { color: #310; }
+.action.state_throttled a:visited, .action.state_waiting a:visited { color: #620; }
+.action.state_throttled a:active, .action.state_waiting a:active { color: #820; }
+.action.state_throttled a:hover, .action.state_waiting a:hover { color: #A30; }
+
+.action.state_succeeded a:link { color: #333; }
+.action.state_succeeded a:visited { color: #555; }
+.action.state_succeeded a:active { color: #888; }
+.action.state_succeeded a:hover { color: #AAA; }
+
+#types > span {
+padding: 0.2em;
+border: 1px solid #888;
+background-color: #ddd;
+margin-left:1em;
 }

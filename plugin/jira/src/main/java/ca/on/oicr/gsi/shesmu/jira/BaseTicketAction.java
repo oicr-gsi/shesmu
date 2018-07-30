@@ -159,6 +159,7 @@ public abstract class BaseTicketAction extends Action {
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
 		node.put("instanceName", config.instance());
+		node.put("projectKey", config.projectKey());
 		node.put("summary", summary);
 		node.put("url", issueUrl == null ? null : issueUrl.toString());
 		return node;

@@ -246,7 +246,7 @@ public final class Server {
 			final Query query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
-				query.perform(os, RuntimeSupport.MAPPER, processor);
+				RuntimeSupport.MAPPER.writeValue(os, query.perform(RuntimeSupport.MAPPER, processor));
 			}
 		});
 
@@ -355,8 +355,24 @@ public final class Server {
 			}
 		});
 
+		add("/actions.js", t -> {
+			t.getResponseHeaders().set("Content-type", "text/javascript");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
+				writer.println("actionRender = new Map();\n");
+				actionRepository.implementations().forEach(repository -> {
+					writer.print("// ");
+					writer.print(repository.getClass().getCanonicalName());
+					writer.println();
+					repository.writeJavaScriptRenderer(writer);
+					writer.println();
+				});
+			}
+		});
+
 		add("/resume", new EmergencyThrottlerHandler(false));
 		add("/stopstopstop", new EmergencyThrottlerHandler(true));
+		add("/actiondash", "text/html; charset=utf-8");
 		add("/main.css", "text/css");
 		add("/shesmu.js", "text/javascript");
 		add("/shesmu.svg", "image/svg+xml");
@@ -495,7 +511,7 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"text/javascript\" src=\"shesmu.js\"></script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"text/javascript\" src=\"shesmu.js\"></script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"actiondash\">Actions</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
 	}
 
 	private void writeRow(PrintStream writer, String key, String value) {
