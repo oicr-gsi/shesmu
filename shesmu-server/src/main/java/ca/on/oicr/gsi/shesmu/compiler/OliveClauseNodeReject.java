@@ -23,9 +23,13 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 
 	private final ExpressionNode expression;
 	private final List<RejectNode> handlers;
+	private final int line;
+	private final int column;
 
-	public OliveClauseNodeReject(ExpressionNode expression, List<RejectNode> handlers) {
+	public OliveClauseNodeReject(int line, int column, ExpressionNode expression, List<RejectNode> handlers) {
 		super();
+		this.line = line;
+		this.column = column;
 		this.expression = expression;
 		this.handlers = handlers;
 	}
@@ -56,6 +60,8 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 		renderer.methodGen().returnValue();
 		renderer.methodGen().visitMaxs(0, 0);
 		renderer.methodGen().visitEnd();
+
+		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
 	}
 
 	@Override

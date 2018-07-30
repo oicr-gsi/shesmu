@@ -46,6 +46,8 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 		filter.methodGen().returnValue();
 		filter.methodGen().visitMaxs(0, 0);
 		filter.methodGen().visitEnd();
+
+		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
 	}
 
 	@Override

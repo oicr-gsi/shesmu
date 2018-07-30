@@ -33,5 +33,7 @@ public class OliveClauseNodeSmash extends OliveClauseNodeBaseBy<SmashNode> {
 		});
 		children().forEach(smash -> smash.render(smasher, builder));
 		smasher.finish();
+
+		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
 	}
 }

@@ -31,10 +31,20 @@ public abstract class ActionGenerator {
 
 	};
 
+	public static final Gauge OLIVE_FLOW = Gauge
+			.build("shesmu_olive_data_flow", "The number of items passing through each olive clause.")
+			.labelNames("filename", "line", "column").register();
+
 	@RuntimeInterop
 	public static final Gauge OLIVE_RUN_TIME = Gauge
 			.build("shesmu_olive_run_time", "The runtime of an olive in seconds.").labelNames("filename", "line")
 			.register();
+
+	@RuntimeInterop
+	public static <T> Stream<T> measureFlow(Stream<T> input, String fileName, int line, int column) {
+		Gauge.Child child = OLIVE_FLOW.labels(fileName, Integer.toString(line), Integer.toString(column));
+		return input.peek(x -> child.inc());
+	}
 
 	private final List<Collector> collectors = new ArrayList<>();
 
