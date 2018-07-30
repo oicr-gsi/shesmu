@@ -92,7 +92,7 @@ public class FakeActionSource implements ActionRepository {
 
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
-		writer.print("actionRender.set('fake', a => [title(a, `Fake ${a.name}`)].concat(jsonParameters(a));");
+		writer.print("actionRender.set('fake', a => [title(a, `Fake ${a.name}`)].concat(jsonParameters(a)));");
 	}
 
 }

@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.function.Function;
@@ -30,7 +31,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import ca.on.oicr.gsi.shesmu.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.Constant.ConstantLoader;
+import ca.on.oicr.gsi.shesmu.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
@@ -243,10 +246,35 @@ public final class Server {
 		});
 
 		add("/query", t -> {
-			final Query query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
+			final Query query;
+			try {
+				query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
+			} catch (Exception e) {
+				t.sendResponseHeaders(400, 0);
+				try (OutputStream os = t.getResponseBody()) {
+				}
+				return;
+			}
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
 				RuntimeSupport.MAPPER.writeValue(os, query.perform(RuntimeSupport.MAPPER, processor));
+			}
+		});
+
+		add("/summary", t -> {
+			final FilterJson[] filters;
+			try {
+				filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FilterJson[].class);
+			} catch (Exception e) {
+				t.sendResponseHeaders(400, 0);
+				try (OutputStream os = t.getResponseBody()) {
+				}
+				return;
+			}
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				RuntimeSupport.MAPPER.writeValue(os, processor.summary(RuntimeSupport.MAPPER,
+						Stream.of(filters).filter(Objects::nonNull).map(FilterJson::convert).toArray(Filter[]::new)));
 			}
 		});
 

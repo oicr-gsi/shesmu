@@ -171,16 +171,14 @@ parser = {
         output: parseInt(match[1])
       };
     }
-    match = input.match(/^\s*Date\s+(\d{4})-(\d{2})-(\d{2})/);
+    match = input.match(
+      /^\s*Date\s+(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}))?)/
+    );
     if (match) {
       return {
         good: true,
         input: input.substring(match[0].length),
-        output: new Date(
-          parseInt(match[1]),
-          parseInt(match[2]) - 1,
-          parseInt(match[3])
-        ).getTime()
+        output: new Date(match[1]).getTime()
       };
     } else {
       return { good: false, input: input, error: "Expected date." };
@@ -339,6 +337,22 @@ function fillNewTypeSelect() {
   }
 }
 
+function parseEpoch(elementId) {
+  const epochElement = document.getElementById(elementId);
+  const epochInput = epochElement.value.trim();
+  epochElement.className = null;
+  if (epochInput.length == 0) {
+    return null;
+  }
+  const result = parser.d(epochInput);
+  if (result.good) {
+    return result.output;
+  } else {
+    epochElement.className = "error";
+    return null;
+  }
+}
+
 function makeFilters() {
   const filters = [];
   const selectedStates = actionStates.filter(
@@ -347,14 +361,12 @@ function makeFilters() {
   if (selectedStates.length) {
     filters.push({ type: "status", states: selectedStates });
   }
-  const epochElement = document.getElementById("epoch");
-  const epochInput = epochElement.value.trim();
-  epochElement.className = null;
-  if (epochInput.match(/^[0-9]+$/)) {
-    filters.push({ type: "after", epoch: parseInt(epochInput) });
-  } else if (epochInput.length > 0) {
-    epochElement.className = "error";
-    return;
+  for (let span of ["added", "checked"]) {
+    const start = parseEpoch(`${span}Start`);
+    const end = parseEpoch(`${span}End`);
+    if (start !== null && end != null) {
+      filters.push({ type: span, start: start, end: end });
+    }
   }
   if (types.length > 0) {
     filters.push({ type: "type", types: types });
@@ -387,7 +399,7 @@ function results(container, slug, body, render) {
     });
 }
 
-function queryActions() {
+function listActions() {
   const query = {
     filters: makeFilters(),
     limit: 25,
@@ -437,91 +449,348 @@ function defaultRenderer(action) {
 }
 
 function nextPage(query, targetElement) {
-  results(
-    targetElement,
-    "/query",
-    JSON.stringify(query),
-    (container, data) => {
-      const jumble = document.createElement("DIV");
-      if (data.results.length == 0) {
-        jumble.innerText = "No actions found.";
+  results(targetElement, "/query", JSON.stringify(query), (container, data) => {
+    const jumble = document.createElement("DIV");
+    if (data.results.length == 0) {
+      jumble.innerText = "No actions found.";
+    }
+
+    data.results.forEach(action => {
+      const tile = document.createElement("DIV");
+      tile.className = `action state_${action.state.toLowerCase()}`;
+      (actionRender.get(action.type) || defaultRenderer)(action).forEach(
+        element => tile.appendChild(element)
+      );
+      const checkDate = new Date(action.lastChecked * 1000).toString();
+      const addedDate = new Date(action.lastAdded * 1000).toString();
+      tile.appendChild(
+        text(`Last Checked: ${checkDate} (${action.lastChecked})`)
+      );
+      tile.appendChild(text(`Last Added: ${addedDate} (${action.lastAdded})`));
+      const showHide = document.createElement("P");
+      const json = document.createElement("PRE");
+      json.innerText = JSON.stringify(action, null, 2);
+      tile.appendChild(showHide);
+      tile.appendChild(json);
+      let visible = true;
+      showHide.onclick = () => {
+        visible = !visible;
+        showHide.innerText = visible ? "⊟ JSON" : "⊞ JSON";
+        json.style = visible ? "display: block" : "display: none";
+      };
+      showHide.onclick();
+      jumble.appendChild(tile);
+    });
+
+    container.appendChild(jumble);
+    if (data.total == data.results.length) {
+      const size = document.createElement("DIV");
+      size.innerText = `${data.total} actions.`;
+      container.appendChild(size);
+    } else {
+      const size = document.createElement("DIV");
+      size.innerText = `${data.results.length} of ${data.total} actions.`;
+      container.appendChild(size);
+      const pager = document.createElement("DIV");
+      const numButtons = Math.ceil(data.total / query.limit);
+      const current = Math.floor(query.skip / query.limit);
+
+      let rendering = true;
+      for (let i = 0; i < numButtons; i++) {
+        if (
+          i <= 2 ||
+          i >= numButtons - 2 ||
+          (i >= current - 2 && i <= current + 2)
+        ) {
+          rendering = true;
+          const page = document.createElement("SPAN");
+          const skip = i * query.limit;
+          page.innerText = `${i + 1}`;
+          if (skip != query.skip) {
+            page.className = "load";
+          }
+          page.onclick = () =>
+            nextPage(
+              {
+                filters: query.filters,
+                skip: skip,
+                limit: query.limit
+              },
+              targetElement
+            );
+          pager.appendChild(page);
+        } else if (rendering) {
+          const ellipsis = document.createElement("SPAN");
+          ellipsis.innerText = "...";
+          pager.appendChild(ellipsis);
+          rendering = false;
+        }
       }
+      container.appendChild(pager);
+    }
+  });
+}
 
-      data.results.forEach(action => {
-        const tile = document.createElement("DIV");
-        tile.className = `action state_${action.state.toLowerCase()}`;
-        (actionRender.get(action.type) || defaultRenderer)(action).forEach(
-          element => tile.appendChild(element)
-        );
-        const updateDate = new Date(action.lastUpdated * 1000).toString();
-        const addedDate = new Date(action.lastAdded * 1000).toString();
-        tile.appendChild(
-          text(`Last Updated: ${updateDate} (${action.lastUpdated})`)
-        );
-        tile.appendChild(
-          text(`Last Added: ${addedDate} (${action.lastAdded})`)
-        );
-        const showHide = document.createElement("P");
-        const json = document.createElement("PRE");
-        json.innerText = JSON.stringify(action, null, 2);
-        tile.appendChild(showHide);
-        tile.appendChild(json);
-        let visible = true;
-        showHide.onclick = () => {
-          visible = !visible;
-          showHide.innerText = visible ? "⊟ JSON" : "⊞ JSON";
-          json.style = visible ? "display: block" : "display: none";
-        };
-        showHide.onclick();
-        jumble.appendChild(tile);
-      });
+function querySummary() {
+  getSummary(makeFilters(), document.getElementById("results"));
+}
 
-      container.appendChild(jumble);
-      if (data.total == data.results.length) {
-        const size = document.createElement("DIV");
-        size.innerText = `${data.total} actions.`;
-        container.appendChild(size);
-      } else {
-        const size = document.createElement("DIV");
-        size.innerText = `${data.results.length} of ${data.total} actions.`;
-        container.appendChild(size);
-        const pager = document.createElement("DIV");
-        const numButtons = Math.ceil(data.total / query.limit);
-        const current = Math.floor(query.skip / query.limit);
+function showFilterJson(filters, targetElement) {
+  while (targetElement.hasChildNodes()) {
+    targetElement.removeChild(targetElement.lastChild);
+  }
+  const pre = document.createElement("PRE");
+  pre.innerText = JSON.stringify(filters, null, 2);
+  targetElement.appendChild(pre);
+}
 
-        let rendering = true;
-        for (let i = 0; i < numButtons; i++) {
-          if (
-            i <= 2 ||
-            i >= numButtons - 2 ||
-            (i >= current - 2 && i <= current + 2)
-          ) {
-            rendering = true;
-            const page = document.createElement("SPAN");
-            const skip = i * query.limit;
-            page.innerText = `${i + 1}`;
-            if (skip != query.skip) {
-              page.className = "load";
-            }
-            page.onclick = () =>
-              nextPage(
-                {
-                  filters: query.filters,
-                  skip: skip,
-                  limit: query.limit
-                },
-                targetElement
-              );
-            pager.appendChild(page);
-          } else if (rendering) {
-            const ellipsis = document.createElement("SPAN");
-            ellipsis.innerText = "...";
-            pager.appendChild(ellipsis);
-            rendering = false;
+function showQuery() {
+  showFilterJson(makeFilters(), document.getElementById("results"));
+}
+
+function propertyFilterMaker(name) {
+  switch (name) {
+    case "type":
+      return t => ({ type: "type", types: [t] });
+    case "status":
+      return s => ({ type: "status", states: [s] });
+    default:
+      return x => null;
+  }
+}
+
+function formatBin(name) {
+  switch (name) {
+    case "added":
+    case "checked":
+      return x => {
+        const d = new Date(x * 1000);
+        let diff = Math.ceil((new Date() - d) / 1000);
+        let ago = "";
+        for (let span of [
+          [604800, "w"],
+          [86400, "d"],
+          [3600, "h"],
+          [60, "m"]
+        ]) {
+          const chunk = Math.floor(diff / span[0]);
+          if (chunk > 0) {
+            ago = `${ago}${chunk}${span[1]}`;
+            diff = diff % span[0];
           }
         }
-        container.appendChild(pager);
+        if (diff > 0 || !ago) {
+          ago = `${ago}${diff}s ago`;
+        }
+        return [ago, `${x} ${d.toISOString()}`];
+      };
+    default:
+      return x => [x, ""];
+  }
+}
+
+function setColorIntensity(element, value, maximum) {
+  element.style.backgroundColor = `hsl(260, 100%, ${Math.ceil(
+    97 - (value || 0) / maximum * 20
+  )}%)`;
+}
+
+function getSummary(filters, targetElement) {
+  results(
+    targetElement,
+    "/summary",
+    JSON.stringify(filters),
+    (container, data) => {
+      if (data.length == 0) {
+        container.innerText = "No summary is available.";
       }
+
+      const drillDown = document.createElement("DIV");
+      data.forEach(summary => {
+        const element = document.createElement("DIV");
+        const makeClick = (clickable, filters) => {
+          clickable.onclick = e => {
+            while (drillDown.hasChildNodes()) {
+              drillDown.removeChild(drillDown.lastChild);
+            }
+            const clickResult = document.createElement("DIV");
+            const toolBar = document.createElement("P");
+            const listButton = document.createElement("SPAN");
+            listButton.className = "load";
+            listButton.innerText = "🔍 List";
+            toolBar.appendChild(listButton);
+            const summaryButton = document.createElement("SPAN");
+            summaryButton.className = "load";
+            summaryButton.innerText = "📈 Summary";
+            toolBar.appendChild(summaryButton);
+            const jsonButton = document.createElement("SPAN");
+            jsonButton.className = "load";
+            jsonButton.innerText = "🛈 Show Request";
+            toolBar.appendChild(jsonButton);
+            listButton.onclick = () => {
+              nextPage(
+                {
+                  filters: filters,
+                  limit: 25,
+                  skip: 0
+                },
+                clickResult
+              );
+            };
+            summaryButton.onclick = () => {
+              getSummary(filters, clickResult);
+            };
+            jsonButton.onclick = () => {
+              showFilterJson(filters, clickResult);
+            };
+            drillDown.appendChild(toolBar);
+            drillDown.appendChild(clickResult);
+          };
+        };
+        switch (summary.type) {
+          case "text":
+            (() => {
+              element.innerText = summary.value;
+            })();
+            break;
+          case "crosstab":
+            (() => {
+              const makeColumnFilter = propertyFilterMaker(summary.column);
+              const makeRowFilter = propertyFilterMaker(summary.row);
+
+              const table = document.createElement("TABLE");
+              element.appendChild(table);
+
+              const header = document.createElement("TR");
+              table.appendChild(header);
+
+              header.appendChild(document.createElement("TH"));
+              const columns = summary.columns.sort().map(colName => ({
+                name: colName,
+                filter: makeColumnFilter(colName)
+              }));
+              for (let col of columns) {
+                const currentHeader = document.createElement("TH");
+                currentHeader.innerText = col.name;
+                header.appendChild(currentHeader);
+                makeClick(currentHeader, filters.concat([col.filter]));
+              }
+              const maximum = Math.max(
+                1,
+                Math.max(
+                  ...Object.values(summary.data).map(row =>
+                    Math.max(...Object.values(row))
+                  )
+                )
+              );
+
+              for (let rowKey of Object.keys(summary.data).sort()) {
+                const rowFilter = makeRowFilter(rowKey);
+                const currentRow = document.createElement("TR");
+                table.appendChild(currentRow);
+
+                const currentHeader = document.createElement("TH");
+                currentHeader.innerText = rowKey;
+                currentRow.appendChild(currentHeader);
+                makeClick(currentHeader, filters.concat([rowFilter]));
+
+                for (let col of columns) {
+                  const currentValue = document.createElement("TD");
+                  currentValue.innerText =
+                    summary.data[rowKey][col.name] || "0";
+                  currentRow.appendChild(currentValue);
+                  setColorIntensity(
+                    currentValue,
+                    summary.data[rowKey][col.name],
+                    maximum
+                  );
+                  makeClick(
+                    currentValue,
+                    filters.concat([col.filter, rowFilter])
+                  );
+                }
+              }
+            })();
+            break;
+
+          case "histogram":
+            (() => {
+              const maximum = Math.max(1, Math.max(...summary.counts));
+              const table = document.createElement("TABLE");
+              element.appendChild(table);
+              const header = document.createElement("TR");
+              table.appendChild(header);
+              const startHeader = document.createElement("TH");
+              startHeader.innerText = "≥";
+              header.appendChild(startHeader);
+              const endHeader = document.createElement("TH");
+              endHeader.innerText = "<";
+              header.appendChild(endHeader);
+              const valueHeader = document.createElement("TH");
+              valueHeader.innerText = "Actions";
+              header.appendChild(valueHeader);
+
+              const formattedBoundaries = summary.boundaries.map(
+                formatBin(summary.bin)
+              );
+
+              for (let i = 0; i < summary.counts.length; i++) {
+                const row = document.createElement("TR");
+                table.appendChild(row);
+                const start = document.createElement("TH");
+                start.innerText = formattedBoundaries[i][0];
+                start.title = formattedBoundaries[i][1];
+                row.appendChild(start);
+                makeClick(
+                  start,
+                  filters.concat([
+                    {
+                      type: summary.bin,
+                      start: summary.boundaries[i],
+                      end: null
+                    }
+                  ])
+                );
+
+                const end = document.createElement("TH");
+                end.innerText = formattedBoundaries[i + 1][0];
+                end.title = formattedBoundaries[i + 1][1];
+                row.appendChild(end);
+                makeClick(
+                  end,
+                  filters.concat([
+                    {
+                      type: summary.bin,
+                      start: null,
+                      end: summary.boundaries[i + 1]
+                    }
+                  ])
+                );
+
+                const value = document.createElement("TD");
+                value.innerText = summary.counts[i];
+                row.appendChild(value);
+                makeClick(
+                  value,
+                  filters.concat([
+                    {
+                      type: summary.bin,
+                      start: summary.boundaries[i],
+                      end: summary.boundaries[i + 1]
+                    }
+                  ])
+                );
+                setColorIntensity(value, summary.counts[i], maximum);
+              }
+            })();
+            break;
+
+          default:
+            element.innerText = `Unknown summary type: ${summary.type}`;
+        }
+        container.appendChild(element);
+      });
+      container.appendChild(drillDown);
     }
   );
 }

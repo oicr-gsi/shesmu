@@ -26,24 +26,52 @@
         "description": "Action filtering.",
         "discriminator": {
           "mapping": {
-            "after": "#/components/schemas/FilterAfter",
-            "status": "#/components/schemas/FilterStatus"
+            "added": "#/components/schemas/FilterAfter",
+            "checked": "#/components/schemas/FilterChecked",
+            "status": "#/components/schemas/FilterStatus",
+            "type": "#/components/schemas/FilterType"
           },
           "propertyName": "type"
         },
         "oneOf": [
           {
-            "$ref": "#/components/schemas/FilterAfter"
+            "$ref": "#/components/schemas/FilterAdded"
+          },
+          {
+            "$ref": "#/components/schemas/FilterChecked"
           },
           {
             "$ref": "#/components/schemas/FilterStatus"
+          },
+          {
+            "$ref": "#/components/schemas/FilterType"
           }
         ]
       },
-      "FilterAfter": {
+      "FilterAdded": {
         "properties": {
-          "epoch": {
-            "description": "UNIX timestamp",
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterChecked": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
             "type": "integer"
           },
           "type": {
@@ -55,6 +83,20 @@
       "FilterStatus": {
         "properties": {
           "states": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterType": {
+        "properties": {
+          "types": {
             "items": {
               "type": "string"
             },
