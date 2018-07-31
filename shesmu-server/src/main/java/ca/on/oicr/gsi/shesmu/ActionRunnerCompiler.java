@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 
 	private static final Type A_ACTION_RUNNER_TYPE = Type.getType(ActionRunner.class);
+	private static final Type A_ACTION_TYPE = Type.getType(Action.class);
 
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 
@@ -32,10 +33,10 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
 	private static final Method JSON_OBJECT__GET = new Method("get", A_JSON_NODE_TYPE, new Type[] { A_STRING_TYPE });
 	private static final Method JSON_OBJECT__HAS = new Method("has", Type.BOOLEAN_TYPE, new Type[] { A_STRING_TYPE });
-	private static final Method LOAD_METHOD = new Method("run", Type.VOID_TYPE, new Type[] { A_JSON_OBJECT_TYPE });
-
 	private static final Method METHOD_IMYHAT__UNPACK_JSON = new Method("unpackJson", A_OBJECT_TYPE,
 			new Type[] { A_JSON_NODE_TYPE });
+
+	private static final Method RUN_METHOD = new Method("run", A_ACTION_TYPE, new Type[] { A_JSON_OBJECT_TYPE });
 
 	public static ActionRunner compile(ActionDefinition function) {
 		return new ActionRunnerCompiler(function).compile();
@@ -49,8 +50,8 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 
 	public ActionRunner compile() {
 		final ClassVisitor classVisitor = createClassVisitor();
-		classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "dyn/shesmu/Action", null, A_OBJECT_TYPE.getInternalName(),
-				new String[] { A_ACTION_RUNNER_TYPE.getInternalName() });
+		classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "dyn/shesmu/ActionRunner", null,
+				A_OBJECT_TYPE.getInternalName(), new String[] { A_ACTION_RUNNER_TYPE.getInternalName() });
 
 		final GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, DEFAULT_CTOR, null, null, classVisitor);
 		ctor.visitCode();
@@ -60,7 +61,7 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 		ctor.visitMaxs(0, 0);
 		ctor.visitEnd();
 
-		final GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
+		final GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, RUN_METHOD, null, null, classVisitor);
 		handle.visitCode();
 		final int actionLocal = handle.newLocal(action.type());
 		action.initialize(handle);
@@ -87,14 +88,14 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 			}
 		});
 		handle.loadLocal(actionLocal);
-		handle.visitInsn(Opcodes.RETURN);
+		handle.returnValue();
 		handle.visitMaxs(0, 0);
 		handle.visitEnd();
 
 		classVisitor.visitEnd();
 
 		try {
-			return load(ActionRunner.class, "dyn.shesmu.Action");
+			return load(ActionRunner.class, "dyn.shesmu.ActionRunner");
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			e.printStackTrace();
 			return p -> null;
