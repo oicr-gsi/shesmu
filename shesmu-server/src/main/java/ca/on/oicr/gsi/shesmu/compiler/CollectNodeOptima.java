@@ -31,7 +31,7 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 
 	@Override
 	protected boolean typeCheckExtra(Consumer<String> errorHandler) {
-		if (selector.type().isSame(Imyhat.INTEGER) || type().isSame(Imyhat.DATE)) {
+		if (selector.type().isSame(Imyhat.INTEGER) || selector.type().isSame(Imyhat.DATE)) {
 			return true;
 		}
 		errorHandler
