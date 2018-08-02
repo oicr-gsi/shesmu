@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -407,19 +408,19 @@ public final class ActionProcessor {
 	}
 
 	private static <T> void binSummary(ArrayNode table, Bin<T> bin, List<Entry<Action, Information>> actions) {
-		Optional<T> min = actions.stream().map(bin::extract).min(bin);
-		ObjectNode minRow = table.addObject();
-		minRow.put("title", "Minimum");
-		minRow.set("value", bin.name(min.get(), 0));
-		minRow.put("kind", "bin");
-		minRow.put("type", bin.name());
-
-		Optional<T> max = actions.stream().map(bin::extract).max(bin);
-		ObjectNode maxRow = table.addObject();
-		maxRow.put("title", "Maximum");
-		maxRow.set("value", bin.name(max.get(), 0));
-		maxRow.put("kind", "bin");
-		maxRow.put("type", bin.name());
+		Stream.<Pair<String, BiFunction<Stream<T>, Comparator<T>, Optional<T>>>>of(//
+				new Pair<>("Minimum", Stream::min), //
+				new Pair<>("Minimum", Stream::max)//
+		).forEach(pair -> {
+			pair.second().apply(actions.stream().map(bin::extract), bin)//
+					.ifPresent(value -> {
+						ObjectNode row = table.addObject();
+						row.put("title", pair.first());
+						row.set("value", bin.name(value, 0));
+						row.put("kind", "bin");
+						row.put("type", bin.name());
+					});
+		});
 	}
 
 	private static <T> void propertySummary(ArrayNode table, Property<T> property,
