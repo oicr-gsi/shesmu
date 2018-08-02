@@ -20,7 +20,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
  *
  */
 public enum WorkflowType {
-	CELL_RANGER(SeqWareWorkflowAction.lanes(//
+	CELL_RANGER(standard(SeqWareWorkflowAction.lanes(//
 			Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING), //
 			Imyhat.tuple(Imyhat.STRING, Imyhat.STRING, Imyhat.STRING), //
 			Imyhat.DATE, //
@@ -29,11 +29,17 @@ public enum WorkflowType {
 			new IniParam("flowcell", STRING), //
 			new IniParam("cellranger", STRING), //
 			new IniParam("memory", unitCorrectedInteger(1024 * 1024)), //
-			new IniParam("queue", false, STRING), //
-			new IniParam("read_ends","readEnds", INTEGER), //
+			new IniParam("read_ends", "readEnds", INTEGER), //
 			new IniParam("usebasesmask", false, STRING), //
-			new IniParam("bcl_to_fastq_path", "bcl2fastqpath", STRING), //
-			new IniParam("manual_output", "manualOutput", BOOLEAN));
+			new IniParam("bcl_to_fastq_path", "bcl2fastqpath", STRING) //
+	));
+
+	private static SeqWareParameterDefinition[] standard(SeqWareParameterDefinition... params) {
+		return Stream.concat(Stream.of(params), Stream.of(new IniParam("manual_output", "manualOutput", BOOLEAN), //
+				new IniParam("queue", false, STRING), //
+				new IniParam("output_prefix", STRING)//
+		)).toArray(SeqWareParameterDefinition[]::new);
+	}
 
 	private final SeqWareParameterDefinition[] definitions;
 	private final Type type;
