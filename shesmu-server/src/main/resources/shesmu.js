@@ -531,8 +531,8 @@ function nextPage(query, targetElement) {
   });
 }
 
-function querySummary() {
-  getSummary(makeFilters(), document.getElementById("results"));
+function queryStats() {
+  getStats(makeFilters(), document.getElementById("results"));
 }
 
 function showFilterJson(filters, targetElement) {
@@ -606,18 +606,18 @@ function setColorIntensity(element, value, maximum) {
   )}%)`;
 }
 
-function getSummary(filters, targetElement) {
+function getStats(filters, targetElement) {
   results(
     targetElement,
-    "/summary",
+    "/stats",
     JSON.stringify(filters),
     (container, data) => {
       if (data.length == 0) {
-        container.innerText = "No summary is available.";
+        container.innerText = "No statistics are available.";
       }
 
       const drillDown = document.createElement("DIV");
-      data.forEach(summary => {
+      data.forEach(stat => {
         const element = document.createElement("DIV");
         const makeClick = (clickable, filters) => {
           clickable.onclick = e => {
@@ -630,10 +630,10 @@ function getSummary(filters, targetElement) {
             listButton.className = "load";
             listButton.innerText = "🔍 List";
             toolBar.appendChild(listButton);
-            const summaryButton = document.createElement("SPAN");
-            summaryButton.className = "load";
-            summaryButton.innerText = "📈 Summary";
-            toolBar.appendChild(summaryButton);
+            const statsButton = document.createElement("SPAN");
+            statsButton.className = "load";
+            statsButton.innerText = "📈 Stats";
+            toolBar.appendChild(statsButton);
             const jsonButton = document.createElement("SPAN");
             jsonButton.className = "load";
             jsonButton.innerText = "🛈 Show Request";
@@ -648,8 +648,8 @@ function getSummary(filters, targetElement) {
                 clickResult
               );
             };
-            summaryButton.onclick = () => {
-              getSummary(filters, clickResult);
+            statsButton.onclick = () => {
+              getStats(filters, clickResult);
             };
             jsonButton.onclick = () => {
               showFilterJson(filters, clickResult);
@@ -658,16 +658,61 @@ function getSummary(filters, targetElement) {
             drillDown.appendChild(clickResult);
           };
         };
-        switch (summary.type) {
+        switch (stat.type) {
           case "text":
             (() => {
-              element.innerText = summary.value;
+              element.innerText = stat.value;
+            })();
+            break;
+          case "table":
+            (() => {
+              const table = document.createElement("TABLE");
+              element.appendChild(table);
+              stat.table.forEach(row => {
+                let prettyTitle;
+                switch (row.kind) {
+                  case "bin":
+                    prettyTitle = x => `${x} ${nameForBin(row.type)}`;
+                    break;
+                  case "property":
+                    prettyTitle = x => `${x} ${row.property}`;
+                    break;
+                  default:
+                    prettyTitle = x => x;
+                }
+                const tr = document.createElement("TR");
+                table.appendChild(tr);
+                const title = document.createElement("TD");
+                title.innerText = prettyTitle(row.title);
+                tr.appendChild(title);
+                const value = document.createElement("TD");
+                if (row.kind == "bin") {
+                  const values = formatBin(row.type)(row.value);
+                  value.innerText = values[0];
+                  value.title = values[1];
+                } else {
+                  value.innerText = row.value;
+                }
+                tr.appendChild(value);
+                if (row.kind == "property") {
+                  makeClick(
+                    tr,
+                    filters.concat([propertyFilterMaker(row.type)(row.property)])
+                  );
+                } else {
+                  tr.onclick = e => {
+                    while (drillDown.hasChildNodes()) {
+                      drillDown.removeChild(drillDown.lastChild);
+                    }
+                  };
+                }
+              });
             })();
             break;
           case "crosstab":
             (() => {
-              const makeColumnFilter = propertyFilterMaker(summary.column);
-              const makeRowFilter = propertyFilterMaker(summary.row);
+              const makeColumnFilter = propertyFilterMaker(stat.column);
+              const makeRowFilter = propertyFilterMaker(stat.row);
 
               const table = document.createElement("TABLE");
               element.appendChild(table);
@@ -676,7 +721,7 @@ function getSummary(filters, targetElement) {
               table.appendChild(header);
 
               header.appendChild(document.createElement("TH"));
-              const columns = summary.columns.sort().map(colName => ({
+              const columns = stat.columns.sort().map(colName => ({
                 name: colName,
                 filter: makeColumnFilter(colName)
               }));
@@ -689,13 +734,13 @@ function getSummary(filters, targetElement) {
               const maximum = Math.max(
                 1,
                 Math.max(
-                  ...Object.values(summary.data).map(row =>
+                  ...Object.values(stat.data).map(row =>
                     Math.max(...Object.values(row))
                   )
                 )
               );
 
-              for (let rowKey of Object.keys(summary.data).sort()) {
+              for (let rowKey of Object.keys(stat.data).sort()) {
                 const rowFilter = makeRowFilter(rowKey);
                 const currentRow = document.createElement("TR");
                 table.appendChild(currentRow);
@@ -708,11 +753,11 @@ function getSummary(filters, targetElement) {
                 for (let col of columns) {
                   const currentValue = document.createElement("TD");
                   currentValue.innerText =
-                    summary.data[rowKey][col.name] || "0";
+                    stat.data[rowKey][col.name] || "0";
                   currentRow.appendChild(currentValue);
                   setColorIntensity(
                     currentValue,
-                    summary.data[rowKey][col.name],
+                    stat.data[rowKey][col.name],
                     maximum
                   );
                   makeClick(
@@ -727,9 +772,9 @@ function getSummary(filters, targetElement) {
           case "histogram":
             (() => {
               const section = document.createElement("H1");
-              section.innerText = nameForBin(summary.bin);
+              section.innerText = nameForBin(stat.bin);
               element.appendChild(section);
-              const maximum = Math.max(1, Math.max(...summary.counts));
+              const maximum = Math.max(1, Math.max(...stat.counts));
               const table = document.createElement("TABLE");
               element.appendChild(table);
               const header = document.createElement("TR");
@@ -744,11 +789,11 @@ function getSummary(filters, targetElement) {
               valueHeader.innerText = "Actions";
               header.appendChild(valueHeader);
 
-              const formattedBoundaries = summary.boundaries.map(
-                formatBin(summary.bin)
+              const formattedBoundaries = stat.boundaries.map(
+                formatBin(stat.bin)
               );
 
-              for (let i = 0; i < summary.counts.length; i++) {
+              for (let i = 0; i < stat.counts.length; i++) {
                 const row = document.createElement("TR");
                 table.appendChild(row);
                 const start = document.createElement("TH");
@@ -759,8 +804,8 @@ function getSummary(filters, targetElement) {
                   start,
                   filters.concat([
                     {
-                      type: summary.bin,
-                      start: summary.boundaries[i],
+                      type: stat.bin,
+                      start: stat.boundaries[i],
                       end: null
                     }
                   ])
@@ -774,33 +819,33 @@ function getSummary(filters, targetElement) {
                   end,
                   filters.concat([
                     {
-                      type: summary.bin,
+                      type: stat.bin,
                       start: null,
-                      end: summary.boundaries[i + 1]
+                      end: stat.boundaries[i + 1]
                     }
                   ])
                 );
 
                 const value = document.createElement("TD");
-                value.innerText = summary.counts[i];
+                value.innerText = stat.counts[i];
                 row.appendChild(value);
                 makeClick(
                   value,
                   filters.concat([
                     {
-                      type: summary.bin,
-                      start: summary.boundaries[i],
-                      end: summary.boundaries[i + 1]
+                      type: stat.bin,
+                      start: stat.boundaries[i],
+                      end: stat.boundaries[i + 1]
                     }
                   ])
                 );
-                setColorIntensity(value, summary.counts[i], maximum);
+                setColorIntensity(value, stat.counts[i], maximum);
               }
             })();
             break;
 
           default:
-            element.innerText = `Unknown summary type: ${summary.type}`;
+            element.innerText = `Unknown stat type: ${stat.type}`;
         }
         container.appendChild(element);
       });

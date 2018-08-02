@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -404,13 +406,51 @@ public final class ActionProcessor {
 		});
 	}
 
-	public ArrayNode summary(ObjectMapper mapper, Filter... filters) {
+	private static <T> void binSummary(ArrayNode table, Bin<T> bin, List<Entry<Action, Information>> actions) {
+		Optional<T> min = actions.stream().map(bin::extract).min(bin);
+		ObjectNode minRow = table.addObject();
+		minRow.put("title", "Minimum");
+		minRow.set("value", bin.name(min.get(), 0));
+		minRow.put("kind", "bin");
+		minRow.put("type", bin.name());
+
+		Optional<T> max = actions.stream().map(bin::extract).max(bin);
+		ObjectNode maxRow = table.addObject();
+		maxRow.put("title", "Maximum");
+		maxRow.set("value", bin.name(max.get(), 0));
+		maxRow.put("kind", "bin");
+		maxRow.put("type", bin.name());
+	}
+
+	private static <T> void propertySummary(ArrayNode table, Property<T> property,
+			List<Entry<Action, Information>> actions) {
+		TreeMap<T, Long> states = actions.stream().map(property::extract)
+				.collect(Collectors.groupingBy(Function.identity(), TreeMap::new, Collectors.counting()));
+		for (Entry<T, Long> state : states.entrySet()) {
+			ObjectNode row = table.addObject();
+			row.put("title", "Total");
+			row.put("value", state.getValue());
+			row.put("kind", "property");
+			row.put("type", property.name());
+			row.put("property", property.name(state.getKey()));
+		}
+	}
+
+	public ArrayNode stats(ObjectMapper mapper, Filter... filters) {
 		List<Entry<Action, Information>> actions = startStream(filters).collect(Collectors.toList());
 		ArrayNode array = mapper.createArrayNode();
 		final ObjectNode message = array.addObject();
-		message.put("type", "text");
-		message.put("value",
-				actions.isEmpty() ? "No actions match." : String.format("%d actions found.", actions.size()));
+		message.put("type", "table");
+		ArrayNode table = message.putArray("table");
+
+		ObjectNode total = table.addObject();
+		total.put("title", "Total");
+		total.put("value", actions.size());
+		total.putNull("kind");
+
+		Stream.<Property<?>>of(ACTION_STATE, TYPE).forEach(property -> propertySummary(table, property, actions));
+		Stream.<Bin<?>>of(ADDED, CHECKED).forEach(bin -> binSummary(table, bin, actions));
+
 		crosstab(array, actions, TYPE, ACTION_STATE);
 		histogram(array, 10, actions, ADDED);
 		histogram(array, 10, actions, CHECKED);
