@@ -261,7 +261,7 @@ public final class Server {
 			}
 		});
 
-		add("/summary", t -> {
+		add("/stats", t -> {
 			final FilterJson[] filters;
 			try {
 				filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FilterJson[].class);
@@ -273,7 +273,7 @@ public final class Server {
 			}
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
-				RuntimeSupport.MAPPER.writeValue(os, processor.summary(RuntimeSupport.MAPPER,
+				RuntimeSupport.MAPPER.writeValue(os, processor.stats(RuntimeSupport.MAPPER,
 						Stream.of(filters).filter(Objects::nonNull).map(FilterJson::convert).toArray(Filter[]::new)));
 			}
 		});
