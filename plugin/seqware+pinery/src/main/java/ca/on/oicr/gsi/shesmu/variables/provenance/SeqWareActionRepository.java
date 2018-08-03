@@ -68,16 +68,17 @@ public class SeqWareActionRepository implements ActionRepository {
 
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
-		writer.println("actionRender.set('seqware', a => [");
-		writer.println("    title(a, `SeqWare Workflow ${a.workflowAccession}`),");
-		writer.println("    text(`Magic: ${a.magic}`),");
-		writer.println("    text(`Input Files: ${a.inputFiles}`),");
-		writer.println("  ].concat(a.limsKeys.flatMap((k, i) => [");
+		writer.println("actionRender.set('seqware', a => ");
+		writer.println("  a.limsKeys.map((k, i) => [");
 		writer.println("    text(`LIMS Key ${i} Provider: ${k.provider}`),");
 		writer.println("    text(`LIMS Key ${i} ID: ${k.id}`),");
 		writer.println("    text(`LIMS Key ${i} Version: ${k.version}`),");
 		writer.println("    text(`LIMS Key ${i} Last Update: ${k.lastModified}`),");
-		writer.println("  ])).concat(Object.entries(a.ini).map(i => text(`INI ${i[0]} = ${i[1]}`))));");
+		writer.println("  ]).reduce((acc, val) => acc.concat(val), [");
+		writer.println("    title(a, `SeqWare Workflow ${a.workflowAccession}`),");
+		writer.println("    text(`Magic: ${a.magic}`),");
+		writer.println("    text(`Input Files: ${a.inputFiles}`),");
+		writer.println("  ].concat(Object.entries(a.ini).map(i => text(`INI ${i[0]} = ${i[1]}`)))));");
 	}
 
 }
