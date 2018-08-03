@@ -32,7 +32,7 @@ public final class IniParam implements SeqWareParameterDefinition {
 		public Imyhat type();
 	}
 
-	private static final Type A_BOOLEAN_TYPE = Type.getType(Long.class);
+	private static final Type A_BOOLEAN_TYPE = Type.getType(Boolean.class);
 	private static final Type A_INI_TYPE = Type.getType(IniParam.class);
 	private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
 	private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
