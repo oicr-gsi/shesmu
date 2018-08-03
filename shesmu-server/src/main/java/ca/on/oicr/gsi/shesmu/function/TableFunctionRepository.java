@@ -234,7 +234,7 @@ public class TableFunctionRepository implements FunctionRepository {
 	private static final Map<String, Table> TABLES = new HashMap<>();
 
 	@RuntimeInterop
-	private static Object lookup(String signature, Object... parameters) {
+	public static Object lookup(String signature, Object... parameters) {
 		return TABLES.get(signature).lookup(parameters);
 	}
 
