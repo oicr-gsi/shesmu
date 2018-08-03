@@ -38,7 +38,7 @@ public class PartitionCount {
 		}
 
 	};
-	
+
 	private long falseCount;
 	private long trueCount;
 
@@ -51,8 +51,8 @@ public class PartitionCount {
 	}
 
 	private PartitionCount combine(PartitionCount other) {
-		this.trueCount += other.trueCount;
-		this.falseCount += other.falseCount;
+		trueCount += other.trueCount;
+		falseCount += other.falseCount;
 		return this;
 	}
 

@@ -82,7 +82,7 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 
 	@Override
 	protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
-		Imyhat flattened = expression.type();
+		final Imyhat flattened = expression.type();
 		if (flattened instanceof Imyhat.ListImyhat) {
 			Imyhat innerIncoming = ((Imyhat.ListImyhat) flattened).inner();
 			initialType = innerIncoming;

@@ -86,7 +86,7 @@ public final class Build extends Compiler implements AutoCloseable {
 			System.exit(1);
 			return;
 		}
-		FileWatcher watcher = FileWatcher
+		final FileWatcher watcher = FileWatcher
 				.of(dataDirectory.map(RuntimeSupport::parsePaths).orElseGet(() -> Stream.of(Paths.get("."))));
 		try (Build compiler = new Build(new NameLoader<>(InputFormatDefinition.formats(), InputFormatDefinition::name),
 				new NameLoader<>(new TableFunctionRepository(watcher).queryFunctions(), FunctionDefinition::name),

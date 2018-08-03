@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.DOUBLE_TYPE;
+import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
@@ -12,6 +13,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.Action;
+import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 
@@ -20,13 +23,16 @@ import io.prometheus.client.Gauge;
  */
 public final class OliveBuilder extends BaseOliveBuilder {
 
-	private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
+	private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(ActionConsumer.class);
 
+	private static final Type A_ACTION_TYPE = Type.getType(Action.class);
+	private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 
 	private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
+	private static final Method METHOD_ACTION_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE,
+			new Type[] { A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE });
 	private static final Method METHOD_CHILD__SET = new Method("set", VOID_TYPE, new Type[] { DOUBLE_TYPE });
-	private static final Method METHOD_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE, new Type[] { A_OBJECT_TYPE });
 
 	private static final Method METHOD_FUNCTION__APPLY = new Method("apply", A_OBJECT_TYPE,
 			new Type[] { A_OBJECT_TYPE });
@@ -39,11 +45,14 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	private static final Method METHOD_SYSTEM__NANO_TIME = new Method("nanoTime", LONG_TYPE, new Type[] {});
 
+	private final int column;
+
 	private final int line;
 
-	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, int line) {
+	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, int line, int column) {
 		super(owner, oliveId, initialType);
 		this.line = line;
+		this.column = column;
 	}
 
 	/**
@@ -58,7 +67,11 @@ public final class OliveBuilder extends BaseOliveBuilder {
 	public void emitAction(GeneratorAdapter methodGen, int local) {
 		methodGen.loadArg(0);
 		methodGen.loadLocal(local);
-		methodGen.invokeInterface(A_CONSUMER_TYPE, METHOD_CONSUMER__ACCEPT);
+		methodGen.push(owner.sourcePath());
+		methodGen.push(line);
+		methodGen.push(column);
+		methodGen.push(owner.compileTime);
+		methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT);
 	}
 
 	/**

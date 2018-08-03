@@ -28,6 +28,8 @@
           "mapping": {
             "added": "#/components/schemas/FilterAfter",
             "checked": "#/components/schemas/FilterChecked",
+            "sourcefile": "#/components/schemas/FilterSourceFile",
+            "sourcelocation": "#/components/schemas/FilterSourceLocation",
             "status": "#/components/schemas/FilterStatus",
             "type": "#/components/schemas/FilterType"
           },
@@ -39,6 +41,12 @@
           },
           {
             "$ref": "#/components/schemas/FilterChecked"
+          },
+          {
+            "$ref": "#/components/schemas/FilterSourceFile"
+          },
+          {
+            "$ref": "#/components/schemas/FilterSourceLocation"
           },
           {
             "$ref": "#/components/schemas/FilterStatus"
@@ -80,6 +88,48 @@
         },
         "type": "object"
       },
+      "FilterSourceFile": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterSourceLocation": {
+        "properties": {
+          "locations": {
+            "items": {
+              "properties": {
+                "column": {
+                  "type": "integer"
+                },
+                "file": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "time": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "FilterStatus": {
         "properties": {
           "states": {
@@ -96,14 +146,14 @@
       },
       "FilterType": {
         "properties": {
+          "type": {
+            "type": "string"
+          },
           "types": {
             "items": {
               "type": "string"
             },
             "type": "array"
-          },
-          "type": {
-            "type": "string"
           }
         },
         "type": "object"

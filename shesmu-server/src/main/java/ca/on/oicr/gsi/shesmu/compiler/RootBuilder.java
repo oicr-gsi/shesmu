@@ -5,6 +5,7 @@ import static org.objectweb.asm.Type.VOID_TYPE;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.Dumper;
@@ -35,8 +37,8 @@ import io.prometheus.client.Gauge;
  */
 public abstract class RootBuilder {
 
+	private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(ActionConsumer.class);
 	private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
-	private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
 	private static final Type A_DUMPER_SOURCE_TYPE = Type.getType(DumperSource.class);
 	private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
 	private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
@@ -54,7 +56,7 @@ public abstract class RootBuilder {
 	private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE = new Method("clearGauge", VOID_TYPE,
 			new Type[] {});
 	private static final Method METHOD_ACTION_GENERATOR__RUN = new Method("run", VOID_TYPE,
-			new Type[] { A_CONSUMER_TYPE, A_FUNCTION_TYPE });
+			new Type[] { A_ACTION_CONSUMER_TYPE, A_FUNCTION_TYPE });
 
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
@@ -90,6 +92,8 @@ public abstract class RootBuilder {
 	final ClassVisitor classVisitor;
 	private final GeneratorAdapter clearGaugeMethod;
 
+	final long compileTime = Instant.now().getEpochSecond();
+
 	private final Supplier<Stream<Constant>> constants;
 
 	private final GeneratorAdapter ctor;
@@ -106,10 +110,10 @@ public abstract class RootBuilder {
 
 	private final GeneratorAdapter runMethod;
 
+	private final Label runStartLabel;
 	private final Type selfType;
 
 	private int streamId;
-	private Label runStartLabel;
 
 	public RootBuilder(String name, String path, InputFormatDefinition inputFormatDefinition,
 			Supplier<Stream<Constant>> constants) {
@@ -155,8 +159,8 @@ public abstract class RootBuilder {
 	 * @param line
 	 *            the line in the source file this olive starts on
 	 */
-	public final OliveBuilder buildRunOlive(int line) {
-		return new OliveBuilder(this, oliveId++, inputFormatDefinition.type(), line);
+	public final OliveBuilder buildRunOlive(int line, int column) {
+		return new OliveBuilder(this, oliveId++, inputFormatDefinition.type(), line, column);
 	}
 
 	public Stream<LoadableValue> constants() {
@@ -190,7 +194,7 @@ public abstract class RootBuilder {
 			runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
 
 		});
-		Label endOfRun = runMethod.mark();
+		final Label endOfRun = runMethod.mark();
 
 		runMethod.visitInsn(Opcodes.RETURN);
 

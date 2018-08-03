@@ -8,15 +8,15 @@ import java.util.stream.Collector;
 
 import org.objectweb.asm.Type;
 
-import ca.on.oicr.gsi.shesmu.PartitionCount;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.PartitionCount;
 import ca.on.oicr.gsi.shesmu.Tuple;
 
 public class CollectNodePartitionCount extends CollectNode {
 
-	private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
 	private static final Type A_COLLECTOR_TYPE = Type.getType(Collector.class);
+	private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
 	private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
 	private final ExpressionNode expression;
 	private Imyhat incomingType;
@@ -57,7 +57,7 @@ public class CollectNodePartitionCount extends CollectNode {
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
 		expression.collectFreeVariables(freeVariables);
-		Renderer renderer = builder.map(name, Imyhat.BOOLEAN, builder.renderer().allValues()
+		final Renderer renderer = builder.map(name, Imyhat.BOOLEAN, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		expression.render(renderer);

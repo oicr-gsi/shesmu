@@ -249,7 +249,7 @@ public final class Server {
 			final Query query;
 			try {
 				query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				t.sendResponseHeaders(400, 0);
 				try (OutputStream os = t.getResponseBody()) {
 				}
@@ -265,7 +265,7 @@ public final class Server {
 			final FilterJson[] filters;
 			try {
 				filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FilterJson[].class);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				t.sendResponseHeaders(400, 0);
 				try (OutputStream os = t.getResponseBody()) {
 				}

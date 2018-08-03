@@ -28,28 +28,31 @@ import ca.on.oicr.gsi.shesmu.WatchedFileListener;
 import io.prometheus.client.Gauge;
 
 /**
- * Read constants from a file with one string per line (and automatically reparse those files if they
- * change)
+ * Read constants from a file with one string per line (and automatically
+ * reparse those files if they change)
  */
 @MetaInfServices(ConstantSource.class)
 public class StringSetFileConstants implements ConstantSource {
-	
+
 	private class ConstantsFile extends Constant implements WatchedFileListener {
 		private Set<String> constants = Collections.emptySet();
 
 		private final Path fileName;
 		private final long id;
+
 		public ConstantsFile(Path fileName) {
-			super(RuntimeSupport.removeExtension(fileName, EXTENSION), Imyhat.STRING.asList(), String.format("set of strings from file %s", fileName));
+			super(RuntimeSupport.removeExtension(fileName, EXTENSION), Imyhat.STRING.asList(),
+					String.format("set of strings from file %s", fileName));
 			this.fileName = fileName;
-			this.id = idGenerator.incrementAndGet();
+			id = idGenerator.incrementAndGet();
 			cache.put(id, this);
 		}
 
 		@Override
 		protected void load(GeneratorAdapter methodGen) {
 			methodGen.push(id);
-			methodGen.invokeStatic(Type.getType(StringSetFileConstants.class), new Method("fetch", Type.getType(Set.class), new Type[] {Type.LONG_TYPE}));
+			methodGen.invokeStatic(Type.getType(StringSetFileConstants.class),
+					new Method("fetch", Type.getType(Set.class), new Type[] { Type.LONG_TYPE }));
 		}
 
 		@Override
@@ -67,21 +70,22 @@ public class StringSetFileConstants implements ConstantSource {
 			try {
 				constants = new HashSet<>(Files.readAllLines(fileName));
 				badFile.labels(fileName.toString()).set(0);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				e.printStackTrace();
 				badFile.labels(fileName.toString()).set(1);
 			}
 			return Optional.empty();
 		}
 	}
+
 	private static final Gauge badFile = Gauge
-			.build("shesmu_auto_update_bad_string_constants_file", "Whether a string constants file can't be read").labelNames("filename")
-			.register();
+			.build("shesmu_auto_update_bad_string_constants_file", "Whether a string constants file can't be read")
+			.labelNames("filename").register();
 	private static final Map<Long, ConstantsFile> cache = new ConcurrentHashMap<>();
 	private static final String EXTENSION = ".set";
-	
+
 	private static final AtomicLong idGenerator = new AtomicLong();
-	
+
 	@RuntimeInterop
 	public static final Set<String> fetch(long constantsId) {
 		return cache.get(constantsId).constants;
@@ -92,11 +96,11 @@ public class StringSetFileConstants implements ConstantSource {
 	public StringSetFileConstants() {
 		files = new AutoUpdatingDirectory<>(EXTENSION, ConstantsFile::new);
 	}
-	
+
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>("Constants", files.stream()
-				.collect(Collectors.toMap(x -> x.name(), x -> x.fileName.toString()))));
+		return Stream.of(new Pair<>("Constants",
+				files.stream().collect(Collectors.toMap(x -> x.name(), x -> x.fileName.toString()))));
 	}
 
 	@Override

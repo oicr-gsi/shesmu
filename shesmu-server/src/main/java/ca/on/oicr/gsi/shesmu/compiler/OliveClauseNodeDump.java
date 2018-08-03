@@ -28,9 +28,11 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	private static final Method DUMPER__WRITE = new Method("write", Type.VOID_TYPE,
 			new Type[] { Type.getType(Object[].class) });
+	private final int column;
 	private final List<ExpressionNode> columns;
 	private final String dumper;
-	private final int column;
+	private List<Imyhat> dumperTypes;
+
 	private final int line;
 
 	public OliveClauseNodeDump(int line, int column, String dumper, List<ExpressionNode> columns) {
@@ -88,8 +90,6 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 				.filter(e -> e.resolve(defs, errorHandler))//
 				.count() == columns.size());
 	}
-
-	private List<Imyhat> dumperTypes;
 
 	@Override
 	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,

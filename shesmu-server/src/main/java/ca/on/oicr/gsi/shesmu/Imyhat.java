@@ -209,8 +209,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String javaScriptParser() {
-			return Stream.of(types).map(Imyhat::javaScriptParser)
-					.collect(Collectors.joining(",", "parser.t([", "])"));
+			return Stream.of(types).map(Imyhat::javaScriptParser).collect(Collectors.joining(",", "parser.t([", "])"));
 		}
 
 		@Override

@@ -21,10 +21,10 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
 public class OliveClauseNodeReject extends OliveClauseNode {
 
+	private final int column;
 	private final ExpressionNode expression;
 	private final List<RejectNode> handlers;
 	private final int line;
-	private final int column;
 
 	public OliveClauseNodeReject(int line, int column, ExpressionNode expression, List<RejectNode> handlers) {
 		super();

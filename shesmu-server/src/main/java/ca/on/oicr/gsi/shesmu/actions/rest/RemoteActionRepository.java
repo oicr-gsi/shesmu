@@ -81,7 +81,8 @@ public final class RemoteActionRepository implements ActionRepository {
 
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
-		writer.print("actionRender.set('remote-action', a => [title(a, `${a.name} on ${a.target}`)].concat(jsonParameters(a)));");
+		writer.print(
+				"actionRender.set('remote-action', a => [title(a, `${a.name} on ${a.target}`)].concat(jsonParameters(a)));");
 	}
 
 }

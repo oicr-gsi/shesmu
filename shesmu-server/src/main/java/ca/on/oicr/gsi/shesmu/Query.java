@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -82,9 +83,47 @@ public class Query {
 			@Type(value = FilterStatus.class, name = "status"), //
 			@Type(value = FilterAdded.class, name = "added"), //
 			@Type(value = FilterChecked.class, name = "checked"), //
+			@Type(value = FilterSourceFile.class, name = "sourcefile"), //
+			@Type(value = FilterSourceLocation.class, name = "sourcelocation"), //
 			@Type(value = FilterType.class, name = "type") })
 	public static abstract class FilterJson {
 		public abstract Filter convert();
+	}
+
+	public static class FilterSourceFile extends FilterJson {
+		private String[] files;
+
+		@Override
+		public Filter convert() {
+			return ActionProcessor.fromFile(files);
+		}
+
+		public String[] getFiles() {
+			return files;
+		}
+
+		public void setFiles(String[] files) {
+			this.files = files;
+		}
+
+	}
+
+	public static class FilterSourceLocation extends FilterJson {
+		private LocationJson[] locations;
+
+		@Override
+		public Filter convert() {
+			return ActionProcessor.fromFile(Stream.of(locations));
+		}
+
+		public LocationJson[] getLocations() {
+			return locations;
+		}
+
+		public void setLocations(LocationJson[] locations) {
+			this.locations = locations;
+		}
+
 	}
 
 	public static class FilterStatus extends FilterJson {
@@ -136,6 +175,37 @@ public class Query {
 			return ++count < limit;
 		}
 
+	}
+
+	public static final class LocationJson implements Predicate<SourceLocation> {
+		private Integer column;
+		private String file;
+		private Integer line;
+		private Long time;
+
+		@Override
+		public boolean test(SourceLocation location) {
+			if (file == null || !file.equals(location.fileName())) {
+				return false;
+			}
+
+			if (line == null) {
+				return true;
+			}
+			if (location.line() != line.intValue()) {
+				return false;
+			}
+			if (column == null) {
+				return true;
+			}
+			if (location.column() != column.intValue()) {
+				return false;
+			}
+			if (time == null) {
+				return true;
+			}
+			return location.time().toEpochMilli() == column.longValue();
+		}
 	}
 
 	FilterJson[] filters;

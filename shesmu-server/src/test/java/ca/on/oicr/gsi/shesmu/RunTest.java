@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -21,14 +20,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class RunTest {
 
-	private class ActionChecker implements Consumer<Action> {
+	private class ActionChecker implements ActionConsumer {
 
 		private int bad;
 		private int good;
 
 		@Override
-		public void accept(Action t) {
-			if (t.perform() == ActionState.SUCCEEDED) {
+		public void accept(Action action, String filename, int line, int column, long time) {
+			if (action.perform() == ActionState.SUCCEEDED) {
 				good++;
 			} else {
 				bad++;
