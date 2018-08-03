@@ -45,7 +45,7 @@ public interface DumperSource extends LoadedConfiguration {
 			}
 		};
 	}
-	
+
 	public static Stream<DumperSource> sources() {
 		return RuntimeSupport.stream(LOADER);
 	}

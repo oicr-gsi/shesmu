@@ -134,7 +134,7 @@ text-decoration: none;
 .action.state_succeeded a:active { color: #888; }
 .action.state_succeeded a:hover { color: #AAA; }
 
-#types > span {
+#types > span, #locations > span {
 padding: 0.2em;
 border: 1px solid #888;
 background-color: #ddd;

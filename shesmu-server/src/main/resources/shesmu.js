@@ -265,6 +265,7 @@ const actionStates = [
   "WAITING"
 ];
 const types = [];
+const locations = [];
 
 function clearActionStates() {
   actionStates.forEach(s => {
@@ -337,6 +338,86 @@ function fillNewTypeSelect() {
   }
 }
 
+function drawLocations() {
+  const container = document.getElementById("locations");
+  while (container.hasChildNodes()) {
+    container.removeChild(container.lastChild);
+  }
+
+  locations.sort(
+    (a, b) =>
+      a.file.localeCompare(b.file) ||
+      (a.line || 0) - (b.line || 0) ||
+      (a.column || 0) - (b.column || 0) ||
+      (a.time || 0) - (b.time || 0)
+  );
+  locations.forEach(sourceLocation => {
+    const element = document.createElement("SPAN");
+    element.innerText = `${sourceLocation.file}${
+      sourceLocation.line === null
+        ? ""
+        : ":" +
+          sourceLocation.line +
+          (sourceLocation.column === null ? "" : ":" + sourceLocation.column)
+    } `;
+    const removeElement = document.createElement("SPAN");
+    removeElement.innerText = "✖";
+    removeElement.onclick = function() {
+      const index = locations.findIndex(
+        l =>
+          l.file === sourceLocation.file &&
+          l.line === sourceLocation.line &&
+          l.column === sourceLocation.column &&
+          l.time === sourceLocation.time
+      );
+      if (index > -1) {
+        locations.splice(index, 1);
+        drawLocations();
+      }
+    };
+
+    element.appendChild(removeElement);
+    container.appendChild(element);
+  });
+}
+
+function clearLocations() {
+  while (locations.length) {
+    locations.pop();
+  }
+  drawLocations();
+}
+
+function addLocationForm() {
+  const element = document.getElementById("newLocation");
+  const match = element.value
+    .trim()
+    .match(/^(.*\.(shesmu|actnow))(:(\d+)(:(\d+))?)?$/);
+  if (match == null) {
+    element.className = "error";
+    return;
+  }
+  element.className = "";
+  const sourceLocation = {
+    file: match[1],
+    line: typeof match[4] == "undefined" ? null : parseInt(match[4]),
+    column: typeof match[6] == "undefined" ? null : parseInt(match[6]),
+    time: null
+  };
+  element.value = "";
+  const index = locations.findIndex(
+    l =>
+      l.file === sourceLocation.file &&
+      l.line === sourceLocation.line &&
+      l.column === sourceLocation.column &&
+      l.time === sourceLocation.time
+  );
+  if (index == -1) {
+    locations.push(sourceLocation);
+    drawLocations();
+  }
+}
+
 function parseEpoch(elementId) {
   const epochElement = document.getElementById(elementId);
   const epochInput = epochElement.value.trim();
@@ -370,6 +451,9 @@ function makeFilters() {
   }
   if (types.length > 0) {
     filters.push({ type: "type", types: types });
+  }
+  if (locations.length > 0) {
+    filters.push({ type: "sourcelocation", locations: locations });
   }
   return filters;
 }
@@ -467,6 +551,13 @@ function nextPage(query, targetElement) {
         text(`Last Checked: ${checkDate} (${action.lastChecked})`)
       );
       tile.appendChild(text(`Last Added: ${addedDate} (${action.lastAdded})`));
+      action.locations.forEach(l => {
+        const p = document.createElement("P");
+        p.innerText = `Made from ${l.file}:${l.line}:${l.column}[${new Date(
+          l.time
+        ).toISOString()}]`;
+        tile.appendChild(p);
+      });
       const showHide = document.createElement("P");
       const json = document.createElement("PRE");
       json.innerText = JSON.stringify(action, null, 2);
@@ -550,10 +641,14 @@ function showQuery() {
 
 function propertyFilterMaker(name) {
   switch (name) {
-    case "type":
-      return t => ({ type: "type", types: [t] });
+    case "sourcefile":
+      return f => ({ type: "sourcefile", files: [f] });
+    case "sourcelocation":
+      return l => ({ type: "sourcelocation", locations: [l] });
     case "status":
       return s => ({ type: "status", states: [s] });
+    case "type":
+      return t => ({ type: "type", types: [t] });
     default:
       return x => null;
   }
@@ -697,7 +792,7 @@ function getStats(filters, targetElement) {
                 if (row.kind == "property") {
                   makeClick(
                     tr,
-                    filters.concat([propertyFilterMaker(row.type)(row.property)])
+                    filters.concat([propertyFilterMaker(row.type)(row.json)])
                   );
                 } else {
                   tr.onclick = e => {
@@ -721,9 +816,9 @@ function getStats(filters, targetElement) {
               table.appendChild(header);
 
               header.appendChild(document.createElement("TH"));
-              const columns = stat.columns.sort().map(colName => ({
-                name: colName,
-                filter: makeColumnFilter(colName)
+              const columns = stat.columns.sort().map(col => ({
+                name: col.name,
+                filter: makeColumnFilter(col.value)
               }));
               for (let col of columns) {
                 const currentHeader = document.createElement("TH");
@@ -741,7 +836,7 @@ function getStats(filters, targetElement) {
               );
 
               for (let rowKey of Object.keys(stat.data).sort()) {
-                const rowFilter = makeRowFilter(rowKey);
+                const rowFilter = makeRowFilter(stat.rows[rowKey]);
                 const currentRow = document.createElement("TR");
                 table.appendChild(currentRow);
 
@@ -752,8 +847,7 @@ function getStats(filters, targetElement) {
 
                 for (let col of columns) {
                   const currentValue = document.createElement("TD");
-                  currentValue.innerText =
-                    stat.data[rowKey][col.name] || "0";
+                  currentValue.innerText = stat.data[rowKey][col.name] || "0";
                   currentRow.appendChild(currentValue);
                   setColorIntensity(
                     currentValue,

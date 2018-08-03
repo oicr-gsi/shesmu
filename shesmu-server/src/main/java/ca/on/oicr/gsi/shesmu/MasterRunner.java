@@ -34,8 +34,8 @@ public class MasterRunner {
 			lastRun.setToCurrentTime();
 			try (AutoCloseable timer = runTime.start()) {
 				final AtomicInteger currentDuplicates = new AtomicInteger();
-				actionGenerator.run(action -> {
-					if (actionSink.accept(action)) {
+				actionGenerator.run((action, fileName, line, column, time) -> {
+					if (actionSink.accept(action, fileName, line, column, time)) {
 						currentDuplicates.incrementAndGet();
 					}
 				}, InputFormatDefinition::all);

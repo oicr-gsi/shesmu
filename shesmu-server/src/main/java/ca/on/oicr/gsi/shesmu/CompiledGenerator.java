@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -29,7 +28,7 @@ public class CompiledGenerator extends ActionGenerator {
 			this.fileName = fileName;
 		}
 
-		public synchronized <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
+		public synchronized <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
 			generator.run(consumer, input);
 		}
 
@@ -59,7 +58,7 @@ public class CompiledGenerator extends ActionGenerator {
 				});
 				errors = compiler.errors().collect(Collectors.joining("<br/>"));
 				return result.isPresent() ? Optional.empty() : Optional.of(2);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				e.printStackTrace();
 				return Optional.of(2);
 			}
@@ -112,7 +111,7 @@ public class CompiledGenerator extends ActionGenerator {
 	}
 
 	@Override
-	public <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
+	public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
 		InputFormatDefinition.formats()

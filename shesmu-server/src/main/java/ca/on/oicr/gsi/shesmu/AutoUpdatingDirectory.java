@@ -20,18 +20,6 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 	/**
 	 * Creates a new automatically updating directory
 	 *
-	 * @param extension
-	 *            the file extension for the files that should be loaded
-	 * @param ctor
-	 *            a constructor to create a new self-updating file for a path
-	 */
-	public AutoUpdatingDirectory(String extension, Function<Path, T> ctor) {
-		this(FileWatcher.DATA_DIRECTORY, extension, ctor);
-	}
-
-	/**
-	 * Creates a new automatically updating directory
-	 *
 	 * @param watcher
 	 *            the file watcher to use
 	 * @param extension
@@ -64,6 +52,18 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 			};
 
 		});
+	}
+
+	/**
+	 * Creates a new automatically updating directory
+	 *
+	 * @param extension
+	 *            the file extension for the files that should be loaded
+	 * @param ctor
+	 *            a constructor to create a new self-updating file for a path
+	 */
+	public AutoUpdatingDirectory(String extension, Function<Path, T> ctor) {
+		this(FileWatcher.DATA_DIRECTORY, extension, ctor);
 	}
 
 	public boolean isEmpty() {

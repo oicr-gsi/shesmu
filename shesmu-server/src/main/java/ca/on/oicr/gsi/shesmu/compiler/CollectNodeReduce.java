@@ -83,9 +83,8 @@ public class CollectNodeReduce extends CollectNode {
 		reducer.collectFreeVariables(capturedNames);
 		capturedNames.remove(name);
 		capturedNames.remove(accumulatorName);
-		final Renderer reducerRenderer = builder.reduce(name, initial.type(), accumulatorName,
-				initial::render, builder.renderer().allValues().filter(v -> capturedNames.contains(v.name()))
-						.toArray(LoadableValue[]::new));
+		final Renderer reducerRenderer = builder.reduce(name, initial.type(), accumulatorName, initial::render, builder
+				.renderer().allValues().filter(v -> capturedNames.contains(v.name())).toArray(LoadableValue[]::new));
 		reducerRenderer.methodGen().visitCode();
 		reducer.render(reducerRenderer);
 		reducerRenderer.methodGen().returnValue();

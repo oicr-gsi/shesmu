@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -25,7 +24,7 @@ public abstract class ActionGenerator {
 	public static final ActionGenerator NULL = new ActionGenerator() {
 
 		@Override
-		public <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input) {
+		public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
 			// Do nothing.
 		}
 
@@ -42,7 +41,7 @@ public abstract class ActionGenerator {
 
 	@RuntimeInterop
 	public static <T> Stream<T> measureFlow(Stream<T> input, String fileName, int line, int column) {
-		Gauge.Child child = OLIVE_FLOW.labels(fileName, Integer.toString(line), Integer.toString(column));
+		final Gauge.Child child = OLIVE_FLOW.labels(fileName, Integer.toString(line), Integer.toString(column));
 		return input.peek(x -> child.inc());
 	}
 
@@ -95,7 +94,7 @@ public abstract class ActionGenerator {
 	 *            a problem for the Shesmu script.
 	 */
 	@RuntimeInterop
-	public abstract <T> void run(Consumer<Action> consumer, Function<Class<T>, Stream<T>> input);
+	public abstract <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input);
 
 	/**
 	 * Remove all Prometheus monitoring for this program.

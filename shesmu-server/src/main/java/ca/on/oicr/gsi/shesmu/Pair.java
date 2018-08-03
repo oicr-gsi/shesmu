@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -11,6 +12,10 @@ import java.util.stream.Stream;
  * Immutable pair of two values
  */
 public final class Pair<T, U> {
+	public static <T, U> Consumer<Pair<T, U>> consume(BiConsumer<? super T, ? super U> consumer) {
+		return pair -> pair.accept(consumer);
+	}
+
 	/**
 	 * Create a stateful function that transforms an item in a pair with the first
 	 * element being the index of this item.

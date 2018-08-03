@@ -19,7 +19,7 @@ public interface Dumper {
 	/**
 	 * This is called after all the olives have produced their output and the round
 	 * is complete.
-	 * 
+	 *
 	 * This may be called multiple times for a single start.
 	 */
 	public void stop();

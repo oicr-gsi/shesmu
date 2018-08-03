@@ -1,12 +1,12 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,7 +44,7 @@ public class StaticActions implements LoadedConfiguration {
 				try {
 					final Action result = runners.get(action.getAction()).run(action.getParameters());
 					if (result != null) {
-						sink.accept(result);
+						sink.accept(result, fileName().toString(), 0, 0, Instant.now().getEpochSecond());
 						success++;
 					} else {
 						retry = true;
@@ -71,9 +71,9 @@ public class StaticActions implements LoadedConfiguration {
 	private AutoUpdatingDirectory<StaticActionFile> configuration;
 	private final Supplier<Stream<ActionDefinition>> definitions;
 	private final Map<String, ActionRunner> runners = new HashMap<>();
-	private final Consumer<Action> sink;
+	private final ActionConsumer sink;
 
-	public StaticActions(Consumer<Action> sink, Supplier<Stream<ActionDefinition>> definitions) {
+	public StaticActions(ActionConsumer sink, Supplier<Stream<ActionDefinition>> definitions) {
 		this.sink = sink;
 		this.definitions = definitions;
 	}

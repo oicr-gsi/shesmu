@@ -2,9 +2,11 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +16,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,6 +74,7 @@ public final class ActionProcessor {
 		Instant lastAdded = Instant.now();
 		Instant lastChecked = Instant.EPOCH;
 		ActionState lastState = ActionState.UNKNOWN;
+		final Set<SourceLocation> locations = new HashSet<>();
 		boolean thrown;
 	}
 
@@ -119,7 +123,9 @@ public final class ActionProcessor {
 	}
 
 	private interface Property<T> {
-		T extract(Entry<Action, Information> input);
+		Stream<T> extract(Entry<Action, Information> input);
+
+		JsonNode json(T input);
 
 		String name();
 
@@ -129,8 +135,13 @@ public final class ActionProcessor {
 	private static final Property<ActionState> ACTION_STATE = new Property<ActionState>() {
 
 		@Override
-		public ActionState extract(Entry<Action, Information> input) {
-			return input.getValue().lastState;
+		public Stream<ActionState> extract(Entry<Action, Information> input) {
+			return Stream.of(input.getValue().lastState);
+		}
+
+		@Override
+		public JsonNode json(ActionState input) {
+			return JSON_FACTORY.textNode(input.name());
 		}
 
 		@Override
@@ -181,6 +192,60 @@ public final class ActionProcessor {
 	private static final Gauge lastRun = Gauge
 			.build("shesmu_action_perform_last_time", "The last time the actions were processed.").register();
 
+	private static final Property<String> SOURCE_FILE = new Property<String>() {
+
+		@Override
+		public Stream<String> extract(Entry<Action, Information> input) {
+			return input.getValue().locations.stream().map(SourceLocation::fileName);
+		}
+
+		@Override
+		public JsonNode json(String input) {
+			return JSON_FACTORY.textNode(input);
+		}
+
+		@Override
+		public String name() {
+			return "sourcefile";
+		}
+
+		@Override
+		public String name(String input) {
+			return input;
+		}
+
+	};
+
+	private static final Property<SourceLocation> SOURCE_LOCATION = new Property<SourceLocation>() {
+
+		@Override
+		public Stream<SourceLocation> extract(Entry<Action, Information> input) {
+			return input.getValue().locations.stream();
+		}
+
+		@Override
+		public JsonNode json(SourceLocation input) {
+			final ObjectNode node = JSON_FACTORY.objectNode();
+			node.put("file", input.fileName());
+			node.put("line", input.line());
+			node.put("column", input.column());
+			node.put("time", input.time().toEpochMilli());
+
+			return node;
+		}
+
+		@Override
+		public String name() {
+			return "sourcelocation";
+		}
+
+		@Override
+		public String name(SourceLocation input) {
+			return String.format("%s:%d:%d[%s]", input.fileName(), input.line(), input.column(),
+					DateTimeFormatter.ISO_INSTANT.format(input.time()));
+		}
+	};
+
 	private static final Gauge stateCount = Gauge
 			.build("shesmu_action_state_count", "The number of actions in a particular state.").labelNames("state")
 			.register();
@@ -188,8 +253,13 @@ public final class ActionProcessor {
 	private static final Property<String> TYPE = new Property<String>() {
 
 		@Override
-		public String extract(Entry<Action, Information> input) {
-			return input.getKey().type();
+		public Stream<String> extract(Entry<Action, Information> input) {
+			return Stream.of(input.getKey().type());
+		}
+
+		@Override
+		public JsonNode json(String input) {
+			return JSON_FACTORY.textNode(input);
 		}
 
 		@Override
@@ -223,6 +293,22 @@ public final class ActionProcessor {
 		};
 	}
 
+	private static <T> void binSummary(ArrayNode table, Bin<T> bin, List<Entry<Action, Information>> actions) {
+		Stream.<Pair<String, BiFunction<Stream<T>, Comparator<T>, Optional<T>>>>of(//
+				new Pair<>("Minimum", Stream::min), //
+				new Pair<>("Minimum", Stream::max)//
+		).forEach(pair -> {
+			pair.second().apply(actions.stream().map(bin::extract), bin)//
+					.ifPresent(value -> {
+						final ObjectNode row = table.addObject();
+						row.put("title", pair.first());
+						row.set("value", bin.name(value, 0));
+						row.put("kind", "bin");
+						row.put("type", bin.name());
+					});
+		});
+	}
+
 	/**
 	 * Check that an action was last checked in the time range provided
 	 *
@@ -243,7 +329,42 @@ public final class ActionProcessor {
 	}
 
 	/**
-	 * Checks that a filter has one of the specified actions states
+	 * Checks that an action was generated in a particular source location
+	 *
+	 * @param locations
+	 *            the source locations
+	 */
+	public static Filter fromFile(Stream<Predicate<SourceLocation>> locations) {
+		final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
+		return new Filter() {
+
+			@Override
+			protected boolean check(Action action, Information info) {
+				return list.stream().anyMatch(l -> info.locations.stream().anyMatch(l));
+			}
+		};
+	}
+
+	/**
+	 * Checks that an action was generated in a particular file
+	 *
+	 * @param files
+	 *            the names of the files
+	 */
+	public static Filter fromFile(String... files) {
+		final Set<String> set = Stream.of(files).collect(Collectors.toSet());
+		return new Filter() {
+
+			@Override
+			protected boolean check(Action action, Information info) {
+				return info.locations.stream().map(SourceLocation::fileName).anyMatch(set::contains);
+			}
+
+		};
+	}
+
+	/**
+	 * Checks that an action is in one of the specified actions states
 	 *
 	 * @param states
 	 *            the permitted states
@@ -259,6 +380,21 @@ public final class ActionProcessor {
 			}
 
 		};
+	}
+
+	private static <T extends Comparable<T>> void propertySummary(ArrayNode table, Property<T> property,
+			List<Entry<Action, Information>> actions) {
+		final TreeMap<T, Long> states = actions.stream().flatMap(property::extract)
+				.collect(Collectors.groupingBy(Function.identity(), TreeMap::new, Collectors.counting()));
+		for (final Entry<T, Long> state : states.entrySet()) {
+			final ObjectNode row = table.addObject();
+			row.put("title", "Total");
+			row.put("value", state.getValue());
+			row.put("kind", "property");
+			row.put("type", property.name());
+			row.put("property", property.name(state.getKey()));
+			row.set("json", property.json(state.getKey()));
+		}
 	}
 
 	/**
@@ -288,7 +424,7 @@ public final class ActionProcessor {
 	public ActionProcessor() {
 		super();
 		Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
-	}
+	};
 
 	/**
 	 * Add an action to the execution pool
@@ -296,60 +432,79 @@ public final class ActionProcessor {
 	 * If this action is a duplicate of an existing action, the existing state is
 	 * kept.
 	 */
-	public synchronized boolean accept(Action action) {
+	public synchronized boolean accept(Action action, String filename, int line, int column, long time) {
+		Information information;
+		boolean isDuplicate;
 		if (!actions.containsKey(action)) {
-			actions.put(action, new Information());
+			information = new Information();
+			actions.put(action, information);
 			stateCount.labels(ActionState.UNKNOWN.name()).inc();
-			return false;
+			isDuplicate = false;
 		} else {
-			actions.get(action).lastAdded = Instant.now();
-			return true;
+			information = actions.get(action);
+			information.lastAdded = Instant.now();
+			isDuplicate = true;
 		}
+		information.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochSecond(time)));
+		return isDuplicate;
 	}
 
-	private <T, U> void crosstab(ArrayNode output, List<Entry<Action, Information>> input, Property<T> row,
-			Property<U> column) {
-		Set<T> rows = input.stream().map(row::extract).collect(Collectors.toSet());
-		Set<U> columns = input.stream().map(column::extract).collect(Collectors.toSet());
+	private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(ArrayNode output,
+			List<Entry<Action, Information>> input, Property<T> row, Property<U> column) {
+		final Set<T> rows = input.stream().flatMap(row::extract).collect(Collectors.toSet());
+		final Set<U> columns = input.stream().flatMap(column::extract).collect(Collectors.toSet());
 		if (rows.size() < 2 && columns.size() < 2) {
 			return;
 		}
-		ObjectNode node = output.addObject();
+		final ObjectNode node = output.addObject();
 		node.put("type", "crosstab");
 		node.put("column", column.name());
 		node.put("row", row.name());
-		columns.stream().map(column::name).sorted().forEach(node.putArray("columns")::add);
-		Map<T, List<Entry<Action, Information>>> map = input.stream().collect(Collectors.groupingBy(row::extract));
-		ObjectNode data = node.putObject("data");
-		for (Entry<T, List<Entry<Action, Information>>> entry : map.entrySet()) {
-			ObjectNode inner = data.putObject(row.name(entry.getKey()));
-			for (Entry<U, Long> i : entry.getValue().stream()
-					.collect(Collectors.groupingBy(column::extract, Collectors.counting())).entrySet()) {
+		final ObjectNode rowsJson = node.putObject("rows");
+		final ArrayNode columnsJson = node.putArray("columns");
+		columns.stream().map(c -> new Pair<>(column.name(c), column.json(c))).sorted(Comparator.comparing(Pair::first))
+				.forEach(colPair -> {
+					final ObjectNode columnJson = columnsJson.addObject();
+					columnJson.put("name", colPair.first());
+					columnJson.set("value", colPair.second());
+				});
+		final Map<T, List<Entry<Action, Information>>> map = input.stream()
+				.flatMap(e -> row.extract(e).map(t -> new Pair<>(t, e)))
+				.collect(Collectors.groupingBy(Pair::first, Collectors.mapping(Pair::second, Collectors.toList())));
+		final ObjectNode data = node.putObject("data");
+		for (final Entry<T, List<Entry<Action, Information>>> entry : map.entrySet()) {
+			final String name = row.name(entry.getKey());
+			final ObjectNode inner = data.putObject(name);
+			rowsJson.set(name, row.json(entry.getKey()));
+
+			for (final Entry<U, Long> i : entry.getValue().stream()
+					.flatMap(e -> column.extract(e).map(u -> new Pair<>(u, e)))
+					.collect(Collectors.groupingBy(Pair::first, Collectors.counting())).entrySet()) {
 				inner.put(column.name(i.getKey()), i.getValue());
 			}
 		}
 	}
 
 	private <T> void histogram(ArrayNode output, int count, List<Entry<Action, Information>> input, Bin<T> bin) {
-		Optional<T> min = input.stream().map(bin::extract).min(bin);
-		Optional<T> max = input.stream().map(bin::extract).max(bin);
+		final Optional<T> min = input.stream().map(bin::extract).min(bin);
+		final Optional<T> max = input.stream().map(bin::extract).max(bin);
 		if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
 			return;
 		}
-		long width = bin.span(min.get(), max.get()) / count;
+		final long width = bin.span(min.get(), max.get()) / count;
 		if (width == 0) {
 			return;
 		}
-		int[] buckets = new int[count];
-		for (Entry<Action, Information> value : input) {
-			int index = (int) bin.bucket(min.get(), width, bin.extract(value));
+		final int[] buckets = new int[count];
+		for (final Entry<Action, Information> value : input) {
+			final int index = (int) bin.bucket(min.get(), width, bin.extract(value));
 			buckets[index >= buckets.length ? buckets.length - 1 : index]++;
 		}
-		ObjectNode node = output.addObject();
+		final ObjectNode node = output.addObject();
 		node.put("type", "histogram");
 		node.put("bin", bin.name());
-		ArrayNode boundaries = node.putArray("boundaries");
-		ArrayNode counts = node.putArray("counts");
+		final ArrayNode boundaries = node.putArray("boundaries");
+		final ArrayNode counts = node.putArray("counts");
 		for (int i = 0; i < buckets.length; i++) {
 			boundaries.add(bin.name(min.get(), i * width));
 			counts.add(buckets[i]);
@@ -362,11 +517,43 @@ public final class ActionProcessor {
 	 */
 	public void start() {
 		processing.start();
-	};
+	}
 
 	private Stream<Entry<Action, Information>> startStream(Filter... filters) {
 		return actions.entrySet().stream().filter(
 				entry -> Arrays.stream(filters).allMatch(filter -> filter.check(entry.getKey(), entry.getValue())));
+	}
+
+	public ArrayNode stats(ObjectMapper mapper, Filter... filters) {
+		final List<Entry<Action, Information>> actions = startStream(filters).collect(Collectors.toList());
+		final ArrayNode array = mapper.createArrayNode();
+		final ObjectNode message = array.addObject();
+		message.put("type", "table");
+		final ArrayNode table = message.putArray("table");
+
+		final ObjectNode total = table.addObject();
+		total.put("title", "Total");
+		total.put("value", actions.size());
+		total.putNull("kind");
+
+		// This is all written out because there's no convenient type-safe way to put it
+		// in a list
+		propertySummary(table, ACTION_STATE, actions);
+		propertySummary(table, TYPE, actions);
+		propertySummary(table, SOURCE_FILE, actions);
+		propertySummary(table, SOURCE_LOCATION, actions);
+
+		binSummary(table, ADDED, actions);
+		binSummary(table, CHECKED, actions);
+
+		crosstab(array, actions, ACTION_STATE, TYPE);
+		crosstab(array, actions, ACTION_STATE, SOURCE_FILE);
+		crosstab(array, actions, ACTION_STATE, SOURCE_LOCATION);
+		crosstab(array, actions, TYPE, SOURCE_FILE);
+		crosstab(array, actions, TYPE, SOURCE_LOCATION);
+		histogram(array, 10, actions, ADDED);
+		histogram(array, 10, actions, CHECKED);
+		return array;
 	}
 
 	/**
@@ -403,59 +590,10 @@ public final class ActionProcessor {
 			node.put("lastAdded", entry.getValue().lastAdded.getEpochSecond());
 			node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
 			node.put("type", entry.getKey().type());
+			final ArrayNode locations = node.putArray("locations");
+			entry.getValue().locations.stream().sorted().forEach(location -> location.toJson(locations));
 			return node;
 		});
-	}
-
-	private static <T> void binSummary(ArrayNode table, Bin<T> bin, List<Entry<Action, Information>> actions) {
-		Stream.<Pair<String, BiFunction<Stream<T>, Comparator<T>, Optional<T>>>>of(//
-				new Pair<>("Minimum", Stream::min), //
-				new Pair<>("Minimum", Stream::max)//
-		).forEach(pair -> {
-			pair.second().apply(actions.stream().map(bin::extract), bin)//
-					.ifPresent(value -> {
-						ObjectNode row = table.addObject();
-						row.put("title", pair.first());
-						row.set("value", bin.name(value, 0));
-						row.put("kind", "bin");
-						row.put("type", bin.name());
-					});
-		});
-	}
-
-	private static <T> void propertySummary(ArrayNode table, Property<T> property,
-			List<Entry<Action, Information>> actions) {
-		TreeMap<T, Long> states = actions.stream().map(property::extract)
-				.collect(Collectors.groupingBy(Function.identity(), TreeMap::new, Collectors.counting()));
-		for (Entry<T, Long> state : states.entrySet()) {
-			ObjectNode row = table.addObject();
-			row.put("title", "Total");
-			row.put("value", state.getValue());
-			row.put("kind", "property");
-			row.put("type", property.name());
-			row.put("property", property.name(state.getKey()));
-		}
-	}
-
-	public ArrayNode stats(ObjectMapper mapper, Filter... filters) {
-		List<Entry<Action, Information>> actions = startStream(filters).collect(Collectors.toList());
-		ArrayNode array = mapper.createArrayNode();
-		final ObjectNode message = array.addObject();
-		message.put("type", "table");
-		ArrayNode table = message.putArray("table");
-
-		ObjectNode total = table.addObject();
-		total.put("title", "Total");
-		total.put("value", actions.size());
-		total.putNull("kind");
-
-		Stream.<Property<?>>of(ACTION_STATE, TYPE).forEach(property -> propertySummary(table, property, actions));
-		Stream.<Bin<?>>of(ADDED, CHECKED).forEach(bin -> binSummary(table, bin, actions));
-
-		crosstab(array, actions, TYPE, ACTION_STATE);
-		histogram(array, 10, actions, ADDED);
-		histogram(array, 10, actions, CHECKED);
-		return array;
 	}
 
 	private void update() {

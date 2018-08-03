@@ -54,6 +54,21 @@
         </td>
       </tr>
       <tr>
+        <td>Source Olive</td>
+        <td>
+          <span id="locations"></span>
+          <span class="load" onclick="clearLocations();">⌫</span>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <input type="text" id="newLocation"></input></span>
+          <span class="load" onclick="addLocationForm();">+</span>
+          <script type="text/javascript">document.getElementById("newLocation").addEventListener("keyup", function(ev) { if (ev.keyCode === 13) { addLocationForm(); } });</script>
+        </td>
+      </tr>
+      <tr>
         <td></td>
         <td>
           <span class="load" onclick="listActions();">🔍 List</span>
