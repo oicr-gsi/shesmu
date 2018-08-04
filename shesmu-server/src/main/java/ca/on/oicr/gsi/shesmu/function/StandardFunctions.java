@@ -5,6 +5,9 @@ import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
@@ -35,7 +38,44 @@ public final class StandardFunctions implements FunctionRepository {
 					Imyhat.STRING, new FunctionParameter("input path", Imyhat.STRING)),
 			FunctionDefinition.staticMethod(RuntimeSupport.class, "dir_name",
 					"Extracts all but the last elements in a path (i.e., the containing directory).", Imyhat.STRING,
-					new FunctionParameter("input path", Imyhat.STRING)) };
+					new FunctionParameter("input path", Imyhat.STRING)),
+			FunctionDefinition.virtualMethod("str_trim", "trim", "Remove white space from a string.", Imyhat.STRING,
+					new FunctionParameter("str", Imyhat.STRING)),
+			FunctionDefinition.virtualMethod("str_lower", "toLowerCase", "Convert a string to lower case.",
+					Imyhat.STRING, new FunctionParameter("str", Imyhat.STRING)),
+			FunctionDefinition.virtualMethod("str_upper", "toUpperCase", "Convert a string to upper case.",
+					Imyhat.STRING, new FunctionParameter("str", Imyhat.STRING)),
+			FunctionDefinition.virtualMethod("str_eq", "equalsIgnoreCase", "Compares two strings ignoring case.",
+					Imyhat.BOOLEAN, new FunctionParameter("first", Imyhat.STRING), new FunctionParameter("second", Imyhat.STRING)),
+			new FunctionDefinition() {
+
+				@Override
+				public Imyhat returnType() {
+					return Imyhat.INTEGER;
+				}
+
+				@Override
+				public void render(GeneratorAdapter methodGen) {
+					methodGen.invokeVirtual(Type.getType(String.class),
+							new Method("length", Type.INT_TYPE, new Type[] {}));
+					methodGen.cast(Type.INT_TYPE, Type.LONG_TYPE);
+				}
+
+				@Override
+				public Stream<FunctionParameter> parameters() {
+					return Stream.of(new FunctionParameter("str", Imyhat.STRING));
+				}
+
+				@Override
+				public String name() {
+					return "str_len";
+				}
+
+				@Override
+				public String description() {
+					return "Gets the length of a string.";
+				}
+			} };
 
 	@Override
 	public Stream<Pair<String, Map<String, String>>> listConfiguration() {

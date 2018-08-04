@@ -27,7 +27,6 @@ public interface FunctionDefinition {
 	 *            the types of the arguments to the method (the appropriate Java
 	 *            types will be matched)
 	 */
-	@SafeVarargs
 	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, String description,
 			Imyhat returnType, FunctionParameter... parameters) {
 		return new FunctionDefinition() {
@@ -51,6 +50,38 @@ public interface FunctionDefinition {
 			public void render(GeneratorAdapter methodGen) {
 				methodGen.invokeStatic(Type.getType(owner), new Method(methodName, returnType.asmType(),
 						Stream.of(parameters).map(p -> p.type().asmType()).toArray(Type[]::new)));
+			}
+
+			@Override
+			public Imyhat returnType() {
+				return returnType;
+			}
+		};
+	}
+
+	public static FunctionDefinition virtualMethod(String name, String methodName, String description,
+			Imyhat returnType, FunctionParameter... parameters) {
+		return new FunctionDefinition() {
+
+			@Override
+			public String description() {
+				return description;
+			}
+
+			@Override
+			public String name() {
+				return name;
+			}
+
+			@Override
+			public Stream<FunctionParameter> parameters() {
+				return Stream.of(parameters);
+			}
+
+			@Override
+			public void render(GeneratorAdapter methodGen) {
+				methodGen.invokeVirtual(parameters[0].type().asmType(), new Method(methodName, returnType.asmType(),
+						Stream.of(parameters).skip(1).map(p -> p.type().asmType()).toArray(Type[]::new)));
 			}
 
 			@Override
