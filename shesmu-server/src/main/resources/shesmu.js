@@ -1,4 +1,6 @@
-function fetchConstant(name, element) {
+import {actionRender} from "./actions.js";
+
+export function fetchConstant(name, element) {
   element.className = "busy";
   element.innerText = "Fetching...";
   fetch("/constant", {
@@ -30,7 +32,7 @@ function fetchConstant(name, element) {
     });
 }
 
-function runFunction(name, element, parameterParser) {
+export function runFunction(name, element, parameterParser) {
   element.className = "busy";
   element.innerText = "Running...";
   let parameters = [];
@@ -78,7 +80,7 @@ function runFunction(name, element, parameterParser) {
     });
 }
 
-function prettyType() {
+export function prettyType() {
   const element = document.getElementById("prettyType");
   element.className = "busy";
   element.innerText = "Prettying...";
@@ -106,14 +108,14 @@ function prettyType() {
     });
 }
 
-parser = {
+export const parser = {
   _: function(input) {
     return { good: false, input: input, error: "Cannot parse bad type." };
   },
   a: function(innerType) {
     return input => {
       const output = [];
-      while (true) {
+      for (;;) {
         let match = input.match(output.length == 0 ? /^\s*\[/ : /^\s*([\],])/);
         if (!match) {
           return {
@@ -267,7 +269,7 @@ const actionStates = [
 const types = [];
 const locations = [];
 
-function clearActionStates() {
+export function clearActionStates() {
   actionStates.forEach(s => {
     document.getElementById(`include_${s}`).checked = false;
   });
@@ -305,7 +307,7 @@ function removeTypeName(typeName) {
   }
 }
 
-function clearTypes() {
+export function clearTypes() {
   while (types.length) {
     types.pop();
   }
@@ -320,13 +322,13 @@ function addType(typeName) {
   }
 }
 
-function addTypeForm() {
+export function addTypeForm() {
   const element = document.getElementById("newType");
   addType(element.value.trim());
   element.remove(element.selectedIndex);
 }
 
-function fillNewTypeSelect() {
+export function fillNewTypeSelect() {
   const element = document.getElementById("newType");
   while (element.length > 0) {
     element.remove(0);
@@ -381,14 +383,14 @@ function drawLocations() {
   });
 }
 
-function clearLocations() {
+export function clearLocations() {
   while (locations.length) {
     locations.pop();
   }
   drawLocations();
 }
 
-function addLocationForm() {
+export function addLocationForm() {
   const element = document.getElementById("newLocation");
   const match = element.value
     .trim()
@@ -483,7 +485,7 @@ function results(container, slug, body, render) {
     });
 }
 
-function listActions() {
+export function listActions() {
   const query = {
     filters: makeFilters(),
     limit: 25,
@@ -492,7 +494,7 @@ function listActions() {
   nextPage(query, document.getElementById("results"));
 }
 
-function text(t) {
+export function text(t) {
   const element = document.createElement("P");
   if (t.length > 100) {
     let visible = true;
@@ -508,7 +510,7 @@ function text(t) {
   return element;
 }
 
-function link(url, t) {
+export function link(url, t) {
   const element = document.createElement("A");
   element.innerText = t + " 🔗";
   element.target = "_blank";
@@ -516,13 +518,13 @@ function link(url, t) {
   return element;
 }
 
-function jsonParameters(action) {
+export function jsonParameters(action) {
   return Object.entries(action.parameters).map(p =>
     text(`Parameter ${p[0]} = ${JSON.stringify(p[1])}`)
   );
 }
 
-function title(action, t) {
+export function title(action, t) {
   const element = action.url ? link(action.url, t) : text(t);
   element.title = action.state;
   return element;
@@ -621,7 +623,7 @@ function nextPage(query, targetElement) {
   });
 }
 
-function queryStats() {
+export function queryStats() {
   getStats(makeFilters(), document.getElementById("results"));
 }
 
@@ -634,7 +636,7 @@ function showFilterJson(filters, targetElement) {
   targetElement.appendChild(pre);
 }
 
-function showQuery() {
+export function showQuery() {
   showFilterJson(makeFilters(), document.getElementById("results"));
 }
 
@@ -649,7 +651,7 @@ function propertyFilterMaker(name) {
     case "type":
       return t => ({ type: "type", types: [t] });
     default:
-      return x => null;
+      return () => null;
   }
 }
 
@@ -714,7 +716,7 @@ function getStats(filters, targetElement) {
       data.forEach(stat => {
         const element = document.createElement("DIV");
         const makeClick = (clickable, filters) => {
-          clickable.onclick = e => {
+          clickable.onclick = () => {
             while (drillDown.hasChildNodes()) {
               drillDown.removeChild(drillDown.lastChild);
             }
@@ -794,7 +796,7 @@ function getStats(filters, targetElement) {
                     filters.concat([propertyFilterMaker(row.type)(row.json)])
                   );
                 } else {
-                  tr.onclick = e => {
+                  tr.onclick = () => {
                     while (drillDown.hasChildNodes()) {
                       drillDown.removeChild(drillDown.lastChild);
                     }

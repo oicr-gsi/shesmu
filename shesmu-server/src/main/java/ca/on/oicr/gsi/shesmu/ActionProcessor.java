@@ -625,6 +625,7 @@ public final class ActionProcessor {
 			try {
 				Thread.sleep(60_000);
 			} catch (final InterruptedException e) {
+        // Either interrupted to stop or just going to process early
 			}
 		}
 	}

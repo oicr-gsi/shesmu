@@ -47,6 +47,7 @@ public class MasterRunner {
 			try {
 				Thread.sleep(5 * 60_000);
 			} catch (final InterruptedException e) {
+				// Either EINTR or shutdown
 			}
 		}
 
