@@ -552,11 +552,10 @@ function nextPage(query, targetElement) {
       );
       tile.appendChild(text(`Last Added: ${addedDate} (${action.lastAdded})`));
       action.locations.forEach(l => {
-        const p = document.createElement("P");
-        p.innerText = `Made from ${l.file}:${l.line}:${l.column}[${new Date(
+        const t = `Made from ${l.file}:${l.line}:${l.column}[${new Date(
           l.time
         ).toISOString()}]`;
-        tile.appendChild(p);
+        tile.appendChild(l.url ? link(l.url, t) : text(t));
       });
       const showHide = document.createElement("P");
       const json = document.createElement("PRE");
