@@ -55,6 +55,10 @@ public abstract class ListNode {
 			o.accept(new ListNodeReverse(p.line(), p.column()));
 			return p.whitespace();
 		});
+		DISPATCH.addKeyword("Distinct", (p, o) -> {
+			o.accept(new ListNodeDistinct(p.line(), p.column()));
+			return p.whitespace();
+		});
 		DISPATCH.addKeyword("Subsample", (p, o) -> {
 			final AtomicReference<List<SampleNode>> samplers = new AtomicReference<>();
 			final Parser result = p//

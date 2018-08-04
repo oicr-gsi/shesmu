@@ -435,6 +435,12 @@ The value of a variable. There are different kinds of variables in Shesmu:
 Only stream variables may be used as discriminators in `Group` clauses.
 
 ### List Modifiers
+
+#### Distinct
+- `Distinct`
+
+Discards any duplicate items in the list.
+
 #### Map
 - `Let` _x_ `=` _expr_
 
