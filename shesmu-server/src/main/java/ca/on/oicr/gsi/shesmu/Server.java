@@ -115,6 +115,7 @@ public final class Server {
 						Throttler::services, //
 						ConstantSource::sources, //
 						DumperSource::sources, //
+						SourceLocation::configuration, //
 						() -> Stream.of(staticActions)//
 				)//
 						.flatMap(Supplier::get)//

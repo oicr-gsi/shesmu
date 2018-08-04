@@ -137,6 +137,24 @@ Each plugin can be considered separately, but a JAR file can deliver multiple
 different things at once. Plugins are described in this section from least
 complicated to most complicated.
 
+### Loaded Configuration
+All of the interfaces discussed extend the `LoadedConfiguration` interface.
+This interface displays configuration panels on the main status page of the
+Shesmu server and are meant to report the configuration of a plugin.
+
+The interface returns any number of `Pair<String, Map<String, String>>`. Each
+`Pair` will be rendered as a section with `Pair.first()` being the title of
+that section. The section will then contain a table, whose rows are the entries
+in the map.
+
+### Source Linker
+Source linkers convert local paths for `.shesmu` files into URLs for accessing
+via the action dashboard. To create a new source linker:
+
+1. Create a class which implements the `SourceLocationLinker` interface.
+1. Annotate this class with `@MetaInfServices`.
+1. Make sure the class has a no-argument constructor.
+
 ### Throttler
 Throttlers temporarily block actions from starting. They can block actions by
 service names provided by plugins and these names are arbitrary strings. To

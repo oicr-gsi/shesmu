@@ -1,11 +1,20 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.time.Instant;
+import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public final class SourceLocation implements Comparable<SourceLocation> {
+	private static final ServiceLoader<SourceLocationLinker> LINKERS = ServiceLoader.load(SourceLocationLinker.class);
+
+	public static Stream<? extends LoadedConfiguration> configuration() {
+		return RuntimeSupport.stream(LINKERS);
+	}
+
 	private final int column;
 	private final String fileName;
 	private final int line;
@@ -102,6 +111,11 @@ public final class SourceLocation implements Comparable<SourceLocation> {
 		node.put("line", line);
 		node.put("column", column);
 		node.put("time", time.toEpochMilli());
+		RuntimeSupport.stream(LINKERS)//
+				.flatMap(l -> l.url(this))//
+				.filter(Objects::nonNull)//
+				.findAny()//
+				.ifPresent(url -> node.put("url", url));
 	}
 
 }

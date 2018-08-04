@@ -186,3 +186,17 @@ debugging output.
 - TSV dumper. Write all data to a TSV file. Create a JSON file ending in
   `.tsvdump` containing an object where the keys are the dumper names and the
   values are the files to write. The file will be truncated with each olive pass.
+
+## Source Linker
+Once a Shesmu server is deployed, it can be useful to have links from the
+Shesmu dashboard to the original `.shesmu` sources, especially when they are
+stored in git or the like. A source linker knows how to convert a path on the
+local file system into a URL.
+
+- Git linker. If the sources are a checked out git repository, this linker 
+  references a web-based git UI to view them. To enable, create a file ending
+	in `.gitlink` containing a JSON object `{"prefix":..., "url":...,
+	"type":xxx}` where `prefix` is the local repository path (_i.e._, the
+	directory where the repository was cloned, `url` is the URL to the dashboard
+	page for this repository, and `type` is either `GITHUB` or `BITBUCKET`,
+  depending on the type of dashboard.
