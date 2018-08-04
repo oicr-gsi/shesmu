@@ -26,7 +26,7 @@ paths:
               schema:
                 type: array
                 items:
-                  : '#/components/schemas/ActionDefinition'
+                  $ref: '#/components/schemas/ActionDefinition'
   /launchaction:
     post:
       summary: Run an action or check its status
@@ -38,7 +38,7 @@ paths:
           content:
             application/json:
               schema:
-                : '#/components/schemas/ActionResult'
+               $ref: '#/components/schemas/ActionResult'
         '202':
           description: The action has been started but is still in progress
         '400':
@@ -51,7 +51,7 @@ paths:
         content:
           application/json:
             schema:
-              : '#/components/schemas/ActionRequest'
+              $ref: '#/components/schemas/ActionRequest'
         description: >-
           Causes an action to be launched. The status code indicates whether the
           job has successfully finished running. If completed successfully, an

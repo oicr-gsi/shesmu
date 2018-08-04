@@ -90,6 +90,7 @@ public abstract class CachedVariablesSource<T> implements InputRepository<T> {
 			try {
 				Thread.sleep(refreshInterval * 60_000);
 			} catch (final InterruptedException e) {
+				// If interrupted, either shutdown or run early.
 			}
 		}
 	}

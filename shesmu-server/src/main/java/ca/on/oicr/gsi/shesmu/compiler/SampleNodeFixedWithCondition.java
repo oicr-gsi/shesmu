@@ -104,7 +104,6 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 				new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, renderer.root().classVisitor),
 				capturedVariables.length, streamType,
 				JavaStreamBuilder.parameters(capturedVariables, name, type.asmType()));
-		;
 		conditionRenderer.methodGen().visitCode();
 		conditionExpression.render(conditionRenderer);
 		conditionRenderer.methodGen().returnValue();

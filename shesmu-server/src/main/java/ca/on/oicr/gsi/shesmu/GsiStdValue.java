@@ -80,6 +80,7 @@ public final class GsiStdValue {
 		return donor;
 	}
 
+	@SuppressWarnings("checkstyle:CyclomaticComplexity")
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -270,6 +271,7 @@ public final class GsiStdValue {
 		return group_id;
 	}
 
+	@SuppressWarnings("checkstyle:CyclomaticComplexity")
 	@Override
 	public int hashCode() {
 		final int prime = 31;

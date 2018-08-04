@@ -1,14 +1,14 @@
-dist : trusty
+dist: trusty
 language: java
 jdk:
   - oraclejdk8
   - oraclejdk9
   - oraclejdk10
 sudo: required
-env:  
+env:
   global:
     - MAVEN_SETTINGS="${TRAVIS_BUILD_DIR}/gsi-config"
-    - MAVEN_OPTS="-Xms1g -Xmx2g" 
+    - MAVEN_OPTS="-Xms1g -Xmx2g"
 
 git:
   depth: 3
