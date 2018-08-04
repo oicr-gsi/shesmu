@@ -85,12 +85,14 @@ public final class JavaStreamBuilder {
 	private static final Method METHOD_STREAM__COLLECT = new Method("collect", A_OBJECT_TYPE,
 			new Type[] { A_COLLECTOR_TYPE });
 	private static final Method METHOD_STREAM__COUNT = new Method("count", Type.LONG_TYPE, new Type[] {});
+	private static final Method METHOD_STREAM__DISTINCT = new Method("distinct", A_STREAM_TYPE,
+			new Type[] {  });
 	private static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
 	private static final Method METHOD_STREAM__FIND_FIRST = new Method("findFirst", A_OPTIONAL_TYPE, new Type[] {});
+
 	private static final Method METHOD_STREAM__FLAT_MAP = new Method("flatMap", A_STREAM_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
-
 	private static final Method METHOD_STREAM__LIMIT = new Method("limit", A_STREAM_TYPE,
 			new Type[] { Type.LONG_TYPE });
 	private static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
@@ -193,6 +195,12 @@ public final class JavaStreamBuilder {
 	public void count() {
 		finish();
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COUNT);
+	}
+
+	public void distinct() {
+		steps.add(renderer -> {
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__DISTINCT);
+		});
 	}
 
 	public final Renderer filter(String name, LoadableValue... capturedVariables) {
@@ -419,6 +427,7 @@ public final class JavaStreamBuilder {
 	public Renderer renderer() {
 		return renderer;
 	}
+
 
 	public void reverse() {
 		steps.add(renderer -> {
