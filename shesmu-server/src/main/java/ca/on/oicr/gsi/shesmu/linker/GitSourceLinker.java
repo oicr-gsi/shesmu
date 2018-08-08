@@ -42,8 +42,9 @@ public class GitSourceLinker implements SourceLocationLinker {
 
 		public String url(SourceLocation location) {
 			return config.map(c -> {
-				if (location.fileName().startsWith(c.getPrefix())) {
-					return c.getType().format(c.getUrl(), location.fileName().substring(c.getPrefix().length()),
+				final String prefix = c.getPrefix() + (c.getPrefix().endsWith("/") ? "" : "/");
+				if (location.fileName().startsWith(prefix)) {
+					return c.getType().format(c.getUrl(), location.fileName().substring(prefix.length()),
 							location.line());
 				}
 				return null;
