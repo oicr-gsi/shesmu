@@ -39,6 +39,7 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 	public void render(Renderer renderer) {
 		source.render(renderer);
 		final JavaStreamBuilder builder = renderer.buildStream(initialType);
+		builder.startFromSet();
 		transforms.forEach(t -> t.render(builder));
 		collector.render(builder);
 
