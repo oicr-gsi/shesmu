@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 
 import java.lang.invoke.LambdaMetafactory;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -137,7 +136,7 @@ public final class JavaStreamBuilder {
 
 	private final Renderer renderer;
 
-	protected final List<Consumer<Renderer>> steps = new ArrayList<>();
+	int steps;
 
 	private final int streamId;
 
@@ -170,24 +169,22 @@ public final class JavaStreamBuilder {
 	private final Renderer comparator(String name, Imyhat targetType, LoadableValue... capturedVariables) {
 		final Imyhat sortType = currentType;
 
-		final Method method = new Method(String.format("chain_%d_%d_compare", streamId, steps.size()),
+		final Method method = new Method(String.format("chain_%d_%d_compare", streamId, steps++),
 				targetType.boxedAsmType(), Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type),
 						Stream.of(streamType, sortType.asmType())).toArray(Type[]::new));
-		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.loadStream();
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("apply",
-					Type.getMethodDescriptor(A_FUNCTION_TYPE, Stream
-							.concat(Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
-							.toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(targetType.boxedAsmType(), sortType.boxedAsmType()));
-			renderer.invokeInterfaceStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
-		});
+		renderer.methodGen().loadThis();
+		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+		renderer.loadStream();
+		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
+				method.getDescriptor(), false);
+		renderer.methodGen().invokeDynamic("apply",
+				Type.getMethodDescriptor(A_FUNCTION_TYPE, Stream
+						.concat(Stream.concat(Stream.of(owner.selfType()),
+								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
+						.toArray(Type[]::new)),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(targetType.boxedAsmType(), sortType.boxedAsmType()));
+		renderer.invokeInterfaceStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, sortType.asmType()));
 	}
@@ -205,32 +202,27 @@ public final class JavaStreamBuilder {
 
 	public final Renderer filter(String name, LoadableValue... capturedVariables) {
 		final Imyhat filterType = currentType;
-		final Method method = new Method(String.format("chain_%d_%d_filter", streamId, steps.size()), BOOLEAN_TYPE,
+		final Method method = new Method(String.format("chain_%d_%d_filter", streamId, steps++), BOOLEAN_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type),
 						Stream.of(streamType, filterType.asmType())).toArray(Type[]::new));
-		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.loadStream();
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("test",
-					Type.getMethodDescriptor(A_PREDICATE_TYPE, Stream
-							.concat(Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
-							.toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(BOOLEAN_TYPE, filterType.boxedAsmType()));
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
-		});
+		renderer.methodGen().loadThis();
+		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+		renderer.loadStream();
+		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
+				method.getDescriptor(), false);
+		renderer.methodGen().invokeDynamic("test",
+				Type.getMethodDescriptor(A_PREDICATE_TYPE, Stream
+						.concat(Stream.concat(Stream.of(owner.selfType()),
+								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
+						.toArray(Type[]::new)),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(BOOLEAN_TYPE, filterType.boxedAsmType()));
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, filterType.asmType()));
 	}
 
 	public final void finish() {
-		renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
-
-		steps.forEach(step -> step.accept(renderer));
 	}
 
 	public Renderer first(Imyhat targetType, LoadableValue... capturedVariables) {
@@ -243,57 +235,51 @@ public final class JavaStreamBuilder {
 		final Imyhat oldType = currentType;
 		currentType = newType;
 
-		final Method method = new Method(String.format("chain_%d_%d_flatten", streamId, steps.size()), A_STREAM_TYPE,
+		final Method method = new Method(String.format("chain_%d_%d_flatten", streamId, steps++), A_STREAM_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type),
 						Stream.of(streamType, oldType.asmType())).toArray(Type[]::new));
-		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.loadStream();
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("apply",
-					Type.getMethodDescriptor(A_FUNCTION_TYPE, Stream
-							.concat(Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
-							.toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(A_STREAM_TYPE, oldType.boxedAsmType()));
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLAT_MAP);
-		});
+		renderer.methodGen().loadThis();
+		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+		renderer.loadStream();
+		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
+				method.getDescriptor(), false);
+		renderer.methodGen().invokeDynamic("apply",
+				Type.getMethodDescriptor(A_FUNCTION_TYPE, Stream
+						.concat(Stream.concat(Stream.of(owner.selfType()),
+								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
+						.toArray(Type[]::new)),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(A_STREAM_TYPE, oldType.boxedAsmType()));
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLAT_MAP);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType.asmType()));
 	}
 
 	public void limit(Consumer<Renderer> limitProducer) {
-		steps.add(renderer -> {
-			limitProducer.accept(renderer);
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__LIMIT);
-		});
+		limitProducer.accept(renderer);
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__LIMIT);
 	}
 
 	public final Renderer map(String name, Imyhat newType, LoadableValue... capturedVariables) {
 		final Imyhat oldType = currentType;
 		currentType = newType;
 
-		final Method method = new Method(String.format("chain_%d_%d_map", streamId, steps.size()), newType.asmType(),
+		final Method method = new Method(String.format("chain_%d_%d_map", streamId, steps++), newType.asmType(),
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type),
 						Stream.of(streamType, oldType.asmType())).toArray(Type[]::new));
-		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.loadStream();
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("apply",
-					Type.getMethodDescriptor(A_FUNCTION_TYPE, Stream
-							.concat(Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
-							.toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(newType.boxedAsmType(), oldType.boxedAsmType()));
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
-		});
+		renderer.methodGen().loadThis();
+		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+		renderer.loadStream();
+		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
+				method.getDescriptor(), false);
+		renderer.methodGen().invokeDynamic("apply",
+				Type.getMethodDescriptor(A_FUNCTION_TYPE, Stream
+						.concat(Stream.concat(Stream.of(owner.selfType()),
+								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
+						.toArray(Type[]::new)),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
+				Type.getMethodType(newType.boxedAsmType(), oldType.boxedAsmType()));
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
 				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType.asmType()));
 	}
@@ -430,41 +416,37 @@ public final class JavaStreamBuilder {
 
 
 	public void reverse() {
-		steps.add(renderer -> {
-			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
-		});
+		renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
 	}
 
 	public void skip(Consumer<Renderer> limitProducer) {
-		steps.add(renderer -> {
-			limitProducer.accept(renderer);
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SKIP);
-		});
+		limitProducer.accept(renderer);
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SKIP);
 	}
 
 	public final Renderer sort(String name, Imyhat targetType, LoadableValue... capturedVariables) {
 		final Renderer sortMethod = comparator(name, targetType, capturedVariables);
-		steps.add(renderer -> {
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
-		});
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
 		return sortMethod;
 	}
 
+	public void startFromSet() {
+		renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
+	}
+
 	public final void subsample(List<RenderSubsampler> renderers) {
-		final String prefix = String.format("chain_%d_%d_", streamId, steps.size());
-		steps.add(renderer -> {
-			final int local = renderer.methodGen().newLocal(A_SUBSAMPLER_TYPE);
-			renderer.methodGen().newInstance(A_START_TYPE);
-			renderer.methodGen().dup();
-			renderer.methodGen().invokeConstructor(A_START_TYPE, DEFAULT_CTOR);
-			renderer.methodGen().storeLocal(local);
-			int index = 0;
-			for (final RenderSubsampler subsample : renderers) {
-				subsample.render(renderer, local, prefix, index++, renderer.streamType());
-			}
-			renderer.methodGen().loadLocal(local);
-			renderer.methodGen().swap();
-			renderer.methodGen().invokeVirtual(A_SUBSAMPLER_TYPE, METHOD_SUBSAMPLER__SUBSAMPLE);
-		});
+		final String prefix = String.format("chain_%d_%d_", streamId, steps++);
+		final int local = renderer.methodGen().newLocal(A_SUBSAMPLER_TYPE);
+		renderer.methodGen().newInstance(A_START_TYPE);
+		renderer.methodGen().dup();
+		renderer.methodGen().invokeConstructor(A_START_TYPE, DEFAULT_CTOR);
+		renderer.methodGen().storeLocal(local);
+		int index = 0;
+		for (final RenderSubsampler subsample : renderers) {
+			subsample.render(renderer, local, prefix, index++, renderer.streamType());
+		}
+		renderer.methodGen().loadLocal(local);
+		renderer.methodGen().swap();
+		renderer.methodGen().invokeVirtual(A_SUBSAMPLER_TYPE, METHOD_SUBSAMPLER__SUBSAMPLE);
 	}
 }

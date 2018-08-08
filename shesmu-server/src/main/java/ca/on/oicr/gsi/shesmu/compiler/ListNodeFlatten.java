@@ -32,6 +32,7 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 	@Override
 	protected void finishMethod(Renderer renderer) {
 		final JavaStreamBuilder builder = renderer.buildStream(initialType);
+		builder.startFromSet();
 		transforms.forEach(t -> t.render(builder));
 		builder.finish();
 	}
