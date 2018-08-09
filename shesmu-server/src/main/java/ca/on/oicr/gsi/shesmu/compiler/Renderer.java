@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,19 +16,28 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 /**
  * Helper class to hold state and context for bytecode generation.
  */
 public class Renderer {
+
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+	private static final Type A_PATTERN_TYPE = Type.getType(Pattern.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Handle HANDLER_IMYHAT = new Handle(Opcodes.H_INVOKESTATIC, A_IMYHAT_TYPE.getInternalName(),
 			"bootstrap", Type.getMethodDescriptor(Type.getType(CallSite.class),
 					Type.getType(MethodHandles.Lookup.class), A_STRING_TYPE, Type.getType(MethodType.class)),
 			false);
-
 	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
+	private static final String METHOD_REGEX = Type.getMethodDescriptor(A_PATTERN_TYPE);
+
+	private static final Handle REGEX_BSM = new Handle(Opcodes.H_INVOKESTATIC,
+			Type.getType(RuntimeSupport.class).getInternalName(), "regexBootstrap",
+			Type.getMethodDescriptor(Type.getType(CallSite.class), Type.getType(MethodHandles.Lookup.class),
+					Type.getType(String.class), Type.getType(MethodType.class), Type.getType(String.class)),
+			false);
 
 	public static void loadImyhatInMethod(GeneratorAdapter methodGen, String signature) {
 		methodGen.invokeDynamic(signature, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
@@ -103,6 +113,10 @@ public class Renderer {
 	 */
 	public GeneratorAdapter methodGen() {
 		return methodGen;
+	}
+
+	public void regex(String regex) {
+		methodGen.invokeDynamic("regex", METHOD_REGEX, REGEX_BSM, regex);
 	}
 
 	/**

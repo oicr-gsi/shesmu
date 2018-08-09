@@ -1,0 +1,4 @@
+Input gsi_std;
+
+Run ok
+ With { ok = (For x From 0 To 5: Count) == 5 }

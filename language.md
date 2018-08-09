@@ -253,6 +253,19 @@ Takes the elements in a list and process them using the supplied modifications
 and then computes a result using the collector. The modifications and
 collectors are described below.
 
+- `For` _var_ `From` _startexpr_` To `_endexpr_`:` _modifications..._ _collector_
+
+Iterates over the range of number from _startexpr_, inclusive, to _endexpr_,
+exclusive, and process them using the supplied modifications and then computes
+a result using the collector. The modifications and collectors are described
+below.
+
+- `For` _var_ `Splitting` _expr_` By /`_regex_`/:` _modifications..._ _collector_
+
+Takes the string _expr_ and splits it into chunks delimited by _regex_ and then
+processes them using the supplied modifications and then computes a result
+using the collector. The modifications and collectors are described below.
+
 ### Logical Disjunction
 - _expr_ `||` _expr_
 
@@ -450,10 +463,24 @@ will be named _x_ in the downstream operations.
 #### Flatten
 - `Flatten (` _x_ `In` _expr_ _modifications_ `)`
 
-For each item in the list _expr_ computes a matching list and the items in this
+For each item in the list, _expr_ computes a matching list and the items in this
 list are presented to the downstream operations. The variable name available in
 the downstream operations is _x_. Additional list modification can also be
 applied.
+
+- `Flatten (` _x_ `From` _startexpr_` To `_endexpr_ _modifications..._`)`
+
+For each item in the list, iterates over the range of number from _startexpr_,
+inclusive, to _endexpr_, exclusive, are presented to the downstream operations.
+The variable name available in the downstream operations is _x_. Additional
+list modification can also be applied.
+
+- `Flatten (` _x_ `Splitting` _expr_ `By /`_regex_`/` _modifications_ `)`
+
+For each item in the list, _expr_ computes a string that is broken into chunks
+delimited by _regex_ and these chunks are presented to downstream operations.
+The variable name available in the downstream operations is _x_. Additional
+list modification can also be applied.
 
 #### Filter
 - `Where` _expr_

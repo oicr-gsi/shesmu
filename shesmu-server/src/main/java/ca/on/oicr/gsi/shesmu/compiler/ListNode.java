@@ -28,7 +28,7 @@ public abstract class ListNode {
 		DISPATCH.addKeyword("Let", handler(ListNodeMap::new, p -> p.symbol("=")));
 		DISPATCH.addKeyword("Flatten", (p, o) -> {
 			final AtomicReference<String> name = new AtomicReference<>();
-			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final AtomicReference<SourceNode> source = new AtomicReference<>();
 			final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
 			final Parser result = p//
 					.whitespace()//
@@ -36,14 +36,12 @@ public abstract class ListNode {
 					.whitespace()//
 					.identifier(name::set)//
 					.whitespace()//
-					.keyword("In")//
-					.whitespace()//
-					.then(ExpressionNode::parse, expression::set)//
+					.then(SourceNode::parse, source::set)//
 					.list(transforms::set, ListNode::parse)//
 					.symbol(")")//
 					.whitespace();
 			if (result.isGood()) {
-				o.accept(new ListNodeFlatten(p.line(), p.column(), name.get(), expression.get(), transforms.get()));
+				o.accept(new ListNodeFlatten(p.line(), p.column(), name.get(), source.get(), transforms.get()));
 			}
 			return result;
 		});

@@ -79,12 +79,10 @@ public final class JavaStreamBuilder {
 
 	private static final Method METHOD_OPTIONAL__OR_ELSE_GET = new Method("orElseGet", A_OBJECT_TYPE,
 			new Type[] { A_SUPPLIER_TYPE });
-	private static final Method METHOD_SET__STREAM = new Method("stream", A_STREAM_TYPE, new Type[] {});
 	private static final Method METHOD_STREAM__COLLECT = new Method("collect", A_OBJECT_TYPE,
 			new Type[] { A_COLLECTOR_TYPE });
 	private static final Method METHOD_STREAM__COUNT = new Method("count", Type.LONG_TYPE, new Type[] {});
-	private static final Method METHOD_STREAM__DISTINCT = new Method("distinct", A_STREAM_TYPE,
-			new Type[] {  });
+	private static final Method METHOD_STREAM__DISTINCT = new Method("distinct", A_STREAM_TYPE, new Type[] {});
 	private static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
 	private static final Method METHOD_STREAM__FIND_FIRST = new Method("findFirst", A_OPTIONAL_TYPE, new Type[] {});
@@ -195,9 +193,7 @@ public final class JavaStreamBuilder {
 	}
 
 	public void distinct() {
-		steps.add(renderer -> {
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__DISTINCT);
-		});
+		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__DISTINCT);
 	}
 
 	public final Renderer filter(String name, LoadableValue... capturedVariables) {
@@ -414,7 +410,6 @@ public final class JavaStreamBuilder {
 		return renderer;
 	}
 
-
 	public void reverse() {
 		renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
 	}
@@ -428,10 +423,6 @@ public final class JavaStreamBuilder {
 		final Renderer sortMethod = comparator(name, targetType, capturedVariables);
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
 		return sortMethod;
-	}
-
-	public void startFromSet() {
-		renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
 	}
 
 	public final void subsample(List<RenderSubsampler> renderers) {

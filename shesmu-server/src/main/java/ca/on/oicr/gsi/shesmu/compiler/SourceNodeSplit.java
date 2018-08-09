@@ -3,34 +3,30 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 
-public class ExpressionNodeRegex extends ExpressionNode {
+public class SourceNodeSplit extends SourceNode {
 
-	private static final Type A_MATCHER_TYPE = Type.getType(Matcher.class);
 	private static final Type A_PATTERN_TYPE = Type.getType(Pattern.class);
-
-	private static final Method METHOD_MATCHER__MATCHES = new Method("matches", Type.BOOLEAN_TYPE, new Type[] {});
-
-	private static final Method METHOD_PATTERN__MATCHER = new Method("matcher", A_MATCHER_TYPE,
+	private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
+	private static final Method METHOD_PATTERN__SPLIT_AS_STREAM = new Method("splitAsStream", A_STREAM_TYPE,
 			new Type[] { Type.getType(CharSequence.class) });
-
 	private final ExpressionNode expression;
 
 	private final String regex;
 
-	public ExpressionNodeRegex(int line, int column, ExpressionNode expression, String regex) {
+	public SourceNodeSplit(int line, int column, String regex, ExpressionNode expression) {
 		super(line, column);
-		this.expression = expression;
 		this.regex = regex;
-
+		this.expression = expression;
 	}
 
 	@Override
@@ -39,11 +35,16 @@ public class ExpressionNodeRegex extends ExpressionNode {
 	}
 
 	@Override
-	public void render(Renderer renderer) {
+	public Ordering ordering() {
+		return Ordering.REQESTED;
+	}
+
+	@Override
+	public JavaStreamBuilder render(Renderer renderer) {
 		renderer.regex(regex);
 		expression.render(renderer);
-		renderer.methodGen().invokeVirtual(A_PATTERN_TYPE, METHOD_PATTERN__MATCHER);
-		renderer.methodGen().invokeVirtual(A_MATCHER_TYPE, METHOD_MATCHER__MATCHES);
+		renderer.methodGen().invokeVirtual(A_PATTERN_TYPE, METHOD_PATTERN__SPLIT_AS_STREAM);
+		return renderer.buildStream(Imyhat.STRING);
 	}
 
 	@Override
@@ -58,20 +59,20 @@ public class ExpressionNodeRegex extends ExpressionNode {
 	}
 
 	@Override
-	public Imyhat type() {
-		return Imyhat.BOOLEAN;
+	public Imyhat streamType() {
+		return Imyhat.STRING;
 	}
 
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
-		final boolean ok = expression.typeCheck(errorHandler);
-		if (ok) {
-			if (expression.type().isSame(Imyhat.STRING)) {
-				return true;
-			}
-			typeError(Imyhat.STRING.name(), expression.type(), errorHandler);
+		if (!expression.typeCheck(errorHandler)) {
 			return false;
+
 		}
-		return ok;
+		if (expression.type().isSame(Imyhat.STRING)) {
+			return true;
+		}
+		expression.typeError(Imyhat.STRING.name(), expression.type(), errorHandler);
+		return false;
 	}
 }

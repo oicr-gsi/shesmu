@@ -10,17 +10,16 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 
-public class ExpressionNodeListTransform extends ExpressionNode {
+public class ExpressionNodeFor extends ExpressionNode {
 
 	private final CollectNode collector;
-	private Imyhat initialType;
 	private final String name;
 
-	private final ExpressionNode source;
+	private final SourceNode source;
 	private final List<ListNode> transforms;
 
-	public ExpressionNodeListTransform(int line, int column, String name, ExpressionNode source,
-			List<ListNode> transforms, CollectNode collector) {
+	public ExpressionNodeFor(int line, int column, String name, SourceNode source, List<ListNode> transforms,
+			CollectNode collector) {
 		super(line, column);
 		this.name = name;
 		this.source = source;
@@ -37,12 +36,9 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 
 	@Override
 	public void render(Renderer renderer) {
-		source.render(renderer);
-		final JavaStreamBuilder builder = renderer.buildStream(initialType);
-		builder.startFromSet();
+		final JavaStreamBuilder builder = source.render(renderer);
 		transforms.forEach(t -> t.render(builder));
 		collector.render(builder);
-
 	}
 
 	@Override
@@ -76,26 +72,19 @@ public class ExpressionNodeListTransform extends ExpressionNode {
 		if (!source.typeCheck(errorHandler)) {
 			return false;
 		}
-		final Imyhat type = source.type();
-		if (type instanceof Imyhat.ListImyhat) {
-			Ordering ordering = Ordering.RANDOM;
-			Imyhat incoming = ((Imyhat.ListImyhat) type).inner();
-			initialType = incoming;
-			for (final ListNode transform : transforms) {
-				if (!transform.typeCheck(incoming, errorHandler)) {
-					return false;
-				}
-				incoming = transform.nextType();
-				ordering = transform.order(ordering, errorHandler);
+		Ordering ordering = source.ordering();
+		Imyhat incoming = source.streamType();
+		for (final ListNode transform : transforms) {
+			if (!transform.typeCheck(incoming, errorHandler)) {
+				return false;
 			}
-			if (collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
-				return collector.orderingCheck(ordering, errorHandler);
-			}
-			return false;
-		} else {
-			typeError("list", type, errorHandler);
-			return false;
+			incoming = transform.nextType();
+			ordering = transform.order(ordering, errorHandler);
 		}
+		if (collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
+			return collector.orderingCheck(ordering, errorHandler);
+		}
+		return false;
 	}
 
 }
