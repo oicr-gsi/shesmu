@@ -464,6 +464,13 @@ public final class ActionProcessor {
 	public ActionProcessor() {
 		super();
 		Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+		ShesmuIntrospectionProcessorRepository.supplier = () -> actions.entrySet().stream()//
+				.map(entry -> new ShesmuIntrospectionValue(entry.getKey(), //
+						entry.getValue().lastStateTransition, //
+						entry.getValue().lastChecked, //
+						entry.getValue().lastAdded, //
+						entry.getValue().lastState, //
+						entry.getValue().locations));
 	};
 
 	/**
@@ -682,7 +689,7 @@ public final class ActionProcessor {
 			try {
 				Thread.sleep(60_000);
 			} catch (final InterruptedException e) {
-        // Either interrupted to stop or just going to process early
+				// Either interrupted to stop or just going to process early
 			}
 		}
 	}
