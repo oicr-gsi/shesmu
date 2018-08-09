@@ -85,6 +85,7 @@ public class Query {
 			@Type(value = FilterChecked.class, name = "checked"), //
 			@Type(value = FilterSourceFile.class, name = "sourcefile"), //
 			@Type(value = FilterSourceLocation.class, name = "sourcelocation"), //
+			@Type(value = FilterStatusChanged.class, name = "statuschanged"), //
 			@Type(value = FilterType.class, name = "type") })
 	public static abstract class FilterJson {
 		public abstract Filter convert();
@@ -141,6 +142,35 @@ public class Query {
 		public void setState(ActionState[] states) {
 			this.states = states;
 		}
+	}
+
+	public static class FilterStatusChanged extends FilterJson {
+		private Long end;
+
+		private Long start;
+
+		@Override
+		public Filter convert() {
+			return ActionProcessor.statusChanged(Optional.ofNullable(start).map(Instant::ofEpochSecond),
+					Optional.ofNullable(end).map(Instant::ofEpochMilli));
+		}
+
+		public Long getEnd() {
+			return end;
+		}
+
+		public Long getStart() {
+			return start;
+		}
+
+		public void setEnd(Long end) {
+			this.end = end;
+		}
+
+		public void setStart(Long start) {
+			this.start = start;
+		}
+
 	}
 
 	public static class FilterType extends FilterJson {
