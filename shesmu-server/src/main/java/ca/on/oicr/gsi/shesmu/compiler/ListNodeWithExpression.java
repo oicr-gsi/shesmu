@@ -84,7 +84,7 @@ public abstract class ListNodeWithExpression extends ListNode {
 		final Set<String> freeVariables = new HashSet<>();
 		collectFreeVariables(freeVariables);
 		final Renderer method = makeMethod(builder, builder.renderer().allValues()
-				.filter(v -> freeVariables.contains(v.name()) && !name.equals(v.name())).toArray(LoadableValue[]::new));
+				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 
 		method.methodGen().visitCode();
 		expression.render(method);
