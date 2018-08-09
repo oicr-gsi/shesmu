@@ -65,9 +65,10 @@ public class ListNodeFlatten extends ListNodeWithExpression {
 
 	@Override
 	protected boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler) {
+		final NameDefinitions innerDefs = defs.bind(parameter);
 
 		final Optional<String> nextName = transforms.stream().reduce(Optional.of(childName),
-				(n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)), (a, b) -> {
+				(n, t) -> n.flatMap(name -> t.resolve(name, innerDefs, errorHandler)), (a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		nextName.ifPresent(n -> this.nextName = n);
