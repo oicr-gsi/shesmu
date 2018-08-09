@@ -39,7 +39,7 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<Integer> INT_SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION = new Parser.ParseDispatch<>();
-	private static final Pattern REGEX = Pattern.compile("^/(([^/\n]|\\\\/)*)/");
+	public static final Pattern REGEX = Pattern.compile("^/(([^/\n]|\\\\/)*)/");
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY = new Parser.ParseDispatch<>();
@@ -258,15 +258,13 @@ public abstract class ExpressionNode {
 		final Parser forParser = input.keyword("For");
 		if (forParser.isGood()) {
 			final AtomicReference<String> name = new AtomicReference<>();
-			final AtomicReference<ExpressionNode> source = new AtomicReference<>();
+			final AtomicReference<SourceNode> source = new AtomicReference<>();
 			final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
 			final AtomicReference<CollectNode> collector = new AtomicReference<>();
 			final Parser result = forParser.whitespace()//
 					.identifier(name::set)//
 					.whitespace()//
-					.keyword("In")//
-					.whitespace()//
-					.then(ExpressionNode::parse, source::set)//
+					.then(SourceNode::parse, source::set)//
 					.whitespace()//
 					.symbol(":")//
 					.whitespace()//
@@ -274,7 +272,7 @@ public abstract class ExpressionNode {
 					.then(CollectNode::parse, collector::set)//
 					.whitespace();
 			if (result.isGood()) {
-				output.accept(new ExpressionNodeListTransform(input.line(), input.column(), name.get(), source.get(),
+				output.accept(new ExpressionNodeFor(input.line(), input.column(), name.get(), source.get(),
 						transforms.get(), collector.get()));
 			}
 			return result;
