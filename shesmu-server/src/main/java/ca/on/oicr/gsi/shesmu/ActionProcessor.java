@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -74,6 +75,7 @@ public final class ActionProcessor {
 		Instant lastAdded = Instant.now();
 		Instant lastChecked = Instant.EPOCH;
 		ActionState lastState = ActionState.UNKNOWN;
+		Instant lastStateTransition = Instant.now();
 		final Set<SourceLocation> locations = new HashSet<>();
 		boolean thrown;
 	}
@@ -173,6 +175,20 @@ public final class ActionProcessor {
 
 	};
 
+	private static final Bin<Instant> STATUS_CHANGED = new InstantBin() {
+
+		@Override
+		public Instant extract(Entry<Action, Information> input) {
+			return input.getValue().lastStateTransition;
+		}
+
+		@Override
+		public String name() {
+			return "statuschanged";
+		}
+
+	};
+
 	private static final Bin<Instant> CHECKED = new InstantBin() {
 
 		@Override
@@ -189,8 +205,13 @@ public final class ActionProcessor {
 
 	private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
 
+	private static final Gauge lastAdd = Gauge
+			.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
 	private static final Gauge lastRun = Gauge
 			.build("shesmu_action_perform_last_time", "The last time the actions were processed.").register();
+	private static final Gauge oldest = Gauge
+			.build("shesmu_action_oldest_time", "The oldest action in a particular state.").labelNames("state")
+			.register();
 
 	private static final Property<String> SOURCE_FILE = new Property<String>() {
 
@@ -329,6 +350,25 @@ public final class ActionProcessor {
 	}
 
 	/**
+	 * Check that an action's last status change was in the time range provided
+	 *
+	 * @param start
+	 *            the exclusive cut-off timestamp
+	 * @param end
+	 *            the exclusive cut-off timestamp
+	 */
+	public static Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
+		return new InstantFilter(start, end) {
+
+			@Override
+			protected Instant get(Information info) {
+				return info.lastStateTransition;
+			}
+
+		};
+	}
+
+	/**
 	 * Checks that an action was generated in a particular source location
 	 *
 	 * @param locations
@@ -446,6 +486,7 @@ public final class ActionProcessor {
 			isDuplicate = true;
 		}
 		information.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochSecond(time)));
+		lastAdd.setToCurrentTime();
 		return isDuplicate;
 	}
 
@@ -545,6 +586,7 @@ public final class ActionProcessor {
 
 		binSummary(table, ADDED, actions);
 		binSummary(table, CHECKED, actions);
+		binSummary(table, STATUS_CHANGED, actions);
 
 		crosstab(array, actions, ACTION_STATE, TYPE);
 		crosstab(array, actions, ACTION_STATE, SOURCE_FILE);
@@ -553,6 +595,7 @@ public final class ActionProcessor {
 		crosstab(array, actions, TYPE, SOURCE_LOCATION);
 		histogram(array, 10, actions, ADDED);
 		histogram(array, 10, actions, CHECKED);
+		histogram(array, 10, actions, STATUS_CHANGED);
 		return array;
 	}
 
@@ -589,6 +632,7 @@ public final class ActionProcessor {
 			node.put("state", entry.getValue().lastState.name());
 			node.put("lastAdded", entry.getValue().lastAdded.getEpochSecond());
 			node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
+			node.put("lastStatusChange", entry.getValue().lastStateTransition.getEpochSecond());
 			node.put("type", entry.getKey().type());
 			final ArrayNode locations = node.putArray("locations");
 			entry.getValue().locations.stream().sorted().forEach(location -> location.toJson(locations));
@@ -616,12 +660,25 @@ public final class ActionProcessor {
 							e.printStackTrace();
 						}
 						if (oldState != entry.getValue().lastState) {
+							entry.getValue().lastStateTransition = Instant.now();
 							stateCount.labels(oldState.name()).dec();
 							stateCount.labels(entry.getValue().lastState.name()).inc();
 						}
 						actionThrows.inc((entry.getValue().thrown ? 0 : 1) - (oldThrown ? 0 : 1));
 					});
 			lastRun.setToCurrentTime();
+			final Map<ActionState, List<Information>> lastTransitions = actions.values().stream()//
+					.collect(Collectors.groupingBy((Information i) -> i.lastState));
+			for (final ActionState state : ActionState.values()) {
+				final long time = lastTransitions.getOrDefault(state, Collections.emptyList()).stream()//
+						.map(i -> i.lastStateTransition)//
+						.sorted()//
+						.findFirst()//
+						.orElse(Instant.now())//
+						.getEpochSecond();
+				oldest.labels(state.name()).set(time);
+			}
+
 			try {
 				Thread.sleep(60_000);
 			} catch (final InterruptedException e) {
