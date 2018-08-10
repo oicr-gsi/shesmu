@@ -251,6 +251,7 @@ public final class Server {
 			try {
 				query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
 			} catch (final Exception e) {
+				e.printStackTrace();
 				t.sendResponseHeaders(400, 0);
 				try (OutputStream os = t.getResponseBody()) {
 				}
