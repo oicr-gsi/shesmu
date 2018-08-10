@@ -59,6 +59,7 @@ background-color:#f5f5f5;
 }
 
 .load{
+white-space:nowrap;
 font-weight:700;
 color:#888;
 margin-left:0.5em;

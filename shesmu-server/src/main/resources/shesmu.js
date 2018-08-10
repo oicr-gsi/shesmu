@@ -1,4 +1,4 @@
-import {actionRender} from "./actions.js";
+import { actionRender } from "./actions.js";
 
 export function fetchConstant(name, element) {
   element.className = "busy";
@@ -25,6 +25,8 @@ export function fetchConstant(name, element) {
         element.nextElementSibling.innerText = data.error;
         element.nextElementSibling.className = "error";
       }
+      element.innerText = "▶ Get";
+      element.className = "load";
     })
     .catch(function(error) {
       element.nextElementSibling.innerText = error.message;
@@ -33,8 +35,6 @@ export function fetchConstant(name, element) {
 }
 
 export function runFunction(name, element, parameterParser) {
-  element.className = "busy";
-  element.innerText = "Running...";
   let parameters = [];
   let paramsOk = true;
   for (let parameter = 0; parameter < parameterParser.length; parameter++) {
@@ -43,7 +43,7 @@ export function runFunction(name, element, parameterParser) {
       parameterParser[parameter],
       x => parameters.push(x),
       message => {
-        element.nextElementSibling.innerText = `Argument ${parameter}: ${message} (retry)`;
+        element.nextElementSibling.innerText = `Argument ${parameter}: ${message}`;
         element.nextElementSibling.className = "error";
       }
     );
@@ -51,6 +51,10 @@ export function runFunction(name, element, parameterParser) {
   if (!paramsOk) {
     return;
   }
+  element.className = "busy";
+  element.innerText = "Running...";
+  element.nextElementSibling.innerText = "";
+  element.nextElementSibling.className = "";
   fetch("/function", {
     body: JSON.stringify({ name: name, args: parameters }),
     method: "POST"
