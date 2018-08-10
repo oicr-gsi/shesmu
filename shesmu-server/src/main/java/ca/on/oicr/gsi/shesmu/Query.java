@@ -183,6 +183,38 @@ public class Query {
 		private Integer line;
 		private Long time;
 
+		public Integer getColumn() {
+			return column;
+		}
+
+		public String getFile() {
+			return file;
+		}
+
+		public Integer getLine() {
+			return line;
+		}
+
+		public Long getTime() {
+			return time;
+		}
+
+		public void setColumn(Integer column) {
+			this.column = column;
+		}
+
+		public void setFile(String file) {
+			this.file = file;
+		}
+
+		public void setLine(Integer line) {
+			this.line = line;
+		}
+
+		public void setTime(Long time) {
+			this.time = time;
+		}
+
 		@Override
 		public boolean test(SourceLocation location) {
 			if (file == null || !file.equals(location.fileName())) {
