@@ -199,7 +199,7 @@ the `Input` instruction. This class must be annotated with
 1. Create new classes that provide data which implement _R_ and are annotated
 with `@MetaInfServices(`_R_`)`.
 
-#### Static JSON Repository
+#### Static and Remote JSON Repositories
 This is an optional step. It allows reading input data from a live Shesmu
 instance, storing it as a JSON file, then using that on another instance.
 
@@ -207,6 +207,9 @@ instance, storing it as a JSON file, then using that on another instance.
 1. Create a no-argument constructor that calls `super("`_name_`");`.
 1. Annotate _J_ with `@MetaInfServices(`_R_`.class)`.
 1. Implement the `convert` method to generate the correct object from the JSON blob.
+
+Now `.`_name_ files will be interpreted as files containing data and
+`.`_name_`-remote` will allow access to a remote endpoint serving this data.
 
 ### Constants
 A constant is a value that can be generated with no input. It need not actually

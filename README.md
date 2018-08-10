@@ -127,6 +127,9 @@ are available:
   to the file containing the provenance settings.
 - JSON files. Create a JSON file ending in `.gsi_std` containing an array of
   objects. This can be copied from a running Shesmu instance at `/input/gsi_std`.
+- JSON URLs. Create a JSON file ending in `.gsi_std-remote` containing an
+  object `{"url": ..., "ttl": ...}` where _url_ is the URL to download the data
+  and _ttl_ is the number of second to cache the data for.
 
 ### Constant Inputs
 Constant values can also be included in a Shesmu script. The following are available:
