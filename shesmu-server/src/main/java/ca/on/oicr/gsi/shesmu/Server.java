@@ -540,7 +540,7 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction} from 'shesmu.js';</script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"actiondash\">Actions</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction;</script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"actiondash\">Actions</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
 	}
 
 	private void writeRow(PrintStream writer, String key, String value) {
