@@ -3,10 +3,10 @@ package ca.on.oicr.gsi.shesmu.constants;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -68,7 +68,7 @@ public class StringSetFileConstants implements ConstantSource {
 		@Override
 		public Optional<Integer> update() {
 			try {
-				constants = new HashSet<>(Files.readAllLines(fileName));
+				constants = new TreeSet<>(Files.readAllLines(fileName));
 				badFile.labels(fileName.toString()).set(0);
 			} catch (final Exception e) {
 				e.printStackTrace();

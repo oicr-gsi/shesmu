@@ -9,14 +9,16 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.swing.text.html.HTMLDocument.Iterator;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -77,6 +79,23 @@ public abstract class Imyhat {
 		@Override
 		public Type asmType() {
 			return A_SET_TYPE;
+		}
+
+		@Override
+		public Comparator<?> comparator() {
+			@SuppressWarnings("unchecked")
+			Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
+			return (Set<?> a, Set<?> b) -> {
+				Iterator<?> aIt = a.iterator();
+				Iterator<?> bIt = b.iterator();
+				while (aIt.hasNext() && bIt.hasNext()) {
+					int result = innerComparator.compare(aIt.next(), bIt.next());
+					if (result != 0) {
+						return result;
+					}
+				}
+				return Boolean.compare(aIt.hasNext(), bIt.hasNext());
+			};
 		}
 
 		public Imyhat inner() {
@@ -176,6 +195,19 @@ public abstract class Imyhat {
 			return A_TUPLE_TYPE;
 		}
 
+		@SuppressWarnings("unchecked")
+		@Override
+		public Comparator<?> comparator() {
+			Comparator<Tuple> comparator = Comparator.comparing((Tuple t) -> t.get(0),
+					(Comparator<Object>) types[0].comparator());
+			for (int i = 1; i < types.length; i++) {
+				final int index = i;
+				comparator = comparator.thenComparing((Tuple t) -> t.get(index),
+						(Comparator<Object>) types[index].comparator());
+			}
+			return comparator;
+		}
+
 		public Imyhat get(int index) {
 			return index >= 0 && index < types.length ? types[index] : BAD;
 		}
@@ -269,6 +301,7 @@ public abstract class Imyhat {
 			}
 			return new Tuple(elements);
 		}
+
 	}
 
 	private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
@@ -284,6 +317,11 @@ public abstract class Imyhat {
 		@Override
 		public Type asmType() {
 			return Type.VOID_TYPE;
+		}
+
+		@Override
+		public Comparator<?> comparator() {
+			return (a, b) -> 0;
 		}
 
 		@Override
@@ -357,6 +395,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public Comparator<?> comparator() {
+			return Comparator.naturalOrder();
+		}
+
+		@Override
 		public Object defaultValue() {
 			return false;
 		}
@@ -420,6 +463,11 @@ public abstract class Imyhat {
 		@Override
 		public Type asmType() {
 			return A_INSTANT_TYPE;
+		}
+
+		@Override
+		public Comparator<?> comparator() {
+			return Comparator.naturalOrder();
 		}
 
 		@Override
@@ -490,6 +538,11 @@ public abstract class Imyhat {
 		@Override
 		public Type boxedAsmType() {
 			return Type.getType(Long.class);
+		}
+
+		@Override
+		public Comparator<?> comparator() {
+			return Comparator.naturalOrder();
 		}
 
 		@Override
@@ -575,6 +628,11 @@ public abstract class Imyhat {
 		@Override
 		public Type asmType() {
 			return A_STRING_TYPE;
+		}
+
+		@Override
+		public Comparator<?> comparator() {
+			return Comparator.naturalOrder();
 		}
 
 		@Override
@@ -771,6 +829,11 @@ public abstract class Imyhat {
 	}
 
 	/**
+	 * Create a comparator for sorting sets.
+	 */
+	public abstract Comparator<?> comparator();
+
+	/**
 	 * Check if this type is malformed
 	 */
 	public abstract boolean isBad();
@@ -808,6 +871,12 @@ public abstract class Imyhat {
 	 */
 	public abstract String name();
 
+	public <T> Set<T> newSet() {
+		@SuppressWarnings("unchecked")
+		Comparator<T> comparator = (Comparator<T>) comparator();
+		return new TreeSet<T>(comparator);
+	}
+
 	protected abstract void packJson(ArrayNode array, Object value);
 
 	/**
@@ -841,4 +910,10 @@ public abstract class Imyhat {
 	 * this type
 	 */
 	public abstract Object unpackJson(JsonNode node);
+
+	@SuppressWarnings("unchecked")
+	public final <T> Collector<T, ?, TreeSet<T>> toSet() {
+		Comparator<T> comparator = (Comparator<T>) comparator();
+		return Collectors.toCollection(() -> new TreeSet<T>(comparator));
+	}
 }

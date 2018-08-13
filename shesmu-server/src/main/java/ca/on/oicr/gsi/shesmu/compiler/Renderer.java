@@ -29,6 +29,10 @@ public class Renderer {
 
 	private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
 
+	public static void loadImyhatInMethod(GeneratorAdapter methodGen, String signature) {
+		methodGen.invokeDynamic(signature, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+	}
+
 	private final Map<String, LoadableValue> loadables;
 
 	private final GeneratorAdapter methodGen;
@@ -72,7 +76,7 @@ public class Renderer {
 	}
 
 	public void loadImyhat(String signature) {
-		methodGen.invokeDynamic(signature, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+		loadImyhatInMethod(methodGen, signature);
 	}
 
 	/**

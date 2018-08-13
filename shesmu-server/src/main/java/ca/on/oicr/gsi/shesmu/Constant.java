@@ -4,8 +4,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,13 +86,12 @@ public abstract class Constant extends Target {
 
 		@Override
 		protected final void load(GeneratorAdapter methodGen) {
-			methodGen.newInstance(A_HASH_SET_TYPE);
-			methodGen.dup();
-			methodGen.invokeConstructor(A_HASH_SET_TYPE, DEFAULT_CTOR);
+			Renderer.loadImyhatInMethod(methodGen, type().signature());
+			methodGen.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
 			for (final T value : values) {
 				methodGen.dup();
 				write(methodGen, value);
-				methodGen.invokeVirtual(A_HASH_SET_TYPE, SET__ADD);
+				methodGen.invokeVirtual(A_SET_TYPE, SET__ADD);
 				methodGen.pop();
 			}
 		}
@@ -112,8 +111,6 @@ public abstract class Constant extends Target {
 
 	private static final Type A_CONSTANT_LOADER_TYPE = Type.getType(ConstantLoader.class);
 
-	private static final Type A_HASH_SET_TYPE = Type.getType(HashSet.class);
-
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 
 	private static final Type A_JSON_OBJECT_TYPE = Type.getType(ObjectNode.class);
@@ -121,6 +118,8 @@ public abstract class Constant extends Target {
 	private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
 
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+
+	private static final Type A_SET_TYPE = Type.getType(Set.class);
 
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 
@@ -130,11 +129,12 @@ public abstract class Constant extends Target {
 			"bootstrap", Type.getMethodDescriptor(Type.getType(CallSite.class),
 					Type.getType(MethodHandles.Lookup.class), A_STRING_TYPE, Type.getType(MethodType.class)),
 			false);
-
 	private static Method INSTANT_CTOR = new Method("ofEpochMilli", Imyhat.DATE.asmType(),
 			new Type[] { Type.LONG_TYPE });
 
 	private static final Method LOAD_METHOD = new Method("load", Type.VOID_TYPE, new Type[] { A_JSON_OBJECT_TYPE });
+
+	private static final Method METHOD_IMYHAT__NEW_SET = new Method("newSet", A_SET_TYPE, new Type[] {});
 
 	private static final Method METHOD_IMYHAT__PACK_JSON = new Method("packJson", Type.VOID_TYPE,
 			new Type[] { A_OBJECT_NODE_TYPE, A_STRING_TYPE, A_OBJECT_TYPE });

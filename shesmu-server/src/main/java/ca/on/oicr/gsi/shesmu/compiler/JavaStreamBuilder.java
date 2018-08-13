@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Handle;
@@ -57,9 +56,9 @@ public final class JavaStreamBuilder {
 	private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
 	private static final Type A_BINARY_OPERATOR_TYPE = Type.getType(BinaryOperator.class);
 	private static final Type A_COLLECTOR_TYPE = Type.getType(Collector.class);
-	private static final Type A_COLLECTORS_TYPE = Type.getType(Collectors.class);
 	private static final Type A_COMPARATOR_TYPE = Type.getType(Comparator.class);
 	private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
+	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
 	private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
@@ -155,7 +154,8 @@ public final class JavaStreamBuilder {
 
 	public void collect() {
 		finish();
-		renderer.methodGen().invokeStatic(A_COLLECTORS_TYPE, METHOD_COLLECTORS__TO_SET);
+		renderer.loadImyhat(currentType.signature());
+		renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_COLLECTORS__TO_SET);
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
 		renderer.methodGen().checkCast(A_SET_TYPE);
 	}
