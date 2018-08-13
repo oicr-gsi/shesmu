@@ -42,7 +42,7 @@ public final class GroupNode extends ByChildNode {
 	}
 
 	public void render(RegroupVariablesBuilder regroup, RootBuilder rootBuilder) {
-		regroup.addCollected(expression.type().asmType(), name(), expression::render);
+		regroup.addCollected(expression.type(), name(), expression::render);
 	}
 
 	@Override

@@ -46,7 +46,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 			@Override
 			protected FileAttributes fetch(String fileName) throws IOException {
-				return sftp.statExistence(fileName);
+				return sftp == null ? null : sftp.statExistence(fileName);
 			}
 		};
 

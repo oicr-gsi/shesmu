@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -14,14 +13,14 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class ExpressionNodeList extends ExpressionNode {
 
-	private static final Type A_HASH_SET_TYPE = Type.getType(HashSet.class);
-
+	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
-	private static final Method CTOR_DEFAULT = new Method("<init>", Type.VOID_TYPE, new Type[] {});
+	private static final Type A_SET_TYPE = Type.getType(Set.class);
 
-	private static final Method METHOD_HASH_SET__ADD = new Method("add", Type.BOOLEAN_TYPE,
-			new Type[] { A_OBJECT_TYPE });
+	private static final Method METHOD_IMYHAT__NEW_SET = new Method("newSet", A_SET_TYPE, new Type[] {});
+
+	private static final Method METHOD_SET__ADD = new Method("add", Type.BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 
 	private final List<ExpressionNode> items;
 
@@ -40,14 +39,13 @@ public class ExpressionNodeList extends ExpressionNode {
 	@Override
 	public void render(Renderer renderer) {
 		renderer.mark(line());
-		renderer.methodGen().newInstance(A_HASH_SET_TYPE);
-		renderer.methodGen().dup();
-		renderer.methodGen().invokeConstructor(A_HASH_SET_TYPE, CTOR_DEFAULT);
+		renderer.loadImyhat(items.get(0).type().signature());
+		renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
 		items.forEach(item -> {
 			renderer.methodGen().dup();
 			item.render(renderer);
 			renderer.methodGen().box(item.type().asmType());
-			renderer.methodGen().invokeVirtual(A_HASH_SET_TYPE, METHOD_HASH_SET__ADD);
+			renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
 			renderer.methodGen().pop();
 		});
 		renderer.mark(line());

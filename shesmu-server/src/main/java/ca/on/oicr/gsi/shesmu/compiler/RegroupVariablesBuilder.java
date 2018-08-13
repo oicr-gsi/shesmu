@@ -5,7 +5,6 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -18,18 +17,19 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.Imyhat;
+
 /**
  * Helps to build a “Group” or “Smash” clause and the corresponding variable
  * class
  */
 public final class RegroupVariablesBuilder {
-
 	private class Collected extends Element {
 		private final String fieldName;
 		private final Consumer<Renderer> loader;
-		private final Type valueType;
+		private final Imyhat valueType;
 
-		public Collected(Type valueType, String fieldName, Consumer<Renderer> loader) {
+		public Collected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
 			super();
 			this.valueType = valueType;
 			this.fieldName = fieldName;
@@ -41,7 +41,7 @@ public final class RegroupVariablesBuilder {
 			collectRenderer.methodGen().loadArg(collectedSelfArgument);
 			collectRenderer.methodGen().invokeVirtual(self, new Method(fieldName, A_SET_TYPE, new Type[] {}));
 			loader.accept(collectRenderer);
-			collectRenderer.methodGen().box(valueType);
+			collectRenderer.methodGen().box(valueType.asmType());
 			collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
 			collectRenderer.methodGen().pop();
 		}
@@ -49,9 +49,8 @@ public final class RegroupVariablesBuilder {
 		@Override
 		public int buildConstructor(GeneratorAdapter ctor, int index) {
 			ctor.loadThis();
-			ctor.newInstance(A_HASHSET_TYPE);
-			ctor.dup();
-			ctor.invokeConstructor(A_HASHSET_TYPE, CTOR_DEFAULT);
+			Renderer.loadImyhatInMethod(ctor, valueType.signature());
+			ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
 			ctor.putField(self, fieldName, A_SET_TYPE);
 			return index;
 		}
@@ -82,7 +81,6 @@ public final class RegroupVariablesBuilder {
 		}
 
 	}
-
 	private class Discriminator extends Element {
 		private final String fieldName;
 		private final Type fieldType;
@@ -245,13 +243,15 @@ public final class RegroupVariablesBuilder {
 
 	}
 
-	private static final Type A_HASHSET_TYPE = Type.getType(HashSet.class);
+	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
+	
 	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
-
+	
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
+	private static final Method METHOD_IMYHAT__NEW_SET = new Method("newSet", A_SET_TYPE, new Type[] {});
 	private static final Method METHOD_NEED_OK = new Method("$isOk", BOOLEAN_TYPE, new Type[] {});
 	private static final Method METHOD_SET__ADD = new Method("add", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private final ClassVisitor classVisitor;
@@ -284,7 +284,7 @@ public final class RegroupVariablesBuilder {
 	 * @param fieldName
 	 *            the name of the variable for consumption by downstream uses
 	 */
-	public void addCollected(Type valueType, String fieldName, Consumer<Renderer> loader) {
+	public void addCollected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
 		classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, A_SET_TYPE.getDescriptor(), null, null).visitEnd();
 		elements.add(new Collected(valueType, fieldName, loader));
 

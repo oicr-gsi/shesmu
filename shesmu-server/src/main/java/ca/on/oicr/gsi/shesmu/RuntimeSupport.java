@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.prometheus.client.Gauge;
 
@@ -309,6 +310,10 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static String toString(Instant instant, String format) {
 		return DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
+	}
+
+	static {
+		MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 	}
 
 	private RuntimeSupport() {
