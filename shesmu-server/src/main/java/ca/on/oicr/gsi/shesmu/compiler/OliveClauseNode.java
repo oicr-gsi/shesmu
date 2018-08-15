@@ -131,6 +131,19 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
+		final Parser joinParser = input.keyword("Join");
+		if (joinParser.isGood()) {
+			final AtomicReference<String> format = new AtomicReference<>();
+			final Parser result = joinParser//
+					.whitespace()//
+					.identifier(format::set)//
+					.whitespace();
+
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeJoin(input.line(), input.column(), format.get()));
+			}
+			return result;
+		}
 		final AtomicReference<Boolean> direction = new AtomicReference<>();
 		final Parser pickParser = input.regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.");
 		if (pickParser.isGood()) {
@@ -237,12 +250,14 @@ public abstract class OliveClauseNode {
 	 *
 	 * @param inputFormatDefinition
 	 *            the input format for this olive
+	 * @param definedFormats
+	 *            the function to find input formats by name
 	 * @param defs
 	 *            the variable definitions available to this clause
-	 *
 	 * @return the variable definitions available to the next clause
 	 */
-	public abstract NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
+	public abstract NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
 			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler);
 
 	/**

@@ -102,7 +102,8 @@ public class ProgramNode {
 
 		// Resolve variables
 		if (ok) {
-			ok = olives.stream().filter(olive -> olive.resolve(inputFormatDefinition, errorHandler, constants))
+			ok = olives.stream().filter(
+					olive -> olive.resolve(inputFormatDefinition, inputFormatDefinitions, errorHandler, constants))
 					.count() == olives.size();
 		}
 

@@ -59,8 +59,9 @@ public final class OliveNodeDefinition extends OliveNode {
 	}
 
 	public Optional<Stream<Target>> outputStreamVariables(InputFormatDefinition inputFormatDefinition,
-			Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
-		if (outputStreamVariables != null || resolve(inputFormatDefinition, errorHandler, constants)) {
+			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
+			Supplier<Stream<Constant>> constants) {
+		if (outputStreamVariables != null || resolve(inputFormatDefinition, definedFormats, errorHandler, constants)) {
 			return Optional.of(outputStreamVariables.stream());
 		}
 		return Optional.empty();
@@ -82,7 +83,8 @@ public final class OliveNodeDefinition extends OliveNode {
 	}
 
 	@Override
-	public boolean resolve(InputFormatDefinition inputFormatDefinition, Consumer<String> errorHandler,
+	public boolean resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants) {
 		if (resolveLock) {
 			errorHandler.accept(
@@ -92,7 +94,8 @@ public final class OliveNodeDefinition extends OliveNode {
 		resolveLock = true;
 		final NameDefinitions result = clauses().stream().reduce(
 				NameDefinitions.root(inputFormatDefinition, Stream.concat(parameters.stream(), constants.get())),
-				(defs, clause) -> clause.resolve(inputFormatDefinition, defs, constants, errorHandler), (a, b) -> {
+				(defs, clause) -> clause.resolve(inputFormatDefinition, definedFormats, defs, constants, errorHandler),
+				(a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		outputStreamVariables = result.stream().filter(target -> target.flavour() == Flavour.STREAM)

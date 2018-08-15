@@ -132,7 +132,8 @@ public abstract class OliveNode {
 	/**
 	 * Resolve all variable definitions
 	 */
-	public abstract boolean resolve(InputFormatDefinition inputFormatDefinition, Consumer<String> errorHandler,
+	public abstract boolean resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants);
 
 	/**

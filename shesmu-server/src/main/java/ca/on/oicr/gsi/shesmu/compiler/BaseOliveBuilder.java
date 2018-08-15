@@ -49,6 +49,7 @@ public abstract class BaseOliveBuilder {
 	protected static final Type A_STRING_TYPE = Type.getType(String.class);
 
 	protected static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
+
 	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
 			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
 			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
@@ -58,8 +59,10 @@ public abstract class BaseOliveBuilder {
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
 	private static final Method METHOD_COMPARATOR__REVERSED = new Method("reversed", A_COMPARATOR_TYPE, new Type[] {});
-
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
+
+	protected static final Method METHOD_FUNCTION__APPLY = new Method("apply", A_OBJECT_TYPE,
+			new Type[] { A_OBJECT_TYPE });
 
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
 
@@ -71,6 +74,8 @@ public abstract class BaseOliveBuilder {
 			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
+	protected static final Method METHOD_STREAM__FLAT_MAP = new Method("flatMap", A_STREAM_TYPE,
+			new Type[] { A_FUNCTION_TYPE });
 	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
 	protected static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
@@ -143,6 +148,52 @@ public abstract class BaseOliveBuilder {
 	 */
 	public final RegroupVariablesBuilder group(LoadableValue... capturedVariables) {
 		return regroup("Group", "group", false, capturedVariables);
+	}
+
+	public final JoinBuilder join(Type innerType) {
+		final String className = String.format("shesmu/dyn/Join%d$%d", oliveId, steps.size());
+
+		final Type oldType = currentType;
+		final Type newType = Type.getObjectType(className);
+		currentType = newType;
+
+		final Method flatMapMethod = new Method(String.format("join_%d_%d", oliveId, steps.size()), A_STREAM_TYPE,
+				new Type[] { A_FUNCTION_TYPE, oldType });
+
+		steps.add(renderer -> {
+			renderer.methodGen().loadThis();
+			renderer.methodGen().loadArg(1);
+			renderer.methodGen()
+					.invokeDynamic("apply",
+							Type.getMethodDescriptor(A_FUNCTION_TYPE, new Type[] { owner.selfType(), A_FUNCTION_TYPE }),
+							LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+									flatMapMethod.getName(), flatMapMethod.getDescriptor(), false),
+							Type.getMethodType(A_STREAM_TYPE, oldType));
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLAT_MAP);
+		});
+
+		final GeneratorAdapter flatMapMethodGen = new GeneratorAdapter(Opcodes.ACC_PUBLIC, flatMapMethod, null, null,
+				owner.classVisitor);
+		flatMapMethodGen.visitCode();
+		flatMapMethodGen.loadArg(0);
+		flatMapMethodGen.push(innerType);
+		flatMapMethodGen.invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
+		flatMapMethodGen.checkCast(A_STREAM_TYPE);
+
+		flatMapMethodGen.loadArg(1);
+		flatMapMethodGen.invokeDynamic("apply",
+				Type.getMethodDescriptor(A_FUNCTION_TYPE, new Type[] { oldType }),
+				LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+				new Handle(Opcodes.H_NEWINVOKESPECIAL, newType.getInternalName(), "<init>",
+						Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
+				Type.getMethodType(newType, innerType));
+		flatMapMethodGen.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
+		flatMapMethodGen.returnValue();
+		flatMapMethodGen.visitMaxs(0, 0);
+		flatMapMethodGen.visitEnd();
+
+		return new JoinBuilder(owner, newType, oldType, innerType);
 	}
 
 	public final LetBuilder let(LoadableValue... capturedVariables) {

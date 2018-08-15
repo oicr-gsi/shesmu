@@ -34,9 +34,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
 			new Type[] { A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE });
 	private static final Method METHOD_CHILD__SET = new Method("set", VOID_TYPE, new Type[] { DOUBLE_TYPE });
 
-	private static final Method METHOD_FUNCTION__APPLY = new Method("apply", A_OBJECT_TYPE,
-			new Type[] { A_OBJECT_TYPE });
-
 	private static final Method METHOD_GAUGE__LABELS = new Method("labels", Type.getType(Object.class),
 			new Type[] { Type.getType(String[].class) });
 

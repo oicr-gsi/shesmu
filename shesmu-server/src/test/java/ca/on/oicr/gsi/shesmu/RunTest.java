@@ -82,9 +82,13 @@ public class RunTest {
 
 	private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
 
+	private static final InputFormatDefinition TEST_INPUT_FORMAT = new BaseInputFormatDefinition<TestValue, TestRepository>(
+			"test", TestValue.class, TestRepository.class) {
+	};
+
 	private static final List<Constant> CONSTANTS = Arrays
 			.asList(Constant.of("project_constant", "the_foo_study", "Testing constant"));
-
+	private static TestValue[] TEST_DATA = new TestValue[] { new TestValue(1, "a"), new TestValue(2, "b") };
 	private static GsiStdValue[] DATA = new GsiStdValue[] {
 			new GsiStdValue("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA", "aaa1",
 					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
@@ -171,7 +175,7 @@ public class RunTest {
 	}
 
 	private <T> Stream<T> data(Class<T> clazz) {
-		return Arrays.stream(DATA).map(clazz::cast);
+		return clazz.equals(TestValue.class) ? Stream.of(TEST_DATA).map(clazz::cast) : Stream.of(DATA).map(clazz::cast);
 	}
 
 	private Stream<FunctionDefinition> functions() {
@@ -194,8 +198,9 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			final HotloadingCompiler compiler = new HotloadingCompiler(x -> new GsiStdFormatDefinition(),
-					this::functions, this::actions, CONSTANTS::stream);
+			final HotloadingCompiler compiler = new HotloadingCompiler(
+					x -> x.equals("test") ? TEST_INPUT_FORMAT : new GsiStdFormatDefinition(), this::functions,
+					this::actions, CONSTANTS::stream);
 			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			final ActionChecker checker = new ActionChecker();
 			generator.run(checker, this::data);
