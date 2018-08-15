@@ -215,6 +215,24 @@ monitoring or dumping. The `Reject` clause does this:
         input = path
       }
 
+It is also possible to bring in data from another format (or even the same
+format) using a `Join` clause:
+
+    Run fastqc
+      Where workflow == "BamQC 2.7+"
+      Join qc_data
+      Where path == qc_file && passed
+      With {
+        memory = 4Gi,
+        input = path
+      }
+
+Unlike SQL, Shesmu only knows how to do one join: a cross or Cartesian join.
+This creates a new output for every possible pair of inputs. There must be no
+names in common between the data going into the join and the input format being
+joined against. If there are, they must be eliminated or renamed using a `Let`
+clause.
+
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a signature that is used for

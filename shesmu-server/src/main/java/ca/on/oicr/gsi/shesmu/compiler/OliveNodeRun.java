@@ -70,11 +70,13 @@ public final class OliveNodeRun extends OliveNode {
 	}
 
 	@Override
-	public boolean resolve(InputFormatDefinition inputFormatDefinition, Consumer<String> errorHandler,
+	public boolean resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants) {
 		final NameDefinitions defs = clauses().stream().reduce(
 				NameDefinitions.root(inputFormatDefinition, constants.get()),
-				(d, clause) -> clause.resolve(inputFormatDefinition, d, constants, errorHandler), (a, b) -> {
+				(d, clause) -> clause.resolve(inputFormatDefinition, definedFormats, d, constants, errorHandler),
+				(a, b) -> {
 					throw new UnsupportedOperationException();
 				});
 		return defs.isGood() & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler))

@@ -47,8 +47,8 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, NameDefinitions defs,
-			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
+			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		final boolean good = arguments.stream().filter(argument -> argument.resolve(defs, errorHandler))
 				.count() == arguments.size();
 		return defs.replaceStream(arguments.stream().map(x -> x), good);
