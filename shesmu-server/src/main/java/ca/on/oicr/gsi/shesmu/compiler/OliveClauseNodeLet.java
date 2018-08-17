@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class OliveClauseNodeLet extends OliveClauseNode {
 
@@ -31,15 +32,21 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
-		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
+		if (state == ClauseStreamOrder.PURE) {
+			arguments.stream()//
+					.forEach(a -> a.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+			return ClauseStreamOrder.TRANSFORMED;
+		}
+		return state;
 	}
 
 	@Override
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		arguments.forEach(argument -> argument.collectFreeVariables(freeVariables));
+		arguments.forEach(argument -> argument.collectFreeVariables(freeVariables, Flavour::needsCapture));
 		final LetBuilder let = oliveBuilder.let(oliveBuilder.loadableValues()
 				.filter(loadable -> freeVariables.contains(loadable.name())).toArray(LoadableValue[]::new));
 		arguments.forEach(argument -> argument.render(let));
@@ -47,8 +54,9 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		final boolean good = arguments.stream().filter(argument -> argument.resolve(defs, errorHandler))
 				.count() == arguments.size();
 		return defs.replaceStream(arguments.stream().map(x -> x), good);

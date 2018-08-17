@@ -21,10 +21,10 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 public class OliveClauseNodeJoin extends OliveClauseNode {
 
 	private final int column;
-	private final int line;
 	private final String format;
 	private InputFormatDefinition inputFormat;
-	private List<Consumer<JoinBuilder>> joins = new ArrayList<>();
+	private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
+	private final int line;
 
 	public OliveClauseNodeJoin(int line, int column, String format) {
 		super();
@@ -34,7 +34,8 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
 		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
 	}
 
@@ -56,11 +57,11 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 			return defs.fail(false);
 		}
 
-		Set<String> newNames = inputFormat.baseStreamVariables()//
+		final Set<String> newNames = inputFormat.baseStreamVariables()//
 				.map(Target::name)//
 				.collect(Collectors.toSet());
 
-		List<String> duplicates = defs.stream()//
+		final List<String> duplicates = defs.stream()//
 				.filter(n -> n.flavour() == Flavour.STREAM && newNames.contains(n.name()))//
 				.map(Target::name)//
 				.sorted()//

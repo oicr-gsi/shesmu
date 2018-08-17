@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -13,6 +14,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeFunctionCall extends ExpressionNode {
 	private static final FunctionDefinition BROKEN_FUCNTION = new FunctionDefinition() {
@@ -56,8 +58,8 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		arguments.forEach(item -> item.collectFreeVariables(names));
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		arguments.forEach(item -> item.collectFreeVariables(names, predicate));
 	}
 
 	@Override

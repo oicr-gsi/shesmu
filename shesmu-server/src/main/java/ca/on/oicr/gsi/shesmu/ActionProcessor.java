@@ -175,20 +175,6 @@ public final class ActionProcessor {
 
 	};
 
-	private static final Bin<Instant> STATUS_CHANGED = new InstantBin() {
-
-		@Override
-		public Instant extract(Entry<Action, Information> input) {
-			return input.getValue().lastStateTransition;
-		}
-
-		@Override
-		public String name() {
-			return "statuschanged";
-		}
-
-	};
-
 	private static final Bin<Instant> CHECKED = new InstantBin() {
 
 		@Override
@@ -207,12 +193,12 @@ public final class ActionProcessor {
 
 	private static final Gauge lastAdd = Gauge
 			.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
+
 	private static final Gauge lastRun = Gauge
 			.build("shesmu_action_perform_last_time", "The last time the actions were processed.").register();
 	private static final Gauge oldest = Gauge
 			.build("shesmu_action_oldest_time", "The oldest action in a particular state.").labelNames("state")
 			.register();
-
 	private static final Property<String> SOURCE_FILE = new Property<String>() {
 
 		@Override
@@ -270,6 +256,20 @@ public final class ActionProcessor {
 	private static final Gauge stateCount = Gauge
 			.build("shesmu_action_state_count", "The number of actions in a particular state.").labelNames("state")
 			.register();
+
+	private static final Bin<Instant> STATUS_CHANGED = new InstantBin() {
+
+		@Override
+		public Instant extract(Entry<Action, Information> input) {
+			return input.getValue().lastStateTransition;
+		}
+
+		@Override
+		public String name() {
+			return "statuschanged";
+		}
+
+	};
 
 	private static final Property<String> TYPE = new Property<String>() {
 
@@ -350,25 +350,6 @@ public final class ActionProcessor {
 	}
 
 	/**
-	 * Check that an action's last status change was in the time range provided
-	 *
-	 * @param start
-	 *            the exclusive cut-off timestamp
-	 * @param end
-	 *            the exclusive cut-off timestamp
-	 */
-	public static Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
-		return new InstantFilter(start, end) {
-
-			@Override
-			protected Instant get(Information info) {
-				return info.lastStateTransition;
-			}
-
-		};
-	}
-
-	/**
 	 * Checks that an action was generated in a particular source location
 	 *
 	 * @param locations
@@ -435,6 +416,25 @@ public final class ActionProcessor {
 			row.put("property", property.name(state.getKey()));
 			row.set("json", property.json(state.getKey()));
 		}
+	}
+
+	/**
+	 * Check that an action's last status change was in the time range provided
+	 *
+	 * @param start
+	 *            the exclusive cut-off timestamp
+	 * @param end
+	 *            the exclusive cut-off timestamp
+	 */
+	public static Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
+		return new InstantFilter(start, end) {
+
+			@Override
+			protected Instant get(Information info) {
+				return info.lastStateTransition;
+			}
+
+		};
 	}
 
 	/**

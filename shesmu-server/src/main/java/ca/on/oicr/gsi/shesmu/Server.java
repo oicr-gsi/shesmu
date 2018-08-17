@@ -34,7 +34,9 @@ import com.sun.net.httpserver.HttpServer;
 import ca.on.oicr.gsi.shesmu.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.Constant.ConstantLoader;
 import ca.on.oicr.gsi.shesmu.Query.FilterJson;
+import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
@@ -173,10 +175,19 @@ public final class Server {
 				InputFormatDefinition.formats().forEach(format -> {
 					writeHeaderedTable(writer, "Variables: " + format.name());
 					format.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
-						writeRow(writer, variable.name(), variable.type().name());
+						final String signableMarker = variable.flavour() == Flavour.STREAM_SIGNABLE
+								? "<span title=\"Included in signatures\">✍️</span>"
+								: "";
+						writeRow(writer, variable.name(), variable.type().name() + signableMarker);
 					});
 					writeFinish(writer);
 				});
+
+				writeHeaderedTable(writer, "Variables: Signatures");
+				NameDefinitions.signatureVariables().forEach(variable -> {
+					writeRow(writer, variable.name(), variable.type().name());
+				});
+				writeFinish(writer);
 
 				writeHeader(writer, "Constants");
 				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
@@ -389,7 +400,8 @@ public final class Server {
 			t.getResponseHeaders().set("Content-type", "text/javascript");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
-				writer.println("import { jsonParameters, link, text, title } from './shesmu.js';\nexport const actionRender = new Map();\n");
+				writer.println(
+						"import { jsonParameters, link, text, title } from './shesmu.js';\nexport const actionRender = new Map();\n");
 				actionRepository.implementations().forEach(repository -> {
 					writer.print("// ");
 					writer.print(repository.getClass().getCanonicalName());

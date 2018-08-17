@@ -14,7 +14,6 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class OliveNodeDefinition extends OliveNode {
 
@@ -39,6 +38,11 @@ public final class OliveNodeDefinition extends OliveNode {
 	@Override
 	protected void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
 		definitions.put(name, builder.buildDefineOlive(parameters.stream()));
+	}
+
+	@Override
+	protected void collectArgumentSignableVariables() {
+		// Do nothing.
 	}
 
 	@Override
@@ -98,7 +102,7 @@ public final class OliveNodeDefinition extends OliveNode {
 				(a, b) -> {
 					throw new UnsupportedOperationException();
 				});
-		outputStreamVariables = result.stream().filter(target -> target.flavour() == Flavour.STREAM)
+		outputStreamVariables = result.stream().filter(target -> target.flavour().isStream())
 				.collect(Collectors.toList());
 		resolveLock = false;
 		return result.isGood();

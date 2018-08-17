@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.objectweb.asm.Label;
@@ -12,6 +13,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeSwitch extends ExpressionNode {
 
@@ -33,12 +35,12 @@ public class ExpressionNodeSwitch extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		test.collectFreeVariables(names);
-		alternative.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		test.collectFreeVariables(names, predicate);
+		alternative.collectFreeVariables(names, predicate);
 		cases.forEach(item -> {
-			item.first().collectFreeVariables(names);
-			item.second().collectFreeVariables(names);
+			item.first().collectFreeVariables(names, predicate);
+			item.second().collectFreeVariables(names, predicate);
 		});
 	}
 

@@ -3,12 +3,14 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeContains extends ExpressionNode {
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
@@ -29,9 +31,9 @@ public class ExpressionNodeContains extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		needle.collectFreeVariables(names);
-		haystack.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		needle.collectFreeVariables(names, predicate);
+		haystack.collectFreeVariables(names, predicate);
 	}
 
 	@Override

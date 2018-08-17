@@ -1,0 +1,8 @@
+Input gsi_std;
+
+Define foo(string s)
+ Where s == project;
+
+Run ok
+ Matches foo("the_foo_study")
+ With { ok = signature_count == 1 && "project" In signature_names }

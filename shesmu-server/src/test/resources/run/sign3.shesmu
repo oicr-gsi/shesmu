@@ -1,0 +1,5 @@
+Input gsi_std;
+
+Run ok
+ Where project == "the_foo_study"
+ With { ok = signature_count == 1 && "project" In signature_names && json_signature == "\{\"project\":\"the_foo_study\"}" }

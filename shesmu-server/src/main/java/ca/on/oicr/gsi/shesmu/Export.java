@@ -16,6 +16,11 @@ import java.lang.annotation.Target;
 @Target(METHOD)
 public @interface Export {
 	/**
+	 * Whether the value should be included in the automatic signature generation
+	 */
+	public boolean signable() default false;
+
+	/**
 	 * A string containing the {@link Imyhat} type signature of the return type of
 	 * the method
 	 */

@@ -5,9 +5,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
  * A “part” in a string literal
@@ -66,7 +68,7 @@ public abstract class StringNode {
 		return input.dispatch(PARTS, output);
 	}
 
-	public abstract void collectFreeVariables(Set<String> names);
+	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
 	public abstract boolean isPassive();
 

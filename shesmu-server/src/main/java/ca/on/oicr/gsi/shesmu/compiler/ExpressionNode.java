@@ -13,12 +13,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
  * An expression in the Shesmu language
@@ -399,10 +401,8 @@ public abstract class ExpressionNode {
 
 	/**
 	 * Add all free variable names to the set provided.
-	 *
-	 * @param names
 	 */
-	public abstract void collectFreeVariables(Set<String> names);
+	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
 	public int column() {
 		return column;

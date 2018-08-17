@@ -233,7 +233,8 @@ public abstract class OliveClauseNode {
 	 * @param state
 	 *            the current variable state
 	 */
-	public abstract ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler);
+	public abstract ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler);
 
 	/**
 	 * Generate byte code for this clause.

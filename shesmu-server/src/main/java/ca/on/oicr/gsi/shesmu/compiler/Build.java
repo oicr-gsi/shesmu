@@ -30,6 +30,7 @@ import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
 
 /**
@@ -65,8 +66,9 @@ public final class Build extends Compiler implements AutoCloseable {
 					System.out.printf("\t%s :: %s\n", format.name(), format.itemClass().getCanonicalName());
 					format.baseStreamVariables()//
 							.sorted((a, b) -> a.name().compareTo(b.name()))//
-							.forEach(variable -> System.out.printf("\t%s :: %s (%s)\n", variable.name(),
-									variable.type().name(), variable.type().signature()));
+							.forEach(variable -> System.out.printf("\t%s :: %s (%s) %s\n", variable.name(),
+									variable.type().name(), variable.type().signature(),
+									variable.flavour() == Flavour.STREAM_SIGNABLE ? "[signable]" : ""));
 				});
 
 			}

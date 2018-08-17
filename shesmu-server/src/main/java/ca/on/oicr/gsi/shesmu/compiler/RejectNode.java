@@ -19,8 +19,9 @@ public interface RejectNode {
 
 	void render(RootBuilder builder, Renderer renderer);
 
-	NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler);
+	NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler);
 
 	boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,

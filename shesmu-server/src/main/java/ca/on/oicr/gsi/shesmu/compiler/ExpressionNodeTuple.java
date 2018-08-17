@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -11,6 +12,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Tuple;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeTuple extends ExpressionNode {
 
@@ -31,8 +33,8 @@ public class ExpressionNodeTuple extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		items.forEach(item -> item.collectFreeVariables(names));
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		items.forEach(item -> item.collectFreeVariables(names, predicate));
 	}
 
 	@Override

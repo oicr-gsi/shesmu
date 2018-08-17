@@ -53,7 +53,7 @@ public abstract class FileWatcher {
 						watchThread.interrupt();
 						watchThread.join();
 					} catch (final InterruptedException e) {
-            // Since this happens during shutdown, we don't really care
+						// Since this happens during shutdown, we don't really care
 					}
 				}
 
@@ -165,7 +165,7 @@ public abstract class FileWatcher {
 							wk.reset();
 						}
 					} catch (final InterruptedException e) {
-            // Either EINTR and we try again or shutdown has been invoked
+						// Either EINTR and we try again or shutdown has been invoked
 					}
 				}
 			} catch (final IOException e) {

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -28,6 +29,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import io.prometheus.client.Gauge;
 
 /**
@@ -41,13 +43,14 @@ public abstract class BaseOliveBuilder {
 	protected static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
 	protected static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
 	protected static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
+	protected static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	protected static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
 	protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	protected static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
 	protected static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
+	protected static final Type A_SET_TYPE = Type.getType(Set.class);
 	protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
 	protected static final Type A_STRING_TYPE = Type.getType(String.class);
-
 	protected static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
 
 	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
@@ -107,6 +110,8 @@ public abstract class BaseOliveBuilder {
 		return currentType;
 	}
 
+	protected abstract void emitSigner(SignatureVariable name, Renderer renderer);
+
 	/**
 	 * Create a “Where” clause in a olive.
 	 *
@@ -135,7 +140,7 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
 	/**
@@ -182,8 +187,7 @@ public abstract class BaseOliveBuilder {
 		flatMapMethodGen.checkCast(A_STREAM_TYPE);
 
 		flatMapMethodGen.loadArg(1);
-		flatMapMethodGen.invokeDynamic("apply",
-				Type.getMethodDescriptor(A_FUNCTION_TYPE, new Type[] { oldType }),
+		flatMapMethodGen.invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, new Type[] { oldType }),
 				LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
 				new Handle(Opcodes.H_NEWINVOKESPECIAL, newType.getInternalName(), "<init>",
 						Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
@@ -225,7 +229,7 @@ public abstract class BaseOliveBuilder {
 
 		final Renderer createMethodGen = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, createMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 
 		return new LetBuilder(owner, newType, createMethodGen);
 	}
@@ -238,6 +242,8 @@ public abstract class BaseOliveBuilder {
 	 * Stream of all the parameters available for capture/use in the clauses.
 	 */
 	public abstract Stream<LoadableValue> loadableValues();
+
+	protected abstract void loadSigner(SignatureVariable variable, Renderer renderer);
 
 	/**
 	 * Create a “Matches” clause in an olive
@@ -260,6 +266,7 @@ public abstract class BaseOliveBuilder {
 		steps.add(renderer -> {
 			renderer.methodGen().loadThis();
 			renderer.methodGen().swap();
+			NameDefinitions.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
 			for (int i = 0; i < arglist.size(); i++) {
 				arglist.get(i).accept(renderer);
 			}
@@ -315,7 +322,7 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_MONITOR);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
 	public Renderer peek(LoadableValue[] capturedVariables) {
@@ -337,7 +344,7 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__PEEK);
 		});
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
 	/**
@@ -458,7 +465,8 @@ public abstract class BaseOliveBuilder {
 
 		return new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, extractMethod, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, streamType, RootBuilder.proxyCaptured(0, capturedVariables),
+				this::emitSigner);
 
 	}
 
@@ -513,10 +521,11 @@ public abstract class BaseOliveBuilder {
 
 		final Renderer newMethodGen = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 		final Renderer collectedMethodGen = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
-				capturedVariables.length + 1, oldType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length + 1, oldType, RootBuilder.proxyCaptured(0, capturedVariables),
+				this::emitSigner);
 
 		return new RegroupVariablesBuilder(owner, className, newMethodGen, collectedMethodGen,
 				capturedVariables.length);

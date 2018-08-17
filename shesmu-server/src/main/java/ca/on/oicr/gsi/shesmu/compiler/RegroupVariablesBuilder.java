@@ -81,6 +81,7 @@ public final class RegroupVariablesBuilder {
 		}
 
 	}
+
 	private class Discriminator extends Element {
 		private final String fieldName;
 		private final Type fieldType;
@@ -246,9 +247,9 @@ public final class RegroupVariablesBuilder {
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
-	
+
 	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
-	
+
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
 	private static final Method METHOD_IMYHAT__NEW_SET = new Method("newSet", A_SET_TYPE, new Type[] {});

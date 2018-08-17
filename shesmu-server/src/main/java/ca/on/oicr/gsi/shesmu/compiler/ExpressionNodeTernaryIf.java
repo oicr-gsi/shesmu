@@ -3,12 +3,14 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeTernaryIf extends ExpressionNode {
 
@@ -25,10 +27,10 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		testExpression.collectFreeVariables(names);
-		trueExpression.collectFreeVariables(names);
-		falseExpression.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		testExpression.collectFreeVariables(names, predicate);
+		trueExpression.collectFreeVariables(names, predicate);
+		falseExpression.collectFreeVariables(names, predicate);
 	}
 
 	@Override

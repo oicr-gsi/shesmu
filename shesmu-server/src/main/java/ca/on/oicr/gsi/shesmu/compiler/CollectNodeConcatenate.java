@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,6 +15,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class CollectNodeConcatenate extends CollectNode {
 
@@ -75,9 +77,9 @@ public class CollectNodeConcatenate extends CollectNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		getter.collectFreeVariables(names);
-		delimiter.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		getter.collectFreeVariables(names, predicate);
+		delimiter.collectFreeVariables(names, predicate);
 	}
 
 	@Override
@@ -102,7 +104,7 @@ public class CollectNodeConcatenate extends CollectNode {
 	@Override
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
-		getter.collectFreeVariables(freeVariables);
+		getter.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
 		final Renderer mapMethod = builder.map(name, Imyhat.STRING, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
