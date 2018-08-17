@@ -4,6 +4,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.SignatureVariable;
 
 /**
  * Helper class to hold state and context for bytecode generation.
@@ -49,16 +51,18 @@ public class Renderer {
 
 	private final RootBuilder rootBuilder;
 
-	private final int streamArg;
+	private final BiConsumer<SignatureVariable, Renderer> signerEmitter;
 
+	private final int streamArg;
 	private final Type streamType;
 
 	public Renderer(RootBuilder rootBuilder, GeneratorAdapter methodGen, int streamArg, Type streamType,
-			Stream<LoadableValue> loadables) {
+			Stream<LoadableValue> loadables, BiConsumer<SignatureVariable, Renderer> signerEmitter) {
 		this.rootBuilder = rootBuilder;
 		this.methodGen = methodGen;
 		this.streamArg = streamArg;
 		this.streamType = streamType;
+		this.signerEmitter = signerEmitter;
 		this.loadables = loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity()));
 
 	}
@@ -78,6 +82,10 @@ public class Renderer {
 	 */
 	public void emitNamed(String name) {
 		loadables.get(name).accept(this);
+	}
+
+	public void emitSigner(SignatureVariable name) {
+		signerEmitter.accept(name, this);
 	}
 
 	public void invokeInterfaceStatic(Type interfaceType, Method method) {
@@ -124,6 +132,10 @@ public class Renderer {
 	 */
 	public RootBuilder root() {
 		return rootBuilder;
+	}
+
+	public BiConsumer<SignatureVariable, Renderer> signerEmitter() {
+		return signerEmitter;
 	}
 
 	/**

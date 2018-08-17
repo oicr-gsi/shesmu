@@ -3,9 +3,11 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class ExpressionNodeBinary extends ExpressionNode {
 
@@ -21,9 +23,9 @@ public abstract class ExpressionNodeBinary extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		left.collectFreeVariables(names);
-		right.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		left.collectFreeVariables(names, predicate);
+		right.collectFreeVariables(names, predicate);
 	}
 
 	public ExpressionNode left() {

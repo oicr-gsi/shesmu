@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class OliveNodeRun extends OliveNode {
 
@@ -41,6 +42,11 @@ public final class OliveNodeRun extends OliveNode {
 	}
 
 	@Override
+	protected void collectArgumentSignableVariables() {
+		arguments.stream().forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+	}
+
+	@Override
 	protected boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Consumer<String> errorHandler) {
 		return true;
@@ -48,7 +54,7 @@ public final class OliveNodeRun extends OliveNode {
 
 	@Override
 	public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
-		final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column);
+		final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
 		clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
 		oliveBuilder.line(line);
 		final Renderer action = oliveBuilder.finish();

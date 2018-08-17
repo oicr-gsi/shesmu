@@ -4,10 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.JavaStreamBuilder.Match;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class CollectNodeMatches extends CollectNode {
 
@@ -41,9 +43,9 @@ public final class CollectNodeMatches extends CollectNode {
 	}
 
 	@Override
-	public final void collectFreeVariables(Set<String> names) {
+	public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
 		final boolean removeName = !names.contains(name);
-		selector.collectFreeVariables(names);
+		selector.collectFreeVariables(names, predicate);
 		if (removeName) {
 			names.remove(name);
 		}
@@ -52,7 +54,7 @@ public final class CollectNodeMatches extends CollectNode {
 	@Override
 	public final void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
-		selector.collectFreeVariables(freeVariables);
+		selector.collectFreeVariables(freeVariables, Flavour::needsCapture);
 		freeVariables.remove(name);
 		final Renderer renderer = builder.match(matchType, name, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));

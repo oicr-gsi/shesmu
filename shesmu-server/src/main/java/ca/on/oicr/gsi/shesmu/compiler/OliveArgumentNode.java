@@ -4,9 +4,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
  * The arguments defined in the “With” section of a “Run” olive.
@@ -51,7 +53,7 @@ public abstract class OliveArgumentNode {
 		this.name = name;
 	}
 
-	public abstract void collectFreeVariables(Set<String> freeVariables);
+	public abstract void collectFreeVariables(Set<String> freeVariables, Predicate<Flavour> predicate);
 
 	/**
 	 * Produce an error if the type of the expression is not as required

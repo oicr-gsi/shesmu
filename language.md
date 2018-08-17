@@ -625,3 +625,136 @@ seen on the status page, or:
 or:
 
     java ca.on.oicr.gsi.shesmu.compiler.Build -v
+
+### Signature and Signable Variables
+Since Shesmu is designed to create repeatable actions, it's useful to know what
+data was read to create this data. If an input format has a unique ID for every
+record, the some values may be immutable for that ID, but other values may be
+(externally) changed. For instance, suppose there is a record of what was
+placed on a sequencer. A user may have incorrectly entered what kit was used to
+prepare this sample; if so, changing it might need to trigger a new action in
+Shesmu.
+
+If the input hasn't changed, even though Shesmu has been restarted, or the
+olive is changed in an unimportant way, the input to the action should be
+considered the same. A signature variable is a way to create a unique signature
+based on the data that was actually used by an olive that can be stored as part
+of the action.
+
+In every input format, some variables can be marked _signable_. That means
+their values may be changed for the same ID. Fields which are immutable for a
+given ID are not signable. The exact list of fields which are signable can
+change between input formats.
+
+An olive references variables from the input, and Shesmu tracks the values of
+these referenced ("used") variables.
+
+A variable is considered used if it is possible to be referenced, but it does
+not need to be referenced in order to be considered used. For instance:
+
+    False ? a : b
+
+references both `a` and `b` even though the value of `a` is never actually the
+result of this expression.
+
+The _signable_ variables are used to create _signature_ variables. The
+supported signature variables are shown on the status page and apply to all
+import formats.
+
+Signature variables are treated like any other variable and they are lost
+during a `Group`, `Join`, `Smash` or `Let` operation if not preserved. Once the
+input is manipulated by a `Group`, `Join`, `Smash` or `Let` operation, it is
+not possible to track what input was used. So, references are only considered
+from the start of the olive until the first manipulation operation. If it is a
+`Run` olive, with no manipulation, the signable variables referenced in `With`
+arguments are also included.
+
+The collection of referenced signable variables is considered over the whole
+scope. For instance:
+
+   Run x
+     Where "project" In signature_names # This is true even though project is
+                                        # referenced after this check
+     Where project ~ /N.*/
+     With { project = project }
+
+Since there are no `Group`, `Join`, `Smash` or `Let` clauses, the entire olive
+is in scope. The signable variable `project` is referenced (used) twice: once
+in the `Where` clause and once in the arguments to the action. Therefore
+`project` is one of the referenced variables and appears in `signature_names`.
+Order does not matter: although `project` is referenced after `signature_names`
+is used, it is still present because it is used in that scope.
+
+This behaviour is necessary to ensure that a signature returns the same
+value in all parts of the program.
+
+#### Example
+As an example, let's suppose we want to run a variant caller. It will take a
+list of genome alignments for different tumour/normal pairs in a patient and
+produce variant information. Whether the tissue is reference (normal) or tumour
+is `tissue_type`. Now, the `tissue_type` is associated with each genome
+alignment (BAM) file, but if the tissue type is changed, the BAM file is not,
+so the action that produces the BAM does not need to be re-run. However,
+changing the tissue type affects the variant caller, so it should be triggered
+to rerun even though the input BAM is not changed.
+
+    Input gsi_std;
+    
+    Run variant_caller
+      Where metatype == "application/bam"
+      Max timestamp By donor, tissue_type
+      Smash
+          reference = path Where tissue_type == "R",
+          reference_signature = sha1_signature Where tissue_type == "R",
+          tumour = path Where tissue_type == "T",
+          tumour_signature = sha1_signature Where tissue_type == "T"
+        By donor
+      With {
+        input_signatures = [reference_signature, tumour_signature],
+        reference_file = reference,
+        tumour_file = tumour
+      }
+
+The value of `sha1_signature` is a string containing a hexadecimal SHA-1 hash
+of all the names and values referenced variables. There is also
+`json_signature` which produced a string containing a JSON object filled with
+the referenced values.  By saving the signatures as part of the action, we save
+the input information.
+
+In this example, the signature will save `donor`, and `tissue_type`.  That
+means if there was a sample swap and both tissues belong to a different donor,
+the signatures will change and the action will be different and, therefore,
+re-run, even though the donor is not directly included in the parameters to the
+action.  Not all values are included. The `metatype` is considered immutable in
+the `gsi_std` format and not included in the signature. The input format
+decides what variables may be included in the signature.
+
+Of course, the donor and tissue type could be included as arguments to the
+action, but to ensure correct behaviour of the action, every variable would
+have to be included without fail. This is burdensome for the programmer, so the
+signature is a short hand that includes the correct information.
+
+Now, suppose we wish to compare possible variants that are in two organs of interest:
+
+    Input gsi_std;
+    
+    Run variant_caller
+      Where metatype == "application/bam"
+      Max timestamp By donor, tissue_origin
+      Smash
+          blood = path Where tissue_origin == "Blood",
+          blood_signature = sha1_signature Where tissue_origin == "Blood",
+          organ = path Where tissue_origin == "Brain",
+          organ_signature = sha1_signature Where tissue_origin == "Brain"
+        By donor
+      With {
+        input_signaturees = [blood_signature, organ_signature],
+        reference_file = blood,
+        tumour_file = organ
+      }
+
+This olive runs the same action as the olive above, but the information that
+goes into the signature is now different because the information used in making
+the decision is different.
+
+The set of what information goes into a signature is unique to each olive.

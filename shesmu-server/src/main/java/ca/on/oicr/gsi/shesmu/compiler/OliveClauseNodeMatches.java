@@ -33,7 +33,8 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
 		switch (state) {
 		case BAD:
 			return ClauseStreamOrder.BAD;
@@ -41,8 +42,8 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 			errorHandler.accept(
 					String.format("%d:%d: “Matches” clause cannot be applied to grouped result.", line, column));
 			return ClauseStreamOrder.BAD;
-
 		case PURE:
+			signableNames.addAll(target.signableNames);
 			return target.isRoot() ? ClauseStreamOrder.PURE : ClauseStreamOrder.TRANSFORMED;
 		default:
 			return ClauseStreamOrder.BAD;
@@ -60,13 +61,14 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
 		boolean good = arguments.stream().filter(argument -> argument.resolve(limitedDefs, errorHandler))
 				.count() == arguments.size();
-		final Optional<Stream<Target>> replacements = target.outputStreamVariables(inputFormatDefinition, definedFormats, errorHandler,
-				constants);
+		final Optional<Stream<Target>> replacements = target.outputStreamVariables(inputFormatDefinition,
+				definedFormats, errorHandler, constants);
 		good &= replacements.isPresent();
 		return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
 

@@ -7,7 +7,20 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
  */
 public abstract class Target {
 	public enum Flavour {
-		CONSTANT, LAMBDA, PARAMETER, STREAM
+		CONSTANT(false), LAMBDA(false), PARAMETER(false), STREAM(true), STREAM_SIGNABLE(true), STREAM_SIGNATURE(true);
+		private final boolean isStream;
+
+		private Flavour(boolean isStream) {
+			this.isStream = isStream;
+		}
+
+		public boolean isStream() {
+			return isStream;
+		}
+
+		public boolean needsCapture() {
+			return !isStream;
+		}
 	}
 
 	/**

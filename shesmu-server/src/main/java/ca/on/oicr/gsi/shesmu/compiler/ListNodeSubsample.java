@@ -5,11 +5,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.SampleNode.Consumption;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ListNodeSubsample extends ListNode {
 
@@ -23,8 +25,8 @@ public class ListNodeSubsample extends ListNode {
 	}
 
 	@Override
-	public final void collectFreeVariables(Set<String> names) {
-		samplers.forEach(sampler -> sampler.collectFreeVariables(names));
+	public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		samplers.forEach(sampler -> sampler.collectFreeVariables(names, predicate));
 	}
 
 	@Override

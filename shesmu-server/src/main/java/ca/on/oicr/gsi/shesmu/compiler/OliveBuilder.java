@@ -5,6 +5,8 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Handle;
@@ -15,6 +17,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
+import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 
@@ -27,9 +30,11 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	private static final Type A_ACTION_TYPE = Type.getType(Action.class);
 	private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
+
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 
 	private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
+
 	private static final Method METHOD_ACTION_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE,
 			new Type[] { A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE });
 	private static final Method METHOD_CHILD__SET = new Method("set", VOID_TYPE, new Type[] { DOUBLE_TYPE });
@@ -46,10 +51,38 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	private final int line;
 
-	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, int line, int column) {
+	private final String signerPrefix;
+
+	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, int line, int column,
+			Stream<Target> signableNames) {
 		super(owner, oliveId, initialType);
 		this.line = line;
 		this.column = column;
+		signerPrefix = String.format("olive_%d$$", oliveId);
+		final List<Target> signables = signableNames.collect(Collectors.toList());
+		NameDefinitions.signatureVariables().forEach(signer -> {
+			final String name = signerPrefix + signer.name();
+			switch (signer.storage()) {
+			case STATIC_FIELD:
+				owner.classVisitor.visitField(Opcodes.ACC_STATIC, name, signer.type().asmType().getDescriptor(), null,
+						null);
+				signer.build(owner.classInitMethod, initialType, signables.stream());
+				owner.classInitMethod.putStatic(owner.selfType(), name, signer.type().asmType());
+				break;
+			case STATIC_METHOD:
+				final Method method = new Method(name, signer.type().asmType(), new Type[] { initialType });
+				final GeneratorAdapter methodGen = new GeneratorAdapter(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+						method, null, null, owner.classVisitor);
+				methodGen.visitCode();
+				signer.build(methodGen, initialType, signables.stream());
+				methodGen.returnValue();
+				methodGen.visitMaxs(0, 0);
+				methodGen.visitEnd();
+				break;
+			default:
+				throw new UnsupportedOperationException();
+			}
+		});
 	}
 
 	/**
@@ -69,6 +102,22 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		methodGen.push(column);
 		methodGen.push(owner.compileTime);
 		methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT);
+	}
+
+	@Override
+	protected void emitSigner(SignatureVariable signer, Renderer renderer) {
+		switch (signer.storage()) {
+		case STATIC_METHOD:
+			renderer.loadStream();
+			renderer.methodGen().invokeStatic(owner.selfType(),
+					new Method(signerPrefix + signer.name(), signer.type().asmType(), new Type[] { initialType }));
+			break;
+		case STATIC_FIELD:
+			renderer.methodGen().getStatic(owner.selfType(), signerPrefix + signer.name(), signer.type().asmType());
+			break;
+		default:
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	/**
@@ -120,12 +169,32 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		runMethod.invokeVirtual(A_CHILD_TYPE, METHOD_CHILD__SET);
 
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor), 1,
-				currentType(), loadableValues());
+				currentType(), loadableValues(), this::emitSigner);
 	}
 
 	@Override
 	public Stream<LoadableValue> loadableValues() {
 		return owner.constants();
+	}
+
+	@Override
+	protected void loadSigner(SignatureVariable signer, Renderer renderer) {
+		switch (signer.storage()) {
+		case STATIC_FIELD:
+			renderer.methodGen().getStatic(owner.selfType(), signerPrefix + signer.name(), signer.type().asmType());
+			break;
+		case STATIC_METHOD:
+			final Handle handle = new Handle(Opcodes.H_INVOKESTATIC, owner.selfType().getInternalName(),
+					signerPrefix + signer.name(), Type.getMethodDescriptor(signer.type().asmType(), initialType),
+					false);
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
+					Type.getMethodType(signer.type().asmType(), initialType));
+
+			break;
+		default:
+			throw new UnsupportedOperationException();
+		}
 	}
 
 }

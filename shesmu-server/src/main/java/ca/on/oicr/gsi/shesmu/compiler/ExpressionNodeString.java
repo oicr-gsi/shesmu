@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.objectweb.asm.Type;
@@ -13,6 +14,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeString extends ExpressionNode {
 
@@ -32,8 +34,8 @@ public class ExpressionNodeString extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		parts.forEach(part -> part.collectFreeVariables(names));
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		parts.forEach(part -> part.collectFreeVariables(names, predicate));
 	}
 
 	@Override

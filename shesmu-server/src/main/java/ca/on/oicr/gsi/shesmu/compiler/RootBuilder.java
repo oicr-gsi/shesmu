@@ -30,6 +30,7 @@ import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import io.prometheus.client.Gauge;
 
 /**
@@ -88,7 +89,7 @@ public abstract class RootBuilder {
 		});
 	}
 
-	private final GeneratorAdapter classInitMethod;
+	final GeneratorAdapter classInitMethod;
 	final ClassVisitor classVisitor;
 	private final GeneratorAdapter clearGaugeMethod;
 
@@ -135,7 +136,8 @@ public abstract class RootBuilder {
 				classVisitor);
 		clearGaugeMethod.visitCode();
 
-		runMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__RUN, null, null, classVisitor);
+		runMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED, METHOD_ACTION_GENERATOR__RUN,
+				null, null, classVisitor);
 		runMethod.visitCode();
 		runMethod.loadThis();
 		runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__CLEAR_GAUGE);
@@ -158,9 +160,12 @@ public abstract class RootBuilder {
 	 *
 	 * @param line
 	 *            the line in the source file this olive starts on
+	 * @param signableNames
 	 */
-	public final OliveBuilder buildRunOlive(int line, int column) {
-		return new OliveBuilder(this, oliveId++, inputFormatDefinition.type(), line, column);
+	public final OliveBuilder buildRunOlive(int line, int column, Set<String> signableNames) {
+		return new OliveBuilder(this, oliveId++, inputFormatDefinition.type(), line, column,
+				inputFormatDefinition.baseStreamVariables()
+						.filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE && signableNames.contains(t.name())));
 	}
 
 	public Stream<LoadableValue> constants() {
@@ -287,7 +292,10 @@ public abstract class RootBuilder {
 	 * No stream variables are available in this context
 	 */
 	public final Renderer rootRenderer() {
-		return new Renderer(this, runMethod, -1, null, Stream.empty());
+		return new Renderer(this, runMethod, -1, null, Stream.empty(), (renderer, name) -> {
+			throw new IllegalArgumentException(
+					String.format("Signature variable %s not defined in root context.", name));
+		});
 	}
 
 	/**

@@ -16,6 +16,10 @@ public final class Pair<T, U> {
 		return pair -> pair.accept(consumer);
 	}
 
+	public static <T> Function<T, Pair<Integer, T>> number() {
+		return number(0);
+	}
+
 	/**
 	 * Create a stateful function that transforms an item in a pair with the first
 	 * element being the index of this item.
@@ -24,13 +28,13 @@ public final class Pair<T, U> {
 	 *
 	 * @return
 	 */
-	public static <T> Function<T, Pair<Integer, T>> number() {
+	public static <T> Function<T, Pair<Integer, T>> number(int offset) {
 		return new Function<T, Pair<Integer, T>>() {
 			int index = 0;
 
 			@Override
 			public Pair<Integer, T> apply(T t) {
-				return new Pair<>(index++, t);
+				return new Pair<>(index++ + offset, t);
 			}
 		};
 	}

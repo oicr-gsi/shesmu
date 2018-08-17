@@ -4,10 +4,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class SourceNode {
 
@@ -78,7 +80,7 @@ public abstract class SourceNode {
 	 *
 	 * @param names
 	 */
-	public abstract void collectFreeVariables(Set<String> names);
+	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
 	public int column() {
 		return column;

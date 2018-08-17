@@ -184,7 +184,8 @@ public final class JavaStreamBuilder {
 				Type.getMethodType(targetType.boxedAsmType(), sortType.boxedAsmType()));
 		renderer.invokeInterfaceStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, parameters(capturedVariables, name, sortType.asmType()));
+				capturedVariables.length, streamType, parameters(capturedVariables, name, sortType.asmType()),
+				renderer.signerEmitter());
 	}
 
 	public void count() {
@@ -215,7 +216,8 @@ public final class JavaStreamBuilder {
 				Type.getMethodType(BOOLEAN_TYPE, filterType.boxedAsmType()));
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, parameters(capturedVariables, name, filterType.asmType()));
+				capturedVariables.length, streamType, parameters(capturedVariables, name, filterType.asmType()),
+				renderer.signerEmitter());
 	}
 
 	public final void finish() {
@@ -248,7 +250,8 @@ public final class JavaStreamBuilder {
 				Type.getMethodType(A_STREAM_TYPE, oldType.boxedAsmType()));
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLAT_MAP);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType.asmType()));
+				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType.asmType()),
+				renderer.signerEmitter());
 	}
 
 	public void limit(Consumer<Renderer> limitProducer) {
@@ -277,7 +280,8 @@ public final class JavaStreamBuilder {
 				Type.getMethodType(newType.boxedAsmType(), oldType.boxedAsmType()));
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType.asmType()));
+				capturedVariables.length, streamType, parameters(capturedVariables, name, oldType.asmType()),
+				renderer.signerEmitter());
 	}
 
 	public final Renderer match(Match matchType, String name, LoadableValue... capturedVariables) {
@@ -299,7 +303,8 @@ public final class JavaStreamBuilder {
 				Type.getMethodType(BOOLEAN_TYPE, currentType.boxedAsmType()));
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, matchType.method);
 		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, parameters(capturedVariables, name, currentType.asmType()));
+				capturedVariables.length, streamType, parameters(capturedVariables, name, currentType.asmType()),
+				renderer.signerEmitter());
 	}
 
 	public Pair<Renderer, Renderer> optima(boolean max, String name, Imyhat targetType,
@@ -335,7 +340,8 @@ public final class JavaStreamBuilder {
 
 		return new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PRIVATE, defaultMethod, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, RootBuilder.proxyCaptured(0, capturedVariables));
+				capturedVariables.length, streamType, RootBuilder.proxyCaptured(0, capturedVariables),
+				renderer.signerEmitter());
 	}
 
 	public Renderer reduce(String name, Imyhat accumulatorType, String accumulatorName, Consumer<Renderer> initial,
@@ -402,7 +408,7 @@ public final class JavaStreamBuilder {
 					public Type type() {
 						return currentType.asmType();
 					}
-				})));
+				})), renderer.signerEmitter());
 
 	}
 

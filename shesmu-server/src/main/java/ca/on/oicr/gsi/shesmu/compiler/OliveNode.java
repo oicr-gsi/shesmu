@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -82,6 +83,7 @@ public abstract class OliveNode {
 	}
 
 	private final List<OliveClauseNode> clauses;
+	protected final Set<String> signableNames = new TreeSet<>();
 
 	public OliveNode(List<OliveClauseNode> clauses) {
 		super();
@@ -102,7 +104,10 @@ public abstract class OliveNode {
 	public final boolean checkVariableStream(Consumer<String> errorHandler) {
 		ClauseStreamOrder state = ClauseStreamOrder.PURE;
 		for (final OliveClauseNode clause : clauses()) {
-			state = clause.ensureRoot(state, errorHandler);
+			state = clause.ensureRoot(state, signableNames, errorHandler);
+		}
+		if (state == ClauseStreamOrder.PURE) {
+			collectArgumentSignableVariables();
 		}
 		return state != ClauseStreamOrder.BAD;
 	}
@@ -113,6 +118,8 @@ public abstract class OliveNode {
 	protected List<OliveClauseNode> clauses() {
 		return clauses;
 	}
+
+	protected abstract void collectArgumentSignableVariables();
 
 	/**
 	 * Find all the olive definitions

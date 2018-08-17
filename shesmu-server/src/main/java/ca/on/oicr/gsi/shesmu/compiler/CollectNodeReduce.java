@@ -4,9 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class CollectNodeReduce extends CollectNode {
 
@@ -64,11 +66,11 @@ public class CollectNodeReduce extends CollectNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		initial.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		initial.collectFreeVariables(names, predicate);
 		final boolean remove = !names.contains(name);
 		final boolean removeAccumulator = !names.contains(accumulatorName);
-		reducer.collectFreeVariables(names);
+		reducer.collectFreeVariables(names, predicate);
 		if (remove) {
 			names.remove(name);
 		}
@@ -80,7 +82,7 @@ public class CollectNodeReduce extends CollectNode {
 	@Override
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> capturedNames = new HashSet<>();
-		reducer.collectFreeVariables(capturedNames);
+		reducer.collectFreeVariables(capturedNames, Flavour::needsCapture);
 		capturedNames.remove(name);
 		capturedNames.remove(accumulatorName);
 		final Renderer reducerRenderer = builder.reduce(name, initial.type(), accumulatorName, initial::render, builder

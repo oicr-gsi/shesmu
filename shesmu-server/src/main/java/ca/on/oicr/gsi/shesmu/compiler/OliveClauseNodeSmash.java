@@ -8,6 +8,8 @@ import java.util.Set;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+
 public class OliveClauseNodeSmash extends OliveClauseNodeBaseBy<SmashNode> {
 
 	public OliveClauseNodeSmash(int line, int column, List<SmashNode> smashes, List<String> discriminators) {
@@ -18,7 +20,7 @@ public class OliveClauseNodeSmash extends OliveClauseNodeBaseBy<SmashNode> {
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		children().forEach(expression -> expression.collectFreeVariables(freeVariables));
+		children().forEach(expression -> expression.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
 		oliveBuilder.line(line);
 		final RegroupVariablesBuilder smasher = oliveBuilder.smash(oliveBuilder.loadableValues()

@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
  * The arguments defined in “Monitor” clause.
@@ -44,7 +45,7 @@ public final class MonitorArgumentNode {
 	}
 
 	public void collectFreeVariables(Set<String> freeVariables) {
-		expression.collectFreeVariables(freeVariables);
+		expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 	}
 
 	/**

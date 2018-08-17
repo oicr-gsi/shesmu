@@ -4,9 +4,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class ListNodeBaseRange extends ListNode {
 
@@ -20,8 +22,8 @@ public abstract class ListNodeBaseRange extends ListNode {
 	}
 
 	@Override
-	public final void collectFreeVariables(Set<String> names) {
-		expression.collectFreeVariables(names);
+	public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		expression.collectFreeVariables(names, predicate);
 	}
 
 	@Override

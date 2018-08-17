@@ -261,6 +261,36 @@ which can only bind to public methods, and
 [`lookup()`](https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandles.html#lookup--),
 which can bind to any method that is visible from the caller.
 
+### Signature Variables
+Signature variables are special variables that compute some kind of record
+based on the input variable used by an olive.
+
+There are two categories of signature variables: ones that are static (_i.e._,
+the same for all inputs) and ones that vary for each input.
+
+This might seem a contradiction, but the static case is useful for things that
+depend only on the names and/or types of the signable variables. This is how
+the `signable_names` works.
+
+To create a signature variable:
+
+1. Create a class that extends `SignatureVariable`.
+1. Include a no-arguments constructor.
+1. Annotate this class with `@MetaInfServices`.
+1. Implement the `build` method to compute a value. If static, no input is
+	 provided. If varying for each record, the input will be the only argument to
+   the method.
+
+For the per-input case, a wrapper is available to make implementation easier:
+
+1. Create a class _S_ that implements `Signable<`_R_`>` where _R_ is the return type.
+1. Include a no-arguments constructor.
+1. Implement the interface as desired.
+1. Create a class _SV_ that extends `SignatureVariableForSigner<`_S_`,`_R_`>`.
+1. Create a no-arguments constructor in _SV_ that passes appropriate values to the
+   super-constructor.
+1. Annotate this class with `@MetaInfServices(SignatureVariable.class)`.
+
 ### Actions
 Actions are the most complicated. Shesmu pushes a number of questions about how
 actions work onto the plugin.

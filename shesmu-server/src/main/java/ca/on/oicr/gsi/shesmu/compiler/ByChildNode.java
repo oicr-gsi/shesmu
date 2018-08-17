@@ -1,8 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
@@ -23,6 +25,8 @@ public abstract class ByChildNode extends Target {
 		this.column = column;
 		this.name = name;
 	}
+
+	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
 	public final int column() {
 		return column;

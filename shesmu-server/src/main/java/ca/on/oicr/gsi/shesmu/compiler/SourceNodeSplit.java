@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -12,6 +13,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class SourceNodeSplit extends SourceNode {
 
@@ -30,8 +32,8 @@ public class SourceNodeSplit extends SourceNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		expression.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		expression.collectFreeVariables(names, predicate);
 	}
 
 	@Override

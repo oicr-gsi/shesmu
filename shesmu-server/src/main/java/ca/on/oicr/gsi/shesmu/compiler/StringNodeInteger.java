@@ -6,6 +6,7 @@ import static org.objectweb.asm.Type.LONG_TYPE;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -13,6 +14,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class StringNodeInteger extends StringNode {
 
@@ -36,8 +38,8 @@ public class StringNodeInteger extends StringNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		expression.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		expression.collectFreeVariables(names, predicate);
 	}
 
 	@Override

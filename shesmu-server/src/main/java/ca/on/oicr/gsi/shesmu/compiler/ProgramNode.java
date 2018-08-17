@@ -106,6 +106,9 @@ public class ProgramNode {
 					olive -> olive.resolve(inputFormatDefinition, inputFormatDefinitions, errorHandler, constants))
 					.count() == olives.size();
 		}
+		if (ok) {
+			ok = olives.stream().filter(olive -> olive.checkVariableStream(errorHandler)).count() == olives.size();
+		}
 
 		// Type check the resolved structure
 		if (ok) {

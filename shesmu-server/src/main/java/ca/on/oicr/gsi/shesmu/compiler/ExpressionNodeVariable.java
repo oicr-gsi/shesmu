@@ -4,12 +4,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ExpressionNodeVariable extends ExpressionNode {
@@ -41,15 +43,17 @@ public class ExpressionNodeVariable extends ExpressionNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		if (target.flavour() != Flavour.STREAM) {
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		if (predicate.test(target.flavour())) {
 			names.add(name);
 		}
 	}
 
 	@Override
 	public void render(Renderer renderer) {
-		if (target.flavour() == Flavour.STREAM) {
+		if (target.flavour() == Flavour.STREAM_SIGNATURE) {
+			renderer.emitSigner((SignatureVariable) target);
+		} else if (target.flavour().isStream()) {
 			renderer.loadStream();
 			renderer.methodGen().invokeVirtual(renderer.streamType(),
 					new Method(target.name(), target.type().asmType(), new Type[] {}));

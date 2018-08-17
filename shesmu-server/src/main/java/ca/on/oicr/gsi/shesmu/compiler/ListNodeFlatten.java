@@ -6,9 +6,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class ListNodeFlatten extends ListNode {
 
@@ -16,16 +18,16 @@ public class ListNodeFlatten extends ListNode {
 
 	private Imyhat incoming;
 
-	private String nextName;
+	private String incomingName;
 
+	private String nextName;
 	private Ordering ordering;
+
 	private final SourceNode source;
 
 	private final List<ListNode> transforms;
 
 	private Imyhat type;
-
-	private String incomingName;
 
 	public ListNodeFlatten(int line, int column, String childName, SourceNode source, List<ListNode> transforms) {
 		super(line, column);
@@ -37,9 +39,9 @@ public class ListNodeFlatten extends ListNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		source.collectFreeVariables(names);
-		transforms.forEach(t -> t.collectFreeVariables(names));
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		source.collectFreeVariables(names, predicate);
+		transforms.forEach(t -> t.collectFreeVariables(names, predicate));
 	}
 
 	@Override
@@ -71,7 +73,7 @@ public class ListNodeFlatten extends ListNode {
 	@Override
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
-		collectFreeVariables(freeVariables);
+		collectFreeVariables(freeVariables, Flavour::needsCapture);
 		final Renderer renderer = builder.flatten(incomingName, type, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
@@ -85,7 +87,7 @@ public class ListNodeFlatten extends ListNode {
 
 	@Override
 	public Optional<String> resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-		this.incomingName = name;
+		incomingName = name;
 		final NameDefinitions innerDefs = defs.bind(new Target() {
 
 			@Override

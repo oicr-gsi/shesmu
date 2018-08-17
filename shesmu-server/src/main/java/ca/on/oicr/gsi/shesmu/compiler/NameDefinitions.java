@@ -2,12 +2,15 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
@@ -18,16 +21,18 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 public class NameDefinitions {
 	public static class DefaultStreamTarget extends Target {
 		private final String name;
+		private final boolean signable;
 		private final Imyhat type;
 
-		public DefaultStreamTarget(String name, Imyhat type) {
+		public DefaultStreamTarget(String name, Imyhat type, boolean signable) {
 			this.name = name;
 			this.type = type;
+			this.signable = signable;
 		}
 
 		@Override
 		public Flavour flavour() {
-			return Flavour.STREAM;
+			return signable ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
 		}
 
 		@Override
@@ -42,6 +47,9 @@ public class NameDefinitions {
 
 	}
 
+	private static final ServiceLoader<SignatureVariable> SIGNATURE_VARIABLE_LOADER = ServiceLoader
+			.load(SignatureVariable.class);
+
 	/**
 	 * Create a new collection of variables from the parameters provided.
 	 *
@@ -53,8 +61,12 @@ public class NameDefinitions {
 		return new NameDefinitions(Stream
 				.concat(parameters.filter(
 						variable -> variable.flavour() == Flavour.PARAMETER || variable.flavour() == Flavour.CONSTANT),
-						inputFormatDefinition.baseStreamVariables())
+						Stream.concat(inputFormatDefinition.baseStreamVariables(), signatureVariables()))
 				.collect(Collectors.toMap(Target::name, Function.identity())), true);
+	}
+
+	public static Stream<SignatureVariable> signatureVariables() {
+		return RuntimeSupport.stream(SIGNATURE_VARIABLE_LOADER);
 	}
 
 	private final boolean isGood;
@@ -115,7 +127,7 @@ public class NameDefinitions {
 	 */
 	public NameDefinitions replaceStream(Stream<Target> newStreamVariables, boolean good) {
 		return new NameDefinitions(
-				Stream.concat(variables.values().stream().filter(variable -> variable.flavour() != Flavour.STREAM),
+				Stream.concat(variables.values().stream().filter(variable -> !variable.flavour().isStream()),
 						newStreamVariables).collect(Collectors.toMap(Target::name, Function.identity())),
 				isGood && good);
 	}

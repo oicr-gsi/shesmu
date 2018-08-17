@@ -54,7 +54,8 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
 		return state;
 	}
 
@@ -99,8 +100,9 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		return defs.fail(labels.stream().filter(arg -> arg.resolve(defs, errorHandler)).count() == labels.size());
 	}
 

@@ -19,6 +19,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.subsample.FixedWithConditions;
 import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
 
@@ -66,10 +67,10 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		limitExpression.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		limitExpression.collectFreeVariables(names, predicate);
 		final boolean remove = !names.contains(name);
-		conditionExpression.collectFreeVariables(names);
+		conditionExpression.collectFreeVariables(names, predicate);
 		if (remove) {
 			names.remove(name);
 		}
@@ -94,7 +95,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 	@Override
 	public void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType) {
 		final Set<String> freeVariables = new HashSet<>();
-		conditionExpression.collectFreeVariables(freeVariables);
+		conditionExpression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 		final LoadableValue[] capturedVariables = renderer.allValues()
 				.filter(v -> freeVariables.contains(v.name()) && !name.equals(v.name())).toArray(LoadableValue[]::new);
 		final Method method = new Method(String.format("%s_%d_condition", prefix, index), BOOLEAN_TYPE,
@@ -103,7 +104,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 		final Renderer conditionRenderer = new Renderer(renderer.root(),
 				new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, renderer.root().classVisitor),
 				capturedVariables.length, streamType,
-				JavaStreamBuilder.parameters(capturedVariables, name, type.asmType()));
+				JavaStreamBuilder.parameters(capturedVariables, name, type.asmType()), renderer.signerEmitter());
 		conditionRenderer.methodGen().visitCode();
 		conditionExpression.render(conditionRenderer);
 		conditionRenderer.methodGen().returnValue();

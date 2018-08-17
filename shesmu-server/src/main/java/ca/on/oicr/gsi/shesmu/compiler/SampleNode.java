@@ -4,11 +4,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.objectweb.asm.Type;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class SampleNode {
 
@@ -60,7 +62,7 @@ public abstract class SampleNode {
 	public SampleNode() {
 	}
 
-	public abstract void collectFreeVariables(Set<String> names);
+	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
 	public abstract Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler);
 

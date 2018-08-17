@@ -35,7 +35,7 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 				errorHandler.accept(String.format("%d:%d: Undefined variable “%s” in “By”.", line, column, name));
 				return null;
 			}
-			if (!target.map(Target::flavour).map(Flavour.STREAM::equals).orElse(false)) {
+			if (!target.map(Target::flavour).map(Flavour::isStream).orElse(false)) {
 				errorHandler.accept(String.format("%d:%d: Non-stream variable “%s” in “By”.", line, column, name));
 				return null;
 			}
@@ -73,13 +73,24 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 	}
 
 	@Override
-	public final ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
-		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
+	public final ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
+		if (state == ClauseStreamOrder.PURE) {
+			discriminatorVariables.stream()//
+					.filter(v -> v.flavour() == Flavour.STREAM_SIGNABLE)//
+					.map(Target::name)//
+					.forEach(signableNames::add);
+			children.stream()//
+					.forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+			return ClauseStreamOrder.TRANSFORMED;
+		}
+		return state;
 	}
 
 	@Override
-	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		boolean ok = children.stream().filter(child -> child.resolve(defs, errorHandler)).count() == children.size();
 		final Optional<List<Target>> maybeDiscriminatorVariables = checkDiscriminators(line, column, defs,
 				discriminators, errorHandler);
@@ -90,7 +101,7 @@ public abstract class OliveClauseNodeBaseBy<T extends ByChildNode> extends Olive
 		}
 
 		ok &= children.stream().noneMatch(group -> {
-			final boolean isDuplicate = defs.get(group.name()).filter(variable -> variable.flavour() != Flavour.STREAM)
+			final boolean isDuplicate = defs.get(group.name()).filter(variable -> !variable.flavour().isStream())
 					.isPresent();
 			if (isDuplicate) {
 				errorHandler.accept(String.format("%d:%d: Redefinition of variable “%s”.", group.line(), group.column(),

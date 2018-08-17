@@ -116,7 +116,8 @@ public abstract class BaseInputFormatDefinition<V, R extends InputRepository<V>>
 		variables = Arrays.stream(itemClass.getMethods()).flatMap(method -> {
 			final Export[] exports = method.getAnnotationsByType(Export.class);
 			if (exports.length == 1) {
-				return Stream.of(new DefaultStreamTarget(method.getName(), Imyhat.parse(exports[0].type())));
+				return Stream.of(new DefaultStreamTarget(method.getName(), Imyhat.parse(exports[0].type()),
+						exports[0].signable()));
 			}
 			return Stream.empty();
 		}).toArray(Target[]::new);

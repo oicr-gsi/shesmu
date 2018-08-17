@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu;
 import java.io.File;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -30,13 +29,10 @@ import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -93,6 +89,10 @@ public final class RuntimeSupport {
 			throw new UnsupportedOperationException();
 		}
 	};
+
+	static {
+		MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+	}
 
 	/**
 	 * Put a formatted date-time into a string builder
@@ -210,6 +210,14 @@ public final class RuntimeSupport {
 		return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
 	}
 
+	public static String printHexBinary(byte[] values) {
+		final StringBuilder builder = new StringBuilder(values.length * 2);
+		for (final byte b : values) {
+			builder.append(String.format("%02X", b));
+		}
+		return builder.toString();
+	}
+
 	/**
 	 * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular
 	 * expression (which is the method name). s
@@ -227,8 +235,7 @@ public final class RuntimeSupport {
 			return callsites.get(regex);
 		}
 		final Pattern pattern = Pattern.compile(regex);
-		final CallSite callsite = new ConstantCallSite(
-				MethodHandles.constant(Pattern.class, pattern));
+		final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Pattern.class, pattern));
 		callsites.put(regex, callsite);
 		return callsite;
 	}
@@ -308,10 +315,6 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static String toString(Instant instant, String format) {
 		return DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
-	}
-
-	static {
-		MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 	}
 
 	private RuntimeSupport() {

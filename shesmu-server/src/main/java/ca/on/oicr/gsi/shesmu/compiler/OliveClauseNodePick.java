@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class OliveClauseNodePick extends OliveClauseNode {
 
@@ -37,7 +38,15 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
+		if (state == ClauseStreamOrder.PURE) {
+			discriminatorVariables.stream()//
+					.filter(v -> v.flavour() == Flavour.STREAM_SIGNABLE)//
+					.map(Target::name)//
+					.forEach(signableNames::add);
+			extractor.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
+		}
 		return state;
 	}
 
@@ -45,7 +54,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		extractor.collectFreeVariables(freeVariables);
+		extractor.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
 		oliveBuilder.line(line);
 		final Renderer extractorMethod = oliveBuilder.pick(extractor.type(), max, discriminatorVariables.stream(),
@@ -62,8 +71,9 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		final Optional<List<Target>> maybeDiscriminatorVariables = OliveClauseNodeBaseBy.checkDiscriminators(line,
 				column, defs, discriminators, errorHandler);
 		maybeDiscriminatorVariables.ifPresent(x -> discriminatorVariables = x);

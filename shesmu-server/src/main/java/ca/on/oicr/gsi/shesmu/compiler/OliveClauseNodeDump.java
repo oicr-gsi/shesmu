@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class OliveClauseNodeDump extends OliveClauseNode implements RejectNode {
 
@@ -45,11 +46,12 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 
 	@Override
 	public void collectFreeVariables(Set<String> freeVariables) {
-		columns.forEach(column -> column.collectFreeVariables(freeVariables));
+		columns.forEach(column -> column.collectFreeVariables(freeVariables, Flavour::needsCapture));
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
 		return state;
 	}
 
@@ -57,7 +59,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		columns.forEach(e -> e.collectFreeVariables(freeVariables));
+		columns.forEach(e -> e.collectFreeVariables(freeVariables, Flavour::needsCapture));
 		final Renderer renderer = oliveBuilder.peek(oliveBuilder.loadableValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
@@ -84,8 +86,9 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		return defs.fail(columns.stream()//
 				.filter(e -> e.resolve(defs, errorHandler))//
 				.count() == columns.size());

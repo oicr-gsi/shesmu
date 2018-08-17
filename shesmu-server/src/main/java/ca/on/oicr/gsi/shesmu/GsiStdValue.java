@@ -75,7 +75,7 @@ public final class GsiStdValue {
 		return accession;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String donor() {
 		return donor;
 	}
@@ -261,12 +261,12 @@ public final class GsiStdValue {
 		return file_size;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String group_desc() {
 		return group_desc;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String group_id() {
 		return group_id;
 	}
@@ -308,27 +308,27 @@ public final class GsiStdValue {
 		return ius;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String kit() {
 		return kit;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String library_design() {
 		return library_design;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String library_name() {
 		return library_name;
 	}
 
-	@Export(type = "i")
+	@Export(type = "i", signable = true)
 	public long library_size() {
 		return library_size;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String library_type() {
 		return library_type;
 	}
@@ -353,7 +353,7 @@ public final class GsiStdValue {
 		return path;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String project() {
 		return project;
 	}
@@ -363,7 +363,7 @@ public final class GsiStdValue {
 		return source;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String targeted_resequencing() {
 		return targeted_resequencing;
 	}
@@ -373,22 +373,22 @@ public final class GsiStdValue {
 		return timestamp;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String tissue_origin() {
 		return tissue_origin;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String tissue_prep() {
 		return tissue_prep;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String tissue_region() {
 		return tissue_region;
 	}
 
-	@Export(type = "s")
+	@Export(type = "s", signable = true)
 	public String tissue_type() {
 		return tissue_type;
 	}

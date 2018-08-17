@@ -15,6 +15,7 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class OliveClauseNodeWhere extends OliveClauseNode {
 
@@ -29,7 +30,11 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 	}
 
 	@Override
-	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Consumer<String> errorHandler) {
+	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
+			Consumer<String> errorHandler) {
+		if (state == ClauseStreamOrder.PURE) {
+			expression.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
+		}
 		return state;
 	}
 
@@ -37,7 +42,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		expression.collectFreeVariables(freeVariables);
+		expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
 		final Renderer filter = oliveBuilder.filter(oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
@@ -51,8 +56,9 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 	}
 
 	@Override
-	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition, Function<String, InputFormatDefinition> definedFormats,
-			NameDefinitions defs, Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
+			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
 		return defs.fail(expression.resolve(defs, errorHandler));
 	}
 

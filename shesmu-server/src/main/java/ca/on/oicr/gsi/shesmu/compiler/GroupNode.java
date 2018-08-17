@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
@@ -37,8 +38,9 @@ public final class GroupNode extends ByChildNode {
 		this.expression = expression;
 	}
 
-	public void collectFreeVariables(Set<String> freeVariables) {
-		expression.collectFreeVariables(freeVariables);
+	@Override
+	public void collectFreeVariables(Set<String> freeVariables, Predicate<Flavour> predicate) {
+		expression.collectFreeVariables(freeVariables, predicate);
 	}
 
 	public void render(RegroupVariablesBuilder regroup, RootBuilder rootBuilder) {

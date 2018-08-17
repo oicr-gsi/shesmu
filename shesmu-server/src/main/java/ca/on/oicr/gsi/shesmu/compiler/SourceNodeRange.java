@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -12,12 +13,14 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class SourceNodeRange extends SourceNode {
 
 	private static final Type A_LONG_STREAM_TYPE = Type.getType(LongStream.class);
 
-	private static final Method METHOD_LONG_STREAM__BOXED = new Method("boxed", Type.getType(Stream.class), new Type[] {});
+	private static final Method METHOD_LONG_STREAM__BOXED = new Method("boxed", Type.getType(Stream.class),
+			new Type[] {});
 	private static final Method METHOD_LONG_STREAM__RANGE = new Method("range", A_LONG_STREAM_TYPE,
 			new Type[] { Type.LONG_TYPE, Type.LONG_TYPE });
 	private final ExpressionNode end;
@@ -30,9 +33,9 @@ public class SourceNodeRange extends SourceNode {
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> names) {
-		start.collectFreeVariables(names);
-		end.collectFreeVariables(names);
+	public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+		start.collectFreeVariables(names, predicate);
+		end.collectFreeVariables(names, predicate);
 	}
 
 	@Override

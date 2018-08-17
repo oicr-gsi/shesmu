@@ -84,18 +84,25 @@ public abstract class Imyhat {
 		@Override
 		public Comparator<?> comparator() {
 			@SuppressWarnings("unchecked")
-			Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
+			final Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
 			return (Set<?> a, Set<?> b) -> {
-				Iterator<?> aIt = a.iterator();
-				Iterator<?> bIt = b.iterator();
+				final Iterator<?> aIt = a.iterator();
+				final Iterator<?> bIt = b.iterator();
 				while (aIt.hasNext() && bIt.hasNext()) {
-					int result = innerComparator.compare(aIt.next(), bIt.next());
+					final int result = innerComparator.compare(aIt.next(), bIt.next());
 					if (result != 0) {
 						return result;
 					}
 				}
 				return Boolean.compare(aIt.hasNext(), bIt.hasNext());
 			};
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			@SuppressWarnings("unchecked")
+			final Set<Object> values = (Set<Object>) value;
+			dispatcher.consume(values.stream(), inner);
 		}
 
 		public Imyhat inner() {
@@ -206,6 +213,14 @@ public abstract class Imyhat {
 						(Comparator<Object>) types[index].comparator());
 			}
 			return comparator;
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			final Tuple tuple = (Tuple) value;
+			for (int it = 0; it < types.length; it++) {
+				dispatcher.consume(it, tuple.get(it), types[it]);
+			}
 		}
 
 		public Imyhat get(int index) {
@@ -325,6 +340,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			throw new UnsupportedOperationException("Cannot consume value of bad type.");
+		}
+
+		@Override
 		public boolean isBad() {
 			return true;
 		}
@@ -400,6 +420,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			dispatcher.consume((Boolean) value);
+		}
+
+		@Override
 		public Object defaultValue() {
 			return false;
 		}
@@ -468,6 +493,11 @@ public abstract class Imyhat {
 		@Override
 		public Comparator<?> comparator() {
 			return Comparator.naturalOrder();
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			dispatcher.consume((Instant) value);
 		}
 
 		@Override
@@ -543,6 +573,11 @@ public abstract class Imyhat {
 		@Override
 		public Comparator<?> comparator() {
 			return Comparator.naturalOrder();
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			dispatcher.consume((Long) value);
 		}
 
 		@Override
@@ -633,6 +668,11 @@ public abstract class Imyhat {
 		@Override
 		public Comparator<?> comparator() {
 			return Comparator.naturalOrder();
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			dispatcher.consume((String) value);
 		}
 
 		@Override
@@ -833,6 +873,8 @@ public abstract class Imyhat {
 	 */
 	public abstract Comparator<?> comparator();
 
+	public abstract void consume(ImyhatDispatcher dispatcher, Object value);
+
 	/**
 	 * Check if this type is malformed
 	 */
@@ -873,7 +915,7 @@ public abstract class Imyhat {
 
 	public <T> Set<T> newSet() {
 		@SuppressWarnings("unchecked")
-		Comparator<T> comparator = (Comparator<T>) comparator();
+		final Comparator<T> comparator = (Comparator<T>) comparator();
 		return new TreeSet<T>(comparator);
 	}
 
@@ -900,6 +942,12 @@ public abstract class Imyhat {
 
 	public abstract void streamJson(GeneratorAdapter method);
 
+	@SuppressWarnings("unchecked")
+	public final <T> Collector<T, ?, TreeSet<T>> toSet() {
+		final Comparator<T> comparator = (Comparator<T>) comparator();
+		return Collectors.toCollection(() -> new TreeSet<T>(comparator));
+	}
+
 	@Override
 	public final String toString() {
 		return signature();
@@ -910,10 +958,4 @@ public abstract class Imyhat {
 	 * this type
 	 */
 	public abstract Object unpackJson(JsonNode node);
-
-	@SuppressWarnings("unchecked")
-	public final <T> Collector<T, ?, TreeSet<T>> toSet() {
-		Comparator<T> comparator = (Comparator<T>) comparator();
-		return Collectors.toCollection(() -> new TreeSet<T>(comparator));
-	}
 }
