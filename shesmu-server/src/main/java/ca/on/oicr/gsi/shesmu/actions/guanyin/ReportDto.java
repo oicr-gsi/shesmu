@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.actions.guanyin;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -12,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Parser;
 /**
  * Bean of Report responses from Guanyin
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ReportDto {
 	private String category;
 	private long id;
