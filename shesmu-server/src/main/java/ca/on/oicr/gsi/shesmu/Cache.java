@@ -20,7 +20,7 @@ import io.prometheus.client.Counter;
  */
 public abstract class Cache<K, V> {
 	private class Record {
-		private final Instant fetchTime = Instant.now();
+		private Instant fetchTime = Instant.now();
 		private final K key;
 		private Optional<V> value;
 
@@ -41,6 +41,7 @@ public abstract class Cache<K, V> {
 			if (Duration.between(fetchTime, now).toMinutes() > ttl) {
 				try {
 					value = Optional.ofNullable(fetch(key));
+					fetchTime = Instant.now();
 				} catch (final IOException e) {
 					e.printStackTrace();
 					staleRefreshError.labels(name).inc();
