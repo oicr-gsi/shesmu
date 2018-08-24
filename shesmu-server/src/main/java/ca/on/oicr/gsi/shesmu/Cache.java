@@ -36,6 +36,10 @@ public abstract class Cache<K, V> {
 			this.value = value;
 		}
 
+		public void invalidate() {
+			fetchTime = Instant.EPOCH;
+		}
+
 		public Optional<V> refresh() {
 			final Instant now = Instant.now();
 			if (Duration.between(fetchTime, now).toMinutes() > ttl) {
@@ -100,5 +104,12 @@ public abstract class Cache<K, V> {
 			records.put(key, new Record(key));
 		}
 		return records.get(key).refresh();
+	}
+
+	public final void invalidate(K key) {
+		final Record record = records.get(key);
+		if (record != null) {
+			record.invalidate();
+		}
 	}
 }
