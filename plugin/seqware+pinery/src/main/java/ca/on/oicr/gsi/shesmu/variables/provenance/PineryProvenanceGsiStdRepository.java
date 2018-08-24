@@ -89,7 +89,7 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 								0L, //
 								"", //
 								"", //
-								lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(), //
+								lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant(), //
 								new Tuple(lp.getLaneProvenanceId(), lp.getVersion(),
 										properties.getOrDefault("provider", "unknown")), //
 								"lane_provenance");
@@ -136,7 +136,7 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 										.orElse(0L), //
 								limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
 								limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""), //
-								sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
+								sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant(), //
 								new Tuple(sp.getSampleProvenanceId(), sp.getVersion(),
 										properties.getOrDefault("provider", "unknown")), //
 								"sample_provenance");
@@ -160,8 +160,7 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 						final Map<String, String> runDirectories = new HashMap<>();
 						final Set<String> completeRuns;
 						try (PineryClient client = new PineryClient(properties.get("url"), true)) {
-							completeRuns = client.getSequencerRun()
-									.all().stream()//
+							completeRuns = client.getSequencerRun().all().stream()//
 									.filter(run -> run.getState().equals("Completed"))//
 									.map(RunDto::getName)//
 									.collect(Collectors.toSet());
