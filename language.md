@@ -53,7 +53,9 @@ _discriminators_ and other variables are grouped into _collectors_.
 
     Run fingerprint
       Where workflow == "BamQC 2.7+"
-      Group files = path By project
+      Group
+          files = List path
+        By project
       With {
         memory = 4Gi,
         input = files
@@ -64,18 +66,34 @@ all the `path` values for each `project`. Any other variables, (_e.g._,
 `workflow`) won't be accessible since they weren't included in the grouping
 operation.
 
-A `Smash` clause also groups items, but it is trying to take the same variable
-depending on other conditions. It also has _discriminators_. If the incoming
-data is a table, `Smash` is doing a sub-select. The _discriminators_ specify
-the scope of the sub-select and each smash creates a new column based on some
-existing data at a particular row.
+Sometimes, it's desirable to create new columns with conditions. In particular, it's often useful to turn data of the form:
+
+| i | k | v |
+|---|---|---|
+| x | a | 7 |
+| x | b | 3 |
+| x | c | 1 |
+| y | a | 9 |
+| y | b | 2 |
+| y | c | 2 |
+
+into
+
+| i | a | b | c |
+|---|---|---|---|
+| x | 7 | 3 | 1 |
+| y | 9 | 2 | 2 |
+
+
+The `Group` operation can also be used to “widen” a table in this way:
 
     Run project_report
-      Smash
-          qc = path Where workflow == "BamQC 2.7+",
+      Group
+          qc = Where workflow == "BamQC 2.7+" First path,
             # Use the output file from BamQC as `qc`
-          fingerprint = path Where workflow == "Fingerprinting"
+          fingerprint = Where workflow == "Fingerprinting" First path,
             # Use the output file from fingerprinting as `fingerprint`
+          timestamp = Max timestamp
         By project, library_name
             # All scoped over project + library_name pairs
       Group
@@ -92,7 +110,22 @@ existing data at a particular row.
 
 If a value is missing (_e.g._, there's no `Fingerprinting` workflow for a
 `library_name`), there will be no output for that discriminator combination.
-That is, partial smashes are discarded.
+That is, partial matches are discarded.
+
+During a `Group` operation, the “best” value might be appropriate, so the `Max`
+and `Min` selectors can pick the highest or lowest integer or date value.
+
+In total, the collectors in a `Group` operation are:
+
+- `List` to collect all values into a list
+- `First` to collect one value; if none are collected, the group is rejected
+- `Max` and `Min` to collect the most extreme value; if none are collected, the
+  group is rejected
+- `Count` to count the number of matched rows
+- `PartitionCount` which returns a tuple of the number of rows that matched and
+  failed the provided condition
+
+and `Where` clauses can precede any of these.
 
 Often, the same data is duplicated and there needs to be grouping that uses the
 “best” value. For this, a `Min` or `Max` clause can get the right data:
@@ -101,7 +134,7 @@ Often, the same data is duplicated and there needs to be grouping that uses the
       Where workflow == "BamQC 2.7+"
       Max timestamp By workflow, library_name
       Group
-          paths = path
+          paths = List path
         By project
       # And create on report per project
       With {
@@ -117,7 +150,7 @@ things. The `Let` clause provides this:
       # Get all the sample provenance and workflows that have produced FASTQs
       Where source == "sample_provenance" || metatype == "chemical/seq-na-fastq-gzip"
       Group
-          workflows = workflow,
+          workflows = List workflow,
           paths = {source == "sample_provenance", path},
           sources = source,
           timestamps = timestamps
@@ -131,8 +164,8 @@ things. The `Let` clause provides this:
         timestamp = For x In timestamps: Max x Default epoch
       # Now regroup by sequencer run
       Group
-          lanes_were_processed = lane_was_processed,
-          lanes = lane_number,
+          lanes_were_processed = List lane_was_processed,
+          lanes = List lane_number,
           timestamps = timestamp
         By sequencer_run, path
       With {
@@ -540,7 +573,7 @@ For example: `Subsample(Fixed 1, Squish 5)` will first select the first item and
 Select the first _integer_ items in a sorted list.
 
 #### FixedWithCondition
-- `Fixed` _integer_ `While` _condition_ 
+- `Fixed` _integer_ `While` _condition_
 
 Select the first _integer_ items in a sorted list while _condition_ is evaluated to be _true_.
 
@@ -662,12 +695,12 @@ supported signature variables are shown on the status page and apply to all
 import formats.
 
 Signature variables are treated like any other variable and they are lost
-during a `Group`, `Join`, `Smash` or `Let` operation if not preserved. Once the
-input is manipulated by a `Group`, `Join`, `Smash` or `Let` operation, it is
-not possible to track what input was used. So, references are only considered
-from the start of the olive until the first manipulation operation. If it is a
-`Run` olive, with no manipulation, the signable variables referenced in `With`
-arguments are also included.
+during a `Group`, `Join`, or `Let` operation if not preserved. Once the input
+is manipulated by a `Group`, `Join`, or `Let` operation, it is not possible to
+track what input was used. So, references are only considered from the start of
+the olive until the first manipulation operation. If it is a `Run` olive, with
+no manipulation, the signable variables referenced in `With` arguments are also
+included.
 
 The collection of referenced signable variables is considered over the whole
 scope. For instance:
@@ -678,12 +711,12 @@ scope. For instance:
      Where project ~ /N.*/
      With { project = project }
 
-Since there are no `Group`, `Join`, `Smash` or `Let` clauses, the entire olive
-is in scope. The signable variable `project` is referenced (used) twice: once
-in the `Where` clause and once in the arguments to the action. Therefore
-`project` is one of the referenced variables and appears in `signature_names`.
-Order does not matter: although `project` is referenced after `signature_names`
-is used, it is still present because it is used in that scope.
+Since there are no `Group`, `Join`, or `Let` clauses, the entire olive is in
+scope. The signable variable `project` is referenced (used) twice: once in the
+`Where` clause and once in the arguments to the action. Therefore `project` is
+one of the referenced variables and appears in `signature_names`.  Order does
+not matter: although `project` is referenced after `signature_names` is used,
+it is still present because it is used in that scope.
 
 This behaviour is necessary to ensure that a signature returns the same
 value in all parts of the program.
@@ -703,11 +736,11 @@ to rerun even though the input BAM is not changed.
     Run variant_caller
       Where metatype == "application/bam"
       Max timestamp By donor, tissue_type
-      Smash
-          reference = path Where tissue_type == "R",
-          reference_signature = sha1_signature Where tissue_type == "R",
-          tumour = path Where tissue_type == "T",
-          tumour_signature = sha1_signature Where tissue_type == "T"
+      Group
+          reference = Where tissue_type == "R" First path,
+          reference_signature = Where tissue_type == "R" First sha1_signature,
+          tumour = Where tissue_type == "T" First path,
+          tumour_signature = Where tissue_type == "T" First sha1_signature
         By donor
       With {
         input_signatures = [reference_signature, tumour_signature],
@@ -741,11 +774,11 @@ Now, suppose we wish to compare possible variants that are in two organs of inte
     Run variant_caller
       Where metatype == "application/bam"
       Max timestamp By donor, tissue_origin
-      Smash
-          blood = path Where tissue_origin == "Blood",
-          blood_signature = sha1_signature Where tissue_origin == "Blood",
-          organ = path Where tissue_origin == "Brain",
-          organ_signature = sha1_signature Where tissue_origin == "Brain"
+      Group
+          blood = Where tissue_origin == "Blood" First path,
+          blood_signature = Where tissue_origin == "Blood" First sha1_signature,
+          organ = Where tissue_origin == "Brain" First path,
+          organ_signature = Where tissue_origin == "Brain" First sha1_signature
         By donor
       With {
         input_signaturees = [blood_signature, organ_signature],

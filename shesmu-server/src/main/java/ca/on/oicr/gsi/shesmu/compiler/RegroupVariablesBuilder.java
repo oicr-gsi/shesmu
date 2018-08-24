@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
+import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
 import java.util.ArrayList;
@@ -18,12 +19,13 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.PartitionCount;
+import ca.on.oicr.gsi.shesmu.Tuple;
 
 /**
- * Helps to build a “Group” or “Smash” clause and the corresponding variable
- * class
+ * Helps to build a “Group” clause and the corresponding variable class
  */
-public final class RegroupVariablesBuilder {
+public final class RegroupVariablesBuilder implements Regrouper {
 	private class Collected extends Element {
 		private final String fieldName;
 		private final Consumer<Renderer> loader;
@@ -34,6 +36,7 @@ public final class RegroupVariablesBuilder {
 			this.valueType = valueType;
 			this.fieldName = fieldName;
 			this.loader = loader;
+			buildGetter(A_SET_TYPE, fieldName);
 		}
 
 		@Override
@@ -79,6 +82,141 @@ public final class RegroupVariablesBuilder {
 		public void loadConstructorArgument() {
 			// No argument to constructor.
 		}
+	}
+
+	private class Conditional extends Element implements Regrouper {
+
+		private final Consumer<Renderer> condition;
+		private final List<Element> elements = new ArrayList<>();
+
+		public Conditional(Consumer<Renderer> condition) {
+			this.condition = condition;
+		}
+
+		@Override
+		public void addCollected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+			elements.add(new Collected(valueType, fieldName, loader));
+		}
+
+		@Override
+		public void addCount(String fieldName) {
+			elements.add(new Count(fieldName));
+		}
+
+		@Override
+		public void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader) {
+			elements.add(new First(fieldType, fieldName, loader));
+		}
+
+		@Override
+		public void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader) {
+			elements.add(new Optima(fieldType, fieldName, max, loader));
+
+		}
+
+		@Override
+		public void addPartitionCount(String fieldName, Consumer<Renderer> condition) {
+			elements.add(new PartitionCounter(fieldName, condition));
+		}
+
+		@Override
+		public Regrouper addWhere(Consumer<Renderer> condition) {
+			final Conditional c = new Conditional(condition);
+			elements.add(c);
+			return c;
+		}
+
+		@Override
+		public void buildCollect() {
+			final Label skip = collectRenderer.methodGen().newLabel();
+			condition.accept(collectRenderer);
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.EQ, skip);
+			elements.forEach(Element::buildCollect);
+			collectRenderer.methodGen().mark(skip);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			return elements.stream().reduce(index, (i, element) -> element.buildConstructor(ctor, i), (a, b) -> {
+				throw new UnsupportedOperationException();
+			});
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			elements.forEach(element -> element.buildEquals(methodGen, otherLocal, end));
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter method) {
+			elements.forEach(element -> element.buildHashCode(method));
+		}
+
+		@Override
+		public Type constructorType() {
+			return null;
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			elements.forEach(element -> element.failIfBad(okMethod));
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			// No argument to constructor.
+		}
+
+	}
+
+	private class Count extends Element {
+
+		private final String fieldName;
+
+		public Count(String fieldName) {
+			this.fieldName = fieldName;
+			buildGetter(LONG_TYPE, fieldName);
+		}
+
+		@Override
+		public void buildCollect() {
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().dup();
+			collectRenderer.methodGen().getField(self, fieldName, LONG_TYPE);
+			collectRenderer.methodGen().push(1L);
+			collectRenderer.methodGen().math(GeneratorAdapter.ADD, LONG_TYPE);
+			collectRenderer.methodGen().putField(self, fieldName, LONG_TYPE);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			return index;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// Counts are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter method) {
+			// Counts are not included in hash code.
+		}
+
+		@Override
+		public Type constructorType() {
+			return null;
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// Counts are always okay.
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			// No argument to constructor.
+		}
 
 	}
 
@@ -92,6 +230,7 @@ public final class RegroupVariablesBuilder {
 			this.fieldType = fieldType;
 			this.fieldName = fieldName;
 			this.loader = loader;
+			buildGetter(fieldType, fieldName);
 		}
 
 		@Override
@@ -177,25 +316,27 @@ public final class RegroupVariablesBuilder {
 		public abstract void loadConstructorArgument();
 	}
 
-	private class Smash extends Element {
+	private class First extends Element {
 
-		private final Consumer<Renderer> condition;
 		private final String fieldName;
 		private final Type fieldType;
 		private final Consumer<Renderer> loader;
 
-		public Smash(Type fieldType, String fieldName, Consumer<Renderer> condition, Consumer<Renderer> loader) {
+		public First(Type fieldType, String fieldName, Consumer<Renderer> loader) {
 			this.fieldType = fieldType;
 			this.fieldName = fieldName;
-			this.condition = condition;
 			this.loader = loader;
+			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$ok", BOOLEAN_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+			buildGetter(fieldType, fieldName);
 		}
 
 		@Override
 		public void buildCollect() {
-			condition.accept(collectRenderer);
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName + "$ok", BOOLEAN_TYPE);
 			final Label skip = collectRenderer.methodGen().newLabel();
-			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.EQ, skip);
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, skip);
 
 			collectRenderer.methodGen().loadArg(collectedSelfArgument);
 			collectRenderer.methodGen().push(true);
@@ -213,12 +354,12 @@ public final class RegroupVariablesBuilder {
 
 		@Override
 		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
-			// Smashes are not included in equality.
+			// Firsts are not included in equality.
 		}
 
 		@Override
 		public void buildHashCode(GeneratorAdapter method) {
-			// Smashes are not included in has code.
+			// Firsts are not included in hash code.
 		}
 
 		@Override
@@ -244,16 +385,185 @@ public final class RegroupVariablesBuilder {
 
 	}
 
+	private class Optima extends Element {
+
+		private final Comparison comparison;
+		private final String fieldName;
+		private final Type fieldType;
+		private final Consumer<Renderer> loader;
+
+		public Optima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader) {
+			this.fieldType = fieldType;
+			this.fieldName = fieldName;
+			comparison = max ? Comparison.GT : Comparison.LT;
+			this.loader = loader;
+			buildGetter(fieldType, fieldName);
+			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$first", BOOLEAN_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$ok", BOOLEAN_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+
+		}
+
+		@Override
+		public void buildCollect() {
+			final int local = collectRenderer.methodGen().newLocal(fieldType);
+			loader.accept(collectRenderer);
+			collectRenderer.methodGen().storeLocal(local);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName + "$first", BOOLEAN_TYPE);
+			final Label store = collectRenderer.methodGen().newLabel();
+			final Label end = collectRenderer.methodGen().newLabel();
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, store);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().push(false);
+			collectRenderer.methodGen().putField(self, fieldName + "$first", BOOLEAN_TYPE);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName, fieldType);
+			collectRenderer.methodGen().loadLocal(local);
+
+			if (fieldType.equals(Type.LONG_TYPE)) {
+				comparison.branchInt(end, collectRenderer.methodGen());
+			} else {
+				comparison.branchDate(end, collectRenderer.methodGen());
+			}
+
+			collectRenderer.methodGen().mark(store);
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().loadLocal(local);
+			collectRenderer.methodGen().putField(self, fieldName, fieldType);
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().push(true);
+			collectRenderer.methodGen().putField(self, fieldName + "$ok", BOOLEAN_TYPE);
+			collectRenderer.methodGen().mark(end);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			return index;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// Optima are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter method) {
+			// Optima are not included in hash code.
+		}
+
+		@Override
+		public Type constructorType() {
+			return null;
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			okMethod.loadThis();
+			okMethod.getField(self, fieldName + "$ok", BOOLEAN_TYPE);
+			final Label next = okMethod.newLabel();
+			okMethod.ifZCmp(GeneratorAdapter.NE, next);
+			okMethod.push(false);
+			okMethod.returnValue();
+			okMethod.mark(next);
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			// No argument to constructor.
+		}
+
+	}
+
+	private class PartitionCounter extends Element {
+		private final Consumer<Renderer> condition;
+		private final String fieldName;
+
+		public PartitionCounter(String fieldName, Consumer<Renderer> condition) {
+			this.fieldName = fieldName;
+			this.condition = condition;
+			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName, A_PARTITION_COUNT_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+			final GeneratorAdapter getMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
+					new Method(fieldName, A_TUPLE_TYPE, new Type[] {}), null, null, classVisitor);
+			getMethod.visitCode();
+			getMethod.loadThis();
+			getMethod.getField(self, fieldName, A_PARTITION_COUNT_TYPE);
+			getMethod.invokeVirtual(A_PARTITION_COUNT_TYPE, METHOD_PARTITION_COUNT__TO_TUPLE);
+			getMethod.returnValue();
+			getMethod.visitMaxs(0, 0);
+			getMethod.visitEnd();
+		}
+
+		@Override
+		public void buildCollect() {
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName, A_PARTITION_COUNT_TYPE);
+			condition.accept(collectRenderer);
+			collectRenderer.methodGen().invokeVirtual(A_PARTITION_COUNT_TYPE, METHOD_PARTITION_COUNT__ACCUMULATE);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			ctor.loadThis();
+			ctor.newInstance(A_PARTITION_COUNT_TYPE);
+			ctor.dup();
+			ctor.invokeConstructor(A_PARTITION_COUNT_TYPE, METHOD_DEFAULT_CTOR);
+			ctor.putField(self, fieldName, A_PARTITION_COUNT_TYPE);
+			return index;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// Partition counters are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter hashMethod) {
+			// Partition counters are not included in the hash.
+		}
+
+		@Override
+		public Type constructorType() {
+			return null;
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// Do nothing
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			// No argument to constructor.
+		}
+	}
+
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+
+	private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
+
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 
-	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
+	private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
 
+	private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
+	private static final Method METHOD_DEFAULT_CTOR = new Method("<init>", VOID_TYPE, new Type[] {});
 	private static final Method METHOD_EQUALS = new Method("equals", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
+
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
+
 	private static final Method METHOD_IMYHAT__NEW_SET = new Method("newSet", A_SET_TYPE, new Type[] {});
-	private static final Method METHOD_NEED_OK = new Method("$isOk", BOOLEAN_TYPE, new Type[] {});
+	private static final Method METHOD_IS_OK = new Method("$isOk", BOOLEAN_TYPE, new Type[] {});
+	private static final Method METHOD_PARTITION_COUNT__ACCUMULATE = new Method("accumulate", VOID_TYPE,
+			new Type[] { BOOLEAN_TYPE });
+	private static final Method METHOD_PARTITION_COUNT__TO_TUPLE = new Method("toTuple", A_TUPLE_TYPE, new Type[] {});
 	private static final Method METHOD_SET__ADD = new Method("add", BOOLEAN_TYPE, new Type[] { A_OBJECT_TYPE });
 	private final ClassVisitor classVisitor;
 	public final int collectedSelfArgument;
@@ -277,64 +587,45 @@ public final class RegroupVariablesBuilder {
 		classVisitor.visitSource(builder.sourcePath(), null);
 	}
 
-	/**
-	 * Add a new collection of values slurped during iteration
-	 *
-	 * @param valueType
-	 *            the type of the values in the collection
-	 * @param fieldName
-	 *            the name of the variable for consumption by downstream uses
-	 */
+	@Override
 	public void addCollected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
-		classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, A_SET_TYPE.getDescriptor(), null, null).visitEnd();
 		elements.add(new Collected(valueType, fieldName, loader));
-
-		final GeneratorAdapter getMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
-				new Method(fieldName, A_SET_TYPE, new Type[] {}), null, null, classVisitor);
-		getMethod.visitCode();
-		getMethod.loadThis();
-		getMethod.getField(self, fieldName, A_SET_TYPE);
-		getMethod.returnValue();
-		getMethod.visitMaxs(0, 0);
-		getMethod.visitEnd();
 	}
 
-	/**
-	 * A single value to be added as part of the deduplication
-	 *
-	 * @param fieldType
-	 *            the type of the value being added
-	 * @param fieldName
-	 *            the name of the variable for consumption by downstream uses
-	 */
+	@Override
+	public void addCount(String fieldName) {
+		elements.add(new Count(fieldName));
+	}
+
+	@Override
+	public void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader) {
+		elements.add(new First(fieldType, fieldName, loader));
+	}
+
 	public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {
-		classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, fieldType.getDescriptor(), null, null).visitEnd();
 		elements.add(new Discriminator(fieldType, fieldName, loader));
-
-		final GeneratorAdapter getMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
-				new Method(fieldName, fieldType, new Type[] {}), null, null, classVisitor);
-		getMethod.visitCode();
-		getMethod.loadThis();
-		getMethod.getField(self, fieldName, fieldType);
-		getMethod.returnValue();
-		getMethod.visitMaxs(0, 0);
-		getMethod.visitEnd();
 	}
 
-	/**
-	 * A single value to collected by a matching row
-	 *
-	 * @param fieldType
-	 *            the type of the value being added
-	 * @param fieldName
-	 *            the name of the variable for consumption by downstream uses
-	 */
-	public void addSmash(Type fieldType, String fieldName, Consumer<Renderer> condition, Consumer<Renderer> loader) {
-		classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName, fieldType.getDescriptor(), null, null).visitEnd();
-		classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$ok", BOOLEAN_TYPE.getDescriptor(), null, null)
-				.visitEnd();
-		elements.add(new Smash(fieldType, fieldName, condition, loader));
+	@Override
+	public void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader) {
+		elements.add(new Optima(fieldType, fieldName, max, loader));
 
+	}
+
+	@Override
+	public void addPartitionCount(String fieldName, Consumer<Renderer> condition) {
+		elements.add(new PartitionCounter(fieldName, condition));
+	}
+
+	@Override
+	public Regrouper addWhere(Consumer<Renderer> condition) {
+		final Conditional c = new Conditional(condition);
+		elements.add(c);
+		return c;
+	}
+
+	private void buildGetter(Type fieldType, String fieldName) {
+		classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName, fieldType.getDescriptor(), null, null).visitEnd();
 		final GeneratorAdapter getMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
 				new Method(fieldName, fieldType, new Type[] {}), null, null, classVisitor);
 		getMethod.visitCode();
@@ -407,7 +698,7 @@ public final class RegroupVariablesBuilder {
 		collectRenderer.methodGen().visitMaxs(0, 0);
 		collectRenderer.methodGen().visitEnd();
 
-		final GeneratorAdapter okMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_NEED_OK, null, null,
+		final GeneratorAdapter okMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC, METHOD_IS_OK, null, null,
 				classVisitor);
 		okMethod.visitCode();
 		elements.forEach(element -> element.failIfBad(okMethod));

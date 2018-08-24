@@ -1,0 +1,5 @@
+Input gsi_std;
+
+Run ok
+ Group a = PartitionCount library_size == 307 By workflow
+ With { ok = a[0] == 1 && a[1] == 1 }

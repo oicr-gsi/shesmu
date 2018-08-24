@@ -143,18 +143,6 @@ public abstract class BaseOliveBuilder {
 				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
-	/**
-	 * Create a “Group By” clause in a olive.
-	 *
-	 * @param capturedVariables
-	 *            A collection of variables that must be available in the grouping
-	 *            clause. These will be available in the resulting method
-	 * @return a method generator for the body of the clause
-	 */
-	public final RegroupVariablesBuilder group(LoadableValue... capturedVariables) {
-		return regroup("Group", "group", false, capturedVariables);
-	}
-
 	public final JoinBuilder join(Type innerType) {
 		final String className = String.format("shesmu/dyn/Join%d$%d", oliveId, steps.size());
 
@@ -470,19 +458,17 @@ public abstract class BaseOliveBuilder {
 
 	}
 
-	private final RegroupVariablesBuilder regroup(String classPrefix, String methodPrefix, boolean needsOk,
-			LoadableValue... capturedVariables) {
-		final String className = String.format("shesmu/dyn/%s%d$%d", classPrefix, oliveId, steps.size());
+	public final RegroupVariablesBuilder regroup(LoadableValue... capturedVariables) {
+		final String className = String.format("shesmu/dyn/Group%d$%d", oliveId, steps.size());
 
 		final Type oldType = currentType;
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method newMethod = new Method(String.format("%s_%d_%d_new", methodPrefix, oliveId, steps.size()), newType,
+		final Method newMethod = new Method(String.format("group_%d_%d_new", oliveId, steps.size()), newType,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
 						.toArray(Type[]::new));
-		final Method collectMethod = new Method(String.format("%s_%d_%d_collect", methodPrefix, oliveId, steps.size()),
-				VOID_TYPE,
+		final Method collectMethod = new Method(String.format("group_%d_%d_collect", oliveId, steps.size()), VOID_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, oldType))
 						.toArray(Type[]::new));
 
@@ -509,14 +495,12 @@ public abstract class BaseOliveBuilder {
 							Type.getMethodType(VOID_TYPE, newType, oldType));
 
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
-			if (needsOk) {
-				renderer.methodGen().invokeDynamic(
-						"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
-						Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL, className,
-								"$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
-						Type.getMethodType(BOOLEAN_TYPE, newType));
-				renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
-			}
+			renderer.methodGen().invokeDynamic(
+					"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
+					Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL, className,
+							"$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
+					Type.getMethodType(BOOLEAN_TYPE, newType));
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
 
 		final Renderer newMethodGen = new Renderer(owner,
@@ -529,12 +513,5 @@ public abstract class BaseOliveBuilder {
 
 		return new RegroupVariablesBuilder(owner, className, newMethodGen, collectedMethodGen,
 				capturedVariables.length);
-	}
-
-	/**
-	 * Create a “Smash” clause
-	 */
-	public RegroupVariablesBuilder smash(LoadableValue[] capturedVariables) {
-		return regroup("Smash", "smash", true, capturedVariables);
 	}
 }

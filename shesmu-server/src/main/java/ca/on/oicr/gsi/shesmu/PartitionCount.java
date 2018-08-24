@@ -42,7 +42,7 @@ public class PartitionCount {
 	private long falseCount;
 	private long trueCount;
 
-	private void accumulate(boolean value) {
+	public void accumulate(boolean value) {
 		if (value) {
 			trueCount++;
 		} else {
@@ -50,13 +50,13 @@ public class PartitionCount {
 		}
 	}
 
-	private PartitionCount combine(PartitionCount other) {
+	public PartitionCount combine(PartitionCount other) {
 		trueCount += other.trueCount;
 		falseCount += other.falseCount;
 		return this;
 	}
 
-	private Tuple toTuple() {
+	public Tuple toTuple() {
 		return new Tuple(trueCount, falseCount);
 	}
 }

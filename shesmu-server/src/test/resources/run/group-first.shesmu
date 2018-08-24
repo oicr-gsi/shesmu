@@ -1,0 +1,8 @@
+Input gsi_std;
+
+Run ok
+ Group
+     x = Where library_size == 307 First path,
+     y = Where library_size == 300 First path
+  By project
+ With { ok = True }

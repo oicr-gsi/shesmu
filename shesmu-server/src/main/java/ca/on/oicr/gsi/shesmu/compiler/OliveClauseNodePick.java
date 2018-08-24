@@ -74,7 +74,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
 			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
-		final Optional<List<Target>> maybeDiscriminatorVariables = OliveClauseNodeBaseBy.checkDiscriminators(line,
+		final Optional<List<Target>> maybeDiscriminatorVariables = OliveClauseNodeGroup.checkDiscriminators(line,
 				column, defs, discriminators, errorHandler);
 		maybeDiscriminatorVariables.ifPresent(x -> discriminatorVariables = x);
 		return defs.fail(maybeDiscriminatorVariables.isPresent() & extractor.resolve(defs, errorHandler));

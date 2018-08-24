@@ -1,0 +1,5 @@
+Input gsi_std;
+
+Run ok
+ Group a = Count By workflow
+ With { ok = a == 2 }
