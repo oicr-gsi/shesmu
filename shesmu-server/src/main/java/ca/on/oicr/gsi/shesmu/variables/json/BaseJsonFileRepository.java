@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.variables.json;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
@@ -93,12 +96,20 @@ public abstract class BaseJsonFileRepository<V> implements InputRepository<V> {
 			config.ifPresent(c -> {
 				if (Duration.between(lastUpdated, Instant.now()).getSeconds() > c.getTtl()) {
 					try (AutoCloseable timer = remoteJsonLatency.start(inputFormatName, c.getUrl());
-							CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(c.getUrl()))) {
-						this.values = Stream
-								.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
-										ObjectNode[].class))//
-								.map(BaseJsonFileRepository.this::convert)//
-								.collect(Collectors.toList());
+							CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(c.getUrl()));
+							JsonParser parser = RuntimeSupport.MAPPER.getFactory()
+									.createParser(response.getEntity().getContent())) {
+						List<V> results = new ArrayList<>();
+						if (parser.nextToken() != JsonToken.START_ARRAY) {
+							throw new IllegalStateException("Expected an array");
+						}
+						while (parser.nextToken() != JsonToken.END_ARRAY) {
+							results.add(convert(RuntimeSupport.MAPPER.readTree(parser)));
+						}
+						if (parser.nextToken() != null) {
+							throw new IllegalStateException("Junk at end of JSON document");
+						}
+						this.values = results;
 						lastUpdated = Instant.now();
 						remoteJsonUpdate.labels(inputFormatName, c.getUrl()).setToCurrentTime();
 					} catch (final Exception e) {
