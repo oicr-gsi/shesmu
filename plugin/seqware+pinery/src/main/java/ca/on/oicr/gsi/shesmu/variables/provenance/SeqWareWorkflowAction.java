@@ -63,8 +63,6 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
  */
 public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
-	static final Map<Long, Semaphore> MAX_IN_FLIGHT = new HashMap<>();
-
 	private static class AnalysisState {
 		private final String fileSWIDSToRun;
 		private final List<LimsKey> limsKeys;
@@ -86,9 +84,9 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		}
 	}
 
-	private static final Type A_SET_TYPE = Type.getType(Set.class);
 	private static final Type A_LONG_ARRAY_TYPE = Type.getType(long[].class);
-	private static final Type A_SQWACTION_TYPE = Type.getType(SeqWareWorkflowAction.class);
+
+	private static final Type A_SET_TYPE = Type.getType(Set.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Cache<String, List<AnalysisState>> CACHE = new Cache<String, List<AnalysisState>>(
 			"sqw-analysis", 20) {
@@ -107,6 +105,13 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 			.thenComparing(Comparator.comparing(LimsKey::getId))//
 			.thenComparing(Comparator.comparing(LimsKey::getVersion));
 
+	static final Map<Long, Semaphore> MAX_IN_FLIGHT = new HashMap<>();
+
+	protected static final Method METHOD_SQWACTION__MAGIC = new Method("magic", Type.VOID_TYPE,
+			new Type[] { A_STRING_TYPE });
+
+	private static final Method METHOD_SQWACTION__PREPARE = new Method("prepare", Type.VOID_TYPE, new Type[] {});
+
 	private static final Gauge runCreated = Gauge
 			.build("shesmu_seqware_run_created", "The number of workflow runs launched.")
 			.labelNames("target", "workflow").create();
@@ -117,7 +122,6 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 	private static final Method SQWACTION__CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] { Type.LONG_TYPE,
 			A_LONG_ARRAY_TYPE, A_STRING_TYPE, A_STRING_TYPE, Type.getType(String[].class) });
-	private static final Method SQWACTION__PREPARE = new Method("prepare", Type.VOID_TYPE, new Type[] {});
 
 	static {
 		Utils.LOADER.ifPresent(loader -> {
@@ -155,14 +159,37 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 						+ (previousAccessions.length == 0 ? ""
 								: LongStream.of(previousAccessions).sorted().mapToObj(Long::toString).collect(
 										Collectors.joining(", ", " Considered equivalent to workflows: ", ""))),
-				Stream.concat(Stream.of(ParameterDefinition.forField(A_SQWACTION_TYPE, "magic", Imyhat.STRING, false)),
+				Stream.concat(Stream.of(new ParameterDefinition() {
+
+					@Override
+					public String name() {
+						return "magic";
+					}
+
+					@Override
+					public boolean required() {
+						return false;
+					}
+
+					@Override
+					public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
+						renderer.methodGen().loadLocal(actionLocal);
+						loadParameter.accept(renderer);
+						renderer.methodGen().invokeVirtual(type, METHOD_SQWACTION__MAGIC);
+					}
+
+					@Override
+					public Imyhat type() {
+						return Imyhat.STRING;
+					}
+				}),
 
 						parameters.map(p -> p.generate(type)))) {
 
 			@Override
 			public void finalize(GeneratorAdapter methodGen, int actionLocal) {
 				methodGen.loadLocal(actionLocal);
-				methodGen.invokeVirtual(type, SQWACTION__PREPARE);
+				methodGen.invokeVirtual(type, METHOD_SQWACTION__PREPARE);
 			}
 
 			@Override
@@ -191,6 +218,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 				}
 				methodGen.invokeConstructor(type, SQWACTION__CTOR);
 			}
+
 		};
 	}
 
@@ -242,9 +270,6 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		};
 	}
 
-	@RuntimeInterop
-	public String magic = "";
-
 	private static ActionState processingStateToActionState(String state) {
 		switch (state) {
 		case "pending":
@@ -279,6 +304,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	protected final String jarPath;
 
 	private final String settingsPath;
+	private String magic = "0";
 
 	private final long workflowAccession;
 
@@ -401,6 +427,12 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	private static final Pattern RUN_SWID_LINE = Pattern.compile("Created workflow run with SWID: (\\d+)");
 
 	private boolean inflight = false;
+	@RuntimeInterop
+	public void magic(String magic) {
+		if (!magic.isEmpty()) {
+			this.magic = magic;
+		}
+	}
 
 	@Override
 	public final ActionState perform() {
