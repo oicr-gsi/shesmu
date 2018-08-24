@@ -26,17 +26,17 @@ public enum WorkflowType {
 					Imyhat.tuple(Imyhat.STRING, Imyhat.STRING, Imyhat.STRING), //
 					Imyhat.DATE, //
 					Imyhat.STRING), //
-					new IniParam("run_directory", "runFolder", STRING), //
+					new IniParam("run_directory", "run_folder", STRING), //
 					new IniParam("flowcell", STRING), //
 					new IniParam("cellranger", STRING), //
 					new IniParam("memory", unitCorrectedInteger(1024 * 1024)), //
-					new IniParam("read_ends", "readEnds", INTEGER), //
+					new IniParam("read_ends", INTEGER), //
 					new IniParam("usebasesmask", false, STRING), //
 					new IniParam("bcl_to_fastq_path", "bcl2fastqpath", STRING) //
 			));
 
 	private static SeqWareParameterDefinition[] standard(SeqWareParameterDefinition... params) {
-		return Stream.concat(Stream.of(params), Stream.of(new IniParam("manual_output", "manualOutput", BOOLEAN), //
+		return Stream.concat(Stream.of(params), Stream.of(new IniParam("manual_output", BOOLEAN), //
 				new IniParam("queue", false, STRING), //
 				new IniParam("output_prefix", STRING)//
 		)).toArray(SeqWareParameterDefinition[]::new);
