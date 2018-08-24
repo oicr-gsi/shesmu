@@ -5,7 +5,7 @@ Define standard_fastq(string s)
   Where workflow == { "BamQC 2.7+" ,3} [ 0 ] 
   Where metatype == "chemical/fastq-gzip"
   Where path==foo ( file_size )
-  Group files = path By accession, donor;
+  Group files = List path By accession, donor;
 
 #Comment 
 Run fastqc

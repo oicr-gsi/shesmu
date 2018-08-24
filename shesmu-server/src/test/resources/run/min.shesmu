@@ -2,5 +2,5 @@ Input gsi_std;
 
 Run ok
  Min library_size By project, file_size
- Group samples = donor By project, library_size
- With { ok = library_size == 300 && (For x In samples: Count) == 1 }
+ Group samples = Count By project, library_size
+ With { ok = library_size == 300 && samples == 1 }

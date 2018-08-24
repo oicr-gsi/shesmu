@@ -9,63 +9,113 @@ import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 
 /**
  * A collection action in a “Group” clause
  *
  * Also usable as the variable definition for the result
  */
-public final class GroupNode extends ByChildNode {
+public abstract class GroupNode extends Target {
+	private interface ParseGroup {
+		GroupNode make(int line, int column, String name);
+
+	}
+
+	private interface ParseGroupWithExpression {
+		GroupNode make(int line, int column, String name, ExpressionNode expression);
+
+	}
+
+	private static final Parser.ParseDispatch<ParseGroup> GROUPERS = new Parser.ParseDispatch<>();
+
+	static {
+		GROUPERS.addKeyword("Count", (p, o) -> {
+			o.accept(GroupNodeCount::new);
+			return p;
+		});
+		GROUPERS.addKeyword("First", of(GroupNodeFirst::new));
+		GROUPERS.addKeyword("List", of(GroupNodeList::new));
+		GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
+		GROUPERS.addKeyword("Max",
+				of((line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, true)));
+		GROUPERS.addKeyword("Min",
+				of((line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, false)));
+		GROUPERS.addKeyword("Where", (p, o) -> {
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final AtomicReference<ParseGroup> sink = new AtomicReference<>();
+			final Parser intermediate = p//
+					.whitespace()//
+					.then(ExpressionNode::parse, expression::set)//
+					.whitespace();
+			final Parser result = intermediate//
+					.dispatch(GROUPERS, sink::set)//
+					.whitespace();
+			if (result.isGood()) {
+				o.accept((line, column, name) -> new GroupNodeWhere(line, column, expression.get(),
+						sink.get().make(intermediate.line(), intermediate.column(), name)));
+			}
+			return result;
+		});
+	}
+
+	private static final Rule<ParseGroup> of(ParseGroupWithExpression maker) {
+		return (p, o) -> {
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final Parser result = p//
+					.whitespace()//
+					.then(ExpressionNode::parse, expression::set)//
+					.whitespace();
+			if (result.isGood()) {
+				o.accept((line, column, name) -> maker.make(line, column, name, expression.get()));
+			}
+			return result;
+		};
+	}
+
 	public static Parser parse(Parser input, Consumer<GroupNode> output) {
 		final AtomicReference<String> name = new AtomicReference<>();
-		final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
 
-		final Parser result = ExpressionNode
-				.parse(input.identifier(name::set).whitespace().keyword("=").whitespace(), expression::set)
-				.whitespace();
-		if (result.isGood()) {
-			output.accept(new GroupNode(input.line(), input.column(), name.get(), expression.get()));
-		}
+		final Parser result = input//
+				.identifier(name::set)//
+				.whitespace()//
+				.keyword("=")//
+				.whitespace()//
+				.dispatch(GROUPERS, maker -> output.accept(maker.make(input.line(), input.column(), name.get())));
 		return result;
 
 	}
 
-	private final ExpressionNode expression;
+	private final int column;
+	private final int line;
 
-	public GroupNode(int line, int column, String name, ExpressionNode expression) {
-		super(line, column, name);
-		this.expression = expression;
+	public GroupNode(int line, int column) {
+		this.line = line;
+		this.column = column;
+	}
+
+	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
+
+	public final int column() {
+		return column;
 	}
 
 	@Override
-	public void collectFreeVariables(Set<String> freeVariables, Predicate<Flavour> predicate) {
-		expression.collectFreeVariables(freeVariables, predicate);
+	public final Flavour flavour() {
+		return Flavour.STREAM;
 	}
 
-	public void render(RegroupVariablesBuilder regroup, RootBuilder rootBuilder) {
-		regroup.addCollected(expression.type(), name(), expression::render);
+	public final int line() {
+		return line;
 	}
 
-	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return expression.resolve(defs, errorHandler);
-	}
+	public abstract void render(Regrouper regroup, RootBuilder builder);
 
-	@Override
-	public boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
+
+	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler) {
-		return expression.resolveFunctions(definedFunctions, errorHandler);
-	}
+			Consumer<String> errorHandler);
 
-	@Override
-	public Imyhat type() {
-		return expression.type().asList();
-	}
-
-	@Override
-	public boolean typeCheck(Consumer<String> errorHandler) {
-		return expression.typeCheck(errorHandler);
-	}
+	public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

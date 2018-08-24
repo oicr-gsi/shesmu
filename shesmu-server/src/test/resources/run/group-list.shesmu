@@ -1,5 +1,5 @@
 Input gsi_std;
 
 Run ok
- Group a = accession By workflow
+ Group a = List accession By workflow
  With { ok = (For x In a: Count) == 2 }
