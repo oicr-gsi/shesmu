@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -35,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
+import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
@@ -102,15 +105,19 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
-	private static final Cache<String, List<AnalysisState>> CACHE = new Cache<String, List<AnalysisState>>(
-			"sqw-analysis", 20) {
+	private static final Cache<Long, List<AnalysisState>> CACHE = new Cache<Long, List<AnalysisState>>("sqw-analysis",
+			20) {
 
 		@Override
-		protected List<AnalysisState> fetch(String key) throws IOException {
-			return client.getAnalysisProvenance().stream().map(AnalysisState::new).collect(Collectors.toList());
+		protected List<AnalysisState> fetch(Long key) throws IOException {
+			Map<FileProvenanceFilter, Set<String>> filters = new EnumMap<>(FileProvenanceFilter.class);
+			filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
+			return client.getAnalysisProvenance(filters).stream()//
+					.filter(ap -> ap.getWorkflowId() != null && (ap.getSkip() == null || !ap.getSkip()))//
+					.map(AnalysisState::new)//
+					.collect(Collectors.toList());
 		}
 	};
-
 	private static final DefaultProvenanceClient client = new DefaultProvenanceClient();
 
 	private static final Pattern COMMA = Pattern.compile(",");
@@ -125,6 +132,8 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 			new Type[] { A_STRING_TYPE });
 
 	private static final Method METHOD_SQWACTION__PREPARE = new Method("prepare", Type.VOID_TYPE, new Type[] {});
+
+	private static final Pattern RUN_SWID_LINE = Pattern.compile(".*Created workflow run with SWID: (\\d+).*");
 
 	private static final Gauge runCreated = Gauge
 			.build("shesmu_seqware_run_created", "The number of workflow runs launched.")
@@ -306,7 +315,6 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		COMMA.splitAsStream(ids).map(Long::parseUnsignedLong).sorted().forEach(node.putArray(name)::add);
 	}
 
-	private boolean dirty = false;
 	private String fileAccessions;
 
 	private final Set<Integer> fileSwids = new TreeSet<>();
@@ -315,20 +323,34 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 	private long id;
 
+	private boolean inflight = false;
+
 	@RuntimeInterop
 	public Properties ini = new Properties();
 
 	protected final String jarPath;
 
-	private final String settingsPath;
 	private String magic = "0";
 
-	private final long workflowAccession;
+	private String parentAccessions;
 
 	private final Set<Integer> parentSwids = new TreeSet<>();
 
 	private final long[] previousAccessions;
+
+	private int runAccession;
+
 	private final Set<String> services;
+
+	private final String settingsPath;
+
+	private int waitForSomeoneToRerunIt;
+
+	private final long workflowAccession;
+
+	private LongStream workflowAccessions() {
+		return LongStream.concat(LongStream.of(workflowAccession), LongStream.of(previousAccessions));
+	}
 
 	public SeqWareWorkflowAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath,
 			String[] services) {
@@ -441,9 +463,6 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		return Collections.emptyList();
 	}
 
-	private static final Pattern RUN_SWID_LINE = Pattern.compile("Created workflow run with SWID: (\\d+)");
-
-	private boolean inflight = false;
 	@RuntimeInterop
 	public void magic(String magic) {
 		if (!magic.isEmpty()) {
@@ -457,15 +476,34 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 			return ActionState.THROTTLED;
 		}
 		try {
+			if (runAccession != 0) {
+				final Map<FileProvenanceFilter, Set<String>> query = new EnumMap<>(FileProvenanceFilter.class);
+				query.put(FileProvenanceFilter.workflow_run, Collections.singleton(Integer.toString(runAccession)));
+				ActionState state = client.getAnalysisProvenance(query).stream().findFirst()//
+						.map(ap -> processingStateToActionState(ap.getWorkflowRunStatus()))//
+						.orElse(ActionState.UNKNOWN);
+				if (state == ActionState.FAILED && ++waitForSomeoneToRerunIt > 5) {
+					// We've previously found or created a run accession for this action, but it's
+					// been in a failed state. We're really hoping that someone will manually rerun
+					// it, but that new version will have a separate workflow run SWID, so we need
+					// to forget our old ID and then find a new one.
+					runAccession = 0;
+					waitForSomeoneToRerunIt = 0;
+				}
+				return state;
+			}
 			// Read the FPR cache to determine if this workflow has already been run
-			final Optional<AnalysisState> current = CACHE.get(settingsPath)//
+			final Optional<AnalysisState> current = workflowAccessions()//
+					.boxed()//
+					.flatMap(CACHE::flatGet)//
 					.flatMap(l -> l.stream()//
-							.filter(this::compare)//
-							.findFirst());
+							.filter(this::compare))//
+					.sorted()//
+					.findFirst();
 			if (current.isPresent()) {
-				dirty = false;
-				ActionState state = current.get().state;
-				boolean isDone = state == ActionState.SUCCEEDED || state == ActionState.FAILED;
+				runAccession = current.get().workflowRunAccession;
+				final ActionState state = current.get().state;
+				final boolean isDone = state == ActionState.SUCCEEDED || state == ActionState.FAILED;
 				if (inflight && isDone) {
 					inflight = false;
 					MAX_IN_FLIGHT.get(workflowAccession).release();
@@ -498,7 +536,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 			// Read the settings
 			final Properties settings = new Properties();
-			try (InputStream settingsInput = new FileInputStream(settingsPath)) {
+			try (InputStream settingsInput = new FileInputStream(settingsPath + ".properties")) {
 				settings.load(settingsInput);
 			}
 			// Create any IUS accessions required and update the INI file based on those
@@ -516,6 +554,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 					.collect(Collectors.joining(","));
 
 			final File iniFile = File.createTempFile("seqware", ".ini");
+			iniFile.deleteOnExit();
 			try (OutputStream out = new FileOutputStream(iniFile)) {
 				ini.store(out, String.format("Generated by Shesmu for workflow %d", workflowAccession));
 			}
@@ -545,24 +584,33 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 				runArgs.add(iusAccessions);
 			}
 			runArgs.add("--host");
-			runArgs.add(settings.getProperty("SW_REST_URL"));
+			runArgs.add(settings.getProperty("SW_HOST"));
 			final ProcessBuilder builder = new ProcessBuilder(runArgs);
-			builder.environment().put("SEQWARE_SETTINGS", settingsPath);
+			builder.environment().put("SEQWARE_SETTINGS", settingsPath + ".properties");
 			final Process process = builder.start();
-			int runAccession = 0;
+			runAccession = 0;
 			boolean success = true;
 			try (OutputStream stdin = process.getOutputStream();
 					Scanner stdout = new Scanner(process.getInputStream());
 					InputStream stderr = process.getErrorStream()) {
-				String line = stdout.findWithinHorizon(RUN_SWID_LINE, 0);
-				if (line == null) {
-					success = false;
+				final String line = stdout.useDelimiter("\\Z").next();
+				final Matcher matcher = RUN_SWID_LINE.matcher(line);
+				if (matcher.matches()) {
+					runAccession = Integer.parseUnsignedInt(matcher.group(1));
 				} else {
-					runAccession = Integer.parseUnsignedInt(RUN_SWID_LINE.matcher(line).group(1));
+					System.err.printf("Failed to get workflow run accession for SeqWare job for workflow %d\n",
+							workflowAccession);
+					success = false;
 				}
 			}
-			success &= process.waitFor() == 0;
+			final int scheduleExitCode = process.waitFor();
+			if (scheduleExitCode != 0) {
+				System.err.printf("Failed to schedule SeqWare workflow %d: exited %d\n", workflowAccession,
+						scheduleExitCode);
+			}
+			success &= scheduleExitCode == 0;
 			if (success) {
+				workflowAccessions().forEach(CACHE::invalidate);
 				final ArrayList<String> annotationArgs = new ArrayList<>();
 				annotationArgs.add("java");
 				annotationArgs.add("-jar");
@@ -576,22 +624,25 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 				annotationArgs.add("magic");
 				annotationArgs.add("--value");
 				annotationArgs.add(magic);
-				annotationArgs.add("--host");
-				annotationArgs.add(settings.getProperty("SW_REST_URL"));
 				final ProcessBuilder annotationBuilder = new ProcessBuilder(annotationArgs);
-				annotationBuilder.environment().put("SEQWARE_SETTINGS", settingsPath);
+				annotationBuilder.environment().put("SEQWARE_SETTINGS", settingsPath + ".properties");
 				final Process annotationProcess = annotationBuilder.start();
 				annotationProcess.getInputStream().close();
 				annotationProcess.getOutputStream().close();
 				annotationProcess.getErrorStream().close();
-				success = annotationProcess.waitFor() == 0;
+				final int annotationExitCode = annotationProcess.waitFor();
+				if (annotationExitCode != 0) {
+					System.err.printf("Failed to annotate SeqWare workflow run %d: exited %d\n", runAccession,
+							annotationExitCode);
+				}
+
+				success = annotationExitCode == 0;
 			}
 
 			// Indicate if we managed to schedule the workflow; if we did, mark ourselves
 			// dirty so there is a delay before our next query.
 			(success ? runCreated : runFailed)
 					.labels(settings.getProperty("SW_REST_URL"), Long.toString(workflowAccession)).inc();
-			dirty = true;
 			return success ? ActionState.QUEUED : ActionState.FAILED;
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -616,7 +667,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 	@Override
 	public final long retryMinutes() {
-		return dirty ? 38 : 20;
+		return 10;
 	}
 
 	@Override
@@ -634,6 +685,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		final ObjectNode iniJson = node.putObject("ini");
 		ini.entrySet().stream().forEach(e -> iniJson.put(e.getKey().toString(), e.getValue().toString()));
 		node.put("workflowAccession", workflowAccession);
+		node.put("workflowRunAccession", runAccession);
 		node.put("jarPath", jarPath);
 		node.put("settingsPath", settingsPath);
 		if (id != 0) {
