@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import io.prometheus.client.Counter;
 
@@ -104,6 +105,10 @@ public abstract class Cache<K, V> {
 			records.put(key, new Record(key));
 		}
 		return records.get(key).refresh();
+	}
+
+	public final Stream<V> flatGet(K key) {
+		return get(key).map(Stream::of).orElseGet(Stream::empty);
 	}
 
 	public final void invalidate(K key) {
