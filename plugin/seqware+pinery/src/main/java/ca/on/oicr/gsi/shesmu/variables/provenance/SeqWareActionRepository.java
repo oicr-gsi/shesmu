@@ -77,7 +77,8 @@ public class SeqWareActionRepository implements ActionRepository {
 		writer.println("  ]).reduce((acc, val) => acc.concat(val), [");
 		writer.println("    title(a, `SeqWare Workflow ${a.workflowAccession}`),");
 		writer.println("    text(`Magic: ${a.magic}`),");
-		writer.println("    text(`Input Files: ${a.inputFiles}`),");
+		writer.println("    text(`Input File Accessions: ${a.fileAccessions || 'None'}`),");
+		writer.println("    text(`Parent Accessions: ${a.parentAccessions || 'None'}`),");
 		writer.println("  ].concat(Object.entries(a.ini).map(i => text(`INI ${i[0]} = ${i[1]}`)))));");
 	}
 

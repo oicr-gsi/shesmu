@@ -64,8 +64,27 @@ public final class IniParam implements SeqWareParameterDefinition {
 	private static final Method BOOLEAN__TO_STRING = new Method("toString", A_STRING_TYPE,
 			new Type[] { Type.BOOLEAN_TYPE });
 	private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
+	/**
+	 * Save a file SWID
+	 */
+	public static final Stringifier FILE_SWID = new Stringifier() {
+
+		@Override
+		public void stringify(GeneratorAdapter methodGen, Type actionType, int actionLocal) {
+			methodGen.loadLocal(actionLocal);
+			methodGen.swap();
+			methodGen.invokeVirtual(actionType, SQWACTION__ADD_FILE_SWID);
+		}
+
+		@Override
+		public Imyhat type() {
+			return Imyhat.STRING;
+		}
+
+	};
 	private static final Method INI__CORRECT_LONG = new Method("correctInteger", A_STRING_TYPE,
 			new Type[] { Type.LONG_TYPE, Type.INT_TYPE });
+
 	/**
 	 * Save an integer in the way you'd expect
 	 */
@@ -82,18 +101,38 @@ public final class IniParam implements SeqWareParameterDefinition {
 		}
 
 	};
-
 	private static final Method ITERATOR__HAS_NEXT = new Method("hasNext", Type.BOOLEAN_TYPE, new Type[] {});
 	private static final Method ITERATOR__NEXT = new Method("next", A_OBJECT_TYPE, new Type[] {});
 	private static final Method LONG__TO_STRING = new Method("toString", A_STRING_TYPE, new Type[] { Type.LONG_TYPE });
 	private static final Method OBJECT__TO_STRING = new Method("toString", A_STRING_TYPE, new Type[] {});
+	/**
+	 * Save a processing SWID
+	 */
+	public static final Stringifier PROCESSING_SWID = new Stringifier() {
+
+		@Override
+		public void stringify(GeneratorAdapter methodGen, Type actionType, int actionLocal) {
+			methodGen.loadLocal(actionLocal);
+			methodGen.swap();
+			methodGen.invokeVirtual(actionType, SQWACTION__ADD_PROCESSING_SWID);
+		}
+
+		@Override
+		public Imyhat type() {
+			return Imyhat.STRING;
+		}
+
+	};
 	private static final Method PROPERTIES__PUT = new Method("put", A_OBJECT_TYPE,
 			new Type[] { A_OBJECT_TYPE, A_OBJECT_TYPE });
 	private static final Method RUNTIME_SUPPORT__TO_STRING = new Method("toString", A_STRING_TYPE,
 			new Type[] { A_INSTANT_TYPE, A_STRING_TYPE });
 	private static final Method SET__ITERATOR = new Method("iterator", A_ITERATOR_TYPE, new Type[] {});
-	protected static final Method SQWACTION__ADD_SWID = new Method("addSwid", A_STRING_TYPE,
+	protected static final Method SQWACTION__ADD_FILE_SWID = new Method("addFileSwid", A_STRING_TYPE,
 			new Type[] { A_STRING_TYPE });
+	protected static final Method SQWACTION__ADD_PROCESSING_SWID = new Method("addProcessingSwid", A_STRING_TYPE,
+			new Type[] { A_STRING_TYPE });
+
 	/**
 	 * Save a string exactly as it is passed by the user
 	 */
@@ -113,25 +152,6 @@ public final class IniParam implements SeqWareParameterDefinition {
 	private static final Method STRING_BUILDER__APPEND = new Method("append", A_STRING_BUILDER_TYPE,
 			new Type[] { A_STRING_TYPE });
 
-	/**
-	 * Save a SWID
-	 */
-	public static final Stringifier SWID = new Stringifier() {
-
-		@Override
-		public void stringify(GeneratorAdapter methodGen, Type actionType, int actionLocal) {
-			methodGen.loadLocal(actionLocal);
-			methodGen.swap();
-			methodGen.invokeVirtual(actionType, SQWACTION__ADD_SWID);
-		}
-
-		@Override
-		public Imyhat type() {
-			return Imyhat.STRING;
-		}
-
-	};
-
 	private static final Method TUPLE__GET = new Method("get", A_OBJECT_TYPE, new Type[] { Type.INT_TYPE });
 
 	@RuntimeInterop
@@ -143,14 +163,14 @@ public final class IniParam implements SeqWareParameterDefinition {
 		if (value % factor == 0) {
 			round = 0;
 		} else {
-			round = (value < 0 ? -1 : 1);
+			round = value < 0 ? -1 : 1;
 		}
 		return Long.toString(value / factor + round);
 	}
 
 	/**
 	 * Convert a date to the specified format, in UTC.
-	 * 
+	 *
 	 * @param format
 	 *            a format understandable by
 	 *            {@link DateTimeFormatter#ofPattern(String)}
@@ -174,9 +194,9 @@ public final class IniParam implements SeqWareParameterDefinition {
 
 	/**
 	 * Convert a list of items into a delimited string
-	 * 
+	 *
 	 * No attempt is made to check that the items do not contain the delimiter
-	 * 
+	 *
 	 * @param delimiter
 	 *            the delimiter between the items
 	 * @param stringifier
@@ -241,7 +261,7 @@ public final class IniParam implements SeqWareParameterDefinition {
 
 	/**
 	 * Concatenate a tuple of different items as a delimited string
-	 * 
+	 *
 	 * @param delimiter
 	 *            the delimiter between the items
 	 * @param stringifiers
@@ -287,13 +307,13 @@ public final class IniParam implements SeqWareParameterDefinition {
 
 	/**
 	 * Save an integer, but first correct the units
-	 * 
+	 *
 	 * We have this problem where workflows use different units as parameters (e.g.,
 	 * memory is in megabytes). We want all values in Shesmu to be specified in base
 	 * units (bytes, bases) because it has convenient suffixes. This will divide the
 	 * value specified into those units and round accordingly so the user never has
 	 * to be concerned about this.
-	 * 
+	 *
 	 * @param factor
 	 *            the units of the target value (i.e., 1024*1024 for a value in
 	 *            megabytes)

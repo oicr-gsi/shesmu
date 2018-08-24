@@ -265,6 +265,9 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	}
 
 	private boolean dirty = false;
+	private String fileAccessions;
+
+	private final Set<Integer> fileSwids = new TreeSet<>();
 
 	private boolean first = true;
 
@@ -273,14 +276,14 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	@RuntimeInterop
 	public Properties ini = new Properties();
 
-	private String inputFiles;
-
-	private final Set<Integer> inputSwids = new TreeSet<>();
 	protected final String jarPath;
 
 	private final String settingsPath;
 
 	private final long workflowAccession;
+
+	private final Set<Integer> parentSwids = new TreeSet<>();
+
 	private final long[] previousAccessions;
 	private final Set<String> services;
 
@@ -295,16 +298,22 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	}
 
 	@RuntimeInterop
-	public String addSwid(String id) {
-		inputSwids.add(Integer.parseUnsignedInt(id));
+	public String addFileSwid(String id) {
+		fileSwids.add(Integer.parseUnsignedInt(id));
+		return id;
+	}
+
+	@RuntimeInterop
+	public String addProcessingSwid(String id) {
+		parentSwids.add(Integer.parseUnsignedInt(id));
 		return id;
 	}
 
 	private boolean compare(AnalysisState state) {
-		if ((state.workflowAccession != workflowAccession
-				&& Arrays.binarySearch(previousAccessions, state.workflowAccession) < 0)
-				|| !state.magic.isEmpty() && !state.magic.contains(magic) || !state.fileSWIDSToRun.equals(inputFiles)
-				|| state.limsKeys.size() != limsKeys().size()) {
+		if (state.workflowAccession != workflowAccession
+				&& Arrays.binarySearch(previousAccessions, state.workflowAccession) < 0
+				|| !state.magic.isEmpty() && !state.magic.contains(magic)
+				|| !state.fileSWIDSToRun.equals(fileAccessions) || state.limsKeys.size() != limsKeys().size()) {
 			return false;
 		}
 		for (int i = 0; i < limsKeys().size(); i++) {
@@ -331,11 +340,11 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 			return false;
 		}
 		final SeqWareWorkflowAction<?> other = (SeqWareWorkflowAction<?>) obj;
-		if (inputFiles == null) {
-			if (other.inputFiles != null) {
+		if (fileAccessions == null) {
+			if (other.fileAccessions != null) {
 				return false;
 			}
-		} else if (!inputFiles.equals(other.inputFiles)) {
+		} else if (!fileAccessions.equals(other.fileAccessions)) {
 			return false;
 		}
 		if (jarPath == null) {
@@ -376,7 +385,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (inputFiles == null ? 0 : inputFiles.hashCode());
+		result = prime * result + (fileAccessions == null ? 0 : fileAccessions.hashCode());
 		result = prime * result + (jarPath == null ? 0 : jarPath.hashCode());
 		result = prime * result + (limsKeys() == null ? 0 : limsKeys().hashCode());
 		result = prime * result + (magic == null ? 0 : magic.hashCode());
@@ -474,15 +483,17 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 			runArgs.add(Long.toString(workflowAccession));
 			runArgs.add("--ini-files");
 			runArgs.add(iniFile.getAbsolutePath());
-			runArgs.add("--input-files");
-			runArgs.add(inputFiles);// empty or ?
-			runArgs.add("--parent-accessions");
-			runArgs.add(Stream.of(iusAccessions, inputFiles)//
-					.filter(x -> !x.isEmpty())//
-					.collect(Collectors.joining(",")));
-			if (!inputFiles.isEmpty()) {
+			if (!fileAccessions.isEmpty()) {
+				runArgs.add("--input-files");
+				runArgs.add(fileAccessions);
+			}
+			if (!parentAccessions.isEmpty()) {
+				runArgs.add("--parent-accessions");
+				runArgs.add(parentAccessions);
+			}
+			if (!iusAccessions.isEmpty()) {
 				runArgs.add("--link-workflow-run-to-parents");
-				runArgs.add(inputFiles);
+				runArgs.add(iusAccessions);
 			}
 			runArgs.add("--host");
 			runArgs.add(settings.getProperty("SW_REST_URL"));
@@ -541,7 +552,8 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 	@RuntimeInterop
 	public final void prepare() {
-		inputFiles = inputSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
+		fileAccessions = fileSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
+		parentAccessions = parentSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
 	}
 
 	protected void prepareIniForLimsKeys(Stream<Pair<Integer, K>> stream) {
@@ -562,16 +574,15 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	public final ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
 		node.put("magic", magic);
-		node.put("inputFiles", inputFiles);
 		limsKeys().stream().map(k -> {
-			ObjectNode key = mapper.createObjectNode();
+			final ObjectNode key = mapper.createObjectNode();
 			key.put("provider", k.getProvider());
 			key.put("id", k.getId());
 			key.put("version", k.getVersion());
 			key.put("lastModified", DateTimeFormatter.ISO_INSTANT.format(k.getLastModified()));
 			return key;
 		}).forEach(node.putArray("limsKeys")::add);
-		ObjectNode iniJson = node.putObject("ini");
+		final ObjectNode iniJson = node.putObject("ini");
 		ini.entrySet().stream().forEach(e -> iniJson.put(e.getKey().toString(), e.getValue().toString()));
 		node.put("workflowAccession", workflowAccession);
 		node.put("jarPath", jarPath);
@@ -579,7 +590,8 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		if (id != 0) {
 			node.put("workflowRunId", id);
 		}
-		repackIntegers(node, "inputFiles", inputFiles);
+		repackIntegers(node, "fileAccessions", fileAccessions);
+		repackIntegers(node, "parentAccessions", parentAccessions);
 		final ObjectNode iniNode = node.putObject("ini");
 		ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
 		limsKeys().stream().map(k -> {
