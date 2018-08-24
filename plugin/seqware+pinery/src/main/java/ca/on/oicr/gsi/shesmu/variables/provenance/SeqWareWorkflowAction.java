@@ -63,12 +63,13 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
  */
 public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
-	private static class AnalysisState {
+	private static class AnalysisState implements Comparable<AnalysisState> {
 		private final String fileSWIDSToRun;
 		private final List<LimsKey> limsKeys;
+		private final SortedSet<String> magic;
 		private final ActionState state;
 		private final long workflowAccession;
-		private final SortedSet<String> magic;
+		public final int workflowRunAccession;
 
 		public AnalysisState(AnalysisProvenance source) {
 			fileSWIDSToRun = source.getWorkflowRunInputFileIds().stream()//
@@ -78,9 +79,22 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 					.map(IusLimsKey::getLimsKey)//
 					.sorted(LIMS_KEY_COMPARATOR)//
 					.collect(Collectors.toList());
-			state = processingStateToActionState(source.getProcessingStatus());
+			state = processingStateToActionState(source.getWorkflowRunStatus());
 			workflowAccession = source.getWorkflowId();
+			workflowRunAccession = source.getWorkflowRunId();
 			magic = source.getWorkflowRunAttributes().getOrDefault("magic", Collections.emptySortedSet());
+		}
+
+		/**
+		 * Sort so that the latest, most successful run is first.
+		 */
+		@Override
+		public int compareTo(AnalysisState other) {
+			int comparison = state.sortPriority() - other.state.sortPriority();
+			if (comparison == 0) {
+				comparison = -Integer.compare(other.workflowRunAccession, workflowRunAccession);
+			}
+			return comparison;
 		}
 	}
 
@@ -271,6 +285,9 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	}
 
 	private static ActionState processingStateToActionState(String state) {
+		if (state == null) {
+			return ActionState.UNKNOWN;
+		}
 		switch (state) {
 		case "pending":
 			return ActionState.QUEUED;
