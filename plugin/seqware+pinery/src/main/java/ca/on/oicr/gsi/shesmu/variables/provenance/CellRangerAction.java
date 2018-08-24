@@ -15,11 +15,12 @@ import ca.on.oicr.gsi.shesmu.Tuple;
 
 public class CellRangerAction extends SeqWareWorkflowAction<CellRangerAction.CellRangerLimsKey> {
 
-	final class CellRangerLimsKey implements LimsKey {
+	final static class CellRangerLimsKey implements LimsKey {
 		private final String groupId;
 		private final int ius_1;
 		private final String ius_2;
 		private final ZonedDateTime lastModified;
+		private final String libraryName;
 		private final String provider;
 		private final String sampleId;
 		private final String version;
@@ -29,13 +30,14 @@ public class CellRangerAction extends SeqWareWorkflowAction<CellRangerAction.Cel
 			ius_1 = ((Long) ius.get(1)).intValue();
 			ius_2 = (String) ius.get(2);
 
-			final Tuple lims = (Tuple) t.get(1);
-			provider = (String) lims.get(0);
-			sampleId = (String) lims.get(1);
-			version = (String) lims.get(2);
+			libraryName = (String) t.get(1);
+			final Tuple lims = (Tuple) t.get(2);
+			sampleId = (String) lims.get(0);
+			version = (String) lims.get(1);
+			provider = (String) lims.get(2);
 
-			lastModified = ZonedDateTime.ofInstant((Instant) t.get(2), ZoneId.of("Z"));
-			groupId = (String) t.get(3);
+			lastModified = ZonedDateTime.ofInstant((Instant) t.get(3), ZoneId.of("Z"));
+			groupId = (String) t.get(4);
 		}
 
 		@SuppressWarnings("checkstyle:CyclomaticComplexity")
@@ -66,6 +68,13 @@ public class CellRangerAction extends SeqWareWorkflowAction<CellRangerAction.Cel
 					return false;
 				}
 			} else if (!ius_2.equals(other.ius_2)) {
+				return false;
+			}
+			if (libraryName == null) {
+				if (other.libraryName != null) {
+					return false;
+				}
+			} else if (!libraryName.equals(other.libraryName)) {
 				return false;
 			}
 			if (lastModified == null) {
@@ -126,6 +135,7 @@ public class CellRangerAction extends SeqWareWorkflowAction<CellRangerAction.Cel
 			result = prime * result + (groupId == null ? 0 : groupId.hashCode());
 			result = prime * result + ius_1;
 			result = prime * result + (ius_2 == null ? 0 : ius_2.hashCode());
+			result = prime * result + (libraryName == null ? 0 : libraryName.hashCode());
 			result = prime * result + (lastModified == null ? 0 : lastModified.toInstant().hashCode());
 			result = prime * result + (provider == null ? 0 : provider.hashCode());
 			result = prime * result + (sampleId == null ? 0 : sampleId.hashCode());
@@ -157,10 +167,9 @@ public class CellRangerAction extends SeqWareWorkflowAction<CellRangerAction.Cel
 		ini.setProperty("lanes", stream.map(iusKey -> {
 			final CellRangerLimsKey limsKey = iusKey.second();
 			return Stream.of(limsKey.ius_1, // lane
-					0, // lane SWID
 					limsKey.ius_2, // barcode
 					iusKey.first(), // IUS SWID
-					limsKey.getId(), // sample name
+					limsKey.libraryName, // library/sample name
 					limsKey.groupId)// group ID
 					.map(Object::toString)//
 					.collect(Collectors.joining(","));

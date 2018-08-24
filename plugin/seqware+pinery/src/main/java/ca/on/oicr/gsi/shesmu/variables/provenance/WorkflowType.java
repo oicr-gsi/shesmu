@@ -23,6 +23,7 @@ public enum WorkflowType {
 	CELL_RANGER(Type.getType(CellRangerAction.class), //
 			standard(SeqWareWorkflowAction.lanes(//
 					Imyhat.tuple(Imyhat.STRING, Imyhat.INTEGER, Imyhat.STRING), //
+					Imyhat.STRING, //
 					Imyhat.tuple(Imyhat.STRING, Imyhat.STRING, Imyhat.STRING), //
 					Imyhat.DATE, //
 					Imyhat.STRING), //
