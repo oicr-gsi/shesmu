@@ -40,7 +40,7 @@ public class ShesmuIntrospectionValue {
 		return generated;
 	}
 
-	@Export(type = "at4siit")
+	@Export(type = "at4siid")
 	public Set<Tuple> locations() {
 		return locations;
 	}
