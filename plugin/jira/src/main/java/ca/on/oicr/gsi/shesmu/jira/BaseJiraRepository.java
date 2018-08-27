@@ -52,6 +52,8 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 
 		private final Pair<String, Map<String, String>> status;
 
+		private String url;
+
 		private List<T> value;
 
 		public JiraConfig(Path fileName) {
@@ -75,6 +77,11 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		@Override
 		public String instance() {
 			return instance;
+		}
+
+		@Override
+		public void invalidate() {
+			lastFetch = Instant.EPOCH;
 		}
 
 		@Override
@@ -130,6 +137,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 			value = create(this, fileName()).collect(Collectors.toList());
 			properties.put("project", config.getProjectKey());
 			properties.put("url", config.getUrl());
+			url = config.getUrl();
 			try {
 				client = new AsynchronousJiraRestClientFactory()
 						.createWithBasicHttpAuthentication(new URI(config.getUrl()), ACCOUNT_NAME, ACCOUNT_PASSWORD);
@@ -143,8 +151,8 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		}
 
 		@Override
-		public void invalidate() {
-			lastFetch = Instant.EPOCH;
+		public String url() {
+			return url;
 		}
 	}
 

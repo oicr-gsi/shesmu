@@ -11,10 +11,12 @@ public interface JiraConnection {
 
 	String instance();
 
+	void invalidate();
+
 	Stream<Issue> issues();
 
 	String projectKey();
 
-	void invalidate();
+	String url();
 
 }

@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import com.atlassian.jira.rest.client.api.domain.BasicIssue;
@@ -40,6 +42,8 @@ public abstract class BaseTicketAction extends Action {
 
 	private final JiraConnection config;
 
+	private final Set<String> issues = new TreeSet<>();
+
 	private URI issueUrl;
 
 	@RuntimeInterop
@@ -72,13 +76,14 @@ public abstract class BaseTicketAction extends Action {
 				new FieldInput(IssueFieldId.DESCRIPTION_FIELD, description), //
 				new FieldInput(IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)));
 
-		BasicIssue result = config.client().getIssueClient().createIssue(input).claim();
+		final BasicIssue result = config.client().getIssueClient().createIssue(input).claim();
 		issueUrl = result.getSelf();
 		config.client().getIssueClient()
 				.updateIssue(result.getKey(), IssueInput
 						.createWithFields(new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot"))))
 				.claim();
 		config.invalidate();
+		issues.add(result.getKey());
 		return ActionState.SUCCEEDED;
 	}
 
@@ -135,7 +140,9 @@ public abstract class BaseTicketAction extends Action {
 		}
 		requests.labels(config.instance()).inc();
 		try {
-			return perform(config.issues().filter(issue -> issue.getSummary().equals(summary)));
+			return perform(config.issues()//
+					.filter(issue -> issue.getSummary().equals(summary))//
+					.peek(issue -> issues.add(issue.getKey())));
 		} catch (final Exception e) {
 			failure.labels(config.instance()).inc();
 			e.printStackTrace();
@@ -162,6 +169,7 @@ public abstract class BaseTicketAction extends Action {
 		node.put("projectKey", config.projectKey());
 		node.put("summary", summary);
 		node.put("url", issueUrl == null ? null : issueUrl.toString());
+		issues.forEach(node.putArray("issues")::add);
 		return node;
 	}
 
@@ -173,6 +181,7 @@ public abstract class BaseTicketAction extends Action {
 		issueUrl = issue.getSelf();
 		config.client().getIssueClient().transition(issue, transition).claim();
 		config.invalidate();
+		issues.add(issue.getKey());
 		return ActionState.SUCCEEDED;
 	}
 
