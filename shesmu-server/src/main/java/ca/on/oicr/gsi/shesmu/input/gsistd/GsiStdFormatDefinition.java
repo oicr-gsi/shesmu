@@ -1,6 +1,9 @@
-package ca.on.oicr.gsi.shesmu;
+package ca.on.oicr.gsi.shesmu.input.gsistd;
 
 import org.kohsuke.MetaInfServices;
+
+import ca.on.oicr.gsi.shesmu.BaseInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 @MetaInfServices(InputFormatDefinition.class)
 public class GsiStdFormatDefinition extends BaseInputFormatDefinition<GsiStdValue, GsiStdRepository> {

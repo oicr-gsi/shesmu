@@ -1,8 +1,14 @@
-package ca.on.oicr.gsi.shesmu;
+package ca.on.oicr.gsi.shesmu.input.shesmu;
 
 import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import ca.on.oicr.gsi.shesmu.Action;
+import ca.on.oicr.gsi.shesmu.ActionState;
+import ca.on.oicr.gsi.shesmu.Export;
+import ca.on.oicr.gsi.shesmu.SourceLocation;
+import ca.on.oicr.gsi.shesmu.Tuple;
 
 public class ShesmuIntrospectionValue {
 	private final Action action;

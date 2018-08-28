@@ -1,10 +1,12 @@
-package ca.on.oicr.gsi.shesmu;
+package ca.on.oicr.gsi.shesmu.input.shesmu;
 
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
+
+import ca.on.oicr.gsi.shesmu.Pair;
 
 @MetaInfServices
 public class ShesmuIntrospectionProcessorRepository implements ShesmuIntrospectionRepository {

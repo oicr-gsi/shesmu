@@ -1,6 +1,9 @@
-package ca.on.oicr.gsi.shesmu;
+package ca.on.oicr.gsi.shesmu.input.gsistd;
 
 import java.time.Instant;
+
+import ca.on.oicr.gsi.shesmu.Export;
+import ca.on.oicr.gsi.shesmu.Tuple;
 
 /**
  * The information available to Shesmu scripts for processing
