@@ -118,6 +118,7 @@ matching _input data repository_ and many repositories can provide the same form
 
 - `gsi_std` is the default format. It contains a mix of analysis provenance
   information tied back to LIMS provenance data.
+- `nabu` has file QC information from [Nabu](https://github.com/oicr-gsi/nabu).
 
 ### Inputs Repositories (_gsi_std_)
 This is where Shesmu gets provenance data for olives to ingest. The following
