@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.variables.json;
+package ca.on.oicr.gsi.shesmu.input.gsistd;
 
 import java.time.Instant;
 
@@ -7,14 +7,13 @@ import org.kohsuke.MetaInfServices;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ca.on.oicr.gsi.shesmu.GsiStdRepository;
-import ca.on.oicr.gsi.shesmu.GsiStdValue;
 import ca.on.oicr.gsi.shesmu.Tuple;
+import ca.on.oicr.gsi.shesmu.input.BaseJsonInputRepository;
 
 @MetaInfServices(GsiStdRepository.class)
-public class JsonFileGsiStdRepository extends BaseJsonFileRepository<GsiStdValue> implements GsiStdRepository {
+public class GsiStdJsonRepository extends BaseJsonInputRepository<GsiStdValue> implements GsiStdRepository {
 
-	public JsonFileGsiStdRepository() {
+	public GsiStdJsonRepository() {
 		super("gsi_std");
 	}
 

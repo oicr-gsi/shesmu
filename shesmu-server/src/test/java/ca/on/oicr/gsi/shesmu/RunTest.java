@@ -18,6 +18,9 @@ import org.objectweb.asm.commons.Method;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdFormatDefinition;
+import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdValue;
+
 public class RunTest {
 
 	private class ActionChecker implements ActionConsumer {

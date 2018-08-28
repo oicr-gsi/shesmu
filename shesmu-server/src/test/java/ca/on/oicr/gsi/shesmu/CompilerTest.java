@@ -20,6 +20,7 @@ import org.objectweb.asm.util.CheckClassAdapter;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
+import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdFormatDefinition;
 
 public class CompilerTest {
 	public final class CompilerHarness extends Compiler {

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.variables.json;
+package ca.on.oicr.gsi.shesmu.input;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -30,7 +30,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
-public abstract class BaseJsonFileRepository<V> implements InputRepository<V> {
+public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 	public static final class Configuration {
 		private long ttl;
 		private String url;
@@ -62,7 +62,7 @@ public abstract class BaseJsonFileRepository<V> implements InputRepository<V> {
 
 		@Override
 		protected Optional<Integer> update(ObjectNode[] values) {
-			this.values = Stream.of(values).map(BaseJsonFileRepository.this::convert).collect(Collectors.toList());
+			this.values = Stream.of(values).map(BaseJsonInputRepository.this::convert).collect(Collectors.toList());
 			return Optional.empty();
 		}
 
@@ -140,7 +140,7 @@ public abstract class BaseJsonFileRepository<V> implements InputRepository<V> {
 	private final AutoUpdatingDirectory<JsonFile> files;
 	private final String inputFormatName;
 
-	public BaseJsonFileRepository(String inputFormatName) {
+	public BaseJsonInputRepository(String inputFormatName) {
 		this.inputFormatName = inputFormatName;
 		files = new AutoUpdatingDirectory<>("." + inputFormatName, JsonFile::new);
 		endpoints = new AutoUpdatingDirectory<>("." + inputFormatName + "-remote", Remote::new);
