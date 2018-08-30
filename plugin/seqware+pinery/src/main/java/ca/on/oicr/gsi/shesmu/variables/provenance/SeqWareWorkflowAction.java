@@ -52,6 +52,7 @@ import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import io.prometheus.client.Gauge;
+import io.seqware.common.model.WorkflowRunStatus;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.metadata.MetadataWS;
 
@@ -297,14 +298,19 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 		if (state == null) {
 			return ActionState.UNKNOWN;
 		}
-		switch (state) {
-		case "pending":
+		switch (WorkflowRunStatus.valueOf(state)) {
+		case submitted:
+		case submitted_retry:
+			return ActionState.WAITING;
+		case pending:
 			return ActionState.QUEUED;
-		case "running":
+		case running:
 			return ActionState.INFLIGHT;
-		case "failed":
+		case cancelled:
+		case submitted_cancel:
+		case failed:
 			return ActionState.FAILED;
-		case "success":
+		case completed:
 			return ActionState.SUCCEEDED;
 		default:
 			return ActionState.UNKNOWN;
