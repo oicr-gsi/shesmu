@@ -266,7 +266,7 @@ public abstract class Imyhat {
 
 		@Override
 		public String name() {
-			return Arrays.stream(types).map(Imyhat::name).collect(Collectors.joining(",", "{", "}"));
+			return Arrays.stream(types).map(Imyhat::name).collect(Collectors.joining(", ", "{", "}"));
 		}
 
 		@Override
