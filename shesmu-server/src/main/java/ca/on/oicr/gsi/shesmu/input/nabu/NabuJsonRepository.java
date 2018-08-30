@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.input.BaseJsonInputRepository;
 
 @MetaInfServices(NabuRepository.class)
-public class NabuJsonRepository extends BaseJsonInputRepository<NabuValue> {
+public class NabuJsonRepository extends BaseJsonInputRepository<NabuValue> implements NabuRepository {
 
 	public NabuJsonRepository() {
 		super("nabu");
