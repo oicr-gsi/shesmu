@@ -111,13 +111,16 @@ public final class Check extends Compiler {
 				ActionDefinition::name);
 
 		final boolean ok = Stream.of(files).allMatch(file -> {
+			boolean fileOk;
 			try {
-				return new Check(inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
+				fileOk = new Check(file, inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
 						"dyn/shesmu/Program", file, constants::stream);
 			} catch (final IOException e) {
 				e.printStackTrace();
-				return false;
+				fileOk = false;
 			}
+			System.err.printf("%s\033[0m\t%s\n", fileOk ? "\033[1;36mOK" : "\033[1;31mFAIL", file);
+			return fileOk;
 		});
 		System.exit(ok ? 0 : 1);
 	}
@@ -257,9 +260,12 @@ public final class Check extends Compiler {
 	private final NameLoader<FunctionDefinition> functions;
 	private final NameLoader<InputFormatDefinition> inputFormats;
 
-	private Check(NameLoader<InputFormatDefinition> inputFormats, NameLoader<FunctionDefinition> functions,
-			NameLoader<ActionDefinition> actions) {
+	private final String fileName;
+
+	private Check(String fileName, NameLoader<InputFormatDefinition> inputFormats,
+			NameLoader<FunctionDefinition> functions, NameLoader<ActionDefinition> actions) {
 		super(true);
+		this.fileName = fileName;
 		this.inputFormats = inputFormats;
 		this.functions = functions;
 		this.actions = actions;
@@ -272,7 +278,7 @@ public final class Check extends Compiler {
 
 	@Override
 	protected void errorHandler(String message) {
-		System.out.println(message);
+		System.out.printf("%s:%s\n", fileName, message);
 	}
 
 	@Override
