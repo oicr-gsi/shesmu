@@ -21,9 +21,9 @@ public class NabuJsonRepository extends BaseJsonInputRepository<NabuValue> {
 
 	@Override
 	protected NabuValue convert(ObjectNode node) {
-		final Set<String> upstream = new TreeSet<>();
+		final Set<Long> upstream = new TreeSet<>();
 		for (JsonNode value : node.get("upstream")) {
-			upstream.add(value.asText());
+			upstream.add(value.asLong());
 		}
 		final JsonNode qcdate = node.get("qcdate");
 		Instant date;

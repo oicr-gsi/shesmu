@@ -14,11 +14,11 @@ public class NabuValue {
 	private final String qcstatus;
 	private final boolean skip;
 	private final String stalestatus;
-	private final Set<String> upstream;
+	private final Set<Long> upstream;
 	private final String username;
 
 	public NabuValue(long fileswid, String filepath, String qcstatus, String username, String comment, String project,
-			String stalestatus, Instant qcdate, Set<String> upstream, boolean skip) {
+			String stalestatus, Instant qcdate, Set<Long> upstream, boolean skip) {
 		super();
 		this.fileswid = fileswid;
 		this.filepath = filepath;
@@ -72,8 +72,8 @@ public class NabuValue {
 		return stalestatus;
 	}
 
-	@Export(type = "as")
-	public Set<String> upstream() {
+	@Export(type = "ai")
+	public Set<Long> upstream() {
 		return upstream;
 	}
 
