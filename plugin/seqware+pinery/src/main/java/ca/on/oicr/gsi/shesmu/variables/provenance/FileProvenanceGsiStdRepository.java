@@ -29,11 +29,11 @@ import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.GsiStdRepository;
-import ca.on.oicr.gsi.shesmu.GsiStdValue;
 import ca.on.oicr.gsi.shesmu.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Tuple;
+import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdRepository;
+import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdValue;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
