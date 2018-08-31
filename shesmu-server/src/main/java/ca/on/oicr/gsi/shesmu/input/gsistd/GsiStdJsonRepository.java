@@ -48,6 +48,7 @@ public class GsiStdJsonRepository extends BaseJsonInputRepository<GsiStdValue> i
 				node.get("kit").asText(), //
 				Instant.ofEpochMilli(node.get("timestamp").asLong()), //
 				new Tuple(lims.get(0).asText(), lims.get(1).asText(), lims.get(2).asText()), //
+				Instant.ofEpochMilli(node.get("completion_date").asLong()), //
 				node.get("source").asText());
 	}
 

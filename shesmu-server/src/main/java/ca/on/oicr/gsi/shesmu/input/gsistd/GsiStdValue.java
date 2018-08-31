@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.Tuple;
  */
 public final class GsiStdValue {
 	private final String accession;
+	private final Instant completed_date;
 	private final String donor;
 	private final long file_size;
 	private final String group_desc;
@@ -43,7 +44,7 @@ public final class GsiStdValue {
 			String workflow_accession, Tuple workflow_version, String project, String library_name, String donor,
 			Tuple ius, String library_design, String tissue_type, String tissue_origin, String tissue_prep,
 			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
-			String library_type, String kit, Instant timestamp, Tuple lims, String source) {
+			String library_type, String kit, Instant timestamp, Tuple lims, Instant completed_date, String source) {
 		super();
 		this.accession = accession;
 		this.path = path;
@@ -70,12 +71,18 @@ public final class GsiStdValue {
 		this.kit = kit;
 		this.timestamp = timestamp;
 		this.lims = lims;
+		this.completed_date = completed_date;
 		this.source = source;
 	}
 
 	@Export(type = "s")
 	public String accession() {
 		return accession;
+	}
+
+	@Export(type = "d")
+	public Instant completed_date() {
+		return completed_date;
 	}
 
 	@Export(type = "s", signable = true)
