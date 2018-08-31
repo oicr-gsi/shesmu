@@ -1,0 +1,9 @@
+Input gsi_std;
+
+Run ok
+ Group
+    x = Where library_size == 307 First path,
+    y = Where library_size == 300 First path,
+    z = Max timestamp
+  By project
+ With { ok = z == EpochSecond 500 }

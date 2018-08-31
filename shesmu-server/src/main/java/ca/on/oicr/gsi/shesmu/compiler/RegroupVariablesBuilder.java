@@ -398,8 +398,6 @@ public final class RegroupVariablesBuilder implements Regrouper {
 			comparison = max ? Comparison.GT : Comparison.LT;
 			this.loader = loader;
 			buildGetter(fieldType, fieldName);
-			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$first", BOOLEAN_TYPE.getDescriptor(), null, null)
-					.visitEnd();
 			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$ok", BOOLEAN_TYPE.getDescriptor(), null, null)
 					.visitEnd();
 
@@ -412,14 +410,14 @@ public final class RegroupVariablesBuilder implements Regrouper {
 			collectRenderer.methodGen().storeLocal(local);
 
 			collectRenderer.methodGen().loadArg(collectedSelfArgument);
-			collectRenderer.methodGen().getField(self, fieldName + "$first", BOOLEAN_TYPE);
+			collectRenderer.methodGen().getField(self, fieldName + "$ok", BOOLEAN_TYPE);
 			final Label store = collectRenderer.methodGen().newLabel();
 			final Label end = collectRenderer.methodGen().newLabel();
-			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, store);
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.EQ, store);
 
 			collectRenderer.methodGen().loadArg(collectedSelfArgument);
-			collectRenderer.methodGen().push(false);
-			collectRenderer.methodGen().putField(self, fieldName + "$first", BOOLEAN_TYPE);
+			collectRenderer.methodGen().push(true);
+			collectRenderer.methodGen().putField(self, fieldName + "$ok", BOOLEAN_TYPE);
 
 			collectRenderer.methodGen().loadArg(collectedSelfArgument);
 			collectRenderer.methodGen().getField(self, fieldName, fieldType);
