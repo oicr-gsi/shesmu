@@ -49,6 +49,9 @@ public abstract class BaseTicketAction extends Action {
 	@RuntimeInterop
 	public String summary;
 
+	@RuntimeInterop
+	public String type = "Task";
+
 	public BaseTicketAction(String id, String jsonName) {
 		super(jsonName);
 		config = BaseJiraRepository.get(id);
@@ -69,7 +72,7 @@ public abstract class BaseTicketAction extends Action {
 		final Map<String, Object> project = new HashMap<>();
 		project.put("key", config.projectKey());
 		final Map<String, Object> issueType = new HashMap<>();
-		issueType.put("name", "Bug");
+		issueType.put("name", type);
 		final IssueInput input = IssueInput.createWithFields(
 				new FieldInput(IssueFieldId.PROJECT_FIELD, new ComplexIssueInputFieldValue(project)), //
 				new FieldInput(IssueFieldId.SUMMARY_FIELD, summary), //
