@@ -29,8 +29,10 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.NameLoader;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.actions.nothing.NothingActionRepository;
 import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.function.StandardFunctions;
 import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
 
 /**
@@ -91,9 +93,11 @@ public final class Build extends Compiler implements AutoCloseable {
 		final FileWatcher watcher = FileWatcher
 				.of(dataDirectory.map(RuntimeSupport::parsePaths).orElseGet(() -> Stream.of(Paths.get("."))));
 		try (Build compiler = new Build(new NameLoader<>(InputFormatDefinition.formats(), InputFormatDefinition::name),
-				new NameLoader<>(new TableFunctionRepository(watcher).queryFunctions(), FunctionDefinition::name),
-				new NameLoader<>(new FileActionRepository(watcher).queryActions(), ActionDefinition::name), skipCompute,
-				true)) {
+				new NameLoader<>(Stream.concat(new StandardFunctions().queryFunctions(),
+						new TableFunctionRepository(watcher).queryFunctions()), FunctionDefinition::name),
+				new NameLoader<>(Stream.concat(new NothingActionRepository().queryActions(),
+						new FileActionRepository(watcher).queryActions()), ActionDefinition::name),
+				skipCompute, true)) {
 			if (dump) {
 				compiler.dump();
 			}
