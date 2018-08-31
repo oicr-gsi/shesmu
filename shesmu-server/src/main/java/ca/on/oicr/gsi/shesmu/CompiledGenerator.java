@@ -29,7 +29,11 @@ public class CompiledGenerator extends ActionGenerator {
 		}
 
 		public synchronized <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
-			generator.run(consumer, input);
+			try {
+				generator.run(consumer, input);
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Override
