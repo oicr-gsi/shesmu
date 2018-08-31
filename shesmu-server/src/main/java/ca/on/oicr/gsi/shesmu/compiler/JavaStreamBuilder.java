@@ -33,21 +33,6 @@ import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
  * Helper to build bytecode for “olives” (decision-action stanzas)
  */
 public final class JavaStreamBuilder {
-	public enum Match {
-		ALL("allMatch", "All"), ANY("anyMatch", "Any"), NONE("noneMatch", "None");
-		private final Method method;
-		private final String syntax;
-
-		private Match(String methodName, String syntax) {
-			this.syntax = syntax;
-			method = new Method(methodName, Type.BOOLEAN_TYPE, new Type[] { A_PREDICATE_TYPE });
-		}
-
-		public String syntax() {
-			return syntax;
-		}
-	}
-
 	public interface RenderSubsampler {
 		void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType);
 	}
@@ -60,7 +45,7 @@ public final class JavaStreamBuilder {
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 	private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
-	private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
+	static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
 	private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 	private static final Type A_START_TYPE = Type.getType(Start.class);

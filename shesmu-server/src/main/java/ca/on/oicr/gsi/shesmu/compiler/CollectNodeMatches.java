@@ -8,7 +8,6 @@ import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.compiler.JavaStreamBuilder.Match;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public final class CollectNodeMatches extends CollectNode {

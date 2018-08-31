@@ -41,6 +41,10 @@ public abstract class GroupNode extends Target {
 				of((line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, true)));
 		GROUPERS.addKeyword("Min",
 				of((line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, false)));
+		for (final Match match : Match.values()) {
+			GROUPERS.addKeyword(match.syntax(), of(
+					(line, column, name, expression) -> new GroupNodeMatches(line, column, name, match, expression)));
+		}
 		GROUPERS.addKeyword("Where", (p, o) -> {
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
 			final AtomicReference<ParseGroup> sink = new AtomicReference<>();

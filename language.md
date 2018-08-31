@@ -124,6 +124,8 @@ In total, the collectors in a `Group` operation are:
 - `Count` to count the number of matched rows
 - `PartitionCount` which returns a tuple of the number of rows that matched and
   failed the provided condition
+- `Any`, `All`, and `None` which check that a condition is satisfied for any,
+  all, and, none of the rows, respectively.
 
 and `Where` clauses can precede any of these.
 
