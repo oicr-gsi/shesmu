@@ -1,6 +1,6 @@
-Input gsi_std;
+Input test;
 
 Run ok
- Join test
+ Join inner_test
  Group ls = List l By accession
  With { ok = (For l In ls: Count) == 2 }

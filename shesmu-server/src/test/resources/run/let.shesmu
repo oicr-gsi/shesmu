@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Run ok
  Let x = workflow

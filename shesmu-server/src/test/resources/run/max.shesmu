@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Run ok
  Max library_size By project, file_size

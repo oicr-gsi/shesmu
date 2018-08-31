@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Run ok
- With { ok = metatype In ["text/x-nothing"]}
+ With { ok = project In ["the_foo_study"]}

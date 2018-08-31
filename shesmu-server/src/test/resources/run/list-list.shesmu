@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Run ok
  With { ok = (For x In (For y In [ 1, 2 ]: List y + 1): All x > 1) }
