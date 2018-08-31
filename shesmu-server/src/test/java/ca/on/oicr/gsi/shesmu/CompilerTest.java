@@ -60,13 +60,13 @@ public class CompilerTest {
 			return functions.get(name);
 		}
 
-		public boolean ok() {
-			return !dirty;
-		}
-
 		@Override
 		protected InputFormatDefinition getInputFormats(String name) {
 			return new GsiStdFormatDefinition();
+		}
+
+		public boolean ok() {
+			return !dirty;
 		}
 
 	}
