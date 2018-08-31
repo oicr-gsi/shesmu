@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Run ok
  With { ok = signature_count == 0 && sha1_signature == "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709" } # This is a signature with no input data

@@ -1,5 +1,5 @@
-Input gsi_std;
+Input test;
 
 Run ok
- Dump ius To somefile
+ Dump workflow To somefile
  With { ok = True }

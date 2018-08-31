@@ -1,7 +1,7 @@
-Input gsi_std;
+Input test;
 
 Run ok
  Reject path != "/foo1" {
-   Dump ius To somefile
+   Dump workflow To somefile
  }
  With { ok = path == "/foo1" }

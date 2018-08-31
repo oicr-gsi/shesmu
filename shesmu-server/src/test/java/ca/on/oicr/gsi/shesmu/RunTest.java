@@ -18,9 +18,6 @@ import org.objectweb.asm.commons.Method;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdFormatDefinition;
-import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdValue;
-
 public class RunTest {
 
 	private class ActionChecker implements ActionConsumer {
@@ -85,25 +82,18 @@ public class RunTest {
 
 	private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
 
-	private static final InputFormatDefinition TEST_INPUT_FORMAT = new BaseInputFormatDefinition<TestValue, TestRepository>(
-			"test", TestValue.class, TestRepository.class) {
-	};
-
 	private static final List<Constant> CONSTANTS = Arrays
 			.asList(Constant.of("project_constant", "the_foo_study", "Testing constant"));
-	private static TestValue[] TEST_DATA = new TestValue[] { new TestValue(1, "a"), new TestValue(2, "b") };
-	private static GsiStdValue[] DATA = new GsiStdValue[] {
-			new GsiStdValue("1", "/foo1", "text/x-nothing", "94d1a7503ff45e5a205a51dd3841f36f", 3, "SlowA", "aaa1",
-					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
-					new Tuple("RUN", 1L, "AACCGGTT"), "EX", "Fresh", "An", "Frozen", "", "Inside", "", "", 307L,
-					"pointy", "UnsureSelect XT", Instant.EPOCH, new Tuple("SAM9000", "3.11", "miso, but less blue"),
-					"test"),
-			new GsiStdValue("2", "/foo2", "text/x-nothing", "f031dcdb95c4ff2fbbc52a6be6c38117", 3, "SlowA", "aaa2",
-					new Tuple(1L, 2L, 3L), "the_foo_study", "unknown_sample", "that_guy",
-					new Tuple("RUN", 1L, "ACGTACGT"), "EX", "Fresh", "nn", "Frozen", "", "Inside", "", "", 300L,
-					"pointy", "UnsureSelect XT", Instant.EPOCH.plusSeconds(500), new Tuple("SAM9000", "3.11", "miso, but less blue"),
-					"test") };
 
+	private static InnerTestValue[] INNER_TEST_DATA = new InnerTestValue[] { new InnerTestValue(1, "a"),
+			new InnerTestValue(2, "b") };
+	private static final NameLoader<InputFormatDefinition> INPUT_FORMATS = new NameLoader<>(Stream.of(//
+			new BaseInputFormatDefinition<TestValue, TestRepository>("test", TestValue.class, TestRepository.class) {
+			}, //
+			new BaseInputFormatDefinition<InnerTestValue, InnerTestRepository>("inner_test", InnerTestValue.class,
+					InnerTestRepository.class) {
+			}), //
+			InputFormatDefinition::name);
 	private static final FunctionDefinition INT2DATE = new FunctionDefinition() {
 		@Override
 		public String description() {
@@ -132,6 +122,7 @@ public class RunTest {
 			return Imyhat.DATE;
 		}
 	};
+
 	private static final FunctionDefinition INT2STR = new FunctionDefinition() {
 
 		@Override
@@ -161,7 +152,6 @@ public class RunTest {
 			return Imyhat.STRING;
 		}
 	};
-
 	private static final ActionDefinition OK_ACTION_DEFINITION = new ActionDefinition("ok", A_OK_ACTION_TYPE,
 			"For unit tests.", Stream.of(ParameterDefinition.forField(A_OK_ACTION_TYPE, "ok", Imyhat.BOOLEAN, true))) {
 
@@ -173,12 +163,18 @@ public class RunTest {
 		}
 	};
 
+	private static TestValue[] TEST_DATA = new TestValue[] {
+			new TestValue("1", "/foo1", 3, "SlowA", new Tuple(1L, 2L, 3L), "the_foo_study", 307L, Instant.EPOCH),
+			new TestValue("2", "/foo2", 3, "SlowA", new Tuple(1L, 2L, 3L), "the_foo_study", 300L,
+					Instant.EPOCH.plusSeconds(500)) };
+
 	private Stream<ActionDefinition> actions() {
 		return Stream.of(OK_ACTION_DEFINITION);
 	}
 
 	private <T> Stream<T> data(Class<T> clazz) {
-		return clazz.equals(TestValue.class) ? Stream.of(TEST_DATA).map(clazz::cast) : Stream.of(DATA).map(clazz::cast);
+		return clazz.equals(InnerTestValue.class) ? Stream.of(INNER_TEST_DATA).map(clazz::cast)
+				: Stream.of(TEST_DATA).map(clazz::cast);
 	}
 
 	private Stream<FunctionDefinition> functions() {
@@ -201,8 +197,7 @@ public class RunTest {
 
 	private boolean testFile(Path file) {
 		try {
-			final HotloadingCompiler compiler = new HotloadingCompiler(
-					x -> x.equals("test") ? TEST_INPUT_FORMAT : new GsiStdFormatDefinition(), this::functions,
+			final HotloadingCompiler compiler = new HotloadingCompiler(INPUT_FORMATS::get, this::functions,
 					this::actions, CONSTANTS::stream);
 			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
 			final ActionChecker checker = new ActionChecker();
