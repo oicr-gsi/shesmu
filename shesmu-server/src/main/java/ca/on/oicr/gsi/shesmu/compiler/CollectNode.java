@@ -9,7 +9,6 @@ import java.util.function.Predicate;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatentationType;
-import ca.on.oicr.gsi.shesmu.compiler.JavaStreamBuilder.Match;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;

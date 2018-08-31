@@ -37,6 +37,14 @@ public interface Regrouper {
 	void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader);
 
 	/**
+	 * Add a value that is the Boolean result of checking expressions
+	 *
+	 * @param condition
+	 *            the condition that must be satisfied
+	 */
+	void addMatches(String name, Match matchType, Consumer<Renderer> condition);
+
+	/**
 	 * A single value which is the optima from all input values
 	 *
 	 * @param fieldType

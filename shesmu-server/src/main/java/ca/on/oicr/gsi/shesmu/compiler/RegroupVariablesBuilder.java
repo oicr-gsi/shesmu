@@ -31,7 +31,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		private final Consumer<Renderer> loader;
 		private final Imyhat valueType;
 
-		public Collected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+		private Collected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
 			super();
 			this.valueType = valueType;
 			this.fieldName = fieldName;
@@ -106,6 +106,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		@Override
 		public void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader) {
 			elements.add(new First(fieldType, fieldName, loader));
+		}
+
+		@Override
+		public void addMatches(String name, Match matchType, Consumer<Renderer> condition) {
+			elements.add(new Matches(name, matchType, condition));
 		}
 
 		@Override
@@ -385,6 +390,76 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
 	}
 
+	private class Matches extends Element {
+		private final Consumer<Renderer> condition;
+		private final String fieldName;
+		private final Match matchType;
+
+		public Matches(String fieldName, Match matchType, Consumer<Renderer> condition) {
+			this.fieldName = fieldName;
+			this.matchType = matchType;
+			this.condition = condition;
+			buildGetter(BOOLEAN_TYPE, fieldName);
+			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$stop", BOOLEAN_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+		}
+
+		@Override
+		public void buildCollect() {
+			final Label skip = collectRenderer.methodGen().newLabel();
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName + "$stop", BOOLEAN_TYPE);
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, skip);
+
+			condition.accept(collectRenderer);
+			collectRenderer.methodGen().push(matchType.stopOnPredicateMatches());
+			collectRenderer.methodGen().ifICmp(GeneratorAdapter.NE, skip);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().push(true);
+			collectRenderer.methodGen().putField(self, fieldName + "$stop", BOOLEAN_TYPE);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().push(matchType.shortCircuitResult());
+			collectRenderer.methodGen().putField(self, fieldName, BOOLEAN_TYPE);
+
+			collectRenderer.methodGen().mark(skip);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			ctor.loadThis();
+			ctor.push(!matchType.shortCircuitResult());
+			ctor.putField(self, fieldName, BOOLEAN_TYPE);
+			return index;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// Partition counters are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter hashMethod) {
+			// Partition counters are not included in the hash.
+		}
+
+		@Override
+		public Type constructorType() {
+			return null;
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// Do nothing
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			// No argument to constructor.
+		}
+	}
+
 	private class Optima extends Element {
 
 		private final Comparison comparison;
@@ -602,6 +677,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
 	public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {
 		elements.add(new Discriminator(fieldType, fieldName, loader));
+	}
+
+	@Override
+	public void addMatches(String name, Match matchType, Consumer<Renderer> condition) {
+		elements.add(new Matches(name, matchType, condition));
 	}
 
 	@Override
