@@ -180,6 +180,7 @@ public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 									new Tuple(limsKey.map(LimsKey::getId).orElse(""),
 											limsKey.map(LimsKey::getVersion).orElse(""),
 											limsKey.map(LimsKey::getProvider).orElse("")), //
+									fp.getLastModified().toInstant(), //
 									"file_provenance");
 
 							if (!badSetInRecord.isEmpty()) {

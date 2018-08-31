@@ -92,6 +92,7 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 								lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant(), //
 								new Tuple(lp.getLaneProvenanceId(), lp.getVersion(),
 										properties.getOrDefault("provider", "unknown")), //
+								lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(), //
 								"lane_provenance");
 
 						if (badSetInRecord.isEmpty()) {
@@ -139,6 +140,7 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 								sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant(), //
 								new Tuple(sp.getSampleProvenanceId(), sp.getVersion(),
 										properties.getOrDefault("provider", "unknown")), //
+								sp.getCreatedDate() == null ? Instant.EPOCH : sp.getCreatedDate().toInstant(), //
 								"sample_provenance");
 
 						if (badSetInRecord.isEmpty()) {
