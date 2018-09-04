@@ -369,13 +369,13 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	}
 
 	@RuntimeInterop
-	public String addFileSwid(String id) {
+	public final String addFileSwid(String id) {
 		fileSwids.add(Integer.parseUnsignedInt(id));
 		return id;
 	}
 
 	@RuntimeInterop
-	public String addProcessingSwid(String id) {
+	public final String addProcessingSwid(String id) {
 		parentSwids.add(Integer.parseUnsignedInt(id));
 		return id;
 	}
@@ -470,7 +470,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 	}
 
 	@RuntimeInterop
-	public void magic(String magic) {
+	public final void magic(String magic) {
 		if (!magic.isEmpty()) {
 			this.magic = magic;
 		}
