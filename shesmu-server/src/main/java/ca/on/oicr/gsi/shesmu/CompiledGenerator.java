@@ -44,6 +44,7 @@ public class CompiledGenerator extends ActionGenerator {
 
 		@Override
 		public void stop() {
+			generator.unregister();
 			scripts.remove(fileName);
 		}
 
