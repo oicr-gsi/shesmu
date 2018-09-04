@@ -542,7 +542,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 
 			// Read the settings
 			final Properties settings = new Properties();
-			try (InputStream settingsInput = new FileInputStream(settingsPath + ".properties")) {
+			try (InputStream settingsInput = new FileInputStream(settingsPath)) {
 				settings.load(settingsInput);
 			}
 			// Create any IUS accessions required and update the INI file based on those
@@ -592,7 +592,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 			runArgs.add("--host");
 			runArgs.add(settings.getProperty("SW_HOST"));
 			final ProcessBuilder builder = new ProcessBuilder(runArgs);
-			builder.environment().put("SEQWARE_SETTINGS", settingsPath + ".properties");
+			builder.environment().put("SEQWARE_SETTINGS", settingsPath);
 			builder.environment().remove("CLASSPATH");
 			final Process process = builder.start();
 			runAccession = 0;
@@ -632,7 +632,7 @@ public class SeqWareWorkflowAction<K extends LimsKey> extends Action {
 				annotationArgs.add("--value");
 				annotationArgs.add(magic);
 				final ProcessBuilder annotationBuilder = new ProcessBuilder(annotationArgs);
-				annotationBuilder.environment().put("SEQWARE_SETTINGS", settingsPath + ".properties");
+				annotationBuilder.environment().put("SEQWARE_SETTINGS", settingsPath);
 				annotationBuilder.environment().remove("CLASSPATH");
 				final Process annotationProcess = annotationBuilder.start();
 				annotationProcess.getInputStream().close();
