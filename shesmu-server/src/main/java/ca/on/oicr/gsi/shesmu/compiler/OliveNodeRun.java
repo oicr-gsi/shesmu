@@ -47,8 +47,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 	}
 
 	@Override
-	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Consumer<String> errorHandler) {
+	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives, Consumer<String> errorHandler) {
 		return true;
 	}
 

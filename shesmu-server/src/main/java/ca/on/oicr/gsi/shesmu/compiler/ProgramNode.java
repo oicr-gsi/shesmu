@@ -95,10 +95,19 @@ public class ProgramNode {
 		final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
 		final Set<String> metricNames = new HashSet<>();
 		final Map<String, List<Imyhat>> dumpers = new HashMap<>();
+		final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
 		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
 				.count() == olives.size();
-		ok &= olives.stream().filter(olive -> olive.resolveDefinitions(definedOlives, definedFunctions, definedActions,
-				metricNames, dumpers, errorHandler)).count() == olives.size();
+		ok &= olives.stream()
+				.allMatch(olive -> olive.collectFunctions(
+						name -> userDefinedFunctions.containsKey(name) || definedFunctions.apply(name) != null,
+						f -> userDefinedFunctions.put(f.name(), f), errorHandler));
+		ok &= olives.stream()
+				.filter(olive -> olive.resolveDefinitions(definedOlives,
+						n -> userDefinedFunctions.containsKey(n) ? userDefinedFunctions.get(n)
+								: definedFunctions.apply(n),
+						definedActions, metricNames, dumpers, errorHandler))
+				.count() == olives.size();
 
 		// Resolve variables
 		if (ok) {

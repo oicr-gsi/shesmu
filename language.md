@@ -300,6 +300,14 @@ machine-to-machine communication.
 | List       | `[`_inner_`]`            | `a`_inner_ |
 | Tuple      | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 
+## Functions
+At the top level of a file, functions may be defined:
+
+    Function myfunc(string someparameter) someparameter ~ /.*x$/;
+
+Functions may use constants or previously defined functions (either built-in or
+defined in the file). Functions cannot be defined recursively. The return type
+is determined automatically.
 
 ## Expressions
 Shesmu has the following expressions, for lowest precedence to highest precendence.

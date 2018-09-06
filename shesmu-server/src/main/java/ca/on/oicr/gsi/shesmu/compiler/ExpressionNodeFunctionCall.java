@@ -40,6 +40,11 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 		}
 
 		@Override
+		public final void renderStart(GeneratorAdapter methodGen) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public Imyhat returnType() {
 			return Imyhat.BAD;
 		}
@@ -64,6 +69,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 
 	@Override
 	public void render(Renderer renderer) {
+		function.renderStart(renderer.methodGen());
 		arguments.forEach(argument -> argument.render(renderer));
 		function.render(renderer.methodGen());
 	}

@@ -17,35 +17,6 @@ import ca.on.oicr.gsi.shesmu.SignatureVariable;
  */
 public final class OliveDefineBuilder extends BaseOliveBuilder {
 
-	private static class LoadParameter extends LoadableValue {
-		private final int index;
-		private final String name;
-		private final Type type;
-
-		public LoadParameter(int index, Target source) {
-			super();
-			this.index = index;
-			name = source.name();
-			type = source.type().asmType();
-		}
-
-		@Override
-		public void accept(Renderer t) {
-			t.methodGen().loadArg(index);
-		}
-
-		@Override
-		public String name() {
-			return name;
-		}
-
-		@Override
-		public Type type() {
-			return type;
-		}
-
-	}
-
 	private final Method method;
 	private final List<LoadableValue> parameters;
 
