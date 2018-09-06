@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -73,6 +72,38 @@ public abstract class OliveNode {
 			}
 			return result;
 		});
+		ROOTS.addKeyword("Alert", (input, output) -> {
+			final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
+			final AtomicReference<List<OliveArgumentNode>> annotations = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> ttl = new AtomicReference<>();
+			final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
+			final Parser result = input//
+					.whitespace()//
+					.list(clauses::set, OliveClauseNode::parse)//
+					.whitespace()//
+					.keyword("Labels")//
+					.whitespace()//
+					.symbol("{")//
+					.whitespace()//
+					.list(labels::set, OliveArgumentNode::parse, ',')//
+					.symbol("}")//
+					.whitespace().keyword("Annotations")//
+					.whitespace()//
+					.symbol("{")//
+					.whitespace()//
+					.listEmpty(annotations::set, OliveArgumentNode::parse, ',')//
+					.symbol("}")//
+					.whitespace()//
+					.then(ExpressionNode::parse, ttl::set)//
+					.whitespace()//
+					.symbol(";")//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(new OliveNodeAlert(input.line(), input.column(), labels.get(), annotations.get(),
+						ttl.get(), clauses.get()));
+			}
+			return result;
+		});
 	}
 
 	/**
@@ -82,44 +113,18 @@ public abstract class OliveNode {
 		return input.dispatch(ROOTS, output).whitespace();
 	}
 
-	private final List<OliveClauseNode> clauses;
-	protected final Set<String> signableNames = new TreeSet<>();
-
-	public OliveNode(List<OliveClauseNode> clauses) {
-		super();
-		this.clauses = clauses;
-	}
-
 	/**
 	 * Create {@link OliveDefineBuilder} instances for this olive, if required
 	 *
 	 * This is part of bytecode generation and happens well after
 	 * {@link #collectDefinitions(Map, Consumer)}
 	 */
-	protected abstract void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
+	public abstract void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
 	/**
 	 * Check the rules that “Matches” clauses must only precede “Group” clauses
 	 */
-	public final boolean checkVariableStream(Consumer<String> errorHandler) {
-		ClauseStreamOrder state = ClauseStreamOrder.PURE;
-		for (final OliveClauseNode clause : clauses()) {
-			state = clause.ensureRoot(state, signableNames, errorHandler);
-		}
-		if (state == ClauseStreamOrder.PURE) {
-			collectArgumentSignableVariables();
-		}
-		return state != ClauseStreamOrder.BAD;
-	}
-
-	/**
-	 * List all the clauses in this node
-	 */
-	protected List<OliveClauseNode> clauses() {
-		return clauses;
-	}
-
-	protected abstract void collectArgumentSignableVariables();
+	public abstract boolean checkVariableStream(Consumer<String> errorHandler);
 
 	/**
 	 * Find all the olive definitions
@@ -127,7 +132,7 @@ public abstract class OliveNode {
 	 * This is part of analysis and happens well before
 	 * {@link #build(RootBuilder, Map)}
 	 */
-	protected abstract boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+	public abstract boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Consumer<String> errorHandler);
 
 	/**
@@ -149,28 +154,12 @@ public abstract class OliveNode {
 	 * This does the clauses and
 	 * {@link #resolveDefinitionsExtra(Map, Function, Function, Consumer)}
 	 */
-	public final boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
-		final boolean clausesOk = clauses.stream().filter(clause -> clause.resolveDefinitions(definedOlives,
-				definedFunctions, definedActions, metricNames, dumpers, errorHandler)).count() == clauses.size();
-		return clausesOk & resolveDefinitionsExtra(definedOlives, definedFunctions, definedActions, errorHandler);
-	}
-
-	/**
-	 * Do any further non-variable definition resolution specific to this class
-	 */
-	protected abstract boolean resolveDefinitionsExtra(Map<String, OliveNodeDefinition> definedOlives,
-			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler);
+			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler);
 
 	/**
 	 * Type check this olive and all its constituent parts
 	 */
-	public final boolean typeCheck(Consumer<String> errorHandler) {
-		final boolean ok = clauses.stream().filter(clause -> clause.typeCheck(errorHandler)).count() == clauses.size();
-		return ok & typeCheckExtra(errorHandler);
-	}
-
-	protected abstract boolean typeCheckExtra(Consumer<String> errorHandler);
+	public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

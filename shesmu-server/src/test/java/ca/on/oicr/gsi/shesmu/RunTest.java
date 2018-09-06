@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -26,12 +27,24 @@ public class RunTest {
 		private int good;
 
 		@Override
-		public void accept(Action action, String filename, int line, int column, long time) {
+		public boolean accept(Action action, String filename, int line, int column, long time) {
 			if (action.perform() == ActionState.SUCCEEDED) {
 				good++;
 			} else {
 				bad++;
 			}
+			return false;
+		}
+
+		@Override
+		public boolean accept(String[] labels, String[] annotation, long ttl) {
+			if (IntStream.range(0, labels.length / 2)
+					.anyMatch(i -> labels[i * 2].equals("value") && labels[i * 2 + 1].equals("true"))) {
+				good++;
+			} else {
+				bad++;
+			}
+			return true;
 		}
 
 		public boolean ok() {
@@ -152,6 +165,7 @@ public class RunTest {
 			return Imyhat.STRING;
 		}
 	};
+
 	private static final ActionDefinition OK_ACTION_DEFINITION = new ActionDefinition("ok", A_OK_ACTION_TYPE,
 			"For unit tests.", Stream.of(ParameterDefinition.forField(A_OK_ACTION_TYPE, "ok", Imyhat.BOOLEAN, true))) {
 

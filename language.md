@@ -268,6 +268,24 @@ names in common between the data going into the join and the input format being
 joined against. If there are, they must be eliminated or renamed using a `Let`
 clause.
 
+There is a final type of olive: one to generate an alert:
+
+     Alert
+       Where workflow == "BamQC 2.7+" && fize_size == 0
+       Labels {
+         alertname = "BadGeneratedData",
+         environment = "production",
+         source = workflow
+       Annotations {
+       } 30mins;
+
+The final number is an expression to determine how long this alert should last.
+If the alert is not regenerated in this time period, it will expire. The
+`Labels` define the labels for an alert, which are used to define the alert and
+deduplicate it from other alerts. The `Annotations` section define information
+that is passed to Alert Manager that gets overwritten. For details, see the
+[Alert Manager](https://prometheus.io/docs/alerting/clients/) documentation.
+
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a signature that is used for

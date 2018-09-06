@@ -56,6 +56,11 @@ On a Linux server, create a systemd configuration in `/lib/systemd/system/shesmu
     [Install]
     WantedBy=multi-user.target
 
+If your Shesmu server cannot determine it's own URL (it attempts to use the
+FQDN of the local system), in the `[Unit]` section, add:
+
+    Environment=LOCAL_URL=http://shesmu.myinstitute.org:8081/
+
 Start the server using:
 
     sudo systemctl daemon-reload

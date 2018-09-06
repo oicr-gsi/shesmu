@@ -15,7 +15,7 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
-public final class OliveNodeDefinition extends OliveNode {
+public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	private final int column;
 	private final int line;
@@ -36,7 +36,7 @@ public final class OliveNodeDefinition extends OliveNode {
 	}
 
 	@Override
-	protected void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+	public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
 		definitions.put(name, builder.buildDefineOlive(parameters.stream()));
 	}
 
@@ -46,7 +46,7 @@ public final class OliveNodeDefinition extends OliveNode {
 	}
 
 	@Override
-	protected boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Consumer<String> errorHandler) {
 		if (definedOlives.containsKey(name)) {
 			final OliveNodeDefinition other = definedOlives.get(name);

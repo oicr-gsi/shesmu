@@ -1,0 +1,9 @@
+Input test;
+
+Alert
+  Labels {
+    alertname = "TestTestTest",
+    value = library_size > 0 ? "true" : "false"
+  }
+  Annotations {
+  } 20mins;

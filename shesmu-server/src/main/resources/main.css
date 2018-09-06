@@ -46,6 +46,9 @@ border:none;
 
 td {
 border-top:1px solid #ddd;
+}
+
+.even td {
 width:50%;
 }
 
@@ -141,4 +144,19 @@ border: 1px solid #888;
 background-color: #ddd;
 margin-left:1em;
 white-space:nowrap;
+}
+
+.label {
+display: inline-block;
+border: 1px solid #888;
+background-color: #eee;
+}
+.alert + .alert {
+border-top: 1px solid #000;
+}
+.live {
+background-color: #fee;
+}
+.alert:target {
+font-weight: bold;
 }
