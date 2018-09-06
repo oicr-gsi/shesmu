@@ -14,7 +14,56 @@ set cpo&vim
 syn case match
 
 syn match shesmuTrailingWhite "\s\+$" containedin=ALL
-syn keyword shesmuKeyword All Any By Count Default Define Distinct Dump Else EpochSecond EpochMilli First Fixed FixedConcat Flatten For From Group In Input Join Let LexicalConcat Limit List Matches Max Min Monitor None PartitionCount Reduce Reject Reverse Run Skip Sort Splitting Squish Subsample Switch Then To When Where While With
+syn keyword shesmuKeyword Alert
+syn keyword shesmuKeyword All
+syn keyword shesmuKeyword Annotations
+syn keyword shesmuKeyword Any
+syn keyword shesmuKeyword By
+syn keyword shesmuKeyword Count
+syn keyword shesmuKeyword Default
+syn keyword shesmuKeyword Define
+syn keyword shesmuKeyword Distinct
+syn keyword shesmuKeyword Dump
+syn keyword shesmuKeyword Else
+syn keyword shesmuKeyword EpochMilli
+syn keyword shesmuKeyword EpochSecond
+syn keyword shesmuKeyword First
+syn keyword shesmuKeyword Fixed
+syn keyword shesmuKeyword FixedConcat
+syn keyword shesmuKeyword Flatten
+syn keyword shesmuKeyword For
+syn keyword shesmuKeyword From
+syn keyword shesmuKeyword Group
+syn keyword shesmuKeyword In
+syn keyword shesmuKeyword Input
+syn keyword shesmuKeyword Join
+syn keyword shesmuKeyword Labels
+syn keyword shesmuKeyword Let
+syn keyword shesmuKeyword LexicalConcat
+syn keyword shesmuKeyword Limit
+syn keyword shesmuKeyword List
+syn keyword shesmuKeyword Matches
+syn keyword shesmuKeyword Max
+syn keyword shesmuKeyword Min
+syn keyword shesmuKeyword Monitor
+syn keyword shesmuKeyword None
+syn keyword shesmuKeyword PartitionCount
+syn keyword shesmuKeyword Reduce
+syn keyword shesmuKeyword Reject
+syn keyword shesmuKeyword Reverse
+syn keyword shesmuKeyword Run
+syn keyword shesmuKeyword Skip
+syn keyword shesmuKeyword Sort
+syn keyword shesmuKeyword Splitting
+syn keyword shesmuKeyword Squish
+syn keyword shesmuKeyword Subsample
+syn keyword shesmuKeyword Switch
+syn keyword shesmuKeyword Then
+syn keyword shesmuKeyword To
+syn keyword shesmuKeyword When
+syn keyword shesmuKeyword Where
+syn keyword shesmuKeyword While
+syn keyword shesmuKeyword With
 syn keyword shesmuBool False True
 syn match shesmuOperators '\(\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|\)' display
 syn keyword shesmuType boolean date integer string

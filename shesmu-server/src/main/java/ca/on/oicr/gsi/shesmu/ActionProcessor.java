@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,12 +16,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.http.client.utils.URIBuilder;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -37,7 +43,83 @@ import io.prometheus.client.Gauge;
  * This class collects actions and tries to {@link Action#perform()} until
  * successful.
  */
-public final class ActionProcessor {
+public final class ActionProcessor implements ActionConsumer {
+	public static final class Alert {
+		private Map<String, String> annotations = new TreeMap<>();
+		private String endsAt;
+		@JsonIgnore
+		private Instant expiryTime;
+		private String generatorURL;
+		private final String id = Long.toString(alertIdGenerator.getAndIncrement());
+		private Map<String, String> labels = new TreeMap<>();
+		private String startsAt;
+
+		public void expiresIn(long ttl) {
+			expiryTime = Instant.now().plusSeconds(ttl);
+		}
+
+		public Map<String, String> getAnnotations() {
+			return annotations;
+		}
+
+		public String getEndsAt() {
+			return endsAt;
+		}
+
+		public String getGeneratorURL() {
+			return generatorURL;
+		}
+
+		public Map<String, String> getLabels() {
+			return labels;
+		}
+
+		public String getStartsAt() {
+			return startsAt;
+		}
+
+		public String id() {
+			return id;
+		}
+
+		public boolean isLive() {
+			return expiryTime.isAfter(Instant.now());
+		}
+
+		public void setAnnotations(Map<String, String> annotations) {
+			this.annotations = annotations;
+		}
+
+		public void setEndsAt(Instant endsAt) {
+			this.endsAt = DateTimeFormatter.ISO_INSTANT.format(endsAt);
+		}
+
+		public void setEndsAt(String endsAt) {
+			this.endsAt = endsAt;
+		}
+
+		public void setGeneratorURL(String generatorURL) {
+			this.generatorURL = generatorURL;
+		}
+
+		public void setLabels(Map<String, String> labels) {
+			this.labels = labels;
+		}
+
+		public void setStartsAt(Instant startsAt) {
+			this.startsAt = DateTimeFormatter.ISO_INSTANT.format(startsAt);
+		}
+
+		public void setStartsAt(String startsAt) {
+			this.startsAt = startsAt;
+		}
+
+		public String expiryTime() {
+			return DateTimeFormatter.ISO_INSTANT.format(expiryTime);
+		}
+
+	}
+
 	private interface Bin<T> extends Comparator<T> {
 		long bucket(T min, long width, T value);
 
@@ -177,6 +259,8 @@ public final class ActionProcessor {
 
 	};
 
+	private static final AtomicLong alertIdGenerator = new AtomicLong();
+
 	private static final Bin<Instant> CHECKED = new InstantBin() {
 
 		@Override
@@ -195,12 +279,12 @@ public final class ActionProcessor {
 
 	private static final Gauge lastAdd = Gauge
 			.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
-
 	private static final Gauge lastRun = Gauge
 			.build("shesmu_action_perform_last_time", "The last time the actions were processed.").register();
 	private static final Gauge oldest = Gauge
 			.build("shesmu_action_oldest_time", "The oldest action in a particular state.").labelNames("state")
 			.register();
+
 	private static final Property<String> SOURCE_FILE = new Property<String>() {
 
 		@Override
@@ -459,12 +543,19 @@ public final class ActionProcessor {
 
 	private final Map<Action, Information> actions = new ConcurrentHashMap<>();
 
+	private final AutoLock alertLock = new AutoLock();
+
+	private final Map<Map<String, String>, Alert> alerts = new HashMap<>();
+
+	private final String baseUri;
+
 	private final Thread processing = new Thread(this::update, "action-processor");
 
 	private volatile boolean running = true;
 
-	public ActionProcessor() {
+	public ActionProcessor(String baseUri) {
 		super();
+		this.baseUri = baseUri;
 		Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 		ShesmuIntrospectionProcessorRepository.supplier = () -> actions.entrySet().stream()//
 				.map(entry -> new ShesmuIntrospectionValue(entry.getKey(), //
@@ -473,7 +564,7 @@ public final class ActionProcessor {
 						entry.getValue().lastAdded, //
 						entry.getValue().lastState, //
 						entry.getValue().locations));
-	};
+	}
 
 	/**
 	 * Add an action to the execution pool
@@ -481,6 +572,7 @@ public final class ActionProcessor {
 	 * If this action is a duplicate of an existing action, the existing state is
 	 * kept.
 	 */
+	@Override
 	public synchronized boolean accept(Action action, String filename, int line, int column, long time) {
 		Information information;
 		boolean isDuplicate;
@@ -497,6 +589,29 @@ public final class ActionProcessor {
 		information.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochSecond(time)));
 		lastAdd.setToCurrentTime();
 		return isDuplicate;
+	}
+
+	@Override
+	public boolean accept(String[] labels, String[] annotations, long ttl) throws Exception {
+		final Map<String, String> labelMap = repack(labels, "Labels");
+		try (AutoCloseable lock = alertLock.acquire()) {
+			Alert alert;
+			final boolean duplicate = alerts.containsKey(labelMap);
+			if (duplicate) {
+				alert = alerts.get(labelMap);
+			} else {
+				alert = new Alert();
+				alert.setLabels(labelMap);
+				alert.setStartsAt(Instant.now());
+				alerts.put(labelMap, alert);
+				final URIBuilder builder = new URIBuilder(baseUri);
+				builder.setFragment("alert-" + alert.id());
+				alert.setGeneratorURL(builder.build().toASCIIString());
+			}
+			alert.setAnnotations(repack(annotations, "Annotations"));
+			alert.expiresIn(ttl);
+		}
+		return false;
 	}
 
 	private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(ArrayNode output,
@@ -560,6 +675,19 @@ public final class ActionProcessor {
 			counts.add(buckets[i]);
 		}
 		boundaries.add(bin.name(max.get(), 0));
+	}
+
+	private Map<String, String> repack(String[] input, String name) {
+		if (input.length % 2 != 0) {
+			throw new IllegalArgumentException(name + " must be paired.");
+		}
+		final Map<String, String> output = new TreeMap<>();
+		for (int i = 0; i < input.length; i += 2) {
+			if (input[i + 1] != null) {
+				output.put(input[i], input[i + 1]);
+			}
+		}
+		return output;
 	}
 
 	/**
@@ -651,6 +779,21 @@ public final class ActionProcessor {
 
 	private void update() {
 		while (running) {
+			byte[] alertJson = null;
+			try (AutoCloseable lock = alertLock.acquire()) {
+				alertJson = RuntimeSupport.MAPPER.writeValueAsBytes(//
+						alerts.values().stream()//
+								.filter(Alert::isLive)//
+								.collect(Collectors.toList()));
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+			if (alertJson != null) {
+				for (final AlertSink sink : AlertSink.SINKS) {
+					sink.push(alertJson);
+				}
+			}
+
 			final Instant now = Instant.now();
 			actions.entrySet().stream()//
 					.sorted(Comparator.comparingInt(e -> e.getKey().priority()))//
@@ -693,6 +836,15 @@ public final class ActionProcessor {
 			} catch (final InterruptedException e) {
 				// Either interrupted to stop or just going to process early
 			}
+		}
+	}
+
+	public void alerts(Consumer<Alert> consumer) {
+		try (AutoCloseable lock = alertLock.acquire()) {
+			alerts.values().stream()//
+					.forEach(consumer);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

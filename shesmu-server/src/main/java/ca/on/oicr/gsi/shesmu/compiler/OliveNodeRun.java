@@ -19,7 +19,7 @@ import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
-public final class OliveNodeRun extends OliveNode {
+public final class OliveNodeRun extends OliveNodeWithClauses {
 
 	private final String actionName;
 	private final List<OliveArgumentNode> arguments;
@@ -37,7 +37,7 @@ public final class OliveNodeRun extends OliveNode {
 	}
 
 	@Override
-	protected void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+	public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
 		// Do nothing.
 	}
 
@@ -47,7 +47,7 @@ public final class OliveNodeRun extends OliveNode {
 	}
 
 	@Override
-	protected boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Consumer<String> errorHandler) {
 		return true;
 	}

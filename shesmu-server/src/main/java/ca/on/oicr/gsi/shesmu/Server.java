@@ -6,7 +6,10 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -15,14 +18,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.http.client.utils.URIBuilder;
+
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -63,6 +69,13 @@ public final class Server {
 	private static final LatencyHistogram responseTime = new LatencyHistogram("shesmu_http_request_time",
 			"The time to respond to an HTTP request.", "url");
 
+	private static String labelsToHtml(Map<String, String> labels) {
+		return labels.entrySet().stream()//
+				.map(l -> "<span class=\"label\">" + l.getKey() + " = "
+						+ new String(JsonStringEncoder.getInstance().quoteAsString(l.getValue())) + "</span>")//
+				.collect(Collectors.joining("<br/>"));
+	}
+
 	public static void main(String[] args) throws Exception {
 		DefaultExports.initialize();
 
@@ -79,11 +92,11 @@ public final class Server {
 			FunctionRepository.class, 15, FunctionRepository::queryFunctions);
 	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
 	private final Semaphore inputDownloadSemaphore = new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
-	private final ActionProcessor processor = new ActionProcessor();
+	private final ActionProcessor processor = new ActionProcessor(localname());
 	private final HttpServer server;
 	private final Instant startTime = Instant.now();
 
-	private final StaticActions staticActions = new StaticActions(processor::accept, this::actionDefinitions);
+	private final StaticActions staticActions = new StaticActions(processor, this::actionDefinitions);
 
 	private final MasterRunner z_master = new MasterRunner(compiler, processor);
 
@@ -96,7 +109,7 @@ public final class Server {
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
-				writeHeaderedTable(writer, "Core");
+				writeHeaderedTable(writer, "Core", true);
 				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
 				writeRow(writer, "Start Time", startTime.toString());
 				writeRow(writer, "Emergency Stop",
@@ -118,13 +131,14 @@ public final class Server {
 						ConstantSource::sources, //
 						DumperSource::sources, //
 						SourceLocation::configuration, //
+						AlertSink::sinks, //
 						() -> Stream.of(staticActions)//
 				)//
 						.flatMap(Supplier::get)//
 						.flatMap(LoadedConfiguration::listConfiguration)//
 						.sorted(Comparator.comparing(Pair::first))//
 						.forEach(config -> {
-							writeHeaderedTable(writer, config.first());
+							writeHeaderedTable(writer, config.first(), true);
 							config.second().forEach((k, v) -> writeRow(writer, k, v));
 							writeFinish(writer);
 						});
@@ -139,7 +153,7 @@ public final class Server {
 			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
 				writePageHeader(writer);
 
-				writeHeaderedTable(writer, "Type");
+				writeHeaderedTable(writer, "Type", true);
 				writeRow(writer, "Signature",
 						"<input type=\"text\" id=\"uglySignature\"></input> <span class=\"load\" onclick=\"prettyType();\">💅 Beautify</span>");
 				writeRow(writer, "Pretty Type", "<span id=\"prettyType\"></span>");
@@ -173,7 +187,7 @@ public final class Server {
 				});
 
 				InputFormatDefinition.formats().forEach(format -> {
-					writeHeaderedTable(writer, "Variables: " + format.name());
+					writeHeaderedTable(writer, "Variables: " + format.name(), true);
 					format.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
 						final String signableMarker = variable.flavour() == Flavour.STREAM_SIGNABLE
 								? "<span title=\"Included in signatures\">✍️</span>"
@@ -183,7 +197,7 @@ public final class Server {
 					writeFinish(writer);
 				});
 
-				writeHeaderedTable(writer, "Variables: Signatures");
+				writeHeaderedTable(writer, "Variables: Signatures", true);
 				NameDefinitions.signatureVariables().forEach(variable -> {
 					writeRow(writer, variable.name(), variable.type().name());
 				});
@@ -204,7 +218,27 @@ public final class Server {
 			}
 		});
 
-		addJson("/actions", mapper -> {
+		add("/alerts", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
+				writePageHeader(writer);
+
+				writeHeaderedTable(writer, "Alerts", false);
+				processor.alerts(a -> writeRowWithId(writer, "alert-" + a.id(), //
+						a.isLive() ? "live alert" : "expired alert", //
+						String.format("#alert-%d", a.id()), //
+						labelsToHtml(a.getLabels()), //
+						labelsToHtml(a.getAnnotations()), //
+						a.getStartsAt(), //
+						a.expiryTime()));
+				writeFinish(writer);
+
+				writePageFooter(writer);
+			}
+		});
+
+		addJson("/actions", (mapper, query) -> {
 			final ArrayNode array = mapper.createArrayNode();
 			actionRepository.stream().forEach(actionDefinition -> {
 				final ObjectNode obj = array.addObject();
@@ -221,7 +255,7 @@ public final class Server {
 			return array;
 		});
 
-		addJson("/constants", mapper -> {
+		addJson("/constants", (mapper, query) -> {
 			final ArrayNode array = mapper.createArrayNode();
 			ConstantSource.all().forEach(constant -> {
 				final ObjectNode obj = array.addObject();
@@ -232,7 +266,7 @@ public final class Server {
 			return array;
 		});
 
-		addJson("/functions", mapper -> {
+		addJson("/functions", (mapper, query) -> {
 			final ArrayNode array = mapper.createArrayNode();
 			functionpRepository.stream().forEach(function -> {
 				final ObjectNode obj = array.addObject();
@@ -291,6 +325,14 @@ public final class Server {
 			}
 		});
 
+		add("/currentalerts", t -> {
+			t.getResponseHeaders().set("Content-type", "application/json");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				CurrentAlerts.pump(os);
+			}
+		});
+
 		add("/constant", t -> {
 			final String query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
 			ConstantLoader loader;
@@ -344,7 +386,7 @@ public final class Server {
 			}
 		});
 
-		addJson("/variables", mapper -> {
+		addJson("/variables", (mapper, query) -> {
 			final ObjectNode node = mapper.createObjectNode();
 			InputFormatDefinition.formats().forEach(source -> {
 				final ObjectNode sourceNode = node.putObject(source.name());
@@ -471,9 +513,10 @@ public final class Server {
 	/**
 	 * Add a new service endpoint with Prometheus monitoring that handles JSON
 	 */
-	private void addJson(String url, Function<ObjectMapper, JsonNode> fetcher) {
+	private void addJson(String url, BiFunction<ObjectMapper, String, JsonNode> fetcher) {
 		add(url, t -> {
-			final JsonNode node = fetcher.apply(RuntimeSupport.MAPPER);
+
+			final JsonNode node = fetcher.apply(RuntimeSupport.MAPPER, t.getRequestURI().getQuery());
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
 			try (OutputStream os = t.getResponseBody()) {
@@ -484,6 +527,42 @@ public final class Server {
 
 	private Stream<FunctionDefinition> functions() {
 		return functionpRepository.stream();
+	}
+
+	private String localname() {
+		URIBuilder builder = null;
+		final String url = System.getenv("LOCAL_URL");
+		if (url != null) {
+			try {
+				builder = new URIBuilder(url);
+			} catch (final URISyntaxException e) {
+				e.printStackTrace();
+			}
+		}
+		if (builder == null) {
+			builder = new URIBuilder();
+			builder.setScheme("http");
+			builder.setHost("localhost");
+			builder.setPort(8081);
+			builder.setPath("");
+			try {
+				builder.setHost(InetAddress.getLocalHost().getCanonicalHostName());
+			} catch (final UnknownHostException eh1) {
+				eh1.printStackTrace();
+				try {
+					builder.setHost(InetAddress.getLocalHost().getHostAddress());
+				} catch (final UnknownHostException eh2) {
+					eh2.printStackTrace();
+				}
+			}
+		}
+		builder.setPath(builder.getPath() + "/alerts");
+		try {
+			return builder.build().toASCIIString();
+		} catch (final URISyntaxException e) {
+			e.printStackTrace();
+			return "http://localhost:8081/alerts";
+		}
 	}
 
 	public void start() {
@@ -541,10 +620,14 @@ public final class Server {
 		writer.print("</h1>");
 	}
 
-	private void writeHeaderedTable(PrintStream writer, String title) {
+	private void writeHeaderedTable(PrintStream writer, String title, boolean even) {
 		writer.print("<h1>");
 		writer.print(title);
-		writer.print("</h1><table>");
+		writer.print("</h1><table");
+		if (even) {
+			writer.print(" class=\"even\"");
+		}
+		writer.print(">");
 	}
 
 	private void writePageFooter(PrintStream writer) {
@@ -553,20 +636,35 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction;</script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"actiondash\">Actions</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction;</script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"actiondash\">Actions</a><a href=\"alerts\">Alerts</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
 	}
 
-	private void writeRow(PrintStream writer, String key, String value) {
-		writer.print("<tr><td>");
-		writer.print(key);
-		writer.print("</td><td>");
-		writer.print(value);
+	private void writeRow(PrintStream writer, String... columns) {
+		writer.print("<tr>");
+		for (final String column : columns) {
+			writer.print("<td>");
+			writer.print(column);
+			writer.print("</td>");
+		}
 		writer.print("</td></tr>");
+	}
 
+	private void writeRowWithId(PrintStream writer, String id, String classes, String... columns) {
+		writer.print("<tr id=\"");
+		writer.print(id);
+		writer.print("\" class=\"");
+		writer.print(classes);
+		writer.print("\">");
+		for (final String column : columns) {
+			writer.print("<td>");
+			writer.print(column);
+			writer.print("</td>");
+		}
+		writer.print("</td></tr>");
 	}
 
 	private void writeTable(PrintStream writer, String title) {
-		writer.print("<table>");
+		writer.print("<table class=\"even\">");
 		writeBlock(writer, title);
 	}
 }

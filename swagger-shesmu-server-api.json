@@ -327,6 +327,28 @@
         ]
       }
     },
+    "/currentalerts": {
+      "get": {
+        "description": "",
+        "operationId": "getCurrentAlerts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://raw.githubusercontent.com/prometheus/alertmanager/master/api/v2/openapi.yaml#/definitions/alerts"
+                }
+              }
+            },
+            "description": "Current active alerts"
+          }
+        },
+        "summary": "Get a list of current firing alerts.",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
     "/function": {
       "post": {
         "description": "",
@@ -599,6 +621,10 @@
     {
       "description": "Actions",
       "name": "actions"
+    },
+    {
+      "description": "Alerts",
+      "name": "alerts"
     },
     {
       "description": "Constants/Predefined Values",

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.DOUBLE_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
@@ -27,16 +28,21 @@ import io.prometheus.client.Gauge;
 public final class OliveBuilder extends BaseOliveBuilder {
 
 	private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(ActionConsumer.class);
-
 	private static final Type A_ACTION_TYPE = Type.getType(Action.class);
-	private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
 
+	private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
+
+	private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 
 	private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
 
-	private static final Method METHOD_ACTION_CONSUMER__ACCEPT = new Method("accept", VOID_TYPE,
+	private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ACTION = new Method("accept", BOOLEAN_TYPE,
 			new Type[] { A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE });
+
+	private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ALERT = new Method("accept", BOOLEAN_TYPE,
+			new Type[] { A_STRING_ARRAY_TYPE, A_STRING_ARRAY_TYPE, LONG_TYPE });
+
 	private static final Method METHOD_CHILD__SET = new Method("set", VOID_TYPE, new Type[] { DOUBLE_TYPE });
 
 	private static final Method METHOD_GAUGE__LABELS = new Method("labels", Type.getType(Object.class),
@@ -101,7 +107,17 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		methodGen.push(line);
 		methodGen.push(column);
 		methodGen.push(owner.compileTime);
-		methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT);
+		methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ACTION);
+		methodGen.pop();
+	}
+
+	public void emitAlert(GeneratorAdapter methodGen, int labelLocal, int annotationLocal, int ttlLocal) {
+		methodGen.loadArg(0);
+		methodGen.loadLocal(labelLocal);
+		methodGen.loadLocal(annotationLocal);
+		methodGen.loadLocal(ttlLocal);
+		methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ALERT);
+		methodGen.pop();
 	}
 
 	@Override
