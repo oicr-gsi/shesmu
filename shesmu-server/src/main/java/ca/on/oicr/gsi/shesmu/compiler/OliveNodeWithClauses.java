@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -32,6 +33,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 	/**
 	 * Check the rules that “Matches” clauses must only precede “Group” clauses
 	 */
+	@Override
 	public final boolean checkVariableStream(Consumer<String> errorHandler) {
 		ClauseStreamOrder state = ClauseStreamOrder.PURE;
 		for (final OliveClauseNode clause : clauses()) {
@@ -52,17 +54,23 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 
 	protected abstract void collectArgumentSignableVariables();
 
-
+	@Override
+	public final boolean collectFunctions(Predicate<String> isDefined, Consumer<FunctionDefinition> defineFunction,
+			Consumer<String> errorHandler) {
+		return true;
+	}
 
 	/**
 	 * Generate bytecode for this stanza into the
 	 * {@link ActionGenerator#run(Consumer, java.util.function.Supplier)} method
 	 */
+	@Override
 	public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
 	/**
 	 * Resolve all variable definitions
 	 */
+	@Override
 	public abstract boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants);
@@ -73,6 +81,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 	 * This does the clauses and
 	 * {@link #resolveDefinitionsExtra(Map, Function, Function, Consumer)}
 	 */
+	@Override
 	public final boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
@@ -91,6 +100,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 	/**
 	 * Type check this olive and all its constituent parts
 	 */
+	@Override
 	public final boolean typeCheck(Consumer<String> errorHandler) {
 		final boolean ok = clauses.stream().filter(clause -> clause.typeCheck(errorHandler)).count() == clauses.size();
 		return ok & typeCheckExtra(errorHandler);

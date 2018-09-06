@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -104,6 +105,28 @@ public abstract class OliveNode {
 			}
 			return result;
 		});
+		ROOTS.addKeyword("Function", (input, output) -> {
+			final AtomicReference<String> name = new AtomicReference<>();
+			final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> body = new AtomicReference<>();
+			final Parser result = input//
+					.whitespace()//
+					.identifier(name::set)//
+					.whitespace()//
+					.symbol("(")//
+					.listEmpty(params::set, OliveParameter::parse, ',')//
+					.symbol(")")//
+					.whitespace()//
+					.then(ExpressionNode::parse, body::set)//
+					.whitespace()//
+					.symbol(";")//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(
+						new OliveNodeFunction(input.line(), input.column(), name.get(), params.get(), body.get()));
+			}
+			return result;
+		});
 	}
 
 	/**
@@ -133,6 +156,9 @@ public abstract class OliveNode {
 	 * {@link #build(RootBuilder, Map)}
 	 */
 	public abstract boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+			Consumer<String> errorHandler);
+
+	public abstract boolean collectFunctions(Predicate<String> isDefined, Consumer<FunctionDefinition> defineFunctions,
 			Consumer<String> errorHandler);
 
 	/**

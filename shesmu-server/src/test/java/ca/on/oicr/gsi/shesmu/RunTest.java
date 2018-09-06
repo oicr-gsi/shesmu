@@ -131,6 +131,11 @@ public class RunTest {
 		}
 
 		@Override
+		public final void renderStart(GeneratorAdapter methodGen) {
+			// None required.
+		}
+
+		@Override
 		public Imyhat returnType() {
 			return Imyhat.DATE;
 		}
@@ -158,6 +163,11 @@ public class RunTest {
 			methodGen.invokeStatic(Type.getType(Long.class),
 					new Method("toString", Type.getType(String.class), new Type[] { Type.LONG_TYPE }));
 
+		}
+
+		@Override
+		public final void renderStart(GeneratorAdapter methodGen) {
+			// None required.
 		}
 
 		@Override

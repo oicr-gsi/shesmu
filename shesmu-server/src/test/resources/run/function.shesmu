@@ -1,0 +1,5 @@
+Input test;
+
+Function foo(string x) x == "the_foo_study";
+
+Run ok With { ok = foo(project) }

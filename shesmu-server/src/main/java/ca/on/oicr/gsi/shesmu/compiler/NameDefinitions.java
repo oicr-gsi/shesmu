@@ -73,7 +73,7 @@ public class NameDefinitions {
 
 	private final Map<String, Target> variables;
 
-	private NameDefinitions(Map<String, Target> variables, boolean isGood) {
+	public NameDefinitions(Map<String, Target> variables, boolean isGood) {
 		this.variables = variables;
 		this.isGood = isGood;
 	}

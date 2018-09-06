@@ -46,7 +46,8 @@ public final class StandardFunctions implements FunctionRepository {
 			FunctionDefinition.virtualMethod("str_upper", "toUpperCase", "Convert a string to upper case.",
 					Imyhat.STRING, new FunctionParameter("str", Imyhat.STRING)),
 			FunctionDefinition.virtualMethod("str_eq", "equalsIgnoreCase", "Compares two strings ignoring case.",
-					Imyhat.BOOLEAN, new FunctionParameter("first", Imyhat.STRING), new FunctionParameter("second", Imyhat.STRING)),
+					Imyhat.BOOLEAN, new FunctionParameter("first", Imyhat.STRING),
+					new FunctionParameter("second", Imyhat.STRING)),
 			new FunctionDefinition() {
 
 				@Override
@@ -74,6 +75,11 @@ public final class StandardFunctions implements FunctionRepository {
 				@Override
 				public String description() {
 					return "Gets the length of a string.";
+				}
+
+				@Override
+				public void renderStart(GeneratorAdapter methodGen) {
+					// None required.
 				}
 			} };
 

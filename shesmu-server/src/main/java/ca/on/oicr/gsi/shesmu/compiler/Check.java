@@ -166,6 +166,11 @@ public final class Check extends Compiler {
 			}
 
 			@Override
+			public final void renderStart(GeneratorAdapter methodGen) {
+				// None required.
+			}
+
+			@Override
 			public Imyhat returnType() {
 				return returnType;
 			}
@@ -257,10 +262,10 @@ public final class Check extends Compiler {
 
 	private final NameLoader<ActionDefinition> actions;
 
-	private final NameLoader<FunctionDefinition> functions;
-	private final NameLoader<InputFormatDefinition> inputFormats;
-
 	private final String fileName;
+	private final NameLoader<FunctionDefinition> functions;
+
+	private final NameLoader<InputFormatDefinition> inputFormats;
 
 	private Check(String fileName, NameLoader<InputFormatDefinition> inputFormats,
 			NameLoader<FunctionDefinition> functions, NameLoader<ActionDefinition> actions) {

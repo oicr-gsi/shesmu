@@ -13,8 +13,8 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 public class GroupNodeMatches extends GroupNode {
 
 	private final ExpressionNode condition;
+	private final Match matchType;
 	private final String name;
-	private Match matchType;
 
 	public GroupNodeMatches(int line, int column, String name, Match matchType, ExpressionNode condition) {
 		super(line, column);

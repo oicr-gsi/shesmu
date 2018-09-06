@@ -46,8 +46,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 	}
 
 	@Override
-	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Consumer<String> errorHandler) {
+	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives, Consumer<String> errorHandler) {
 		if (definedOlives.containsKey(name)) {
 			final OliveNodeDefinition other = definedOlives.get(name);
 			errorHandler.accept(String.format("%d:%d: Duplicate definition of “Define %s”. Previous entry on %d:%d.",

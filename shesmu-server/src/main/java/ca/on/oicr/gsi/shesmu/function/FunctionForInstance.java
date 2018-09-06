@@ -118,6 +118,11 @@ public class FunctionForInstance implements FunctionDefinition {
 	}
 
 	@Override
+	public final void renderStart(GeneratorAdapter methodGen) {
+		// None required.
+	}
+
+	@Override
 	public final Imyhat returnType() {
 		return returnType;
 	}

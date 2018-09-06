@@ -128,6 +128,11 @@ public class TableFunctionRepository implements FunctionRepository {
 		}
 
 		@Override
+		public final void renderStart(GeneratorAdapter methodGen) {
+			// None required.
+		}
+
+		@Override
 		public Imyhat returnType() {
 			return returnType;
 		}

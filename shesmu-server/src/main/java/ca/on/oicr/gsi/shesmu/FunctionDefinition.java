@@ -53,6 +53,11 @@ public interface FunctionDefinition {
 			}
 
 			@Override
+			public void renderStart(GeneratorAdapter methodGen) {
+				// None required.
+			}
+
+			@Override
 			public Imyhat returnType() {
 				return returnType;
 			}
@@ -85,6 +90,11 @@ public interface FunctionDefinition {
 			}
 
 			@Override
+			public void renderStart(GeneratorAdapter methodGen) {
+				// None required.
+			}
+
+			@Override
 			public Imyhat returnType() {
 				return returnType;
 			}
@@ -110,6 +120,12 @@ public interface FunctionDefinition {
 	 * Create bytecode for this function.
 	 */
 	void render(GeneratorAdapter methodGen);
+
+	/**
+	 * Create bytecode for anything that should be on the stack before the arguments
+	 * of this function.
+	 */
+	void renderStart(GeneratorAdapter methodGen);
 
 	/**
 	 * The return type of the map
