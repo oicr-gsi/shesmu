@@ -39,6 +39,12 @@ public final class StandardFunctions implements FunctionRepository {
 			FunctionDefinition.staticMethod(RuntimeSupport.class, "dir_name",
 					"Extracts all but the last elements in a path (i.e., the containing directory).", Imyhat.STRING,
 					new FunctionParameter("input path", Imyhat.STRING)),
+			FunctionDefinition.staticMethod(RuntimeSupport.class, "version_at_least",
+					"Checks whether the supplied version tuple is the same or greater than version numbers provided.",
+					Imyhat.BOOLEAN,
+					new FunctionParameter("version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER)),
+					new FunctionParameter("major", Imyhat.INTEGER), new FunctionParameter("minor", Imyhat.INTEGER),
+					new FunctionParameter("patch", Imyhat.INTEGER)),
 			FunctionDefinition.virtualMethod("str_trim", "trim", "Remove white space from a string.", Imyhat.STRING,
 					new FunctionParameter("str", Imyhat.STRING)),
 			FunctionDefinition.virtualMethod("str_lower", "toLowerCase", "Convert a string to lower case.",
@@ -46,7 +52,8 @@ public final class StandardFunctions implements FunctionRepository {
 			FunctionDefinition.virtualMethod("str_upper", "toUpperCase", "Convert a string to upper case.",
 					Imyhat.STRING, new FunctionParameter("str", Imyhat.STRING)),
 			FunctionDefinition.virtualMethod("str_eq", "equalsIgnoreCase", "Compares two strings ignoring case.",
-					Imyhat.BOOLEAN, new FunctionParameter("first", Imyhat.STRING), new FunctionParameter("second", Imyhat.STRING)),
+					Imyhat.BOOLEAN, new FunctionParameter("first", Imyhat.STRING),
+					new FunctionParameter("second", Imyhat.STRING)),
 			new FunctionDefinition() {
 
 				@Override

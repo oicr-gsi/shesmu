@@ -317,6 +317,18 @@ public final class RuntimeSupport {
 		return DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
 	}
 
+	@RuntimeInterop
+	public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
+		if ((Long)version.get(0) < major) {
+			return false;
+		}
+		if ((Long)version.get(1) < minor) {
+			return false;
+		}
+		return (Long)version.get(2) >= patch;
+
+	}
+
 	private RuntimeSupport() {
 	}
 }
