@@ -160,3 +160,7 @@ background-color: #fee;
 .alert:target {
 font-weight: bold;
 }
+
+pre {
+overflow-x: auto;
+}
