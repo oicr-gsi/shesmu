@@ -102,13 +102,6 @@ public abstract class BaseTicketAction extends Action {
 			return false;
 		}
 		final BaseTicketAction other = (BaseTicketAction) obj;
-		if (issueUrl == null) {
-			if (other.issueUrl != null) {
-				return false;
-			}
-		} else if (!issueUrl.equals(other.issueUrl)) {
-			return false;
-		}
 		if (config == null) {
 			if (other.config != null) {
 				return false;
@@ -130,7 +123,6 @@ public abstract class BaseTicketAction extends Action {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (issueUrl == null ? 0 : issueUrl.hashCode());
 		result = prime * result + (config == null ? 0 : config.hashCode());
 		result = prime * result + (summary == null ? 0 : summary.hashCode());
 		return result;
@@ -171,6 +163,7 @@ public abstract class BaseTicketAction extends Action {
 		node.put("instanceName", config.instance());
 		node.put("projectKey", config.projectKey());
 		node.put("summary", summary);
+		node.put("instanceUrl", config.url());
 		node.put("url", issueUrl == null ? null : issueUrl.toString());
 		issues.forEach(node.putArray("issues")::add);
 		return node;
