@@ -16,7 +16,6 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
-import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public class OliveClauseNodeJoin extends OliveClauseNode {
 
@@ -62,14 +61,14 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 				.collect(Collectors.toSet());
 
 		final List<String> duplicates = defs.stream()//
-				.filter(n -> n.flavour() == Flavour.STREAM && newNames.contains(n.name()))//
+				.filter(n -> n.flavour().isStream() && newNames.contains(n.name()))//
 				.map(Target::name)//
 				.sorted()//
 				.collect(Collectors.toList());
 
 		if (duplicates.isEmpty()) {
 			defs.stream()//
-					.filter(n -> n.flavour() == Flavour.STREAM)//
+					.filter(n -> n.flavour().isStream())//
 					.forEach(n -> joins.add(jb -> jb.add(n.type().asmType(), n.name(), true)));
 			inputFormat.baseStreamVariables()
 					.forEach(n -> joins.add(jb -> jb.add(n.type().asmType(), n.name(), false)));
@@ -82,7 +81,7 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 		return defs.replaceStream(//
 				Stream.concat(//
 						defs.stream()//
-								.filter(n -> n.flavour() == Flavour.STREAM), //
+								.filter(n -> n.flavour().isStream()), //
 						inputFormat.baseStreamVariables()), //
 				duplicates.isEmpty());
 	}
