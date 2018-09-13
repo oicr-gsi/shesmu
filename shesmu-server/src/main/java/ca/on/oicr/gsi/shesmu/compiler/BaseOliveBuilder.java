@@ -254,6 +254,7 @@ public abstract class BaseOliveBuilder {
 		steps.add(renderer -> {
 			renderer.methodGen().loadThis();
 			renderer.methodGen().swap();
+			renderer.methodGen().loadArg(1);
 			NameDefinitions.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
 			for (int i = 0; i < arglist.size(); i++) {
 				arglist.get(i).accept(renderer);
