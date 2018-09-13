@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,6 +29,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import io.prometheus.client.Gauge;
@@ -38,6 +40,7 @@ import io.prometheus.client.Gauge;
 public abstract class BaseOliveBuilder {
 	protected static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
 	private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
+	private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
 	private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
 	protected static final Type A_COMPARATOR_TYPE = Type.getType(Comparator.class);
 	protected static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
@@ -69,6 +72,8 @@ public abstract class BaseOliveBuilder {
 
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
 
+	protected static final Method METHOD_LEFT_JOIN = new Method("leftJoin", A_STREAM_TYPE, new Type[] { A_STREAM_TYPE,
+			Type.getType(Class.class), A_FUNCTION_TYPE, A_BIFUNCTION_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
 	protected static final Method METHOD_PICK = new Method("pick", A_STREAM_TYPE,
@@ -186,6 +191,79 @@ public abstract class BaseOliveBuilder {
 		flatMapMethodGen.visitEnd();
 
 		return new JoinBuilder(owner, newType, oldType, innerType);
+	}
+
+	public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(Type innerType,
+			LoadableValue... capturedVariables) {
+		final String joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary%d$%d", oliveId, steps.size());
+		final String outputClassName = String.format("shesmu/dyn/LeftJoin%d$%d", oliveId, steps.size());
+
+		final Type oldType = currentType;
+		final Type joinedType = Type.getObjectType(joinedClassName);
+		final Type newType = Type.getObjectType(outputClassName);
+		currentType = newType;
+
+		final Method newMethod = new Method(String.format("leftjoin_%d_%d_new", oliveId, steps.size()), newType,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(joinedType))
+						.toArray(Type[]::new));
+		final Method collectMethod = new Method(String.format("leftjoin_%d_%d_collect", oliveId, steps.size()),
+				VOID_TYPE,
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, joinedType))
+						.toArray(Type[]::new));
+
+		final Type[] captureTypes = Stream
+				.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
+				.toArray(Type[]::new);
+
+		steps.add(renderer -> {
+			renderer.methodGen().push(innerType);
+			renderer.methodGen().loadArg(1);
+
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_BIFUNCTION_TYPE, new Type[] {}),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_NEWINVOKESPECIAL, joinedType.getInternalName(), "<init>",
+							Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
+					Type.getMethodType(joinedType, oldType, innerType));
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen().invokeDynamic(
+					"apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes), LAMBDA_METAFACTORY_BSM,
+					Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
+							owner.selfType().getInternalName(), newMethod.getName(), newMethod.getDescriptor(), false),
+					Type.getMethodType(newType, joinedType));
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen()
+					.invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
+							LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
+							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
+									collectMethod.getName(), collectMethod.getDescriptor(), false),
+							Type.getMethodType(VOID_TYPE, newType, joinedType));
+
+			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_LEFT_JOIN);
+
+			renderer.methodGen().invokeDynamic(
+					"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
+					Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL, outputClassName,
+							"$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
+					Type.getMethodType(BOOLEAN_TYPE, newType));
+			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
+
+		});
+
+		final Renderer newMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
+				capturedVariables.length, joinedType, RootBuilder.proxyCaptured(0, capturedVariables),
+				this::emitSigner);
+		final Renderer collectedMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
+				capturedVariables.length + 1, joinedType, RootBuilder.proxyCaptured(0, capturedVariables),
+				this::emitSigner);
+
+		return new Pair<>(new JoinBuilder(owner, joinedType, oldType, innerType), new RegroupVariablesBuilder(owner,
+				outputClassName, newMethodGen, collectedMethodGen, capturedVariables.length));
 	}
 
 	public final LetBuilder let(LoadableValue... capturedVariables) {

@@ -1,0 +1,9 @@
+Input test;
+
+Define foo()
+ LeftJoin inner_test
+    ls = List l;
+
+Run ok
+ Matches foo()
+ With { ok = (For l In ls: Count) == 2 }

@@ -80,6 +80,21 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
+		final Parser leftJoinParser = input.keyword("LeftJoin");
+		if (leftJoinParser.isGood()) {
+			final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
+			final AtomicReference<String> format = new AtomicReference<>();
+			final Parser result = leftJoinParser//
+					.whitespace()//
+					.identifier(format::set)//
+					.whitespace()//
+					.list(groups::set, GroupNode::parse, ',')//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeLeftJoin(input.line(), input.column(), format.get(), groups.get()));
+			}
+			return result;
+		}
 		final Parser letParser = input.keyword("Let");
 		if (letParser.isGood()) {
 			final AtomicReference<List<LetArgumentNode>> arguments = new AtomicReference<>();
