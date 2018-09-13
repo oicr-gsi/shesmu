@@ -65,10 +65,6 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 		this.discriminators = discriminators;
 	}
 
-	protected final Stream<Target> discriminators() {
-		return discriminatorVariables.stream();
-	}
-
 	@Override
 	public final ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler) {
@@ -94,7 +90,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 		final RegroupVariablesBuilder regroup = oliveBuilder.regroup(oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 
-		discriminators().forEach(discriminator -> {
+		discriminatorVariables.stream().forEach(discriminator -> {
 			regroup.addKey(discriminator.type().asmType(), discriminator.name(), context -> {
 				context.loadStream();
 				context.methodGen().invokeVirtual(context.streamType(),
