@@ -268,6 +268,22 @@ names in common between the data going into the join and the input format being
 joined against. If there are, they must be eliminated or renamed using a `Let`
 clause.
 
+There is a `LeftJoin` clause that works like a `Join` and a `Group` clause at once:
+
+    Run fastqc
+      Where workflow == "BamQC 2.7+"
+      LeftJoin qc_data
+        passed_count = Where path == qc_file && passed Count
+      Where passed_count > 0
+      With {
+        memory = 4Gi,
+        input = path
+      }
+
+The incoming variables act as the `By` part of the `LeftJoin` and the collected
+variables are available in the output. The collectors have access to the joined
+stream.
+
 There is a final type of olive: one to generate an alert:
 
      Alert

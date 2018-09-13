@@ -38,6 +38,7 @@ syn keyword shesmuKeyword In
 syn keyword shesmuKeyword Input
 syn keyword shesmuKeyword Join
 syn keyword shesmuKeyword Labels
+syn keyword shesmuKeyword LeftJoin
 syn keyword shesmuKeyword Let
 syn keyword shesmuKeyword LexicalConcat
 syn keyword shesmuKeyword Limit

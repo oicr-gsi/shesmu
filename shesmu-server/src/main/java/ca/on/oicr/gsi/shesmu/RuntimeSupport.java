@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -168,6 +169,37 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static String join_path(String dir, String file) {
 		return Paths.get(dir).resolve(file).toString();
+	}
+
+	/**
+	 * Left join a stream of input against another input format
+	 *
+	 * @param input
+	 *            the stream to be joined against
+	 * @param inner
+	 *            the type of the inner (right) input stream
+	 * @param inputLoader
+	 *            a function to load this input format
+	 * @param joiner
+	 *            a function to create an intermediate joined type from the two
+	 *            types
+	 * @param makeKey
+	 *            a function to create a new output type; it must accept a joined
+	 *            type where the right side will be null
+	 * @param collector
+	 *            a function that processes joined inputs with both right and left
+	 *            values to an output
+	 * @return
+	 */
+	@RuntimeInterop
+	public static <I, N, J, O> Stream<O> leftJoin(Stream<I> input, Class<N> inner,
+			Function<Class<N>, Stream<N>> inputLoader, BiFunction<I, N, J> joiner, Function<J, O> makeKey,
+			BiConsumer<O, J> collector) {
+		return input.map(left -> {
+			final O output = makeKey.apply(joiner.apply(left, null));
+			inputLoader.apply(inner).forEach(right -> collector.accept(output, joiner.apply(left, right)));
+			return output;
+		});
 	}
 
 	/**
@@ -319,13 +351,13 @@ public final class RuntimeSupport {
 
 	@RuntimeInterop
 	public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
-		if ((Long)version.get(0) < major) {
+		if ((Long) version.get(0) < major) {
 			return false;
 		}
-		if ((Long)version.get(1) < minor) {
+		if ((Long) version.get(1) < minor) {
 			return false;
 		}
-		return (Long)version.get(2) >= patch;
+		return (Long) version.get(2) >= patch;
 
 	}
 

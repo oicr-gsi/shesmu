@@ -1,0 +1,6 @@
+Input test;
+
+Run ok
+ LeftJoin inner_test
+    ls = List l
+ With { ok = (For l In ls: Count) == 2 }
