@@ -2,8 +2,6 @@ package ca.on.oicr.gsi.shesmu.input.nabu;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Set;
-import java.util.TreeSet;
 
 import org.kohsuke.MetaInfServices;
 
@@ -21,9 +19,14 @@ public class NabuJsonRepository extends BaseJsonInputRepository<NabuValue> imple
 
 	@Override
 	protected NabuValue convert(ObjectNode node) {
-		final Set<Long> upstream = new TreeSet<>();
-		for (JsonNode value : node.get("upstream")) {
-			upstream.add(value.asLong());
+		final JsonNode qcstatus = node.get("qcstatus");
+		String status;
+		if (qcstatus == null || qcstatus.isNull()) {
+			status = "PENDING";
+		} else if (qcstatus.isBoolean()) {
+			status = qcstatus.asBoolean() ? "PASSED" : "FAILED";
+		} else {
+			status = qcstatus.asText();
 		}
 		final JsonNode qcdate = node.get("qcdate");
 		Instant date;
@@ -38,14 +41,11 @@ public class NabuJsonRepository extends BaseJsonInputRepository<NabuValue> imple
 		return new NabuValue(//
 				node.get("fileswid").asInt(), //
 				node.get("filepath").asText(), //
-				node.get("qcstatus").asText(), //
+				status, //
 				node.get("username").asText(), //
-				node.get("comment").asText(), //
+				node.get("comment").asText(""), //
 				node.get("project").asText(), //
-				node.get("stalestatus").asText(), //
-				date, //
-				upstream, //
-				node.get("skip").asBoolean(false));
+				date);
 	}
 
 }
