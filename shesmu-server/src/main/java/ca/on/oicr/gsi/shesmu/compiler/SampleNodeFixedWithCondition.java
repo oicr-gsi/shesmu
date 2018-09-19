@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -99,12 +98,12 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 		final LoadableValue[] capturedVariables = renderer.allValues()
 				.filter(v -> freeVariables.contains(v.name()) && !name.equals(v.name())).toArray(LoadableValue[]::new);
 		final Method method = new Method(String.format("%s_%d_condition", prefix, index), BOOLEAN_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type),
-						Stream.of(streamType, type.asmType())).toArray(Type[]::new));
+				JavaStreamBuilder.parameterTypes(renderer.root(), false, capturedVariables, streamType, type));
 		final Renderer conditionRenderer = new Renderer(renderer.root(),
 				new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, renderer.root().classVisitor),
 				capturedVariables.length, streamType,
-				JavaStreamBuilder.parameters(capturedVariables, name, type.asmType()), renderer.signerEmitter());
+				JavaStreamBuilder.parameters(capturedVariables, streamType, name, type.asmType()),
+				renderer.signerEmitter());
 		conditionRenderer.methodGen().visitCode();
 		conditionExpression.render(conditionRenderer);
 		conditionRenderer.methodGen().returnValue();
@@ -120,10 +119,8 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, renderer.root().selfType().getInternalName(),
 				method.getName(), method.getDescriptor(), false);
 		renderer.methodGen().invokeDynamic("test",
-				Type.getMethodDescriptor(A_PREDICATE_TYPE, Stream
-						.concat(Stream.concat(Stream.of(renderer.root().selfType()),
-								Arrays.stream(capturedVariables).map(LoadableValue::type)), Stream.of(streamType))
-						.toArray(Type[]::new)),
+				Type.getMethodDescriptor(A_PREDICATE_TYPE,
+						JavaStreamBuilder.parameterTypes(renderer.root(), true, capturedVariables, streamType)),
 				LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
 				Type.getMethodType(BOOLEAN_TYPE, type.asmType()));
 		renderer.methodGen().invokeConstructor(A_FIXEDWITHCONDITION_TYPE, CTOR);

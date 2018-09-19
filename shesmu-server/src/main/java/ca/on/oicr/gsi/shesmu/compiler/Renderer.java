@@ -100,13 +100,12 @@ public class Renderer {
 	/**
 	 * Load the current stream value on the stack
 	 *
-	 * This cannot be used in the contexts where the stream hasn't started.
+	 * This is a no-op in the contexts where the stream hasn't started.
 	 */
 	public void loadStream() {
-		if (streamType == null) {
-			throw new UnsupportedOperationException();
+		if (streamType != null) {
+			methodGen.loadArg(streamArg);
 		}
-		methodGen.loadArg(streamArg);
 	}
 
 	/**
