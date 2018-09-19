@@ -102,7 +102,7 @@ public final class Build extends Compiler implements AutoCloseable {
 				compiler.dump();
 			}
 			final boolean ok = compiler.compile(Files.readAllBytes(Paths.get(file)), "dyn/shesmu/Program", file,
-					ConstantSource::all);
+					ConstantSource::all, null);
 			System.exit(ok ? 0 : 1);
 		} catch (final Exception e) {
 			e.printStackTrace();

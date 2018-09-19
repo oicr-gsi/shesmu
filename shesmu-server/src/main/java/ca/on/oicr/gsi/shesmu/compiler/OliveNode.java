@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
 
 /**
  * An olive stanza declaration
@@ -58,7 +59,7 @@ public abstract class OliveNode {
 					.whitespace()//
 					.list(labels::set, OliveArgumentNode::parse, ',')//
 					.whitespace();
-			Parser annotationsParser = result//
+			final Parser annotationsParser = result//
 					.keyword("Annotations");
 			if (annotationsParser.isGood()) {
 				result = annotationsParser//
@@ -168,6 +169,8 @@ public abstract class OliveNode {
 
 	public abstract boolean collectFunctions(Predicate<String> isDefined, Consumer<FunctionDefinition> defineFunctions,
 			Consumer<String> errorHandler);
+
+	public abstract Stream<OliveTable> dashboard();
 
 	/**
 	 * Generate bytecode for this stanza into the

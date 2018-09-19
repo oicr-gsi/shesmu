@@ -1,7 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -12,6 +14,7 @@ import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
 
 /**
  * A shell of a compiler that can output bytecode
@@ -63,7 +66,8 @@ public abstract class Compiler {
 	 *            the source file's path for debugging information
 	 * @return whether compilation was successful
 	 */
-	public final boolean compile(byte[] input, String name, String path, Supplier<Stream<Constant>> constants) {
+	public final boolean compile(byte[] input, String name, String path, Supplier<Stream<Constant>> constants,
+			Consumer<FileTable> dashboardOutput) {
 		final AtomicReference<ProgramNode> program = new AtomicReference<>();
 		final MaxParseError maxParseError = new MaxParseError();
 		final boolean parseOk = ProgramNode.parseFile(new String(input, StandardCharsets.UTF_8), program::set,
@@ -73,10 +77,15 @@ public abstract class Compiler {
 		}
 		if (parseOk && program.get().validate(this::getInputFormats, this::getFunction, this::getAction,
 				this::errorHandler, constants)) {
+			Instant compileTime = Instant.now();
+			if (dashboardOutput != null) {
+				dashboardOutput.accept(program.get().dashboard(path, compileTime));
+			}
 			if (skipRender) {
 				return true;
 			}
-			final RootBuilder builder = new RootBuilder(name, path, program.get().inputFormatDefinition(), constants) {
+			final RootBuilder builder = new RootBuilder(compileTime, name, path, program.get().inputFormatDefinition(),
+					constants) {
 				@Override
 				protected ClassVisitor createClassVisitor() {
 					return Compiler.this.createClassVisitor();

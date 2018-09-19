@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
@@ -72,6 +73,11 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 
 	}
 
+	@Override
+	public Imyhat type() {
+		return expression.type();
+	}
+
 	/**
 	 * Perform type check on this argument's expression
 	 */
@@ -79,4 +85,5 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		return expression.typeCheck(errorHandler);
 	}
+
 }

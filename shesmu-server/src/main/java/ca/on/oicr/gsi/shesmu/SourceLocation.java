@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
@@ -111,11 +112,14 @@ public final class SourceLocation implements Comparable<SourceLocation> {
 		node.put("line", line);
 		node.put("column", column);
 		node.put("time", time.toEpochMilli());
-		RuntimeSupport.stream(LINKERS)//
+		url().ifPresent(url -> node.put("url", url));
+	}
+
+	public Optional<String> url() {
+		return RuntimeSupport.stream(LINKERS)//
 				.flatMap(l -> l.url(this))//
 				.filter(Objects::nonNull)//
-				.findAny()//
-				.ifPresent(url -> node.put("url", url));
+				.findAny();
 	}
 
 }

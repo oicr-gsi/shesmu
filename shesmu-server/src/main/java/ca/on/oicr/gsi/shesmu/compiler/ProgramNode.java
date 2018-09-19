@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +18,7 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
 
 public class ProgramNode {
 	/**
@@ -63,6 +65,10 @@ public class ProgramNode {
 		this.olives = olives;
 	}
 
+	public FileTable dashboard(String filename, Instant timestamp) {
+		return new FileTable(filename, inputFormatDefinition, timestamp, olives.stream().flatMap(OliveNode::dashboard));
+	}
+
 	public InputFormatDefinition inputFormatDefinition() {
 		return inputFormatDefinition;
 	}
@@ -107,8 +113,8 @@ public class ProgramNode {
 				NameDefinitions.signatureVariables())//
 				.collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
 
-		for (TypeAliasNode alias : typeAliases) {
-			Imyhat type = alias.resolve(userDefinedTypes::get, errorHandler);
+		for (final TypeAliasNode alias : typeAliases) {
+			final Imyhat type = alias.resolve(userDefinedTypes::get, errorHandler);
 			if (type.isBad()) {
 				return false;
 			}

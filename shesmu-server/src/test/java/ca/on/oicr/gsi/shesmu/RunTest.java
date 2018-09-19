@@ -223,7 +223,7 @@ public class RunTest {
 		try {
 			final HotloadingCompiler compiler = new HotloadingCompiler(INPUT_FORMATS::get, this::functions,
 					this::actions, CONSTANTS::stream);
-			final ActionGenerator generator = compiler.compile(file).orElse(ActionGenerator.NULL);
+			final ActionGenerator generator = compiler.compile(file, null).orElse(ActionGenerator.NULL);
 			compiler.errors().forEach(System.err::println);
 			final ActionChecker checker = new ActionChecker();
 			generator.run(checker, this::data);

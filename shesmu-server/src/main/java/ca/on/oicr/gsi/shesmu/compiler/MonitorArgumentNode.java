@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -44,8 +45,8 @@ public final class MonitorArgumentNode {
 		this.expression = expression;
 	}
 
-	public void collectFreeVariables(Set<String> freeVariables) {
-		expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
+	public void collectFreeVariables(Set<String> freeVariables, Predicate<Flavour> predicate) {
+		expression.collectFreeVariables(freeVariables, predicate);
 	}
 
 	/**

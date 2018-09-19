@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -12,6 +13,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
+import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
 
 /**
  * Compiles a user-specified file into a usable program and updates it as
@@ -38,7 +40,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 		this.constants = constants;
 	}
 
-	public Optional<ActionGenerator> compile(Path fileName) {
+	public Optional<ActionGenerator> compile(Path fileName, Consumer<FileTable> dashboardConsumer) {
 		try {
 			errors.clear();
 			final Compiler compiler = new Compiler(false) {
@@ -73,7 +75,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 				}
 			};
 
-			if (compiler.compile(Files.readAllBytes(fileName), "dyn/shesmu/Program", fileName.toString(), constants)) {
+			if (compiler.compile(Files.readAllBytes(fileName), "dyn/shesmu/Program", fileName.toString(), constants,
+					dashboardConsumer)) {
 				return Optional.of(load(ActionGenerator.class, "dyn.shesmu.Program"));
 			}
 		} catch (final Exception e) {

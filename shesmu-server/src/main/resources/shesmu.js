@@ -498,6 +498,54 @@ export function listActions() {
   nextPage(query, document.getElementById("results"));
 }
 
+export function filterForOlive(filename, line, column, timestamp) {
+  return [
+    {
+      type: "sourcelocation",
+      locations: [
+        {
+          file: filename,
+          line: line,
+          column: column,
+          time: timestamp
+        }
+      ]
+    }
+  ];
+}
+
+function makePopup() {
+  const modal = document.createElement("DIV");
+  modal.className = "modal";
+
+  const inner = document.createElement("DIV");
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+
+  modal.onclick = e => {
+    if (e.target == modal) {
+      document.body.removeChild(modal);
+    }
+  };
+
+  return inner;
+}
+
+export function listActionsPopup(filters) {
+  nextPage(
+    {
+      filters: filters,
+      limit: 25,
+      skip: 0
+    },
+    makePopup()
+  );
+}
+
+export function queryStatsPopup(filters) {
+  getStats(filters, makePopup());
+}
+
 export function text(t) {
   const element = document.createElement("P");
   if (t.length > 100) {

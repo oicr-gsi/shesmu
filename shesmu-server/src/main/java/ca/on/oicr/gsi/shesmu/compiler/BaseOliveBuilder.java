@@ -106,6 +106,37 @@ public abstract class BaseOliveBuilder {
 	}
 
 	/**
+	 * Create a “Matches” clause in an olive
+	 *
+	 * @param matcher
+	 *            the matcher to run
+	 * @param arguments
+	 *            the arguments to pass as parameters to the matcher
+	 */
+	public final void call(OliveDefineBuilder matcher, Stream<Consumer<Renderer>> arguments) {
+		final List<Consumer<Renderer>> arglist = arguments.collect(Collectors.toList());
+		if (arglist.size() != matcher.parameters()) {
+			throw new IllegalArgumentException(
+					String.format("Invalid number of arguments for matcher. Got %d, expected %d.", arglist.size(),
+							matcher.parameters()));
+		}
+		if (!currentType.equals(owner.inputFormatDefinition().type())) {
+			throw new IllegalArgumentException("Cannot start matcher on non-initial variable type.");
+		}
+		steps.add(renderer -> {
+			renderer.methodGen().loadThis();
+			renderer.methodGen().swap();
+			renderer.methodGen().loadArg(1);
+			NameDefinitions.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
+			for (int i = 0; i < arglist.size(); i++) {
+				arglist.get(i).accept(renderer);
+			}
+			renderer.methodGen().invokeVirtual(owner.selfType(), matcher.method());
+		});
+		currentType = matcher.currentType();
+	}
+
+	/**
 	 * Gets the current type of an olive
 	 *
 	 * Due to grouping clauses, the type flowing through an olive may change. This
@@ -246,8 +277,8 @@ public abstract class BaseOliveBuilder {
 
 			renderer.methodGen().invokeDynamic(
 					"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
-					Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL, outputClassName,
-							"$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
+					Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
+							outputClassName, "$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
 					Type.getMethodType(BOOLEAN_TYPE, newType));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 
@@ -310,37 +341,6 @@ public abstract class BaseOliveBuilder {
 	public abstract Stream<LoadableValue> loadableValues();
 
 	protected abstract void loadSigner(SignatureVariable variable, Renderer renderer);
-
-	/**
-	 * Create a “Matches” clause in an olive
-	 *
-	 * @param matcher
-	 *            the matcher to run
-	 * @param arguments
-	 *            the arguments to pass as parameters to the matcher
-	 */
-	public final void call(OliveDefineBuilder matcher, Stream<Consumer<Renderer>> arguments) {
-		final List<Consumer<Renderer>> arglist = arguments.collect(Collectors.toList());
-		if (arglist.size() != matcher.parameters()) {
-			throw new IllegalArgumentException(
-					String.format("Invalid number of arguments for matcher. Got %d, expected %d.", arglist.size(),
-							matcher.parameters()));
-		}
-		if (!currentType.equals(owner.inputFormatDefinition().type())) {
-			throw new IllegalArgumentException("Cannot start matcher on non-initial variable type.");
-		}
-		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			renderer.methodGen().swap();
-			renderer.methodGen().loadArg(1);
-			NameDefinitions.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
-			for (int i = 0; i < arglist.size(); i++) {
-				arglist.get(i).accept(renderer);
-			}
-			renderer.methodGen().invokeVirtual(owner.selfType(), matcher.method());
-		});
-		currentType = matcher.currentType();
-	}
 
 	/**
 	 * Measure how much data goes through this olive clause.

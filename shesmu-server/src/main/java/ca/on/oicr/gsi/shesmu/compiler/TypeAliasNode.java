@@ -9,11 +9,10 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 public class TypeAliasNode {
 
 	public static Parser parse(Parser input, Consumer<TypeAliasNode> output) {
-		AtomicReference<String> name = new AtomicReference<>();
-		AtomicReference<ImyhatNode> type = new AtomicReference<>();
-		Parser result = input//
-				.whitespace()
-				.keyword("TypeAlias")//
+		final AtomicReference<String> name = new AtomicReference<>();
+		final AtomicReference<ImyhatNode> type = new AtomicReference<>();
+		final Parser result = input//
+				.whitespace().keyword("TypeAlias")//
 				.whitespace()//
 				.identifier(name::set)//
 				.whitespace()//

@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -22,22 +23,46 @@ import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 
 	private final List<GroupNode> children;
 	protected final int column;
+	private List<Target> discriminators;
 	private final String format;
 	private InputFormatDefinition inputFormat;
-	protected final int line;
 	private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
-	private List<Target> discriminators;
+	protected final int line;
 
 	public OliveClauseNodeLeftJoin(int line, int column, String format, List<GroupNode> children) {
 		this.line = line;
 		this.column = column;
 		this.format = format;
 		this.children = children;
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		final Set<String> joinedNames = inputFormat.baseStreamVariables()//
+				.map(Target::name)//
+				.collect(Collectors.toSet());
+		return new OliveClauseRow("LeftJoin", line, column, true, true, //
+				Stream.concat(//
+						children.stream()//
+								.map(child -> {
+									final Set<String> inputs = new TreeSet<>();
+									child.collectFreeVariables(inputs, Flavour::isStream);
+									inputs.removeAll(joinedNames);
+									return new VariableInformation(child.name(), child.type(), inputs.stream(),
+											Behaviour.DEFINITION);
+								}), //
+						discriminators.stream()//
+								.map(discriminator -> new VariableInformation(discriminator.name(),
+										discriminator.type(), Stream.of(discriminator.name()),
+										Behaviour.PASSTHROUGH))));
 	}
 
 	@Override
@@ -113,15 +138,15 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 		discriminators = defs.stream().filter(t -> t.flavour().isStream() && t.flavour() != Flavour.STREAM_SIGNATURE)
 				.collect(Collectors.toList());
 
-		NameDefinitions joinedDefs = defs.replaceStream(//
+		final NameDefinitions joinedDefs = defs.replaceStream(//
 				Stream.concat(//
 						discriminators.stream(), //
 						inputFormat.baseStreamVariables()//
 								.map(x -> new Target() { // We remove any signing from the joined input
 
 									@Override
-									public Imyhat type() {
-										return x.type();
+									public Flavour flavour() {
+										return Flavour.STREAM;
 									}
 
 									@Override
@@ -130,13 +155,13 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 									}
 
 									@Override
-									public Flavour flavour() {
-										return Flavour.STREAM;
+									public Imyhat type() {
+										return x.type();
 									}
 								})), //
 				true);
 
-		boolean ok = children.stream().filter(group -> {
+		final boolean ok = children.stream().filter(group -> {
 			final boolean isDuplicate = discriminators.stream().anyMatch(t -> t.name().equals(group.name()));
 			if (isDuplicate) {
 				errorHandler.accept(String.format("%d:%d: Redefinition of variable “%s”.", group.line(), group.column(),

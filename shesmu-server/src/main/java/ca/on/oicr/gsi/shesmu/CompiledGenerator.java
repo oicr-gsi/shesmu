@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Timer;
 
@@ -17,6 +18,7 @@ import io.prometheus.client.Gauge.Timer;
 public class CompiledGenerator extends ActionGenerator {
 
 	private final class Script implements WatchedFileListener {
+		private FileTable dashboard;
 		private String errors = "Not yet compiled or exception during compilation.";
 		private final Path fileName;
 
@@ -24,6 +26,10 @@ public class CompiledGenerator extends ActionGenerator {
 
 		private Script(Path fileName) {
 			this.fileName = fileName;
+		}
+
+		public Stream<FileTable> dashboard() {
+			return dashboard == null ? Stream.empty() : Stream.of(dashboard);
 		}
 
 		public synchronized <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
@@ -48,7 +54,7 @@ public class CompiledGenerator extends ActionGenerator {
 		public synchronized Optional<Integer> update() {
 			try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
 				final HotloadingCompiler compiler = new HotloadingCompiler(SOURCES::get, functions, actions, constants);
-				final Optional<ActionGenerator> result = compiler.compile(fileName);
+				final Optional<ActionGenerator> result = compiler.compile(fileName, ft -> this.dashboard = ft);
 				sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
 				result.ifPresent(x -> {
 					if (generator != x) {
@@ -70,7 +76,7 @@ public class CompiledGenerator extends ActionGenerator {
 			.build("shesmu_source_compile_time", "The number of seconds the last compilation took to perform.")
 			.labelNames("filename").register();
 
-	private static final Gauge inputRecords = Gauge
+	public static final Gauge INPUT_RECORDS = Gauge
 			.build("shesmu_input_records", "The number of records for each input format.").labelNames("format")
 			.register();
 
@@ -96,8 +102,8 @@ public class CompiledGenerator extends ActionGenerator {
 		this.constants = constants;
 	}
 
-	private Stream<Script> scripts() {
-		return scripts.map(AutoUpdatingDirectory::stream).orElseGet(Stream::empty);
+	public Stream<FileTable> dashboard() {
+		return scripts().flatMap(Script::dashboard);
 	}
 
 	/**
@@ -117,9 +123,13 @@ public class CompiledGenerator extends ActionGenerator {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
 		InputFormatDefinition.formats()
-				.forEach(format -> inputRecords.labels(format.name()).set(format.input(format.itemClass()).count()));
+				.forEach(format -> INPUT_RECORDS.labels(format.name()).set(format.input(format.itemClass()).count()));
 		ActionGenerator.OLIVE_FLOW.clear();
 		scripts().forEach(script -> script.run(consumer, input));
+	}
+
+	private Stream<Script> scripts() {
+		return scripts.map(AutoUpdatingDirectory::stream).orElseGet(Stream::empty);
 	}
 
 	public void start() {

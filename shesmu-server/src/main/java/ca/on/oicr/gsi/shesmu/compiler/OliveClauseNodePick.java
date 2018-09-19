@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -17,6 +18,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public class OliveClauseNodePick extends OliveClauseNode {
 
@@ -35,6 +39,20 @@ public class OliveClauseNodePick extends OliveClauseNode {
 		this.max = max;
 		this.extractor = extractor;
 		this.discriminators = discriminators;
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		final Set<String> inputs = new TreeSet<>();
+		extractor.collectFreeVariables(inputs, Flavour::isStream);
+		return new OliveClauseRow("Pick " + (max ? "Max" : "Min"), line, column, true, false, //
+				Stream.concat(//
+						inputs.stream()//
+								.map(n -> new VariableInformation(n, Imyhat.BOOLEAN, Stream.of(n), Behaviour.OBSERVER)), //
+						discriminatorVariables.stream()//
+								.map(discriminator -> new VariableInformation(discriminator.name(),
+										discriminator.type(), Stream.of(discriminator.name()),
+										Behaviour.PASSTHROUGH))));
 	}
 
 	@Override

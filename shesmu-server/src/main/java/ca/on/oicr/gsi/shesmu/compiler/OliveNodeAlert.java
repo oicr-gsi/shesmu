@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public class OliveNodeAlert extends OliveNodeWithClauses {
 
@@ -99,6 +103,26 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 	@Override
 	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives, Consumer<String> errorHandler) {
 		return true;
+	}
+
+	@Override
+	public Stream<OliveTable> dashboard() {
+		final Set<String> ttlInputs = new HashSet<>();
+		ttl.collectFreeVariables(ttlInputs, Flavour::isStream);
+
+		return Stream.of(new OliveTable("Alert", line, column, clauses().stream().map(OliveClauseNode::dashboard), //
+				Stream.concat(//
+						Stream.of(labels, annotations)//
+								.flatMap(List::stream)//
+								.map(arg -> {
+									final Set<String> inputs = new HashSet<>();
+									arg.collectFreeVariables(inputs, Flavour::isStream);
+									return new VariableInformation(arg.name(), Imyhat.STRING, inputs.parallelStream(),
+											Behaviour.DEFINITION);
+								}), //
+						ttlInputs.stream()//
+								.map(n -> new VariableInformation(n, Imyhat.INTEGER, Stream.of(n),
+										Behaviour.OBSERVER)))));
 	}
 
 	@Override

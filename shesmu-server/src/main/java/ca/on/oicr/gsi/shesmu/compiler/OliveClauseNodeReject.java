@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -19,6 +20,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public class OliveClauseNodeReject extends OliveClauseNode {
 
@@ -33,6 +37,14 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 		this.column = column;
 		this.expression = expression;
 		this.handlers = handlers;
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		final Set<String> inputs = new TreeSet<>();
+		expression.collectFreeVariables(inputs, Flavour::isStream);
+		return new OliveClauseRow("Reject", line, column, true, false, inputs.stream()//
+				.map(n -> new VariableInformation(n, Imyhat.BOOLEAN, Stream.of(n), Behaviour.OBSERVER)));
 	}
 
 	@Override
