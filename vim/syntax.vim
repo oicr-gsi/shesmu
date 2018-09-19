@@ -32,6 +32,7 @@ syn keyword shesmuKeyword Fixed
 syn keyword shesmuKeyword FixedConcat
 syn keyword shesmuKeyword Flatten
 syn keyword shesmuKeyword For
+syn keyword shesmuKeyword Function
 syn keyword shesmuKeyword From
 syn keyword shesmuKeyword Group
 syn keyword shesmuKeyword In
@@ -66,6 +67,9 @@ syn keyword shesmuKeyword Where
 syn keyword shesmuKeyword While
 syn keyword shesmuKeyword With
 syn keyword shesmuBool False True
+syn keyword shesmuKeyword json_signature
+syn keyword shesmuKeyword sha1_signature
+syn keyword shesmuKeyword signature_names
 syn match shesmuOperators '\(\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|\)' display
 syn keyword shesmuType boolean date integer string
 syn match shesmuConstant "\<\d\+\>" display
