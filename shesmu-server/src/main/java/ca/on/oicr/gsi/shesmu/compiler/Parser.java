@@ -270,11 +270,12 @@ public abstract class Parser {
 			return result;
 		}
 
-		final Parser tupleParser = input.symbol("<");
+		final Parser tupleParser = input.symbol("{");
 		if (tupleParser.isGood()) {
 			final AtomicReference<List<Imyhat>> inner = new AtomicReference<>(Collections.emptyList());
-			final Parser result = listParser.whitespace()
-					.list(inner::set, (p, o) -> parseImyhat(p, o).whitespace(), ',').symbol(")");
+			final Parser result = tupleParser.whitespace()//
+					.list(inner::set, (p, o) -> parseImyhat(p.whitespace(), o).whitespace(), ',')//
+					.symbol("}");
 			output.accept(Imyhat.tuple(inner.get().stream().toArray(Imyhat[]::new)));
 			return result;
 		}
