@@ -1,0 +1,6 @@
+Input test;
+
+Function foo([{boolean, [integer]}] input) (For x In input: Flatten (y In x[1] Let z = {x[0], y + 1}) Where z[0] Reduce(a=0) a + z[1]);
+
+Run ok
+ With { ok = foo([ {True, [1,2]}, {False, [3, 4]} ]) == 5 }
