@@ -43,6 +43,7 @@ import ca.on.oicr.gsi.shesmu.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.MetroDiagram;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
@@ -92,8 +93,11 @@ public final class Server {
 			FunctionRepository.class, 15, FunctionRepository::queryFunctions);
 	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
 	private final Semaphore inputDownloadSemaphore = new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
+
 	private final ActionProcessor processor = new ActionProcessor(localname());
+
 	private final HttpServer server;
+
 	private final Instant startTime = Instant.now();
 
 	private final StaticActions staticActions = new StaticActions(processor, this::actionDefinitions);
@@ -143,6 +147,31 @@ public final class Server {
 							writeFinish(writer);
 						});
 
+				writePageFooter(writer);
+			}
+		});
+
+		add("/olivedash", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
+				writePageHeader(writer);
+				compiler.dashboard().forEach(fileTable -> {
+					writeHeaderedTable(writer, fileTable.filename(), true);
+					writeRow(writer, "Input format", fileTable.format().name());
+					writeFinish(writer);
+					long inputCount = (long) CompiledGenerator.INPUT_RECORDS.labels(fileTable.format().name()).get();
+
+					fileTable.olives().forEach(olive -> {
+						writer.printf(
+								"<p><span class=\"load\" onclick=\"listActionsPopup(filterForOlive('%1$s', %2$d, %3$d, %4$d))\">🔍 List Actions</span><span class=\"load\" onclick=\"queryStatsPopup(filterForOlive('%1$s', %2$d, %3$d, %4$d))\">📈 Stats on Actions</span></p>",
+								fileTable.filename(), olive.line(), olive.column(),
+								fileTable.timestamp().getEpochSecond());
+						writer.print("<div class=\"indent\" style=\"overflow-x:auto\">");
+						MetroDiagram.draw(writer, fileTable.filename(), fileTable.timestamp(), olive, inputCount);
+						writer.print("</div>");
+					});
+				});
 				writePageFooter(writer);
 			}
 		});
@@ -636,7 +665,7 @@ public final class Server {
 
 	private void writePageHeader(PrintStream writer) {
 		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction;</script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"actiondash\">Actions</a><a href=\"alerts\">Alerts</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
+				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup; </script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"olivedash\">Olives</a><a href=\"actiondash\">Actions</a><a href=\"alerts\">Alerts</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
 	}
 
 	private void writeRow(PrintStream writer, String... columns) {
@@ -667,4 +696,5 @@ public final class Server {
 		writer.print("<table class=\"even\">");
 		writeBlock(writer, title);
 	}
+
 }

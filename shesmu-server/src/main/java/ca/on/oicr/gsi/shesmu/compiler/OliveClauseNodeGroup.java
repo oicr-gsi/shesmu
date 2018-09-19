@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -23,6 +24,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public final class OliveClauseNodeGroup extends OliveClauseNode {
 
@@ -63,6 +67,23 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 		this.column = column;
 		this.children = children;
 		this.discriminators = discriminators;
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		return new OliveClauseRow("Group", line, column, true, true, //
+				Stream.concat(//
+						children.stream()//
+								.map(child -> {
+									final Set<String> inputs = new TreeSet<>();
+									child.collectFreeVariables(inputs, Flavour::isStream);
+									return new VariableInformation(child.name(), child.type(), inputs.stream(),
+											Behaviour.DEFINITION);
+								}), //
+						discriminatorVariables.stream()//
+								.map(discriminator -> new VariableInformation(discriminator.name(),
+										discriminator.type(), Stream.of(discriminator.name()),
+										Behaviour.PASSTHROUGH))));
 	}
 
 	@Override

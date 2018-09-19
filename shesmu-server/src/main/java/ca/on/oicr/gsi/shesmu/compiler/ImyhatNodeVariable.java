@@ -15,7 +15,7 @@ public class ImyhatNodeVariable extends ImyhatNode {
 
 	@Override
 	public Imyhat render(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-		Imyhat result = definedTypes.apply(name);
+		final Imyhat result = definedTypes.apply(name);
 		if (result == null) {
 			errorHandler.accept(String.format("Unknown type “%s“.", name));
 			return Imyhat.BAD;

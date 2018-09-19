@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -19,6 +20,10 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 import io.prometheus.client.Gauge;
 
 public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNode {
@@ -50,7 +55,19 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
 	@Override
 	public void collectFreeVariables(Set<String> freeVariables) {
-		labels.forEach(arg -> arg.collectFreeVariables(freeVariables));
+		labels.forEach(arg -> arg.collectFreeVariables(freeVariables, Flavour::needsCapture));
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		return new OliveClauseRow("Monitor", line, column, false, false, labels.stream()//
+				.map(label -> {
+					final Set<String> inputs = new TreeSet<>();
+					label.collectFreeVariables(inputs, Flavour::isStream);
+					return new VariableInformation(metricName + "{" + label.name() + "}", Imyhat.STRING,
+							inputs.stream(), Behaviour.DEFINITION);
+
+				}));
 	}
 
 	@Override
@@ -78,7 +95,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
-		labels.forEach(arg -> arg.collectFreeVariables(freeVariables));
+		labels.forEach(arg -> arg.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
 		oliveBuilder.line(line);
 		final Renderer renderer = oliveBuilder.monitor(metricName, help, labelNames(), oliveBuilder.loadableValues()

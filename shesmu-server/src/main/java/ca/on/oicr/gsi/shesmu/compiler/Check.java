@@ -114,7 +114,7 @@ public final class Check extends Compiler {
 			boolean fileOk;
 			try {
 				fileOk = new Check(file, inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
-						"dyn/shesmu/Program", file, constants::stream);
+						"dyn/shesmu/Program", file, constants::stream, null);
 			} catch (final IOException e) {
 				e.printStackTrace();
 				fileOk = false;

@@ -1,18 +1,14 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import ca.on.oicr.gsi.shesmu.Imyhat;
 
 /**
  * Parse an input stream

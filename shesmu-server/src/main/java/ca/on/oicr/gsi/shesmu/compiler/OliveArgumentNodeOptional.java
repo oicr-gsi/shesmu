@@ -91,6 +91,11 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 
 	}
 
+	@Override
+	public Imyhat type() {
+		return expression.type();
+	}
+
 	/**
 	 * Perform type check on this argument's expression
 	 */

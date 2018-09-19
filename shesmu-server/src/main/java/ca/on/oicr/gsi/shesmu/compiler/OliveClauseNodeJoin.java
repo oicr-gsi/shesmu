@@ -16,6 +16,9 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public class OliveClauseNodeJoin extends OliveClauseNode {
 
@@ -33,6 +36,13 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	}
 
 	@Override
+	public OliveClauseRow dashboard() {
+		return new OliveClauseRow("Join", line, column, true, false, inputFormat.baseStreamVariables()//
+				.map(variable -> new VariableInformation(variable.name(), variable.type(), Stream.empty(),
+						Behaviour.DEFINITION)));
+	}
+
+	@Override
 	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler) {
 		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
@@ -44,6 +54,8 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 		final JoinBuilder join = oliveBuilder.join(inputFormat.type());
 		joins.forEach(a -> a.accept(join));
 		join.finish();
+
+		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
 	}
 
 	@Override

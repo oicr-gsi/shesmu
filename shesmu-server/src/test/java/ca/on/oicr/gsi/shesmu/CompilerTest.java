@@ -104,9 +104,8 @@ public class CompilerTest {
 	private Pair<Path, Optional<Boolean>> testFile(Path file) {
 		final CompilerHarness compiler = new CompilerHarness();
 		try {
-			return new Pair<>(file, Optional.of(
-					compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program", file.toString(), CONSTANTS::stream)
-							&& compiler.ok()));
+			return new Pair<>(file, Optional.of(compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program",
+					file.toString(), CONSTANTS::stream, null) && compiler.ok()));
 		} catch (final Exception e) {
 			return new Pair<>(file, Optional.empty());
 		}

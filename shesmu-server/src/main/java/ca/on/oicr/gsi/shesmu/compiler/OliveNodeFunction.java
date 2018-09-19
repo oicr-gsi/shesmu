@@ -22,6 +22,7 @@ import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
 
 public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 	private final ExpressionNode body;
@@ -67,6 +68,11 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 		}
 		defineFunctions.accept(this);
 		return true;
+	}
+
+	@Override
+	public Stream<OliveTable> dashboard() {
+		return Stream.empty();
 	}
 
 	@Override
@@ -146,5 +152,4 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		return body.typeCheck(errorHandler);
 	}
-
 }

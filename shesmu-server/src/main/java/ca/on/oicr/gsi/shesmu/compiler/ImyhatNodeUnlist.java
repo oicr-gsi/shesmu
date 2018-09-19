@@ -15,7 +15,7 @@ public class ImyhatNodeUnlist extends ImyhatNode {
 
 	@Override
 	public Imyhat render(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-		Imyhat type = outer.render(definedTypes, errorHandler);
+		final Imyhat type = outer.render(definedTypes, errorHandler);
 		if (type instanceof Imyhat.ListImyhat) {
 			return ((Imyhat.ListImyhat) type).inner();
 		}

@@ -93,7 +93,7 @@ public abstract class RootBuilder {
 	final ClassVisitor classVisitor;
 	private final GeneratorAdapter clearGaugeMethod;
 
-	final long compileTime = Instant.now().getEpochSecond();
+	final long compileTime;
 
 	private final Supplier<Stream<Constant>> constants;
 
@@ -116,8 +116,9 @@ public abstract class RootBuilder {
 
 	private int streamId;
 
-	public RootBuilder(String name, String path, InputFormatDefinition inputFormatDefinition,
+	public RootBuilder(Instant compileTime, String name, String path, InputFormatDefinition inputFormatDefinition,
 			Supplier<Stream<Constant>> constants) {
+		this.compileTime = compileTime.getEpochSecond();
 		this.path = path;
 		this.inputFormatDefinition = inputFormatDefinition;
 		this.constants = constants;

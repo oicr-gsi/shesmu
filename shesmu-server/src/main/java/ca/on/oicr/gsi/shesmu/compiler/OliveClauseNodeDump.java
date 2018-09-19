@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -22,6 +23,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public final class OliveClauseNodeDump extends OliveClauseNode implements RejectNode {
 
@@ -47,6 +51,23 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	@Override
 	public void collectFreeVariables(Set<String> freeVariables) {
 		columns.forEach(column -> column.collectFreeVariables(freeVariables, Flavour::needsCapture));
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		return new OliveClauseRow("Dump", line, column, false, false, columns.stream()//
+				.map(new Function<ExpressionNode, VariableInformation>() {
+					private int index;
+
+					@Override
+					public VariableInformation apply(ExpressionNode expression) {
+						final Set<String> inputs = new TreeSet<>();
+						expression.collectFreeVariables(inputs, Flavour::isStream);
+						return new VariableInformation(String.format("%d:%d(%d)", line, column, index++),
+								expression.type(), inputs.stream(), Behaviour.DEFINITION);
+
+					}
+				}));
 	}
 
 	@Override

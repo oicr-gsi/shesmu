@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
@@ -82,6 +83,8 @@ public abstract class OliveArgumentNode {
 	 */
 	public abstract boolean resolveFunctions(Function<String, FunctionDefinition> definedFunctions,
 			Consumer<String> errorHandler);
+
+	public abstract Imyhat type();
 
 	/**
 	 * Perform type check on this argument's expression

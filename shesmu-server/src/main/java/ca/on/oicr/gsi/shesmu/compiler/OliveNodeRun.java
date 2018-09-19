@@ -19,6 +19,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public final class OliveNodeRun extends OliveNodeWithClauses {
 
@@ -50,6 +53,19 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 	@Override
 	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives, Consumer<String> errorHandler) {
 		return true;
+	}
+
+	@Override
+	public Stream<OliveTable> dashboard() {
+		return Stream.of(
+				new OliveTable("Run " + actionName, line, column, clauses().stream().map(OliveClauseNode::dashboard), //
+						arguments.stream()//
+								.map(arg -> {
+									final Set<String> inputs = new HashSet<>();
+									arg.collectFreeVariables(inputs, Flavour::isStream);
+									return new VariableInformation(arg.name(), arg.type(), inputs.parallelStream(),
+											Behaviour.DEFINITION);
+								})));
 	}
 
 	@Override

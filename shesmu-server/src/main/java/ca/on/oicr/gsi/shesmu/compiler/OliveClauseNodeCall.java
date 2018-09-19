@@ -16,6 +16,9 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public class OliveClauseNodeCall extends OliveClauseNode {
 
@@ -33,14 +36,25 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 	}
 
 	@Override
+	public OliveClauseRow dashboard() {
+		return new OliveClauseRow("Matches", line, column, true, !target.isRoot(), //
+				Stream.concat(//
+						target.inputVariables()//
+								.map(n -> new VariableInformation(n, Imyhat.BAD, Stream.of(n), Behaviour.OBSERVER)),
+						target.outputStreamVariables()//
+								.map(var -> new VariableInformation(var.name(), var.type(), Stream.empty(),
+										Behaviour.DEFINITION))));
+	}
+
+	@Override
 	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler) {
 		switch (state) {
 		case BAD:
 			return ClauseStreamOrder.BAD;
 		case TRANSFORMED:
-			errorHandler.accept(
-					String.format("%d:%d: “Call” clause cannot be applied to grouped result.", line, column));
+			errorHandler
+					.accept(String.format("%d:%d: “Call” clause cannot be applied to grouped result.", line, column));
 			return ClauseStreamOrder.BAD;
 		case PURE:
 			signableNames.addAll(target.signableNames);
@@ -84,9 +98,9 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 		if (definedOlives.containsKey(name)) {
 			target = definedOlives.get(name);
 			if (target.parameterCount() != arguments.size()) {
-				errorHandler.accept(String.format(
-						"%d:%d: “Define %s” specifies %d parameters, but “Call” has only %d arguments.", line,
-						column, name, target.parameterCount(), arguments.size()));
+				errorHandler.accept(
+						String.format("%d:%d: “Define %s” specifies %d parameters, but “Call” has only %d arguments.",
+								line, column, name, target.parameterCount(), arguments.size()));
 				return false;
 			}
 			return ok;
@@ -110,4 +124,5 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 			return isSame;
 		}).count() == arguments.size();
 	}
+
 }

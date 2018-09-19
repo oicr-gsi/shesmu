@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
 
 /**
  * Base type for an olive clause
@@ -223,6 +224,8 @@ public abstract class OliveClauseNode {
 		}
 		return input.raise("Expected olive clause.");
 	}
+
+	public abstract OliveClauseRow dashboard();
 
 	/**
 	 * Check whether the variable stream is acceptable to the clause

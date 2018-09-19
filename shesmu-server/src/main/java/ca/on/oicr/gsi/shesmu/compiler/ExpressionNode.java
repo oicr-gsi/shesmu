@@ -330,7 +330,7 @@ public abstract class ExpressionNode {
 	private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
 		return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, input, output);
 	}
-	
+
 	private static Parser parse7(Parser input, Consumer<ExpressionNode> output) {
 		return scanPrefixed(ExpressionNode::parse8, UNARY, input, output);
 	}

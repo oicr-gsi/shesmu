@@ -1,8 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -14,10 +16,13 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
 
 public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	private final int column;
+	private final Set<String> inputVariables = new HashSet<>();
 	private final int line;
 	private final String name;
 	private List<Target> outputStreamVariables;
@@ -57,8 +62,22 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 		return true;
 	}
 
+	@Override
+	public Stream<OliveTable> dashboard() {
+		return Stream.of(new OliveTable("Define " + name, line, column,
+				clauses().stream().map(OliveClauseNode::dashboard), Stream.empty()));
+	}
+
+	public Stream<String> inputVariables() {
+		return inputVariables.stream();
+	}
+
 	public boolean isRoot() {
 		return clauses().stream().noneMatch(OliveClauseNodeGroup.class::isInstance);
+	}
+
+	public Stream<Target> outputStreamVariables() {
+		return outputStreamVariables.stream();
 	}
 
 	public Optional<Stream<Target>> outputStreamVariables(InputFormatDefinition inputFormatDefinition,
@@ -103,6 +122,10 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 				});
 		outputStreamVariables = result.stream().filter(target -> target.flavour().isStream())
 				.collect(Collectors.toList());
+		if (result.isGood()) {
+			clauses().stream().findFirst().ifPresent(
+					c -> c.dashboard().variables().flatMap(VariableInformation::inputs).forEach(inputVariables::add));
+		}
 		resolveLock = false;
 		return result.isGood();
 	}
@@ -125,5 +148,4 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 	protected boolean typeCheckExtra(Consumer<String> errorHandler) {
 		return true;
 	}
-
 }

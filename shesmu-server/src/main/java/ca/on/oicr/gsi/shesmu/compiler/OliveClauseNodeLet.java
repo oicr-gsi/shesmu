@@ -17,6 +17,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
 
 public class OliveClauseNodeLet extends OliveClauseNode {
 
@@ -29,6 +32,16 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 		this.line = line;
 		this.column = column;
 		this.arguments = arguments;
+	}
+
+	@Override
+	public OliveClauseRow dashboard() {
+		return new OliveClauseRow("Let", line, column, false, true, arguments.stream()//
+				.map(arg -> {
+					final Set<String> inputs = new HashSet<>();
+					arg.collectFreeVariables(inputs, Flavour::isStream);
+					return new VariableInformation(arg.name(), arg.type(), inputs.stream(), Behaviour.DEFINITION);
+				}));
 	}
 
 	@Override

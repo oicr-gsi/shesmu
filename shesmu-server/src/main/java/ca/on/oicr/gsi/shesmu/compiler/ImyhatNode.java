@@ -24,7 +24,7 @@ public abstract class ImyhatNode {
 		Parser result = parse0(input, type::set);
 		while (result.isGood()) {
 			final AtomicLong index = new AtomicLong();
-			Parser next = result//
+			final Parser next = result//
 					.symbol("[")//
 					.whitespace()//
 					.integer(index::set, 10)//
@@ -86,7 +86,7 @@ public abstract class ImyhatNode {
 					.whitespace();
 		}
 
-		AtomicReference<String> name = new AtomicReference<String>();
+		final AtomicReference<String> name = new AtomicReference<String>();
 		final Parser result = input.identifier(name::set);
 		if (!result.isGood()) {
 			return result;

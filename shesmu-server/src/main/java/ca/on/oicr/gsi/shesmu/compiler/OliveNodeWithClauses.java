@@ -31,7 +31,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 	}
 
 	/**
-	 * Check the rules that “Matches” clauses must only precede “Group” clauses
+	 * Check the rules that call clauses must only precede “Group” clauses
 	 */
 	@Override
 	public final boolean checkVariableStream(Consumer<String> errorHandler) {
