@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.time.Instant;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class TestValue {
 	private final String accession;
@@ -11,6 +13,7 @@ public class TestValue {
 	private final Instant timestamp;
 	private final String workflow;
 	private final Tuple workflow_version;
+	private final Set<String> stuff = new TreeSet<>();
 
 	public TestValue(String accession, String path, long file_size, String workflow, Tuple workflow_version,
 			String project, long library_size, Instant timestamp) {
@@ -23,6 +26,14 @@ public class TestValue {
 		this.project = project;
 		this.library_size = library_size;
 		this.timestamp = timestamp;
+		stuff.add(accession);
+		stuff.add(workflow);
+		stuff.add(project);
+	}
+
+	@Export(type = "as")
+	public Set<String> stuff() {
+		return stuff;
 	}
 
 	@Export(type = "s")

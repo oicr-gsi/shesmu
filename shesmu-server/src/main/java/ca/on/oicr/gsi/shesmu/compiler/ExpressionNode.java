@@ -42,7 +42,8 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION = new Parser.ParseDispatch<>();
 	public static final Pattern REGEX = Pattern.compile("^/(([^/\n]|\\\\/)*)/");
-	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX = new Parser.ParseDispatch<>();
+	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE = new Parser.ParseDispatch<>();
+	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_TIGHT = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY = new Parser.ParseDispatch<>();
 
@@ -90,19 +91,20 @@ public abstract class ExpressionNode {
 		ARITHMETIC_CONJUNCTION.addSymbol("/", just(ExpressionNodeArithmeticDivide::new));
 		ARITHMETIC_CONJUNCTION.addSymbol("%", just(ExpressionNodeArithmeticModulo::new));
 
-		UNARY.addSymbol("!", just(ExpressionNodeLogicalNot::new));
-		UNARY.addSymbol("-", just(ExpressionNodeNegate::new));
-
-		SUFFIX.addKeyword("In", (p, o) -> {
+		SUFFIX_LOOSE.addKeyword("In", (p, o) -> {
 			final AtomicReference<ExpressionNode> collection = new AtomicReference<>();
-			final Parser result = parse8(p.whitespace(), collection::set);
+			final Parser result = parse7(p.whitespace(), collection::set);
 			if (result.isGood()) {
 				final ExpressionNode c = collection.get();
 				o.accept(node -> new ExpressionNodeContains(p.line(), p.column(), node, c));
 			}
 			return result;
 		});
-		SUFFIX.addSymbol("[", (p, o) -> {
+
+		UNARY.addSymbol("!", just(ExpressionNodeLogicalNot::new));
+		UNARY.addSymbol("-", just(ExpressionNodeNegate::new));
+
+		SUFFIX_TIGHT.addSymbol("[", (p, o) -> {
 			final AtomicLong index = new AtomicLong();
 			final Parser result = p.whitespace().integer(index::set, 10).whitespace().symbol("]");
 			if (result.isGood()) {
@@ -326,14 +328,18 @@ public abstract class ExpressionNode {
 	}
 
 	private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
-		return scanPrefixed(ExpressionNode::parse7, UNARY, input, output);
+		return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, input, output);
 	}
-
+	
 	private static Parser parse7(Parser input, Consumer<ExpressionNode> output) {
-		return scanSuffixed(ExpressionNode::parse8, SUFFIX, input, output);
+		return scanPrefixed(ExpressionNode::parse8, UNARY, input, output);
 	}
 
 	private static Parser parse8(Parser input, Consumer<ExpressionNode> output) {
+		return scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, input, output);
+	}
+
+	private static Parser parse9(Parser input, Consumer<ExpressionNode> output) {
 		return input.dispatch(TERMINAL, output);
 	}
 
