@@ -41,7 +41,7 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 
 				@Override
 				public void stop() {
-					active.remove(path);
+					active.remove(path, inner);
 					inner.stop();
 				}
 
