@@ -67,9 +67,9 @@ syn keyword shesmuKeyword Where
 syn keyword shesmuKeyword While
 syn keyword shesmuKeyword With
 syn keyword shesmuBool False True
-syn keyword shesmuKeyword json_signature
-syn keyword shesmuKeyword sha1_signature
-syn keyword shesmuKeyword signature_names
+syn keyword shesmuConstant json_signature
+syn keyword shesmuConstant sha1_signature
+syn keyword shesmuConstant signature_names
 syn match shesmuOperators '\(\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|\)' display
 syn keyword shesmuType boolean date integer string
 syn match shesmuConstant "\<\d\+\>" display
