@@ -1,9 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -38,14 +36,12 @@ public class CompiledGenerator extends ActionGenerator {
 
 		@Override
 		public void start() {
-			scripts.put(fileName, this);
 			update();
 		}
 
 		@Override
 		public void stop() {
 			generator.unregister();
-			scripts.remove(fileName);
 		}
 
 		@Override
@@ -84,13 +80,14 @@ public class CompiledGenerator extends ActionGenerator {
 	private static final Gauge sourceValid = Gauge
 			.build("shesmu_source_valid", "Whether the source file has been successfully compiled.")
 			.labelNames("filename").register();
+
 	private final Supplier<Stream<ActionDefinition>> actions;
 
 	private final Supplier<Stream<Constant>> constants;
 
 	private final Supplier<Stream<FunctionDefinition>> functions;
 
-	private final Map<Path, Script> scripts = new ConcurrentHashMap<>();
+	private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
 
 	public CompiledGenerator(Supplier<Stream<FunctionDefinition>> functions, Supplier<Stream<ActionDefinition>> actions,
 			Supplier<Stream<Constant>> constants) {
@@ -99,20 +96,20 @@ public class CompiledGenerator extends ActionGenerator {
 		this.constants = constants;
 	}
 
+	private Stream<Script> scripts() {
+		return scripts.map(AutoUpdatingDirectory::stream).orElseGet(Stream::empty);
+	}
+
 	/**
 	 * Get all the error messages from the last compilation as an HTML blob.
 	 *
 	 * @return
 	 */
 	public String errorHtml() {
-		final StringBuilder builder = new StringBuilder();
-		for (final Script script : scripts.values()) {
-			if (script.errors.length() > 0) {
-				builder.append("<p><b>").append(script.fileName.toString()).append("</b></p><p>").append(script.errors)
-						.append("</p>");
-			}
-		}
-		return builder.toString();
+		return scripts()//
+				.filter(script -> script.errors.length() > 0)//
+				.map(script -> String.format("<p><b>%s</b></p><p>%s</p>", script.fileName.toString(), script.errors))//
+				.collect(Collectors.joining());
 	}
 
 	@Override
@@ -122,11 +119,11 @@ public class CompiledGenerator extends ActionGenerator {
 		InputFormatDefinition.formats()
 				.forEach(format -> inputRecords.labels(format.name()).set(format.input(format.itemClass()).count()));
 		ActionGenerator.OLIVE_FLOW.clear();
-		scripts.values().forEach(script -> script.run(consumer, input));
+		scripts().forEach(script -> script.run(consumer, input));
 	}
 
 	public void start() {
-		FileWatcher.DATA_DIRECTORY.register(".shesmu", Script::new);
+		scripts = Optional.of(new AutoUpdatingDirectory<>(".shesmu", Script::new));
 	}
 
 }

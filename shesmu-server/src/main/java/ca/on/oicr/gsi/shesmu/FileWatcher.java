@@ -137,7 +137,9 @@ public abstract class FileWatcher {
 									active.put(path, ctors.entrySet().stream()//
 											.filter(entry -> fileName.endsWith(entry.getKey()))//
 											.flatMap(entry -> entry.getValue().stream())//
-											.map(ctor -> ctor.apply(path)).collect(Collectors.toList()));
+											.map(ctor -> ctor.apply(path))//
+											.peek(WatchedFileListener::start)//
+											.collect(Collectors.toList()));
 									updateTime.labels(path.toString()).setToCurrentTime();
 								} else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
 									System.out.printf("File %s deleted.\n", path.toString());
