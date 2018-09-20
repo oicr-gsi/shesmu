@@ -19,6 +19,7 @@ syn keyword shesmuKeyword All
 syn keyword shesmuKeyword Annotations
 syn keyword shesmuKeyword Any
 syn keyword shesmuKeyword By
+syn keyword shesmuKeyword Call
 syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
 syn keyword shesmuKeyword Define
@@ -44,7 +45,6 @@ syn keyword shesmuKeyword Let
 syn keyword shesmuKeyword LexicalConcat
 syn keyword shesmuKeyword Limit
 syn keyword shesmuKeyword List
-syn keyword shesmuKeyword Matches
 syn keyword shesmuKeyword Max
 syn keyword shesmuKeyword Min
 syn keyword shesmuKeyword Monitor

@@ -5,5 +5,5 @@ Define foo()
  Group ls = List l By accession;
 
 Run ok
- Matches foo()
+ Call foo()
  With { ok = (For l In ls: Count) == 2 }

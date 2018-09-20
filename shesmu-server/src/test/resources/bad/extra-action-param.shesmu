@@ -7,7 +7,7 @@ Define standard_fastq(string s)
   Where path == foo[file_size];
 
 Run fastqc
-  Matches standard_fastq("a")
+  Call standard_fastq("a")
   Group files = path By accession, donor
   With {
     memory = 4Gi,

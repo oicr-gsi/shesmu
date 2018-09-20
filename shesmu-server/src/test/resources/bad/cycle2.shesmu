@@ -1,7 +1,7 @@
 Input gsi_std;
 
 Define standard_execution()
-  Matches broken();
+  Call broken();
 
 Define broken()
-  Matches standard_execution();
+  Call standard_execution();
