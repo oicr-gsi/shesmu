@@ -5,5 +5,5 @@ Define foo()
     ls = List l;
 
 Run ok
- Matches foo()
+ Call foo()
  With { ok = (For l In ls: Count) == 2 }

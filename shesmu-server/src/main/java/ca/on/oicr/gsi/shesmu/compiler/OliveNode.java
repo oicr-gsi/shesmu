@@ -145,7 +145,7 @@ public abstract class OliveNode {
 	public abstract void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
 	/**
-	 * Check the rules that “Matches” clauses must only precede “Group” clauses
+	 * Check the rules that “Call” clauses must only precede “Group” clauses
 	 */
 	public abstract boolean checkVariableStream(Consumer<String> errorHandler);
 

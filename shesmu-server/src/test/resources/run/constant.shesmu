@@ -4,5 +4,5 @@ Define foo()
  Where project == project_constant;
 
 Run ok
-  Matches foo()
+  Call foo()
   With { ok = project == project_constant }

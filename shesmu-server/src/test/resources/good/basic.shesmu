@@ -18,7 +18,7 @@ Define standard_bamqc()
   Where workflow == {"BamQC 2.7+"}[0];
 
 Run fastqc
-  Matches standard_fastq("a")
+  Call standard_fastq("a")
   Group files = List path By accession, donor
   With {
     memory = 4Gi,

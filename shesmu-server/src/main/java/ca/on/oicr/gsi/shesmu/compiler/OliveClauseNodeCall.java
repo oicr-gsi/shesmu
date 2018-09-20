@@ -17,7 +17,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 
-public class OliveClauseNodeMatches extends OliveClauseNode {
+public class OliveClauseNodeCall extends OliveClauseNode {
 
 	private final List<ExpressionNode> arguments;
 	private final int column;
@@ -25,7 +25,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	private final String name;
 	private OliveNodeDefinition target;
 
-	public OliveClauseNodeMatches(int line, int column, String name, List<ExpressionNode> arguments) {
+	public OliveClauseNodeCall(int line, int column, String name, List<ExpressionNode> arguments) {
 		this.line = line;
 		this.column = column;
 		this.name = name;
@@ -40,7 +40,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 			return ClauseStreamOrder.BAD;
 		case TRANSFORMED:
 			errorHandler.accept(
-					String.format("%d:%d: “Matches” clause cannot be applied to grouped result.", line, column));
+					String.format("%d:%d: “Call” clause cannot be applied to grouped result.", line, column));
 			return ClauseStreamOrder.BAD;
 		case PURE:
 			signableNames.addAll(target.signableNames);
@@ -54,7 +54,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
 		oliveBuilder.line(line);
-		oliveBuilder.matches(definitions.get(name),
+		oliveBuilder.call(definitions.get(name),
 				arguments.stream().map(argument -> renderer -> argument.render(renderer)));
 
 		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
@@ -85,13 +85,13 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 			target = definedOlives.get(name);
 			if (target.parameterCount() != arguments.size()) {
 				errorHandler.accept(String.format(
-						"%d:%d: “Define %s” specifies %d parameters, but “Matches” has only %d arguments.", line,
+						"%d:%d: “Define %s” specifies %d parameters, but “Call” has only %d arguments.", line,
 						column, name, target.parameterCount(), arguments.size()));
 				return false;
 			}
 			return ok;
 		}
-		errorHandler.accept(String.format("%d:%d: Cannot find “Define %s” for “Matches”.", line, column, name));
+		errorHandler.accept(String.format("%d:%d: Cannot find “Define %s” for “Call”.", line, column, name));
 		return false;
 	}
 
@@ -103,7 +103,7 @@ public class OliveClauseNodeMatches extends OliveClauseNode {
 			}
 			final boolean isSame = arguments.get(index).type().isSame(target.parameterType(index));
 			if (!isSame) {
-				errorHandler.accept(String.format("%d:%d: Parameter %d to “Matches %s” expects %s, but got %s.", line,
+				errorHandler.accept(String.format("%d:%d: Parameter %d to “Call %s” expects %s, but got %s.", line,
 						column, index, name, target.parameterType(index).name(), arguments.get(index).type().name()));
 
 			}

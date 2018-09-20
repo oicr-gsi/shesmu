@@ -43,11 +43,11 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
-		final Parser matchesParser = input.keyword("Matches");
-		if (matchesParser.isGood()) {
+		final Parser callParser = input.keyword("Call");
+		if (callParser.isGood()) {
 			final AtomicReference<String> name = new AtomicReference<>();
 			final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
-			final Parser result = matchesParser//
+			final Parser result = callParser//
 					.whitespace()//
 					.identifier(name::set)//
 					.whitespace()//
@@ -58,7 +58,7 @@ public abstract class OliveClauseNode {
 					.symbol(")")//
 					.whitespace();
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeMatches(input.line(), input.column(), name.get(), arguments.get()));
+				output.accept(new OliveClauseNodeCall(input.line(), input.column(), name.get(), arguments.get()));
 			}
 			return result;
 		}

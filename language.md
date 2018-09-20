@@ -182,27 +182,53 @@ To make reusable logic, the _Define_ olive can be used:
       Where workflow == "CASAVA 1.8";
 
     Run fastqc
-      Matches standard_fastq()
+      Call standard_fastq()
       With {
         memory = 4Gi,
         input = path
       }
 
-The `Define` olive creates a reusable set of clauses and `Matches` includes it in another olive. Parameters can also be specified:
+The `Define` olive creates a reusable set of clauses and `Call` includes it in
+another olive. Parameters can also be specified:
 
     Define standard_fastq(date limit):
       Where after_date > limit
       Where metatype == "x-chemical/fastq-gzip"
-      Where workflow == "CASAVA 1.8"
+      Where workflow == "CASAVA 1.8";
 
     Run fastqc
-      Matches standard_fastq(Date 2017-01-01)
+      Call standard_fastq(Date 2017-01-01)
       With {
         memory = 4Gi,
         input = path
       }
 
-Because grouping changes variables, `Matches` must appear before `Group` clauses.
+Any kind of normal manipulation can be done in a `Define` olive:
+
+    Define paired_fastq():
+      Where metatype == "x-chemical/fastq-gzip" && workflow == "CASAVA 1.8"
+      Let
+       path = path,
+       is_read_two = path ~ /.*_2\.fastq/,
+       timestamp = timestamp,
+       donor = donor
+      Max timestamp By donor, is_read_two
+      Group
+       read_one = Where !is_read_two First path,
+       read_two = Where is_read_two First path
+      By donor;
+
+    Run bwa_mem
+      Call paired_fastq()
+      With {
+        memory = 4Gi,
+        read_one = read_one,
+        read_two = read_two
+      }
+
+Because some operations change variables, `Call` must appear before `Group`,
+`Join`, `LeftJoin`, and `Let` clauses and `Call` clauses that contain any of
+these.
 
 Once a Shesmu program is running, debugging is rather difficult, so Prometheus
 monitoring is built into the language using the `Monitor` clause:

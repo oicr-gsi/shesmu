@@ -13,7 +13,7 @@ import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.SignatureVariable;
 
 /**
- * Creates bytecode for a “Define”-style olive to be used in “Matches” clauses
+ * Creates bytecode for a “Define”-style olive to be used in “Call” clauses
  */
 public final class OliveDefineBuilder extends BaseOliveBuilder {
 
@@ -61,7 +61,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 	/**
 	 * Writes the byte code for this method.
 	 *
-	 * This must be called before using this in a “Matches” clause.
+	 * This must be called before using this in a “Call” clause.
 	 */
 	public void finish() {
 		final Renderer renderer = new Renderer(owner,

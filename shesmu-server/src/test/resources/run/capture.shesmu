@@ -4,5 +4,5 @@ Define foo(string s)
  Where s == project;
 
 Run ok
- Matches foo("the_foo_study")
+ Call foo("the_foo_study")
  With { ok = True }

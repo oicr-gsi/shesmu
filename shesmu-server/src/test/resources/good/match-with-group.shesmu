@@ -9,7 +9,7 @@ Define standard_fastq(string s)
 
 #Comment 
 Run fastqc
-  Matches standard_fastq("a")#comment
+  Call standard_fastq("a")#comment
   With {
     memory=4Gi ,#comment
     input = files

@@ -319,7 +319,7 @@ public abstract class BaseOliveBuilder {
 	 * @param arguments
 	 *            the arguments to pass as parameters to the matcher
 	 */
-	public final void matches(OliveDefineBuilder matcher, Stream<Consumer<Renderer>> arguments) {
+	public final void call(OliveDefineBuilder matcher, Stream<Consumer<Renderer>> arguments) {
 		final List<Consumer<Renderer>> arglist = arguments.collect(Collectors.toList());
 		if (arglist.size() != matcher.parameters()) {
 			throw new IllegalArgumentException(
