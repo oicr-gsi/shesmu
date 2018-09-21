@@ -342,6 +342,25 @@ machine-to-machine communication.
 | List       | `[`_inner_`]`            | `a`_inner_ |
 | Tuple      | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 
+Every input variable's type is available as _name_`_type`. For instance, the
+`shesmu` input format has the variable `locations`, so `locations_type` will be
+available.
+
+User defined types can also be created:
+
+    TypeAlias my_name {integer, string, location_type};
+
+Now `my_name` will be available for parameters in `Define` and `Function`. All
+`TypeAlias` definitions must occur at the top of the file, after the `Input`
+declaration.
+
+Additionally, types can be destructured. For instance, `locations_type` is a
+list of tuples. The tuple can be specified from the list of tuples by doing `In
+location_type`. Similarly, the `[`_i_`]` can be used to access the type of a
+tuple item.
+
+So, `(In [{integer, string}])[0]` is `integer`.
+
 ## Functions
 At the top level of a file, functions may be defined:
 

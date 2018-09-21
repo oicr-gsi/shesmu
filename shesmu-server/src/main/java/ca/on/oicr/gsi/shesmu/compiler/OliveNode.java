@@ -184,6 +184,8 @@ public abstract class OliveNode {
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler);
 
+	public abstract boolean resolveTypes(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler);
+
 	/**
 	 * Type check this olive and all its constituent parts
 	 */

@@ -15,6 +15,7 @@ import org.objectweb.asm.Opcodes;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
@@ -129,6 +130,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 		}
 		return ok;
 
+	}
+
+	@Override
+	public boolean resolveTypes(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+		return true;
 	}
 
 	@Override

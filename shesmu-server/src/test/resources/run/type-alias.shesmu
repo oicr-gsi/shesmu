@@ -1,0 +1,12 @@
+Input test;
+
+TypeAlias thingie {project_type, integer};
+
+Function is_project(project_type p, [project_type] projects) p In projects;
+
+Define foo(thingie s, [project_type] projects)
+ Where is_project(project, projects) || project == s[0];
+
+Run ok
+ Call foo({"a", 3}, ["the_foo_study"])
+ With { ok = True }
