@@ -8,9 +8,9 @@ Define standard_fastq(string s)
   Group files = List path By accession, donor;
 
 #Comment 
-Run fastqc
-  Call standard_fastq("a")#comment
-  With {
+Olive
+  standard_fastq("a")#comment
+  Run fastqc With 
     memory=4Gi ,#comment
     input = files
-  }
+  ;

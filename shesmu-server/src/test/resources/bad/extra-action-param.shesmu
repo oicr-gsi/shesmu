@@ -6,11 +6,10 @@ Define standard_fastq(string s)
   Where metatype == "chemical/fastq-gzip"
   Where path == foo[file_size];
 
-Run fastqc
-  Call standard_fastq("a")
+Olive
+  standard_fastq("a")
   Group files = path By accession, donor
-  With {
+  Run fastqc With
     memory = 4Gi,
     input = files,
-    undefined = 3
-  }
+    undefined = 3;

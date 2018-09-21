@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = (For x Splitting "a,b,c" By /,/: Count) == 3 }
+Olive
+ Run ok With ok = (For x Splitting "a,b,c" By /,/: Count) == 3;

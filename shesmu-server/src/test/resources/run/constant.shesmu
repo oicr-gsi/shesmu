@@ -3,6 +3,6 @@ Input test;
 Define foo()
  Where project == project_constant;
 
-Run ok
-  Call foo()
-  With { ok = project == project_constant }
+Olive
+  foo()
+  Run ok With ok = project == project_constant;

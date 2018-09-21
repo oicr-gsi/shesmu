@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = (For x From 0 To 5: Count) == 5 }
+Olive
+ Run ok With ok = (For x From 0 To 5: Count) == 5;

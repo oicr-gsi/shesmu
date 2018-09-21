@@ -25,12 +25,11 @@ _stream_ over the rows.
 
 A _run_ olive specifies an action to run if the conditions are met. For example:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
-      With {
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 This will take all the input provenance and selects any run by the workflow
 `BamQC 2.7+` and then launch `fastqc`. The `With` portion sets all the
@@ -38,28 +37,26 @@ parameters. These are specific to the action.
 
 Some parameters can be optionally specified:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
-      With {
+      Run fastqc With
         memory = 4Gi,
         input = path,
-        bed_file = bedfile(study) If study In ["PCSI", "TEST", "OCT"]
-      }
+        bed_file = bedfile(study) If study In ["PCSI", "TEST", "OCT"];
 
 The `Where` line is an _olive clause_. The clauses are: where, group, matches, and monitor.
 
 A `Group` clause groups items in the stream to be de-duplicated based on
 _discriminators_ and other variables are grouped into _collectors_.
 
-    Run fingerprint
+    Olive
       Where workflow == "BamQC 2.7+"
       Group
           files = List path
         By project
-      With {
+      Run fingerprint With
         memory = 4Gi,
-        input = files
-      }
+        input = files;
 
 The grouping changes the stream. After the grouping, `files` will be a list of
 all the `path` values for each `project`. Any other variables, (_e.g._,
@@ -87,7 +84,7 @@ into
 
 The `Group` operation can also be used to “widen” a table in this way:
 
-    Run project_report
+    Olive
       Group
           qc = Where workflow == "BamQC 2.7+" First path,
             # Use the output file from BamQC as `qc`
@@ -102,11 +99,10 @@ The `Group` operation can also be used to “widen” a table in this way:
             # in this project
         By project
       # And create on report per project
-      With {
+      Run project_report With
         memory = 4Gi,
         project = project,
-        chunks = chunks
-      }
+        chunks = chunks;
 
 If a value is missing (_e.g._, there's no `Fingerprinting` workflow for a
 `library_name`), there will be no output for that discriminator combination.
@@ -130,25 +126,25 @@ In total, the collectors in a `Group` operation are:
 and `Where` clauses can precede any of these.
 
 Often, the same data is duplicated and there needs to be grouping that uses the
-“best” value. For this, a `Min` or `Max` clause can get the right data:
+“best” value. For this, a `Pick Min` or `Pick Max` clause can get the right
+data:
 
-    Run project_report
+    Olive
       Where workflow == "BamQC 2.7+"
-      Max timestamp By workflow, library_name
+      Pick Max timestamp By workflow, library_name
       Group
           paths = List path
         By project
       # And create on report per project
-      With {
+      Run project_report With
         memory = 4Gi,
         project = project
-        paths = paths
-      }
+        paths = paths;
 
 After complicated regrouping, it's often helpful to transform and rename
 things. The `Let` clause provides this:
 
-    Run lane_completeness_report
+    Olive
       # Get all the sample provenance and workflows that have produced FASTQs
       Where source == "sample_provenance" || metatype == "chemical/seq-na-fastq-gzip"
       Group
@@ -170,10 +166,9 @@ things. The `Let` clause provides this:
           lanes = List lane_number,
           timestamps = timestamp
         By sequencer_run, path
-      With {
+      Run lane_completeness_report With
         run = sequencer_run,
-        path = path
-      }
+        path = path;
 
 To make reusable logic, the _Define_ olive can be used:
 
@@ -181,14 +176,13 @@ To make reusable logic, the _Define_ olive can be used:
       Where metatype == "x-chemical/fastq-gzip"
       Where workflow == "CASAVA 1.8";
 
-    Run fastqc
-      Call standard_fastq()
-      With {
+    Olive
+      standard_fastq()
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
-The `Define` olive creates a reusable set of clauses and `Call` includes it in
+The `Define` olive creates a reusable set of clauses and call includes it in
 another olive. Parameters can also be specified:
 
     Define standard_fastq(date limit):
@@ -196,12 +190,11 @@ another olive. Parameters can also be specified:
       Where metatype == "x-chemical/fastq-gzip"
       Where workflow == "CASAVA 1.8";
 
-    Run fastqc
-      Call standard_fastq(Date 2017-01-01)
-      With {
+   Olive 
+      standard_fastq(Date 2017-01-01)
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 Any kind of normal manipulation can be done in a `Define` olive:
 
@@ -218,28 +211,26 @@ Any kind of normal manipulation can be done in a `Define` olive:
        read_two = Where is_read_two First path
       By donor;
 
-    Run bwa_mem
-      Call paired_fastq()
-      With {
+    Olive
+      paired_fastq()
+      Run bwa_mem With
         memory = 4Gi,
         read_one = read_one,
-        read_two = read_two
-      }
+        read_two = read_two;
 
-Because some operations change variables, `Call` must appear before `Group`,
-`Join`, `LeftJoin`, and `Let` clauses and `Call` clauses that contain any of
+Because some operations change variables, calls must appear before `Group`,
+`Join`, `LeftJoin`, and `Let` clauses and call clauses that contain any of
 these.
 
 Once a Shesmu program is running, debugging is rather difficult, so Prometheus
 monitoring is built into the language using the `Monitor` clause:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
       Monitor fastqc "The number of records for FastQC execution." { metatype = metatype }
-      With {
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 The number of hits to each monitoring clause will be output via Prometheus. The
 name, which will be exported as `shesmu_user_fastqc`, must be unique in the
@@ -248,13 +239,12 @@ specified; the values must be strings.
 
 Additionally, for more serious debugging, the data passing through an olive can be dumped:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
       Dump metatype, ius To some_file
-      With {
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 The specified expressions will be dumped to a file. The file is defined by a
 dumper. If no dumper exists, the output is sent nowhere. This makes it possible
@@ -265,28 +255,26 @@ Since life revolves around inevitably bad data, it's nice to be able to filter
 out data, similar to `Where`, but collect information about the rejection via
 monitoring or dumping. The `Reject` clause does this:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
       Reject file_size == 0 {
          Monitor bad_bam_qc_results "The number of bad BamQC results in production" {},
          Dump ius, path To junk_bamqc_results
       }
-      With {
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 It is also possible to bring in data from another format (or even the same
 format) using a `Join` clause:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
       Join qc_data
       Where path == qc_file && passed
-      With {
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 Unlike SQL, Shesmu only knows how to do one join: a cross or Cartesian join.
 This creates a new output for every possible pair of inputs. There must be no
@@ -296,15 +284,14 @@ clause.
 
 There is a `LeftJoin` clause that works like a `Join` and a `Group` clause at once:
 
-    Run fastqc
+    Olive
       Where workflow == "BamQC 2.7+"
       LeftJoin qc_data
         passed_count = Where path == qc_file && passed Count
       Where passed_count > 0
-      With {
+      Run fastqc With
         memory = 4Gi,
-        input = path
-      }
+        input = path;
 
 The incoming variables act as the `By` part of the `LeftJoin` and the collected
 variables are available in the output. The collectors have access to the joined
@@ -312,14 +299,14 @@ stream.
 
 There is a final type of olive: one to generate an alert:
 
-     Alert
+     Olive
        Where workflow == "BamQC 2.7+" && fize_size == 0
-       Labels {
+       Alert Labels
          alertname = "BadGeneratedData",
          environment = "production",
          source = workflow
-       Annotations {
-       } 30mins;
+       Annotations
+       30mins;
 
 The final number is an expression to determine how long this alert should last.
 If the alert is not regenerated in this time period, it will expire. The
@@ -794,11 +781,11 @@ included.
 The collection of referenced signable variables is considered over the whole
 scope. For instance:
 
-   Run x
+   Olive
      Where "project" In signature_names # This is true even though project is
                                         # referenced after this check
      Where project ~ /N.*/
-     With { project = project }
+     Run x With project = project;
 
 Since there are no `Group`, `Join`, or `Let` clauses, the entire olive is in
 scope. The signable variable `project` is referenced (used) twice: once in the
@@ -822,7 +809,7 @@ to rerun even though the input BAM is not changed.
 
     Input gsi_std;
     
-    Run variant_caller
+    Olive
       Where metatype == "application/bam"
       Max timestamp By donor, tissue_type
       Group
@@ -831,11 +818,10 @@ to rerun even though the input BAM is not changed.
           tumour = Where tissue_type == "T" First path,
           tumour_signature = Where tissue_type == "T" First sha1_signature
         By donor
-      With {
+      Run variant_caller With
         input_signatures = [reference_signature, tumour_signature],
         reference_file = reference,
-        tumour_file = tumour
-      }
+        tumour_file = tumour;
 
 The value of `sha1_signature` is a string containing a hexadecimal SHA-1 hash
 of all the names and values referenced variables. There is also
@@ -860,20 +846,19 @@ Now, suppose we wish to compare possible variants that are in two organs of inte
 
     Input gsi_std;
     
-    Run variant_caller
+    Olive
       Where metatype == "application/bam"
-      Max timestamp By donor, tissue_origin
+      Pick Max timestamp By donor, tissue_origin
       Group
           blood = Where tissue_origin == "Blood" First path,
           blood_signature = Where tissue_origin == "Blood" First sha1_signature,
           organ = Where tissue_origin == "Brain" First path,
           organ_signature = Where tissue_origin == "Brain" First sha1_signature
         By donor
-      With {
+      Run variant_caller With
         input_signaturees = [blood_signature, organ_signature],
         reference_file = blood,
-        tumour_file = organ
-      }
+        tumour_file = organ;
 
 This olive runs the same action as the olive above, but the information that
 goes into the signature is now different because the information used in making

@@ -4,6 +4,6 @@ Define foo()
  Join inner_test
  Group ls = List l By accession;
 
-Run ok
- Call foo()
- With { ok = (For l In ls: Count) == 2 }
+Olive
+ foo()
+ Run ok With ok = (For l In ls: Count) == 2;

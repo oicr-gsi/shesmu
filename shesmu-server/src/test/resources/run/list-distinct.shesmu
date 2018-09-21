@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = (For x In [{"a", 1}, {"a", 2}, {"a", 1} ]: Distinct Count) == 2 }
+Olive
+ Run ok With ok = (For x In [{"a", 1}, {"a", 2}, {"a", 1} ]: Distinct Count) == 2;

@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = project In ["the_foo_study"]}
+Olive
+ Run ok With ok = project In ["the_foo_study"];

@@ -1,7 +1,7 @@
 Input test;
 
-Run ok
+Olive
  Reject path != "/foo1" {
    Dump workflow To somefile
  }
- With { ok = path == "/foo1" }
+ Run ok With ok = path == "/foo1";

@@ -3,6 +3,6 @@ Input test;
 Define foo(string s)
  Where s == project;
 
-Run ok
- Call foo("the_foo_study")
- With { ok = True }
+Olive
+ foo("the_foo_study")
+ Run ok With ok = True;

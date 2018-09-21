@@ -1,6 +1,6 @@
 Input test;
 
-Run ok
+Olive
  Join inner_test
  Group ls = List l By accession
- With { ok = (For l In ls: Count) == 2 }
+ Run ok With ok = (For l In ls: Count) == 2;

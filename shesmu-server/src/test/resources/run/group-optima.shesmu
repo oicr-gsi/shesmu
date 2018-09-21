@@ -1,9 +1,9 @@
 Input test;
 
-Run ok
+Olive
  Group
     x = Where library_size == 307 First path,
     y = Where library_size == 300 First path,
     z = Max library_size
   By project
- With { ok = z == 307 }
+ Run ok With ok = z == 307;

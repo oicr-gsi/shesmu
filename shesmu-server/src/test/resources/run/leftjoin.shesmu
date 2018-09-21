@@ -1,6 +1,6 @@
 Input test;
 
-Run ok
+Olive
  LeftJoin inner_test
     ls = List l
- With { ok = (For l In ls: Count) == 2 }
+ Run ok With ok = (For l In ls: Count) == 2;

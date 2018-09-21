@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Let x = workflow
- With { ok = x == "SlowA" }
+ Run ok With ok = x == "SlowA";

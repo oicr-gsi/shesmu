@@ -1,7 +1,7 @@
 Input test;
 
-Run ok
+Olive
  Group
     z = None library_size > 400
   By project
- With { ok = z }
+ Run ok With ok = z;

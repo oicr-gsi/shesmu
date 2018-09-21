@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Where project == "the_foo_study"
- With { ok = signature_count == 1 && "project" In signature_names && json_signature == "\{\"project\":\"the_foo_study\"}" }
+ Run ok With ok = signature_count == 1 && "project" In signature_names && json_signature == "\{\"project\":\"the_foo_study\"}";

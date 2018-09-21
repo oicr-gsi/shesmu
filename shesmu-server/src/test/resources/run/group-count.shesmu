@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Group a = Count By workflow
- With { ok = a == 2 }
+ Run ok With ok = a == 2;
