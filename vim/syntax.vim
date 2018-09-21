@@ -19,7 +19,6 @@ syn keyword shesmuKeyword All
 syn keyword shesmuKeyword Annotations
 syn keyword shesmuKeyword Any
 syn keyword shesmuKeyword By
-syn keyword shesmuKeyword Call
 syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
 syn keyword shesmuKeyword Define
@@ -49,7 +48,9 @@ syn keyword shesmuKeyword Max
 syn keyword shesmuKeyword Min
 syn keyword shesmuKeyword Monitor
 syn keyword shesmuKeyword None
+syn keyword shesmuKeyword Olive
 syn keyword shesmuKeyword PartitionCount
+syn keyword shesmuKeyword Pick
 syn keyword shesmuKeyword Reduce
 syn keyword shesmuKeyword Reject
 syn keyword shesmuKeyword Reverse

@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Group a = List accession By workflow
- With { ok = (For x In a: Count) == 2 }
+ Run ok With ok = (For x In a: Count) == 2;

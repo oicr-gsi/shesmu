@@ -1,9 +1,7 @@
 Input test;
 
-Alert
-  Labels {
+Olive
+  Alert
     alertname = "TestTestTest",
     value = library_size > 0 ? "true" : "false"
-  }
-  Annotations {
-  } 20mins;
+  For 20mins;

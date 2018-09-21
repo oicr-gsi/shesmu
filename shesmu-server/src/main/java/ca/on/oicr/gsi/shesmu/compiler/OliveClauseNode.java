@@ -43,25 +43,6 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
-		final Parser callParser = input.keyword("Call");
-		if (callParser.isGood()) {
-			final AtomicReference<String> name = new AtomicReference<>();
-			final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
-			final Parser result = callParser//
-					.whitespace()//
-					.identifier(name::set)//
-					.whitespace()//
-					.symbol("(")//
-					.whitespace()//
-					.listEmpty(arguments::set, ExpressionNode::parse, ',')//
-					.whitespace()//
-					.symbol(")")//
-					.whitespace();
-			if (result.isGood()) {
-				output.accept(new OliveClauseNodeCall(input.line(), input.column(), name.get(), arguments.get()));
-			}
-			return result;
-		}
 		final Parser groupParser = input.keyword("Group");
 		if (groupParser.isGood()) {
 			final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
@@ -141,12 +122,14 @@ public abstract class OliveClauseNode {
 			}
 			return result;
 		}
-		final AtomicReference<Boolean> direction = new AtomicReference<>();
-		final Parser pickParser = input.regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.");
+		final Parser pickParser = input.keyword("Pick");
 		if (pickParser.isGood()) {
+			final AtomicReference<Boolean> direction = new AtomicReference<>();
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
 			final AtomicReference<List<String>> discriminators = new AtomicReference<>();
 			final Parser result = pickParser//
+					.whitespace()//
+					.regex(OPTIMA, m -> direction.set(m.group().equals("Max")), "Need Min or Max.")//
 					.whitespace()//
 					.then(ExpressionNode::parse, expression::set)//
 					.whitespace()//
@@ -157,6 +140,23 @@ public abstract class OliveClauseNode {
 			if (result.isGood()) {
 				output.accept(new OliveClauseNodePick(input.line(), input.column(), direction.get(), expression.get(),
 						discriminators.get()));
+			}
+			return result;
+		}
+		final AtomicReference<String> name = new AtomicReference<>();
+		final Parser callParser = input.identifier(name::set);
+		if (callParser.isGood()) {
+			final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
+			final Parser result = callParser//
+					.whitespace()//
+					.symbol("(")//
+					.whitespace()//
+					.listEmpty(arguments::set, ExpressionNode::parse, ',')//
+					.whitespace()//
+					.symbol(")")//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(new OliveClauseNodeCall(input.line(), input.column(), name.get(), arguments.get()));
 			}
 			return result;
 		}

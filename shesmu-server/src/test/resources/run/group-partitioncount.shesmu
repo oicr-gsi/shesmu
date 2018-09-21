@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Group a = PartitionCount library_size == 307 By workflow
- With { ok = a[0] == 1 && a[1] == 1 }
+ Run ok With ok = a[0] == 1 && a[1] == 1;

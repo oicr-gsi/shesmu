@@ -1,4 +1,4 @@
 Input gsi_std;
 
 Define foo(string s)
-	Group a = accession By s;
+	Group a = List accession By s;

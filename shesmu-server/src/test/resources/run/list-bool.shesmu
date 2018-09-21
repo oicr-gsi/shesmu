@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = (For x In [ {1,True}, {2, False}, {3, True} ]: PartitionCount x[1])[0] == 2 }
+Olive
+ Run ok With ok = (For x In [ {1,True}, {2, False}, {3, True} ]: PartitionCount x[1])[0] == 2;

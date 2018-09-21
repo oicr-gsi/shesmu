@@ -3,6 +3,6 @@ Input test;
 Define foo({string, integer} s, [string] projects)
  Where project In projects || project == s[0];
 
-Run ok
- Call foo({"a", 3}, ["the_foo_study"])
- With { ok = True }
+Olive
+ foo({"a", 3}, ["the_foo_study"])
+ Run ok With ok = True;

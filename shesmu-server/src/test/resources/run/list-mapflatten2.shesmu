@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = (For x In [ {True, [1,2]}, {False, [3, 4]} ]: Where x[0] Flatten (y In x[1] Let z = y + 1) Reduce(a=0) a + z) == 5 }
+Olive
+ Run ok With ok = (For x In [ {True, [1,2]}, {False, [3, 4]} ]: Where x[0] Flatten (y In x[1] Let z = y + 1) Reduce(a=0) a + z) == 5;

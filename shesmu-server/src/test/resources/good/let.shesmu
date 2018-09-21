@@ -1,7 +1,7 @@
 Input gsi_std;
 
-Run optional
+Olive
   Let x = path, y = workflow
-  With {
-    junk = True
-  }
+  Run optional With
+    junk = True;
+  

@@ -1,6 +1,0 @@
-Input test;
-
-Run ok
- Max library_size By project, file_size
- Group samples = Count By project, library_size
- With { ok = library_size == 307 && samples == 1 }

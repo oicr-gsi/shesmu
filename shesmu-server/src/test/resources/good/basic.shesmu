@@ -17,10 +17,9 @@ Define standard_bamqc()
   Where metatype == "txt/json"
   Where workflow == {"BamQC 2.7+"}[0];
 
-Run fastqc
-  Call standard_fastq("a")
+Olive
+  standard_fastq("a")
   Group files = List path By accession, donor
-  With {
+  Run fastqc With
     memory = 4Gi,
-    input = files
-  }
+    input = files;

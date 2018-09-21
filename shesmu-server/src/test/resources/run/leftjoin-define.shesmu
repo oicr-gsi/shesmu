@@ -4,6 +4,6 @@ Define foo()
  LeftJoin inner_test
     ls = List l;
 
-Run ok
- Call foo()
- With { ok = (For l In ls: Count) == 2 }
+Olive
+ foo()
+ Run ok With ok = (For l In ls: Count) == 2;

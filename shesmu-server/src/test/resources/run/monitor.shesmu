@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Monitor foo "The foos." { x = project }
- With { ok = True }
+ Run ok With ok = True;

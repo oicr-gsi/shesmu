@@ -1,4 +1,4 @@
 Input test;
 
-Run ok
- With { ok = (For y In [ {project, 0}, {workflow, 1} ]: Where y[0] In stuff Count) == 2 }
+Olive
+ Run ok With ok = (For y In [ {project, 0}, {workflow, 1} ]: Where y[0] In stuff Count) == 2;

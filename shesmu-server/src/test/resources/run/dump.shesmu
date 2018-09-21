@@ -1,5 +1,5 @@
 Input test;
 
-Run ok
+Olive
  Dump workflow To somefile
- With { ok = True }
+ Run ok With ok = True;
