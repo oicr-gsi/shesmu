@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
@@ -11,9 +12,13 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 public class OliveParameter extends Target {
 
 	public static Parser parse(Parser parser, Consumer<OliveParameter> output) {
-		final AtomicReference<Imyhat> type = new AtomicReference<>();
+		final AtomicReference<ImyhatNode> type = new AtomicReference<>();
 		final AtomicReference<String> name = new AtomicReference<>();
-		final Parser result = Parser.parseImyhat(parser, type::set).whitespace().identifier(name::set).whitespace();
+		final Parser result = parser//
+				.then(ImyhatNode::parse, type::set)//
+				.whitespace()//
+				.identifier(name::set)//
+				.whitespace();
 		if (result.isGood()) {
 			output.accept(new OliveParameter(name.get(), type.get()));
 		}
@@ -23,9 +28,10 @@ public class OliveParameter extends Target {
 
 	private final String name;
 
-	private final Imyhat type;
+	private Imyhat realType;
+	private final ImyhatNode type;
 
-	public OliveParameter(String name, Imyhat type) {
+	public OliveParameter(String name, ImyhatNode type) {
 		this.name = name;
 		this.type = type;
 	}
@@ -40,9 +46,14 @@ public class OliveParameter extends Target {
 		return name;
 	}
 
+	public boolean resolveTypes(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+		realType = type.render(definedTypes, errorHandler);
+		return !realType.isBad();
+	}
+
 	@Override
 	public Imyhat type() {
-		return type;
+		return realType;
 	}
 
 }

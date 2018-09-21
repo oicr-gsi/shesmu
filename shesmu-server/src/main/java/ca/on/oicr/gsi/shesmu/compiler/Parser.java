@@ -245,9 +245,6 @@ public abstract class Parser {
 		Parser parse(Parser parser, Consumer<T> output);
 	}
 
-	private static final Imyhat[] BASE_TYPES = new Imyhat[] { Imyhat.BOOLEAN, Imyhat.DATE, Imyhat.INTEGER,
-			Imyhat.STRING };
-
 	private static Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
 
 	public static Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
@@ -256,38 +253,6 @@ public abstract class Parser {
 
 	private static CharSequence consume(CharSequence input, int offset) {
 		return input.subSequence(offset, input.length());
-	}
-
-	/**
-	 * Parse a type.
-	 */
-	public static Parser parseImyhat(Parser input, Consumer<Imyhat> output) {
-		final Parser listParser = input.symbol("[");
-		if (listParser.isGood()) {
-			final AtomicReference<Imyhat> inner = new AtomicReference<>(Imyhat.BAD);
-			final Parser result = parseImyhat(listParser.whitespace(), inner::set).whitespace().symbol("]");
-			output.accept(inner.get().asList());
-			return result;
-		}
-
-		final Parser tupleParser = input.symbol("{");
-		if (tupleParser.isGood()) {
-			final AtomicReference<List<Imyhat>> inner = new AtomicReference<>(Collections.emptyList());
-			final Parser result = tupleParser.whitespace()//
-					.list(inner::set, (p, o) -> parseImyhat(p.whitespace(), o).whitespace(), ',')//
-					.symbol("}");
-			output.accept(Imyhat.tuple(inner.get().stream().toArray(Imyhat[]::new)));
-			return result;
-		}
-
-		for (final Imyhat base : BASE_TYPES) {
-			final Parser result = input.keyword(base.name());
-			if (result.isGood()) {
-				output.accept(base);
-				return result;
-			}
-		}
-		return input.raise("Expected a type.");
 	}
 
 	/**

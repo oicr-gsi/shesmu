@@ -178,6 +178,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 	}
 
 	@Override
+	public boolean resolveTypes(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+		return true;
+	}
+
+	@Override
 	protected boolean typeCheckExtra(Consumer<String> errorHandler) {
 		boolean ok = //
 				labels.stream().filter(new ArgumentCheckAndDefiner(errorHandler)).count() == labels.size()

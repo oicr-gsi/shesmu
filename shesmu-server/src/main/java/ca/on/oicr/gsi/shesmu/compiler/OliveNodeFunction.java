@@ -131,6 +131,13 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 	}
 
 	@Override
+	public boolean resolveTypes(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+		return parameters.stream()//
+				.filter(p -> p.resolveTypes(definedTypes, errorHandler))//
+				.count() == parameters.size();
+	}
+
+	@Override
 	public Imyhat returnType() {
 		return body.type();
 	}

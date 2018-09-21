@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
@@ -23,6 +24,7 @@ public class ProgramNode {
 	 */
 	public static boolean parseFile(CharSequence input, Consumer<ProgramNode> output, ErrorConsumer errorHandler) {
 		final AtomicReference<String> inputFormat = new AtomicReference<>();
+		final AtomicReference<List<TypeAliasNode>> typeAliases = new AtomicReference<>();
 		final AtomicReference<List<OliveNode>> olives = new AtomicReference<>();
 		final Parser result = Parser.start(input, errorHandler)//
 				.whitespace()//
@@ -32,11 +34,12 @@ public class ProgramNode {
 				.whitespace()//
 				.symbol(";")//
 				.whitespace()//
+				.list(typeAliases::set, TypeAliasNode::parse)//
 				.list(olives::set, OliveNode::parse)//
 				.whitespace();
 		if (result.isGood()) {
 			if (result.isEmpty()) {
-				output.accept(new ProgramNode(inputFormat.get(), olives.get()));
+				output.accept(new ProgramNode(inputFormat.get(), typeAliases.get(), olives.get()));
 				return true;
 			} else {
 				errorHandler.raise(result.line(), result.column(), "Junk at end of file.");
@@ -51,9 +54,12 @@ public class ProgramNode {
 
 	private final List<OliveNode> olives;
 
-	public ProgramNode(String input, List<OliveNode> olives) {
+	private final List<TypeAliasNode> typeAliases;
+
+	public ProgramNode(String input, List<TypeAliasNode> typeAliases, List<OliveNode> olives) {
 		super();
 		this.input = input;
+		this.typeAliases = typeAliases;
 		this.olives = olives;
 	}
 
@@ -96,8 +102,22 @@ public class ProgramNode {
 		final Set<String> metricNames = new HashSet<>();
 		final Map<String, List<Imyhat>> dumpers = new HashMap<>();
 		final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
+		final Map<String, Imyhat> userDefinedTypes = Stream.<Target>concat(//
+				inputFormatDefinition.baseStreamVariables(), //
+				NameDefinitions.signatureVariables())//
+				.collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
+
+		for (TypeAliasNode alias : typeAliases) {
+			Imyhat type = alias.resolve(userDefinedTypes::get, errorHandler);
+			if (type.isBad()) {
+				return false;
+			}
+			userDefinedTypes.put(alias.name(), type);
+		}
+
 		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
 				.count() == olives.size();
+		ok &= olives.stream().allMatch(olive -> olive.resolveTypes(userDefinedTypes::get, errorHandler));
 		ok &= olives.stream()
 				.allMatch(olive -> olive.collectFunctions(
 						name -> userDefinedFunctions.containsKey(name) || definedFunctions.apply(name) != null,

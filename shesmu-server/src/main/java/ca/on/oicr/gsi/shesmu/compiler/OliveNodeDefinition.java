@@ -115,6 +115,13 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 	}
 
 	@Override
+	public boolean resolveTypes(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+		return parameters.stream()//
+				.filter(p -> p.resolveTypes(definedTypes, errorHandler))//
+				.count() == parameters.size();
+	}
+
+	@Override
 	protected boolean typeCheckExtra(Consumer<String> errorHandler) {
 		return true;
 	}
