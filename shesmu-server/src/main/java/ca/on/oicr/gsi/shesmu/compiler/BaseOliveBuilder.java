@@ -106,22 +106,22 @@ public abstract class BaseOliveBuilder {
 	}
 
 	/**
-	 * Create a “Matches” clause in an olive
+	 * Create a call clause in an olive
 	 *
-	 * @param matcher
-	 *            the matcher to run
+	 * @param defineOlive
+	 *            the define olive to run
 	 * @param arguments
-	 *            the arguments to pass as parameters to the matcher
+	 *            the arguments to pass as parameters to the olive
 	 */
-	public final void call(OliveDefineBuilder matcher, Stream<Consumer<Renderer>> arguments) {
+	public final void call(OliveDefineBuilder defineOlive, Stream<Consumer<Renderer>> arguments) {
 		final List<Consumer<Renderer>> arglist = arguments.collect(Collectors.toList());
-		if (arglist.size() != matcher.parameters()) {
+		if (arglist.size() != defineOlive.parameters()) {
 			throw new IllegalArgumentException(
-					String.format("Invalid number of arguments for matcher. Got %d, expected %d.", arglist.size(),
-							matcher.parameters()));
+					String.format("Invalid number of arguments for call. Got %d, expected %d.", arglist.size(),
+							defineOlive.parameters()));
 		}
 		if (!currentType.equals(owner.inputFormatDefinition().type())) {
-			throw new IllegalArgumentException("Cannot start matcher on non-initial variable type.");
+			throw new IllegalArgumentException("Cannot call on a transformed data stream.");
 		}
 		steps.add(renderer -> {
 			renderer.methodGen().loadThis();
@@ -131,9 +131,9 @@ public abstract class BaseOliveBuilder {
 			for (int i = 0; i < arglist.size(); i++) {
 				arglist.get(i).accept(renderer);
 			}
-			renderer.methodGen().invokeVirtual(owner.selfType(), matcher.method());
+			renderer.methodGen().invokeVirtual(owner.selfType(), defineOlive.method());
 		});
-		currentType = matcher.currentType();
+		currentType = defineOlive.currentType();
 	}
 
 	/**
