@@ -37,7 +37,8 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 
 	@Override
 	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Matches", line, column, true, !target.isRoot(), //
+		final String prettyName = name + "(" + (target.parameterCount() == 0 ? "" : "...") + ")";
+		return new OliveClauseRow(prettyName, line, column, true, !target.isRoot(), //
 				Stream.concat(//
 						target.inputVariables()//
 								.map(n -> new VariableInformation(n, Imyhat.BAD, Stream.of(n), Behaviour.OBSERVER)),
