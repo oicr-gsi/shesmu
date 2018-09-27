@@ -256,7 +256,7 @@ public final class Server {
 				writeHeaderedTable(writer, "Alerts", false);
 				processor.alerts(a -> writeRowWithId(writer, "alert-" + a.id(), //
 						a.isLive() ? "live alert" : "expired alert", //
-						String.format("#alert-%d", a.id()), //
+						a.id(), //
 						labelsToHtml(a.getLabels()), //
 						labelsToHtml(a.getAnnotations()), //
 						a.getStartsAt(), //
