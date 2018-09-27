@@ -166,7 +166,7 @@ public final class Server {
 						writer.printf(
 								"<p><span class=\"load\" onclick=\"listActionsPopup(filterForOlive('%1$s', %2$d, %3$d, %4$d))\">🔍 List Actions</span><span class=\"load\" onclick=\"queryStatsPopup(filterForOlive('%1$s', %2$d, %3$d, %4$d))\">📈 Stats on Actions</span></p>",
 								fileTable.filename(), olive.line(), olive.column(),
-								fileTable.timestamp().getEpochSecond());
+								fileTable.timestamp().toEpochMilli());
 						writer.print("<div class=\"indent\" style=\"overflow-x:auto\">");
 						MetroDiagram.draw(writer, fileTable.filename(), fileTable.timestamp(), olive, inputCount);
 						writer.print("</div>");

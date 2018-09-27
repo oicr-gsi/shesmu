@@ -118,7 +118,7 @@ public abstract class RootBuilder {
 
 	public RootBuilder(Instant compileTime, String name, String path, InputFormatDefinition inputFormatDefinition,
 			Supplier<Stream<Constant>> constants) {
-		this.compileTime = compileTime.getEpochSecond();
+		this.compileTime = compileTime.toEpochMilli();
 		this.path = path;
 		this.inputFormatDefinition = inputFormatDefinition;
 		this.constants = constants;
