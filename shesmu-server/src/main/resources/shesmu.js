@@ -549,14 +549,17 @@ export function queryStatsPopup(filters) {
 
 export function text(t) {
   const element = document.createElement("P");
-  if (t.length > 100) {
-    let visible = true;
+  const tSpecial = t.replace(/\n/g, "⏎");
+  if (t.length > 100 || tSpecial != t) {
     element.title = "There's a lot to unpack here.";
-    element.onclick = function() {
-      visible = !visible;
-      element.innerText = visible ? t : t.substring(0, 98) + "...";
+    element.innerText = tSpecial.substring(0, 98) + "...";
+    element.style.cursor = "pointer";
+    element.onclick = () => {
+      const popup = makePopup();
+      const pre = document.createElement("PRE");
+      pre.innerText = t;
+      popup.appendChild(pre);
     };
-    element.onclick();
   } else {
     element.innerText = t;
   }
@@ -573,7 +576,7 @@ export function link(url, t) {
 
 export function jsonParameters(action) {
   return Object.entries(action.parameters).map(p =>
-    text(`Parameter ${p[0]} = ${JSON.stringify(p[1])}`)
+    text(`Parameter ${p[0]} = ${JSON.stringify(p[1], null, 2)}`)
   );
 }
 
@@ -708,6 +711,7 @@ function showFilterJson(filters, targetElement) {
     targetElement.removeChild(targetElement.lastChild);
   }
   const pre = document.createElement("PRE");
+  pre.className = "json";
   pre.innerText = JSON.stringify(filters, null, 2);
   targetElement.appendChild(pre);
 }
