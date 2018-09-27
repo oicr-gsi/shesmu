@@ -495,7 +495,7 @@ export function listActions() {
     limit: 25,
     skip: 0
   };
-  nextPage(query, document.getElementById("results"));
+  nextPage(query, document.getElementById("results"), true);
 }
 
 export function filterForOlive(filename, line, column, timestamp) {
@@ -538,12 +538,13 @@ export function listActionsPopup(filters) {
       limit: 25,
       skip: 0
     },
-    makePopup()
+    makePopup(),
+    false
   );
 }
 
 export function queryStatsPopup(filters) {
-  getStats(filters, makePopup());
+  getStats(filters, makePopup(), false);
 }
 
 export function text(t) {
@@ -586,7 +587,7 @@ function defaultRenderer(action) {
   return [title(action, `Unknown Action: ${action.type}`)];
 }
 
-function nextPage(query, targetElement) {
+function nextPage(query, targetElement, onActionPage) {
   results(targetElement, "/query", JSON.stringify(query), (container, data) => {
     const jumble = document.createElement("DIV");
     if (data.results.length == 0) {
@@ -619,10 +620,22 @@ function nextPage(query, targetElement) {
         const t = `Made from ${l.file}:${l.line}:${l.column}[${new Date(
           l.time
         ).toISOString()}]`;
-        tile.appendChild(l.url ? link(l.url, t) : text(t));
+        tile.appendChild(text(t));
+        if (l.url) {
+          tile.appendChild(link(l.url, "View Source"));
+        }
+        if (onActionPage) {
+          tile.appendChild(
+            link(
+              `olivedash#${l.file}:${l.line}:${l.column}:${l.time}`,
+              "View in Olive dashboard"
+            )
+          );
+        }
       });
       const showHide = document.createElement("P");
       const json = document.createElement("PRE");
+      json.className = "json";
       json.innerText = JSON.stringify(action, null, 2);
       tile.appendChild(showHide);
       tile.appendChild(json);
@@ -670,7 +683,8 @@ function nextPage(query, targetElement) {
                 skip: skip,
                 limit: query.limit
               },
-              targetElement
+              targetElement,
+              onActionPage
             );
           pager.appendChild(page);
         } else if (rendering) {
@@ -686,7 +700,7 @@ function nextPage(query, targetElement) {
 }
 
 export function queryStats() {
-  getStats(makeFilters(), document.getElementById("results"));
+  getStats(makeFilters(), document.getElementById("results"), true);
 }
 
 function showFilterJson(filters, targetElement) {
@@ -766,7 +780,7 @@ function setColorIntensity(element, value, maximum) {
   )}%)`;
 }
 
-function getStats(filters, targetElement) {
+function getStats(filters, targetElement, onActionPage) {
   results(
     targetElement,
     "/stats",
@@ -805,11 +819,12 @@ function getStats(filters, targetElement) {
                   limit: 25,
                   skip: 0
                 },
-                clickResult
+                clickResult,
+                onActionPage
               );
             };
             statsButton.onclick = () => {
-              getStats(filters, clickResult);
+              getStats(filters, clickResult, onActionPage);
             };
             jsonButton.onclick = () => {
               showFilterJson(filters, clickResult);
