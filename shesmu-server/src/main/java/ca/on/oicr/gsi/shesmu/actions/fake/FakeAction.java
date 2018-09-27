@@ -8,12 +8,12 @@ import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.actions.util.JsonParameterised;
 
-public class DoNothing extends Action implements JsonParameterised {
+public class FakeAction extends Action implements JsonParameterised {
 
 	private final String name;
 	private final ObjectNode parameters = RuntimeSupport.MAPPER.createObjectNode();
 
-	public DoNothing(String name) {
+	public FakeAction(String name) {
 		super("fake");
 		this.name = name;
 	}
@@ -29,7 +29,7 @@ public class DoNothing extends Action implements JsonParameterised {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final DoNothing other = (DoNothing) obj;
+		final FakeAction other = (FakeAction) obj;
 		if (name == null) {
 			if (other.name != null) {
 				return false;
