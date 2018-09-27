@@ -55,7 +55,7 @@ public class MetroDiagram {
 			"#826bb9", "#78bb73", "#802964", "#a8bd69", "#b995e2", "#346e2e", "#d97eb8", "#6e6f24", "#e36f96",
 			"#c29b59", "#862644", "#da8b57", "#d2506f", "#8d4e19", "#d34b5b", "#832520", "#d06c72", "#ce7058" };
 	private static final long SVG_CONTROL_DISTANCE = 15;
-	private static final long SVG_COUNT_START = 32;
+	private static final long SVG_COUNT_START = 90;
 	private static final long SVG_METRO_START = 300;
 	private static final long SVG_METRO_WIDTH = 25;
 	private static final long SVG_RADIUS = 3;
@@ -176,7 +176,7 @@ public class MetroDiagram {
 
 	private static void writeClause(PrintStream writer, int row, String title, Long count, SourceLocation location) {
 		if (count != null) {
-			writer.printf("<text text-anchor=\"right\" x=\"%d\" y=\"%d\">%d</text>", SVG_COUNT_START,
+			writer.printf("<text text-anchor=\"end\" x=\"%d\" y=\"%d\">%,d</text>", SVG_COUNT_START,
 					SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE, count);
 		}
 		final Optional<String> url = location.url();
