@@ -266,7 +266,7 @@ public class Query {
 			if (time == null) {
 				return true;
 			}
-			return location.time().toEpochMilli() == column.longValue();
+			return location.time().toEpochMilli() == time.longValue();
 		}
 	}
 

@@ -586,7 +586,7 @@ public final class ActionProcessor implements ActionConsumer {
 			information.lastAdded = Instant.now();
 			isDuplicate = true;
 		}
-		information.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochSecond(time)));
+		information.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochMilli(time)));
 		lastAdd.setToCurrentTime();
 		return isDuplicate;
 	}
