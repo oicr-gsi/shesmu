@@ -106,10 +106,18 @@ public abstract class ExpressionNode {
 
 		SUFFIX_TIGHT.addSymbol("[", (p, o) -> {
 			final AtomicLong index = new AtomicLong();
-			final Parser result = p.whitespace().integer(index::set, 10).whitespace().symbol("]");
+			final Parser result = p.whitespace().integer(index::set, 10).whitespace().symbol("]").whitespace();
 			if (result.isGood()) {
 				final int i = (int) index.get();
 				o.accept(node -> new ExpressionNodeTupleGet(p.line(), p.column(), node, i));
+			}
+			return result;
+		});
+		SUFFIX_TIGHT.addSymbol(".", (p, o) -> {
+			final AtomicReference<String> index = new AtomicReference<>();
+			final Parser result = p.whitespace().identifier(index::set).whitespace();
+			if (result.isGood()) {
+				o.accept(node -> new ExpressionNodeObjectGet(p.line(), p.column(), node, index.get()));
 			}
 			return result;
 		});
@@ -132,6 +140,32 @@ public abstract class ExpressionNode {
 			o.accept(new ExpressionNodeDate(p.line(), p.column(), Instant.ofEpochSecond(e)));
 		}, 10).whitespace());
 		TERMINAL.addSymbol("{", (p, o) -> {
+			final AtomicReference<List<Pair<String, ExpressionNode>>> fields = new AtomicReference<>();
+			final Parser objectResult = p//
+					.whitespace()//
+					.<Pair<String, ExpressionNode>>list(fields::set, (fp, fo) -> {
+						final AtomicReference<String> name = new AtomicReference<>();
+						final AtomicReference<ExpressionNode> value = new AtomicReference<>();
+						final Parser fresult = fp//
+								.whitespace()//
+								.identifier(name::set)//
+								.whitespace()//
+								.symbol("=")//
+								.whitespace()//
+								.then(ExpressionNode::parse, value::set);
+						if (fresult.isGood()) {
+							fo.accept(new Pair<>(name.get(), value.get()));
+						}
+						return fresult;
+					}, ',')//
+					.whitespace()//
+					.symbol("}")//
+					.whitespace();
+			if (objectResult.isGood()) {
+				o.accept(new ExpressionNodeObject(p.line(), p.column(), fields.get()));
+				return objectResult;
+			}
+
 			final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
 			final Parser result = p//
 					.whitespace()//

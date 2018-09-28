@@ -7,15 +7,19 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -188,6 +192,151 @@ public abstract class Imyhat {
 		public Object unpackJson(JsonNode node) {
 			return RuntimeSupport.stream(node.elements()).map(inner::unpackJson).collect(Collectors.toSet());
 		}
+	}
+
+	public static final class ObjectImyhat extends Imyhat {
+
+		private final Map<String, Pair<Imyhat, Integer>> fields;
+
+		public ObjectImyhat(Stream<Pair<String, Imyhat>> fields) {
+			this.fields = fields//
+					.sorted(Comparator.comparing(Pair::first))//
+					.collect(Collectors.toMap(Pair::first, new Function<Pair<String, Imyhat>, Pair<Imyhat, Integer>>() {
+						int index;
+
+						@Override
+						public Pair<Imyhat, Integer> apply(Pair<String, Imyhat> pair) {
+							return new Pair<>(pair.second(), index++);
+						}
+					}));
+		}
+
+		@Override
+		public Type asmType() {
+			return A_TUPLE_TYPE;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Comparator<?> comparator() {
+			return fields.values().stream()//
+					.sorted(Comparator.comparing(Pair::second))//
+					.map(p -> Comparator.comparing((Tuple t) -> t.get(p.second()),
+							(Comparator<Object>) p.first().comparator()))//
+					.reduce(Comparator::thenComparing).get();
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			final Tuple tuple = (Tuple) value;
+			for (final Entry<String, Pair<Imyhat, Integer>> entry : fields.entrySet()) {
+				dispatcher.consume(entry.getKey(), tuple.get(entry.getValue().second()), entry.getValue().first());
+			}
+		}
+
+		public Imyhat get(String field) {
+			return fields.getOrDefault(field, new Pair<>(BAD, 0)).first();
+		}
+
+		public int index(String field) {
+			return fields.getOrDefault(field, new Pair<>(BAD, 0)).second();
+		}
+
+		@Override
+		public boolean isBad() {
+			return fields.values().stream().map(Pair::first).anyMatch(Imyhat::isBad);
+		}
+
+		@Override
+		public boolean isOrderable() {
+			return false;
+		}
+
+		@Override
+		public boolean isSame(Imyhat other) {
+			if (!(other instanceof ObjectImyhat)) {
+				return false;
+			}
+			final Map<String, Pair<Imyhat, Integer>> otherFields = ((ObjectImyhat) other).fields;
+			if (fields.size() != otherFields.size()) {
+				return false;
+			}
+			return fields.entrySet().stream()//
+					.allMatch(e -> otherFields.getOrDefault(e.getKey(), new Pair<>(Imyhat.BAD, 0)).first()
+							.isSame(e.getValue().first()));
+		}
+
+		@Override
+		public String javaScriptParser() {
+			return fields.entrySet().stream()//
+					.map(e -> e.getKey() + ":" + e.getValue().first().javaScriptParser())//
+					.collect(Collectors.joining(",", "parser.o({", "})"));
+		}
+
+		@Override
+		public Class<?> javaType() {
+			return Tuple.class;
+		}
+
+		@Override
+		public String name() {
+			return fields.entrySet().stream()//
+					.map(e -> e.getKey() + " = " + e.getValue().first().name())//
+					.sorted()//
+					.collect(Collectors.joining(",", "{ ", " }"));
+		}
+
+		@Override
+		protected void packJson(ArrayNode array, Object value) {
+			final ObjectNode object = array.addObject();
+			final Tuple tuple = (Tuple) value;
+			for (final Entry<String, Pair<Imyhat, Integer>> entry : fields.entrySet()) {
+				entry.getValue().first().packJson(object, entry.getKey(), tuple.get(entry.getValue().second()));
+			}
+		}
+
+		@Override
+		public void packJson(ObjectNode node, String key, Object value) {
+			final ObjectNode object = node.putObject(key);
+			final Tuple tuple = (Tuple) value;
+			for (final Entry<String, Pair<Imyhat, Integer>> entry : fields.entrySet()) {
+				entry.getValue().first().packJson(object, entry.getKey(), tuple.get(entry.getValue().second()));
+			}
+		}
+
+		@Override
+		public String signature() {
+			return "o" + fields.size() + //
+					fields.entrySet().stream()//
+							.map(e -> e.getKey() + "$" + e.getValue().first().signature())//
+							.collect(Collectors.joining());
+		}
+
+		@Override
+		public void streamJson(GeneratorAdapter method) {
+			final int local = method.newLocal(A_TUPLE_TYPE);
+			method.storeLocal(local);
+			method.dup();
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__ARRAY_START);
+
+			for (final Entry<String, Pair<Imyhat, Integer>> field : fields.entrySet()) {
+				method.dup();
+				method.loadLocal(local);
+				method.push(field.getValue().second());
+				method.invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
+				method.unbox(field.getValue().first().asmType());
+				field.getValue().first().streamJson(method);
+			}
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__ARRAY_END);
+		}
+
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return fields.entrySet().stream()//
+					.collect(Collectors.toMap(Entry::getKey,
+							e -> e.getValue().first().unpackJson(node.get(e.getKey()))));
+		}
+
 	}
 
 	public static final class TupleImyhat extends Imyhat {
@@ -815,6 +964,7 @@ public abstract class Imyhat {
 		case 'a':
 			return parse(input.subSequence(1, input.length()), output).asList();
 		case 't':
+		case 'o':
 			int count = 0;
 			int index;
 			for (index = 1; Character.isDigit(input.charAt(index)); index++) {
@@ -823,12 +973,27 @@ public abstract class Imyhat {
 			if (count == 0) {
 				return BAD;
 			}
-			final Imyhat[] inner = new Imyhat[count];
 			output.set(input.subSequence(index, input.length()));
-			for (int i = 0; i < count; i++) {
-				inner[i] = parse(output.get(), output);
+			if (input.charAt(0) == 't') {
+				final Imyhat[] inner = new Imyhat[count];
+				for (int i = 0; i < count; i++) {
+					inner[i] = parse(output.get(), output);
+				}
+				return tuple(inner);
+			} else {
+				final List<Pair<String, Imyhat>> fields = new ArrayList<>();
+				for (int i = 0; i < count; i++) {
+					final StringBuilder name = new StringBuilder();
+					int dollar = 0;
+					while (output.get().charAt(dollar) != '$') {
+						name.append(output.get().charAt(dollar));
+						dollar++;
+					}
+					output.set(output.get().subSequence(dollar + 1, output.get().length()));
+					fields.add(new Pair<>(name.toString(), parse(output.get(), output)));
+				}
+				return new ObjectImyhat(fields.stream());
 			}
-			return tuple(inner);
 		default:
 			output.set(input);
 			return BAD;

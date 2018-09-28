@@ -64,6 +64,13 @@ public class SHA1DigestSigner implements Signer<String>, ImyhatDispatcher {
 	}
 
 	@Override
+	public void consume(String field, Object value, Imyhat type) {
+		digest.update(field.getBytes(StandardCharsets.UTF_8));
+		digest.update((byte) '$');
+		type.consume(this, value);
+	}
+
+	@Override
 	public String finish() {
 		return RuntimeSupport.printHexBinary(digest.digest());
 	}

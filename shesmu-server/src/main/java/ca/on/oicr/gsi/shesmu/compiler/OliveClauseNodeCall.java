@@ -55,7 +55,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 			return ClauseStreamOrder.BAD;
 		case TRANSFORMED:
 			errorHandler
-					.accept(String.format("%d:%d: “Call” clause cannot be applied to grouped result.", line, column));
+					.accept(String.format("%d:%d: Call clause cannot be applied to grouped result.", line, column));
 			return ClauseStreamOrder.BAD;
 		case PURE:
 			signableNames.addAll(target.signableNames);
@@ -100,13 +100,13 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 			target = definedOlives.get(name);
 			if (target.parameterCount() != arguments.size()) {
 				errorHandler.accept(
-						String.format("%d:%d: “Define %s” specifies %d parameters, but “Call” has only %d arguments.",
+						String.format("%d:%d: “Define %s” specifies %d parameters, but only %d arguments provided.",
 								line, column, name, target.parameterCount(), arguments.size()));
 				return false;
 			}
 			return ok;
 		}
-		errorHandler.accept(String.format("%d:%d: Cannot find “Define %s” for “Call”.", line, column, name));
+		errorHandler.accept(String.format("%d:%d: Cannot find matching “Define %s” for call.", line, column, name));
 		return false;
 	}
 
@@ -118,7 +118,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 			}
 			final boolean isSame = arguments.get(index).type().isSame(target.parameterType(index));
 			if (!isSame) {
-				errorHandler.accept(String.format("%d:%d: Parameter %d to “Call %s” expects %s, but got %s.", line,
+				errorHandler.accept(String.format("%d:%d: Parameter %d to “%s” expects %s, but got %s.", line,
 						column, index, name, target.parameterType(index).name(), arguments.get(index).type().name()));
 
 			}
