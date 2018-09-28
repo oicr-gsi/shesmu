@@ -53,14 +53,16 @@ public class RunReport extends Action implements JsonParameterised {
 	private final ObjectNode rootParameters = RuntimeSupport.MAPPER.createObjectNode();
 	private final String script;
 	private final String 观音Url;
+	private final String reportName;
 
-	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId) {
+	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId, String reportName) {
 		super("guanyin-report");
 		this.drmaaUrl = drmaaUrl;
 		this.drmaaPsk = drmaaPsk;
 		this.观音Url = 观音Url;
 		this.script = script;
 		this.reportId = reportId;
+		this.reportName = reportName;
 		parameters = rootParameters.putObject("parameters");
 	}
 
@@ -267,6 +269,7 @@ public class RunReport extends Action implements JsonParameterised {
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
 		node.put("type", "guanyin-report");
+		node.put("reportName", reportName);
 		node.put("reportId", reportId);
 		node.put("script", script);
 		node.set("parameters", parameters);
