@@ -202,6 +202,60 @@ export const parser = {
       return { good: false, input: input, error: "Expected integer." };
     }
   },
+  o: function(fieldTypes) {
+    return input => {
+      const output = {};
+      // We're going to iterate over the keys so we get the right number of fields, but we won't actually use them directly since we don't know the order the user gave them to us in
+      for (let field in Object.keys(fieldTypes)) {
+        let match = input.match(i == 0 ? /^\s*{/ : /^\s*,/);
+        if (!match) {
+          return {
+            good: false,
+            input: input,
+            error: i == 0 ? "Expected { for object." : "Expected , for object."
+          };
+        }
+        const fieldStart = input
+          .substring(match[0].length)
+          .match(/^\s*([a-z][a-z_])*\s*:\s*/);
+        if (!fieldStart) {
+          return {
+            good: false,
+            input: input,
+            error: "Expected field name for object."
+          };
+        }
+        if (!output.hasOwnProperty(fieldStart[1])) {
+          return {
+            good: false,
+            input: input,
+            error: `Expected field ${fieldStart[1]} in object.`
+          };
+        }
+
+        const fieldType = fieldTypes[fieldStart[1]];
+        const state = fieldType(
+          input.substring(match[0].length + fieldStart[0].length)
+        );
+        if (state.good) {
+          output[fieldStart[1]] = state.output;
+          input = state.input;
+        } else {
+          return state;
+        }
+      }
+      let closeMatch = input.match(/^\s*}/);
+      if (closeMatch) {
+        return {
+          good: true,
+          input: input.substring(closeMatch[0].length),
+          output: output
+        };
+      } else {
+        return { good: false, input: input, error: "Expected } in object." };
+      }
+    };
+  },
   s: function(input) {
     let match = input.match(/^\s*"(([^"\\]|\\")*)"/);
     if (match) {

@@ -320,14 +320,15 @@ There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a signature that is used for
 machine-to-machine communication.
 
-| Name       | Syntax                   | Signature  |
-|---         |---                       |---         |
-| Integer    | `integer`                | `i`	      |
-| String     | `string`                 | `s`	      |
-| Boolean    | `boolean`                | `b`	      |
-| Date       | `date`                   | `d`        |
-| List       | `[`_inner_`]`            | `a`_inner_ |
-| Tuple      | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Name       | Syntax                                             | Signature  |
+|---         |---                                                 |---         |
+| Integer    | `integer`                                          | `i`	       |
+| String     | `string`                                           | `s`	       |
+| Boolean    | `boolean`                                          | `b`	       |
+| Date       | `date`                                             | `d`        |
+| List       | `[`_inner_`]`                                      | `a`_inner_ |
+| Tuple      | `{`_t1_`,`_t2_`,` ...`}`                           | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| NamedTuple | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
 
 Every input variable's type is available as _name_`_type`. For instance, the
 `shesmu` input format has the variable `locations`, so `locations_type` will be
@@ -336,6 +337,7 @@ available.
 User defined types can also be created:
 
     TypeAlias my_name {integer, string, location_type};
+    TypeAlias my_name {id = integer, name = string, location = location_type};
 
 Now `my_name` will be available for parameters in `Define` and `Function`. All
 `TypeAlias` definitions must occur at the top of the file, after the `Input`
@@ -344,7 +346,7 @@ declaration.
 Additionally, types can be destructured. For instance, `locations_type` is a
 list of tuples. The tuple can be specified from the list of tuples by doing `In
 location_type`. Similarly, the `[`_i_`]` can be used to access the type of a
-tuple item.
+tuple item and `.`_field_ to access the type of a field in a named tuple.
 
 So, `(In [{integer, string}])[0]` is `integer`.
 
@@ -465,6 +467,14 @@ Divides two values which must be integers.
 Computes the remainder of diving the first value by the second, both of which
 must be integers.
 
+### Suffix Operators
+#### List Membership
+- _needle_ `In` _haystack_
+
+Determines if the expression _needle_ is present in the list _haystack_ and
+returns the result as a boolean. _needle_ may be any type, but _haystack_ must
+be a list of the same type.
+
 ### Unary Operators
 #### Boolean Not
 - `!` _expr_
@@ -476,14 +486,7 @@ Compute the logical complement of the expression, which must be a boolean.
 
 Computes the arithmetic additive inverse of the expression, which must be an integer.
 
-### Suffix Operators
-#### List Membership
-- _needle_ `In` _haystack_
-
-Determines if the expression _needle_ is present in the list _haystack_ and
-returns the result as a boolean. _needle_ may be any type, but _haystack_ must
-be a list of the same type.
-
+### Access Operators
 #### Tuple Access
 - _expr_ `[` _n_ `]`
 
@@ -491,6 +494,13 @@ Extracts an element from a tuple. _n_ is an integer that specifies the
 zero-based index of the item in the tuple. The result type will be based on the
 type of that position in the tuple. If _n_ is beyond the number of items in the
 tuple, an error occurs.
+
+#### Named Tuple Access
+- _expr_ `.` _field_
+
+Extracts a field from a named tuple. _field_ is the name of the field. The
+result type will be based on the type of that field in the named tuple. If
+_field_ is not in the named tuple, an error occurs.
 
 ### Terminals
 #### Date Literal
@@ -508,6 +518,12 @@ Specifies a date and time. If the time is not specified, it is assumed to be mid
 
 Creates a new tuple with the elements as specified. The type of the tuple is
 determined based on the elements.
+
+#### Named Tuple Literal
+- `{`_field_` = `_expr_`, `_field_` = `_expr_`, `...`}`
+
+Creates a new named tuple with the fields as specified. The type of the named
+tuple is determined based on the elements.
 
 #### List Literal
 - `[`_expr_`,` _expr_`,` ...`]`

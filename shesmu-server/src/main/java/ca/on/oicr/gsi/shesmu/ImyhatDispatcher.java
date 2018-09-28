@@ -11,6 +11,8 @@ public interface ImyhatDispatcher {
 
 	void consume(int position, Object value, Imyhat type);
 
+	void consume(String field, Object value, Imyhat type);
+
 	void consume(long value);
 
 	<T> void consume(Stream<T> values, Imyhat inner);

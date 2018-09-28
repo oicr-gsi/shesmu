@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Pair;
 
 public abstract class ImyhatNode {
 
@@ -24,18 +25,29 @@ public abstract class ImyhatNode {
 		Parser result = parse0(input, type::set);
 		while (result.isGood()) {
 			final AtomicLong index = new AtomicLong();
-			final Parser next = result//
+			final Parser nextTuple = result//
 					.symbol("[")//
 					.whitespace()//
 					.integer(index::set, 10)//
 					.whitespace()//
 					.symbol("]")//
 					.whitespace();
-			if (next.isGood()) {
+			if (nextTuple.isGood()) {
 				type.set(new ImyhatNodeUntuple(type.get(), (int) index.get()));
-				result = next;
+				result = nextTuple;
 			} else {
-				break;
+				final AtomicReference<String> name = new AtomicReference<>();
+				final Parser nextObject = result//
+						.symbol(".")//
+						.whitespace()//
+						.identifier(name::set)//
+						.whitespace();
+				if (nextObject.isGood()) {
+					type.set(new ImyhatNodeUnobject(type.get(), name.get()));
+					result = nextObject;
+				} else {
+					break;
+				}
 			}
 		}
 		output.accept(type.get());
@@ -50,18 +62,46 @@ public abstract class ImyhatNode {
 					.whitespace()//
 					.then(ImyhatNode::parse, inner::set)//
 					.whitespace()//
-					.symbol("]");
+					.symbol("]")//
+					.whitespace();
 			output.accept(new ImyhatNodeList(inner.get()));
 			return result;
 		}
 
 		final Parser tupleParser = input.symbol("{");
 		if (tupleParser.isGood()) {
+			final AtomicReference<List<Pair<String, ImyhatNode>>> fields = new AtomicReference<>();
+			final Parser objectParser = tupleParser//
+					.whitespace()//
+					.<Pair<String, ImyhatNode>>list(fields::set, (fp, fo) -> {
+						final AtomicReference<String> name = new AtomicReference<>();
+						final AtomicReference<ImyhatNode> value = new AtomicReference<>();
+						final Parser fresult = fp//
+								.whitespace()//
+								.identifier(name::set)//
+								.whitespace()//
+								.symbol("=")//
+								.whitespace()//
+								.then(ImyhatNode::parse, value::set);
+						if (fresult.isGood()) {
+							fo.accept(new Pair<>(name.get(), value.get()));
+						}
+						return fresult;
+					}, ',')//
+					.whitespace()//
+					.symbol("}")//
+					.whitespace();
+			if (objectParser.isGood()) {
+				output.accept(new ImyhatNodeObject(fields.get()));
+				return objectParser;
+			}
+
 			final AtomicReference<List<ImyhatNode>> inner = new AtomicReference<>(Collections.emptyList());
 			final Parser result = tupleParser//
 					.whitespace()//
 					.list(inner::set, (p, o) -> parse(p.whitespace(), o).whitespace(), ',')//
-					.symbol("}");
+					.symbol("}")//
+					.whitespace();
 			output.accept(new ImyhatNodeTuple(inner.get()));
 			return result;
 		}
@@ -87,7 +127,9 @@ public abstract class ImyhatNode {
 		}
 
 		final AtomicReference<String> name = new AtomicReference<String>();
-		final Parser result = input.identifier(name::set);
+		final Parser result = input//
+				.identifier(name::set)//
+				.whitespace();
 		if (!result.isGood()) {
 			return result;
 		}

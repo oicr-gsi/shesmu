@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+  Let x = {project = project, l = library_size}
+  Run ok With ok = x.project == "the_foo_study";
