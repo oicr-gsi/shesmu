@@ -18,16 +18,17 @@ public class ReportDefinition extends ActionDefinition {
 	private static final Type ACTION_TYPE = Type.getType(RunReport.class);
 
 	private static final Method CTOR = new Method("<init>", Type.VOID_TYPE,
-			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, LONG_TYPE });
+			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, A_STRING_TYPE, LONG_TYPE, A_STRING_TYPE });
 
 	private final String drmaaPsk;
 	private final String drmaaUrl;
 	private final long reportId;
 	private final String script;
 	private final String 观音Url;
+	private final String reportName;
 
 	public ReportDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId, String name,
-			String version, Stream<ParameterDefinition> parameters) {
+			String version, String category, Stream<ParameterDefinition> parameters) {
 		super(name + "_" + version.replaceAll("[^A-Za-z0-9_]", "_"), ACTION_TYPE,
 				String.format("Runs report %s-%s (%d) in %s from %s using %s.", name, version, reportId, script, 观音Url,
 						drmaaUrl),
@@ -37,6 +38,7 @@ public class ReportDefinition extends ActionDefinition {
 		this.drmaaPsk = drmaaPsk;
 		this.script = script;
 		this.reportId = reportId;
+		this.reportName = String.format("%s %s[%s]", name, version, category);
 	}
 
 	@Override
@@ -48,6 +50,7 @@ public class ReportDefinition extends ActionDefinition {
 		methodGen.push(drmaaPsk);
 		methodGen.push(script);
 		methodGen.push(reportId);
+		methodGen.push(reportName);
 		methodGen.invokeConstructor(ACTION_TYPE, CTOR);
 	}
 

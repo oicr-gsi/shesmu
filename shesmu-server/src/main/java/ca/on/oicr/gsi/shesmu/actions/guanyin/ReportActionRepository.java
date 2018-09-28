@@ -90,6 +90,6 @@ public class ReportActionRepository implements ActionRepository {
 	@Override
 	public void writeJavaScriptRenderer(PrintStream writer) {
 		writer.print(
-				"actionRender.set('guanyin-report', a => [title(a, `Run Report ${a.reportId}`)].concat(jsonParameters(a)));");
+				"actionRender.set('guanyin-report', a => [title(a, `${a.reportName} – 观音 Report ${a.reportId}`)].concat(jsonParameters(a)));");
 	}
 }
