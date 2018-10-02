@@ -22,8 +22,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.SourceLocation;
+import ca.on.oicr.gsi.shesmu.compiler.Target;
 
 public class MetroDiagram {
 	private static final class DeathChecker implements Predicate<OliveClauseRow> {
@@ -64,12 +67,15 @@ public class MetroDiagram {
 	private static final long SVG_SMALL_TEXT = 10;
 	private static final long SVG_TEXT_BASELINE = 30;
 	private static final long SVG_TITLE_START = 100;
+	private static final String CLAUSE_HEADER = "Clause (Line:Column)";
 
-	public static void draw(PrintStream writer, String filename, Instant timestamp, OliveTable olive, long inputCount) {
+	public static void draw(PrintStream writer, String filename, Instant timestamp, OliveTable olive, long inputCount,
+			InputFormatDefinition format) {
 		final long metroStart = 120 + Stream.concat(//
 				olive.clauses()//
 						.map(OliveClauseRow::syntax), //
-				Stream.of(olive.syntax()))//
+				Stream.of(olive.syntax(), //
+						CLAUSE_HEADER))//
 				.mapToLong(new Canvas().getFontMetrics(new Font(Font.SANS_SERIF, Font.PLAIN, 18))::stringWidth)//
 				.max().orElse(100);
 		final long height = SVG_ROW_HEIGHT * (olive.clauses().count() + 3); // Padding + Input + Clauses + Output
@@ -90,6 +96,9 @@ public class MetroDiagram {
 		writer.print(height);
 		writer.print(
 				"\" version=\"1.1\"><defs><filter id=\"blur\" x=\"0\" y=\"0\"><feFlood flood-color=\"white\"/><feComposite in2=\"SourceGraphic\" operator=\"in\"/><feGaussianBlur stdDeviation=\"2\"/><feComponentTransfer><feFuncA type=\"gamma\" exponent=\".5\" amplitude=\"2\"/></feComponentTransfer><feComposite in=\"SourceGraphic\"/><feComposite in=\"SourceGraphic\"/></filter></defs>");
+		writer.printf(
+				"<text text-anchor=\"end\" x=\"%2$d\" y=\"%1$d\" style=\"font-weight:bold\">Records</text><text x=\"%3$d\" y=\"%1$d\" style=\"font-weight:bold\">%4$s</text>",
+				SVG_ROW_HEIGHT, SVG_COUNT_START, SVG_TITLE_START, CLAUSE_HEADER);
 		final AtomicInteger idGen = new AtomicInteger();
 		final AtomicInteger row = new AtomicInteger(2);
 		final ByteArrayOutputStream textLayerBuffer = new ByteArrayOutputStream();
@@ -101,7 +110,11 @@ public class MetroDiagram {
 					.sorted()//
 					.collect(Collectors.toMap(Function.identity(), name -> {
 						final int colour = idGen.getAndIncrement();
-						return new MetroDiagram(textLayer, writer, name, colour, 1, colour, metroStart);
+						return new MetroDiagram(textLayer, writer, name, format.baseStreamVariables()//
+								.filter(var -> var.name().equals(name))//
+								.map(Target::type)//
+								.findFirst()//
+								.orElse(Imyhat.BAD), "", colour, 1, colour, metroStart);
 					}));
 
 			final SourceLocation source = new SourceLocation(filename, olive.line(), olive.column(), timestamp);
@@ -152,13 +165,14 @@ public class MetroDiagram {
 			case DEFINITION:
 				// If we have a defined variable, then it always needs to be drawn
 				final MetroDiagram newVariable = new MetroDiagram(textLayer, connectorLayer, variable.name(),
-						idGen.getAndIncrement(), row, outputVariableColumns.get(variable.name()), metroStart);
+						variable.type(), from(variable, variables), idGen.getAndIncrement(), row,
+						outputVariableColumns.get(variable.name()), metroStart);
 				variable.inputs().forEach(input -> variables.get(input).drawConnector(newVariable.start()));
 				outputVariables.put(variable.name(), newVariable);
 				break;
 			case OBSERVER:
 				final MetroDiagram observedVariable = variables.get(variable.name());
-				observedVariable.drawDot(currentPoint);
+				observedVariable.drawDot(currentPoint, "used");
 				break;
 			case PASSTHROUGH:
 				final MetroDiagram passthroughVariable = variables.get(variable.name());
@@ -182,16 +196,26 @@ public class MetroDiagram {
 		return outputVariables;
 	}
 
+	private static String from(VariableInformation variable, Map<String, MetroDiagram> variables) {
+		if (variable.inputs().count() == 0) {
+			return " de novo";
+		}
+		return variable.inputs()//
+				.map(variables::get)//
+				.map(v -> v.title)//
+				.collect(Collectors.joining(", ", " from ", ""));
+	}
+
 	private static void writeClause(PrintStream writer, int row, String title, Long count, SourceLocation location) {
 		if (count != null) {
 			writer.printf("<text text-anchor=\"end\" x=\"%d\" y=\"%d\">%,d</text>", SVG_COUNT_START,
 					SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE, count);
 		}
 		final Optional<String> url = location.url();
-		url.ifPresent(u -> writer.printf("<a xlink:href=\"%s\">", u));
+		url.ifPresent(u -> writer.printf("<a xlink:href=\"%s\" xlink:title=\"View Source\" xlink:show=\"new\">", u));
 		writer.printf("<text x=\"%d\" y=\"%d\">%s (%d:%d)</text>", SVG_TITLE_START,
 				SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE, title, location.line(), location.column());
-		url.ifPresent(u -> writer.println("</a>"));
+		url.ifPresent(u -> writer.println("🔗</a>"));
 	}
 
 	private final String colour;
@@ -203,21 +227,23 @@ public class MetroDiagram {
 	private final Queue<Pair<Integer, Integer>> segments = new LinkedList<>();
 	private final Pair<Integer, Integer> start;
 	private final PrintStream textLayer;
+	private final String title;
 
-	private MetroDiagram(PrintStream textLayer, PrintStream connectorLayer, String name, int colour, int row,
-			int column, long metroStart) {
+	private MetroDiagram(PrintStream textLayer, PrintStream connectorLayer, String name, Imyhat type, String from,
+			int colour, int row, int column, long metroStart) {
 		this.textLayer = textLayer;
 		this.connectorLayer = connectorLayer;
+		title = name + " (" + type.name() + ")";
 		this.metroStart = metroStart;
 		this.colour = COLOURS[colour % COLOURS.length];
 		start = new Pair<>(column, row);
 		segments.offer(start);
-		drawDot(start);
+		drawDot(start, "defined" + from);
 		final long x = metroStart + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
 		final long y = SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
 		textLayer.printf(
-				"<text transform=\"rotate(-45, %1$d, %2$d)\" x=\"%3$d\" y=\"%4$d\" fill=\"#000\" filter=\"url(#blur)\" font-size=\"%5$d\">%6$s</text>",
-				x, y, x + SVG_RADIUS * 2, y + SVG_RADIUS * 2, SVG_SMALL_TEXT, name);
+				"<text transform=\"rotate(-45, %1$d, %2$d)\" x=\"%3$d\" y=\"%4$d\" fill=\"#000\" filter=\"url(#blur)\" font-size=\"%5$d\"><title>%7$s</title>%6$s</text>",
+				x, y, x + SVG_RADIUS * 2, y + SVG_RADIUS * 2, SVG_SMALL_TEXT, name, type.name());
 	}
 
 	public void append(Pair<Integer, Integer> point) {
@@ -234,14 +260,14 @@ public class MetroDiagram {
 			drawSegment(segments.poll(), segments.peek());
 		}
 		drawSegment(segments.peek(), output);
-		connectorLayer.println("\"></path>");
+		connectorLayer.printf("\"><title>%s</title></path>\n", title);
 	}
 
-	private void drawDot(Pair<Integer, Integer> point) {
+	private void drawDot(Pair<Integer, Integer> point, String verb) {
 		drawConnector(point);
-		textLayer.printf("<circle r=\"%d\" cx=\"%d\" cy=\"%d\" fill=\"%s\"></circle>", SVG_RADIUS,
+		textLayer.printf("<circle r=\"%d\" cx=\"%d\" cy=\"%d\" fill=\"%s\"><title>%s %s</title></circle>", SVG_RADIUS,
 				metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2,
-				SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2, colour);
+				SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2, colour, title, verb);
 	}
 
 	private void drawSegment(Pair<Integer, Integer> input, Pair<Integer, Integer> output) {
@@ -261,9 +287,11 @@ public class MetroDiagram {
 
 	private void drawSquare(Pair<Integer, Integer> point) {
 		drawConnector(point);
-		textLayer.printf("<rect width=\"%d\" height=\"%d\" x=\"%d\" y=\"%d\" fill=\"%s\"></rect>", SVG_RADIUS * 4,
-				SVG_RADIUS * 4, metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2 - SVG_RADIUS * 2,
-				SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2 - SVG_RADIUS * 2, colour);
+		textLayer.printf(
+				"<rect width=\"%d\" height=\"%d\" x=\"%d\" y=\"%d\" fill=\"%s\"><title>Group By %s</title></rect>",
+				SVG_RADIUS * 4, SVG_RADIUS * 4,
+				metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2 - SVG_RADIUS * 2,
+				SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2 - SVG_RADIUS * 2, colour, title);
 	}
 
 	private Pair<Integer, Integer> start() {

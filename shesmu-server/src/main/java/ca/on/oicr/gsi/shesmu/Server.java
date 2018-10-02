@@ -168,7 +168,8 @@ public final class Server {
 								fileTable.filename(), olive.line(), olive.column(),
 								fileTable.timestamp().toEpochMilli());
 						writer.print("<div class=\"indent\" style=\"overflow-x:auto\">");
-						MetroDiagram.draw(writer, fileTable.filename(), fileTable.timestamp(), olive, inputCount);
+						MetroDiagram.draw(writer, fileTable.filename(), fileTable.timestamp(), olive, inputCount,
+								fileTable.format());
 						writer.print("</div>");
 					});
 				});
