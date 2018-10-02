@@ -46,7 +46,7 @@ Some parameters can be optionally specified:
 
 The `Where` line is an _olive clause_. The clauses are: where, group, matches, and monitor.
 
-A `Group` clause groups items in the stream to be de-duplicated based on
+<a name="group"></a>A `Group` clause groups items in the stream to be de-duplicated based on
 _discriminators_ and other variables are grouped into _collectors_.
 
     Olive
@@ -222,7 +222,7 @@ Because some operations change variables, calls must appear before `Group`,
 `Join`, `LeftJoin`, and `Let` clauses and call clauses that contain any of
 these.
 
-Once a Shesmu program is running, debugging is rather difficult, so Prometheus
+<a name="monitor"></a>Once a Shesmu program is running, debugging is rather difficult, so Prometheus
 monitoring is built into the language using the `Monitor` clause:
 
     Olive
@@ -237,7 +237,7 @@ name, which will be exported as `shesmu_user_fastqc`, must be unique in the
 program. After the name is the help text. Inside the braces, labels can be
 specified; the values must be strings.
 
-Additionally, for more serious debugging, the data passing through an olive can be dumped:
+<a name="dump"></a>Additionally, for more serious debugging, the data passing through an olive can be dumped:
 
     Olive
       Where workflow == "BamQC 2.7+"
