@@ -99,11 +99,10 @@ The following are available:
 - JSON-over-HTTP interface. To add one, create a JSON file ending in `.remote`,
   in the `SHESMU_DATA` directory, containing `{ "url": ... }`. See
   [the remote action repository specification](api.md).
-- JSON-over-HTTP using a local repository definition. To define, create a JSON
-  file ending in `.actions` in the `SHESMU_DATA` directory with
+- JSON-over-HTTP using a local repository definition. To define, create a JSON file ending in `.actions` in the `SHESMU_DATA` directory with
   `{"definitions":[...], "url": ...}`, where `url` is the URL to the HTTP
   server and `defintions` is as per the remote repository specification.
-- JIRA file-a-ticket actions (in the `action-jira` directory). To use this,
+- <a name="jira"></a>JIRA file-a-ticket actions (in the `action-jira` directory). To use this,
   create a JSON file ending in `.jira` in the `SHESMU_DATA` directory with
   `{"name":.., "projectKey":..., "token":.., "url": ...}` where `name` is the
   name that will appear in olives, `projectKey` is the JIRA project identifier
