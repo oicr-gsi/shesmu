@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.olivedashboard;
 
+import java.awt.Canvas;
+import java.awt.Font;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -56,7 +58,6 @@ public class MetroDiagram {
 			"#c29b59", "#862644", "#da8b57", "#d2506f", "#8d4e19", "#d34b5b", "#832520", "#d06c72", "#ce7058" };
 	private static final long SVG_CONTROL_DISTANCE = 15;
 	private static final long SVG_COUNT_START = 90;
-	private static final long SVG_METRO_START = 300;
 	private static final long SVG_METRO_WIDTH = 25;
 	private static final long SVG_RADIUS = 3;
 	private static final long SVG_ROW_HEIGHT = 64;
@@ -65,8 +66,14 @@ public class MetroDiagram {
 	private static final long SVG_TITLE_START = 100;
 
 	public static void draw(PrintStream writer, String filename, Instant timestamp, OliveTable olive, long inputCount) {
+		final long metroStart = 120 + Stream.concat(//
+				olive.clauses()//
+						.map(OliveClauseRow::syntax), //
+				Stream.of(olive.syntax()))//
+				.mapToLong(new Canvas().getFontMetrics(new Font(Font.SANS_SERIF, Font.PLAIN, 18))::stringWidth)//
+				.max().orElse(100);
 		final long height = SVG_ROW_HEIGHT * (olive.clauses().count() + 3); // Padding + Input + Clauses + Output
-		final long width = SVG_METRO_START + SVG_METRO_WIDTH * (Stream.<VariableInformation>concat(//
+		final long width = metroStart + SVG_METRO_WIDTH * (Stream.<VariableInformation>concat(//
 				olive.clauses()//
 						.flatMap(OliveClauseRow::variables), //
 				olive.variables())//
@@ -94,7 +101,7 @@ public class MetroDiagram {
 					.sorted()//
 					.collect(Collectors.toMap(Function.identity(), name -> {
 						final int colour = idGen.getAndIncrement();
-						return new MetroDiagram(textLayer, writer, name, colour, 1, colour);
+						return new MetroDiagram(textLayer, writer, name, colour, 1, colour, metroStart);
 					}));
 
 			final SourceLocation source = new SourceLocation(filename, olive.line(), olive.column(), timestamp);
@@ -111,12 +118,13 @@ public class MetroDiagram {
 										: null,
 								new SourceLocation(filename, clause.line(), clause.column(), timestamp));
 
-						return drawVariables(textLayer, writer, idGen, variables, clause::variables, currentRow);
+						return drawVariables(textLayer, writer, metroStart, idGen, variables, clause::variables,
+								currentRow);
 					}, (a, b) -> {
 						throw new UnsupportedOperationException();
 					});
 			writeClause(writer, row.get(), olive.syntax(), null, source);
-			drawVariables(textLayer, writer, idGen, terminalVariables, olive::variables, row.get());
+			drawVariables(textLayer, writer, metroStart, idGen, terminalVariables, olive::variables, row.get());
 		} catch (final UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -126,8 +134,8 @@ public class MetroDiagram {
 	}
 
 	private static Map<String, MetroDiagram> drawVariables(PrintStream textLayer, PrintStream connectorLayer,
-			AtomicInteger idGen, Map<String, MetroDiagram> variables, Supplier<Stream<VariableInformation>> information,
-			int row) {
+			long metroStart, AtomicInteger idGen, Map<String, MetroDiagram> variables,
+			Supplier<Stream<VariableInformation>> information, int row) {
 		final Map<String, Integer> outputVariableColumns = Stream.concat(//
 				information.get().map(VariableInformation::name), //
 				variables.keySet().stream())//
@@ -144,7 +152,7 @@ public class MetroDiagram {
 			case DEFINITION:
 				// If we have a defined variable, then it always needs to be drawn
 				final MetroDiagram newVariable = new MetroDiagram(textLayer, connectorLayer, variable.name(),
-						idGen.getAndIncrement(), row, outputVariableColumns.get(variable.name()));
+						idGen.getAndIncrement(), row, outputVariableColumns.get(variable.name()), metroStart);
 				variable.inputs().forEach(input -> variables.get(input).drawConnector(newVariable.start()));
 				outputVariables.put(variable.name(), newVariable);
 				break;
@@ -186,31 +194,26 @@ public class MetroDiagram {
 		url.ifPresent(u -> writer.println("</a>"));
 	}
 
-	private static long xCoordinate(Pair<Integer, Integer> point) {
-		return SVG_METRO_START + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
-	}
-
-	private static long yCoordinate(Pair<Integer, Integer> point) {
-		return point.second() * SVG_ROW_HEIGHT + SVG_ROW_HEIGHT / 2;
-	}
-
 	private final String colour;
+
 	private final PrintStream connectorLayer;
+
+	private final long metroStart;
+
 	private final Queue<Pair<Integer, Integer>> segments = new LinkedList<>();
-
 	private final Pair<Integer, Integer> start;
-
 	private final PrintStream textLayer;
 
 	private MetroDiagram(PrintStream textLayer, PrintStream connectorLayer, String name, int colour, int row,
-			int column) {
+			int column, long metroStart) {
 		this.textLayer = textLayer;
 		this.connectorLayer = connectorLayer;
+		this.metroStart = metroStart;
 		this.colour = COLOURS[colour % COLOURS.length];
 		start = new Pair<>(column, row);
 		segments.offer(start);
 		drawDot(start);
-		final long x = SVG_METRO_START + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
+		final long x = metroStart + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
 		final long y = SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
 		textLayer.printf(
 				"<text transform=\"rotate(-45, %1$d, %2$d)\" x=\"%3$d\" y=\"%4$d\" fill=\"#000\" filter=\"url(#blur)\" font-size=\"%5$d\">%6$s</text>",
@@ -237,7 +240,7 @@ public class MetroDiagram {
 	private void drawDot(Pair<Integer, Integer> point) {
 		drawConnector(point);
 		textLayer.printf("<circle r=\"%d\" cx=\"%d\" cy=\"%d\" fill=\"%s\"></circle>", SVG_RADIUS,
-				SVG_METRO_START + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2,
+				metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2,
 				SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2, colour);
 	}
 
@@ -259,12 +262,19 @@ public class MetroDiagram {
 	private void drawSquare(Pair<Integer, Integer> point) {
 		drawConnector(point);
 		textLayer.printf("<rect width=\"%d\" height=\"%d\" x=\"%d\" y=\"%d\" fill=\"%s\"></rect>", SVG_RADIUS * 4,
-				SVG_RADIUS * 4,
-				SVG_METRO_START + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2 - SVG_RADIUS * 2,
+				SVG_RADIUS * 4, metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2 - SVG_RADIUS * 2,
 				SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2 - SVG_RADIUS * 2, colour);
 	}
 
 	private Pair<Integer, Integer> start() {
 		return start;
+	}
+
+	private long xCoordinate(Pair<Integer, Integer> point) {
+		return metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
+	}
+
+	private long yCoordinate(Pair<Integer, Integer> point) {
+		return point.second() * SVG_ROW_HEIGHT + SVG_ROW_HEIGHT / 2;
 	}
 }
