@@ -24,6 +24,21 @@ font-weight:400;
 font-size:120%
 }
 
+a:visited, a:link {
+color:#800;
+}
+
+a text {
+fill:#800;
+}
+
+a:hover, a:active {
+color:#c00;
+}
+a:hover text, a:active text {
+fill:#c00;
+}
+
 nav,nav a:link,nav a:visited {
 color:#9d9d9d;
 }
@@ -189,3 +204,4 @@ width: 80%;
 max-height: 90vh;
 overflow: auto;
 }
+
