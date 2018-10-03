@@ -6,7 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -22,16 +23,18 @@ import ca.on.oicr.gsi.shesmu.core.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.core.tsv.TableFunctionRepository;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
-import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor.Filter;
 
 public class CompilerTest {
 	public final class CompilerHarness extends Compiler {
+		private Set<String> allowedErrors;
 		private boolean dirty;
-		private Path file;
 
-		public CompilerHarness(Path file) {
+		public CompilerHarness(Path file) throws IOException {
 			super(false);
-			this.file = file;
+			try (Stream<String> lines = Files.lines(
+					file.getParent().resolve(file.getFileName().toString().replaceFirst("\\.shesmu", ".errors")))) {
+				allowedErrors = lines.collect(Collectors.toSet());
+			}
 		}
 
 		@Override
@@ -51,6 +54,9 @@ public class CompilerTest {
 
 		@Override
 		protected void errorHandler(String message) {
+			if (allowedErrors.remove(message)) {
+				return;
+			}
 			dirty = true;
 			System.err.println(message);
 		}
@@ -71,7 +77,8 @@ public class CompilerTest {
 		}
 
 		public boolean ok() {
-			return !dirty;
+			allowedErrors.forEach(e -> System.err.printf("Missing error: %s\n", e));
+			return !dirty && allowedErrors.isEmpty();
 		}
 
 	}
@@ -89,53 +96,29 @@ public class CompilerTest {
 			new TableFunctionRepository(TEST_WATCHER).queryFunctions(), FunctionDefinition::name);
 
 	@Test
-	public void testBad() throws IOException {
-		System.err.println("Testing bad code");
-		try (Stream<Path> files = Files.walk(Paths.get(this.getClass().getResource("/bad").getPath()), 1)) {
-			Assert.assertTrue("Bad code compiled!", files//
+	public void testCompiler() throws IOException {
+		try (Stream<Path> files = Files.walk(Paths.get(this.getClass().getResource("/compiler").getPath()), 1)) {
+			Assert.assertTrue("Compilation output not as expected!", files//
 					.filter(Files::isRegularFile)//
-					.filter(p -> p.getFileName().toString().endsWith(".shesmu"))//
+					.filter(p -> p.getFileName().getFileName().toString().endsWith(".shesmu"))//
 					.map(this::testFile)//
-					.filter(Pair.predicate((file, result) -> {
-						final boolean failed = result.orElse(true);
-						if (failed) {
-							System.err.printf("NEGFAIL %s\n", file);
-						} else {
-							System.err.printf("OK %s\n", file);
-						}
-						return failed;
+					.filter(Pair.predicate((file, ok) -> {
+						System.err.printf("%s %s\n", ok ? "OK" : "FAIL", file.getFileName());
+						return !ok;
 					}))//
 					.count() == 0);
 		}
 	}
 
-	private Pair<Path, Optional<Boolean>> testFile(Path file) {
-		final CompilerHarness compiler = new CompilerHarness(file);
+	private Pair<Path, Boolean> testFile(Path file) {
 		try {
-			return new Pair<>(file, Optional.of(compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program",
-					file.toString(), CONSTANTS::stream, null) && compiler.ok()));
+			final CompilerHarness compiler = new CompilerHarness(file);
+			// Attempt to compile and throw away whether the compiler was successful; we
+			// know everything based on the errors generated.
+			compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program", file.toString(), CONSTANTS::stream, null);
+			return new Pair<>(file, compiler.ok());
 		} catch (final Exception e) {
-			return new Pair<>(file, Optional.empty());
-		}
-	}
-
-	@Test
-	public void testGood() throws IOException {
-		System.err.println("Testing good code");
-		try (Stream<Path> files = Files.walk(Paths.get(this.getClass().getResource("/good").getPath()), 1)) {
-			Assert.assertTrue("Good code failed to compile!", files//
-					.filter(Files::isRegularFile)//
-					.map(this::testFile)//
-					.filter(Pair.predicate((file, result) -> {
-						final boolean failed = !result.orElse(false);
-						if (failed) {
-							System.err.printf("FAIL %s\n", file);
-						} else {
-							System.err.printf("OK %s\n", file);
-						}
-						return failed;
-					}))//
-					.count() == 0);
+			return new Pair<>(file, false);
 		}
 	}
 }
