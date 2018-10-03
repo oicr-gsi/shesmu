@@ -2,6 +2,10 @@ package ca.on.oicr.gsi.shesmu.util;
 
 import io.prometheus.client.Histogram;
 
+/**
+ * A prometheus histogram for measuring latency using a try-with-resources
+ * pattern in exponentially distributed buckets.
+ */
 public class LatencyHistogram {
 
 	private final Histogram histogram;

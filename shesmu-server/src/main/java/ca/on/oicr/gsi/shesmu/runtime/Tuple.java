@@ -20,6 +20,7 @@ public final class Tuple {
 	 *            the elements in the tuple; the array must not have any references
 	 *            after passing to the constructors
 	 */
+	@RuntimeInterop
 	public Tuple(Object... elements) {
 		super();
 		this.elements = elements;
