@@ -53,12 +53,15 @@ public class MetroDiagram {
 		}
 	}
 
+	private static final String CLAUSE_HEADER = "Clause (Line:Column)";
 	private static final String[] COLOURS = new String[] { "#d09c2e", "#5b7fee", "#bacd4c", "#503290", "#8bc151",
 			"#903691", "#46ca79", "#db64c3", "#63bb5b", "#af74db", "#9fa627", "#5a5dc0", "#72891f", "#578ae2",
 			"#c96724", "#38b3eb", "#c34f32", "#34d3ca", "#be2e68", "#4ec88c", "#be438d", "#53d1a8", "#d54a4a",
 			"#319466", "#d486d8", "#417c25", "#4b2f75", "#c3b857", "#3b5ba0", "#e09c4e", "#6d95db", "#9f741f",
 			"#826bb9", "#78bb73", "#802964", "#a8bd69", "#b995e2", "#346e2e", "#d97eb8", "#6e6f24", "#e36f96",
 			"#c29b59", "#862644", "#da8b57", "#d2506f", "#8d4e19", "#d34b5b", "#832520", "#d06c72", "#ce7058" };
+	private static final String[] STROKES = new String[] { "", "stroke-dasharray=\"2\"", "stroke-dasharray=\"4\"",
+			"stroke-dasharray=\"4 1 2 1\"", "stroke-dasharray=\"4 1\"", "stroke-dasharray=\"2 1\"" };
 	private static final long SVG_CONTROL_DISTANCE = 15;
 	private static final long SVG_COUNT_START = 90;
 	private static final long SVG_METRO_WIDTH = 25;
@@ -67,7 +70,6 @@ public class MetroDiagram {
 	private static final long SVG_SMALL_TEXT = 10;
 	private static final long SVG_TEXT_BASELINE = 30;
 	private static final long SVG_TITLE_START = 100;
-	private static final String CLAUSE_HEADER = "Clause (Line:Column)";
 
 	public static void draw(PrintStream writer, String filename, Instant timestamp, OliveTable olive, long inputCount,
 			InputFormatDefinition format) {
@@ -226,6 +228,7 @@ public class MetroDiagram {
 
 	private final Queue<Pair<Integer, Integer>> segments = new LinkedList<>();
 	private final Pair<Integer, Integer> start;
+	private final String stroke;
 	private final PrintStream textLayer;
 	private final String title;
 
@@ -236,6 +239,7 @@ public class MetroDiagram {
 		title = name + " (" + type.name() + ")";
 		this.metroStart = metroStart;
 		this.colour = COLOURS[colour % COLOURS.length];
+		stroke = STROKES[colour / COLOURS.length % STROKES.length];
 		start = new Pair<>(column, row);
 		segments.offer(start);
 		drawDot(start, "defined" + from);
@@ -254,8 +258,8 @@ public class MetroDiagram {
 		if (segments.size() == 1 && segments.peek().equals(output)) {
 			return;
 		}
-		connectorLayer.printf("<path stroke=\"%s\" fill=\"none\" d=\"M %d %d", colour, xCoordinate(segments.peek()),
-				yCoordinate(segments.peek()));
+		connectorLayer.printf("<path stroke=\"%s\" fill=\"none\" %s d=\"M %d %d", colour, stroke,
+				xCoordinate(segments.peek()), yCoordinate(segments.peek()));
 		while (segments.size() > 1) {
 			drawSegment(segments.poll(), segments.peek());
 		}
