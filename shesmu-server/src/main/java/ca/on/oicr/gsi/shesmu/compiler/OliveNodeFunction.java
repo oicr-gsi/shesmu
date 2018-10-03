@@ -102,9 +102,11 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 		methodGen.visitCode();
 		methodGen.visitLineNumber(line, methodGen.mark());
 		body.render(new Renderer(builder, methodGen, -1, null, //
-				parameters.stream()//
-						.map(Pair.number())//
-						.map(Pair.transform(LoadParameter::new)), //
+				Stream.concat(//
+						parameters.stream()//
+								.map(Pair.number())//
+								.map(Pair.transform(LoadParameter::new)), //
+						builder.constants()), //
 				(sv, r) -> {
 					throw new UnsupportedOperationException("Cannot have signature in function.");
 				}));

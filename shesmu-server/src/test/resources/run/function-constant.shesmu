@@ -1,0 +1,5 @@
+Input test;
+
+Function foo(string x) x == project_constant;
+
+Olive Run ok With ok = foo(project);
