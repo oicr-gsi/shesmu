@@ -10,6 +10,7 @@ import java.util.stream.Collector;
 
 public class PartitionCount {
 
+	@RuntimeInterop
 	public static final Collector<Boolean, PartitionCount, Tuple> COLLECTOR = new Collector<Boolean, PartitionCount, Tuple>() {
 
 		@Override
@@ -42,6 +43,7 @@ public class PartitionCount {
 	private long falseCount;
 	private long trueCount;
 
+	@RuntimeInterop
 	public void accumulate(boolean value) {
 		if (value) {
 			trueCount++;
@@ -56,6 +58,7 @@ public class PartitionCount {
 		return this;
 	}
 
+	@RuntimeInterop
 	public Tuple toTuple() {
 		return new Tuple(trueCount, falseCount);
 	}

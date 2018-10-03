@@ -27,9 +27,11 @@ import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor.Filter;
 public class CompilerTest {
 	public final class CompilerHarness extends Compiler {
 		private boolean dirty;
+		private Path file;
 
-		public CompilerHarness() {
+		public CompilerHarness(Path file) {
 			super(false);
+			this.file = file;
 		}
 
 		@Override
@@ -108,7 +110,7 @@ public class CompilerTest {
 	}
 
 	private Pair<Path, Optional<Boolean>> testFile(Path file) {
-		final CompilerHarness compiler = new CompilerHarness();
+		final CompilerHarness compiler = new CompilerHarness(file);
 		try {
 			return new Pair<>(file, Optional.of(compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program",
 					file.toString(), CONSTANTS::stream, null) && compiler.ok()));

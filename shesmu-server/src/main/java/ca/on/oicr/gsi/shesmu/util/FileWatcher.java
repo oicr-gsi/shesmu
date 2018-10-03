@@ -28,6 +28,9 @@ import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
 
+/**
+ * Wrapper around Java's file watching to provide a better interface
+ */
 public abstract class FileWatcher {
 	private static final class RealFileWatcher extends FileWatcher {
 		private final Map<Path, List<WatchedFileListener>> active = new ConcurrentHashMap<>();
