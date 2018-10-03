@@ -11,8 +11,8 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.subsample.Fixed;
-import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Fixed;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 
 public class SampleNodeFixed extends SampleNode {
 

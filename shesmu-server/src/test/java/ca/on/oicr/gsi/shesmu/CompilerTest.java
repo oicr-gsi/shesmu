@@ -17,10 +17,12 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
-import ca.on.oicr.gsi.shesmu.input.gsistd.GsiStdFormatDefinition;
+import ca.on.oicr.gsi.shesmu.core.actions.rest.FileActionRepository;
+import ca.on.oicr.gsi.shesmu.core.tsv.TableFunctionRepository;
+import ca.on.oicr.gsi.shesmu.util.FileWatcher;
+import ca.on.oicr.gsi.shesmu.util.NameLoader;
+import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor.Filter;
 
 public class CompilerTest {
 	public final class CompilerHarness extends Compiler {
@@ -48,6 +50,7 @@ public class CompilerTest {
 		@Override
 		protected void errorHandler(String message) {
 			dirty = true;
+			System.err.println(message);
 		}
 
 		@Override
@@ -62,7 +65,7 @@ public class CompilerTest {
 
 		@Override
 		protected InputFormatDefinition getInputFormats(String name) {
-			return new GsiStdFormatDefinition();
+			return RunTest.INPUT_FORMATS.get(name);
 		}
 
 		public boolean ok() {
@@ -89,11 +92,14 @@ public class CompilerTest {
 		try (Stream<Path> files = Files.walk(Paths.get(this.getClass().getResource("/bad").getPath()), 1)) {
 			Assert.assertTrue("Bad code compiled!", files//
 					.filter(Files::isRegularFile)//
+					.filter(p -> p.getFileName().toString().endsWith(".shesmu"))//
 					.map(this::testFile)//
 					.filter(Pair.predicate((file, result) -> {
 						final boolean failed = result.orElse(true);
 						if (failed) {
 							System.err.printf("NEGFAIL %s\n", file);
+						} else {
+							System.err.printf("OK %s\n", file);
 						}
 						return failed;
 					}))//
@@ -122,6 +128,8 @@ public class CompilerTest {
 						final boolean failed = !result.orElse(false);
 						if (failed) {
 							System.err.printf("FAIL %s\n", file);
+						} else {
+							System.err.printf("OK %s\n", file);
 						}
 						return failed;
 					}))//

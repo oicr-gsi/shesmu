@@ -1,5 +1,5 @@
 
-Input gsi_std;
+Input test;
 
 
 Define standard_fastq(string s)
@@ -8,7 +8,7 @@ Define standard_fastq(string s)
   Where path == foo(file_size);
 
 Olive
-  Call standard_fastq("a")
-  Group files = path By accession, donor
+  standard_fastq("a")
+  Group files = List path By accession
   Run fastqc With
     input = files;

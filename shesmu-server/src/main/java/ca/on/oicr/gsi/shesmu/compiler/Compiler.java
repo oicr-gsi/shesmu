@@ -14,7 +14,7 @@ import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 
 /**
  * A shell of a compiler that can output bytecode

@@ -21,9 +21,9 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
-import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
-import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 
 public class OliveNodeAlert extends OliveNodeWithClauses {
 

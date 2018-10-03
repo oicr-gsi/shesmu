@@ -18,7 +18,7 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 
 public class ProgramNode {
 	/**

@@ -9,10 +9,10 @@ import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Test;
 
-import ca.on.oicr.gsi.shesmu.subsample.Fixed;
-import ca.on.oicr.gsi.shesmu.subsample.FixedWithConditions;
-import ca.on.oicr.gsi.shesmu.subsample.Squish;
-import ca.on.oicr.gsi.shesmu.subsample.Start;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Fixed;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.FixedWithConditions;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Squish;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Start;
 
 public class SubsamplerTest {
 

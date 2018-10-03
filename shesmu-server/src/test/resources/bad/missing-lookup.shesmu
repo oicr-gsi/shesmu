@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Define standard_fastq(string s)
   Where workflow == {"BamQC 2.7+", 3 }[0]

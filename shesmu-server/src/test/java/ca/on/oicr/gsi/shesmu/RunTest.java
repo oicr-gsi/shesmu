@@ -19,6 +19,11 @@ import org.objectweb.asm.commons.Method;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import ca.on.oicr.gsi.shesmu.util.NameLoader;
+import ca.on.oicr.gsi.shesmu.util.input.BaseInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.util.server.HotloadingCompiler;
+
 public class RunTest {
 
 	private class ActionChecker implements ActionConsumer {
@@ -100,7 +105,7 @@ public class RunTest {
 
 	private static InnerTestValue[] INNER_TEST_DATA = new InnerTestValue[] { new InnerTestValue(1, "a"),
 			new InnerTestValue(2, "b") };
-	private static final NameLoader<InputFormatDefinition> INPUT_FORMATS = new NameLoader<>(Stream.of(//
+	public static final NameLoader<InputFormatDefinition> INPUT_FORMATS = new NameLoader<>(Stream.of(//
 			new BaseInputFormatDefinition<TestValue, TestRepository>("test", TestValue.class, TestRepository.class) {
 			}, //
 			new BaseInputFormatDefinition<InnerTestValue, InnerTestRepository>("inner_test", InnerTestValue.class,

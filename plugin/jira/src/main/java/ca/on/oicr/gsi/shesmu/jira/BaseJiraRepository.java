@@ -26,10 +26,10 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 
-import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
-import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
 import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 

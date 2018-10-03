@@ -11,9 +11,9 @@ import org.objectweb.asm.Type;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.PartitionCount;
-import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 
 public class CollectNodePartitionCount extends CollectNode {
 

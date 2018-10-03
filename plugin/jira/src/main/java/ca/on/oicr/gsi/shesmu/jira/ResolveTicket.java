@@ -7,7 +7,7 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 
 import ca.on.oicr.gsi.shesmu.ActionState;
-import ca.on.oicr.gsi.shesmu.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 
 public class ResolveTicket extends BaseTicketAction {
 

@@ -1,11 +1,11 @@
-Input gsi_std;
+Input test;
 
 # this a comment
 Define standard_fastq(string s)
   Where workflow == { "BamQC 2.7+" ,3} [ 0 ] 
-  Where metatype == "chemical/fastq-gzip"
+  Where project == "foo"
   Where path==foo ( file_size )
-  Group files = List path By accession, donor;
+  Group files = List path By accession, project;
 
 #Comment 
 Olive

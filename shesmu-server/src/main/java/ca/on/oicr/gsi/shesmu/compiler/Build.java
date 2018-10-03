@@ -24,16 +24,16 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
-import ca.on.oicr.gsi.shesmu.FileWatcher;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.NameLoader;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.actions.nothing.NothingActionRepository;
-import ca.on.oicr.gsi.shesmu.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.function.StandardFunctions;
-import ca.on.oicr.gsi.shesmu.function.TableFunctionRepository;
+import ca.on.oicr.gsi.shesmu.core.StandardFunctions;
+import ca.on.oicr.gsi.shesmu.core.actions.nothing.NothingActionRepository;
+import ca.on.oicr.gsi.shesmu.core.actions.rest.FileActionRepository;
+import ca.on.oicr.gsi.shesmu.core.tsv.TableFunctionRepository;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.util.FileWatcher;
+import ca.on.oicr.gsi.shesmu.util.NameLoader;
 
 /**
  * The command-line compiler for Shesmu scripts

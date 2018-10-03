@@ -1,4 +1,4 @@
-Input gsi_std;
+Input test;
 
 Define standard_execution()
   Where "{Date 1970-01-01}" != "";

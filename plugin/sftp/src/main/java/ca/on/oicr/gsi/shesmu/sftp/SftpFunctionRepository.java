@@ -15,16 +15,16 @@ import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.AutoUpdatingDirectory;
-import ca.on.oicr.gsi.shesmu.AutoUpdatingJsonFile;
-import ca.on.oicr.gsi.shesmu.Cache;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.RuntimeInterop;
-import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.util.Cache;
+import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import net.schmizz.sshj.SSHClient;

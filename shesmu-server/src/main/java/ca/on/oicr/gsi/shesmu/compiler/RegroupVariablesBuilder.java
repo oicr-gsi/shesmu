@@ -19,8 +19,8 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.PartitionCount;
-import ca.on.oicr.gsi.shesmu.Tuple;
+import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 
 /**
  * Helps to build a “Group” clause and the corresponding variable class

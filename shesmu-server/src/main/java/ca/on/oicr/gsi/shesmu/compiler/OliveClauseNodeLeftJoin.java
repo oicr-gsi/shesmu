@@ -23,9 +23,9 @@ import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.olivedashboard.OliveClauseRow;
-import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
-import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 
 public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 

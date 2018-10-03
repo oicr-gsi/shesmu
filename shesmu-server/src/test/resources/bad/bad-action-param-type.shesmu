@@ -1,7 +1,7 @@
-Input gsi_std;
+Input test;
 
 Olive
-  Group files = List path By accession, donor
+  Group files = List path By accession
   Run fastqc With
     memory = "bad",
     input = files;

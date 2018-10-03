@@ -16,8 +16,8 @@ import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
-import ca.on.oicr.gsi.shesmu.olivedashboard.VariableInformation;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 
 public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
@@ -110,7 +110,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 			Supplier<Stream<Constant>> constants) {
 		if (resolveLock) {
 			errorHandler.accept(
-					String.format("%d:%d: Olive definition %s includes itself via “Matches”.", line, column, name));
+					String.format("%d:%d: Olive definition %s includes itself.", line, column, name));
 			return false;
 		}
 		resolveLock = true;

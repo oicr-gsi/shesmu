@@ -8,7 +8,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 
 public class ExpressionNodeArithmeticSubtract extends ExpressionNodeBinary {
 	private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);

@@ -7,7 +7,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ca.on.oicr.gsi.shesmu.olivedashboard.FileTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
+import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.util.NameLoader;
+import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
+import ca.on.oicr.gsi.shesmu.util.server.HotloadingCompiler;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Timer;
 

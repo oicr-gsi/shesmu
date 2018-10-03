@@ -4,6 +4,9 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+
 /**
  * A source to find dumpers by name
  */

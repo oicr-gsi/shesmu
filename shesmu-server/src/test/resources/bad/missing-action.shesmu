@@ -1,7 +1,7 @@
-Input gsi_std;
+Input test;
 
 Olive
-  Group files = path By accession, donor
+  Group files = List path By accession
   Run nothing With
     memory = 4Gi,
     input = files;

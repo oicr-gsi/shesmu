@@ -25,9 +25,9 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.subsample.Start;
-import ca.on.oicr.gsi.shesmu.subsample.Subsampler;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Start;
+import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 
 /**
  * Helper to build bytecode for “olives” (decision-action stanzas)

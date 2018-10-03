@@ -16,9 +16,9 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.RuntimeInterop;
-import ca.on.oicr.gsi.shesmu.Tuple;
-import ca.on.oicr.gsi.shesmu.function.FunctionForInstance;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
 
 @MetaInfServices(FunctionRepository.class)
 public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDefinition> implements FunctionRepository {

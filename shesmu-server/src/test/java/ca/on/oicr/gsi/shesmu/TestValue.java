@@ -4,6 +4,9 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
 
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import ca.on.oicr.gsi.shesmu.util.input.Export;
+
 public class TestValue {
 	private final String accession;
 	private final long file_size;

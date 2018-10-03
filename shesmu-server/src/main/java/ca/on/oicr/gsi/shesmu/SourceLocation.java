@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+
 public final class SourceLocation implements Comparable<SourceLocation> {
 	private static final ServiceLoader<SourceLocationLinker> LINKERS = ServiceLoader.load(SourceLocationLinker.class);
 

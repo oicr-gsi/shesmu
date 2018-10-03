@@ -16,8 +16,8 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.Tuple;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 
 public class ExpressionNodeObject extends ExpressionNode {
 

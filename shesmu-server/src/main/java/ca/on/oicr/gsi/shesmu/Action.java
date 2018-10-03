@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor;
+
 /**
  * An action that can be performed as a result of the decision-making process
  *

@@ -22,7 +22,7 @@ import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.Pair;
-import ca.on.oicr.gsi.shesmu.olivedashboard.OliveTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 
 public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 	private final ExpressionNode body;

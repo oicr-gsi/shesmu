@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
-import ca.on.oicr.gsi.shesmu.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.Throttler;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import io.prometheus.client.Counter;
 
 public abstract class BaseTicketAction extends Action {
