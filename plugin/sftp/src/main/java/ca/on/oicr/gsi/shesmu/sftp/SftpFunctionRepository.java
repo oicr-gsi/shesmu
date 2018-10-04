@@ -68,20 +68,24 @@ public class SftpFunctionRepository implements FunctionRepository {
 						String.format("%s_size", service),
 						String.format("Get the size of a file, in bytes, living on the SFTP server described in %s.",
 								fileName),
-						Imyhat.INTEGER, new FunctionParameter("file_name", Imyhat.STRING),
+						Imyhat.INTEGER, //
+						new FunctionParameter("file_name", Imyhat.STRING), //
 						new FunctionParameter("size_if_not_exists", Imyhat.INTEGER)));
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "exists",
 						String.format("%s_exists", service),
 						String.format(
 								"Returns true if the file or directory exists on the SFTP server described in %s.",
 								fileName),
-						Imyhat.BOOLEAN, new FunctionParameter("file_name", Imyhat.STRING)));
+						Imyhat.BOOLEAN, //
+						new FunctionParameter("file_name", Imyhat.STRING), //
+						new FunctionParameter("result_on_error", Imyhat.BOOLEAN)));
 				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "mtime",
 						String.format("%s_mtime", service),
 						String.format(
 								"Gets the last modification timestamp of a file or directory living on the SFTP server described in %s.",
 								fileName),
-						Imyhat.DATE, new FunctionParameter("file_name", Imyhat.STRING),
+						Imyhat.DATE, //
+						new FunctionParameter("file_name", Imyhat.STRING), //
 						new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
 			} catch (NoSuchMethodException | IllegalAccessException e) {
 				e.printStackTrace();
@@ -140,9 +144,9 @@ public class SftpFunctionRepository implements FunctionRepository {
 		}
 
 		@RuntimeInterop
-		public synchronized boolean exists(String fileName) {
+		public synchronized boolean exists(String fileName, boolean errorValue) {
 			if (!attemptConnect()) {
-				return false;
+				return errorValue;
 			}
 			return fileAttributes.get(fileName).isPresent();
 		}
