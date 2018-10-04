@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
@@ -25,6 +26,7 @@ import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.Cache;
 import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
+import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance.FinishBind;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import net.schmizz.sshj.SSHClient;
@@ -33,6 +35,30 @@ import net.schmizz.sshj.sftp.SFTPClient;
 
 @MetaInfServices
 public class SftpFunctionRepository implements FunctionRepository {
+	private static final List<FinishBind<SftpServer>> FUNCTIONS = new ArrayList<>();
+	static {
+		try {
+			final Lookup lookup = MethodHandles.lookup();
+			FUNCTIONS.add(FunctionForInstance.startBind(lookup, SftpServer.class, "size", "%1$s_size", //
+					"Get the size of a file, in bytes, living on the SFTP server described in %2$s.", //
+					Imyhat.INTEGER, //
+					new FunctionParameter("file_name", Imyhat.STRING), //
+					new FunctionParameter("size_if_not_exists", Imyhat.INTEGER)));
+			FUNCTIONS.add(FunctionForInstance.startBind(lookup, SftpServer.class, "exists", "%1$s_exists", //
+					"Returns true if the file or directory exists on the SFTP server described in %2$s.", //
+					Imyhat.BOOLEAN, //
+					new FunctionParameter("file_name", Imyhat.STRING), //
+					new FunctionParameter("result_on_error", Imyhat.BOOLEAN)));
+			FUNCTIONS.add(FunctionForInstance.startBind(lookup, SftpServer.class, "mtime", "%1$s_mtime", //
+					"Gets the last modification timestamp of a file or directory living on the SFTP server described in %2$s.", //
+					Imyhat.DATE, //
+					new FunctionParameter("file_name", Imyhat.STRING), //
+					new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
+		} catch (NoSuchMethodException | IllegalAccessException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private class SftpServer extends AutoUpdatingJsonFile<Configuration> {
 		private Instant backoff = Instant.EPOCH;
 
@@ -40,7 +66,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		private Optional<Configuration> configuration = Optional.empty();
 
-		private final List<FunctionDefinition> definitions = new ArrayList<>();
+		private final List<FunctionDefinition> definitions;
 
 		private final Cache<String, FileAttributes> fileAttributes = new Cache<String, FileAttributes>("sftp", 10) {
 
@@ -62,34 +88,9 @@ public class SftpFunctionRepository implements FunctionRepository {
 			final String filePart = fileName.getFileName().toString();
 			service = filePart.substring(0, filePart.length() - EXTENSION.length());
 
-			try {
-				final Lookup lookup = MethodHandles.lookup();
-				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "size",
-						String.format("%s_size", service),
-						String.format("Get the size of a file, in bytes, living on the SFTP server described in %s.",
-								fileName),
-						Imyhat.INTEGER, //
-						new FunctionParameter("file_name", Imyhat.STRING), //
-						new FunctionParameter("size_if_not_exists", Imyhat.INTEGER)));
-				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "exists",
-						String.format("%s_exists", service),
-						String.format(
-								"Returns true if the file or directory exists on the SFTP server described in %s.",
-								fileName),
-						Imyhat.BOOLEAN, //
-						new FunctionParameter("file_name", Imyhat.STRING), //
-						new FunctionParameter("result_on_error", Imyhat.BOOLEAN)));
-				definitions.add(FunctionForInstance.bind(lookup, SftpServer.class, this, "mtime",
-						String.format("%s_mtime", service),
-						String.format(
-								"Gets the last modification timestamp of a file or directory living on the SFTP server described in %s.",
-								fileName),
-						Imyhat.DATE, //
-						new FunctionParameter("file_name", Imyhat.STRING), //
-						new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
-			} catch (NoSuchMethodException | IllegalAccessException e) {
-				e.printStackTrace();
-			}
+			definitions = FUNCTIONS.stream()//
+					.map(f -> f.bind(this, service, fileName))//
+					.collect(Collectors.toList());
 		}
 
 		private boolean attemptConnect() {

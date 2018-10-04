@@ -22,6 +22,9 @@ import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public class FunctionForInstance implements FunctionDefinition {
+	public interface FinishBind<T> {
+		FunctionForInstance bind(T instance, Object... args);
+	}
 
 	private static final String BSM_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(CallSite.class),
 			Type.getType(MethodHandles.Lookup.class), Type.getType(String.class), Type.getType(MethodType.class));
@@ -44,7 +47,6 @@ public class FunctionForInstance implements FunctionDefinition {
 				new ConstantCallSite(
 						findVirtualFor(lookup, owner, methodName, returnType, parameterTypes).bindTo(instance)),
 				name, description, returnType, parameterTypes);
-
 	}
 
 	public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
@@ -59,6 +61,15 @@ public class FunctionForInstance implements FunctionDefinition {
 	public static MethodType methodTypeByImyhat(Imyhat returnType, FunctionParameter... parameterTypes) {
 		return MethodType.methodType(returnType.javaType(),
 				Stream.of(parameterTypes).map(p -> p.type().javaType()).toArray(Class[]::new));
+	}
+
+	public static <T> FinishBind<T> startBind(Lookup lookup, Class<T> owner, String methodName, String name,
+			String description, Imyhat returnType, FunctionParameter... parameterTypes)
+			throws NoSuchMethodException, IllegalAccessException {
+		final MethodHandle method = findVirtualFor(lookup, owner, methodName, returnType, parameterTypes);
+		return (instance, args) -> new FunctionForInstance(new ConstantCallSite(method.bindTo(instance)),
+				String.format(name, args), String.format(description, args), returnType, parameterTypes);
+
 	}
 
 	private final String description;
