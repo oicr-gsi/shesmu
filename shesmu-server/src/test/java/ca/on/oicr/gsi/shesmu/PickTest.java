@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Test;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 
 public class PickTest {

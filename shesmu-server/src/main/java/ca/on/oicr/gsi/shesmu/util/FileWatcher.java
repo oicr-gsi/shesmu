@@ -24,7 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
 

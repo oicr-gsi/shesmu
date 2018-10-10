@@ -8,11 +8,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 
@@ -20,13 +20,14 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.Cache;
 import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
 import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance.FinishBind;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import net.schmizz.sshj.SSHClient;
@@ -76,15 +77,12 @@ public class SftpFunctionRepository implements FunctionRepository {
 			}
 		};
 
-		private final Map<String, String> properties = new TreeMap<>();
-
 		private final String service;
 
 		private volatile SFTPClient sftp;
 
 		public SftpServer(Path fileName) {
 			super(fileName, Configuration.class);
-			properties.put("path", fileName.toString());
 			final String filePart = fileName.getFileName().toString();
 			service = filePart.substring(0, filePart.length() - EXTENSION.length());
 
@@ -136,8 +134,20 @@ public class SftpFunctionRepository implements FunctionRepository {
 			return false;
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			return new Pair<>(String.format("SFTP “%s”", service), properties);
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection(String.format("SFTP “%s”", service)) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					renderer.line("Filename", fileName().toString());
+					configuration.ifPresent(configuration -> {
+						renderer.line("Host", configuration.getHost());
+						renderer.line("Port", configuration.getPort());
+						renderer.line("User", configuration.getUser());
+					});
+					renderer.line("Active", client == null ? "No" : "Yes");
+				}
+			};
 		}
 
 		public Stream<FunctionDefinition> definitions() {
@@ -170,9 +180,6 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		@Override
 		public synchronized Optional<Integer> update(Configuration configuration) {
-			properties.put("host", configuration.getHost());
-			properties.put("port", Integer.toString(configuration.getPort()));
-			properties.put("user", configuration.getUser());
 			this.configuration = Optional.of(configuration);
 			try {
 				if (client != null && client.isConnected()) {
@@ -206,7 +213,7 @@ public class SftpFunctionRepository implements FunctionRepository {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configurations.stream().map(SftpServer::configuration);
 	}
 

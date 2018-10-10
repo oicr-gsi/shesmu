@@ -33,11 +33,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.AlertSink;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.SourceLocation;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionProcessorRepository;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;

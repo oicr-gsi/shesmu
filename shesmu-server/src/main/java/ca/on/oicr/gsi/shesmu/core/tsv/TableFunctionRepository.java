@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 import org.objectweb.asm.Type;
@@ -30,7 +33,8 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
-import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 
 /**
@@ -254,10 +258,16 @@ public class TableFunctionRepository implements FunctionRepository {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		final Map<String, String> map = configuration.stream()
-				.collect(Collectors.toMap(t -> t.fileName.toString(), TableFile::configuration));
-		return Stream.of(new Pair<>("Table Functions", map));
+	public Stream<ConfigurationSection> listConfiguration() {
+		return Stream.of(new ConfigurationSection("Table Functions") {
+
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				configuration.stream()//
+						.sorted(Comparator.comparing(TableFile::name))//
+						.forEach(t -> renderer.line(t.fileName.toString(), t.configuration()));
+			}
+		});
 	}
 
 	@Override

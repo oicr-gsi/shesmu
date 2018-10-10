@@ -5,11 +5,11 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -19,10 +19,11 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 /**
  * Converts Guanyin reports into actions
@@ -32,14 +33,24 @@ public class ReportActionRepository implements ActionRepository {
 	private class GuanyinFile extends AutoUpdatingJsonFile<Configuration> {
 		private List<ActionDefinition> actions = Collections.emptyList();
 
-		private final Map<String, String> map = new TreeMap<>();
+		private Optional<Configuration> configuration = Optional.empty();
 
 		public GuanyinFile(Path fileName) {
 			super(fileName, Configuration.class);
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			return new Pair<>("观音 Report Repository: " + fileName(), map);
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("观音 Report Repository: " + fileName()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					configuration.ifPresent(configuration -> {
+						renderer.link("DRMAAWS", configuration.getDrmaa(), configuration.getDrmaa());
+						renderer.link("观音", configuration.getGuanyin(), configuration.getGuanyin());
+						renderer.line("Script", configuration.getScript());
+					});
+				}
+			};
 
 		}
 
@@ -49,9 +60,6 @@ public class ReportActionRepository implements ActionRepository {
 
 		@Override
 		protected Optional<Integer> update(Configuration configuration) {
-			map.put("drmaa", configuration.getDrmaa());
-			map.put("观音", configuration.getGuanyin());
-			map.put("script", configuration.getScript());
 			try (CloseableHttpResponse response = HTTP_CLIENT
 					.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
 				actions = Stream
@@ -60,6 +68,7 @@ public class ReportActionRepository implements ActionRepository {
 						.<ActionDefinition>map(def -> def.toDefinition(configuration.getGuanyin(),
 								configuration.getDrmaa(), configuration.getDrmaaPsk(), configuration.getScript()))//
 						.collect(Collectors.toList());
+				this.configuration = Optional.of(configuration);
 				return Optional.empty();
 			} catch (final IOException e) {
 				e.printStackTrace();
@@ -78,7 +87,7 @@ public class ReportActionRepository implements ActionRepository {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configurations.stream().map(GuanyinFile::configuration);
 	}
 

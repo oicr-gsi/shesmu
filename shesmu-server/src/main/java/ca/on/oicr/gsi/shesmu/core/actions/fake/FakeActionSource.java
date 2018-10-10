@@ -4,25 +4,26 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Check;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.actions.JsonParameter;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 /**
  * Create actions that mirror the actions of an existing Shesmu instance, but do
@@ -44,12 +45,15 @@ public class FakeActionSource implements ActionRepository {
 			super(fileName, Configuration.class);
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			final Map<String, String> properties = new TreeMap<>();
-			properties.put("allow regex", allow);
-			properties.put("url", url);
-			properties.put("filename", fileName().toString());
-			return new Pair<>("Fake Actions from Remote Server", properties);
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("Fake Actions from Remote Server: " + fileName()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					renderer.line("Allow RegEx", allow);
+					renderer.link("URL", url, url);
+				}
+			};
 		}
 
 		public Stream<ActionDefinition> stream() {
@@ -81,7 +85,7 @@ public class FakeActionSource implements ActionRepository {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return instances.stream().map(RemoteInstance::configuration);
 	}
 

@@ -3,11 +3,11 @@ package ca.on.oicr.gsi.shesmu.core.prometheus;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -15,12 +15,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.Cache;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 /**
  * Determines if throttling should occur based on a Prometheus Alert Manager
@@ -44,14 +45,18 @@ public class PrometheusThrottler implements Throttler {
 			super(fileName, Configuration.class);
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			final Map<String, String> properties = new TreeMap<>();
-			configuration.ifPresent(c -> {
-				properties.put("address", c.getAlertmanager());
-				properties.put("environment", c.getEnvironment());
-			});
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("Prometheus Throttler: " + fileName().toString()) {
 
-			return new Pair<>("Prometheus Throttler: " + fileName().toString(), properties);
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					configuration.ifPresent(c -> {
+						renderer.link("Address", c.getAlertmanager(), c.getAlertmanager());
+						renderer.line("Environment", c.getEnvironment());
+					});
+
+				}
+			};
 		}
 
 		public boolean isOverloaded(Set<String> services) {
@@ -99,7 +104,7 @@ public class PrometheusThrottler implements Throttler {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configuration.stream().map(Endpoint::configuration);
 	}
 

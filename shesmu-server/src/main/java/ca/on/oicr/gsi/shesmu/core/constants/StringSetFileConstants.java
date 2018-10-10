@@ -3,14 +3,16 @@ package ca.on.oicr.gsi.shesmu.core.constants;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 import org.objectweb.asm.Type;
@@ -20,11 +22,12 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 
 /**
@@ -98,9 +101,16 @@ public class StringSetFileConstants implements ConstantSource {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>("Constants",
-				files.stream().collect(Collectors.toMap(x -> x.name(), x -> x.fileName.toString()))));
+	public Stream<ConfigurationSection> listConfiguration() {
+		return Stream.of(new ConfigurationSection("Constants") {
+
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				files.stream()//
+						.sorted(Comparator.comparing(f -> f.fileName))//
+						.forEach(f -> renderer.line(f.fileName.toString(), f.constants.size()));
+			}
+		});
 	}
 
 	@Override

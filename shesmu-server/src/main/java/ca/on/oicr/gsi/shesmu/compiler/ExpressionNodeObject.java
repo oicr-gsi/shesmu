@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 

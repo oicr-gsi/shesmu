@@ -1,17 +1,21 @@
 package ca.on.oicr.gsi.shesmu;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.util.server.HotloadingCompiler;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Timer;
 
@@ -23,7 +27,7 @@ public class CompiledGenerator extends ActionGenerator {
 
 	private final class Script implements WatchedFileListener {
 		private FileTable dashboard;
-		private String errors = "Not yet compiled or exception during compilation.";
+		private List<String> errors = Collections.emptyList();
 		private final Path fileName;
 
 		private ActionGenerator generator = ActionGenerator.NULL;
@@ -34,6 +38,16 @@ public class CompiledGenerator extends ActionGenerator {
 
 		public Stream<FileTable> dashboard() {
 			return dashboard == null ? Stream.empty() : Stream.of(dashboard);
+		}
+
+		public void errorHtml(SectionRenderer renderer) {
+			if (errors.isEmpty()) {
+				return;
+			}
+			for (final String error : errors) {
+				renderer.line(Stream.of(new Pair<>("class", "error")), "Compile Error",
+						fileName.toString() + ":" + error);
+			}
 		}
 
 		public synchronized <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
@@ -58,7 +72,7 @@ public class CompiledGenerator extends ActionGenerator {
 		public synchronized Optional<Integer> update() {
 			try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
 				final HotloadingCompiler compiler = new HotloadingCompiler(SOURCES::get, functions, actions, constants);
-				final Optional<ActionGenerator> result = compiler.compile(fileName, ft -> this.dashboard = ft);
+				final Optional<ActionGenerator> result = compiler.compile(fileName, ft -> dashboard = ft);
 				sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
 				result.ifPresent(x -> {
 					if (generator != x) {
@@ -67,7 +81,7 @@ public class CompiledGenerator extends ActionGenerator {
 						generator = x;
 					}
 				});
-				errors = compiler.errors().collect(Collectors.joining("<br/>"));
+				errors = compiler.errors().collect(Collectors.toList());
 				return result.isPresent() ? Optional.empty() : Optional.of(2);
 			} catch (final Exception e) {
 				e.printStackTrace();
@@ -115,11 +129,8 @@ public class CompiledGenerator extends ActionGenerator {
 	 *
 	 * @return
 	 */
-	public String errorHtml() {
-		return scripts()//
-				.filter(script -> script.errors.length() > 0)//
-				.map(script -> String.format("<p><b>%s</b></p><p>%s</p>", script.fileName.toString(), script.errors))//
-				.collect(Collectors.joining());
+	public void errorHtml(SectionRenderer renderer) {
+		scripts().forEach(script -> script.errorHtml(renderer));
 	}
 
 	@Override

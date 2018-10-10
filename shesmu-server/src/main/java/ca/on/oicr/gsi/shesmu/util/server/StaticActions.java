@@ -2,22 +2,24 @@ package ca.on.oicr.gsi.shesmu.util.server;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 
 public class StaticActions implements LoadedConfiguration {
@@ -86,11 +88,18 @@ public class StaticActions implements LoadedConfiguration {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>("Static Configuration",
-				configuration == null ? Collections.emptyMap()
-						: configuration.stream().collect(
-								Collectors.toMap(f -> f.fileName().toString(), f -> Integer.toString(f.lastCount)))));
+	public Stream<ConfigurationSection> listConfiguration() {
+		return Stream.of(new ConfigurationSection("Static Configuration") {
+
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				configuration.stream()//
+						.sorted(Comparator.comparing(StaticActionFile::fileName))//
+						.forEach(config -> {
+							renderer.line(config.fileName().toString(), config.lastCount);
+						});
+			}
+		});
 	}
 
 	public void start() {

@@ -1,13 +1,12 @@
 package ca.on.oicr.gsi.shesmu.util.server;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Throttler;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 import io.prometheus.client.Gauge;
 
 @MetaInfServices
@@ -32,7 +31,7 @@ public class EmergencyThrottler implements Throttler {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return Stream.empty();
 	}
 

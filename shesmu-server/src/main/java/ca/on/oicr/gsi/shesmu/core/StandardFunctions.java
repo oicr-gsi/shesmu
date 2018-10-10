@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.core;
 
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
@@ -13,8 +12,8 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 
 /**
  * Load any {@link FunctionDefinition} objects available by
@@ -90,7 +89,7 @@ public final class StandardFunctions implements FunctionRepository {
 			} };
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return Stream.empty();
 	}
 
