@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
@@ -29,9 +31,10 @@ import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
@@ -109,22 +112,28 @@ public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 
 	private Instant lastUpdated = Instant.EPOCH;
 
-	private final Map<String, String> properties = new TreeMap<>();
-
 	public FileProvenanceGsiStdRepository() throws IOException {
 		Utils.LOADER.ifPresent(loader -> {
 			Utils.setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
 			Utils.setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
 			Utils.setProvider(loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
-			properties.put("analyis providers", Integer.toString(loader.getAnalysisProvenanceProviders().size()));
-			properties.put("lane providers", Integer.toString(loader.getLaneProvenanceProviders().size()));
-			properties.put("sample providers", Integer.toString(loader.getSampleProvenanceProviders().size()));
 		});
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>("File Provenance Variable Source", properties));
+	public Stream<ConfigurationSection> listConfiguration() {
+		return Stream.of(new ConfigurationSection("File Provenance Variable Source") {
+
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				Utils.LOADER.ifPresent(loader -> {
+					renderer.line("analyis providers",
+							Integer.toString(loader.getAnalysisProvenanceProviders().size()));
+					renderer.line("lane providers", Integer.toString(loader.getLaneProvenanceProviders().size()));
+					renderer.line("sample providers", Integer.toString(loader.getSampleProvenanceProviders().size()));
+				});
+			}
+		});
 	}
 
 	@Override

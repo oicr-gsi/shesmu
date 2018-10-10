@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -24,20 +26,21 @@ import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;
 
 @MetaInfServices
 public class RunScannerFunctionRepository implements FunctionRepository {
 	private class RunScannerClient extends AutoUpdatingJsonFile<Configuration> {
 
-		private final Pair<String, Map<String, String>> configurationPair;
+		private final ConfigurationSection configurationPair;
 		private final List<FunctionDefinition> functions;
 		private final String instance;
 		private final Map<String, String> properties = new TreeMap<>();
@@ -47,7 +50,14 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 		public RunScannerClient(Path fileName) {
 			super(fileName, Configuration.class);
 			instance = RuntimeSupport.removeExtension(fileName, EXTENSION);
-			configurationPair = new Pair<>(String.format("RunScanner Function for %s", instance), properties);
+			configurationPair = new ConfigurationSection(String.format("RunScanner Function for %s", instance)) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					renderer.line("Filename", fileName().toString());
+					url.ifPresent(u -> renderer.link("URL", u, u));
+				}
+			};
 			List<FunctionDefinition> functions;
 			try {
 				functions = Arrays.asList(//
@@ -75,7 +85,7 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 			this.functions = functions;
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
+		public ConfigurationSection configuration() {
 			return configurationPair;
 		}
 
@@ -172,7 +182,7 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return clients.stream().map(RunScannerClient::configuration);
 	}
 

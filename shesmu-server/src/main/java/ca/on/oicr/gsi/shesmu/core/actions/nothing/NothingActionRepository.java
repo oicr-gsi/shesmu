@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core.actions.nothing;
 
 import java.io.PrintStream;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
@@ -12,8 +11,8 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 
 @MetaInfServices
 public class NothingActionRepository implements ActionRepository {
@@ -35,7 +34,7 @@ public class NothingActionRepository implements ActionRepository {
 	};
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return Stream.empty();
 	}
 

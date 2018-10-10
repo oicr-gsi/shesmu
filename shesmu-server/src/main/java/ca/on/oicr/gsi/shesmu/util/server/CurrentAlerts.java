@@ -3,13 +3,12 @@ package ca.on.oicr.gsi.shesmu.util.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.AlertSink;
-import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 
 @MetaInfServices
 public final class CurrentAlerts implements AlertSink {
@@ -20,7 +19,7 @@ public final class CurrentAlerts implements AlertSink {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return Stream.empty();
 	}
 

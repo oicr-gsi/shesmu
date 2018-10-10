@@ -4,35 +4,46 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 @MetaInfServices
 public class WorkflowActionRepository implements ActionRepository {
 	private class ServerInstance extends AutoUpdatingJsonFile<Configuration> {
 		private List<ActionDefinition> actionDefinitions = Collections.emptyList();
-
-		private final Map<String, String> properties = new TreeMap<>();
+		private Optional<Configuration> configuration = Optional.empty();
 
 		public ServerInstance(Path fileName) {
 			super(fileName, Configuration.class);
-			properties.put("file", fileName.toString());
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			return new Pair<>("SeqWare/Niassa Action Repository", properties);
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("SeqWare/Niassa Action Repository: " + fileName()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					renderer.line("Filename", fileName().toString());
+					configuration.ifPresent(c -> {
+						renderer.line("JAR File", c.getJar());
+						renderer.line("Settings", c.getSettings());
+						renderer.line("Registered Workflows Count", c.getWorkflows().length);
+					});
+
+				}
+			};
 		}
 
 		public Stream<ActionDefinition> queryActions() {
@@ -41,7 +52,6 @@ public class WorkflowActionRepository implements ActionRepository {
 
 		@Override
 		protected Optional<Integer> update(Configuration value) {
-			properties.put("settings", value.getSettings());
 			actionDefinitions = Stream.of(value.getWorkflows())//
 					.peek(wc -> WorkflowAction.MAX_IN_FLIGHT.putIfAbsent(wc.getAccession(),
 							new Semaphore(wc.getMaxInFlight())))//
@@ -49,6 +59,7 @@ public class WorkflowActionRepository implements ActionRepository {
 							wc.getAccession(), wc.getPreviousAccessions(), value.getJar(), value.getSettings(),
 							wc.getServices(), wc.getType().parameters()))//
 					.collect(Collectors.toList());
+			configuration = Optional.of(value);
 			return Optional.empty();
 		}
 	}
@@ -57,7 +68,7 @@ public class WorkflowActionRepository implements ActionRepository {
 			ServerInstance::new);
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configurations.stream().map(ServerInstance::configuration);
 	}
 

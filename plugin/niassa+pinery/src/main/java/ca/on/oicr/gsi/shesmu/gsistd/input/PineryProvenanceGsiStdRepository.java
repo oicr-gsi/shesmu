@@ -19,18 +19,21 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.kohsuke.MetaInfServices;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.provenance.PineryProvenanceProvider;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.pinery.client.PineryClient;
 import ca.on.oicr.ws.dto.RunDto;
 import io.prometheus.client.Counter;
@@ -48,8 +51,16 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 			super(fileName, ObjectNode.class);
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			return new Pair<>("Sample/Lane Provenance Variable Source", properties);
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("Sample/Lane Provenance Variable Source: " + fileName()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					for (Entry<String, String> property : properties.entrySet()) {
+						renderer.line(property.getKey(), property.getValue());
+					}
+				}
+			};
 		}
 
 		private Stream<GsiStdValue> lanes(PineryProvenanceProvider provider, Map<String, Integer> badSetCounts,
@@ -231,7 +242,7 @@ public class PineryProvenanceGsiStdRepository implements GsiStdRepository {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return sources.stream().map(PinerySource::configuration);
 	}
 

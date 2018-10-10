@@ -2,12 +2,15 @@ package ca.on.oicr.gsi.shesmu.core.constants;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 
@@ -16,10 +19,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 /**
  * Read constants from JSON files (and automatically reparse those files if they
@@ -33,10 +37,6 @@ public class JsonFileConstants implements ConstantSource {
 
 		public ConstantsFile(Path fileName) {
 			super(fileName, ObjectNode.class);
-		}
-
-		public Stream<Pair<String, String>> pairs() {
-			return constants.stream().map(constant -> new Pair<>(constant.name(), fileName().toString()));
 		}
 
 		public Stream<Constant> stream() {
@@ -91,9 +91,16 @@ public class JsonFileConstants implements ConstantSource {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>("Constants", files.stream().flatMap(ConstantsFile::pairs)
-				.collect(Collectors.toMap(Pair::first, Pair::second, (a, b) -> a))));
+	public Stream<ConfigurationSection> listConfiguration() {
+		return Stream.of(new ConfigurationSection("Constants") {
+
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				files.stream()//
+						.sorted(Comparator.comparing(ConstantsFile::fileName))//
+						.forEach(f -> renderer.line(f.fileName().toString(), f.constants.size()));
+			}
+		});
 	}
 
 	@Override

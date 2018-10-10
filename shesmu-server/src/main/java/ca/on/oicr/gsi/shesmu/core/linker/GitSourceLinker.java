@@ -1,18 +1,19 @@
 package ca.on.oicr.gsi.shesmu.core.linker;
 
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.SourceLocation;
 import ca.on.oicr.gsi.shesmu.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 @MetaInfServices
 public class GitSourceLinker implements SourceLocationLinker {
@@ -23,15 +24,19 @@ public class GitSourceLinker implements SourceLocationLinker {
 			super(fileName, GitConfiguration.class);
 		}
 
-		Pair<String, Map<String, String>> configuration() {
-			Map<String, String> properties = new TreeMap<>();
-			config.ifPresent(c -> {
-				properties.put("prefix", c.getPrefix());
-				properties.put("url", c.getUrl());
-				properties.put("type", c.getType().name());
+		ConfigurationSection configuration() {
 
-			});
-			return new Pair<>("Git Web Link: " + fileName(), properties);
+			return new ConfigurationSection("Git Web Link: " + fileName()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					config.ifPresent(c -> {
+						renderer.line("Prefix", c.getPrefix());
+						renderer.link("URL", c.getUrl(), c.getUrl());
+						renderer.line("Type", c.getType().name());
+					});
+				}
+			};
 		}
 
 		@Override
@@ -56,7 +61,7 @@ public class GitSourceLinker implements SourceLocationLinker {
 			GitLinkerFile::new);
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configurations.stream().map(GitLinkerFile::configuration);
 	}
 

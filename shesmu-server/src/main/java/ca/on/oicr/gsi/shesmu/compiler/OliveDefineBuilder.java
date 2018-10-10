@@ -9,7 +9,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.SignatureVariable;
 
 /**

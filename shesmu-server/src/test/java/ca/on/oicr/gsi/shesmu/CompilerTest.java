@@ -18,6 +18,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.core.actions.rest.FileActionRepository;
 import ca.on.oicr.gsi.shesmu.core.tsv.TableFunctionRepository;

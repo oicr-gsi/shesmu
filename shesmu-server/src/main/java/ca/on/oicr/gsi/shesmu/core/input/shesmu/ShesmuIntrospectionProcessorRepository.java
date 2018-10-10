@@ -1,12 +1,11 @@
 package ca.on.oicr.gsi.shesmu.core.input.shesmu;
 
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 
 @MetaInfServices
 public class ShesmuIntrospectionProcessorRepository implements ShesmuIntrospectionRepository {
@@ -18,7 +17,7 @@ public class ShesmuIntrospectionProcessorRepository implements ShesmuIntrospecti
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return Stream.empty();
 	}
 

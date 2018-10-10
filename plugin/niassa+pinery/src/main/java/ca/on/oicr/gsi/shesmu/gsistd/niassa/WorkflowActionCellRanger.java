@@ -8,8 +8,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 

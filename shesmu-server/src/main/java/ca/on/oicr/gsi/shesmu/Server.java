@@ -10,11 +10,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.time.Duration;
-import java.time.Instant;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -23,12 +23,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.apache.http.client.utils.URIBuilder;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -37,6 +39,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.Constant.ConstantLoader;
 import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
@@ -45,6 +48,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor;
+import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.util.server.CachedRepository;
 import ca.on.oicr.gsi.shesmu.util.server.CurrentAlerts;
 import ca.on.oicr.gsi.shesmu.util.server.EmergencyThrottler;
@@ -54,15 +58,24 @@ import ca.on.oicr.gsi.shesmu.util.server.FunctionRunnerCompiler;
 import ca.on.oicr.gsi.shesmu.util.server.MasterRunner;
 import ca.on.oicr.gsi.shesmu.util.server.MetroDiagram;
 import ca.on.oicr.gsi.shesmu.util.server.Query;
-import ca.on.oicr.gsi.shesmu.util.server.StaticActions;
-import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.util.server.Query.FilterJson;
+import ca.on.oicr.gsi.shesmu.util.server.StaticActions;
+import ca.on.oicr.gsi.status.BasePage;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.Header;
+import ca.on.oicr.gsi.status.NavigationMenu;
+import ca.on.oicr.gsi.status.SectionRenderer;
+import ca.on.oicr.gsi.status.ServerConfig;
+import ca.on.oicr.gsi.status.StatusPage;
+import ca.on.oicr.gsi.status.TablePage;
+import ca.on.oicr.gsi.status.TableRowWriter;
+import ca.on.oicr.gsi.status.TableWriter;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
 
 @SuppressWarnings("restriction")
-public final class Server {
+public final class Server implements ServerConfig {
 	private static class EmergencyThrottlerHandler implements HttpHandler {
 		private final boolean state;
 
@@ -82,13 +95,6 @@ public final class Server {
 
 	private static final LatencyHistogram responseTime = new LatencyHistogram("shesmu_http_request_time",
 			"The time to respond to an HTTP request.", "url");
-
-	private static String labelsToHtml(Map<String, String> labels) {
-		return labels.entrySet().stream()//
-				.map(l -> "<span class=\"label\">" + l.getKey() + " = "
-						+ new String(JsonStringEncoder.getInstance().quoteAsString(l.getValue())) + "</span>")//
-				.collect(Collectors.joining("<br/>"));
-	}
 
 	public static void main(String[] args) throws Exception {
 		DefaultExports.initialize();
@@ -111,8 +117,6 @@ public final class Server {
 
 	private final HttpServer server;
 
-	private final Instant startTime = Instant.now();
-
 	private final StaticActions staticActions = new StaticActions(processor, this::actionDefinitions);
 
 	private final MasterRunner z_master = new MasterRunner(compiler, processor);
@@ -124,160 +128,615 @@ public final class Server {
 		add("/", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
-				writePageHeader(writer);
-				writeHeaderedTable(writer, "Core", true);
-				writeRow(writer, "Uptime", Duration.between(startTime, Instant.now()).toString());
-				writeRow(writer, "Start Time", startTime.toString());
-				writeRow(writer, "Emergency Stop",
-						String.format("<a class=\"load\" href=\"%s\">%s</a>",
-								EmergencyThrottler.stopped() ? "/resume" : "/stopstopstop",
-								EmergencyThrottler.stopped() ? "▶ Resume" : "⏹ STOP ALL ACTIONS"));
-				FileWatcher.DATA_DIRECTORY.paths().forEach(path -> writeRow(writer, "Data Directory", path.toString()));
-				writeFinish(writer);
-				if (!compiler.errorHtml().isEmpty()) {
-					writer.print("<h1>Compile Errors</h1><p>");
-					writer.print(compiler.errorHtml());
-					writer.print("</p>");
-				}
-				Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
-						InputFormatDefinition::allConfiguration, //
-						actionRepository::implementations, //
-						functionpRepository::implementations, //
-						Throttler::services, //
-						ConstantSource::sources, //
-						DumperSource::sources, //
-						SourceLocation::configuration, //
-						AlertSink::sinks, //
-						() -> Stream.of(staticActions)//
-				)//
-						.flatMap(Supplier::get)//
-						.flatMap(LoadedConfiguration::listConfiguration)//
-						.sorted(Comparator.comparing(Pair::first))//
-						.forEach(config -> {
-							writeHeaderedTable(writer, config.first(), true);
-							config.second().forEach((k, v) -> writeRow(writer, k, v));
-							writeFinish(writer);
-						});
+			try (OutputStream os = t.getResponseBody()) {
+				new StatusPage(this) {
 
-				writePageFooter(writer);
+					@Override
+					protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
+						renderer.link("Emergency Stop", EmergencyThrottler.stopped() ? "/resume" : "/stopstopstop",
+								EmergencyThrottler.stopped() ? "▶ Resume" : "⏹ STOP ALL ACTIONS");
+						FileWatcher.DATA_DIRECTORY.paths()
+								.forEach(path -> renderer.line("Data Directory", path.toString()));
+						compiler.errorHtml(renderer);
+					}
+
+					@Override
+					public Stream<ConfigurationSection> sections() {
+						return Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(//
+								InputFormatDefinition::allConfiguration, //
+								actionRepository::implementations, //
+								functionpRepository::implementations, //
+								Throttler::services, //
+								ConstantSource::sources, //
+								DumperSource::sources, //
+								SourceLocation::configuration, //
+								AlertSink::sinks, //
+								() -> Stream.of(staticActions)//
+						)//
+								.flatMap(Supplier::get)//
+								.flatMap(LoadedConfiguration::listConfiguration);
+					}
+				}.renderPage(os);
 			}
 		});
 
 		add("/olivedash", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
-				writePageHeader(writer);
-				compiler.dashboard().forEach(fileTable -> {
-					writeHeaderedTable(writer, fileTable.filename(), true);
-					writeRow(writer, "Input format", fileTable.format().name());
-					writeFinish(writer);
-					long inputCount = (long) CompiledGenerator.INPUT_RECORDS.labels(fileTable.format().name()).get();
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
 
-					fileTable.olives().forEach(olive -> {
-						writer.printf(
-								"<p id=\"%1$s:%2$d:%3$d:%4$d\" class=\"olive\"><span class=\"load\" onclick=\"listActionsPopup(filterForOlive('%1$s', %2$d, %3$d, %4$d))\">🔍 List Actions</span><span class=\"load\" onclick=\"queryStatsPopup(filterForOlive('%1$s', %2$d, %3$d, %4$d))\">📈 Stats on Actions</span></p>",
-								fileTable.filename(), olive.line(), olive.column(),
-								fileTable.timestamp().toEpochMilli());
-						writer.print("<div class=\"indent\" style=\"overflow-x:auto\">");
-						MetroDiagram.draw(writer, fileTable.filename(), fileTable.timestamp(), olive, inputCount,
-								fileTable.format());
-						writer.print("</div>");
-					});
-				});
-				writePageFooter(writer);
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						compiler.dashboard().forEach(fileTable -> {
+							try {
+								writer.writeStartElement("h1");
+								writer.writeCharacters(fileTable.filename());
+								writer.writeEndElement();
+								TableWriter.render(writer, (row) -> {
+									row.write(false, "Input format", fileTable.format().name());
+									row.write(false, "Last Compiled", fileTable.timestamp().toString());
+								});
+							} catch (XMLStreamException e) {
+								throw new RuntimeException(e);
+							}
+							long inputCount = (long) CompiledGenerator.INPUT_RECORDS.labels(fileTable.format().name())
+									.get();
+
+							fileTable.olives().forEach(olive -> {
+								try {
+									writer.writeStartElement("p");
+									writer.writeAttribute("id",
+											String.format("%1$s:%2$d:%3$d:%4$d", fileTable.filename(), olive.line(),
+													olive.column(), fileTable.timestamp().toEpochMilli()));
+									writer.writeAttribute("class", "olive");
+
+									String filterForOlive = String.format("filterForOlive('%1$s', %2$d, %3$d, %4$d)",
+											fileTable.filename(), olive.line(), olive.column(),
+											fileTable.timestamp().toEpochMilli());
+
+									for (Pair<String, String> button : Arrays.asList(
+											new Pair<>("listActionsPopup", "🔍 List Actions"),
+											new Pair<>("queryStatsPopup", "📈 Stats on Actions"))) {
+										writer.writeStartElement("span");
+										writer.writeAttribute("class", "load");
+										writer.writeAttribute("onclick", button.first() + "(" + filterForOlive + ")");
+										writer.writeCharacters(button.second());
+										writer.writeEndElement();
+									}
+									writer.writeEndElement();
+
+									writer.writeStartElement("div");
+									writer.writeAttribute("class", "indent");
+									writer.writeAttribute("style", "overflow-x:auto");
+									MetroDiagram.draw(writer, fileTable.filename(), fileTable.timestamp(), olive,
+											inputCount, fileTable.format());
+									writer.writeEndElement();
+								} catch (XMLStreamException e) {
+									throw new RuntimeException(e);
+								}
+							});
+						});
+
+					}
+				}.renderPage(os);
 			}
 		});
 
-		add("/definitions", t -> {
+		add("/actiondash", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
-				writePageHeader(writer);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
 
-				writeHeaderedTable(writer, "Type", true);
-				writeRow(writer, "Signature",
-						"<input type=\"text\" id=\"uglySignature\"></input> <span class=\"load\" onclick=\"prettyType();\">💅 Beautify</span>");
-				writeRow(writer, "Pretty Type", "<span id=\"prettyType\"></span>");
-				writeFinish(writer);
+					@Override
+					public Stream<Header> headers() {
+						return Stream.of(Header.jsModule("import {" + //
+						"addLocationForm," + //
+						"addTypeForm," + //
+						"clearActionStates," + //
+						"clearLocations," + //
+						"clearTypes," + //
+						"fillNewTypeSelect," + //
+						"listActions," + //
+						"queryStats," + //
+						"showQuery" + //
+						"} from \"./shesmu.js\";" + //
+						"fillNewTypeSelect();" + //
+						"document.getElementById(\"newLocation\").addEventListener(\"keyup\", function(ev) {" + //
+						"  if (ev.keyCode === 13) {" + //
+						"    addLocationForm();" + //
+						"  }" + //
+						"});" + //
+						"document.getElementById(\"newLocationButton\").addEventListener(\"click\", addLocationForm);" + //
+						"document.getElementById(\"addTypeButton\").addEventListener(\"click\", addTypeForm);" + //
+						"document.getElementById(\"clearActionStatesButton\").addEventListener(\"click\", clearActionStates);"
+								+ //
+						"document.getElementById(\"clearLocationsButton\").addEventListener(\"click\", clearLocations);"
+								+ //
+						"document.getElementById(\"clearTypesButton\").addEventListener(\"click\", clearTypes);" + //
+						"document.getElementById(\"listActionsButton\").addEventListener(\"click\", listActions);" + //
+						"document.getElementById(\"queryStatsButton\").addEventListener(\"click\", queryStats);" + //
+						"document.getElementById(\"showQueryButton\").addEventListener(\"click\", showQuery);"));
+					}
 
-				writeHeader(writer, "Functions");
-				functionpRepository.stream().sorted(Comparator.comparing(FunctionDefinition::name))
-						.forEach(function -> {
-							writeTable(writer, function.name());
-							function.parameters().map(Pair.number())
-									.forEach(p -> writeRow(writer,
-											"Argument " + Integer.toString(p.first() + 1) + ": " + p.second().name(),
-											String.format("%s <input type=\"text\" id=\"%s$%d\"></input>",
-													p.second().type().name(), function.name(), p.first())));
-							writeRow(writer, "Result: " + function.returnType().name(), String.format(
-									"<span class=\"load\" onclick=\"runFunction('%s', this, %s)\">▶ Run</span><span></span>",
-									function.name(), function.parameters().map(p -> p.type().javaScriptParser())
-											.collect(Collectors.joining(",", "[", "]"))));
-							writeDescription(writer, function.description());
+					private void writeDateRange(XMLStreamWriter writer, String name, String description)
+							throws XMLStreamException {
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters(description);
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("input");
+						writer.writeAttribute("type", "text");
+						writer.writeAttribute("id", name + "Start");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeCharacters(" to ");
+						writer.writeStartElement("input");
+						writer.writeAttribute("type", "text");
+						writer.writeAttribute("id", name + "End");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+					}
 
-							writeFinish(writer);
-						});
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						writer.writeStartElement("h1");
+						writer.writeCharacters("Search");
+						writer.writeEndElement();
 
-				writeHeader(writer, "Actions");
-				actionRepository.stream().sorted(Comparator.comparing(ActionDefinition::name)).forEach(action -> {
-					writeTable(writer, action.name());
-					action.parameters().sorted((a, b) -> a.name().compareTo(b.name()))
-							.forEach(p -> writeRow(writer, p.name(), p.type().name()));
-					writeDescription(writer, action.description());
-					writeFinish(writer);
-				});
+						writer.writeStartElement("table");
+						writer.writeAttribute("class", "even");
+						writeDateRange(writer, "added", "Time Since Action was Last Generated by an Olive");
+						writeDateRange(writer, "checked", "Last Time Action was Last Run");
 
-				InputFormatDefinition.formats().forEach(format -> {
-					writeHeaderedTable(writer, "Variables: " + format.name(), true);
-					format.baseStreamVariables().sorted(Comparator.comparing(Target::name)).forEach(variable -> {
-						final String signableMarker = variable.flavour() == Flavour.STREAM_SIGNABLE
-								? "<span title=\"Included in signatures\">✍️</span>"
-								: "";
-						writeRow(writer, variable.name(), variable.type().name() + signableMarker);
-					});
-					writeFinish(writer);
-				});
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Status");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						for (ActionState state : ActionState.values()) {
+							writer.writeStartElement("label");
+							writer.writeAttribute("class", "state_" + state.name().toLowerCase());
+							writer.writeStartElement("input");
+							writer.writeAttribute("type", "checkbox");
+							writer.writeAttribute("id", "include_" + state.name());
+							writer.writeCharacters(
+									state.name().substring(0, 1) + state.name().substring(1).toLowerCase());
+							writer.writeEndElement();
+							writer.writeEndElement();
+						}
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "clearActionStatesButton");
+						writer.writeCharacters("⌫");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
 
-				writeHeaderedTable(writer, "Variables: Signatures", true);
-				NameDefinitions.signatureVariables().forEach(variable -> {
-					writeRow(writer, variable.name(), variable.type().name());
-				});
-				writeFinish(writer);
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Type");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("span");
+						writer.writeAttribute("id", "types");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "clearTypesButton");
+						writer.writeCharacters("⌫");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
 
-				writeHeader(writer, "Constants");
-				ConstantSource.all().sorted(Comparator.comparing(Target::name)).forEach(constant -> {
-					writeTable(writer, constant.name());
-					writeRow(writer, "Type", constant.type().name());
-					writeRow(writer, "Value", String.format(
-							"<span class=\"load\" onclick=\"fetchConstant('%s', this)\">▶ Get</span><span></span>",
-							constant.name()));
-					writeDescription(writer, constant.description());
-					writeFinish(writer);
-				});
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("select");
+						writer.writeAttribute("id", "newType");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "addTypeButton");
+						writer.writeCharacters("+");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
 
-				writePageFooter(writer);
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Source Olive");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("span");
+						writer.writeAttribute("id", "locations");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "clearLocationsButton");
+						writer.writeCharacters("⌫");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("input");
+						writer.writeAttribute("type", "text");
+						writer.writeAttribute("id", "newLocation");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "newLocationButton");
+						writer.writeCharacters("+");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "listActionsButton");
+						writer.writeCharacters("🔍 List");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "queryStatsButton");
+						writer.writeCharacters("📈 Stats");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "showQueryButton");
+						writer.writeCharacters("🛈 Show Request");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeEndElement();
+
+						writer.writeStartElement("div");
+						writer.writeAttribute("id", "results");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeStartElement("p");
+						writer.writeCharacters("Click any cell or heading in summary tables to view matching results.");
+						writer.writeEndElement();
+					}
+				}.renderPage(os);
+			}
+		});
+
+		add("/actiondefs", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
+
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						actionRepository.stream()//
+								.sorted(Comparator.comparing(ActionDefinition::name))//
+								.forEach(action -> {
+									try {
+										writer.writeStartElement("h1");
+										writer.writeCharacters(action.name());
+										writer.writeEndElement();
+										writer.writeStartElement("p");
+										writer.writeCharacters(action.description());
+										writer.writeEndElement();
+
+										writer.writeStartElement("table");
+										writer.writeAttribute("class", "even");
+										TableRowWriter row = new TableRowWriter(writer);
+										action.parameters()//
+												.sorted(Comparator.comparing(ParameterDefinition::name))//
+												.forEach(p -> row.write(false, p.name(),
+														p.type().name() + (p.required() ? " Required" : " Optional")));
+										writer.writeEndElement();
+									} catch (XMLStreamException e) {
+										throw new RuntimeException(e);
+									}
+								});
+					}
+				}.renderPage(os);
+			}
+		});
+		add("/inputdefs", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
+
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						InputFormatDefinition.formats()//
+								.sorted(Comparator.comparing(InputFormatDefinition::name))//
+								.forEach(format -> {
+									try {
+										writer.writeStartElement("h1");
+										writer.writeCharacters(format.name());
+										writer.writeEndElement();
+
+										writer.writeStartElement("table");
+										format.baseStreamVariables().sorted(Comparator.comparing(Target::name))
+												.forEach(variable -> {
+													try {
+														writer.writeStartElement("tr");
+														writer.writeStartElement("td");
+														writer.writeCharacters(variable.name());
+														writer.writeEndElement();
+														writer.writeStartElement("td");
+														writer.writeCharacters(variable.type().name());
+														writer.writeEndElement();
+														writer.writeStartElement("td");
+														if (variable.flavour() == Flavour.STREAM_SIGNABLE) {
+															writer.writeAttribute("title", "Included in signatures");
+															writer.writeCharacters("✍️");
+														}
+														writer.writeEndElement();
+														writer.writeEndElement();
+													} catch (XMLStreamException e) {
+														throw new RuntimeException(e);
+													}
+												});
+										writer.writeEndElement();
+									} catch (XMLStreamException e) {
+										throw new RuntimeException(e);
+									}
+								});
+					}
+				}.renderPage(os);
+			}
+		});
+		add("/signaturedefs", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new TablePage(this) {
+
+					@Override
+					protected void writeRows(TableRowWriter row) {
+						NameDefinitions.signatureVariables()//
+								.sorted(Comparator.comparing(SignatureVariable::name))//
+								.forEach(variable -> {
+									row.write(false, variable.name(), variable.type().name());
+								});
+					}
+				}.renderPage(os);
+			}
+		});
+		add("/constantdefs", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
+
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						ConstantSource.all()//
+								.sorted(Comparator.comparing(Target::name))//
+								.forEach(constant -> {
+									try {
+										writer.writeStartElement("h1");
+										writer.writeCharacters(constant.name());
+										writer.writeEndElement();
+										writer.writeStartElement("p");
+										writer.writeCharacters(constant.description());
+										writer.writeEndElement();
+										writer.writeStartElement("table");
+										writer.writeAttribute("class", "even");
+										writer.writeStartElement("tr");
+										writer.writeStartElement("td");
+										writer.writeCharacters("Type");
+										writer.writeEndElement();
+										writer.writeStartElement("td");
+										writer.writeCharacters(constant.type().name());
+										writer.writeEndElement();
+										writer.writeEndElement();
+										writer.writeStartElement("tr");
+										writer.writeStartElement("td");
+										writer.writeCharacters("Value");
+										writer.writeEndElement();
+										writer.writeStartElement("td");
+										writer.writeStartElement("span");
+										writer.writeAttribute("class", "load");
+										writer.writeAttribute("onclick",
+												String.format("fetchConstant('%s', this)", constant.name()));
+										writer.writeCharacters("▶ Get");
+										writer.writeEndElement();
+										writer.writeStartElement("span");
+										writer.writeEndElement();
+										writer.writeEndElement();
+										writer.writeEndElement();
+										writer.writeEndElement();
+									} catch (XMLStreamException e) {
+										throw new RuntimeException(e);
+									}
+								});
+					}
+				}.renderPage(os);
+			}
+		});
+
+		add("/functiondefs", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
+
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						functionpRepository.stream()//
+								.sorted(Comparator.comparing(FunctionDefinition::name))//
+								.forEach(function -> {
+									try {
+										writer.writeStartElement("h1");
+										writer.writeCharacters(function.name());
+										writer.writeEndElement();
+										writer.writeStartElement("p");
+										writer.writeCharacters(function.description());
+										writer.writeEndElement();
+										writer.writeStartElement("table");
+										writer.writeAttribute("class", "even");
+										function.parameters().map(Pair.number()).forEach(p -> {
+											try {
+												writer.writeStartElement("tr");
+												writer.writeStartElement("td");
+												writer.writeCharacters("Argument " + Integer.toString(p.first() + 1)
+														+ ": " + p.second().name());
+												writer.writeEndElement();
+												writer.writeStartElement("td");
+												writer.writeCharacters(p.second().type().name());
+												writer.writeStartElement("input");
+												writer.writeAttribute("type", "text");
+												writer.writeAttribute("id", function.name() + "$" + p.first());
+												writer.writeEndElement();
+												writer.writeEndElement();
+												writer.writeEndElement();
+											} catch (XMLStreamException e) {
+												throw new RuntimeException(e);
+											}
+										});
+										writer.writeStartElement("tr");
+										writer.writeStartElement("td");
+										writer.writeCharacters("Result: " + function.returnType().name());
+										writer.writeEndElement();
+										writer.writeStartElement("td");
+										writer.writeStartElement("span");
+										writer.writeAttribute("class", "load");
+										writer.writeAttribute("onclick",
+												String.format("runFunction('%s', this, %s)", function.name(),
+														function.parameters().map(p -> p.type().javaScriptParser())
+																.collect(Collectors.joining(",", "[", "]"))));
+										writer.writeCharacters("▶ Run");
+										writer.writeEndElement();
+										writer.writeStartElement("span");
+										writer.writeEndElement();
+										writer.writeEndElement();
+										writer.writeEndElement();
+										writer.writeEndElement();
+									} catch (XMLStreamException e) {
+										throw new RuntimeException(e);
+									}
+								});
+
+					}
+				}.renderPage(os);
+			}
+		});
+
+		add("/typedefs", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
+
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						writer.writeStartElement("table");
+
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Signature");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("input");
+						writer.writeAttribute("type", "text");
+						writer.writeAttribute("id", "uglySignature");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("onclick", "prettyType();");
+						writer.writeCharacters("💅 Beautify");
+						writer.writeEndElement();
+
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Pretty Type");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("span");
+						writer.writeAttribute("id", "prettyType");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeEndElement();
+					}
+				}.renderPage(os);
 			}
 		});
 
 		add("/alerts", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
-			try (OutputStream os = t.getResponseBody(); PrintStream writer = new PrintStream(os, false, "UTF-8")) {
-				writePageHeader(writer);
+			try (OutputStream os = t.getResponseBody()) {
+				new BasePage(this) {
 
-				writeHeaderedTable(writer, "Alerts", false);
-				processor.alerts(a -> writeRowWithId(writer, "alert-" + a.id(), //
-						a.isLive() ? "live alert" : "expired alert", //
-						a.id(), //
-						labelsToHtml(a.getLabels()), //
-						labelsToHtml(a.getAnnotations()), //
-						a.getStartsAt(), //
-						a.expiryTime()));
-				writeFinish(writer);
+					private void labelsToHtml(XMLStreamWriter writer, Map<String, String> labels)
+							throws XMLStreamException {
+						for (Entry<String, String> entry : labels.entrySet()) {
+							writer.writeStartElement("span");
+							writer.writeAttribute("class", "label");
+							writer.writeCharacters(entry.getKey());
+							writer.writeCharacters(" = ");
+							writer.writeCharacters(entry.getValue());
+							writer.writeEndElement();
+							writer.writeEmptyElement("br");
+						}
+					}
 
-				writePageFooter(writer);
+					@Override
+					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						writer.writeStartElement("table");
+						processor.alerts(a -> {
+							try {
+								writer.writeStartElement("tr");
+								writer.writeAttribute("id", "alert-" + a.id());
+								writer.writeAttribute("class", a.isLive() ? "live alert" : "expired alert");
+								writer.writeStartElement("td");
+								writer.writeCharacters(a.id());
+								writer.writeEndElement();
+								writer.writeStartElement("td");
+								labelsToHtml(writer, a.getLabels());
+								writer.writeEndElement();
+								writer.writeStartElement("td");
+								labelsToHtml(writer, a.getAnnotations());
+								writer.writeEndElement();
+								writer.writeStartElement("td");
+								writer.writeCharacters(a.getStartsAt());
+								writer.writeEndElement();
+								writer.writeStartElement("td");
+								writer.writeCharacters(a.expiryTime());
+								writer.writeEndElement();
+								writer.writeEndElement();
+							} catch (XMLStreamException e) {
+								throw new RuntimeException(e);
+							}
+						});
+						writer.writeEndElement();
+					}
+
+				}.renderPage(os);
 			}
 		});
 
@@ -499,7 +958,6 @@ public final class Server {
 
 		add("/resume", new EmergencyThrottlerHandler(false));
 		add("/stopstopstop", new EmergencyThrottlerHandler(true));
-		add("/actiondash", "text/html; charset=utf-8");
 		add("/main.css", "text/css");
 		add("/shesmu.js", "text/javascript");
 		add("/shesmu.svg", "image/svg+xml");
@@ -572,6 +1030,14 @@ public final class Server {
 		return functionpRepository.stream();
 	}
 
+	@Override
+	public Stream<Header> headers() {
+		return Stream.of(Header.cssFile("/main.css"), //
+				Header.faviconPng(16), //
+				Header.jsModule(
+						"import {parser, fetchConstant, prettyType, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup;"));
+	}
+
 	private String localname() {
 		URIBuilder builder = null;
 		final String url = System.getenv("LOCAL_URL");
@@ -608,6 +1074,25 @@ public final class Server {
 		}
 	}
 
+	@Override
+	public String name() {
+		return "Shesmu";
+	}
+
+	@Override
+	public Stream<NavigationMenu> navigation() {
+		return Stream.of(//
+				NavigationMenu.submenu("Definitions", //
+						NavigationMenu.item("actiondefs", "Actions"), //
+						NavigationMenu.item("inputdefs", "Input Formats"), //
+						NavigationMenu.item("signaturedefs", "Signatures"), //
+						NavigationMenu.item("constantdefs", "Constants"), //
+						NavigationMenu.item("functiondefs", "Functions")), //
+				NavigationMenu.item("olivedash", "Olives"), //
+				NavigationMenu.item("actiondash", "Actions"), //
+				NavigationMenu.item("alerts", "Alerts"));
+	}
+
 	public void start() {
 		System.out.println("Starting server...");
 		server.start();
@@ -638,77 +1123,6 @@ public final class Server {
 		processor.start();
 		System.out.println("Starting scheduler...");
 		z_master.start();
-	}
-
-	private void writeBlock(PrintStream writer, String title) {
-		writer.print("<tr><th colspan=\"2\">");
-		writer.print(title);
-		writer.print("</th></tr>");
-	}
-
-	private void writeDescription(PrintStream writer, String info) {
-		writer.print("<tr><td colspan=\"2\">");
-		writer.print(info);
-		writer.print("</td></tr>");
-	}
-
-	private void writeFinish(PrintStream writer) {
-		writer.print("</table>");
-
-	}
-
-	private void writeHeader(PrintStream writer, String title) {
-		writer.print("<h1>");
-		writer.print(title);
-		writer.print("</h1>");
-	}
-
-	private void writeHeaderedTable(PrintStream writer, String title, boolean even) {
-		writer.print("<h1>");
-		writer.print(title);
-		writer.print("</h1><table");
-		if (even) {
-			writer.print(" class=\"even\"");
-		}
-		writer.print(">");
-	}
-
-	private void writePageFooter(PrintStream writer) {
-		writer.print("</div></body></html>");
-	}
-
-	private void writePageHeader(PrintStream writer) {
-		writer.print(
-				"<html><head><link type=\"text/css\" rel=\"stylesheet\" href=\"main.css\"/><link rel=\"icon\" href=\"favicon.png\" sizes=\"16x16\" type=\"image/png\"><script type=\"module\">import {parser, fetchConstant, prettyType, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup; </script><title>Shesmu</title></head><body><nav><img src=\"shesmu.svg\" /><a href=\"/\">Status</a><a href=\"/definitions\">Definitions</a><a href=\"olivedash\">Olives</a><a href=\"actiondash\">Actions</a><a href=\"alerts\">Alerts</a><a href=\"/api-docs/index.html\">API Docs</a></nav><div><table>");
-	}
-
-	private void writeRow(PrintStream writer, String... columns) {
-		writer.print("<tr>");
-		for (final String column : columns) {
-			writer.print("<td>");
-			writer.print(column);
-			writer.print("</td>");
-		}
-		writer.print("</td></tr>");
-	}
-
-	private void writeRowWithId(PrintStream writer, String id, String classes, String... columns) {
-		writer.print("<tr id=\"");
-		writer.print(id);
-		writer.print("\" class=\"");
-		writer.print(classes);
-		writer.print("\">");
-		for (final String column : columns) {
-			writer.print("<td>");
-			writer.print(column);
-			writer.print("</td>");
-		}
-		writer.print("</td></tr>");
-	}
-
-	private void writeTable(PrintStream writer, String title) {
-		writer.print("<table class=\"even\">");
-		writeBlock(writer, title);
 	}
 
 }

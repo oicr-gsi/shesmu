@@ -15,10 +15,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 
 /**
  * Compile a {@link FunctionDefinition} to a {@link FunctionRunner} so that it

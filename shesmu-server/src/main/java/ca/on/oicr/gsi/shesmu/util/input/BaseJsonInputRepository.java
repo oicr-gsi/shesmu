@@ -5,12 +5,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -22,11 +23,12 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.InputRepository;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
@@ -149,25 +151,28 @@ public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 	protected abstract V convert(ObjectNode node);
 
 	@Override
-	public final Stream<Pair<String, Map<String, String>>> listConfiguration() {
-		return Stream.of(new Pair<>(String.format("Variables from Files (%s Format)", inputFormatName),
-				files.stream().sorted().collect(Collectors.toMap(new Function<JsonFile, String>() {
-					int i;
+	public final Stream<ConfigurationSection> listConfiguration() {
+		return Stream.of(new ConfigurationSection(String.format("Variables from Files (%s Format)", inputFormatName)) {
 
-					@Override
-					public String apply(JsonFile t) {
-						return Integer.toString(i++);
-					}
-				}, f -> f.fileName().toString()))),
-				new Pair<>(String.format("Variables from Remote Endpoint (%s Format)", inputFormatName),
-						endpoints.stream().sorted().collect(Collectors.toMap(new Function<Remote, String>() {
-							int i;
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				files.stream()//
+						.sorted(Comparator.comparing(JsonFile::fileName))//
+						.forEach(file -> renderer.line(file.fileName().toString(), file.values.size()));
+			}
 
-							@Override
-							public String apply(Remote t) {
-								return Integer.toString(i++);
-							}
-						}, f -> f.url().toString()))));
+		}, new ConfigurationSection(String.format("Variables from Remote Endpoint (%s Format)", inputFormatName)) {
+
+			@Override
+			public void emit(SectionRenderer renderer) throws XMLStreamException {
+				endpoints.stream()//
+						.sorted(Comparator.comparing(Remote::fileName))//
+						.forEach(remote -> {
+							renderer.line(remote.fileName().toString(), remote.url());
+							renderer.lineSpan(remote.fileName().toString(), remote.lastUpdated);
+						});
+			}
+		});
 	}
 
 	@Override

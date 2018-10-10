@@ -2,10 +2,10 @@ package ca.on.oicr.gsi.shesmu.core.prometheus;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -16,9 +16,10 @@ import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.AlertSink;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 
 /**
@@ -37,13 +38,17 @@ public class PrometheusAlertSink implements AlertSink {
 			super(fileName, Configuration.class);
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			final Map<String, String> properties = new TreeMap<>();
-			configuration.ifPresent(c -> {
-				properties.put("address", c.getAlertmanager());
-			});
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("Prometheus Alert Sink: " + fileName().toString()) {
 
-			return new Pair<>("Prometheus Alert Sink: " + fileName().toString(), properties);
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					configuration.ifPresent(c -> {
+						renderer.link("Address", c.getAlertmanager(), c.getAlertmanager());
+					});
+
+				}
+			};
 		}
 
 		@Override
@@ -79,7 +84,7 @@ public class PrometheusAlertSink implements AlertSink {
 			Endpoint::new);
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configuration.stream().map(Endpoint::configuration);
 	}
 

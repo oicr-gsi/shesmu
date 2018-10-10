@@ -6,9 +6,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 public abstract class CollectNodeWithDefault extends CollectNode {

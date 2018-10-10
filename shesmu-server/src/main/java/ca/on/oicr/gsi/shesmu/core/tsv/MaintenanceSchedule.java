@@ -7,21 +7,22 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.kohsuke.MetaInfServices;
 
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 /**
  * Reads <tt>maintenance.tsv</tt> which is a schedule or maintenance windows
@@ -39,14 +40,19 @@ public class MaintenanceSchedule implements Throttler {
 			this.fileName = fileName;
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			final Map<String, String> properties = new HashMap<>();
-			properties.put("state", inMaintenanceWindow() ? "throttled" : "permit");
-			for (int i = 0; i < windows.size(); i++) {
-				properties.put(String.format("Window %d", i),
-						String.format("%s - %s", windows.get(i)[0], windows.get(i)[1]));
-			}
-			return new Pair<>("Maintenance Window Throttler: " + fileName.toString(), properties);
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection("Maintenance Window Throttler: " + fileName.toString()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					renderer.line("Current State", inMaintenanceWindow() ? "Throttled" : "Permit");
+					for (int i = 0; i < windows.size(); i++) {
+						renderer.line(String.format("Window %d", i),
+								String.format("%s - %s", windows.get(i)[0], windows.get(i)[1]));
+					}
+
+				}
+			};
 		}
 
 		public boolean inMaintenanceWindow() {
@@ -93,7 +99,7 @@ public class MaintenanceSchedule implements Throttler {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return schedules.stream().map(ScheduleReader::configuration);
 	}
 

@@ -15,12 +15,12 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;

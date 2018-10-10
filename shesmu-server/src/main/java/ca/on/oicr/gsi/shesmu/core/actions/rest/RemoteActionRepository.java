@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -18,10 +18,11 @@ import org.kohsuke.MetaInfServices;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionRepository;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 @MetaInfServices
 public final class RemoteActionRepository implements ActionRepository {
@@ -34,11 +35,16 @@ public final class RemoteActionRepository implements ActionRepository {
 			super(fileName, Configuration.class);
 		}
 
-		private Pair<String, Map<String, String>> configuration() {
-			final Map<String, String> map = new TreeMap<>();
-			map.put("url", url);
-			map.put("file", fileName().toString());
-			return new Pair<>("Remote Action Repository", map);
+		private ConfigurationSection configuration() {
+			return new ConfigurationSection("Remote Action Repository: " + fileName()) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					if (url != null) {
+						renderer.link("URL", url, url);
+					}
+				}
+			};
 		}
 
 		private Stream<ActionDefinition> queryActionsCatalog() {
@@ -70,7 +76,7 @@ public final class RemoteActionRepository implements ActionRepository {
 	private final AutoUpdatingDirectory<Remote> configurations = new AutoUpdatingDirectory<>(".remote", Remote::new);
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configurations.stream().map(Remote::configuration);
 	}
 

@@ -2,8 +2,8 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.function.Consumer;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 
 public final class CollectNodeOptima extends CollectNodeWithDefault {
 

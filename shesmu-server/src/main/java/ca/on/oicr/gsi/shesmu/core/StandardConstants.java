@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.core;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.kohsuke.MetaInfServices;
@@ -14,7 +13,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 
 /**
  * Default constants provided to Shesmu scripts
@@ -35,7 +34,7 @@ public class StandardConstants implements ConstantSource {
 	private static final Method METHOD_INSTANT__NOW = new Method("now", A_INSTANT_TYPE, new Type[] {});
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return Stream.empty();
 	}
 

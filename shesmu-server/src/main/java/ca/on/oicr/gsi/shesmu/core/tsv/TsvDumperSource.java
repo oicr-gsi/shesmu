@@ -5,12 +5,15 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
 
@@ -19,10 +22,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.Pair;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
 
 @MetaInfServices
 public class TsvDumperSource implements DumperSource {
@@ -34,9 +38,16 @@ public class TsvDumperSource implements DumperSource {
 			super(fileName, ObjectNode.class);
 		}
 
-		public Pair<String, Map<String, String>> configuration() {
-			return new Pair<>(String.format("TSV Dumpers from %s", fileName()),
-					paths.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().toString())));
+		public ConfigurationSection configuration() {
+			return new ConfigurationSection(String.format("TSV Dumpers from %s", fileName())) {
+
+				@Override
+				public void emit(SectionRenderer renderer) throws XMLStreamException {
+					paths.entrySet().stream()//
+							.sorted(Comparator.comparing(Entry::getKey))//
+							.forEach(pair -> renderer.line(pair.getKey(), pair.getValue().toString()));
+				}
+			};
 		}
 
 		public Dumper get(String name) {
@@ -95,7 +106,7 @@ public class TsvDumperSource implements DumperSource {
 	}
 
 	@Override
-	public Stream<Pair<String, Map<String, String>>> listConfiguration() {
+	public Stream<ConfigurationSection> listConfiguration() {
 		return configurations.stream().map(DumperConfiguration::configuration);
 	}
 
