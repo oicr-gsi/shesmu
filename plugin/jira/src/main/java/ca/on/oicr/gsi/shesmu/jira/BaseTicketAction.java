@@ -2,15 +2,21 @@ package ca.on.oicr.gsi.shesmu.jira;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.atlassian.jira.rest.client.api.domain.BasicIssue;
+import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
+import com.atlassian.jira.rest.client.api.domain.Transition.Field;
 import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
@@ -22,6 +28,7 @@ import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Counter;
 
 public abstract class BaseTicketAction extends Action {
@@ -42,18 +49,20 @@ public abstract class BaseTicketAction extends Action {
 
 	private final JiraConnection config;
 
+	private final Optional<ActionState> emptyTransitionState;
+
 	private final Set<String> issues = new TreeSet<>();
 
 	private URI issueUrl;
 
 	@RuntimeInterop
 	public String summary;
-
 	@RuntimeInterop
 	public String type = "Task";
 
-	public BaseTicketAction(String id, String jsonName) {
+	public BaseTicketAction(String id, String jsonName, Optional<ActionState> emptyTransitionState) {
 		super(jsonName);
+		this.emptyTransitionState = emptyTransitionState;
 		config = BaseJiraRepository.get(id);
 	}
 
@@ -62,6 +71,8 @@ public abstract class BaseTicketAction extends Action {
 		issueUrl = null;
 		return ActionState.FAILED;
 	}
+
+	protected abstract Comment comment();
 
 	protected final ActionState createIssue(String description) {
 		if (Throttler.anyOverloaded("jira", config.projectKey())) {
@@ -91,7 +102,7 @@ public abstract class BaseTicketAction extends Action {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public final boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -120,13 +131,19 @@ public abstract class BaseTicketAction extends Action {
 	}
 
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (config == null ? 0 : config.hashCode());
 		result = prime * result + (summary == null ? 0 : summary.hashCode());
 		return result;
 	}
+
+	private boolean isInTargetState(Issue issue) {
+		return isInTargetState(config.closedStatuses(), issue.getStatus().getName()::equalsIgnoreCase);
+	}
+
+	protected abstract boolean isInTargetState(Stream<String> closedStates, Predicate<String> matchesIssue);
 
 	@Override
 	public final ActionState perform() {
@@ -148,12 +165,24 @@ public abstract class BaseTicketAction extends Action {
 	protected abstract ActionState perform(Stream<Issue> results);
 
 	@Override
-	public int priority() {
+	public final int priority() {
 		return 1000;
 	}
 
+	/**
+	 * Process an issue and return a new action state
+	 *
+	 * @param accumulator
+	 *            the state from the previously processed issue
+	 * @param transitionIssue
+	 *            change the current issue; if not invoked, the current issue is
+	 *            left unchanged.
+	 */
+	protected abstract Optional<ActionState> processTransition(Optional<ActionState> accumulator,
+			Supplier<Optional<ActionState>> transitionIssue);
+
 	@Override
-	public long retryMinutes() {
+	public final long retryMinutes() {
 		return 10;
 	}
 
@@ -169,16 +198,57 @@ public abstract class BaseTicketAction extends Action {
 		return node;
 	}
 
-	protected final ActionState updateIssue(Issue issue, TransitionInput transition) {
-		if (Throttler.anyOverloaded("jira", config.projectKey())) {
-			return ActionState.THROTTLED;
+	/**
+	 * Get the list of the names of the actions that will put an issue in the right
+	 * state
+	 */
+	protected abstract Stream<String> transitionActions(JiraConnection connection);
+
+	/**
+	 * Change an issue's status using one of JIRA's transitions
+	 *
+	 * This attempts to find a transition that is from the approved list of
+	 * transition names that is allowed for the issue and doesn't require any input.
+	 * It then attempts to change the issue in JIRA.
+	 */
+	private final Optional<ActionState> transitionIssue(Issue issue) {
+		if (isInTargetState(issue)) {
+			return Optional.of(ActionState.SUCCEEDED);
 		}
-		issueUpdates.labels(config.instance()).inc();
-		issueUrl = issue.getSelf();
-		config.client().getIssueClient().transition(issue, transition).claim();
-		config.invalidate();
-		issues.add(issue.getKey());
-		return ActionState.SUCCEEDED;
+		return RuntimeSupport.stream(config.client().getIssueClient().getTransitions(issue).claim())//
+				.filter(t -> transitionActions(config).anyMatch(t.getName()::equalsIgnoreCase)
+						&& RuntimeSupport.stream(t.getFields()).noneMatch(Field::isRequired))//
+				.findAny()//
+				.map(t -> {
+					if (Throttler.anyOverloaded("jira", config.projectKey())) {
+						return ActionState.THROTTLED;
+					}
+					issueUpdates.labels(config.instance()).inc();
+					issueUrl = issue.getSelf();
+					config.client().getIssueClient().transition(issue, new TransitionInput(t.getId(), comment()))
+							.claim();
+					config.invalidate();
+					issues.add(issue.getKey());
+					return ActionState.SUCCEEDED;
+				});
 	}
 
+	/**
+	 * Transitions a stream of issues as dictated by
+	 * {@link #processTransition(Optional, Supplier)}
+	 *
+	 * This works over the list of actions and does a reduce to come up with a final
+	 * action state. The {@link #processTransition(Optional, Supplier)} decides how
+	 * to proceed at each step allow all of the actions to be processed; or only
+	 * some.
+	 */
+	protected final ActionState transitionIssues(Stream<Issue> issues) {
+		return issues//
+				.sorted(Comparator.comparingInt(issue -> isInTargetState(issue) ? 0 : 1))
+				.<Optional<ActionState>>reduce(emptyTransitionState, //
+						(acc, issue) -> processTransition(acc, () -> transitionIssue(issue)), //
+						(a, b) -> RuntimeSupport.merge(a, b,
+								(aa, bb) -> aa.sortPriority() > bb.sortPriority() ? aa : bb))//
+				.orElse(ActionState.FAILED);
+	}
 }

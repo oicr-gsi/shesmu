@@ -1,30 +1,35 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
 
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 
-public class FileTicket extends BaseTicketAction {
+public final class FileTicket extends BaseTicketAction {
 
 	@RuntimeInterop
 	public String description;
 
 	public FileTicket(String id) {
-		super(id, "jira-open-ticket");
+		super(id, "jira-open-ticket", Optional.empty());
 	}
 
-	private ActionState checkIssue(Issue issue) {
-		if (issue.getStatus().getName().equalsIgnoreCase("CLOSED")
-				|| issue.getStatus().getName().equalsIgnoreCase("RESOLVED")) {
-			return updateIssue(issue, new TransitionInput(3));
-		}
-		return ActionState.SUCCEEDED;
+	@Override
+	protected Comment comment() {
+		return null;
+	}
+
+	@Override
+	protected boolean isInTargetState(Stream<String> closedStates, Predicate<String> matchesIssue) {
+		return closedStates.noneMatch(matchesIssue);
 	}
 
 	@Override
@@ -33,10 +38,23 @@ public class FileTicket extends BaseTicketAction {
 		if (matches.isEmpty()) {
 			return createIssue(description);
 		}
-		if (matches.stream().anyMatch(issue -> !issue.getStatus().getName().equalsIgnoreCase("CLOSED")
-				&& !issue.getStatus().getName().equalsIgnoreCase("RESOLVED")))
-			return ActionState.SUCCEEDED;
-		return checkIssue(matches.get(0));
+		return transitionIssues(matches.stream());
+	}
+
+	/**
+	 * When reopening an issue, only one issue need be opened, so only attempt to
+	 * reopen an existing issue if the previous one could not be opened/there was no
+	 * previous one.
+	 */
+	@Override
+	protected Optional<ActionState> processTransition(Optional<ActionState> accumulator,
+			Supplier<Optional<ActionState>> transitionIssue) {
+		return accumulator.isPresent() ? accumulator : transitionIssue.get();
+	}
+
+	@Override
+	protected Stream<String> transitionActions(JiraConnection connection) {
+		return connection.reopenActions();
 	}
 
 }
