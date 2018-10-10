@@ -202,6 +202,17 @@ public final class RuntimeSupport {
 		});
 	}
 
+	public static <T> Optional<T> merge(Optional<T> left, Optional<T> right,
+			BiFunction<? super T, ? super T, ? extends T> merge) {
+		if (left.isPresent() && right.isPresent()) {
+			return Optional.of(merge.apply(left.get(), right.get()));
+		}
+		if (left.isPresent()) {
+			return left;
+		}
+		return right;
+	}
+
 	/**
 	 * Add Prometheus monitoring to a stream.
 	 *

@@ -9,6 +9,10 @@ public interface JiraConnection {
 
 	JiraRestClient client();
 
+	Stream<String> closeActions();
+
+	Stream<String> closedStatuses();
+
 	String instance();
 
 	void invalidate();
@@ -16,6 +20,8 @@ public interface JiraConnection {
 	Stream<Issue> issues();
 
 	String projectKey();
+
+	Stream<String> reopenActions();
 
 	String url();
 

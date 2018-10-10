@@ -1,9 +1,8 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -15,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -39,16 +38,20 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 
 		private JiraRestClient client;
 
+		private List<String> closeActions = Collections.emptyList();
+
+		private List<String> closedStatuses = Collections.emptyList();
+
 		private final String id = String.format("jira%d", counter++);
 
 		private final String instance;
 
 		private List<Issue> issues = Collections.emptyList();
-
 		private Instant lastFetch = Instant.EPOCH;
 		private String projectKey = "FAKE";
-
 		private final Map<String, String> properties = new TreeMap<>();
+
+		private List<String> reopenActions = Collections.emptyList();
 
 		private final Pair<String, Map<String, String>> status;
 
@@ -68,6 +71,16 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		@Override
 		public JiraRestClient client() {
 			return client;
+		}
+
+		@Override
+		public Stream<String> closeActions() {
+			return closeActions.stream();
+		}
+
+		@Override
+		public Stream<String> closedStatuses() {
+			return closedStatuses.stream();
 		}
 
 		public String id() {
@@ -124,6 +137,11 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 			return projectKey;
 		}
 
+		@Override
+		public Stream<String> reopenActions() {
+			return reopenActions.stream();
+		}
+
 		public Pair<String, Map<String, String>> status() {
 			return status;
 		}
@@ -135,15 +153,24 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		@Override
 		public Optional<Integer> update(Configuration config) {
 			value = create(this, fileName()).collect(Collectors.toList());
-			properties.put("project", config.getProjectKey());
-			properties.put("url", config.getUrl());
+			properties.put("Project", config.getProjectKey());
+			properties.put("URL", config.getUrl());
+			properties.put("User", config.getUser());
+			properties.put("Password File", config.getPasswordFile());
+			properties.put("Reopen Actions", config.getReopenActions().stream().collect(Collectors.joining(" | ")));
+			properties.put("Close Actions", config.getCloseActions().stream().collect(Collectors.joining(" | ")));
+			properties.put("Closed Statuses", config.getClosedStatues().stream().collect(Collectors.joining(" | ")));
 			url = config.getUrl();
-			try {
-				client = new AsynchronousJiraRestClientFactory()
-						.createWithBasicHttpAuthentication(new URI(config.getUrl()), ACCOUNT_NAME, ACCOUNT_PASSWORD);
-				projectKey = config.getProjectKey();
-				issues = Collections.emptyList();
-				lastFetch = Instant.EPOCH;
+			projectKey = config.getProjectKey();
+			reopenActions = config.getReopenActions();
+			closeActions = config.getCloseActions();
+			closedStatuses = config.getClosedStatues();
+			issues = Collections.emptyList();
+			lastFetch = Instant.EPOCH;
+			try (Scanner passwordScanner = new Scanner(
+					fileName().getParent().resolve(Paths.get(config.getPasswordFile())))) {
+				client = new AsynchronousJiraRestClientFactory().createWithBasicHttpAuthentication(
+						new URI(config.getUrl()), config.getUser(), passwordScanner.nextLine());
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
@@ -156,8 +183,6 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 		}
 	}
 
-	private static final String ACCOUNT_NAME;
-	private static final String ACCOUNT_PASSWORD;
 	private static final Gauge cacheSize = Gauge
 			.build("shesmu_jira_ticket_cache_size", "The number of tickets currently cached locally.")
 			.labelNames("project", "purpose").create();
@@ -181,23 +206,6 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 	private static final Gauge lastFetchTime = Gauge
 			.build("shesmu_jira_ticket_fetch_time", "The timestamp of the last query.").labelNames("project", "purpose")
 			.create();
-
-	static {
-		String accountName;
-		String accountPassword;
-		try {
-			final Properties properties = new Properties();
-			properties.load(new FileInputStream(new File(System.getProperty("user.home"), ".jira")));
-			accountName = properties.getProperty("user");
-			accountPassword = properties.getProperty("password");
-		} catch (final Exception e) {
-			e.printStackTrace();
-			accountName = "jira";
-			accountPassword = "jira";
-		}
-		ACCOUNT_NAME = accountName;
-		ACCOUNT_PASSWORD = accountPassword;
-	}
 
 	public static JiraConnection get(String id) {
 		return clients.get(id);

@@ -104,10 +104,33 @@ The following are available:
   server and `defintions` is as per the remote repository specification.
 - <a name="jira"></a>JIRA file-a-ticket actions (in the `action-jira` directory). To use this,
   create a JSON file ending in `.jira` in the `SHESMU_DATA` directory with
-  `{"name":.., "projectKey":..., "token":.., "url": ...}` where `name` is the
-  name that will appear in olives, `projectKey` is the JIRA project identifier
-  (usually a short collection of capital letters), `token` is the JIRA
-  application token, and `url` is the address of the JIRA server.
+
+      {
+        "closeActions": [
+          "Close Issue",
+          "Resolve Issue"
+        ],
+        "closedStatues": [
+          "CLOSED",
+          "RESOLVED"
+        ],
+      "passwordFile": "/path/to/jira/password",
+        "projectKey": "PK",
+        "reopenActions": [
+          "Reopen Issue"
+        ],
+        "url": "https://jira.example.com",
+        "user": "ticketbot"
+      }
+
+  `projectKey` is the JIRA project identifier (usually a short collection of
+  capital letters), `user` is user name to log into JIRA and `passwordFile`
+  contains the plain text password; it can be relative to the directory storing
+  the `.jira` file. `url` is the address of the JIRA server.  Shesmu needs to
+  reopen tickets, but it can only do so if there is no mandatory fields to fill
+  in. Therefore the names of the actions that can reopen and close a ticket
+  must be provided. Also, the status that are considered closed; any status not
+  considered closed is seen as open.
 - Guyanyin+DRMAA launch report actions (currently very OICR-specific)
 - Fake actions. Copy actions from an existing Shesmu instance, but don't do
   anything with them. This is useful for setting up a development server.
@@ -203,8 +226,8 @@ local file system into a URL.
 
 - Git linker. If the sources are a checked out git repository, this linker 
   references a web-based git UI to view them. To enable, create a file ending
-	in `.gitlink` containing a JSON object `{"prefix":..., "url":...,
-	"type":xxx}` where `prefix` is the local repository path (_i.e._, the
-	directory where the repository was cloned, `url` is the URL to the dashboard
-	page for this repository, and `type` is either `GITHUB` or `BITBUCKET`,
+  in `.gitlink` containing a JSON object `{"prefix":..., "url":...,
+  "type":xxx}` where `prefix` is the local repository path (_i.e._, the
+  directory where the repository was cloned, `url` is the URL to the dashboard
+  page for this repository, and `type` is either `GITHUB` or `BITBUCKET`,
   depending on the type of dashboard.
