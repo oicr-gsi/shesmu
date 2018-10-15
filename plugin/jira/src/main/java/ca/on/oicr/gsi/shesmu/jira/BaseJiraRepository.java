@@ -159,12 +159,12 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 			properties.put("Password File", config.getPasswordFile());
 			properties.put("Reopen Actions", config.getReopenActions().stream().collect(Collectors.joining(" | ")));
 			properties.put("Close Actions", config.getCloseActions().stream().collect(Collectors.joining(" | ")));
-			properties.put("Closed Statuses", config.getClosedStatues().stream().collect(Collectors.joining(" | ")));
+			properties.put("Closed Statuses", config.getClosedStatuses().stream().collect(Collectors.joining(" | ")));
 			url = config.getUrl();
 			projectKey = config.getProjectKey();
 			reopenActions = config.getReopenActions();
 			closeActions = config.getCloseActions();
-			closedStatuses = config.getClosedStatues();
+			closedStatuses = config.getClosedStatuses();
 			issues = Collections.emptyList();
 			lastFetch = Instant.EPOCH;
 			try (Scanner passwordScanner = new Scanner(

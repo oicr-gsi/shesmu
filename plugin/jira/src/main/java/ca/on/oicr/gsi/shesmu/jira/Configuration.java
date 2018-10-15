@@ -4,7 +4,7 @@ import java.util.List;
 
 public final class Configuration {
 	private List<String> closeActions;
-	private List<String> closedStatues;
+	private List<String> closedStatuses;
 	private String passwordFile;
 	private String projectKey;
 	private List<String> reopenActions;
@@ -15,8 +15,8 @@ public final class Configuration {
 		return closeActions;
 	}
 
-	public List<String> getClosedStatues() {
-		return closedStatues;
+	public List<String> getClosedStatuses() {
+		return closedStatuses;
 	}
 
 	public String getPasswordFile() {
@@ -43,8 +43,8 @@ public final class Configuration {
 		this.closeActions = closeActions;
 	}
 
-	public void setClosedStatues(List<String> closedStatues) {
-		this.closedStatues = closedStatues;
+	public void setClosedStatuses(List<String> closedStatuses) {
+		this.closedStatuses = closedStatuses;
 	}
 
 	public void setPasswordFile(String passwordFile) {
