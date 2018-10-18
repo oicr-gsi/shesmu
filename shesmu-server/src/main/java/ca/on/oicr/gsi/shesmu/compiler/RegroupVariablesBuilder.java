@@ -7,9 +7,9 @@ import static org.objectweb.asm.Type.VOID_TYPE;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
@@ -69,8 +69,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return Stream.empty();
 		}
 
 		@Override
@@ -109,6 +109,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
+		public void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader, Consumer<Renderer> initial) {
+			elements.add(new FirstWithDefault(fieldType, fieldName, loader, initial));
+
+		}
+
+		@Override
 		public void addMatches(String name, Match matchType, Consumer<Renderer> condition) {
 			elements.add(new Matches(name, matchType, condition));
 		}
@@ -117,6 +123,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		public void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader) {
 			elements.add(new Optima(fieldType, fieldName, max, loader));
 
+		}
+
+		@Override
+		public void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader,
+				Consumer<Renderer> initial) {
+			elements.add(new OptimaWithDefault(fieldType, fieldName, max, loader, initial));
 		}
 
 		@Override
@@ -158,8 +170,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return elements.stream().flatMap(Element::constructorType);
 		}
 
 		@Override
@@ -169,7 +181,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
 		@Override
 		public void loadConstructorArgument() {
-			// No argument to constructor.
+			elements.forEach(Element::loadConstructorArgument);
 		}
 
 	}
@@ -209,8 +221,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return Stream.empty();
 		}
 
 		@Override
@@ -288,8 +300,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return fieldType;
+		public Stream<Type> constructorType() {
+			return Stream.of(fieldType);
 		}
 
 		@Override
@@ -314,7 +326,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
 		public abstract void buildHashCode(GeneratorAdapter method);
 
-		public abstract Type constructorType();
+		public abstract Stream<Type> constructorType();
 
 		public abstract void failIfBad(GeneratorAdapter okMethod);
 
@@ -368,8 +380,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return Stream.empty();
 		}
 
 		@Override
@@ -386,6 +398,75 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		@Override
 		public void loadConstructorArgument() {
 			// No argument to constructor.
+		}
+
+	}
+
+	private class FirstWithDefault extends Element {
+
+		private final String fieldName;
+		private final Type fieldType;
+		private final Consumer<Renderer> initial;
+		private final Consumer<Renderer> loader;
+
+		public FirstWithDefault(Type fieldType, String fieldName, Consumer<Renderer> loader,
+				Consumer<Renderer> initial) {
+			this.fieldType = fieldType;
+			this.fieldName = fieldName;
+			this.loader = loader;
+			this.initial = initial;
+			classVisitor.visitField(Opcodes.ACC_PUBLIC, fieldName + "$ok", BOOLEAN_TYPE.getDescriptor(), null, null)
+					.visitEnd();
+			buildGetter(fieldType, fieldName);
+		}
+
+		@Override
+		public void buildCollect() {
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName + "$ok", BOOLEAN_TYPE);
+			final Label skip = collectRenderer.methodGen().newLabel();
+			collectRenderer.methodGen().ifZCmp(GeneratorAdapter.NE, skip);
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().push(true);
+			collectRenderer.methodGen().putField(self, fieldName + "$ok", BOOLEAN_TYPE);
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			loader.accept(collectRenderer);
+			collectRenderer.methodGen().putField(self, fieldName, fieldType);
+			collectRenderer.methodGen().mark(skip);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			ctor.loadThis();
+			ctor.loadArg(index);
+			ctor.putField(self, fieldName, fieldType);
+			return index + 1;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// First with default are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter method) {
+			// First with are not included in hash code.
+		}
+
+		@Override
+		public Stream<Type> constructorType() {
+			return Stream.of(fieldType);
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// First with default is always ok
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			initial.accept(newRenderer);
 		}
 
 	}
@@ -445,8 +526,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return Stream.empty();
 		}
 
 		@Override
@@ -530,8 +611,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return Stream.empty();
 		}
 
 		@Override
@@ -548,6 +629,83 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		@Override
 		public void loadConstructorArgument() {
 			// No argument to constructor.
+		}
+
+	}
+
+	private class OptimaWithDefault extends Element {
+
+		private final Comparison comparison;
+		private final String fieldName;
+		private final Type fieldType;
+		private final Consumer<Renderer> initial;
+		private final Consumer<Renderer> loader;
+
+		public OptimaWithDefault(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader,
+				Consumer<Renderer> intial) {
+			this.fieldType = fieldType;
+			this.fieldName = fieldName;
+			initial = intial;
+			comparison = max ? Comparison.GT : Comparison.LT;
+			this.loader = loader;
+			buildGetter(fieldType, fieldName);
+		}
+
+		@Override
+		public void buildCollect() {
+			final int local = collectRenderer.methodGen().newLocal(fieldType);
+			loader.accept(collectRenderer);
+			collectRenderer.methodGen().storeLocal(local);
+
+			final Label end = collectRenderer.methodGen().newLabel();
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().getField(self, fieldName, fieldType);
+			collectRenderer.methodGen().loadLocal(local);
+
+			if (fieldType.equals(Type.LONG_TYPE)) {
+				comparison.branchInt(end, collectRenderer.methodGen());
+			} else {
+				comparison.branchDate(end, collectRenderer.methodGen());
+			}
+
+			collectRenderer.methodGen().loadArg(collectedSelfArgument);
+			collectRenderer.methodGen().loadLocal(local);
+			collectRenderer.methodGen().putField(self, fieldName, fieldType);
+			collectRenderer.methodGen().mark(end);
+		}
+
+		@Override
+		public int buildConstructor(GeneratorAdapter ctor, int index) {
+			ctor.loadThis();
+			ctor.loadArg(index);
+			ctor.putField(self, fieldName, fieldType);
+			return index + 1;
+		}
+
+		@Override
+		public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+			// Optima with default are not included in equality.
+		}
+
+		@Override
+		public void buildHashCode(GeneratorAdapter method) {
+			// Optima with default are not included in hash code.
+		}
+
+		@Override
+		public Stream<Type> constructorType() {
+			return Stream.of(fieldType);
+		}
+
+		@Override
+		public void failIfBad(GeneratorAdapter okMethod) {
+			// Optima with deafults are always ok.
+		}
+
+		@Override
+		public void loadConstructorArgument() {
+			initial.accept(newRenderer);
 		}
 
 	}
@@ -601,8 +759,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		}
 
 		@Override
-		public Type constructorType() {
-			return null;
+		public Stream<Type> constructorType() {
+			return Stream.empty();
 		}
 
 		@Override
@@ -675,6 +833,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		elements.add(new First(fieldType, fieldName, loader));
 	}
 
+	@Override
+	public void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader, Consumer<Renderer> initial) {
+		elements.add(new FirstWithDefault(fieldType, fieldName, loader, initial));
+
+	}
+
 	public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {
 		elements.add(new Discriminator(fieldType, fieldName, loader));
 	}
@@ -688,6 +852,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
 	public void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader) {
 		elements.add(new Optima(fieldType, fieldName, max, loader));
 
+	}
+
+	@Override
+	public void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader,
+			Consumer<Renderer> initial) {
+		elements.add(new OptimaWithDefault(fieldType, fieldName, max, loader, initial));
 	}
 
 	@Override
@@ -719,7 +889,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 	 */
 	public void finish() {
 		final Method ctorType = new Method("<init>", VOID_TYPE,
-				elements.stream().map(Element::constructorType).filter(Objects::nonNull).toArray(Type[]::new));
+				elements.stream().flatMap(Element::constructorType).toArray(Type[]::new));
 		final GeneratorAdapter ctor = new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
 		ctor.visitCode();
 		ctor.loadThis();

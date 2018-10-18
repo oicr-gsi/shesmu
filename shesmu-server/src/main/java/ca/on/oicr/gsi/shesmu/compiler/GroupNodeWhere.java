@@ -38,8 +38,8 @@ public class GroupNodeWhere extends GroupNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-		return condition.resolve(defs, errorHandler) & sink.resolve(defs, errorHandler);
+	public boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
+		return condition.resolve(defs, errorHandler) & sink.resolve(defs, outerDefs, errorHandler);
 	}
 
 	@Override

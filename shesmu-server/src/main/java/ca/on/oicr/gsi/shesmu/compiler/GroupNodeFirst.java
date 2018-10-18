@@ -15,7 +15,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
  *
  * Also usable as the variable definition for the result
  */
-public final class GroupNodeFirst extends GroupNode {
+public final class GroupNodeFirst extends GroupNodeDefaultable {
 
 	private final ExpressionNode expression;
 	private final String name;
@@ -42,7 +42,12 @@ public final class GroupNodeFirst extends GroupNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public void render(Regrouper regroup, ExpressionNode initial, RootBuilder rootBuilder) {
+		regroup.addFirst(expression.type().asmType(), name(), expression::render, initial::render);
+	}
+
+	@Override
+	public boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
 		return expression.resolve(defs, errorHandler);
 	}
 

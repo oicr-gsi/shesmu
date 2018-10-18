@@ -128,7 +128,8 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
 			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
-		boolean ok = children.stream().filter(child -> child.resolve(defs, errorHandler)).count() == children.size();
+		boolean ok = children.stream().filter(child -> child.resolve(defs, defs, errorHandler)).count() == children
+				.size();
 		final Optional<List<Target>> maybeDiscriminatorVariables = checkDiscriminators(line, column, defs,
 				discriminators, errorHandler);
 		maybeDiscriminatorVariables.ifPresent(x -> discriminatorVariables = x);

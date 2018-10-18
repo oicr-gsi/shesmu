@@ -36,6 +36,8 @@ public interface Regrouper {
 	 */
 	void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader);
 
+	void addFirst(Type fieldType, String fieldName, Consumer<Renderer> loader, Consumer<Renderer> first);
+
 	/**
 	 * Add a value that is the Boolean result of checking expressions
 	 *
@@ -53,6 +55,8 @@ public interface Regrouper {
 	 *            the name of the variable for consumption by downstream uses
 	 */
 	void addOptima(Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader);
+
+	void addOptima(Type asmType, String name, boolean max, Consumer<Renderer> loader, Consumer<Renderer> initial);
 
 	/**
 	 * Count whether a variable matches a condition

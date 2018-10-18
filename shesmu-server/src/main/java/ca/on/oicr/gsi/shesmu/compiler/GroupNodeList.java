@@ -42,7 +42,7 @@ public final class GroupNodeList extends GroupNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
 		return expression.resolve(defs, errorHandler);
 	}
 

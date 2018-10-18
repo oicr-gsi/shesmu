@@ -167,7 +167,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 				errorHandler.accept(String.format("%d:%d: Redefinition of variable “%s”.", group.line(), group.column(),
 						group.name()));
 			}
-			return group.resolve(joinedDefs, errorHandler) && !isDuplicate;
+			return group.resolve(joinedDefs, defs, errorHandler) && !isDuplicate;
 		}).count() == children.size();
 
 		return defs.replaceStream(Stream.concat(discriminators.stream(), children.stream()), ok);
