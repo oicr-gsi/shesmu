@@ -94,7 +94,7 @@ The `Group` operation can also be used to “widen” a table in this way:
         By project, library_name
             # All scoped over project + library_name pairs
       Group
-          chunks = {library_name, qc, fingerprint}
+          chunks = List {library_name, qc, fingerprint}
             # Create a tuple for each interesting file for each library
             # in this project
         By project
@@ -125,6 +125,30 @@ In total, the collectors in a `Group` operation are:
   all, and, none of the rows, respectively.
 
 and `Where` clauses can precede any of these.
+
+`First`, `Max`, and `Min` can also take a `Default` to prevent the entire group
+from being rejected:
+
+    Olive
+      Group
+          qc = Where workflow == "BamQC 2.7+" First path Default "/dev/null",
+            # Use the output file from BamQC as `qc`
+          fingerprint = Where workflow == "Fingerprinting" First path Default "/dev/null",
+            # Use the output file from fingerprinting as `fingerprint`
+          timestamp = Max timestamp
+        By project, library_name
+            # All scoped over project + library_name pairs
+      Group
+          chunks = List {library_name, qc, fingerprint}
+            # Create a tuple for each interesting file for each library
+            # in this project
+        By project
+      # And create on report per project
+      Run project_report With
+        memory = 4Gi,
+        project = project,
+        chunks = chunks;
+
 
 Often, the same data is duplicated and there needs to be grouping that uses the
 “best” value. For this, a `Pick Min` or `Pick Max` clause can get the right

@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
-public class GroupNodeOptima extends GroupNode {
+public class GroupNodeOptima extends GroupNodeDefaultable {
 
 	private final ExpressionNode expression;
 	private final boolean max;
@@ -34,12 +34,17 @@ public class GroupNodeOptima extends GroupNode {
 	}
 
 	@Override
+	public void render(Regrouper regroup, ExpressionNode initial, RootBuilder builder) {
+		regroup.addOptima(expression.type().asmType(), name(), max, expression::render, initial::render);
+	}
+
+	@Override
 	public void render(Regrouper regroup, RootBuilder rootBuilder) {
 		regroup.addOptima(expression.type().asmType(), name(), max, expression::render);
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
 		return expression.resolve(defs, errorHandler);
 	}
 

@@ -40,7 +40,7 @@ public final class GroupNodeCount extends GroupNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+	public boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
 		return true;
 	}
 

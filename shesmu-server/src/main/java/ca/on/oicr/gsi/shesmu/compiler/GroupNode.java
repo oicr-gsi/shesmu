@@ -27,6 +27,11 @@ public abstract class GroupNode extends Target {
 
 	}
 
+	private interface ParseGroupWithExpressionDefaultable {
+		GroupNodeDefaultable make(int line, int column, String name, ExpressionNode expression);
+
+	}
+
 	private static final Parser.ParseDispatch<ParseGroup> GROUPERS = new Parser.ParseDispatch<>();
 
 	static {
@@ -34,13 +39,13 @@ public abstract class GroupNode extends Target {
 			o.accept(GroupNodeCount::new);
 			return p;
 		});
-		GROUPERS.addKeyword("First", of(GroupNodeFirst::new));
+		GROUPERS.addKeyword("First", ofWithDefault(GroupNodeFirst::new));
 		GROUPERS.addKeyword("List", of(GroupNodeList::new));
 		GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
-		GROUPERS.addKeyword("Max",
-				of((line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, true)));
-		GROUPERS.addKeyword("Min",
-				of((line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, false)));
+		GROUPERS.addKeyword("Max", ofWithDefault(
+				(line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, true)));
+		GROUPERS.addKeyword("Min", ofWithDefault(
+				(line, column, name, expression) -> new GroupNodeOptima(line, column, name, expression, false)));
 		for (final Match match : Match.values()) {
 			GROUPERS.addKeyword(match.syntax(), of(
 					(line, column, name, expression) -> new GroupNodeMatches(line, column, name, match, expression)));
@@ -71,6 +76,34 @@ public abstract class GroupNode extends Target {
 					.then(ExpressionNode::parse, expression::set)//
 					.whitespace();
 			if (result.isGood()) {
+				o.accept((line, column, name) -> maker.make(line, column, name, expression.get()));
+			}
+			return result;
+		};
+	}
+
+	private static final Rule<ParseGroup> ofWithDefault(ParseGroupWithExpressionDefaultable maker) {
+		return (p, o) -> {
+			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+			final Parser result = p//
+					.whitespace()//
+					.then(ExpressionNode::parse, expression::set)//
+					.whitespace();
+			if (result.isGood()) {
+				final Parser defaultResult = result//
+						.keyword("Default");//
+				if (defaultResult.isGood()) {
+					final AtomicReference<ExpressionNode> initial = new AtomicReference<>();
+					final Parser defaultComplete = defaultResult//
+							.whitespace()//
+							.then(ExpressionNode::parse, initial::set)//
+							.whitespace();
+					if (defaultComplete.isGood()) {
+						o.accept((line, column, name) -> new GroupNodeWithDefault(line, column, initial.get(),
+								maker.make(line, column, name, expression.get())));
+					}
+					return defaultComplete;
+				}
 				o.accept((line, column, name) -> maker.make(line, column, name, expression.get()));
 			}
 			return result;
@@ -115,7 +148,7 @@ public abstract class GroupNode extends Target {
 
 	public abstract void render(Regrouper regroup, RootBuilder builder);
 
-	public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
+	public abstract boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler);
 
 	public abstract boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,

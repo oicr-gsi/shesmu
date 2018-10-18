@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Group
+     x = Where library_size == 999 First path Default "",
+     y = Where library_size == 300 First path
+  By project
+ Run ok With ok = x == "";
