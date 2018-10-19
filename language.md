@@ -118,8 +118,9 @@ In total, the collectors in a `Group` operation are:
 - `Max` and `Min` to collect the most extreme value; if none are collected, the
   group is rejected
 - `Count` to count the number of matched rows
-- `PartitionCount` which returns a tuple of the number of rows that matched and
-  failed the provided condition
+- `PartitionCount` which returns an object with two fields: `matched_count`
+  with the number of rows that satisfied the condition and `not_matched_count`
+  with the number that failed the provided condition
 - `Any`, `All`, and `None` which check that a condition is satisfied for any,
   all, and, none of the rows, respectively.
 
@@ -721,8 +722,9 @@ condition specified in _expr_, which must return a Boolean.
 #### Partitioned Counter
 - `PartitionCount` _expr_
 
-Produces a tuple with two elements: the first is the number of items for which
-_expr_ was true, the second is the number of items for which _expr_ was false.
+Produces an object with two field: `matched_count` is the number of items for
+which _expr_ was true, the `not_matched_count` is the number of items for which
+_expr_ was false.
 
 #### Reduce
 - `Reduce(`_a_ `=` _initialexpr_ `)` _expr_

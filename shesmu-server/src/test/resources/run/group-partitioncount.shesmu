@@ -2,4 +2,4 @@ Input test;
 
 Olive
  Group a = PartitionCount library_size == 307 By workflow
- Run ok With ok = a[0] == 1 && a[1] == 1;
+ Run ok With ok = a.matched_count == 1 && a.not_matched_count == 1;
