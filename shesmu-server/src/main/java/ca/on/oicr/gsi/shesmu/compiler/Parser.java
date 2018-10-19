@@ -10,6 +10,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ca.on.oicr.gsi.Pair;
+
 /**
  * Parse an input stream
  */
@@ -384,6 +386,14 @@ public abstract class Parser {
 		}
 		output.accept(list);
 		return last;
+	}
+
+	/**
+	 * Emit current line and column
+	 */
+	public final Parser location(Consumer<Pair<Integer, Integer>> output) {
+		output.accept(new Pair<>(line(), column()));
+		return this;
 	}
 
 	/**

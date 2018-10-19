@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
@@ -25,11 +26,13 @@ public class ProgramNode {
 	 * Parse a file of olive nodes
 	 */
 	public static boolean parseFile(CharSequence input, Consumer<ProgramNode> output, ErrorConsumer errorHandler) {
+		final AtomicReference<Pair<Integer, Integer>> start = new AtomicReference<>();
 		final AtomicReference<String> inputFormat = new AtomicReference<>();
 		final AtomicReference<List<TypeAliasNode>> typeAliases = new AtomicReference<>();
 		final AtomicReference<List<OliveNode>> olives = new AtomicReference<>();
 		final Parser result = Parser.start(input, errorHandler)//
 				.whitespace()//
+				.location(start::set)//
 				.keyword("Input")//
 				.whitespace()//
 				.identifier(inputFormat::set)//
@@ -41,7 +44,8 @@ public class ProgramNode {
 				.whitespace();
 		if (result.isGood()) {
 			if (result.isEmpty()) {
-				output.accept(new ProgramNode(inputFormat.get(), typeAliases.get(), olives.get()));
+				output.accept(new ProgramNode(start.get().first(), start.get().second(), inputFormat.get(),
+						typeAliases.get(), olives.get()));
 				return true;
 			} else {
 				errorHandler.raise(result.line(), result.column(), "Junk at end of file.");
@@ -50,16 +54,22 @@ public class ProgramNode {
 		return false;
 	}
 
+	private final int column;
+
 	private final String input;
 
 	private InputFormatDefinition inputFormatDefinition;
+
+	private final int line;
 
 	private final List<OliveNode> olives;
 
 	private final List<TypeAliasNode> typeAliases;
 
-	public ProgramNode(String input, List<TypeAliasNode> typeAliases, List<OliveNode> olives) {
+	public ProgramNode(int line, int column, String input, List<TypeAliasNode> typeAliases, List<OliveNode> olives) {
 		super();
+		this.line = line;
+		this.column = column;
 		this.input = input;
 		this.typeAliases = typeAliases;
 		this.olives = olives;
@@ -100,7 +110,8 @@ public class ProgramNode {
 
 		inputFormatDefinition = inputFormatDefinitions.apply(input);
 		if (inputFormatDefinition == null) {
-			errorHandler.accept(String.format("No input format of data named “%s” is available.", input));
+			errorHandler.accept(
+					String.format("%d:%d: No input format of data named “%s” is available.", line, column, input));
 			return false;
 		}
 		// Find and resolve olive “Define” and “Matches”
