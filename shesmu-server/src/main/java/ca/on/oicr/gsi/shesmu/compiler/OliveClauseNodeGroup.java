@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +13,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.Constant;
@@ -58,11 +55,11 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
 	private final List<GroupNode> children;
 	protected final int column;
-	private final List<String> discriminators;
-	private List<Target> discriminatorVariables = Collections.emptyList();
+	private final List<DiscriminatorNode> discriminators;
 	protected final int line;
 
-	public OliveClauseNodeGroup(int line, int column, List<GroupNode> children, List<String> discriminators) {
+	public OliveClauseNodeGroup(int line, int column, List<GroupNode> children,
+			List<DiscriminatorNode> discriminators) {
 		this.line = line;
 		this.column = column;
 		this.children = children;
@@ -80,20 +77,16 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 									return new VariableInformation(child.name(), child.type(), inputs.stream(),
 											Behaviour.DEFINITION);
 								}), //
-						discriminatorVariables.stream()//
-								.map(discriminator -> new VariableInformation(discriminator.name(),
-										discriminator.type(), Stream.of(discriminator.name()),
-										Behaviour.PASSTHROUGH))));
+						discriminators.stream()//
+								.map(DiscriminatorNode::dashboard)));
 	}
 
 	@Override
 	public final ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler) {
 		if (state == ClauseStreamOrder.PURE) {
-			discriminatorVariables.stream()//
-					.filter(v -> v.flavour() == Flavour.STREAM_SIGNABLE)//
-					.map(Target::name)//
-					.forEach(signableNames::add);
+			discriminators.stream()//
+					.forEach(d -> d.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
 			children.stream()//
 					.forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
 			return ClauseStreamOrder.TRANSFORMED;
@@ -111,13 +104,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 		final RegroupVariablesBuilder regroup = oliveBuilder.regroup(oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 
-		discriminatorVariables.stream().forEach(discriminator -> {
-			regroup.addKey(discriminator.type().asmType(), discriminator.name(), context -> {
-				context.loadStream();
-				context.methodGen().invokeVirtual(context.streamType(),
-						new Method(discriminator.name(), discriminator.type().asmType(), new Type[] {}));
-			});
-		});
+		discriminators.forEach(d -> d.render(regroup));
 		children.stream().forEach(group -> group.render(regroup, builder));
 		regroup.finish();
 
@@ -128,15 +115,13 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
 			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
-		boolean ok = children.stream().filter(child -> child.resolve(defs, defs, errorHandler)).count() == children
-				.size();
-		final Optional<List<Target>> maybeDiscriminatorVariables = checkDiscriminators(line, column, defs,
-				discriminators, errorHandler);
-		maybeDiscriminatorVariables.ifPresent(x -> discriminatorVariables = x);
-
-		if (!maybeDiscriminatorVariables.isPresent()) {
-			ok = false;
-		}
+		boolean ok = //
+				children.stream()//
+						.filter(child -> child.resolve(defs, defs, errorHandler))//
+						.count() == children.size() & //
+						discriminators.stream()//
+								.filter(discriminator -> discriminator.resolve(defs, errorHandler))//
+								.count() == discriminators.size();
 
 		ok &= children.stream().noneMatch(group -> {
 			final boolean isDuplicate = defs.get(group.name()).filter(variable -> !variable.flavour().isStream())
@@ -147,34 +132,31 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 			}
 			return isDuplicate;
 		});
-		return defs.replaceStream(Stream.concat(discriminatorVariables.stream(), children.stream()), ok);
+		return defs.replaceStream(Stream.concat(discriminators.stream(), children.stream()), ok);
 	}
 
 	@Override
 	public final boolean resolveDefinitions(Map<String, OliveNodeDefinition> definedOlives,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
 			Set<String> metricNames, Map<String, List<Imyhat>> dumpers, Consumer<String> errorHandler) {
-		boolean ok = children.stream().filter(
-				group -> group.resolveDefinitions(definedOlives, definedFunctions, definedActions, errorHandler))
-				.count() == children.size();
-		if (discriminators.stream().distinct().count() != discriminators.size()) {
-			ok = false;
-			errorHandler.accept(String.format("%d:%d: Duplicate “By” variables in “Group” clause. Should be: %s", line,
-					column, discriminators.stream().sorted().distinct().collect(Collectors.joining(", "))));
-		}
-		if (children.stream().map(GroupNode::name).distinct().count() != children.size()) {
-			ok = false;
-			errorHandler.accept(String.format("%d:%d: Duplicate collected variables in “Group” clause. Should be: %s",
-					line, column,
-					children.stream().map(GroupNode::name).sorted().distinct().collect(Collectors.joining(", "))));
-		}
-		final List<GroupNode> badGroups = children.stream().filter(child -> discriminators.contains(child.name()))
-				.collect(Collectors.toList());
-		if (!badGroups.isEmpty()) {
-			ok = false;
-			errorHandler.accept(String.format("%d:%d: Collected variables have same names as “By” variables: %s", line,
-					column, badGroups.stream().map(GroupNode::name).collect(Collectors.joining(", "))));
-		}
+		boolean ok = children.stream()
+				.filter(group -> group.resolveDefinitions(definedOlives, definedFunctions, definedActions,
+						errorHandler))
+				.count() == children.size()
+				& discriminators.stream().filter(group -> group.resolveFunctions(definedFunctions, errorHandler))
+						.count() == discriminators.size();
+
+		ok &= Stream.<DefinedTarget>concat(discriminators.stream(), children.stream())//
+				.collect(Collectors.groupingBy(DefinedTarget::name))//
+				.entrySet().stream()//
+				.filter(e -> e.getValue().size() > 1)//
+				.peek(e -> errorHandler.accept(String.format("%d:%d: “Group” has duplicate name %s: %s", line, column,
+						e.getKey(), e.getValue().stream()//
+								.sorted(Comparator.comparingInt(DefinedTarget::line)
+										.thenComparingInt(DefinedTarget::column))//
+								.map(l -> String.format("%d:%d", l.line(), l.column()))//
+								.collect(Collectors.joining(", ")))))//
+				.count() == 0;
 		return ok;
 	}
 

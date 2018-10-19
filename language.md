@@ -149,6 +149,18 @@ from being rejected:
         project = project,
         chunks = chunks;
 
+Sometimes, it's useful to change the data format of the discriminators. It's
+possible to reshape the data using `Let`, but it can be more convenient to do
+that in the `By` clause:
+
+    Olive
+      Where workflow == "BamQC 2.7+"
+      Group
+          files = List path
+        By project, sequencer_run = ius[0]
+      Run fingerprint With
+        memory = 4Gi,
+        input = files;
 
 Often, the same data is duplicated and there needs to be grouping that uses the
 “best” value. For this, a `Pick Min` or `Pick Max` clause can get the right
