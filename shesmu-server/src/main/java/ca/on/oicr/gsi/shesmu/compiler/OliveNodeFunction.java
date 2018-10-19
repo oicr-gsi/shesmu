@@ -125,8 +125,9 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants) {
 		final NameDefinitions defs = new NameDefinitions(Stream.concat(//
-				constants.get(), parameters.stream())//
-				.collect(Collectors.toMap(Target::name, Function.identity())), //
+				parameters.stream(), //
+				constants.get())//
+				.collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)), //
 				true);
 		return body.resolve(defs, errorHandler);
 	}

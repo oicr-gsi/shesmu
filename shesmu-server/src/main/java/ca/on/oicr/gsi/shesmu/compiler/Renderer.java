@@ -63,7 +63,7 @@ public class Renderer {
 		this.streamArg = streamArg;
 		this.streamType = streamType;
 		this.signerEmitter = signerEmitter;
-		this.loadables = loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity()));
+		this.loadables = loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity(), (a, b) -> a));
 
 	}
 
