@@ -109,9 +109,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
 			Supplier<Stream<Constant>> constants) {
 		if (resolveLock) {
-			errorHandler.accept(
-					String.format("%d:%d: Olive definition %s includes itself.", line, column, name));
+			errorHandler.accept(String.format("%d:%d: Olive definition %s includes itself.", line, column, name));
 			return false;
+		}
+		if (outputStreamVariables != null) {
+			return true;
 		}
 		resolveLock = true;
 		final NameDefinitions result = clauses().stream().reduce(
@@ -120,9 +122,9 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 				(a, b) -> {
 					throw new UnsupportedOperationException();
 				});
-		outputStreamVariables = result.stream().filter(target -> target.flavour().isStream())
-				.collect(Collectors.toList());
 		if (result.isGood()) {
+			outputStreamVariables = result.stream().filter(target -> target.flavour().isStream())
+					.collect(Collectors.toList());
 			clauses().stream().findFirst().ifPresent(
 					c -> c.dashboard().variables().flatMap(VariableInformation::inputs).forEach(inputVariables::add));
 		}

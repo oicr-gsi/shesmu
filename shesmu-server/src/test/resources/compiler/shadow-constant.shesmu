@@ -1,0 +1,6 @@
+Input test;
+
+Function x(string notpi) "{notpi}!";
+
+Define thingie(string notpi)
+  Where workflow == notpi;

@@ -62,7 +62,7 @@ public class NameDefinitions {
 				.concat(parameters.filter(
 						variable -> variable.flavour() == Flavour.PARAMETER || variable.flavour() == Flavour.CONSTANT),
 						Stream.concat(inputFormatDefinition.baseStreamVariables(), signatureVariables()))
-				.collect(Collectors.toMap(Target::name, Function.identity())), true);
+				.collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)), true);
 	}
 
 	public static Stream<SignatureVariable> signatureVariables() {
@@ -88,10 +88,10 @@ public class NameDefinitions {
 	 * @return
 	 */
 	public NameDefinitions bind(Target parameter) {
-		return new NameDefinitions(
-				Stream.concat(variables.values().stream().filter(variable -> !variable.name().equals(parameter.name())),
-						Stream.of(parameter)).collect(Collectors.toMap(Target::name, Function.identity())),
-				isGood);
+		return new NameDefinitions(Stream
+				.concat(Stream.of(parameter),
+						variables.values().stream().filter(variable -> !variable.name().equals(parameter.name())))
+				.collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)), isGood);
 	}
 
 	/**
@@ -126,10 +126,10 @@ public class NameDefinitions {
 	 *            whether a failure has occurred
 	 */
 	public NameDefinitions replaceStream(Stream<Target> newStreamVariables, boolean good) {
-		return new NameDefinitions(
-				Stream.concat(variables.values().stream().filter(variable -> !variable.flavour().isStream()),
-						newStreamVariables).collect(Collectors.toMap(Target::name, Function.identity())),
-				isGood && good);
+		return new NameDefinitions(Stream
+				.concat(newStreamVariables,
+						variables.values().stream().filter(variable -> !variable.flavour().isStream()))
+				.collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)), isGood && good);
 	}
 
 	public Stream<Target> stream() {
