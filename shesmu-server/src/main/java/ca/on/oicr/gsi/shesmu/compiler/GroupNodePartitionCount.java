@@ -9,10 +9,10 @@ import java.util.function.Predicate;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
 
 public class GroupNodePartitionCount extends GroupNode {
 
-	private static final Imyhat TYPE = Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER);
 	private final ExpressionNode condition;
 	private final String name;
 
@@ -51,7 +51,7 @@ public class GroupNodePartitionCount extends GroupNode {
 
 	@Override
 	public Imyhat type() {
-		return TYPE;
+		return PartitionCount.TYPE;
 	}
 
 	@Override

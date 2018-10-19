@@ -85,7 +85,7 @@ public class CollectNodePartitionCount extends CollectNode {
 
 	@Override
 	public Imyhat type() {
-		return Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER);
+		return PartitionCount.TYPE;
 	}
 
 	@Override
