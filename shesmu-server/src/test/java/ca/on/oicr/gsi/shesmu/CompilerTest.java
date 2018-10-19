@@ -33,7 +33,7 @@ public class CompilerTest {
 		public CompilerHarness(Path file) throws IOException {
 			super(false);
 			try (Stream<String> lines = Files.lines(
-					file.getParent().resolve(file.getFileName().toString().replaceFirst("\\.shesmu", ".errors")))) {
+					file.getParent().resolve(file.getFileName().toString().replaceFirst("\\.shesmu$", ".errors")))) {
 				allowedErrors = lines.collect(Collectors.toSet());
 			}
 		}
@@ -119,6 +119,7 @@ public class CompilerTest {
 			compiler.compile(Files.readAllBytes(file), "dyn/shesmu/Program", file.toString(), CONSTANTS::stream, null);
 			return new Pair<>(file, compiler.ok());
 		} catch (final Exception e) {
+			e.printStackTrace();
 			return new Pair<>(file, false);
 		}
 	}
