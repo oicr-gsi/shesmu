@@ -1,0 +1,7 @@
+Input test;
+
+Olive
+ Group
+    z = Max library_size
+  By p = "x{project}"
+ Run ok With ok = z == 307 && p == "xthe_foo_study";

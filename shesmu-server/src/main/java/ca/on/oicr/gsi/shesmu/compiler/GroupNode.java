@@ -16,7 +16,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
  *
  * Also usable as the variable definition for the result
  */
-public abstract class GroupNode extends Target {
+public abstract class GroupNode extends DefinedTarget {
 	private interface ParseGroup {
 		GroupNode make(int line, int column, String name);
 
@@ -114,6 +114,7 @@ public abstract class GroupNode extends Target {
 		final AtomicReference<String> name = new AtomicReference<>();
 
 		final Parser result = input//
+				.whitespace()//
 				.identifier(name::set)//
 				.whitespace()//
 				.keyword("=")//

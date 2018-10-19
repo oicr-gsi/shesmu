@@ -47,14 +47,14 @@ public abstract class OliveClauseNode {
 		final Parser groupParser = input.keyword("Group");
 		if (groupParser.isGood()) {
 			final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
-			final AtomicReference<List<String>> discriminators = new AtomicReference<>();
+			final AtomicReference<List<DiscriminatorNode>> discriminators = new AtomicReference<>();
 			final Parser result = groupParser//
 					.whitespace()//
 					.listEmpty(groups::set, GroupNode::parse, ',')//
 					.whitespace()//
 					.keyword("By")//
 					.whitespace()//
-					.list(discriminators::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')//
+					.list(discriminators::set, DiscriminatorNode::parse, ',')//
 					.whitespace();
 			if (result.isGood()) {
 				output.accept(
