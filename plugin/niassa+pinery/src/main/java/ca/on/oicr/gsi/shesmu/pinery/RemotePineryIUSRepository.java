@@ -207,7 +207,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 			.build("shesmu_pinery_last_count", "The number of lanes and samples from Pinery.").labelNames("target")
 			.register();
 
-	private static final String EXTENSION = ".pinery";
+	public static final String EXTENSION = ".pinery";
 
 	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_pinery_lane_request_time",
 			"The time to fetch data from Provenance.");
