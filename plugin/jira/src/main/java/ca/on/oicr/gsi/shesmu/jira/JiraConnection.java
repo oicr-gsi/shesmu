@@ -5,7 +5,9 @@ import java.util.stream.Stream;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 
-public interface JiraConnection {
+import ca.on.oicr.gsi.shesmu.util.FileBound;
+
+public interface JiraConnection extends FileBound {
 
 	JiraRestClient client();
 

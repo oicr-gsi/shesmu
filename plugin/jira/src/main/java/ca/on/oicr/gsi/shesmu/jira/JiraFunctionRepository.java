@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -18,7 +16,7 @@ import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
-import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
+import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
 
 @MetaInfServices(FunctionRepository.class)
 public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDefinition> implements FunctionRepository {
@@ -43,7 +41,28 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 
 	}
 
-	private static final Imyhat QUERY_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING).asList();
+	private static final RuntimeBinding<JiraConnection> RUNTIME_BINDING = new RuntimeBinding<>(JiraConnection.class,
+			EXTENSION)//
+					.staticFunction("count_tickets_%s", JiraFunctionRepository.class, "count", Imyhat.INTEGER,
+							"Count the number of open or closed tickets from the JIRA project defined in %2$s.",
+							new FunctionParameter("search_test", Imyhat.STRING),
+							new FunctionParameter("is_open", Imyhat.BOOLEAN))//
+					.staticFunction("query_tickets_%s", JiraFunctionRepository.class, "fetch",
+							Imyhat.tuple(Imyhat.STRING, Imyhat.STRING).asList(),
+							"Get the ticket summary and descriptions from the JIRA project defined in %2$s.",
+							new FunctionParameter("search_test", Imyhat.STRING),
+							new FunctionParameter("is_open", Imyhat.BOOLEAN));
+
+	@RuntimeInterop
+	public static long count(JiraConnection connection, String keyword, boolean open) {
+		return connection.issues().filter(new IssueFilter(keyword, open)).count();
+	}
+
+	@RuntimeInterop
+	public static Set<Tuple> fetch(JiraConnection connection, String keyword, boolean open) {
+		return connection.issues().filter(new IssueFilter(keyword, open))
+				.map(issue -> new Tuple(issue.getKey(), issue.getSummary())).collect(Collectors.toSet());
+	}
 
 	public JiraFunctionRepository() {
 		super("JIRA Function Repository");
@@ -51,35 +70,7 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 
 	@Override
 	protected Stream<FunctionDefinition> create(JiraConfig config, Path filename) {
-		try {
-			final Lookup lookup = MethodHandles.lookup();
-			return Stream.<FunctionDefinition>of(new FunctionForInstance(lookup, "count",
-					String.format("count_tickets_%s", config.instance()),
-					String.format("Count the number of open or closed tickets from the JIRA project defined in %s.",
-							filename),
-					Imyhat.INTEGER, new FunctionParameter("search_test", Imyhat.STRING),
-					new FunctionParameter("is_open", Imyhat.BOOLEAN)) {
-
-				@RuntimeInterop
-				public long count(String keyword, boolean open) {
-					return config.issues().filter(new IssueFilter(keyword, open)).count();
-				}
-			}, new FunctionForInstance(lookup, "fetch", String.format("query_tickets_%s", config.instance()),
-					String.format("Get the ticket summary and descriptions from the JIRA project defined in %s.",
-							filename),
-					QUERY_TYPE, new FunctionParameter("search_test", Imyhat.STRING),
-					new FunctionParameter("is_open", Imyhat.BOOLEAN)) {
-
-				@RuntimeInterop
-				public Set<Tuple> fetch(String keyword, boolean open) {
-					return config.issues().filter(new IssueFilter(keyword, open))
-							.map(issue -> new Tuple(issue.getKey(), issue.getSummary())).collect(Collectors.toSet());
-				}
-			});
-		} catch (final Exception e) {
-			e.printStackTrace();
-			return Stream.empty();
-		}
+		return RUNTIME_BINDING.bindFunctions(config).stream();
 	}
 
 	@Override

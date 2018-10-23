@@ -203,7 +203,7 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 			.labelNames("project", "purpose").create();
 	private static Map<String, JiraConnection> clients = new HashMap<>();
 
-	private static final String EXTENSION = ".jira";
+	protected static final String EXTENSION = ".jira";
 
 	private static final Counter fetchErrors = Counter
 			.build("shesmu_jira_ticket_fetch_error", "The number of errors refreshing the ticket cache.")
