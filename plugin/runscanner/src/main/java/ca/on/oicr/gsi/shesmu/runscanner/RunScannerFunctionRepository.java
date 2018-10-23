@@ -1,9 +1,6 @@
 package ca.on.oicr.gsi.shesmu.runscanner;
 
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,14 +28,14 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
-import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
+import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;
 
 @MetaInfServices
 public class RunScannerFunctionRepository implements FunctionRepository {
-	private class RunScannerClient extends AutoUpdatingJsonFile<Configuration> {
+	public final class RunScannerClient extends AutoUpdatingJsonFile<Configuration> {
 
 		private final ConfigurationSection configurationPair;
 		private final List<FunctionDefinition> functions;
@@ -58,31 +55,7 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 					url.ifPresent(u -> renderer.link("URL", u, u));
 				}
 			};
-			List<FunctionDefinition> functions;
-			try {
-				functions = Arrays.asList(//
-						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "laneCount",
-								String.format("%s_lane_count", instance),
-								String.format("Get the number of lanes detected by the Run Scanner defined in %s",
-										fileName),
-								Imyhat.INTEGER, new FunctionParameter("run_id", Imyhat.STRING)), //
-						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "readEnds",
-								String.format("%s_read_ends", instance),
-								String.format("Get the number of reads detected by the Run Scanner defined in %s",
-										fileName),
-								Imyhat.INTEGER, new FunctionParameter("run_id", Imyhat.STRING)), //
-						FunctionForInstance.bind(MethodHandles.lookup(), RunScannerClient.class, this, "flowcell",
-								String.format("%s_flowcell", instance),
-								String.format(
-										"Get the serial number of the flowcell detected by the Run Scanner defined in %s",
-										fileName),
-								Imyhat.STRING, new FunctionParameter("run_id", Imyhat.STRING))//
-				);
-			} catch (NoSuchMethodException | IllegalAccessException e) {
-				functions = Collections.emptyList();
-				e.printStackTrace();
-			}
-			this.functions = functions;
+			functions = RUNTIME_BINDING.bindFunctions(this);
 		}
 
 		public ConfigurationSection configuration() {
@@ -174,7 +147,17 @@ public class RunScannerFunctionRepository implements FunctionRepository {
 
 	private static final LatencyHistogram requestTime = new LatencyHistogram("shesmu_runscanner_request_time",
 			"The request time latency to access run information.", "target");
-
+	private static final RuntimeBinding<RunScannerClient> RUNTIME_BINDING = new RuntimeBinding<>(RunScannerClient.class,
+			EXTENSION)//
+					.function("%s_lane_count", "laneCount", Imyhat.INTEGER,
+							"Get the number of lanes detected by the Run Scanner defined in %2$s",
+							new FunctionParameter("run_id", Imyhat.STRING))//
+					.function("%s_read_ends", "readEnds", Imyhat.INTEGER,
+							"Get the number of reads detected by the Run Scanner defined in %2$s",
+							new FunctionParameter("run_id", Imyhat.STRING))//
+					.function("%s_flowcell", "flowcell", Imyhat.STRING,
+							"Get the serial number of the flowcell detected by the Run Scanner defined in %2$s",
+							new FunctionParameter("run_id", Imyhat.STRING));
 	private final AutoUpdatingDirectory<RunScannerClient> clients;
 
 	public RunScannerFunctionRepository() {

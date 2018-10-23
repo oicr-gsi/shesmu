@@ -11,7 +11,7 @@ import io.prometheus.client.Gauge;
  * Creates a watched JSON file that will be notified when the file changes on
  * disk and parsed
  */
-public abstract class AutoUpdatingJsonFile<T> implements WatchedFileListener {
+public abstract class AutoUpdatingJsonFile<T> implements WatchedFileListener, FileBound {
 
 	private static final Gauge goodJson = Gauge
 			.build("shesmu_auto_update_good_json", "Whether a JSON configuration file is valid.").labelNames("filename")

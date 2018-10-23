@@ -1,15 +1,11 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.stream.XMLStreamException;
@@ -21,11 +17,11 @@ import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.FunctionRepository;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.Cache;
-import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance;
-import ca.on.oicr.gsi.shesmu.util.function.FunctionForInstance.FinishBind;
+import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;
@@ -36,31 +32,7 @@ import net.schmizz.sshj.sftp.SFTPClient;
 
 @MetaInfServices
 public class SftpFunctionRepository implements FunctionRepository {
-	private static final List<FinishBind<SftpServer>> FUNCTIONS = new ArrayList<>();
-	static {
-		try {
-			final Lookup lookup = MethodHandles.lookup();
-			FUNCTIONS.add(FunctionForInstance.startBind(lookup, SftpServer.class, "size", "%1$s_size", //
-					"Get the size of a file, in bytes, living on the SFTP server described in %2$s.", //
-					Imyhat.INTEGER, //
-					new FunctionParameter("file_name", Imyhat.STRING), //
-					new FunctionParameter("size_if_not_exists", Imyhat.INTEGER)));
-			FUNCTIONS.add(FunctionForInstance.startBind(lookup, SftpServer.class, "exists", "%1$s_exists", //
-					"Returns true if the file or directory exists on the SFTP server described in %2$s.", //
-					Imyhat.BOOLEAN, //
-					new FunctionParameter("file_name", Imyhat.STRING), //
-					new FunctionParameter("result_on_error", Imyhat.BOOLEAN)));
-			FUNCTIONS.add(FunctionForInstance.startBind(lookup, SftpServer.class, "mtime", "%1$s_mtime", //
-					"Gets the last modification timestamp of a file or directory living on the SFTP server described in %2$s.", //
-					Imyhat.DATE, //
-					new FunctionParameter("file_name", Imyhat.STRING), //
-					new FunctionParameter("date_if_not_exists", Imyhat.DATE)));
-		} catch (NoSuchMethodException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private class SftpServer extends AutoUpdatingJsonFile<Configuration> {
+	public final class SftpServer extends AutoUpdatingJsonFile<Configuration> {
 		private Instant backoff = Instant.EPOCH;
 
 		private SSHClient client;
@@ -83,12 +55,9 @@ public class SftpFunctionRepository implements FunctionRepository {
 
 		public SftpServer(Path fileName) {
 			super(fileName, Configuration.class);
-			final String filePart = fileName.getFileName().toString();
-			service = filePart.substring(0, filePart.length() - EXTENSION.length());
+			service = RuntimeSupport.removeExtension(fileName, EXTENSION);
 
-			definitions = FUNCTIONS.stream()//
-					.map(f -> f.bind(this, service, fileName))//
-					.collect(Collectors.toList());
+			definitions = RUNTIME_BINDING.bindFunctions(this);
 		}
 
 		private boolean attemptConnect() {
@@ -205,6 +174,20 @@ public class SftpFunctionRepository implements FunctionRepository {
 			.register();
 
 	private static final String EXTENSION = ".sftp";
+
+	private static final RuntimeBinding<SftpServer> RUNTIME_BINDING = new RuntimeBinding<>(SftpServer.class, EXTENSION)//
+			.function("%1$s_size", "size", Imyhat.INTEGER,
+					"Get the size of a file, in bytes, living on the SFTP server described in %2$s.", //
+					new FunctionParameter("file_name", Imyhat.STRING), //
+					new FunctionParameter("size_if_not_exists", Imyhat.INTEGER))//
+			.function("%1$s_exists", "exists", Imyhat.BOOLEAN,
+					"Returns true if the file or directory exists on the SFTP server described in %2$s.", //
+					new FunctionParameter("file_name", Imyhat.STRING), //
+					new FunctionParameter("result_on_error", Imyhat.BOOLEAN))//
+			.function("%1$s_mtime", "mtime", Imyhat.DATE,
+					"Gets the last modification timestamp of a file or directory living on the SFTP server described in %2$s.", //
+					new FunctionParameter("file_name", Imyhat.STRING), //
+					new FunctionParameter("date_if_not_exists", Imyhat.DATE));
 
 	private final AutoUpdatingDirectory<SftpServer> configurations;
 

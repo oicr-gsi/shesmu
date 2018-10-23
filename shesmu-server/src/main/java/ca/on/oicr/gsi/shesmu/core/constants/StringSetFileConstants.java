@@ -4,27 +4,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.kohsuke.MetaInfServices;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.Constant;
 import ca.on.oicr.gsi.shesmu.ConstantSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.util.FileBound;
+import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
@@ -37,25 +35,25 @@ import io.prometheus.client.Gauge;
 @MetaInfServices(ConstantSource.class)
 public class StringSetFileConstants implements ConstantSource {
 
-	private class ConstantsFile extends Constant implements WatchedFileListener {
-		private Set<String> constants = Collections.emptySet();
+	public final class ConstantsFile implements WatchedFileListener, FileBound {
+		private final List<Constant> constants;
 
 		private final Path fileName;
-		private final long id;
+		private Set<String> values = Collections.emptySet();
 
 		public ConstantsFile(Path fileName) {
-			super(RuntimeSupport.removeExtension(fileName, EXTENSION), Imyhat.STRING.asList(),
-					String.format("set of strings from file %s", fileName));
 			this.fileName = fileName;
-			id = idGenerator.incrementAndGet();
-			cache.put(id, this);
+			constants = RUNTIME_BINDING.bindConstants(this);
 		}
 
 		@Override
-		protected void load(GeneratorAdapter methodGen) {
-			methodGen.push(id);
-			methodGen.invokeStatic(Type.getType(StringSetFileConstants.class),
-					new Method("fetch", Type.getType(Set.class), new Type[] { Type.LONG_TYPE }));
+		public Path fileName() {
+			return fileName;
+		}
+
+		@RuntimeInterop
+		public Set<String> get() {
+			return values;
 		}
 
 		@Override
@@ -71,7 +69,7 @@ public class StringSetFileConstants implements ConstantSource {
 		@Override
 		public Optional<Integer> update() {
 			try {
-				constants = new TreeSet<>(Files.readAllLines(fileName));
+				values = new TreeSet<>(Files.readAllLines(fileName));
 				badFile.labels(fileName.toString()).set(0);
 			} catch (final Exception e) {
 				e.printStackTrace();
@@ -86,12 +84,13 @@ public class StringSetFileConstants implements ConstantSource {
 			.labelNames("filename").register();
 	private static final Map<Long, ConstantsFile> cache = new ConcurrentHashMap<>();
 	private static final String EXTENSION = ".set";
-
-	private static final AtomicLong idGenerator = new AtomicLong();
+	private static final RuntimeBinding<ConstantsFile> RUNTIME_BINDING = new RuntimeBinding<>(ConstantsFile.class,
+			EXTENSION)//
+					.constant("%s", "get", Imyhat.STRING.asList(), "Set of strings from file %2$s");
 
 	@RuntimeInterop
 	public static final Set<String> fetch(long constantsId) {
-		return cache.get(constantsId).constants;
+		return cache.get(constantsId).values;
 	}
 
 	private final AutoUpdatingDirectory<ConstantsFile> files;
@@ -108,14 +107,14 @@ public class StringSetFileConstants implements ConstantSource {
 			public void emit(SectionRenderer renderer) throws XMLStreamException {
 				files.stream()//
 						.sorted(Comparator.comparing(f -> f.fileName))//
-						.forEach(f -> renderer.line(f.fileName.toString(), f.constants.size()));
+						.forEach(f -> renderer.line(f.fileName.toString(), f.values.size()));
 			}
 		});
 	}
 
 	@Override
 	public Stream<? extends Constant> queryConstants() {
-		return files.stream();
+		return files.stream().flatMap(f -> f.constants.stream());
 	}
 
 }
