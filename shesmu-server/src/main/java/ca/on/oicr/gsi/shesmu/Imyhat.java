@@ -275,7 +275,7 @@ public abstract class Imyhat {
 		public String javaScriptParser() {
 			return fields.entrySet().stream()//
 					.map(e -> e.getKey() + ":" + e.getValue().first().javaScriptParser())//
-					.collect(Collectors.joining(",", "parser.o({", "})"));
+					.collect(Collectors.joining(", ", "parser.o({", "})"));
 		}
 
 		@Override
