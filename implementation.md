@@ -114,6 +114,7 @@ olives cannot handle null values.
 | Date      | `java.time.Instant`           | `date`                   | `d`        |
 | List      | `java.lang.Set`               | `[`_inner_`]`            | `a`_inner_ |
 | Tuple     | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Object    | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_f1_` = `_t1_`,`_f2_` = `_t2_`,` ...`}` | `o` _n_ _f1_`$`_t1_ _f2_`$`_t2_ Where _n_ is the number of elements in the object. Fields must be sorted alphabetically. |
 
 The ASM bytecode generation library has a class `Type` that describes JVM
 types. A `Type` object can be constructed either by knowing the JVM name for a
@@ -221,10 +222,13 @@ copy the value of a constant, so a constant should be side-effect free.
 1. Include a no-arguments constructor for the `ConstantSource` class.
 1. Return a stream of `Constant` objects for the constants to be created.
 
-There are a number of convience methods to create constants for values. If
+There are a number of convenience methods to create constants for values. If
 something more complicated is desired, extend the `Constant` class and write
 arbitrary bytecode in the `load` method. The code must not change any value on
 the stack and must leave exactly one value of the correct type on the stack.
+
+The `RuntimeBinding` class can be used to create constants as method calls on
+the instance of a class.
 
 ### Functions
 A function is a transformation of input data. It matches with a call to a
@@ -234,7 +238,7 @@ when an error occurs.
 
 To provide functions:
 
-1. Create a class taht implements `FunctionRepository`.
+1. Create a class that implements `FunctionRepository`.
 1. Annotate this class with `@MetaInfServices`.
 1. Include a no-arguments constructor for the `FunctionRepository` class.
 1. Return a stream of `FunctionDefintion` objects for the functions to be created.
@@ -245,21 +249,14 @@ There are a few ways methods to generate a `FunctionDefinition`:
 bytecode.
 1. Use `FunctionDefinition.staticMethod` to create a binding for a public
 static method in a class.
-1. Use `FunctionForInstance.bind` to create a binding for a method in an
-instance of a class (a closure).
+1. Use `RuntimeBinding` to create a binding for a method in an instance of a
+class (a closure).
 
 In all cases, the Java types for the parameters must match the Shesmu types
 provided. The order of the arguments must match. If they do not match, errors
 will occur during compilation of an olive.
 
 When writing byte code, the arguments will be on the stack in order.
-
-When binding an instance, a `MethodHandles.Lookup` object must be provided.
-There are two ways to obtain one
-[`publicLookup()`](https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandles.html#publicLookup--),
-which can only bind to public methods, and
-[`lookup()`](https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandles.html#lookup--),
-which can bind to any method that is visible from the caller.
 
 ### Signature Variables
 Signature variables are special variables that compute some kind of record
@@ -393,3 +390,20 @@ An action needs to take some data from the Shesmu olive. To do this, there are t
 1. Put data in a public field using `ParameterDefinition.forField`.
 1. Put data in a JSON object stored in a field using `new JsonParameter`. _A_ must extend `JsonParameterised`.
 1. Write bytecode to set the parameter.
+
+## Runtime Binding Utility
+Actions, functions, and constants often need to come from configuration files.
+To keep a live configuration object connected to the bytecode, that value must
+be placed in a global variable and then retrieved by the bytecode. Since the
+file configuration is dynamic, these object need to be stored in some kind of
+collection. To make implementing this easier, `RuntimeBinding` is provided.
+
+The binding allows injecting an instance of a class into an olive as functions,
+constants, or actions. To do so, create an instance of `RuntimeBinding` for the
+public class or interface to be injected. There are helper methods to bind
+constants and functions. For any of these, provide the name of the Java method
+to be bound. This method must be public and handle types that Shesmu can
+understand. Save the binding in a static variable. Once an instance of this
+class is avaiable, call the appropriate bind method that will return
+`FunctionDefinition` or `Constant` in order to inject that instance into
+definitions that can be used by an olive.
