@@ -177,6 +177,15 @@ public final class Server implements ServerConfig {
 									row.write(false, "Input format", fileTable.format().name());
 									row.write(false, "Last Compiled", fileTable.timestamp().toString());
 								});
+								writer.writeStartElement("p");
+								writer.writeAttribute("onclick", "toggleBytecode(this)");
+								writer.writeCharacters("⊞ Bytecode");
+								writer.writeEndElement();
+								writer.writeStartElement("pre");
+								writer.writeAttribute("class", "json");
+								writer.writeAttribute("style", "display:none");
+								writer.writeCharacters(fileTable.bytecode());
+								writer.writeEndElement();
 							} catch (XMLStreamException e) {
 								throw new RuntimeException(e);
 							}
@@ -1035,7 +1044,7 @@ public final class Server implements ServerConfig {
 		return Stream.of(Header.cssFile("/main.css"), //
 				Header.faviconPng(16), //
 				Header.jsModule(
-						"import {parser, fetchConstant, prettyType, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup;"));
+						"import {parser, fetchConstant, prettyType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup;"));
 	}
 
 	private String localname() {

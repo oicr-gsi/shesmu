@@ -1085,3 +1085,10 @@ function getStats(filters, targetElement, onActionPage) {
     }
   );
 }
+
+export function toggleBytecode(title) {
+  const visible = title.nextSibling.style.display != "block";
+
+  title.innerText = visible ? "⊟ Bytecode" : "⊞ Bytecode";
+  title.nextSibling.style = visible ? "display: block" : "display: none";
+}

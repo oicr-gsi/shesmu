@@ -2,12 +2,18 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.util.Textifier;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
@@ -78,21 +84,43 @@ public abstract class Compiler {
 		if (parseOk && program.get().validate(this::getInputFormats, this::getFunction, this::getAction,
 				this::errorHandler, constants)) {
 			Instant compileTime = Instant.now();
-			if (dashboardOutput != null) {
-				dashboardOutput.accept(program.get().dashboard(path, compileTime));
+			if (dashboardOutput != null && skipRender) {
+				dashboardOutput.accept(program.get().dashboard(path, compileTime, "Bytecode not available."));
 			}
 			if (skipRender) {
 				return true;
 			}
+			final List<Textifier> bytecode = new ArrayList<>();
 			final RootBuilder builder = new RootBuilder(compileTime, name, path, program.get().inputFormatDefinition(),
 					constants) {
 				@Override
 				protected ClassVisitor createClassVisitor() {
-					return Compiler.this.createClassVisitor();
+					final ClassVisitor outputVisitor = Compiler.this.createClassVisitor();
+					if (dashboardOutput == null) {
+						return outputVisitor;
+					}
+					final Textifier writer = new Textifier();
+					bytecode.add(writer);
+					return new TraceClassVisitor(outputVisitor, writer, null);
 				}
 			};
 			program.get().render(builder);
 			builder.finish();
+			if (dashboardOutput != null) {
+				dashboardOutput.accept(program.get().dashboard(path, compileTime, bytecode.stream()//
+						.flatMap(t -> t.getText().stream())//
+						.flatMap(new Function<Object, Stream<String>>() {
+
+							@Override
+							public Stream<String> apply(Object object) {
+								if (object instanceof List) {
+									return ((List<?>) object).stream().flatMap(this);
+								}
+								return Stream.of(object.toString());
+							}
+						})//
+						.collect(Collectors.joining())));
+			}
 			return true;
 		}
 		return false;

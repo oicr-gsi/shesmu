@@ -8,17 +8,24 @@ import java.util.stream.Stream;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 
 public final class FileTable {
+	private final String bytecode;
 	private final String filename;
 	private final InputFormatDefinition format;
 	private final List<OliveTable> olives;
 	private final Instant timestamp;
 
-	public FileTable(String filename, InputFormatDefinition format, Instant timestamp, Stream<OliveTable> olives) {
+	public FileTable(String filename, InputFormatDefinition format, Instant timestamp, String bytecode,
+			Stream<OliveTable> olives) {
 		super();
 		this.filename = filename;
 		this.format = format;
 		this.timestamp = timestamp;
+		this.bytecode = bytecode;
 		this.olives = olives.collect(Collectors.toList());
+	}
+
+	public String bytecode() {
+		return bytecode;
 	}
 
 	public String filename() {
