@@ -16,9 +16,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,7 +44,9 @@ import com.sun.net.httpserver.HttpServer;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.Constant.ConstantLoader;
+import ca.on.oicr.gsi.shesmu.compiler.ImyhatNode;
 import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
+import ca.on.oicr.gsi.shesmu.compiler.Parser;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -60,6 +65,8 @@ import ca.on.oicr.gsi.shesmu.util.server.MetroDiagram;
 import ca.on.oicr.gsi.shesmu.util.server.Query;
 import ca.on.oicr.gsi.shesmu.util.server.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.util.server.StaticActions;
+import ca.on.oicr.gsi.shesmu.util.server.TypeParseRequest;
+import ca.on.oicr.gsi.shesmu.util.server.TypeParseResponse;
 import ca.on.oicr.gsi.status.BasePage;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.Header;
@@ -658,21 +665,62 @@ public final class Server implements ServerConfig {
 
 					@Override
 					protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+						writer.writeStartElement("p");
+						writer.writeCharacters(
+								"Shesmu's type can be written two ways: human-friendly (e.g., “[string]”) and machine-friendly (e.g., “as”). The machine-friendly format is called a descriptor. When writing olives, the human-friendly format is used. When writing plugins for Shesmu, the descriptors are used. Use this page to convert or validate types in either format. For any input format, every variable's type is available as the name of the variable suffixed by “_type” (e.g., “ius” has “ius_type”).");
+						writer.writeEndElement();
+
 						writer.writeStartElement("table");
 
 						writer.writeStartElement("tr");
 						writer.writeStartElement("td");
-						writer.writeCharacters("Signature");
+						writer.writeCharacters("Format");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("select");
+						writer.writeAttribute("id", "format");
+
+						writer.writeStartElement("option");
+						writer.writeAttribute("value", "0");
+						writer.writeCharacters("Descriptor");
+						writer.writeEndElement();
+						writer.writeStartElement("option");
+						writer.writeAttribute("value", "");
+						writer.writeCharacters("Human-friendly");
+						writer.writeEndElement();
+
+						InputFormatDefinition.formats()//
+								.sorted(Comparator.comparing(InputFormatDefinition::name))
+								//
+								.forEach(format -> {
+									try {
+										writer.writeStartElement("option");
+										writer.writeAttribute("value", format.name());
+										writer.writeCharacters("Human-field with types from " + format.name());
+										writer.writeEndElement();
+									} catch (XMLStreamException e) {
+										throw new RuntimeException(e);
+									}
+
+								});
+
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Text to parse");
 						writer.writeEndElement();
 						writer.writeStartElement("td");
 						writer.writeStartElement("input");
 						writer.writeAttribute("type", "text");
-						writer.writeAttribute("id", "uglySignature");
+						writer.writeAttribute("id", "typeValue");
 						writer.writeEndElement();
 						writer.writeStartElement("span");
 						writer.writeAttribute("class", "load");
-						writer.writeAttribute("onclick", "prettyType();");
-						writer.writeCharacters("💅 Beautify");
+						writer.writeAttribute("onclick", "parseType();");
+						writer.writeCharacters("Parse");
 						writer.writeEndElement();
 
 						writer.writeEndElement();
@@ -680,11 +728,22 @@ public final class Server implements ServerConfig {
 
 						writer.writeStartElement("tr");
 						writer.writeStartElement("td");
-						writer.writeCharacters("Pretty Type");
+						writer.writeCharacters("Human-friendly Type");
 						writer.writeEndElement();
 						writer.writeStartElement("td");
 						writer.writeStartElement("span");
-						writer.writeAttribute("id", "prettyType");
+						writer.writeAttribute("id", "humanType");
+						writer.writeEndElement();
+						writer.writeEndElement();
+						writer.writeEndElement();
+
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters("Descriptor");
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("span");
+						writer.writeAttribute("id", "descriptorType");
 						writer.writeEndElement();
 						writer.writeEndElement();
 						writer.writeEndElement();
@@ -935,8 +994,36 @@ public final class Server implements ServerConfig {
 		});
 
 		add("/type", t -> {
-			final Imyhat type = Imyhat.parse(RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class));
-			t.getResponseHeaders().set("Content-type", "application/json");
+			final TypeParseRequest request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(),
+					TypeParseRequest.class);
+			Imyhat type;
+			if (request.getFormat() == null || request.getFormat().equals("0")) {
+				type = Imyhat.parse(request.getValue());
+				t.getResponseHeaders().set("Content-type", "application/json");
+			} else {
+				Optional<Function<String, Imyhat>> existingTypes = request.getFormat().isEmpty()
+						? Optional.of(n -> null)
+						: InputFormatDefinition.formats()//
+								.filter(format -> format.name().equals(request.getFormat()))//
+								.findAny()//
+								.map(format -> Stream.<Target>concat(//
+										format.baseStreamVariables(), //
+										NameDefinitions.signatureVariables())//
+										.collect(Collectors.toMap(udt -> udt.name() + "_type", Target::type))::get);
+				type = existingTypes.flatMap(types -> {
+					AtomicReference<ImyhatNode> node = new AtomicReference<>();
+					Parser parser = Parser.start(request.getValue(), (l, c, m) -> {
+					})//
+							.whitespace()//
+							.then(ImyhatNode::parse, node::set)//
+							.whitespace();
+					if (parser.isGood()) {
+						return Optional.of(node.get().render(types, m -> {
+						}));
+					}
+					return Optional.empty();
+				}).orElse(Imyhat.BAD);
+			}
 			if (type.isBad()) {
 				t.sendResponseHeaders(400, 0);
 				try (OutputStream os = t.getResponseBody()) {
@@ -944,9 +1031,10 @@ public final class Server implements ServerConfig {
 			} else {
 				t.sendResponseHeaders(200, 0);
 				try (OutputStream os = t.getResponseBody()) {
-					RuntimeSupport.MAPPER.writeValue(os, type.name());
+					RuntimeSupport.MAPPER.writeValue(os, new TypeParseResponse(type));
 				}
 			}
+
 		});
 
 		add("/actions.js", t -> {
@@ -1044,7 +1132,7 @@ public final class Server implements ServerConfig {
 		return Stream.of(Header.cssFile("/main.css"), //
 				Header.faviconPng(16), //
 				Header.jsModule(
-						"import {parser, fetchConstant, prettyType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.prettyType = prettyType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup;"));
+						"import {parser, fetchConstant, parseType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup;"));
 	}
 
 	private String localname() {
@@ -1099,7 +1187,9 @@ public final class Server implements ServerConfig {
 						NavigationMenu.item("functiondefs", "Functions")), //
 				NavigationMenu.item("olivedash", "Olives"), //
 				NavigationMenu.item("actiondash", "Actions"), //
-				NavigationMenu.item("alerts", "Alerts"));
+				NavigationMenu.item("alerts", "Alerts"), //
+				NavigationMenu.submenu("Tools", //
+						NavigationMenu.item("typedefs", "Type Converter")));
 	}
 
 	public void start() {

@@ -84,31 +84,39 @@ export function runFunction(name, element, parameterParser) {
     });
 }
 
-export function prettyType() {
-  const element = document.getElementById("prettyType");
-  element.className = "busy";
-  element.innerText = "Prettying...";
+export function parseType() {
+  const humanType = document.getElementById("humanType");
+  humanType.innerText = "Prettying...";
+  const descriptorType = document.getElementById("descriptorType");
+  descriptorType.innerText = "Uglying...";
+  const format = document.getElementById("format");
   fetch("/type", {
-    body: JSON.stringify(document.getElementById("uglySignature").value),
+    body: JSON.stringify({
+      value: document.getElementById("typeValue").value,
+      format: format.options[format.selectedIndex].value
+    }),
     method: "POST"
   })
     .then(response => {
       if (response.ok) {
         return Promise.resolve(response);
       } else if (response.code === 400) {
-        return Promise.reject(new Error("Invalid type signature."));
+        return Promise.reject(new Error("Invalid type descriptor."));
       } else {
         return Promise.reject(new Error("Failed to load"));
       }
     })
     .then(response => response.json())
     .then(data => {
-      element.innerText = data;
-      element.className = "data";
+      humanType.innerText = data.humanName;
+      humanType.className = "data";
+      descriptorType.innerText = data.descriptor;
+      descriptorType.className = "data";
     })
     .catch(function(error) {
-      element.innerText = error.message;
-      element.className = "error";
+      humanType.innerText = error.message;
+      humanType.className = "error";
+      descriptorType.innerText = "";
     });
 }
 
