@@ -18,7 +18,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -117,8 +116,6 @@ public final class Build extends Compiler implements AutoCloseable {
 	private final NameLoader<FunctionDefinition> functions;
 	private final NameLoader<InputFormatDefinition> inputFormats;
 
-	private final Printer printer = new Textifier();
-
 	private final boolean skipCompute;
 
 	private final PrintWriter writer = new PrintWriter(System.out);
@@ -151,7 +148,7 @@ public final class Build extends Compiler implements AutoCloseable {
 				final CheckClassAdapter check = new CheckClassAdapter(new ClassWriter(0), dataFlowAnalysis);
 				reader.accept(check, 0);
 			}
-		}, printer, writer);
+		}, new Textifier(), writer);
 	}
 
 	private void dump() {
