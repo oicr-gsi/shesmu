@@ -75,8 +75,9 @@ public class ProgramNode {
 		this.olives = olives;
 	}
 
-	public FileTable dashboard(String filename, Instant timestamp) {
-		return new FileTable(filename, inputFormatDefinition, timestamp, olives.stream().flatMap(OliveNode::dashboard));
+	public FileTable dashboard(String filename, Instant timestamp, String bytecode) {
+		return new FileTable(filename, inputFormatDefinition, timestamp, bytecode,
+				olives.stream().flatMap(OliveNode::dashboard));
 	}
 
 	public InputFormatDefinition inputFormatDefinition() {
