@@ -24,17 +24,18 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 	private static class IssueFilter implements Predicate<Issue> {
 		private final String keyword;
 		private final boolean open;
+		private final JiraConnection connection;
 
-		public IssueFilter(String keyword, boolean open) {
+		public IssueFilter(JiraConnection connection, String keyword, boolean open) {
 			super();
+			this.connection = connection;
 			this.keyword = keyword;
 			this.open = open;
 		}
 
 		@Override
 		public boolean test(Issue issue) {
-			return (issue.getStatus().getName().equals("CLOSED")
-					|| issue.getStatus().getName().equals("RESOLVED")) != open
+			return connection.closedStatuses().anyMatch(issue.getStatus().getName()::equals) != open
 					&& (issue.getSummary() != null && issue.getSummary().contains(keyword)
 							|| issue.getDescription() != null && issue.getDescription().contains(keyword));
 		}
@@ -55,12 +56,12 @@ public final class JiraFunctionRepository extends BaseJiraRepository<FunctionDef
 
 	@RuntimeInterop
 	public static long count(JiraConnection connection, String keyword, boolean open) {
-		return connection.issues().filter(new IssueFilter(keyword, open)).count();
+		return connection.issues().filter(new IssueFilter(connection, keyword, open)).count();
 	}
 
 	@RuntimeInterop
 	public static Set<Tuple> fetch(JiraConnection connection, String keyword, boolean open) {
-		return connection.issues().filter(new IssueFilter(keyword, open))
+		return connection.issues().filter(new IssueFilter(connection, keyword, open))
 				.map(issue -> new Tuple(issue.getKey(), issue.getSummary())).collect(Collectors.toSet());
 	}
 
