@@ -11,13 +11,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
@@ -25,10 +27,12 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 
 public final class OliveNodeRun extends OliveNodeWithClauses {
 
+	private static final Method METHOD_ACTION__PREPARE = new Method("prepare", Type.VOID_TYPE, new Type[] {});
 	private final String actionName;
 	private final List<OliveArgumentNode> arguments;
 	private final int column;
 	private ActionDefinition definition;
+
 	private final int line;
 
 	public OliveNodeRun(int line, int column, String actionName, List<OliveArgumentNode> arguments,
@@ -84,7 +88,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 			parameter.render(action, local);
 		});
 		action.methodGen().visitLineNumber(line, action.methodGen().mark());
-		definition.finalize(action.methodGen(), local);
+		action.methodGen().loadLocal(local);
+		action.methodGen().invokeVirtual(definition.type(), METHOD_ACTION__PREPARE);
 		oliveBuilder.emitAction(action.methodGen(), local);
 		action.methodGen().visitInsn(Opcodes.RETURN);
 		action.methodGen().visitMaxs(0, 0);
@@ -94,7 +99,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 	@Override
 	public boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<Constant>> constants) {
+			Supplier<Stream<ConstantDefinition>> constants) {
 		final NameDefinitions defs = clauses().stream().reduce(
 				NameDefinitions.root(inputFormatDefinition, constants.get()),
 				(d, clause) -> clause.resolve(inputFormatDefinition, definedFormats, d, constants, errorHandler),
@@ -122,10 +127,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 		definition = definedActions.apply(actionName);
 		if (definition != null) {
 
-			final Set<String> definedArgumentNames = definition.parameters().map(ParameterDefinition::name)
+			final Set<String> definedArgumentNames = definition.parameters().map(ActionParameterDefinition::name)
 					.collect(Collectors.toSet());
-			final Set<String> requiredArgumentNames = definition.parameters().filter(ParameterDefinition::required)
-					.map(ParameterDefinition::name).collect(Collectors.toSet());
+			final Set<String> requiredArgumentNames = definition.parameters()
+					.filter(ActionParameterDefinition::required).map(ActionParameterDefinition::name)
+					.collect(Collectors.toSet());
 			if (!definedArgumentNames.containsAll(argumentNames)) {
 				ok = false;
 				final Set<String> badTerms = new HashSet<>(argumentNames);
@@ -158,8 +164,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 		boolean ok = arguments.stream().filter(argument -> argument.typeCheck(errorHandler)).count() == arguments
 				.size();
 		if (ok) {
-			final Map<String, ParameterDefinition> parameterInfo = definition.parameters()
-					.collect(Collectors.toMap(ParameterDefinition::name, Function.identity()));
+			final Map<String, ActionParameterDefinition> parameterInfo = definition.parameters()
+					.collect(Collectors.toMap(ActionParameterDefinition::name, Function.identity()));
 			ok = arguments.stream()
 					.filter(argument -> argument.ensureType(parameterInfo.get(argument.name()), errorHandler))
 					.count() == arguments.size();

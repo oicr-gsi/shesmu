@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
@@ -59,7 +59,7 @@ public abstract class OliveArgumentNode {
 	/**
 	 * Produce an error if the type of the expression is not as required
 	 */
-	public abstract boolean ensureType(ParameterDefinition definition, Consumer<String> errorHandler);
+	public abstract boolean ensureType(ActionParameterDefinition definition, Consumer<String> errorHandler);
 
 	/**
 	 * The argument name

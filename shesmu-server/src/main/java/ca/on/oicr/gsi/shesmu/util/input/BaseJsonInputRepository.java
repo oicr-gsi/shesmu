@@ -22,11 +22,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.InputRepository;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
-import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Counter;

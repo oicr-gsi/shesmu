@@ -80,8 +80,8 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 			}
 			parameter.store(new Renderer(null, handle, 0, null, Stream.empty(), (n, r) -> {
 				throw new UnsupportedOperationException("Trying to access signature variable from action runner.");
-			}), actionLocal, r -> {
-				r.loadImyhat(parameter.type().signature());
+			}), action.type(), actionLocal, r -> {
+				r.loadImyhat(parameter.type().descriptor());
 				r.methodGen().loadArg(0);
 				r.methodGen().push(parameter.name());
 				handle.invokeVirtual(A_JSON_OBJECT_TYPE, JSON_OBJECT__GET);

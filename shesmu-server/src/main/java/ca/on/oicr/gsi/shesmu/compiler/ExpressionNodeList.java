@@ -41,7 +41,7 @@ public class ExpressionNodeList extends ExpressionNode {
 	@Override
 	public void render(Renderer renderer) {
 		renderer.mark(line());
-		renderer.loadImyhat(items.get(0).type().signature());
+		renderer.loadImyhat(items.get(0).type().descriptor());
 		renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
 		items.forEach(item -> {
 			renderer.methodGen().dup();

@@ -14,7 +14,7 @@ import org.objectweb.asm.ClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
@@ -29,7 +29,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
 	private final Supplier<Stream<ActionDefinition>> actions;
 
-	private final Supplier<Stream<Constant>> constants;
+	private final Supplier<Stream<ConstantDefinition>> constants;
 
 	private final List<String> errors = new ArrayList<>();
 
@@ -39,7 +39,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
 	public HotloadingCompiler(Function<String, InputFormatDefinition> inputFormats,
 			Supplier<Stream<FunctionDefinition>> functions, Supplier<Stream<ActionDefinition>> actions,
-			Supplier<Stream<Constant>> constants) {
+			Supplier<Stream<ConstantDefinition>> constants) {
 		this.inputFormats = inputFormats;
 		this.functions = functions;
 		this.actions = actions;

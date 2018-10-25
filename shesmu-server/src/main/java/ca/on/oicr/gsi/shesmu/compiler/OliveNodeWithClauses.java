@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -73,7 +73,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 	@Override
 	public abstract boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<Constant>> constants);
+			Supplier<Stream<ConstantDefinition>> constants);
 
 	/**
 	 * Resolve all non-variable definitions

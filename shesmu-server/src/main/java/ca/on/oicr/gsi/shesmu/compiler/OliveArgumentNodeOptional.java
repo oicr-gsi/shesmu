@@ -10,7 +10,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
@@ -19,7 +19,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 
 	private final ExpressionNode condition;
-	private ParameterDefinition definition;
+	private ActionParameterDefinition definition;
 	private final ExpressionNode expression;
 
 	public OliveArgumentNodeOptional(int line, int column, String name, ExpressionNode condition,
@@ -39,7 +39,7 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 	 * Produce an error if the type of the expression is not as required
 	 */
 	@Override
-	public final boolean ensureType(ParameterDefinition definition, Consumer<String> errorHandler) {
+	public final boolean ensureType(ActionParameterDefinition definition, Consumer<String> errorHandler) {
 		this.definition = definition;
 		boolean ok = true;
 		if (!definition.type().isSame(expression.type())) {
@@ -68,7 +68,7 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 		renderer.mark(line);
 		final Label end = renderer.methodGen().newLabel();
 		renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, end);
-		definition.store(renderer, action, expression::render);
+		definition.store(renderer, renderer.methodGen().getLocalType(action), action, expression::render);
 		renderer.methodGen().mark(end);
 	}
 

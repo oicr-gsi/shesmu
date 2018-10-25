@@ -221,7 +221,7 @@
                               "type": "boolean"
                             },
                             "type": {
-                              "format": "signature",
+                              "format": "typedescriptor",
                               "type": "string"
                             }
                           },
@@ -308,7 +308,7 @@
                         "type": "string"
                       },
                       "type": {
-                        "format": "signature",
+                        "format": "typedescriptor",
                         "type": "string"
                       }
                     },
@@ -418,17 +418,17 @@
                         "type": "string"
                       },
                       "return": {
-                        "format": "signature",
+                        "format": "typedescriptor",
                         "type": "string"
                       },
                       "types": {
                         "items": {
                           "properties": {
-                            "name": {
+                            "description": {
                               "type": "string"
                             },
                             "type": {
-                              "format": "signature",
+                              "format": "typedescriptor",
                               "type": "string"
                             }
                           },
@@ -578,10 +578,10 @@
             "description": "The human readable type"
           },
           "400": {
-            "description": "The type signature provided is not valid."
+            "description": "The type descriptor provided is not valid."
           }
         },
-        "summary": "Convert a Shesmu type signature into a human-readable form",
+        "summary": "Parse a Shesmu type",
         "tags": [
           "misc"
         ]
@@ -598,7 +598,7 @@
                 "schema": {
                   "additionalProperties": {
                     "additionalProperties": {
-                      "format": "signature",
+                      "format": "typedescriptor",
                       "type": "string"
                     },
                     "type": "object"

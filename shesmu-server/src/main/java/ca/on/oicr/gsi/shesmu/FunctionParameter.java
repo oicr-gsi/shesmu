@@ -2,18 +2,18 @@ package ca.on.oicr.gsi.shesmu;
 
 public final class FunctionParameter {
 
-	private final String name;
+	private final String description;
 
 	private final Imyhat type;
 
-	public FunctionParameter(String name, Imyhat type) {
+	public FunctionParameter(String description, Imyhat type) {
 		super();
-		this.name = name;
+		this.description = description;
 		this.type = type;
 	}
 
-	public String name() {
-		return name;
+	public String description() {
+		return description;
 	}
 
 	public Imyhat type() {

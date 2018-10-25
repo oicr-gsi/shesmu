@@ -354,7 +354,7 @@ that is passed to Alert Manager that gets overwritten. For details, see the
 
 ## Types
 There are a small number of types in the language, listed below. Each has
-syntax as it appears in the language and a signature that is used for
+syntax as it appears in the language and a descriptor that is used for
 machine-to-machine communication.
 
 | Name       | Syntax                                             | Signature  |

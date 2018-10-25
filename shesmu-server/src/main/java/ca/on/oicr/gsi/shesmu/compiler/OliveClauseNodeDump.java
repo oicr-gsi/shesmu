@@ -16,7 +16,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -109,7 +109,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	@Override
 	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
 		return defs.fail(columns.stream()//
 				.filter(e -> e.resolve(defs, errorHandler))//
 				.count() == columns.size());

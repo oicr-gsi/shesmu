@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.InputRepository;
-import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 

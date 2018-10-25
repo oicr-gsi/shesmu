@@ -100,8 +100,8 @@ public class RunTest {
 
 	private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
 
-	private static final List<Constant> CONSTANTS = Arrays
-			.asList(Constant.of("project_constant", "the_foo_study", "Testing constant"));
+	private static final List<ConstantDefinition> CONSTANTS = Arrays
+			.asList(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
 
 	private static InnerTestValue[] INNER_TEST_DATA = new InnerTestValue[] { new InnerTestValue(1, "a"),
 			new InnerTestValue(2, "b") };
@@ -182,7 +182,7 @@ public class RunTest {
 	};
 
 	private static final ActionDefinition OK_ACTION_DEFINITION = new ActionDefinition("ok", A_OK_ACTION_TYPE,
-			"For unit tests.", Stream.of(ParameterDefinition.forField(A_OK_ACTION_TYPE, "ok", Imyhat.BOOLEAN, true))) {
+			"For unit tests.", Stream.of(ActionParameterDefinition.forField("ok", "ok", Imyhat.BOOLEAN, true))) {
 
 		@Override
 		public void initialize(GeneratorAdapter methodGen) {

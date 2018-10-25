@@ -15,11 +15,11 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
@@ -38,7 +38,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 		@Override
 		public boolean test(OliveArgumentNode argument) {
 			final int index = i++;
-			return argument.typeCheck(errorHandler) & argument.ensureType(new ParameterDefinition() {
+			return argument.typeCheck(errorHandler) & argument.ensureType(new ActionParameterDefinition() {
 
 				@Override
 				public String name() {
@@ -51,7 +51,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 				}
 
 				@Override
-				public void store(Renderer renderer, int arrayLocal, Consumer<Renderer> loadParameter) {
+				public void store(Renderer renderer, Type owner, int arrayLocal, Consumer<Renderer> loadParameter) {
 					renderer.methodGen().loadLocal(arrayLocal);
 					renderer.methodGen().push(index * 2);
 					renderer.methodGen().push(argument.name());
@@ -161,7 +161,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 	@Override
 	public boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<Constant>> constants) {
+			Supplier<Stream<ConstantDefinition>> constants) {
 		final NameDefinitions defs = clauses().stream().reduce(
 				NameDefinitions.root(inputFormatDefinition, constants.get()),
 				(d, clause) -> clause.resolve(inputFormatDefinition, definedFormats, d, constants, errorHandler),

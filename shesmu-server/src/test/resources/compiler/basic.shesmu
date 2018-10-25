@@ -7,7 +7,7 @@ Define standard_execution()
 Define standard_fastq(string s)
   Where workflow == {"BamQC 2.7+", 3 }[0]
   Where project == "foo"
-  Where path == foo(file_size);
+  Where str_len(path) == file_size;
 
 Define standard_bam()
   Where project == "bar"

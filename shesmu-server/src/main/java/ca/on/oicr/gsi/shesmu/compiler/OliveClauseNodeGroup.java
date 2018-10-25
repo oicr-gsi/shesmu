@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -114,7 +114,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 	@Override
 	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
 		boolean ok = //
 				children.stream()//
 						.filter(child -> child.resolve(defs, defs, errorHandler))//

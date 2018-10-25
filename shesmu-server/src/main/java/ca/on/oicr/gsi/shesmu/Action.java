@@ -46,6 +46,13 @@ public abstract class Action {
 	public abstract ActionState perform();
 
 	/**
+	 * Perform any preparation needed after parameters have been set.
+	 */
+	public void prepare() {
+
+	}
+
+	/**
 	 * A priority for determine which actions should get processed first.
 	 *
 	 * The {@link ActionProcessor} will sort actions by priority and work in order.

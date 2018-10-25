@@ -17,7 +17,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
@@ -72,7 +72,7 @@ public abstract class Compiler {
 	 *            the source file's path for debugging information
 	 * @return whether compilation was successful
 	 */
-	public final boolean compile(byte[] input, String name, String path, Supplier<Stream<Constant>> constants,
+	public final boolean compile(byte[] input, String name, String path, Supplier<Stream<ConstantDefinition>> constants,
 			Consumer<FileTable> dashboardOutput) {
 		final AtomicReference<ProgramNode> program = new AtomicReference<>();
 		final MaxParseError maxParseError = new MaxParseError();

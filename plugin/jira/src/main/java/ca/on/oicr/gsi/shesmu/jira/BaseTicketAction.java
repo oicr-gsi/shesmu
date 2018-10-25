@@ -27,25 +27,26 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.Throttler;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.util.definitions.ActionParameter;
 import io.prometheus.client.Counter;
 
 public abstract class BaseTicketAction extends Action {
 	private static final Counter failure = Counter
 			.build("shesmu_jira_client_failures", "Number of failed requests to the JIRA web service.")
-			.labelNames("name").register();
+			.labelNames("url", "project").register();
 	private static final Counter issueBad = Counter
-			.build("shesmu_jira_client_issue_bad", "Number of bad issues found in JIRA.").labelNames("name").register();
+			.build("shesmu_jira_client_issue_bad", "Number of bad issues found in JIRA.").labelNames("url", "project")
+			.register();
 	private static final Counter issueCreates = Counter
-			.build("shesmu_jira_client_issue_creates", "Number of new issues added to JIRA.").labelNames("name")
-			.register();
+			.build("shesmu_jira_client_issue_creates", "Number of new issues added to JIRA.")
+			.labelNames("url", "project").register();
 	private static final Counter issueUpdates = Counter
-			.build("shesmu_jira_client_issue_updates", "Number of changes to issues found in JIRA.").labelNames("name")
-			.register();
+			.build("shesmu_jira_client_issue_updates", "Number of changes to issues found in JIRA.")
+			.labelNames("url", "project").register();
 	private static final Counter requests = Counter
-			.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.").labelNames("v")
-			.register();
+			.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.")
+			.labelNames("url", "project").register();
 
 	private final JiraConnection connection;
 
@@ -55,9 +56,9 @@ public abstract class BaseTicketAction extends Action {
 
 	private URI issueUrl;
 
-	@RuntimeInterop
+	@ActionParameter
 	public String summary;
-	@RuntimeInterop
+	@ActionParameter(required = false)
 	public String type = "Task";
 
 	public BaseTicketAction(JiraConnection connection, String jsonName, Optional<ActionState> emptyTransitionState) {
@@ -67,7 +68,7 @@ public abstract class BaseTicketAction extends Action {
 	}
 
 	protected final ActionState badIssue() {
-		issueBad.labels(connection.instance()).inc();
+		issueBad.labels(connection.url()).inc();
 		issueUrl = null;
 		return ActionState.FAILED;
 	}
@@ -78,7 +79,7 @@ public abstract class BaseTicketAction extends Action {
 		if (Throttler.anyOverloaded("jira", connection.projectKey())) {
 			return ActionState.THROTTLED;
 		}
-		issueCreates.labels(connection.instance()).inc();
+		issueCreates.labels(connection.url(), connection.projectKey()).inc();
 
 		final Map<String, Object> project = new HashMap<>();
 		project.put("key", connection.projectKey());
@@ -150,13 +151,13 @@ public abstract class BaseTicketAction extends Action {
 		if (connection == null) {
 			return ActionState.FAILED;
 		}
-		requests.labels(connection.instance()).inc();
+		requests.labels(connection.url(), connection.projectKey()).inc();
 		try {
 			return perform(connection.issues()//
 					.filter(issue -> issue.getSummary().equals(summary))//
 					.peek(issue -> issues.add(issue.getKey())));
 		} catch (final Exception e) {
-			failure.labels(connection.instance()).inc();
+			failure.labels(connection.url(), connection.projectKey()).inc();
 			e.printStackTrace();
 			return ActionState.UNKNOWN;
 		}
@@ -189,7 +190,6 @@ public abstract class BaseTicketAction extends Action {
 	@Override
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("instanceName", connection.instance());
 		node.put("projectKey", connection.projectKey());
 		node.put("summary", summary);
 		node.put("instanceUrl", connection.url());
@@ -223,7 +223,7 @@ public abstract class BaseTicketAction extends Action {
 					if (Throttler.anyOverloaded("jira", connection.projectKey())) {
 						return ActionState.THROTTLED;
 					}
-					issueUpdates.labels(connection.instance()).inc();
+					issueUpdates.labels(connection.url(), connection.projectKey()).inc();
 					issueUrl = issue.getSelf();
 					connection.client().getIssueClient().transition(issue, new TransitionInput(t.getId(), comment()))
 							.claim();

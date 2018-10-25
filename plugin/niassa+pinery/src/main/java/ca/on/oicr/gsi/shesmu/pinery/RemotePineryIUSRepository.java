@@ -25,6 +25,7 @@ import org.kohsuke.MetaInfServices;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.PineryProvenanceProvider;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.gsistd.input.Utils;
@@ -32,7 +33,6 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
-import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.pinery.client.PineryClient;

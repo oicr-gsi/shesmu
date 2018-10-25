@@ -2,6 +2,6 @@ Input test;
 
 Olive
   Group files = List path By accession
-  Run nothing With
+  Run no_such_action With
     memory = 4Gi,
     input = files;

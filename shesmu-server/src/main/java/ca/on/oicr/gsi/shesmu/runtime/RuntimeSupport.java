@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -141,34 +140,8 @@ public final class RuntimeSupport {
 		return Duration.between(right, left).getSeconds();
 	}
 
-	/**
-	 * Get the directory name of a path
-	 */
-	@RuntimeInterop
-	public static String dir_name(String input) {
-		final Path path = Paths.get(input).getParent();
-		return path == null ? "" : path.toString();
-	}
-
 	public static Optional<String> environmentVariable() {
 		return Optional.ofNullable(System.getenv("SHESMU_DATA"));
-	}
-
-	/**
-	 * Get the file name (basename) of a path
-	 */
-	@RuntimeInterop
-	public static String file_name(String input) {
-		return Paths.get(input).getFileName().toString();
-
-	}
-
-	/**
-	 * Join two paths
-	 */
-	@RuntimeInterop
-	public static String join_path(String dir, String file) {
-		return Paths.get(dir).resolve(file).toString();
 	}
 
 	/**
@@ -330,14 +303,6 @@ public final class RuntimeSupport {
 	}
 
 	/**
-	 * Truncate a time stamp to midnight
-	 */
-	@RuntimeInterop
-	public static Instant start_of_day(Instant input) {
-		return input.truncatedTo(ChronoUnit.DAYS);
-	}
-
-	/**
 	 * Stream an iterable object
 	 */
 	public static <T> Stream<T> stream(Iterable<T> iterable) {
@@ -358,18 +323,6 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static String toString(Instant instant, String format) {
 		return DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
-	}
-
-	@RuntimeInterop
-	public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
-		if ((Long) version.get(0) < major) {
-			return false;
-		}
-		if ((Long) version.get(1) < minor) {
-			return false;
-		}
-		return (Long) version.get(2) >= patch;
-
 	}
 
 	private RuntimeSupport() {

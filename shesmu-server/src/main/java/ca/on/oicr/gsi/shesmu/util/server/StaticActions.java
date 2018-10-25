@@ -7,15 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.xml.stream.XMLStreamException;
 
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
+import ca.on.oicr.gsi.shesmu.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.status.ConfigurationSection;
@@ -37,7 +36,7 @@ public class StaticActions implements LoadedConfiguration {
 			boolean retry = false;
 			for (final StaticAction action : actions) {
 				if (!runners.containsKey(action.getAction())) {
-					final Optional<ActionRunner> runner = definitions.get()//
+					final Optional<ActionRunner> runner = DefinitionRepository.allActions()//
 							.filter(definition -> definition.name().equals(action.getAction()))//
 							.findFirst()//
 							.map(ActionRunnerCompiler::new)//
@@ -53,6 +52,7 @@ public class StaticActions implements LoadedConfiguration {
 				try {
 					final Action result = runners.get(action.getAction()).run(action.getParameters());
 					if (result != null) {
+						result.prepare();
 						sink.accept(result, fileName().toString(), 0, 0, Instant.now().getEpochSecond());
 						success++;
 					} else {
@@ -78,13 +78,11 @@ public class StaticActions implements LoadedConfiguration {
 			.labelNames("filename").register();
 
 	private AutoUpdatingDirectory<StaticActionFile> configuration;
-	private final Supplier<Stream<ActionDefinition>> definitions;
 	private final Map<String, ActionRunner> runners = new HashMap<>();
 	private final ActionConsumer sink;
 
-	public StaticActions(ActionConsumer sink, Supplier<Stream<ActionDefinition>> definitions) {
+	public StaticActions(ActionConsumer sink) {
 		this.sink = sink;
-		this.definitions = definitions;
 	}
 
 	@Override

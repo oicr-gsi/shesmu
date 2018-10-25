@@ -143,10 +143,8 @@ All of the interfaces discussed extend the `LoadedConfiguration` interface.
 This interface displays configuration panels on the main status page of the
 Shesmu server and are meant to report the configuration of a plugin.
 
-The interface returns any number of `Pair<String, Map<String, String>>`. Each
-`Pair` will be rendered as a section with `Pair.first()` being the title of
-that section. The section will then contain a table, whose rows are the entries
-in the map.
+The interface returns any number of `ConfigurationSection` objects. These will
+populate the main status page of the server.
 
 ### Source Linker
 Source linkers convert local paths for `.shesmu` files into URLs for accessing
@@ -189,7 +187,7 @@ type safe. To create a new source format:
 data. It must be a class and not an interface.
 1. Create a parameterless method in _V_ for every variable to be exposed. The
 method names must be valid Shemsu names (lowercase with underscores) and
-decorated with `@ShesmuVariable` annotations with the correct type signature. All
+decorated with `@ShesmuVariable` annotations with the correct type descriptor. All
 methods must return `boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple`
 (and `Set` and `Tuple` may only contain more of the same).
 1. Create a new interface, _R_, extending `InputRepository<`_V_`>`.
@@ -217,45 +215,130 @@ instance, storing it as a JSON file, then using that on another instance.
 Now `.`_name_ files will be interpreted as files containing data and
 `.`_name_`-remote` will allow access to a remote endpoint serving this data.
 
-### Constants
+### Definition Repositories (Constants, Functions, and Actions)
+Definition repositories handle any combination of constants, functions, and
+actions. There are three ways to build one:
+
+1. Implement the `DefinitionRepository` interface manually.
+1. Use the `FileBackedMatchedDefinitionRepository` which reads files and creates
+   a new set of functions for every matching configuration file.
+1. Use the `FileBackedArbitraryDefinitionRepository` which reads files and
+   allows creating an arbitrary number of constants, functions, and actions for
+   each.
+
+The distinction between the later two is best explained by example: for JIRA,
+we configure every JIRA connection with a separate file, so there is going to
+be exactly one _file ticket_ action definition and one _close ticket_ action
+for each configuration file; therefore, it uses a
+`FileBackedMatchedDefinitionRepository`. A `.constants` JSON file can create
+many constants for each file, so it uses a
+`FileBackedArbitraryDefinitionRepository`.
+
+Implementing the interface manually is useful only when:
+
+- There is no configuration files
+- The constants, functions, or actions require custom initialisation (_e.g._, custom `INVOKE DYNAMIC`, calls, calling non-Java JVM languages)
+
+#### File-Backed Repositories
+File-backed repositories are meant to be easy to implement.
+
+1. Create a class _T_ that implements `FileBackedConfiguration`.
+1. If the configuration file format is a JSON file, also extend
+   `AutoUpdatingJsonFile`.
+1. Implement the missing methods to read the configuration file and create any
+   necessary state.
+1. Implement a constructor in _T_ that takes `Path` or `Path` and `Definer`
+   depending on what kind of repository is used.
+1. Create a class _R_ that extends either
+   `FileBackedArbitraryDefinitionRepository` or
+   `FileBackedMatchedDefinitionRepository` with _T_ as the type argument.
+1. Annotate _R_ with `@MetaInfServices(DefinitionRepository.class)`.
+1. Create a constructor with no arguments. In the body, call `super`  as
+	 follows: `super(`_T_`.class, ".`_ext_`, `_T_`::new);` where _ext_ is the
+   extension for your configuration files.
+
+For an example of a matched repository, view
+[`JiraDefinitionRepository`](plugin/jira/src/main/java/ca/on/oicr/gsi/shesmu/jira/JiraDefinitionRepository.java)
+and
+[`JiraConnection`](plugin/jira/src/main/java/ca/on/oicr/gsi/shesmu/jira/JiraConnection.java)
+or
+[`SftpDefinitionRepository`](plugin/sftp/src/main/java/ca/on/oicr/gsi/shesmu/sftp/SftpDefintionRepository.java)
+and
+[`SftpServer`](plugin/sftp/src/main/java/ca/on/oicr/gsi/shesmu/sftp/SftpServer.java).
+
+#### Constants
 A constant is a value that can be generated with no input. It need not actually
 be constant (_e.g._, `now` is a constant). The Shesmu compiler will arbitrarily
 copy the value of a constant, so a constant should be side-effect free.
 
-1. Create a class that implements `ConstantSource`.
-1. Annotate this class with `@MetaInfServices`.
-1. Include a no-arguments constructor for the `ConstantSource` class.
-1. Return a stream of `Constant` objects for the constants to be created.
+##### File-Backed Matched Implementation
+For file-backed matched implementations, constants are defined in the same way
+that functions are defined. Constants are simply functions that do not take any
+input arguments. See the section below for details.
 
-There are a number of convenience methods to create constants for values. If
-something more complicated is desired, extend the `Constant` class and write
-arbitrary bytecode in the `load` method. The code must not change any value on
-the stack and must leave exactly one value of the correct type on the stack.
+##### File-Backed Arbitrary Implementation
+For file-backed arbitrary implementations, constants can be created through the
+`UserDefiner.defineConstant` methods, which can take either a value or a
+function that returns that value.
 
-The `RuntimeBinding` class can be used to create constants as method calls on
-the instance of a class.
+##### Manual Implementation
+When directly implementing the `DefinitionRepository` interface, create
+instances of `ConstantDefinition`. There are a number of convenience
+methods to create constants for values. If something more complicated is
+desired, extend the `ConstantDefinition` class and write arbitrary bytecode in
+the `load` method. The code must not change any value on the stack and must
+leave exactly one value of the correct type on the stack.
 
-### Functions
+#### Functions
 A function is a transformation of input data. It matches with a call to a
 method. Since there is no user-defined error-handling, these functions should
 not throw. Also, since Shesmu has no null values, they should not return null
 when an error occurs.
 
-To provide functions:
+##### File-Backed Matched Implementation
+For file-backed matched implementations, functions can be defined in three ways:
 
-1. Create a class that implements `FunctionRepository`.
-1. Annotate this class with `@MetaInfServices`.
-1. Include a no-arguments constructor for the `FunctionRepository` class.
-1. Return a stream of `FunctionDefintion` objects for the functions to be created.
+- as static members of _R_
+- as static members of _R_ with the first argument being _T_
+- as instance members of _T_ (_e.g._, [`activeProjects()` in `PinerySource`](plugin/niassa+pinery/src/main/java/ca/on/oicr/gsi/shesmu/pinery/PinerySource.java))
 
-There are a few ways methods to generate a `FunctionDefinition`:
+In all cases, the method must be public and annotated with `@ShesmuMethod`. The
+method must either have a valid Shesmu name or the `name` property of the
+annotation must be set to a valid Shesmu name. For methods taking an
+instance of _T_, the name must include `$`, which will be substituted for the
+name of the configuration file.
+
+The `@ShesmuMethod` annotation also has a `description` property that will be
+shown in the definition page. In the description, `{instance}` and `{file}`
+will be replace with the instance name and configuration file path,
+respectively.
+
+Parameters to this method may be annotated with `@ShesmuParam` to give a
+description of the parameter.
+
+Since Shesmu and Java types are not entirely compatible, Shesmu will attempt to
+infer the Shesmu type from the Java type. If this isn't possible (the return
+type is `Tuple` or `Set`), both `@ShesmuMethod` and `@ShesmuParam` contain a
+`type` property which is the Shesmu type descriptor of the return type or
+parameter type.
+
+##### File-Backed Arbitrary Implementation
+For file-backed arbitrary implementations, functions can be created through the
+`UserDefiner.defineFunction` methods, which can take a instance of a function
+interface. The `VariadicFunction` interface takes an arbitrary number of
+arguments and the implementer of this interface is responsible for making sure
+the parameter types of the implementation match the parameter types of the
+definition.
+
+##### Manual Implementation
+When directly implementing the `DefinitionRepository` interface, create
+instances of `FunctionDefinition`.  There are a few ways to generate a
+`FunctionDefinition`:
 
 1. Create a class that implements `FunctionDefinition` and write arbitrary
-bytecode.
+bytecode. For example [`str_len` in `StandardDefinitions`](shesmu-server/src/main/java/ca/on/oicr/gsi/shesmu/core/StandardDefinitions.java).
 1. Use `FunctionDefinition.staticMethod` to create a binding for a public
 static method in a class.
-1. Use `RuntimeBinding` to create a binding for a method in an instance of a
-class (a closure).
 
 In all cases, the Java types for the parameters must match the Shesmu types
 provided. The order of the arguments must match. If they do not match, errors
@@ -263,37 +346,16 @@ will occur during compilation of an olive.
 
 When writing byte code, the arguments will be on the stack in order.
 
-### Signature Variables
-Signature variables are special variables that compute some kind of record
-based on the input variable used by an olive.
+The `FunctionDefinition` class has two methods:
 
-There are two categories of signature variables: ones that are static (_i.e._,
-the same for all inputs) and ones that vary for each input.
+- `renderStart` is called first to generate any bytecode on the initial stack.
+- the compiler will push each argument on the stack in the Java order
+- `render` is called to invoke the function
 
-This might seem a contradiction, but the static case is useful for things that
-depend only on the names and/or types of the signable variables. This is how
-the `signable_names` works.
+This functionality is provided in the case when an object must be pushed on the
+stack first.
 
-To create a signature variable:
-
-1. Create a class that extends `SignatureVariable`.
-1. Include a no-arguments constructor.
-1. Annotate this class with `@MetaInfServices`.
-1. Implement the `build` method to compute a value. If static, no input is
-	 provided. If varying for each record, the input will be the only argument to
-   the method.
-
-For the per-input case, a wrapper is available to make implementation easier:
-
-1. Create a class _S_ that implements `Signable<`_R_`>` where _R_ is the return type.
-1. Include a no-arguments constructor.
-1. Implement the interface as desired.
-1. Create a class _SV_ that extends `SignatureVariableForSigner<`_S_`,`_R_`>`.
-1. Create a no-arguments constructor in _SV_ that passes appropriate values to the
-   super-constructor.
-1. Annotate this class with `@MetaInfServices(SignatureVariable.class)`.
-
-### Actions
+#### Actions
 Actions are the most complicated. Shesmu pushes a number of questions about how
 actions work onto the plugin.
 
@@ -344,22 +406,24 @@ When queried by the user, an action can return a JSON representation. This is
 arbitrary and entirely for the benefit of users. Any information can be
 included in an appropriate way.
 
+##### Manual Implementation
+
 To create an action:
 
 1. Create a class _A_ that extends `Action`.
-1. It must provide a unique _type_ name to the superconstructor that will be available for searching via the REST API.
+1. It must provide a unique _JSON action type_ to the superconstructor that will be available for searching via the REST API and the action dashboard. (_e.g._, `jira-open-ticket`, `nothing`, `fake`)
 1. Override all the methods for the desired behaviour as described above.
-1. Create a class _AR_ that implements `ActionRepository`.
-1. Annotate this class with `@MetaInfServices`.
-1. Include a no-arguments constructor for the `ActionRepository` class.
+1. Create a class _AR_ that implements `DefinitionRepository`.
+1. Annotate this class with `@MetaInfServices(DefinitionRepository.class)`.
+1. Include a no-arguments constructor for the `DefinitionRepository` class.
 1. Create a class _AD_ that extends `ActionDefinition`.
-1. In the constructor of _AD_, call the superconstructor with `("_json type name_`"`, Type.getType(`_A_`.class)`, Stream.of(`_parameters_`);`
+1. In the constructor of _AD_, call the superconstructor with `("`_name for use in olives_`"`, Type.getType(`_A_`.class)`, Stream.of(`_parameters_`);`
 1. In _AD_, override `initialize` to generate bytecode to create a new instance of the class. Details are provided below.
-1. If _A_ requires a step to prepare it for use after all the `With` arguments are set, override `finalize` in _AD_ to generate the bytecode to perform this step.
+1. If _A_ requires a step to prepare it for use after all the `With` arguments are set, override `prepare` method.
 1. In _AD_, provide all the `With` arguments this action requires in the _parameters_ stream. Details are provided below
 1. In _AR_, return a stream of _AD_.
 
-#### Constructors
+###### Constructors
 Calling a constructor is straight forward if all the parameter to the constructors are primitive types and strings. If this is the case, it can be done with the following code:
 
     // Create an ASM type for a String
@@ -389,26 +453,75 @@ new class with a method that returns a new instance in the way you require,
 then use `javap -c -p com.example.Test` to see the bytecode generated by the
 Java compiler and copy it.
 
-#### Action Parameters
+###### Action Parameters
 An action needs to take some data from the Shesmu olive. To do this, there are three methods:
 
-1. Put data in a public field using `ParameterDefinition.forField`.
+1. Put data in a public field using `ActionParameterDefinition.forField`.
 1. Put data in a JSON object stored in a field using `new JsonParameter`. _A_ must extend `JsonParameterised`.
 1. Write bytecode to set the parameter.
 
-## Runtime Binding Utility
-Actions, functions, and constants often need to come from configuration files.
-To keep a live configuration object connected to the bytecode, that value must
-be placed in a global variable and then retrieved by the bytecode. Since the
-file configuration is dynamic, these object need to be stored in some kind of
-collection. To make implementing this easier, `RuntimeBinding` is provided.
+##### File-Backed Implementation
+Implementation is similar to functions and constants.
 
-The binding allows injecting an instance of a class into an olive as functions,
-constants, or actions. To do so, create an instance of `RuntimeBinding` for the
-public class or interface to be injected. There are helper methods to bind
-constants and functions. For any of these, provide the name of the Java method
-to be bound. This method must be public and handle types that Shesmu can
-understand. Save the binding in a static variable. Once an instance of this
-class is avaiable, call the appropriate bind method that will return
-`FunctionDefinition` or `Constant` in order to inject that instance into
-definitions that can be used by an olive.
+1. Create a class _A_ that extends `Action`.
+1. It must provide a unique _type_ name to the superconstructor that will be available for searching via the REST API.
+1. Override all the methods for the desired behaviour as described above.
+1. Attach annotations to the _A_ class for defining parameters.
+
+Parameters may be annotated in the following way:
+
+- a public instance field annotated with `@ActionParameter`
+- a public setter method annotated with `@ActionParameter`
+- a `@JsonActionParameter` on the class, which must implement `JsonParameterised`
+
+All of these annotations allow:
+
+- setting a name if the member does not have a Shesmu-compatible name
+- setting a type, if it cannot be inferred from the Java type
+- setting whether the parameter is required
+
+In the case of file-backed matched implementations:
+
+1. Create a public static method in _R_ or a public instance method in _T_ that return _A_
+1. Annotate this method with `@ShesmuAction`.
+1. Name this method with a Shesmu-compatible name or set the `name` property in
+	 the annotation. If the name is associated with an instance, it must contain
+   a `$` which will be substituted for the instance name.
+1. Return a new instance of _A_ from this method.
+
+In the case of file-backed matched implementations:
+
+1. Create instances of `ActionParameterDefinition` for parameters not defined
+	 using annotations. See the manual implementation section for details.
+1. Create a method/lambda to create a new instance of the appropriate action.
+1. Use the `UserDefiner.defineAction` method to create a new definition.
+
+### Signature Variables
+Signature variables are special variables that compute some kind of record
+based on the input variable used by an olive.
+
+There are two categories of signature variables: ones that are static (_i.e._,
+the same for all inputs) and ones that vary for each input.
+
+This might seem a contradiction, but the static case is useful for things that
+depend only on the names and/or types of the signable variables. This is how
+the `signable_names` works.
+
+To create a signature variable:
+
+1. Create a class that extends `SignatureVariable`.
+1. Include a no-arguments constructor.
+1. Annotate this class with `@MetaInfServices`.
+1. Implement the `build` method to compute a value. If static, no input is
+	 provided. If varying for each record, the input will be the only argument to
+   the method.
+
+For the per-input case, a wrapper is available to make implementation easier:
+
+1. Create a class _S_ that implements `Signable<`_R_`>` where _R_ is the return type.
+1. Include a no-arguments constructor.
+1. Implement the interface as desired.
+1. Create a class _SV_ that extends `SignatureVariableForSigner<`_S_`,`_R_`>`.
+1. Create a no-arguments constructor in _SV_ that passes appropriate values to the
+   super-constructor.
+1. Annotate this class with `@MetaInfServices(SignatureVariable.class)`.

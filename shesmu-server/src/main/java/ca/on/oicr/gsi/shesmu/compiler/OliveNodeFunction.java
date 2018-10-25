@@ -17,7 +17,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -123,7 +123,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 	@Override
 	public boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<Constant>> constants) {
+			Supplier<Stream<ConstantDefinition>> constants) {
 		final NameDefinitions defs = new NameDefinitions(Stream.concat(//
 				parameters.stream(), //
 				constants.get())//

@@ -11,11 +11,11 @@ import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 
 import ca.on.oicr.gsi.shesmu.ActionState;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.util.definitions.ActionParameter;
 
 public final class FileTicket extends BaseTicketAction {
 
-	@RuntimeInterop
+	@ActionParameter
 	public String description;
 
 	public FileTicket(JiraConnection connection) {
