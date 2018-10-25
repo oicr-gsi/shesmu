@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.pinery;
 import java.time.Instant;
 
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
-import ca.on.oicr.gsi.shesmu.util.input.Export;
+import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 /**
  * IUS information from Pinery
@@ -74,12 +74,12 @@ public final class PineryIUSValue {
 		this.completed_date = completed_date;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant completed_date() {
 		return completed_date;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String donor() {
 		return donor;
 	}
@@ -208,12 +208,12 @@ public final class PineryIUSValue {
 		return true;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String group_desc() {
 		return group_desc;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String group_id() {
 		return group_id;
 	}
@@ -242,87 +242,87 @@ public final class PineryIUSValue {
 		return result;
 	}
 
-	@Export(type = "b")
+	@ShesmuVariable
 	public boolean is_sample() {
 		return is_sample;
 	}
 
-	@Export(type = "t3sis")
+	@ShesmuVariable(type = "t3sis")
 	public Tuple ius() {
 		return ius;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String kit() {
 		return kit;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String library_design() {
 		return library_design;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String library_name() {
 		return library_name;
 	}
 
-	@Export(type = "i", signable = true)
+	@ShesmuVariable(signable = true)
 	public long library_size() {
 		return library_size;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String library_type() {
 		return library_type;
 	}
 
-	@Export(type = "t3sss")
+	@ShesmuVariable(type = "t3sss")
 	public Tuple lims() {
 		return lims;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String path() {
 		return path;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String project() {
 		return project;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String run_name() {
 		return (String) ius.get(0);
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String targeted_resequencing() {
 		return targeted_resequencing;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant timestamp() {
 		return timestamp;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_origin() {
 		return tissue_origin;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_prep() {
 		return tissue_prep;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_region() {
 		return tissue_region;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_type() {
 		return tissue_type;
 	}

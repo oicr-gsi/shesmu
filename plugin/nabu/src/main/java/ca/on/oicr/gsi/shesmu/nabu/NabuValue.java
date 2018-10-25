@@ -2,7 +2,7 @@ package ca.on.oicr.gsi.shesmu.nabu;
 
 import java.time.Instant;
 
-import ca.on.oicr.gsi.shesmu.util.input.Export;
+import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 public class NabuValue {
 	private final String comment;
@@ -25,37 +25,37 @@ public class NabuValue {
 		this.qcdate = qcdate;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String comment() {
 		return comment;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String filepath() {
 		return filepath;
 	}
 
-	@Export(type = "i")
+	@ShesmuVariable
 	public long fileswid() {
 		return fileswid;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String project() {
 		return project;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant qcdate() {
 		return qcdate;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String qcstatus() {
 		return qcstatus;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String username() {
 		return username;
 	}

@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -921,8 +922,16 @@ public abstract class Imyhat {
 	 * Parse a signature which must be one of the base types (no lists or tuples)
 	 */
 	public static BaseImyhat forName(String s) {
-		return Stream.of(BOOLEAN, DATE, INTEGER, STRING).filter(t -> t.name().equals(s)).findAny()
+		return Stream.of(BOOLEAN, DATE, INTEGER, STRING)//
+				.filter(t -> t.name().equals(s))//
+				.findAny()//
 				.orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
+	}
+
+	public static Optional<BaseImyhat> of(Class<?> c) {
+		return Stream.of(BOOLEAN, DATE, INTEGER, STRING)//
+				.filter(t -> t.javaType().equals(c))//
+				.findAny();
 	}
 
 	/**
