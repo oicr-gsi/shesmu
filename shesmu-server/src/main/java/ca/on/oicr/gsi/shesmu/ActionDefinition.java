@@ -16,11 +16,11 @@ public abstract class ActionDefinition {
 
 	private final String name;
 
-	private final List<ParameterDefinition> parameters;
+	private final List<ActionParameterDefinition> parameters;
 
 	private final Type type;
 
-	public ActionDefinition(String name, Type type, String description, Stream<ParameterDefinition> parameters) {
+	public ActionDefinition(String name, Type type, String description, Stream<ActionParameterDefinition> parameters) {
 		this.name = name;
 		this.type = type;
 		this.description = description;
@@ -32,13 +32,6 @@ public abstract class ActionDefinition {
 	 */
 	public final String description() {
 		return description;
-	}
-
-	/**
-	 * Write bytecode to finish preparing a new instance of an action
-	 */
-	public void finalize(GeneratorAdapter methodGen, int actionLocal) {
-		// Do nothing
 	}
 
 	/**
@@ -65,7 +58,7 @@ public abstract class ActionDefinition {
 	/**
 	 * List all the parameters that must be set for this action to be performed.
 	 */
-	public final Stream<ParameterDefinition> parameters() {
+	public final Stream<ActionParameterDefinition> parameters() {
 		return parameters.stream();
 	}
 

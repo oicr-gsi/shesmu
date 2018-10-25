@@ -22,16 +22,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.Method;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -43,15 +38,12 @@ import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.Action;
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionState;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.Throttler;
-import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.gsistd.input.Utils;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.util.Cache;
+import ca.on.oicr.gsi.shesmu.util.definitions.ActionParameter;
 import io.prometheus.client.Gauge;
 import io.seqware.common.model.WorkflowRunStatus;
 import net.sourceforge.seqware.common.metadata.Metadata;
@@ -66,7 +58,7 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
  * workflow accession. <b>The contents of the INI file can be different and they
  * will still be considered the same.</b>
  */
-public class WorkflowAction<K extends LimsKey> extends Action {
+public abstract class WorkflowAction<K extends LimsKey> extends Action {
 
 	private static class AnalysisState implements Comparable<AnalysisState> {
 		private final String fileSWIDSToRun;
@@ -103,10 +95,6 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 		}
 	}
 
-	private static final Type A_LONG_ARRAY_TYPE = Type.getType(long[].class);
-
-	private static final Type A_SET_TYPE = Type.getType(Set.class);
-	private static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Cache<Long, List<AnalysisState>> CACHE = new Cache<Long, List<AnalysisState>>("sqw-analysis",
 			20) {
 
@@ -130,11 +118,6 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 
 	static final Map<Long, Semaphore> MAX_IN_FLIGHT = new HashMap<>();
 
-	protected static final Method METHOD_WORKFLOW_ACTION__MAGIC = new Method("magic", Type.VOID_TYPE,
-			new Type[] { A_STRING_TYPE });
-
-	private static final Method METHOD_WORKFLOW_ACTION__PREPARE = new Method("prepare", Type.VOID_TYPE, new Type[] {});
-
 	private static final Pattern RUN_SWID_LINE = Pattern.compile(".*Created workflow run with SWID: (\\d+).*");
 
 	private static final Gauge runCreated = Gauge
@@ -145,9 +128,6 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 			.build("shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
 			.labelNames("target", "workflow").create();
 
-	private static final Method WORKFLOW_ACTION__CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {
-			Type.LONG_TYPE, A_LONG_ARRAY_TYPE, A_STRING_TYPE, A_STRING_TYPE, Type.getType(String[].class) });
-
 	static {
 		Utils.LOADER.ifPresent(loader -> {
 			Utils.setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
@@ -155,144 +135,6 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 			Utils.setProvider(loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
 		});
 
-	}
-
-	/**
-	 * Create a new workflow flow definition.
-	 *
-	 * @param name
-	 *            the Shesmu “Run” name of the workflow
-	 * @param type
-	 *            the ASM type of the class implementing the custom LIMS key
-	 *            handling
-	 * @param workflowAccession
-	 *            the Niassa accession of the workflow
-	 * @param jarPath
-	 *            the path to the Niassa distribution JAR
-	 * @param settingsPath
-	 *            the path to the Niassa settings file
-	 * @param services
-	 *            the throttler services to engage for this workflow
-	 * @param parameters
-	 *            the parameters accepted by this workflow
-	 */
-	public static ActionDefinition create(String name, Type type, long workflowAccession, long[] previousAccessions,
-			String jarPath, String settingsPath, String[] services, Stream<WorkflowParameterDefinition> parameters) {
-		return new ActionDefinition(name, type,
-				String.format("Runs SeqWare/Niassa workflow %d using %s with settings in %s.", workflowAccession,
-						jarPath, settingsPath)
-						+ (previousAccessions.length == 0 ? ""
-								: LongStream.of(previousAccessions).sorted().mapToObj(Long::toString).collect(
-										Collectors.joining(", ", " Considered equivalent to workflows: ", ""))),
-				Stream.concat(Stream.of(new ParameterDefinition() {
-
-					@Override
-					public String name() {
-						return "magic";
-					}
-
-					@Override
-					public boolean required() {
-						return false;
-					}
-
-					@Override
-					public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
-						renderer.methodGen().loadLocal(actionLocal);
-						loadParameter.accept(renderer);
-						renderer.methodGen().invokeVirtual(type, METHOD_WORKFLOW_ACTION__MAGIC);
-					}
-
-					@Override
-					public Imyhat type() {
-						return Imyhat.STRING;
-					}
-				}),
-
-						parameters.map(p -> p.generate(type)))) {
-
-			@Override
-			public void finalize(GeneratorAdapter methodGen, int actionLocal) {
-				methodGen.loadLocal(actionLocal);
-				methodGen.invokeVirtual(type, METHOD_WORKFLOW_ACTION__PREPARE);
-			}
-
-			@Override
-			public void initialize(GeneratorAdapter methodGen) {
-				methodGen.newInstance(type);
-				methodGen.dup();
-				methodGen.push(workflowAccession);
-				methodGen.push(previousAccessions.length);
-				methodGen.newArray(Type.LONG_TYPE);
-				Arrays.sort(previousAccessions);
-				for (int i = 0; i < previousAccessions.length; i++) {
-					methodGen.dup();
-					methodGen.push(i);
-					methodGen.push(previousAccessions[i]);
-					methodGen.arrayStore(Type.LONG_TYPE);
-				}
-				methodGen.push(jarPath);
-				methodGen.push(settingsPath);
-				methodGen.push(services.length);
-				methodGen.newArray(A_STRING_TYPE);
-				for (int i = 0; i < services.length; i++) {
-					methodGen.dup();
-					methodGen.push(i);
-					methodGen.push(services[i]);
-					methodGen.arrayStore(A_STRING_TYPE);
-				}
-				methodGen.invokeConstructor(type, WORKFLOW_ACTION__CTOR);
-			}
-
-		};
-	}
-
-	/**
-	 * Create a <tt>lanes</tt> parameter that can tie a workflow run to new IUSes
-	 *
-	 * To use this, create a class that inherits from {@link WorkflowAction} that
-	 * has a constructor that exactly matches the superclass constructor.
-	 * <ol>
-	 * <li>Create a new method called <tt>void lanes(Set&lt;Tuple&gt; info)</tt>
-	 * that accepts a set of tuples as described by the <tt>lanes</tt> parameter and
-	 * stores that information in a field.</li>
-	 * <li>Override the {@link #limsKeys()} to return a collection of
-	 * {@link LimsKey} based on this stored information</li>
-	 * <li>Override {@link #prepareIniForLimsKeys(Stream)} to take a stream of
-	 * {@link IusLimsKey} and update {@link #ini} as appropriate. The
-	 * {@link LimsKey} values stored in the {@link IusLimsKey} are the ones provided
-	 * earlier, so they can be cast to a class carrying supplemental
-	 * information</li>
-	 * </ol>
-	 *
-	 * @return
-	 */
-	public static final WorkflowParameterDefinition lanes(Imyhat... lanes) {
-		return type -> new ParameterDefinition() {
-
-			@Override
-			public String name() {
-				return "lanes";
-			}
-
-			@Override
-			public boolean required() {
-				return true;
-			}
-
-			@Override
-			public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
-				renderer.methodGen().loadLocal(actionLocal);
-				loadParameter.accept(renderer);
-				renderer.methodGen().invokeVirtual(type,
-						new Method("lanes", Type.VOID_TYPE, new Type[] { A_SET_TYPE }));
-			}
-
-			@Override
-			public Imyhat type() {
-				return Imyhat.tuple(lanes).asList();
-			}
-		};
 	}
 
 	private static ActionState processingStateToActionState(String state) {
@@ -397,6 +239,7 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 	}
 
 	@Override
+	@SuppressWarnings("checkstyle:CyclomaticComplexity")
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
@@ -466,13 +309,14 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 		return Collections.emptyList();
 	}
 
-	@RuntimeInterop
+	@ActionParameter
 	public final void magic(String magic) {
 		if (!magic.isEmpty()) {
 			this.magic = magic;
 		}
 	}
 
+	@SuppressWarnings("checkstyle:CyclomaticComplexity")
 	@Override
 	public final ActionState perform() {
 		if (Throttler.anyOverloaded(services)) {
@@ -655,7 +499,7 @@ public class WorkflowAction<K extends LimsKey> extends Action {
 		}
 	}
 
-	@RuntimeInterop
+	@Override
 	public final void prepare() {
 		fileAccessions = fileSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
 		parentAccessions = parentSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));

@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
 /**
@@ -15,7 +15,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
  */
 public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 
-	private ParameterDefinition definition;
+	private ActionParameterDefinition definition;
 	private final ExpressionNode expression;
 
 	public OliveArgumentNodeProvided(int line, int column, String name, ExpressionNode expression) {
@@ -35,7 +35,7 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 	 *            the required type
 	 */
 	@Override
-	public boolean ensureType(ParameterDefinition definition, Consumer<String> errorHandler) {
+	public boolean ensureType(ActionParameterDefinition definition, Consumer<String> errorHandler) {
 		this.definition = definition;
 		final boolean ok = definition.type().isSame(expression.type());
 		if (!ok) {
@@ -51,7 +51,7 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 	@Override
 	public void render(Renderer renderer, int action) {
 		renderer.mark(line);
-		definition.store(renderer, action, expression::render);
+		definition.store(renderer, renderer.methodGen().getLocalType(action), action, expression::render);
 
 	}
 

@@ -14,7 +14,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -84,7 +84,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 	@Override
 	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
 		return defs.fail(expression.resolve(defs, errorHandler) & handlers
 				.stream().filter(handler -> handler
 						.resolve(inputFormatDefinition, definedFormats, defs, constants, errorHandler).isGood())

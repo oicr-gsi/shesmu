@@ -77,12 +77,12 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 
 		final GeneratorAdapter handle = new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
 		handle.visitCode();
-		handle.invokeDynamic(function.returnType().signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+		handle.invokeDynamic(function.returnType().descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 		handle.loadArg(1);
 		handle.push("value");
 		function.renderStart(handle);
 		function.parameters().map(FunctionParameter::type).map(Pair.number()).forEach(type -> {
-			handle.invokeDynamic(type.second().signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+			handle.invokeDynamic(type.second().descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 			handle.loadArg(0);
 			handle.push(type.first());
 			handle.invokeVirtual(A_JSON_ARRAY_TYPE, JSON_ARRAY__GET);

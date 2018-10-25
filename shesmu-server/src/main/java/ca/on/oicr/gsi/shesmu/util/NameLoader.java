@@ -5,8 +5,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
-
 /**
  * Packs named objects into a map for retrieval
  *
@@ -39,7 +37,6 @@ public final class NameLoader<T> {
 	/**
 	 * Get a particular object by name
 	 */
-	@RuntimeInterop
 	public T get(String name) {
 		return items.get(name);
 	}

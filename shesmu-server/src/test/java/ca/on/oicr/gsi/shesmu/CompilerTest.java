@@ -16,16 +16,89 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.CheckClassAdapter;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.core.actions.rest.FileActionRepository;
-import ca.on.oicr.gsi.shesmu.core.tsv.TableFunctionRepository;
-import ca.on.oicr.gsi.shesmu.util.FileWatcher;
+import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 
 public class CompilerTest {
+	public static class TestAction extends Action {
+		public long memory;
+		public Set<String> input;
+		public boolean ok;
+		public boolean junk;
+
+		public TestAction() {
+			super("test");
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return 0;
+		}
+
+		@Override
+		public ActionState perform() {
+			return ActionState.SUCCEEDED;
+		}
+
+		@Override
+		public int priority() {
+			return 0;
+		}
+
+		@Override
+		public long retryMinutes() {
+			return 0;
+		}
+
+		@Override
+		public ObjectNode toJson(ObjectMapper mapper) {
+			return null;
+		}
+
+	}
+
+	private static class TestActionDefinition extends ActionDefinition {
+		public TestActionDefinition(String name, Type type, String description,
+				Stream<ActionParameterDefinition> parameters) {
+			super(name, type, description, parameters);
+		}
+
+		@Override
+		public void initialize(GeneratorAdapter methodGen) {
+			methodGen.newInstance(type());
+			methodGen.dup();
+			methodGen.invokeConstructor(type(), new Method("<init>", Type.VOID_TYPE, new Type[] {}));
+		}
+
+	}
+
+	private final ActionDefinition ACTIONS[] = new ActionDefinition[] {
+			new TestActionDefinition("fastqc", Type.getType(TestAction.class), "TEST",
+					Stream.of(ActionParameterDefinition.forField("memory", "memory", Imyhat.INTEGER, true),
+							ActionParameterDefinition.forField("input", "input", Imyhat.STRING.asList(), true))),
+			new TestActionDefinition("ok", Type.getType(TestAction.class), "TEST",
+					Stream.of(ActionParameterDefinition.forField("ok", "ok", Imyhat.BOOLEAN, true))),
+			new TestActionDefinition("optional", Type.getType(TestAction.class), "TEST",
+					Stream.of(ActionParameterDefinition.forField("junk", "junk", Imyhat.BOOLEAN, true),
+							ActionParameterDefinition.forField("ok", "ok", Imyhat.BOOLEAN, false))),
+
+	};
+
 	public final class CompilerHarness extends Compiler {
 		private Set<String> allowedErrors;
 		private boolean dirty;
@@ -84,17 +157,14 @@ public class CompilerTest {
 
 	}
 
-	private static final List<Constant> CONSTANTS = Arrays.asList(
-			Constant.of("alwaystrue", true, "It's true. I swear."),
-			Constant.of("notpi", 3, "Any value which is not pi."));
-
-	private static final FileWatcher TEST_WATCHER = FileWatcher
-			.of(Paths.get(CompilerTest.class.getResource("/data").getPath()));
+	private static final List<ConstantDefinition> CONSTANTS = Arrays.asList(
+			ConstantDefinition.of("alwaystrue", true, "It's true. I swear."),
+			ConstantDefinition.of("notpi", 3, "Any value which is not pi."));
 
 	private final NameLoader<ActionDefinition> actions = new NameLoader<>(
-			new FileActionRepository(TEST_WATCHER).queryActions(), ActionDefinition::name);
-	private final NameLoader<FunctionDefinition> functions = new NameLoader<>(
-			new TableFunctionRepository(TEST_WATCHER).queryFunctions(), FunctionDefinition::name);
+			Stream.concat(Stream.of(ACTIONS), new StandardDefinitions().actions()), ActionDefinition::name);
+	private final NameLoader<FunctionDefinition> functions = new NameLoader<>(new StandardDefinitions().functions(),
+			FunctionDefinition::name);
 
 	@Test
 	public void testCompiler() throws IOException {

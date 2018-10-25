@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -107,7 +107,7 @@ public class ProgramNode {
 	 */
 	public boolean validate(Function<String, InputFormatDefinition> inputFormatDefinitions,
 			Function<String, FunctionDefinition> definedFunctions, Function<String, ActionDefinition> definedActions,
-			Consumer<String> errorHandler, Supplier<Stream<Constant>> constants) {
+			Consumer<String> errorHandler, Supplier<Stream<ConstantDefinition>> constants) {
 
 		inputFormatDefinition = inputFormatDefinitions.apply(input);
 		if (inputFormatDefinition == null) {

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.util.actions.JsonParameterised;
+import ca.on.oicr.gsi.shesmu.util.definitions.JsonParameterised;
 
 public class FakeAction extends Action implements JsonParameterised {
 

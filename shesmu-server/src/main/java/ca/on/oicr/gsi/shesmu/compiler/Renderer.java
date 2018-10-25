@@ -41,8 +41,8 @@ public class Renderer {
 					Type.getType(String.class), Type.getType(MethodType.class), Type.getType(String.class)),
 			false);
 
-	public static void loadImyhatInMethod(GeneratorAdapter methodGen, String signature) {
-		methodGen.invokeDynamic(signature, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+	public static void loadImyhatInMethod(GeneratorAdapter methodGen, String descriptor) {
+		methodGen.invokeDynamic(descriptor, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 	}
 
 	private final Map<String, LoadableValue> loadables;
@@ -93,8 +93,8 @@ public class Renderer {
 				method.getDescriptor(), true);
 	}
 
-	public void loadImyhat(String signature) {
-		loadImyhatInMethod(methodGen, signature);
+	public void loadImyhat(String descriptor) {
+		loadImyhatInMethod(methodGen, descriptor);
 	}
 
 	/**

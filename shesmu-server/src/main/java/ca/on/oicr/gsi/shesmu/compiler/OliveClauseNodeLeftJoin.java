@@ -17,7 +17,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -105,7 +105,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 	@Override
 	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
 		inputFormat = definedFormats.apply(format);
 		if (inputFormat == null) {
 			errorHandler.accept(String.format("%d:%d: Unknown input format “%s” in LeftJoin.", line, column, format));

@@ -48,7 +48,7 @@ import ca.on.oicr.gsi.shesmu.runtime.Tuple;
  *
  * Java's {@link Class} (and, by extension, ASM {@link Type}) are unsuitable for
  * this purpose because generic erasure has happened. Shesmu types also have an
- * interchange string format, called a signature.
+ * interchange string format, called a descriptor.
  */
 public abstract class Imyhat {
 	/**
@@ -115,6 +115,11 @@ public abstract class Imyhat {
 			dispatcher.consume(values.stream(), inner);
 		}
 
+		@Override
+		public String descriptor() {
+			return "a" + inner.descriptor();
+		}
+
 		public Imyhat inner() {
 			return inner;
 		}
@@ -162,11 +167,6 @@ public abstract class Imyhat {
 		public void packJson(ObjectNode node, String key, Object value) {
 			final ArrayNode listJson = node.putArray(key);
 			((Collection<?>) value).forEach(item -> inner.packJson(listJson, item));
-		}
-
-		@Override
-		public String signature() {
-			return "a" + inner.signature();
 		}
 
 		@Override
@@ -240,6 +240,14 @@ public abstract class Imyhat {
 			}
 		}
 
+		@Override
+		public String descriptor() {
+			return "o" + fields.size() + //
+					fields.entrySet().stream()//
+							.map(e -> e.getKey() + "$" + e.getValue().first().descriptor())//
+							.collect(Collectors.joining());
+		}
+
 		public Imyhat get(String field) {
 			return fields.getOrDefault(field, new Pair<>(BAD, 0)).first();
 		}
@@ -311,14 +319,6 @@ public abstract class Imyhat {
 		}
 
 		@Override
-		public String signature() {
-			return "o" + fields.size() + //
-					fields.entrySet().stream()//
-							.map(e -> e.getKey() + "$" + e.getValue().first().signature())//
-							.collect(Collectors.joining());
-		}
-
-		@Override
 		public void streamJson(GeneratorAdapter method) {
 			final int local = method.newLocal(A_TUPLE_TYPE);
 			method.storeLocal(local);
@@ -376,6 +376,11 @@ public abstract class Imyhat {
 			for (int it = 0; it < types.length; it++) {
 				dispatcher.consume(it, tuple.get(it), types[it]);
 			}
+		}
+
+		@Override
+		public String descriptor() {
+			return Arrays.stream(types).map(Imyhat::descriptor).collect(Collectors.joining("", "t" + types.length, ""));
 		}
 
 		public Imyhat get(int index) {
@@ -441,11 +446,6 @@ public abstract class Imyhat {
 		}
 
 		@Override
-		public String signature() {
-			return Arrays.stream(types).map(Imyhat::signature).collect(Collectors.joining("", "t" + types.length, ""));
-		}
-
-		@Override
 		public void streamJson(GeneratorAdapter method) {
 			final int local = method.newLocal(A_TUPLE_TYPE);
 			method.storeLocal(local);
@@ -500,6 +500,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String descriptor() {
+			return "$";
+		}
+
+		@Override
 		public boolean isBad() {
 			return true;
 		}
@@ -537,11 +542,6 @@ public abstract class Imyhat {
 		@Override
 		public void packJson(ObjectNode node, String key, Object value) {
 			node.putNull(key);
-		}
-
-		@Override
-		public String signature() {
-			return "$";
 		}
 
 		@Override
@@ -585,6 +585,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String descriptor() {
+			return "b";
+		}
+
+		@Override
 		public boolean isOrderable() {
 			return false;
 		}
@@ -617,11 +622,6 @@ public abstract class Imyhat {
 		@Override
 		public Object parse(String s) {
 			return "true".equals(s);
-		}
-
-		@Override
-		public String signature() {
-			return "b";
 		}
 
 		@Override
@@ -661,6 +661,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String descriptor() {
+			return "d";
+		}
+
+		@Override
 		public boolean isOrderable() {
 			return true;
 		}
@@ -693,11 +698,6 @@ public abstract class Imyhat {
 		@Override
 		public Object parse(String s) {
 			return ZonedDateTime.parse(s).toInstant();
-		}
-
-		@Override
-		public String signature() {
-			return "d";
 		}
 
 		@Override
@@ -741,6 +741,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String descriptor() {
+			return "i";
+		}
+
+		@Override
 		public boolean isOrderable() {
 			return true;
 		}
@@ -773,11 +778,6 @@ public abstract class Imyhat {
 		@Override
 		public Object parse(String s) {
 			return Long.parseLong(s);
-		}
-
-		@Override
-		public String signature() {
-			return "i";
 		}
 
 		@Override
@@ -836,6 +836,11 @@ public abstract class Imyhat {
 		}
 
 		@Override
+		public String descriptor() {
+			return "s";
+		}
+
+		@Override
 		public boolean isOrderable() {
 			return false;
 		}
@@ -871,11 +876,6 @@ public abstract class Imyhat {
 		}
 
 		@Override
-		public String signature() {
-			return "s";
-		}
-
-		@Override
 		public void streamJson(GeneratorAdapter method) {
 			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_STRING);
 		}
@@ -888,10 +888,10 @@ public abstract class Imyhat {
 
 	/**
 	 * A bootstrap method that returns the appropriate {@link Imyhat} from a
-	 * signature.
+	 * descriptor.
 	 *
-	 * @param signature
-	 *            the method name, which is the type signature; signatures are
+	 * @param descriptor
+	 *            the method name, which is the type descriptor; descriptor are
 	 *            guaranteed to be valid JVM identifiers
 	 * @param type
 	 *            the type of this call site, which must take no arguments and
@@ -899,27 +899,59 @@ public abstract class Imyhat {
 	 * @return
 	 */
 	@RuntimeInterop
-	public static CallSite bootstrap(Lookup lookup, String signature, MethodType type) {
+	public static CallSite bootstrap(Lookup lookup, String descriptor, MethodType type) {
 		if (!type.returnType().equals(Imyhat.class)) {
 			throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
 		}
 		if (type.parameterCount() != 0) {
 			throw new IllegalArgumentException("Method cannot take parameters.");
 		}
-		if (callsites.containsKey(signature)) {
-			return callsites.get(signature);
+		if (callsites.containsKey(descriptor)) {
+			return callsites.get(descriptor);
 		}
-		final Imyhat imyhat = parse(signature);
+		final Imyhat imyhat = parse(descriptor);
 		if (imyhat.isBad()) {
-			throw new IllegalArgumentException("Bad type signature: " + signature);
+			throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
 		}
 		final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Imyhat.class, imyhat));
-		callsites.put(signature, callsite);
+		callsites.put(descriptor, callsite);
 		return callsite;
 	}
 
 	/**
-	 * Parse a signature which must be one of the base types (no lists or tuples)
+	 * Convert a possibly annotated Java type into a Shesmu type
+	 *
+	 * @param context
+	 *            the location to be displayed in error messages
+	 * @param descriptor
+	 *            the annotated Shesmu descriptor
+	 * @param clazz
+	 *            the class of the type
+	 */
+	public static Imyhat convert(String context, String descriptor, Class<?> clazz) {
+		if (descriptor.isEmpty()) {
+			return Imyhat.of(clazz)
+					.orElseThrow(() -> new IllegalArgumentException(
+							String.format("%s has no type annotation and %s type isn't a valid Shesmu type.", context,
+									clazz.getName())));
+		} else {
+			final Imyhat type = Imyhat.parse(descriptor);
+			if (type.isBad()) {
+				throw new IllegalArgumentException(
+						String.format("%s has invalid type descriptor %s", context, descriptor));
+			}
+			if (!type.javaType().equals(clazz)) {
+				throw new IllegalArgumentException(
+						String.format("%s has Java type %s but Shesmu type descriptor implies %s.", context,
+								clazz.getName(), type.javaType()));
+			}
+			return type;
+		}
+
+	}
+
+	/**
+	 * Parse a name which must be one of the base types (no lists or tuples)
 	 */
 	public static BaseImyhat forName(String s) {
 		return Stream.of(BOOLEAN, DATE, INTEGER, STRING)//
@@ -938,7 +970,7 @@ public abstract class Imyhat {
 	 * Parse a string-representation of a type
 	 *
 	 * @param input
-	 *            the Shesmu string (as generated by {@link #signature()}
+	 *            the Shesmu string (as generated by {@link #descriptor()}
 	 * @return the parsed type; if the type is malformed, {@link #BAD} is returned
 	 */
 	@RuntimeInterop
@@ -949,10 +981,10 @@ public abstract class Imyhat {
 	}
 
 	/**
-	 * Parse a signature and return the corresponding type
+	 * Parse a descriptor and return the corresponding type
 	 *
 	 * @param input
-	 *            the Shesmu string (as generated by {@link #signature()}
+	 *            the Shesmu string (as generated by {@link #descriptor()}
 	 * @param output
 	 *            the remaining subsequence of the input after parsing
 	 * @return the parsed type; if the type is malformed, {@link #BAD} is returned
@@ -1055,6 +1087,13 @@ public abstract class Imyhat {
 	public abstract void consume(ImyhatDispatcher dispatcher, Object value);
 
 	/**
+	 * Create a machine-friendly string describing this type.
+	 *
+	 * @see #parse(CharSequence)
+	 */
+	public abstract String descriptor();
+
+	/**
 	 * Check if this type is malformed
 	 */
 	public abstract boolean isBad();
@@ -1112,13 +1151,6 @@ public abstract class Imyhat {
 	 */
 	public abstract void packJson(ObjectNode node, String key, Object value);
 
-	/**
-	 * Create a machine-friendly string describing this type.
-	 *
-	 * @see #parse(CharSequence)
-	 */
-	public abstract String signature();
-
 	public abstract void streamJson(GeneratorAdapter method);
 
 	@SuppressWarnings("unchecked")
@@ -1129,7 +1161,7 @@ public abstract class Imyhat {
 
 	@Override
 	public final String toString() {
-		return signature();
+		return descriptor();
 	}
 
 	/**

@@ -148,7 +148,7 @@ public final class JavaStreamBuilder {
 
 	public void collect() {
 		finish();
-		renderer.loadImyhat(currentType.signature());
+		renderer.loadImyhat(currentType.descriptor());
 		renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_COLLECTORS__TO_SET);
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
 		renderer.methodGen().checkCast(A_SET_TYPE);

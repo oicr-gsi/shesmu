@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -61,7 +61,7 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	@Override
 	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<Constant>> constants, Consumer<String> errorHandler) {
+			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
 		inputFormat = definedFormats.apply(format);
 		if (inputFormat == null) {
 			errorHandler.accept(String.format("%d:%d: Unknown input format “%s” in Join.", line, column, format));

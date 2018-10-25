@@ -64,7 +64,7 @@ public abstract class SignatureVariableForSigner<T, R> extends SignatureVariable
 
 			method.dup();
 			method.push(target.name());
-			Renderer.loadImyhatInMethod(method, target.type().signature());
+			Renderer.loadImyhatInMethod(method, target.type().descriptor());
 			method.loadArg(0);
 			method.invokeVirtual(initialType, new Method(target.name(), target.type().asmType(), new Type[] {}));
 			method.box(target.type().asmType());

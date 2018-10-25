@@ -27,7 +27,7 @@ public interface FunctionDefinition {
 	 *            the types of the arguments to the method (the appropriate Java
 	 *            types will be matched)
 	 */
-	public static FunctionDefinition staticMethod(Class<?> owner, String methodName, String description,
+	public static FunctionDefinition staticMethod(String name, Class<?> owner, String methodName, String description,
 			Imyhat returnType, FunctionParameter... parameters) {
 		return new FunctionDefinition() {
 
@@ -38,7 +38,7 @@ public interface FunctionDefinition {
 
 			@Override
 			public String name() {
-				return methodName;
+				return name;
 			}
 
 			@Override

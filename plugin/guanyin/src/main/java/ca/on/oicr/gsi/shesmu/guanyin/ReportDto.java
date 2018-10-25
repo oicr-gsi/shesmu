@@ -5,12 +5,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Parser;
-import ca.on.oicr.gsi.shesmu.core.actions.rest.ParameterInfo;
-import ca.on.oicr.gsi.shesmu.guanyin.ReportActionRepository.GuanyinFile;
-import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
-import ca.on.oicr.gsi.shesmu.util.actions.JsonParameter;
 
 /**
  * Bean of Report responses from Guanyin
@@ -68,10 +63,4 @@ public class ReportDto {
 	public void setVersion(String version) {
 		this.version = version;
 	}
-
-	public ReportDefinition toDefinition(RuntimeBinding<GuanyinFile>.CustomBinding guanyin) {
-		return new ReportDefinition(guanyin, id, name, version, category, permittedParameters.entrySet().stream().map(
-				e -> new JsonParameter(e.getKey(), Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
-	}
-
 }

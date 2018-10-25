@@ -8,7 +8,7 @@ public class TypeParseResponse {
 
 	public TypeParseResponse(Imyhat input) {
 		humanName = input.name();
-		descriptor = input.signature();
+		descriptor = input.descriptor();
 	}
 
 	public String getDescriptor() {

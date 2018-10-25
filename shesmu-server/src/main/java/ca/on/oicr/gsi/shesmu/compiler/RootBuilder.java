@@ -25,7 +25,7 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -95,7 +95,7 @@ public abstract class RootBuilder {
 
 	final long compileTime;
 
-	private final Supplier<Stream<Constant>> constants;
+	private final Supplier<Stream<ConstantDefinition>> constants;
 
 	private final GeneratorAdapter ctor;
 
@@ -117,7 +117,7 @@ public abstract class RootBuilder {
 	private int streamId;
 
 	public RootBuilder(Instant compileTime, String name, String path, InputFormatDefinition inputFormatDefinition,
-			Supplier<Stream<Constant>> constants) {
+			Supplier<Stream<ConstantDefinition>> constants) {
 		this.compileTime = compileTime.toEpochMilli();
 		this.path = path;
 		this.inputFormatDefinition = inputFormatDefinition;
@@ -170,7 +170,7 @@ public abstract class RootBuilder {
 	}
 
 	public Stream<LoadableValue> constants() {
-		return constants.get().map(Constant::asLoadable);
+		return constants.get().map(ConstantDefinition::asLoadable);
 	}
 
 	/**
@@ -246,7 +246,7 @@ public abstract class RootBuilder {
 			for (int i = 0; i < types.length; i++) {
 				ctor.dup();
 				ctor.push(i);
-				ctor.invokeDynamic(types[i].signature(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+				ctor.invokeDynamic(types[i].descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
 				ctor.arrayStore(A_IMYHAT_TYPE);
 			}
 			ctor.visitMethodInsn(Opcodes.INVOKESTATIC, A_DUMPER_SOURCE_TYPE.getInternalName(),

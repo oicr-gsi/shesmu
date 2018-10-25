@@ -21,6 +21,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -28,13 +29,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Constant;
+import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.LoadedConfiguration;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 
@@ -92,8 +93,8 @@ public final class Check extends Compiler {
 			System.exit(1);
 			return;
 		}
-		final List<Constant> constants = fetch(remote, "constants")//
-				.map(o -> new Constant(o.get("name").asText(), Imyhat.parse(o.get("type").asText()),
+		final List<ConstantDefinition> constants = fetch(remote, "constants")//
+				.map(o -> new ConstantDefinition(o.get("name").asText(), Imyhat.parse(o.get("type").asText()),
 						o.get("description").asText()) {
 
 					@Override
@@ -141,7 +142,7 @@ public final class Check extends Compiler {
 		final String description = node.get("description").asText();
 		final Imyhat returnType = Imyhat.parse(node.get("return").asText());
 		final FunctionParameter[] parameters = RuntimeSupport.stream(node.get("parameters").elements())
-				.map(p -> new FunctionParameter(p.get("name").asText(), Imyhat.parse(p.get("type").asText())))
+				.map(p -> new FunctionParameter(p.get("description").asText(), Imyhat.parse(p.get("type").asText())))
 				.toArray(FunctionParameter[]::new);
 		return new FunctionDefinition() {
 
@@ -232,11 +233,11 @@ public final class Check extends Compiler {
 
 	}
 
-	private static ParameterDefinition makeParameter(JsonNode node) {
+	private static ActionParameterDefinition makeParameter(JsonNode node) {
 		final String name = node.get("name").asText();
 		final Imyhat type = Imyhat.parse(node.get("type").asText());
 		final boolean required = node.get("required").asBoolean();
-		return new ParameterDefinition() {
+		return new ActionParameterDefinition() {
 
 			@Override
 			public String name() {
@@ -249,7 +250,7 @@ public final class Check extends Compiler {
 			}
 
 			@Override
-			public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
+			public void store(Renderer renderer, Type owner, int actionLocal, Consumer<Renderer> loadParameter) {
 				throw new UnsupportedOperationException();
 			}
 

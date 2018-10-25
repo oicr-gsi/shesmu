@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import io.prometheus.client.Gauge;
 
 /**

@@ -13,8 +13,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.ParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Parser;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
@@ -25,7 +25,7 @@ import ca.on.oicr.gsi.shesmu.runtime.Tuple;
  * Creates a parameter that will be formatted and saved as INI parameter for a
  * {@link WorkflowAction}
  */
-public final class IniParam implements WorkflowParameterDefinition {
+public final class IniParam implements ActionParameterDefinition {
 	public interface Stringifier {
 		public void stringify(GeneratorAdapter methodGen, Type actionType, int actionLocal);
 
@@ -367,34 +367,29 @@ public final class IniParam implements WorkflowParameterDefinition {
 	}
 
 	@Override
-	public ParameterDefinition generate(Type actionType) {
-		return new ParameterDefinition() {
-			@Override
-			public final String name() {
-				return name;
-			}
+	public final String name() {
+		return name;
+	}
 
-			@Override
-			public final boolean required() {
-				return required;
-			}
+	@Override
+	public final boolean required() {
+		return required;
+	}
 
-			@Override
-			public final void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
-				renderer.methodGen().loadLocal(actionLocal);
-				renderer.methodGen().getField(actionType, "ini", A_PROPERTIES_TYPE);
-				renderer.methodGen().push(realName);
-				loadParameter.accept(renderer);
-				stringifier.stringify(renderer.methodGen(), actionType, actionLocal);
-				renderer.methodGen().invokeVirtual(A_PROPERTIES_TYPE, PROPERTIES__PUT);
-				renderer.methodGen().pop();
-			}
+	@Override
+	public final void store(Renderer renderer, Type actionType, int actionLocal, Consumer<Renderer> loadParameter) {
+		renderer.methodGen().loadLocal(actionLocal);
+		renderer.methodGen().getField(actionType, "ini", A_PROPERTIES_TYPE);
+		renderer.methodGen().push(realName);
+		loadParameter.accept(renderer);
+		stringifier.stringify(renderer.methodGen(), actionType, actionLocal);
+		renderer.methodGen().invokeVirtual(A_PROPERTIES_TYPE, PROPERTIES__PUT);
+		renderer.methodGen().pop();
+	}
 
-			@Override
-			public final Imyhat type() {
-				return stringifier.type();
-			}
-		};
+	@Override
+	public final Imyhat type() {
+		return stringifier.type();
 	}
 
 }

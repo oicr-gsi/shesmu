@@ -30,7 +30,8 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
  * variables
  *
  * @param <V>
- *            the type for each “row”, decorated with {@link ShesmuVariable} annotations
+ *            the type for each “row”, decorated with {@link ShesmuVariable}
+ *            annotations
  * @param <R>
  *            the type of the interface implemented by sources of input data
  */
@@ -121,26 +122,8 @@ public abstract class BaseInputFormatDefinition<V, R extends InputRepository<V>>
 		variables = Arrays.stream(itemClass.getMethods()).flatMap(method -> {
 			final ShesmuVariable[] exports = method.getAnnotationsByType(ShesmuVariable.class);
 			if (exports.length == 1) {
-				Imyhat type;
-				if (exports[0].type().isEmpty()) {
-					type = Imyhat.of(method.getReturnType())
-							.orElseThrow(() -> new IllegalArgumentException(String.format(
-									"Method %s of type %s has no type annotation and return %s type isn't a valid Shesmu type.",
-									method.getName(), itemClass.getName(), method.getReturnType().getName())));
-				} else {
-					type = Imyhat.parse(exports[0].type());
-					if (type.isBad()) {
-						throw new IllegalArgumentException(
-								String.format("Method %s of type %s has invalid type signature %s", method.getName(),
-										itemClass.getName(), exports[0].type()));
-					}
-					if (!type.javaType().equals(method.getReturnType())) {
-						throw new IllegalArgumentException(String.format(
-								"Method %s of type %s has no type annotation and return %s but Shesmu type signature implies %s.",
-								method.getName(), itemClass.getName(), method.getReturnType().getName(),
-								type.javaType()));
-					}
-				}
+				Imyhat type = Imyhat.convert(String.format("Method %s of %s", method.getName(), itemClass.getName()),
+						exports[0].type(), method.getReturnType());
 				return Stream.of(new DefaultStreamTarget(method.getName(), type, exports[0].signable()));
 			}
 			return Stream.empty();

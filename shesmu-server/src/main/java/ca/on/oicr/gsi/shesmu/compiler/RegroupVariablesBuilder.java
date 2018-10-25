@@ -52,7 +52,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 		@Override
 		public int buildConstructor(GeneratorAdapter ctor, int index) {
 			ctor.loadThis();
-			Renderer.loadImyhatInMethod(ctor, valueType.signature());
+			Renderer.loadImyhatInMethod(ctor, valueType.descriptor());
 			ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
 			ctor.putField(self, fieldName, A_SET_TYPE);
 			return index;

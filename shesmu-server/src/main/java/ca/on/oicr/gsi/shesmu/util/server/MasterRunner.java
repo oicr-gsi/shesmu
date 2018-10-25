@@ -2,12 +2,12 @@ package ca.on.oicr.gsi.shesmu.util.server;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.InputRepository;
-import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
