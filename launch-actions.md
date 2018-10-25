@@ -98,8 +98,12 @@ to the `<ticket summary/title>` in the olive which opened the ticket.
 
 
 ## Test an olive
-End your olive with `Run nothing;`. This will cause no actions to be launched
-until the correctness of the olive's behaviour is confirmed.
+End your olive with: 
+```
+Run nothing With 
+	value = <value>; # where <value> = "" or any value that you wish to print for debugging purposes
+```
+This will cause no actions to be launched until the correctness of the olive's behaviour is confirmed.
 Start the Shesmu server and navigate to http://localhost:8081 .
 
 1. Check the [Status](http://localhost:8081) page. Any olive compilation errors
