@@ -10,9 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -65,7 +63,6 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 
 		public JiraConfig(Path fileName) {
 			super(fileName, Configuration.class);
-			clients.put(id, this);
 			final String filenamePart = fileName.getFileName().toString();
 			instance = filenamePart.substring(0, filenamePart.length() - EXTENSION.length());
 		}
@@ -201,7 +198,6 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 	private static final Gauge cacheSize = Gauge
 			.build("shesmu_jira_ticket_cache_size", "The number of tickets currently cached locally.")
 			.labelNames("project", "purpose").create();
-	private static Map<String, JiraConnection> clients = new HashMap<>();
 
 	protected static final String EXTENSION = ".jira";
 
@@ -221,10 +217,6 @@ public abstract class BaseJiraRepository<T> implements LoadedConfiguration {
 	private static final Gauge lastFetchTime = Gauge
 			.build("shesmu_jira_ticket_fetch_time", "The timestamp of the last query.").labelNames("project", "purpose")
 			.create();
-
-	public static JiraConnection get(String id) {
-		return clients.get(id);
-	}
 
 	private final AutoUpdatingDirectory<JiraConfig> configurations;
 

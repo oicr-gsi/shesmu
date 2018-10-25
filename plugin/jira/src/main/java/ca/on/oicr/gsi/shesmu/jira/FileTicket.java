@@ -18,8 +18,8 @@ public final class FileTicket extends BaseTicketAction {
 	@RuntimeInterop
 	public String description;
 
-	public FileTicket(String id) {
-		super(id, "jira-open-ticket", Optional.empty());
+	public FileTicket(JiraConnection connection) {
+		super(connection, "jira-open-ticket", Optional.empty());
 	}
 
 	@Override

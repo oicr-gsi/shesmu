@@ -22,6 +22,7 @@ import ca.on.oicr.gsi.shesmu.ActionRepository;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 
@@ -30,13 +31,15 @@ import ca.on.oicr.gsi.status.SectionRenderer;
  */
 @MetaInfServices(ActionRepository.class)
 public class ReportActionRepository implements ActionRepository {
-	private class GuanyinFile extends AutoUpdatingJsonFile<Configuration> {
+	public class GuanyinFile extends AutoUpdatingJsonFile<Configuration> {
 		private List<ActionDefinition> actions = Collections.emptyList();
+		private final RuntimeBinding<GuanyinFile>.CustomBinding binder;
 
 		private Optional<Configuration> configuration = Optional.empty();
 
 		public GuanyinFile(Path fileName) {
 			super(fileName, Configuration.class);
+			binder = RUNTIME_BINDING.bindCustom(this);
 		}
 
 		public ConfigurationSection configuration() {
@@ -54,6 +57,18 @@ public class ReportActionRepository implements ActionRepository {
 
 		}
 
+		public String drmaaPsk() {
+			return configuration.get().getDrmaaPsk();
+		}
+
+		public String drmaaUrl() {
+			return configuration.get().getDrmaa();
+		}
+
+		public String script() {
+			return configuration.get().getScript();
+		}
+
 		public Stream<ActionDefinition> stream() {
 			return actions.stream();
 		}
@@ -65,8 +80,7 @@ public class ReportActionRepository implements ActionRepository {
 				actions = Stream
 						.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), ReportDto[].class))//
 						.filter(ReportDto::isValid)//
-						.<ActionDefinition>map(def -> def.toDefinition(configuration.getGuanyin(),
-								configuration.getDrmaa(), configuration.getDrmaaPsk(), configuration.getScript()))//
+						.<ActionDefinition>map(def -> def.toDefinition(binder))//
 						.collect(Collectors.toList());
 				this.configuration = Optional.of(configuration);
 				return Optional.empty();
@@ -76,14 +90,22 @@ public class ReportActionRepository implements ActionRepository {
 			}
 		}
 
+		public String 观音Url() {
+			return configuration.get().getGuanyin();
+		}
 	}
 
+	private static final String EXTENSION = ".guanyin";
+
 	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+
+	private static final RuntimeBinding<GuanyinFile> RUNTIME_BINDING = new RuntimeBinding<>(GuanyinFile.class,
+			EXTENSION);
 
 	private final AutoUpdatingDirectory<GuanyinFile> configurations;
 
 	public ReportActionRepository() {
-		configurations = new AutoUpdatingDirectory<>(".guanyin", GuanyinFile::new);
+		configurations = new AutoUpdatingDirectory<>(EXTENSION, GuanyinFile::new);
 	}
 
 	@Override
