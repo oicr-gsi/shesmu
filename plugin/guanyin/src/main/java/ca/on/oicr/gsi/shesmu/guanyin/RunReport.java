@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.Throttler;
+import ca.on.oicr.gsi.shesmu.guanyin.ReportActionRepository.GuanyinFile;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.util.actions.JsonParameterised;
@@ -45,22 +46,16 @@ public class RunReport extends Action implements JsonParameterised {
 	private static final LatencyHistogram 观音RequestTime = new LatencyHistogram("shesmu_guanyin_request_time",
 			"The request time latency to launch a remote action.", "target");
 
-	private final String drmaaPsk;
-	private final String drmaaUrl;
+	private final GuanyinFile owner;
 	private final ObjectNode parameters;
 	private final long reportId;
+	private final String reportName;
 	private OptionalLong reportRecordId = OptionalLong.empty();
 	private final ObjectNode rootParameters = RuntimeSupport.MAPPER.createObjectNode();
-	private final String script;
-	private final String 观音Url;
-	private final String reportName;
 
-	public RunReport(String 观音Url, String drmaaUrl, String drmaaPsk, String script, long reportId, String reportName) {
+	public RunReport(GuanyinFile owner, long reportId, String reportName) {
 		super("guanyin-report");
-		this.drmaaUrl = drmaaUrl;
-		this.drmaaPsk = drmaaPsk;
-		this.观音Url = 观音Url;
-		this.script = script;
+		this.owner = owner;
 		this.reportId = reportId;
 		this.reportName = reportName;
 		parameters = rootParameters.putObject("parameters");
@@ -78,18 +73,7 @@ public class RunReport extends Action implements JsonParameterised {
 			return false;
 		}
 		final RunReport other = (RunReport) obj;
-		if (drmaaPsk == null) {
-			if (other.drmaaPsk != null) {
-				return false;
-			}
-		} else if (!drmaaPsk.equals(other.drmaaPsk)) {
-			return false;
-		}
-		if (drmaaUrl == null) {
-			if (other.drmaaUrl != null) {
-				return false;
-			}
-		} else if (!drmaaUrl.equals(other.drmaaUrl)) {
+		if (owner != other.owner) {
 			return false;
 		}
 		if (parameters == null) {
@@ -102,20 +86,6 @@ public class RunReport extends Action implements JsonParameterised {
 		if (reportId != other.reportId) {
 			return false;
 		}
-		if (script == null) {
-			if (other.script != null) {
-				return false;
-			}
-		} else if (!script.equals(other.script)) {
-			return false;
-		}
-		if (观音Url == null) {
-			if (other.观音Url != null) {
-				return false;
-			}
-		} else if (!观音Url.equals(other.观音Url)) {
-			return false;
-		}
 		return true;
 	}
 
@@ -123,12 +93,9 @@ public class RunReport extends Action implements JsonParameterised {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (drmaaPsk == null ? 0 : drmaaPsk.hashCode());
-		result = prime * result + (drmaaUrl == null ? 0 : drmaaUrl.hashCode());
+		result = prime * result + (owner == null ? 0 : owner.hashCode());
 		result = prime * result + (parameters == null ? 0 : parameters.hashCode());
 		result = prime * result + Long.hashCode(reportId);
-		result = prime * result + (script == null ? 0 : script.hashCode());
-		result = prime * result + (观音Url == null ? 0 : 观音Url.hashCode());
 		return result;
 	}
 
@@ -155,14 +122,14 @@ public class RunReport extends Action implements JsonParameterised {
 
 		boolean create = false;
 		final HttpPost request = new HttpPost(
-				String.format("%s/reportdb/record_parameters?report=%d", 观音Url, reportId));
+				String.format("%s/reportdb/record_parameters?report=%d", owner.观音Url(), reportId));
 		request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
 		request.setEntity(body);
-		try (AutoCloseable timer = 观音RequestTime.start(观音Url);
+		try (AutoCloseable timer = 观音RequestTime.start(owner.观音Url());
 				CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(request)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
 				showError(response, "Error from Guanyin: ");
-				观音RequestErrors.labels(观音Url).inc();
+				观音RequestErrors.labels(owner.观音Url()).inc();
 				return ActionState.FAILED;
 			}
 			final RecordDto[] results = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
@@ -179,38 +146,38 @@ public class RunReport extends Action implements JsonParameterised {
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			观音RequestErrors.labels(观音Url).inc();
+			观音RequestErrors.labels(owner.观音Url()).inc();
 			return ActionState.FAILED;
 		}
 		// At this point, either it exists and isn't complete or it doesn't exist.
 		// Create it if it doesn't exist
 		if (create) {
 			final HttpPost createRequest = new HttpPost(
-					String.format("%s/reportdb/record_start?report=%d", 观音Url, reportId));
+					String.format("%s/reportdb/record_start?report=%d", owner.观音Url(), reportId));
 			createRequest.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
 			createRequest.setEntity(body);
-			try (AutoCloseable timer = 观音RequestTime.start(观音Url);
+			try (AutoCloseable timer = 观音RequestTime.start(owner.观音Url());
 					CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(createRequest)) {
 				if (response.getStatusLine().getStatusCode() != 200) {
 					showError(response, "Error from Guanyin: ");
-					观音RequestErrors.labels(观音Url).inc();
+					观音RequestErrors.labels(owner.观音Url()).inc();
 					return ActionState.FAILED;
 				}
 				reportRecordId = OptionalLong.of(
 						RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), CreateDto.class).getId());
 			} catch (final Exception e) {
 				e.printStackTrace();
-				观音RequestErrors.labels(观音Url).inc();
+				观音RequestErrors.labels(owner.观音Url()).inc();
 				return ActionState.FAILED;
 			}
 		}
 		// Now that exists, try to run it via DRMAA
-		final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", drmaaUrl));
+		final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", owner.drmaaUrl()));
 		try {
 			final ObjectNode drmaaParameters = RuntimeSupport.MAPPER.createObjectNode();
-			drmaaParameters.put("drmaa_remote_command", script);
+			drmaaParameters.put("drmaa_remote_command", owner.script());
 			drmaaParameters.putArray("drmaa_v_argv")
-					.add(String.format("%s/reportdb/record/%d", 观音Url, reportRecordId.getAsLong()));
+					.add(String.format("%s/reportdb/record/%d", owner.观音Url(), reportRecordId.getAsLong()));
 			drmaaParameters.put("drmaa_output_path",
 					String.format(":$drmaa_hd_ph$/logs/reports/report%d-%d.out", reportId, reportRecordId.getAsLong()));
 			drmaaParameters.put("drmaa_error_path",
@@ -218,7 +185,7 @@ public class RunReport extends Action implements JsonParameterised {
 			drmaaParameters.put("drmaa_native_specification", "-l h_vmem=2g");
 			final byte[] drmaaBody = RuntimeSupport.MAPPER.writeValueAsBytes(drmaaParameters);
 			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
-			digest.update(drmaaPsk.getBytes(StandardCharsets.UTF_8));
+			digest.update(owner.drmaaPsk().getBytes(StandardCharsets.UTF_8));
 			digest.update(drmaaBody);
 			drmaaRequest.setHeader("Accept", "application/json");
 			drmaaRequest.addHeader("Authorization", "signed " + DatatypeConverter.printHexBinary(digest.digest()));
@@ -227,11 +194,11 @@ public class RunReport extends Action implements JsonParameterised {
 			e.printStackTrace();
 			return ActionState.FAILED;
 		}
-		try (AutoCloseable timer = drmaaRequestTime.start(drmaaUrl);
+		try (AutoCloseable timer = drmaaRequestTime.start(owner.drmaaUrl());
 				CloseableHttpResponse response = ReportActionRepository.HTTP_CLIENT.execute(drmaaRequest)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
 				showError(response, "Error from DRMAA: ");
-				drmaaRequestErrors.labels(drmaaUrl).inc();
+				drmaaRequestErrors.labels(owner.drmaaUrl()).inc();
 				return ActionState.FAILED;
 			}
 			final String result = RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(), String.class);
@@ -239,7 +206,7 @@ public class RunReport extends Action implements JsonParameterised {
 			return state == null ? ActionState.UNKNOWN : state;
 		} catch (final Exception e) {
 			e.printStackTrace();
-			drmaaRequestErrors.labels(drmaaUrl).inc();
+			drmaaRequestErrors.labels(owner.drmaaUrl()).inc();
 			return ActionState.FAILED;
 		}
 	}
@@ -271,9 +238,9 @@ public class RunReport extends Action implements JsonParameterised {
 		node.put("type", "guanyin-report");
 		node.put("reportName", reportName);
 		node.put("reportId", reportId);
-		node.put("script", script);
+		node.put("script", owner.script());
 		node.set("parameters", parameters);
-		reportRecordId.ifPresent(id -> node.put("url", String.format("%s/reportdb/record/%d", 观音Url, id)));
+		reportRecordId.ifPresent(id -> node.put("url", String.format("%s/reportdb/record/%d", owner.观音Url(), id)));
 		return node;
 	}
 

@@ -17,8 +17,8 @@ public final class ResolveTicket extends BaseTicketAction {
 	@RuntimeInterop
 	public String comment;
 
-	public ResolveTicket(String id) {
-		super(id, "jira-close-ticket", Optional.of(ActionState.SUCCEEDED));
+	public ResolveTicket(JiraConnection connection) {
+		super(connection, "jira-close-ticket", Optional.of(ActionState.SUCCEEDED));
 	}
 
 	@Override

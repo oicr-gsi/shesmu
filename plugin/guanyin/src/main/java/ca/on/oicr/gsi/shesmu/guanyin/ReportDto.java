@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Parser;
 import ca.on.oicr.gsi.shesmu.core.actions.rest.ParameterInfo;
+import ca.on.oicr.gsi.shesmu.guanyin.ReportActionRepository.GuanyinFile;
+import ca.on.oicr.gsi.shesmu.util.RuntimeBinding;
 import ca.on.oicr.gsi.shesmu.util.actions.JsonParameter;
 
 /**
@@ -67,10 +69,9 @@ public class ReportDto {
 		this.version = version;
 	}
 
-	public ReportDefinition toDefinition(String 观音Url, String drmaaUrl, String drmaaPsk, String script) {
-		return new ReportDefinition(观音Url, drmaaUrl, drmaaPsk, script, id, name, version, category,
-				permittedParameters.entrySet().stream().map(e -> new JsonParameter(e.getKey(),
-						Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
+	public ReportDefinition toDefinition(RuntimeBinding<GuanyinFile>.CustomBinding guanyin) {
+		return new ReportDefinition(guanyin, id, name, version, category, permittedParameters.entrySet().stream().map(
+				e -> new JsonParameter(e.getKey(), Imyhat.parse(e.getValue().getType()), e.getValue().isRequired())));
 	}
 
 }

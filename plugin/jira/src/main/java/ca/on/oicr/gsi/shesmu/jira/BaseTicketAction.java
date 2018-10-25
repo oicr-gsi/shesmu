@@ -47,7 +47,7 @@ public abstract class BaseTicketAction extends Action {
 			.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.").labelNames("v")
 			.register();
 
-	private final JiraConnection config;
+	private final JiraConnection connection;
 
 	private final Optional<ActionState> emptyTransitionState;
 
@@ -60,14 +60,14 @@ public abstract class BaseTicketAction extends Action {
 	@RuntimeInterop
 	public String type = "Task";
 
-	public BaseTicketAction(String id, String jsonName, Optional<ActionState> emptyTransitionState) {
+	public BaseTicketAction(JiraConnection connection, String jsonName, Optional<ActionState> emptyTransitionState) {
 		super(jsonName);
 		this.emptyTransitionState = emptyTransitionState;
-		config = BaseJiraRepository.get(id);
+		this.connection = connection;
 	}
 
 	protected final ActionState badIssue() {
-		issueBad.labels(config.instance()).inc();
+		issueBad.labels(connection.instance()).inc();
 		issueUrl = null;
 		return ActionState.FAILED;
 	}
@@ -75,13 +75,13 @@ public abstract class BaseTicketAction extends Action {
 	protected abstract Comment comment();
 
 	protected final ActionState createIssue(String description) {
-		if (Throttler.anyOverloaded("jira", config.projectKey())) {
+		if (Throttler.anyOverloaded("jira", connection.projectKey())) {
 			return ActionState.THROTTLED;
 		}
-		issueCreates.labels(config.instance()).inc();
+		issueCreates.labels(connection.instance()).inc();
 
 		final Map<String, Object> project = new HashMap<>();
-		project.put("key", config.projectKey());
+		project.put("key", connection.projectKey());
 		final Map<String, Object> issueType = new HashMap<>();
 		issueType.put("name", type);
 		final IssueInput input = IssueInput.createWithFields(
@@ -90,13 +90,13 @@ public abstract class BaseTicketAction extends Action {
 				new FieldInput(IssueFieldId.DESCRIPTION_FIELD, description), //
 				new FieldInput(IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)));
 
-		final BasicIssue result = config.client().getIssueClient().createIssue(input).claim();
+		final BasicIssue result = connection.client().getIssueClient().createIssue(input).claim();
 		issueUrl = result.getSelf();
-		config.client().getIssueClient()
+		connection.client().getIssueClient()
 				.updateIssue(result.getKey(), IssueInput
 						.createWithFields(new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot"))))
 				.claim();
-		config.invalidate();
+		connection.invalidate();
 		issues.add(result.getKey());
 		return ActionState.SUCCEEDED;
 	}
@@ -113,11 +113,11 @@ public abstract class BaseTicketAction extends Action {
 			return false;
 		}
 		final BaseTicketAction other = (BaseTicketAction) obj;
-		if (config == null) {
-			if (other.config != null) {
+		if (connection == null) {
+			if (other.connection != null) {
 				return false;
 			}
-		} else if (!config.equals(other.config)) {
+		} else if (!connection.equals(other.connection)) {
 			return false;
 		}
 		if (summary == null) {
@@ -134,29 +134,29 @@ public abstract class BaseTicketAction extends Action {
 	public final int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (config == null ? 0 : config.hashCode());
+		result = prime * result + (connection == null ? 0 : connection.hashCode());
 		result = prime * result + (summary == null ? 0 : summary.hashCode());
 		return result;
 	}
 
 	private boolean isInTargetState(Issue issue) {
-		return isInTargetState(config.closedStatuses(), issue.getStatus().getName()::equalsIgnoreCase);
+		return isInTargetState(connection.closedStatuses(), issue.getStatus().getName()::equalsIgnoreCase);
 	}
 
 	protected abstract boolean isInTargetState(Stream<String> closedStates, Predicate<String> matchesIssue);
 
 	@Override
 	public final ActionState perform() {
-		if (config == null) {
+		if (connection == null) {
 			return ActionState.FAILED;
 		}
-		requests.labels(config.instance()).inc();
+		requests.labels(connection.instance()).inc();
 		try {
-			return perform(config.issues()//
+			return perform(connection.issues()//
 					.filter(issue -> issue.getSummary().equals(summary))//
 					.peek(issue -> issues.add(issue.getKey())));
 		} catch (final Exception e) {
-			failure.labels(config.instance()).inc();
+			failure.labels(connection.instance()).inc();
 			e.printStackTrace();
 			return ActionState.UNKNOWN;
 		}
@@ -189,10 +189,10 @@ public abstract class BaseTicketAction extends Action {
 	@Override
 	public ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("instanceName", config.instance());
-		node.put("projectKey", config.projectKey());
+		node.put("instanceName", connection.instance());
+		node.put("projectKey", connection.projectKey());
 		node.put("summary", summary);
-		node.put("instanceUrl", config.url());
+		node.put("instanceUrl", connection.url());
 		node.put("url", issueUrl == null ? null : issueUrl.toString());
 		issues.forEach(node.putArray("issues")::add);
 		return node;
@@ -215,19 +215,19 @@ public abstract class BaseTicketAction extends Action {
 		if (isInTargetState(issue)) {
 			return Optional.of(ActionState.SUCCEEDED);
 		}
-		return RuntimeSupport.stream(config.client().getIssueClient().getTransitions(issue).claim())//
-				.filter(t -> transitionActions(config).anyMatch(t.getName()::equalsIgnoreCase)
+		return RuntimeSupport.stream(connection.client().getIssueClient().getTransitions(issue).claim())//
+				.filter(t -> transitionActions(connection).anyMatch(t.getName()::equalsIgnoreCase)
 						&& RuntimeSupport.stream(t.getFields()).noneMatch(Field::isRequired))//
 				.findAny()//
 				.map(t -> {
-					if (Throttler.anyOverloaded("jira", config.projectKey())) {
+					if (Throttler.anyOverloaded("jira", connection.projectKey())) {
 						return ActionState.THROTTLED;
 					}
-					issueUpdates.labels(config.instance()).inc();
+					issueUpdates.labels(connection.instance()).inc();
 					issueUrl = issue.getSelf();
-					config.client().getIssueClient().transition(issue, new TransitionInput(t.getId(), comment()))
+					connection.client().getIssueClient().transition(issue, new TransitionInput(t.getId(), comment()))
 							.claim();
-					config.invalidate();
+					connection.invalidate();
 					issues.add(issue.getKey());
 					return ActionState.SUCCEEDED;
 				});
