@@ -189,7 +189,7 @@ type safe. To create a new source format:
 data. It must be a class and not an interface.
 1. Create a parameterless method in _V_ for every variable to be exposed. The
 method names must be valid Shemsu names (lowercase with underscores) and
-decorated with `@Export` annotations with the correct type signature. All
+decorated with `@ShesmuVariable` annotations with the correct type signature. All
 methods must return `boolean`, `long`, `String`, `Instant`, `Set`, or `Tuple`
 (and `Set` and `Tuple` may only contain more of the same).
 1. Create a new interface, _R_, extending `InputRepository<`_V_`>`.
@@ -199,6 +199,11 @@ the `Input` instruction. This class must be annotated with
 `@MetaInfServices(InputFormatDefinition)`.
 1. Create new classes that provide data which implement _R_ and are annotated
 with `@MetaInfServices(`_R_`)`.
+
+For each variable, Shesmu can try to infer the type from the return type of the
+method. If the type is not `boolean`, `Instant`, `long`, or `String`, it must
+be specified in the `type` property of the `@ShesmuVariable` annotation in the
+type descriptor format.
 
 #### Static and Remote JSON Repositories
 This is an optional step. It allows reading input data from a live Shesmu

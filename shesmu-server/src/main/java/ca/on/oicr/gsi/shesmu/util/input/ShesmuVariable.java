@@ -17,7 +17,7 @@ import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface Export {
+public @interface ShesmuVariable {
 	/**
 	 * Whether the value should be included in the automatic signature generation
 	 */
@@ -27,5 +27,5 @@ public @interface Export {
 	 * A string containing the {@link Imyhat} type signature of the return type of
 	 * the method
 	 */
-	public String type();
+	public String type() default "";
 }

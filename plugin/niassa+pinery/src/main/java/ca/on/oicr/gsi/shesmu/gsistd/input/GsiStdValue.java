@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.gsistd.input;
 import java.time.Instant;
 
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
-import ca.on.oicr.gsi.shesmu.util.input.Export;
+import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 /**
  * The information available to Shesmu scripts for processing
@@ -75,17 +75,17 @@ public final class GsiStdValue {
 		this.source = source;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String accession() {
 		return accession;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant completed_date() {
 		return completed_date;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String donor() {
 		return donor;
 	}
@@ -266,17 +266,17 @@ public final class GsiStdValue {
 		return true;
 	}
 
-	@Export(type = "i")
+	@ShesmuVariable
 	public long file_size() {
 		return file_size;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String group_desc() {
 		return group_desc;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String group_id() {
 		return group_id;
 	}
@@ -313,107 +313,107 @@ public final class GsiStdValue {
 		return result;
 	}
 
-	@Export(type = "t3sis")
+	@ShesmuVariable(type = "t3sis")
 	public Tuple ius() {
 		return ius;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String kit() {
 		return kit;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String library_design() {
 		return library_design;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String library_name() {
 		return library_name;
 	}
 
-	@Export(type = "i", signable = true)
+	@ShesmuVariable(signable = true)
 	public long library_size() {
 		return library_size;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String library_type() {
 		return library_type;
 	}
 
-	@Export(type = "t3sss")
+	@ShesmuVariable(type = "t3sss")
 	public Tuple lims() {
 		return lims;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String md5() {
 		return md5;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String metatype() {
 		return metatype;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String path() {
 		return path;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String project() {
 		return project;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String source() {
 		return source;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String targeted_resequencing() {
 		return targeted_resequencing;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant timestamp() {
 		return timestamp;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_origin() {
 		return tissue_origin;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_prep() {
 		return tissue_prep;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_region() {
 		return tissue_region;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(signable = true)
 	public String tissue_type() {
 		return tissue_type;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String workflow() {
 		return workflow;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String workflow_accession() {
 		return workflow_accession;
 	}
 
-	@Export(type = "t3iii")
+	@ShesmuVariable(type = "t3iii")
 	public Tuple workflow_version() {
 		return workflow_version;
 	}

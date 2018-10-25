@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
-import ca.on.oicr.gsi.shesmu.util.input.Export;
+import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 public class TestValue {
 	private final String accession;
@@ -34,47 +34,47 @@ public class TestValue {
 		stuff.add(project);
 	}
 
-	@Export(type = "as")
+	@ShesmuVariable(type = "as")
 	public Set<String> stuff() {
 		return stuff;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable(type = "s")
 	public String accession() {
 		return accession;
 	}
 
-	@Export(type = "i")
+	@ShesmuVariable(type = "i")
 	public long file_size() {
 		return file_size;
 	}
 
-	@Export(type = "i", signable = true)
+	@ShesmuVariable(type = "i", signable = true)
 	public long library_size() {
 		return library_size;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable(type = "s")
 	public String path() {
 		return path;
 	}
 
-	@Export(type = "s", signable = true)
+	@ShesmuVariable(type = "s", signable = true)
 	public String project() {
 		return project;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable(type = "d")
 	public Instant timestamp() {
 		return timestamp;
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable(type = "s")
 	public String workflow() {
 		return workflow;
 	}
 
-	@Export(type = "t3iii")
+	@ShesmuVariable(type = "t3iii")
 	public Tuple workflow_version() {
 		return workflow_version;
 	}

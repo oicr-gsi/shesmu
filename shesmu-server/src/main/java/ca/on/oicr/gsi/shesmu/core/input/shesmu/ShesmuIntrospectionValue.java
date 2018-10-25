@@ -8,7 +8,7 @@ import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.SourceLocation;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
-import ca.on.oicr.gsi.shesmu.util.input.Export;
+import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 public class ShesmuIntrospectionValue {
 	private final Action action;
@@ -18,8 +18,8 @@ public class ShesmuIntrospectionValue {
 	private final Set<Tuple> locations;
 	private final ActionState state;
 
-	public ShesmuIntrospectionValue(Action action, Instant changed, Instant checked, Instant generated, ActionState state,
-			Set<SourceLocation> locations) {
+	public ShesmuIntrospectionValue(Action action, Instant changed, Instant checked, Instant generated,
+			ActionState state, Set<SourceLocation> locations) {
 		super();
 		this.action = action;
 		this.changed = changed;
@@ -31,42 +31,42 @@ public class ShesmuIntrospectionValue {
 				.collect(Collectors.toSet());
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant changed() {
 		return changed;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant checked() {
 		return checked;
 	}
 
-	@Export(type = "d")
+	@ShesmuVariable
 	public Instant generated() {
 		return generated;
 	}
 
-	@Export(type = "at4siid")
+	@ShesmuVariable(type = "at4siid")
 	public Set<Tuple> locations() {
 		return locations;
 	}
 
-	@Export(type = "i")
+	@ShesmuVariable
 	public long priority() {
 		return action.priority();
 	}
 
-	@Export(type = "i")
+	@ShesmuVariable
 	public long retry() {
 		return action.retryMinutes();
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String state() {
 		return state.name();
 	}
 
-	@Export(type = "s")
+	@ShesmuVariable
 	public String type() {
 		return action.type();
 	}
