@@ -58,7 +58,7 @@ public abstract class Cache<K, V> {
 
 	private static final Counter staleRefreshError = Counter
 			.build("shesmu_cache_refresh_error",
-					"Attempted to refersh a value stored in cache, but the refresh failed.")
+					"Attempted to refresh a value stored in cache, but the refresh failed.")
 			.labelNames("name").register();
 
 	private final String name;
