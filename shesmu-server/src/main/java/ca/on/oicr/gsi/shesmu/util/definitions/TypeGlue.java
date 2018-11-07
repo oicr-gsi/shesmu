@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.util.definitions;
 import java.time.Instant;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 
 public interface TypeGlue<T> {
 	TypeGlue<Boolean> BOOLEAN = new TypeGlue<Boolean>() {
@@ -28,6 +29,11 @@ public interface TypeGlue<T> {
 			return Imyhat.INTEGER;
 		}
 
+	};
+
+	public static TypeGlue<Tuple> tuple(Imyhat... inner) {
+		final Imyhat tupleType = Imyhat.tuple(inner);
+		return () -> tupleType;
 	};
 
 	Imyhat type();

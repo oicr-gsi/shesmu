@@ -1,14 +1,11 @@
 package ca.on.oicr.gsi.shesmu.gsistd.niassa;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -19,7 +16,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
@@ -32,22 +28,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
-import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
-import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.Throttler;
-import ca.on.oicr.gsi.shesmu.gsistd.input.Utils;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
-import ca.on.oicr.gsi.shesmu.util.Cache;
 import ca.on.oicr.gsi.shesmu.util.definitions.ActionParameter;
 import io.prometheus.client.Gauge;
-import io.seqware.common.model.WorkflowRunStatus;
-import net.sourceforge.seqware.common.metadata.Metadata;
-import net.sourceforge.seqware.common.metadata.MetadataWS;
 
 /**
  * Action to run a SeqWare/Niassa workflow
@@ -58,61 +46,11 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
  * workflow accession. <b>The contents of the INI file can be different and they
  * will still be considered the same.</b>
  */
-public abstract class WorkflowAction<K extends LimsKey> extends Action {
-
-	private static class AnalysisState implements Comparable<AnalysisState> {
-		private final String fileSWIDSToRun;
-		private final List<LimsKey> limsKeys;
-		private final SortedSet<String> magic;
-		private final ActionState state;
-		private final long workflowAccession;
-		public final int workflowRunAccession;
-
-		public AnalysisState(AnalysisProvenance source) {
-			fileSWIDSToRun = source.getWorkflowRunInputFileIds().stream()//
-					.map(Object::toString)//
-					.collect(Collectors.joining(","));
-			limsKeys = source.getIusLimsKeys().stream()//
-					.map(IusLimsKey::getLimsKey)//
-					.sorted(LIMS_KEY_COMPARATOR)//
-					.collect(Collectors.toList());
-			state = processingStateToActionState(source.getWorkflowRunStatus());
-			workflowAccession = source.getWorkflowId();
-			workflowRunAccession = source.getWorkflowRunId();
-			magic = source.getWorkflowRunAttributes().getOrDefault("magic", Collections.emptySortedSet());
-		}
-
-		/**
-		 * Sort so that the latest, most successful run is first.
-		 */
-		@Override
-		public int compareTo(AnalysisState other) {
-			int comparison = state.sortPriority() - other.state.sortPriority();
-			if (comparison == 0) {
-				comparison = -Integer.compare(other.workflowRunAccession, workflowRunAccession);
-			}
-			return comparison;
-		}
-	}
-
-	private static final Cache<Long, List<AnalysisState>> CACHE = new Cache<Long, List<AnalysisState>>("sqw-analysis",
-			20) {
-
-		@Override
-		protected List<AnalysisState> fetch(Long key) throws IOException {
-			final Map<FileProvenanceFilter, Set<String>> filters = new EnumMap<>(FileProvenanceFilter.class);
-			filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
-			return client.getAnalysisProvenance(filters).stream()//
-					.filter(ap -> ap.getWorkflowId() != null && (ap.getSkip() == null || !ap.getSkip()))//
-					.map(AnalysisState::new)//
-					.collect(Collectors.toList());
-		}
-	};
-	private static final DefaultProvenanceClient client = new DefaultProvenanceClient();
+public final class WorkflowAction extends Action {
 
 	private static final Pattern COMMA = Pattern.compile(",");
 
-	protected static final Comparator<LimsKey> LIMS_KEY_COMPARATOR = Comparator.comparing(LimsKey::getProvider)//
+	static final Comparator<LimsKey> LIMS_KEY_COMPARATOR = Comparator.comparing(LimsKey::getProvider)//
 			.thenComparing(Comparator.comparing(LimsKey::getId))//
 			.thenComparing(Comparator.comparing(LimsKey::getVersion));
 
@@ -127,38 +65,6 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 	private static final Gauge runFailed = Gauge
 			.build("shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
 			.labelNames("target", "workflow").create();
-
-	static {
-		Utils.LOADER.ifPresent(loader -> {
-			Utils.setProvider(loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
-			Utils.setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
-			Utils.setProvider(loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
-		});
-
-	}
-
-	private static ActionState processingStateToActionState(String state) {
-		if (state == null) {
-			return ActionState.UNKNOWN;
-		}
-		switch (WorkflowRunStatus.valueOf(state)) {
-		case submitted:
-		case submitted_retry:
-			return ActionState.WAITING;
-		case pending:
-			return ActionState.QUEUED;
-		case running:
-			return ActionState.INFLIGHT;
-		case cancelled:
-		case submitted_cancel:
-		case failed:
-			return ActionState.FAILED;
-		case completed:
-			return ActionState.SUCCEEDED;
-		default:
-			return ActionState.UNKNOWN;
-		}
-	}
 
 	private static void repackIntegers(ObjectNode node, String name, String ids) {
 		COMMA.splitAsStream(ids).map(Long::parseUnsignedLong).sorted().forEach(node.putArray(name)::add);
@@ -197,9 +103,13 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 
 	private final long workflowAccession;
 
-	public WorkflowAction(long workflowAccession, long[] previousAccessions, String jarPath, String settingsPath,
-			String[] services) {
+	private final NiassaServer server;
+
+	public WorkflowAction(NiassaServer server, LanesType laneType, long workflowAccession, long[] previousAccessions,
+			String jarPath, String settingsPath, String[] services) {
 		super("niassa");
+		this.server = server;
+		this.lanesType = laneType;
 		this.workflowAccession = workflowAccession;
 		this.previousAccessions = previousAccessions;
 		this.jarPath = jarPath;
@@ -219,25 +129,6 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 		return id;
 	}
 
-	private boolean compare(AnalysisState state) {
-		if (state.workflowAccession != workflowAccession
-				&& Arrays.binarySearch(previousAccessions, state.workflowAccession) < 0
-				|| !state.magic.isEmpty() && !state.magic.contains(magic)
-				|| !state.fileSWIDSToRun.equals(fileAccessions) || state.limsKeys.size() != limsKeys().size()) {
-			return false;
-		}
-		for (int i = 0; i < limsKeys().size(); i++) {
-			final LimsKey a = state.limsKeys.get(i);
-			final LimsKey b = limsKeys().get(i);
-			if (!a.getProvider().equals(b.getProvider()) || !a.getId().equals(b.getId())
-					|| !a.getVersion().equals(b.getVersion())
-					|| !a.getLastModified().toInstant().equals(b.getLastModified().toInstant())) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	@Override
 	@SuppressWarnings("checkstyle:CyclomaticComplexity")
 	public boolean equals(Object obj) {
@@ -250,7 +141,7 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final WorkflowAction<?> other = (WorkflowAction<?>) obj;
+		final WorkflowAction other = (WorkflowAction) obj;
 		if (fileAccessions == null) {
 			if (other.fileAccessions != null) {
 				return false;
@@ -265,11 +156,11 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 		} else if (!jarPath.equals(other.jarPath)) {
 			return false;
 		}
-		if (limsKeys() == null) {
-			if (other.limsKeys() != null) {
+		if (limsKeys == null) {
+			if (other.limsKeys != null) {
 				return false;
 			}
-		} else if (!limsKeys().equals(other.limsKeys())) {
+		} else if (!limsKeys.equals(other.limsKeys)) {
 			return false;
 		}
 		if (magic == null) {
@@ -298,15 +189,11 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 		int result = 1;
 		result = prime * result + (fileAccessions == null ? 0 : fileAccessions.hashCode());
 		result = prime * result + (jarPath == null ? 0 : jarPath.hashCode());
-		result = prime * result + (limsKeys() == null ? 0 : limsKeys().hashCode());
+		result = prime * result + (limsKeys == null ? 0 : limsKeys.hashCode());
 		result = prime * result + (magic == null ? 0 : magic.hashCode());
 		result = prime * result + (settingsPath == null ? 0 : settingsPath.hashCode());
 		result = prime * result + (int) (workflowAccession ^ workflowAccession >>> 32);
 		return result;
-	}
-
-	protected List<K> limsKeys() {
-		return Collections.emptyList();
 	}
 
 	@ActionParameter
@@ -315,6 +202,16 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 			this.magic = magic;
 		}
 	}
+
+	private List<StringableLimsKey> limsKeys = Collections.emptyList();
+
+	@RuntimeInterop
+	public void lanes(Set<? extends Object> input) {
+		limsKeys = input.stream().map(lanesType::makeLimsKey).sorted(LIMS_KEY_COMPARATOR).collect(Collectors.toList());
+
+	}
+
+	private final LanesType lanesType;
 
 	@SuppressWarnings("checkstyle:CyclomaticComplexity")
 	@Override
@@ -326,8 +223,8 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 			if (runAccession != 0) {
 				final Map<FileProvenanceFilter, Set<String>> query = new EnumMap<>(FileProvenanceFilter.class);
 				query.put(FileProvenanceFilter.workflow_run, Collections.singleton(Integer.toString(runAccession)));
-				final ActionState state = client.getAnalysisProvenance(query).stream().findFirst()//
-						.map(ap -> processingStateToActionState(ap.getWorkflowRunStatus()))//
+				final ActionState state = server.metadata().getAnalysisProvenance(query).stream().findFirst()//
+						.map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus()))//
 						.orElse(ActionState.UNKNOWN);
 				if (state == ActionState.FAILED && ++waitForSomeoneToRerunIt > 5) {
 					// We've previously found or created a run accession for this action, but it's
@@ -342,14 +239,13 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 			// Read the FPR cache to determine if this workflow has already been run
 			final Optional<AnalysisState> current = workflowAccessions()//
 					.boxed()//
-					.flatMap(CACHE::flatGet)//
-					.flatMap(l -> l.stream()//
-							.filter(this::compare))//
+					.flatMap(accession -> server.analysisCache().get(accession)//
+							.filter(as -> as.compare(workflowAccessions(), magic, fileAccessions, limsKeys)))//
 					.sorted()//
 					.findFirst();
 			if (current.isPresent()) {
-				runAccession = current.get().workflowRunAccession;
-				final ActionState state = current.get().state;
+				runAccession = current.get().workflowRunAccession();
+				final ActionState state = current.get().state();
 				final boolean isDone = state == ActionState.SUCCEEDED || state == ActionState.FAILED;
 				if (inflight && isDone) {
 					inflight = false;
@@ -381,24 +277,29 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 				return ActionState.WAITING;
 			}
 
-			// Read the settings
-			final Properties settings = new Properties();
-			try (InputStream settingsInput = new FileInputStream(settingsPath)) {
-				settings.load(settingsInput);
+			final String iusAccessions;
+			if (lanesType != null) {
+				final List<Pair<Integer, StringableLimsKey>> iusLimsKeys = limsKeys.stream()//
+						.map(key -> new Pair<>(server.metadata().addIUS(//
+								server.metadata().addLimsKey(//
+										key.getProvider(), //
+										key.getId(), //
+										key.getVersion(), //
+										key.getLastModified()), //
+								false), //
+								key))
+						.collect(Collectors.toList());
+				ini.setProperty("lanes", iusLimsKeys.stream()//
+						.map(p -> p.second().asLaneString(p.first()))//
+						.collect(Collectors.joining(lanesType.delimiter())));
+				iusAccessions = iusLimsKeys.stream()//
+						.map(Pair::first)//
+						.sorted()//
+						.map(Object::toString)//
+						.collect(Collectors.joining(","));
+			} else {
+				iusAccessions = "";
 			}
-			// Create any IUS accessions required and update the INI file based on those
-			final Metadata metadata = new MetadataWS(settings.getProperty("SW_REST_URL"),
-					settings.getProperty("SW_REST_USER"), settings.getProperty("SW_REST_PASS"));
-			final List<Pair<Integer, K>> iusLimsKeys = limsKeys().stream()//
-					.map(key -> new Pair<>(metadata.addIUS(metadata.addLimsKey(key.getProvider(), key.getId(),
-							key.getVersion(), key.getLastModified()), false), key))//
-					.collect(Collectors.toList());
-			prepareIniForLimsKeys(iusLimsKeys.stream());
-			final String iusAccessions = iusLimsKeys.stream()//
-					.map(Pair::first)//
-					.sorted()//
-					.map(Object::toString)//
-					.collect(Collectors.joining(","));
 
 			final File iniFile = File.createTempFile("niassa", ".ini");
 			iniFile.deleteOnExit();
@@ -431,7 +332,7 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 				runArgs.add(iusAccessions);
 			}
 			runArgs.add("--host");
-			runArgs.add(settings.getProperty("SW_HOST"));
+			runArgs.add(server.host());
 			final ProcessBuilder builder = new ProcessBuilder(runArgs);
 			builder.environment().put("SEQWARE_SETTINGS", settingsPath);
 			builder.environment().remove("CLASSPATH");
@@ -458,7 +359,7 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 			}
 			success &= scheduleExitCode == 0;
 			if (success) {
-				workflowAccessions().forEach(CACHE::invalidate);
+				workflowAccessions().forEach(server.analysisCache()::invalidate);
 				final ArrayList<String> annotationArgs = new ArrayList<>();
 				annotationArgs.add("java");
 				annotationArgs.add("-jar");
@@ -490,8 +391,7 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 
 			// Indicate if we managed to schedule the workflow; if we did, mark ourselves
 			// dirty so there is a delay before our next query.
-			(success ? runCreated : runFailed)
-					.labels(settings.getProperty("SW_REST_URL"), Long.toString(workflowAccession)).inc();
+			(success ? runCreated : runFailed).labels(server.url(), Long.toString(workflowAccession)).inc();
 			return success ? ActionState.QUEUED : ActionState.FAILED;
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -503,10 +403,6 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 	public final void prepare() {
 		fileAccessions = fileSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
 		parentAccessions = parentSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
-	}
-
-	protected void prepareIniForLimsKeys(Stream<Pair<Integer, K>> stream) {
-		// Do nothing.
 	}
 
 	@Override
@@ -523,7 +419,7 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 	public final ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
 		node.put("magic", magic);
-		limsKeys().stream().map(k -> {
+		limsKeys.stream().map(k -> {
 			final ObjectNode key = mapper.createObjectNode();
 			key.put("provider", k.getProvider());
 			key.put("id", k.getId());
@@ -544,14 +440,6 @@ public abstract class WorkflowAction<K extends LimsKey> extends Action {
 		repackIntegers(node, "parentAccessions", parentAccessions);
 		final ObjectNode iniNode = node.putObject("ini");
 		ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
-		limsKeys().stream().map(k -> {
-			final ObjectNode key = mapper.createObjectNode();
-			key.put("provider", k.getProvider());
-			key.put("id", k.getId());
-			key.put("version", k.getVersion());
-			key.put("lastModified", k.getLastModified().toEpochSecond());
-			return key;
-		}).forEach(node.putArray("limsKeys")::add);
 
 		return node;
 	}
