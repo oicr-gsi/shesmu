@@ -1,12 +1,9 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -25,7 +22,6 @@ import org.kohsuke.MetaInfServices;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.PineryProvenanceProvider;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.gsistd.input.Utils;
@@ -33,27 +29,59 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.util.cache.ReplacingRecord;
+import ca.on.oicr.gsi.shesmu.util.cache.ValueCache;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.pinery.client.PineryClient;
 import ca.on.oicr.ws.dto.RunDto;
-import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 
 @MetaInfServices
 public class RemotePineryIUSRepository implements PineryIUSRepository {
+
 	private class PinerySource extends AutoUpdatingJsonFile<ObjectNode> {
-		private List<PineryIUSValue> cache = Collections.emptyList();
-		private Instant lastUpdated = Instant.EPOCH;
+		private final class ItemCache extends ValueCache<Stream<PineryIUSValue>> {
+			private ItemCache(Path fileName) {
+				super("pinery " + fileName.toString(), 15, ReplacingRecord::new);
+			}
+
+			@Override
+			protected Stream<PineryIUSValue> fetch(Instant lastUpdated) throws Exception {
+				if (!provider.isPresent())
+					return Stream.empty();
+				PineryProvenanceProvider p = provider.get();
+				final Map<String, Integer> badSetCounts = new TreeMap<>();
+				final Map<String, String> runDirectories = new HashMap<>();
+				final Set<String> completeRuns;
+				try (PineryClient client = new PineryClient(properties.get("url"), true)) {
+					completeRuns = client.getSequencerRun().all().stream()//
+							.filter(run -> run.getState().equals("Completed"))//
+							.map(RunDto::getName)//
+							.collect(Collectors.toSet());
+				}
+				return Stream.concat(//
+						lanes(p, badSetCounts, runDirectories, completeRuns::contains), //
+						samples(p, badSetCounts, runDirectories, completeRuns::contains))//
+						.onClose(() -> badSetCounts.entrySet()
+								.forEach(e -> badSetMap
+										.labels(Stream.concat(Stream.of(fileName().toString()),
+												Stream.of(e.getKey().split(":"))).toArray(String[]::new))
+										.set(e.getValue())));
+			}
+		}
+
+		private final ItemCache cache;
 		private Map<String, String> properties = Collections.emptyMap();
 		private Optional<PineryProvenanceProvider> provider = Optional.empty();
 
 		public PinerySource(Path fileName) {
 			super(fileName, ObjectNode.class);
+			cache = new ItemCache(fileName);
 		}
 
 		public ConfigurationSection configuration() {
-			return new ConfigurationSection("Pinery IUS Source: " + fileName()) {
+			return new ConfigurationSection(fileName().toString()) {
 
 				@Override
 				public void emit(SectionRenderer renderer) throws XMLStreamException {
@@ -156,36 +184,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 		}
 
 		public Stream<PineryIUSValue> stream() {
-			if (Duration.between(lastUpdated, Instant.now()).get(ChronoUnit.SECONDS) > 900) {
-				provider.ifPresent(provider -> {
-					try (AutoCloseable timer = fetchLatency.start()) {
-						final Map<String, Integer> badSetCounts = new TreeMap<>();
-						final Map<String, String> runDirectories = new HashMap<>();
-						final Set<String> completeRuns;
-						try (PineryClient client = new PineryClient(properties.get("url"), true)) {
-							completeRuns = client.getSequencerRun().all().stream()//
-									.filter(run -> run.getState().equals("Completed"))//
-									.map(RunDto::getName)//
-									.collect(Collectors.toSet());
-						}
-						cache = Stream.concat(lanes(provider, badSetCounts, runDirectories, completeRuns::contains), //
-								samples(provider, badSetCounts, runDirectories, completeRuns::contains))//
-								.collect(Collectors.toList());
-						count.labels(fileName().toString()).set(cache.size());
-						lastUpdated = Instant.now();
-						lastFetchTime.labels(fileName().toString()).setToCurrentTime();
-						badSetCounts.entrySet()
-								.forEach(e -> badSetMap
-										.labels(Stream.concat(Stream.of(fileName().toString()),
-												Stream.of(e.getKey().split(":"))).toArray(String[]::new))
-										.set(e.getValue()));
-					} catch (final Exception e) {
-						e.printStackTrace();
-						provenanceError.labels(fileName().toString()).inc();
-					}
-				});
-			}
-			return cache.stream();
+			return cache.get();
 		}
 
 		@Override
@@ -203,25 +202,10 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 					"The number of provenace records with sets not containing exactly one item.")
 			.labelNames("target", "property", "reason").register();
 
-	private static final Gauge count = Gauge
-			.build("shesmu_pinery_last_count", "The number of lanes and samples from Pinery.").labelNames("target")
-			.register();
+	static final String EXTENSION = ".pinery";
 
-	public static final String EXTENSION = ".pinery";
-
-	private static final LatencyHistogram fetchLatency = new LatencyHistogram("shesmu_pinery_lane_request_time",
-			"The time to fetch data from Provenance.");
-
-	private static final Gauge lastFetchTime = Gauge
-			.build("shesmu_pinery_last_fetch_time",
-					"The time, in seconds since the epoch, when the last fetch from Pinery occured.")
-			.labelNames("target").register();
-
-	private static final Counter provenanceError = Counter
-			.build("shesmu_pinery_error", "The number of times calling out to Pinery has failed.").labelNames("target")
-			.register();
-
-	public static Optional<String> limsAttr(SampleProvenance sp, String key, Consumer<String> isBad, boolean required) {
+	private static Optional<String> limsAttr(SampleProvenance sp, String key, Consumer<String> isBad,
+			boolean required) {
 		return Utils.singleton(sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
 	}
 
