@@ -78,7 +78,7 @@ public final class AnnotationUtils {
 				final String setterName = checkName(setterAnnotation.name(), setter, false);
 				final Imyhat setterType = Imyhat.convert(
 						String.format("Setter %s in %s", setter.getName(), setter.getDeclaringClass().getName()),
-						setterAnnotation.type(), setter.getReturnType());
+						setterAnnotation.type(), setter.getParameterTypes()[0]);
 				final org.objectweb.asm.commons.Method asmMethod = org.objectweb.asm.commons.Method.getMethod(setter);
 				parameters.add(new ActionParameterDefinition() {
 
