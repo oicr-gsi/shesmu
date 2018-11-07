@@ -10,8 +10,10 @@ import ca.on.oicr.gsi.shesmu.util.definitions.FileBackedArbitraryDefinitionRepos
 @MetaInfServices(DefinitionRepository.class)
 public class WorkflowActionRepository extends FileBackedArbitraryDefinitionRepository<NiassaServer> {
 
+	static final String EXTENSION = ".niassa";
+
 	public WorkflowActionRepository() {
-		super(NiassaServer.class, ".seqware", NiassaServer::new);
+		super(NiassaServer.class, EXTENSION, NiassaServer::new);
 	}
 
 	@Override
