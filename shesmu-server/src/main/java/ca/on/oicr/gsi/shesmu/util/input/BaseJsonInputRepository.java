@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.util.input;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,15 +21,14 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.InputRepository;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.util.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.util.cache.ReplacingRecord;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
 
 public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 	public static final class Configuration {
@@ -74,19 +72,47 @@ public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 	}
 
 	private class Remote extends AutoUpdatingJsonFile<Configuration> {
+		private class RemoteReloader extends ValueCache<Stream<V>> {
+			public RemoteReloader(Path fileName) {
+				super("remotejson " + inputFormatName + " " + fileName.toString(), 10, ReplacingRecord::new);
+			}
 
+			@Override
+			protected Stream<V> fetch(Instant lastUpdated) throws Exception {
+				final String url = config.map(Configuration::getUrl).orElse(null);
+				if (url == null) {
+					throw new IllegalStateException();
+				}
+				try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(url));
+						JsonParser parser = RuntimeSupport.MAPPER.getFactory()
+								.createParser(response.getEntity().getContent())) {
+					final List<V> results = new ArrayList<>();
+					if (parser.nextToken() != JsonToken.START_ARRAY) {
+						throw new IllegalStateException("Expected an array");
+					}
+					while (parser.nextToken() != JsonToken.END_ARRAY) {
+						results.add(convert(RuntimeSupport.MAPPER.readTree(parser)));
+					}
+					if (parser.nextToken() != null) {
+						throw new IllegalStateException("Junk at end of JSON document");
+					}
+					return results.stream();
+				}
+			}
+		}
+
+		private final ValueCache<Stream<V>> cache;
 		private Optional<Configuration> config = Optional.empty();
-		private Instant lastUpdated = Instant.EPOCH;
-
-		private List<V> values = Collections.emptyList();
 
 		public Remote(Path fileName) {
 			super(fileName, Configuration.class);
+			cache = new RemoteReloader(fileName);
 		}
 
 		@Override
 		protected Optional<Integer> update(Configuration value) {
 			config = Optional.of(value);
+			cache.invalidate();
 			return Optional.empty();
 		}
 
@@ -95,48 +121,11 @@ public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 		}
 
 		public Stream<V> variables() {
-			config.ifPresent(c -> {
-				if (Duration.between(lastUpdated, Instant.now()).getSeconds() > c.getTtl()) {
-					try (AutoCloseable timer = remoteJsonLatency.start(inputFormatName, c.getUrl());
-							CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(c.getUrl()));
-							JsonParser parser = RuntimeSupport.MAPPER.getFactory()
-									.createParser(response.getEntity().getContent())) {
-						List<V> results = new ArrayList<>();
-						if (parser.nextToken() != JsonToken.START_ARRAY) {
-							throw new IllegalStateException("Expected an array");
-						}
-						while (parser.nextToken() != JsonToken.END_ARRAY) {
-							results.add(convert(RuntimeSupport.MAPPER.readTree(parser)));
-						}
-						if (parser.nextToken() != null) {
-							throw new IllegalStateException("Junk at end of JSON document");
-						}
-						this.values = results;
-						lastUpdated = Instant.now();
-						remoteJsonUpdate.labels(inputFormatName, c.getUrl()).setToCurrentTime();
-					} catch (final Exception e) {
-						e.printStackTrace();
-						remoteJsonError.labels(inputFormatName, c.getUrl()).inc();
-					}
-				}
-			});
-			return values.stream();
+			return cache.get();
 		}
 	}
 
 	private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-	private static final Counter remoteJsonError = Counter
-			.build("shesmu_json_remote_error",
-					"The number of times the fetch has failed from a remote JSON input source.")
-			.labelNames("format", "target").register();
-
-	private static final LatencyHistogram remoteJsonLatency = new LatencyHistogram("shesmu_json_remote_fetch_time",
-			"The time to fetch data from a remote JSON input source.", "format", "target");
-
-	private static final Gauge remoteJsonUpdate = Gauge
-			.build("shesmu_json_remote_last_updated",
-					"The last time data from the remote JSON input source was downloaded successfully.")
-			.labelNames("format", "target").register();
 
 	private final AutoUpdatingDirectory<Remote> endpoints;
 	private final AutoUpdatingDirectory<JsonFile> files;
@@ -169,7 +158,7 @@ public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 						.sorted(Comparator.comparing(Remote::fileName))//
 						.forEach(remote -> {
 							renderer.line(remote.fileName().toString(), remote.url());
-							renderer.lineSpan(remote.fileName().toString(), remote.lastUpdated);
+							renderer.lineSpan(remote.fileName().toString(), remote.cache.lastUpdated());
 						});
 			}
 		});
