@@ -30,7 +30,7 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
 	}
 
-	private Target target;
+	private Target target = Target.BAD;
 
 	@Override
 	public void render(RegroupVariablesBuilder builder) {

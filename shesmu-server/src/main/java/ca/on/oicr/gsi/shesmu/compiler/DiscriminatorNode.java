@@ -44,7 +44,7 @@ public abstract class DiscriminatorNode extends DefinedTarget {
 	private final int column;
 
 	private final int line;
-public abstract VariableInformation dashboard();
+
 	public DiscriminatorNode(int line, int column) {
 		super();
 		this.line = line;
@@ -56,10 +56,14 @@ public abstract VariableInformation dashboard();
 	 */
 	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
+	@Override
 	public int column() {
 		return column;
 	}
 
+	public abstract VariableInformation dashboard();
+
+	@Override
 	public int line() {
 		return line;
 	}
@@ -85,6 +89,7 @@ public abstract VariableInformation dashboard();
 	 *
 	 * This should return {@link Imyhat#BAD} if no type can be determined
 	 */
+	@Override
 	public abstract Imyhat type();
 
 	/**

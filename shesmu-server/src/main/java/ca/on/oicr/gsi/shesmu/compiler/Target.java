@@ -23,6 +23,24 @@ public abstract class Target {
 		}
 	}
 
+	public static final Target BAD = new Target() {
+
+		@Override
+		public Flavour flavour() {
+			return Flavour.CONSTANT;
+		}
+
+		@Override
+		public String name() {
+			return "<BAD>";
+		}
+
+		@Override
+		public Imyhat type() {
+			return Imyhat.BAD;
+		}
+	};
+
 	/**
 	 * What category of variables this one belongs to
 	 */
