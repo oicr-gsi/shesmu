@@ -3,11 +3,9 @@ package ca.on.oicr.gsi.shesmu.jira;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,16 +25,42 @@ import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientF
 
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
+import ca.on.oicr.gsi.shesmu.util.cache.MergingRecord;
+import ca.on.oicr.gsi.shesmu.util.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.util.definitions.FileBackedConfiguration;
 import ca.on.oicr.gsi.shesmu.util.definitions.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.util.definitions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.util.definitions.ShesmuParameter;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
 
 public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implements FileBackedConfiguration {
+
+	private class IssueCache extends ValueCache<Stream<Issue>> {
+		public IssueCache(Path fileName) {
+			super("jira-issues " + fileName.toString(), 15, MergingRecord.by(Issue::getId));
+		}
+
+		@Override
+		protected Stream<Issue> fetch(Instant lastUpdated) throws Exception {
+			if (client == null) {
+				return Stream.empty();
+			}
+			final String jql = String.format("updated >= '%s' AND project = %s",
+					FORMAT.format(lastUpdated.atZone(ZoneId.systemDefault())), projectKey);
+			final List<Issue> buffer = new ArrayList<>();
+			for (int page = 0; true; page++) {
+				final SearchResult results = client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS).claim();
+				for (final Issue issue : results.getIssues()) {
+					buffer.add(issue);
+				}
+				if (buffer.size() >= results.getTotal()) {
+					break;
+				}
+			}
+			return buffer.stream();
+		}
+	}
 
 	private class IssueFilter implements Predicate<Issue> {
 		private final String keyword;
@@ -57,28 +81,13 @@ public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implemen
 
 	}
 
-	private static final Gauge cacheSize = Gauge
-			.build("shesmu_jira_ticket_cache_size", "The number of tickets currently cached locally.")
-			.labelNames("project", "url").create();
-
 	protected static final String EXTENSION = ".jira";
-
-	private static final Counter fetchErrors = Counter
-			.build("shesmu_jira_ticket_fetch_error", "The number of errors refreshing the ticket cache.")
-			.labelNames("project", "url").create();
 
 	private static final Set<String> FIELDS = Stream
 			.of("summary", "issuetype", "created", "updated", "project", "status", "description")
 			.collect(Collectors.toSet());
 
 	private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm");
-	private static final Gauge lastFetchSize = Gauge
-			.build("shesmu_jira_ticket_fetch_size", "The number of tickets retrieved in the last query.")
-			.labelNames("project", "rul").create();
-
-	private static final Gauge lastFetchTime = Gauge
-			.build("shesmu_jira_ticket_fetch_time", "The timestamp of the last query.").labelNames("project", "url")
-			.create();
 
 	private JiraRestClient client;
 
@@ -86,9 +95,7 @@ public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implemen
 
 	private List<String> closedStatuses = Collections.emptyList();
 
-	private List<Issue> issues = Collections.emptyList();
-
-	private Instant lastFetch = Instant.EPOCH;
+	private final IssueCache issues;
 
 	private String passwordFile;
 
@@ -102,6 +109,7 @@ public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implemen
 
 	public JiraConnection(Path fileName) {
 		super(fileName, Configuration.class);
+		issues = new IssueCache(fileName);
 	}
 
 	public JiraRestClient client() {
@@ -127,8 +135,7 @@ public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implemen
 					renderer.link("URL", url, url);
 				}
 				renderer.line("Project", projectKey);
-				renderer.line("Cache Size", issues.size());
-				renderer.lineSpan("Last Cache Update", lastFetch);
+				renderer.lineSpan("Last Cache Update", issues.lastUpdated());
 				if (user != null) {
 					renderer.line("User", user);
 				}
@@ -149,41 +156,11 @@ public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implemen
 	}
 
 	public void invalidate() {
-		lastFetch = Instant.EPOCH;
+		issues.invalidate();
 	}
 
 	public Stream<Issue> issues() {
-		final Instant now = Instant.now().truncatedTo(ChronoUnit.MINUTES);
-		if (Duration.between(lastFetch, now).toMinutes() > 15) {
-			try {
-				final String jql = String.format("updated >= '%s' AND project = %s",
-						FORMAT.format(lastFetch.atZone(ZoneId.systemDefault())), projectKey);
-				final List<Issue> buffer = new ArrayList<>();
-				for (int page = 0; true; page++) {
-					final SearchResult results = client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS)
-							.claim();
-					for (final Issue issue : results.getIssues()) {
-						buffer.add(issue);
-					}
-					if (buffer.size() >= results.getTotal()) {
-						break;
-					}
-				}
-
-				final Set<Long> newIds = buffer.stream().map(Issue::getId).collect(Collectors.toSet());
-				issues = Stream
-						.concat(issues.stream().filter(issue -> !newIds.contains(issue.getId())), buffer.stream())
-						.collect(Collectors.toList());
-				lastFetch = now;
-				lastFetchTime.labels(projectKey, url()).set(now.getEpochSecond());
-				lastFetchSize.labels(projectKey, url()).set(buffer.size());
-				cacheSize.labels(projectKey, url()).set(issues.size());
-			} catch (final Exception e) {
-				e.printStackTrace();
-				fetchErrors.labels(projectKey, url()).inc();
-			}
-		}
-		return issues.stream();
+		return issues.get();
 	}
 
 	public String projectKey() {
@@ -221,11 +198,10 @@ public class JiraConnection extends AutoUpdatingJsonFile<Configuration> implemen
 			projectKey = config.getProjectKey();
 			user = config.getUser();
 			passwordFile = config.getPasswordFile();
-			issues = Collections.emptyList();
 			closedStatuses = config.getClosedStatuses();
 			closeActions = config.getCloseActions();
 			reopenActions = config.getReopenActions();
-			lastFetch = Instant.EPOCH;
+			issues.invalidate();
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
