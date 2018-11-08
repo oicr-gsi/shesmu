@@ -4,7 +4,7 @@ Input test;
 
 Define standard_fastq(string s)
   Where workflow == {"BamQC 2.7+", 3 }[0]
-  Where metatype == "chemical/fastq-gzip"
+  Where project == "blah"
   Where str_len(path) == file_size;
 
 Olive
