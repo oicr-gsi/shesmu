@@ -36,6 +36,11 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		final String prettyName = name + "(" + (target.parameterCount() == 0 ? "" : "...") + ")";
 		return new OliveClauseRow(prettyName, line, column, true, !target.isRoot(), //
@@ -54,8 +59,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 		case BAD:
 			return ClauseStreamOrder.BAD;
 		case TRANSFORMED:
-			errorHandler
-					.accept(String.format("%d:%d: Call clause cannot be applied to grouped result.", line, column));
+			errorHandler.accept(String.format("%d:%d: Call clause cannot be applied to grouped result.", line, column));
 			return ClauseStreamOrder.BAD;
 		case PURE:
 			signableNames.addAll(target.signableNames);
@@ -63,6 +67,11 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 		default:
 			return ClauseStreamOrder.BAD;
 		}
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override
@@ -118,8 +127,8 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 			}
 			final boolean isSame = arguments.get(index).type().isSame(target.parameterType(index));
 			if (!isSame) {
-				errorHandler.accept(String.format("%d:%d: Parameter %d to “%s” expects %s, but got %s.", line,
-						column, index, name, target.parameterType(index).name(), arguments.get(index).type().name()));
+				errorHandler.accept(String.format("%d:%d: Parameter %d to “%s” expects %s, but got %s.", line, column,
+						index, name, target.parameterType(index).name(), arguments.get(index).type().name()));
 
 			}
 			return isSame;

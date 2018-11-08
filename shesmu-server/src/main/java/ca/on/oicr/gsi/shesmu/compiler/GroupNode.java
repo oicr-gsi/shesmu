@@ -134,6 +134,7 @@ public abstract class GroupNode extends DefinedTarget {
 
 	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
+	@Override
 	public final int column() {
 		return column;
 	}
@@ -143,6 +144,7 @@ public abstract class GroupNode extends DefinedTarget {
 		return Flavour.STREAM;
 	}
 
+	@Override
 	public final int line() {
 		return line;
 	}

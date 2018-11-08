@@ -36,6 +36,11 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		return new OliveClauseRow("Join", line, column, true, false, inputFormat.baseStreamVariables()//
 				.map(variable -> new VariableInformation(variable.name(), variable.type(), Stream.empty(),
@@ -46,6 +51,11 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler) {
 		return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override

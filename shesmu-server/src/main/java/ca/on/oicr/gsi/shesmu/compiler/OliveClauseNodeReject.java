@@ -40,6 +40,11 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		final Set<String> inputs = new TreeSet<>();
 		expression.collectFreeVariables(inputs, Flavour::isStream);
@@ -54,6 +59,11 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 			expression.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
 		}
 		return state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override

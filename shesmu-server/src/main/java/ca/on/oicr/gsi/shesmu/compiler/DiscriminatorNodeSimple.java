@@ -19,6 +19,8 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
 	private final String name;
 
+	private Target target = Target.BAD;
+
 	public DiscriminatorNodeSimple(int line, int column, String name) {
 		super(line, column);
 		this.name = name;
@@ -30,7 +32,20 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
 	}
 
-	private Target target = Target.BAD;
+	@Override
+	public VariableInformation dashboard() {
+		return new VariableInformation(name, target.type(), Stream.of(name), Behaviour.PASSTHROUGH);
+	}
+
+	@Override
+	public Flavour flavour() {
+		return target.flavour();
+	}
+
+	@Override
+	public String name() {
+		return name;
+	}
 
 	@Override
 	public void render(RegroupVariablesBuilder builder) {
@@ -70,20 +85,5 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		return true;
-	}
-
-	@Override
-	public Flavour flavour() {
-		return target.flavour();
-	}
-
-	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
-	public VariableInformation dashboard() {
-		return new VariableInformation(name, target.type(), Stream.of(name), Behaviour.PASSTHROUGH);
 	}
 }

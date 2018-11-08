@@ -15,11 +15,11 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;

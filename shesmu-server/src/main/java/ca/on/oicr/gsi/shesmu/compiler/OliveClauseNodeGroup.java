@@ -67,6 +67,11 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		return new OliveClauseRow("Group", line, column, true, true, //
 				Stream.concat(//
@@ -92,6 +97,11 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 			return ClauseStreamOrder.TRANSFORMED;
 		}
 		return state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override

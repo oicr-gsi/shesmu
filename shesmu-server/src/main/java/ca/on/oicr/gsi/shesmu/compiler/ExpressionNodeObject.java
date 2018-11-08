@@ -50,7 +50,7 @@ public class ExpressionNodeObject extends ExpressionNode {
 		renderer.methodGen().dup();
 		renderer.methodGen().push(fields.size());
 		renderer.methodGen().newArray(A_OBJECT_TYPE);
-		AtomicInteger index = new AtomicInteger();
+		final AtomicInteger index = new AtomicInteger();
 		fields.stream()//
 				.sorted(Comparator.comparing(Pair::first))//
 				.forEach(field -> {
@@ -86,7 +86,7 @@ public class ExpressionNodeObject extends ExpressionNode {
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		boolean ok = fields.stream().filter(field -> field.second().typeCheck(errorHandler)).count() == fields.size();
-		Map<String, Long> fieldCounts = fields.stream()//
+		final Map<String, Long> fieldCounts = fields.stream()//
 				.map(Pair::first)//
 				.collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 		if (fieldCounts.entrySet().stream()//

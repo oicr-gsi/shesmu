@@ -225,6 +225,8 @@ public abstract class OliveClauseNode {
 		return input.raise("Expected olive clause.");
 	}
 
+	public abstract int column();
+
 	public abstract OliveClauseRow dashboard();
 
 	/**
@@ -235,6 +237,8 @@ public abstract class OliveClauseNode {
 	 */
 	public abstract ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler);
+
+	public abstract int line();
 
 	/**
 	 * Generate byte code for this clause.

@@ -83,7 +83,7 @@ public abstract class Compiler {
 		}
 		if (parseOk && program.get().validate(this::getInputFormats, this::getFunction, this::getAction,
 				this::errorHandler, constants)) {
-			Instant compileTime = Instant.now();
+			final Instant compileTime = Instant.now();
 			if (dashboardOutput != null && skipRender) {
 				dashboardOutput.accept(program.get().dashboard(path, compileTime, "Bytecode not available."));
 			}

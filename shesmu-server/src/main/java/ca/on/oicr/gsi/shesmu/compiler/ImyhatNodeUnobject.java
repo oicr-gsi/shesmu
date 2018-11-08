@@ -21,8 +21,7 @@ public class ImyhatNodeUnobject extends ImyhatNode {
 		if (type instanceof Imyhat.ObjectImyhat) {
 			final Imyhat inner = ((Imyhat.ObjectImyhat) type).get(field);
 			if (inner.isBad()) {
-				errorHandler.accept(
-						String.format("Object type %s does not contain an field %s.", type.name(), field));
+				errorHandler.accept(String.format("Object type %s does not contain an field %s.", type.name(), field));
 			}
 			return inner;
 		}

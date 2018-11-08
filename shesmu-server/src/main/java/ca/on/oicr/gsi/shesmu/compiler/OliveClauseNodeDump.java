@@ -54,6 +54,11 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		return new OliveClauseRow("Dump", line, column, false, false, columns.stream()//
 				.map(new Function<ExpressionNode, VariableInformation>() {
@@ -74,6 +79,11 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	public ClauseStreamOrder ensureRoot(ClauseStreamOrder state, Set<String> signableNames,
 			Consumer<String> errorHandler) {
 		return state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override
