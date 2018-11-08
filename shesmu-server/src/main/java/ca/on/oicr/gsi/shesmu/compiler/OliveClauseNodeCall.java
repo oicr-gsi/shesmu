@@ -93,7 +93,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 				.count() == arguments.size();
 		final Optional<Stream<Target>> replacements = target.outputStreamVariables(inputFormatDefinition,
 				definedFormats, errorHandler, constants);
-		good &= replacements.isPresent();
+		good = good && replacements.isPresent();
 		return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
 
 	}

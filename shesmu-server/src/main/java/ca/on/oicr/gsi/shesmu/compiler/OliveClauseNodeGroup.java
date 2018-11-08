@@ -133,7 +133,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 								.filter(discriminator -> discriminator.resolve(defs, errorHandler))//
 								.count() == discriminators.size();
 
-		ok &= children.stream().noneMatch(group -> {
+		ok = ok && children.stream().noneMatch(group -> {
 			final boolean isDuplicate = defs.get(group.name()).filter(variable -> !variable.flavour().isStream())
 					.isPresent();
 			if (isDuplicate) {
@@ -156,7 +156,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 				& discriminators.stream().filter(group -> group.resolveFunctions(definedFunctions, errorHandler))
 						.count() == discriminators.size();
 
-		ok &= Stream.<DefinedTarget>concat(discriminators.stream(), children.stream())//
+		ok = ok && Stream.<DefinedTarget>concat(discriminators.stream(), children.stream())//
 				.collect(Collectors.groupingBy(DefinedTarget::name))//
 				.entrySet().stream()//
 				.filter(e -> e.getValue().size() > 1)//

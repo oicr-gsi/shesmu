@@ -52,7 +52,7 @@ public class ExpressionNodeFor extends ExpressionNode {
 					throw new UnsupportedOperationException();
 				});
 
-		ok &= nextName.map(name -> collector.resolve(name, defs, errorHandler)).orElse(false);
+		ok = ok && nextName.map(name -> collector.resolve(name, defs, errorHandler)).orElse(false);
 		return ok;
 	}
 
