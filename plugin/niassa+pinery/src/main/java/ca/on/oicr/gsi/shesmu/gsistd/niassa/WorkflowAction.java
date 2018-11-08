@@ -85,7 +85,7 @@ public final class WorkflowAction extends Action {
 
 	protected final String jarPath;
 
-	private String magic = "0";
+	private long majorOliveVersion;
 
 	private String parentAccessions;
 
@@ -163,11 +163,7 @@ public final class WorkflowAction extends Action {
 		} else if (!limsKeys.equals(other.limsKeys)) {
 			return false;
 		}
-		if (magic == null) {
-			if (other.magic != null) {
-				return false;
-			}
-		} else if (!magic.equals(other.magic)) {
+		if (majorOliveVersion != other.majorOliveVersion) {
 			return false;
 		}
 		if (settingsPath == null) {
@@ -190,17 +186,15 @@ public final class WorkflowAction extends Action {
 		result = prime * result + (fileAccessions == null ? 0 : fileAccessions.hashCode());
 		result = prime * result + (jarPath == null ? 0 : jarPath.hashCode());
 		result = prime * result + (limsKeys == null ? 0 : limsKeys.hashCode());
-		result = prime * result + (magic == null ? 0 : magic.hashCode());
+		result = prime * result + Long.hashCode(majorOliveVersion);
 		result = prime * result + (settingsPath == null ? 0 : settingsPath.hashCode());
 		result = prime * result + (int) (workflowAccession ^ workflowAccession >>> 32);
 		return result;
 	}
 
-	@ActionParameter
-	public final void magic(String magic) {
-		if (!magic.isEmpty()) {
-			this.magic = magic;
-		}
+	@ActionParameter(name = "major_olive_version")
+	public final void majorOliveVersion(long majorOliveVersion) {
+		this.majorOliveVersion = majorOliveVersion;
 	}
 
 	private List<StringableLimsKey> limsKeys = Collections.emptyList();
@@ -240,7 +234,8 @@ public final class WorkflowAction extends Action {
 			final Optional<AnalysisState> current = workflowAccessions()//
 					.boxed()//
 					.flatMap(accession -> server.analysisCache().get(accession)//
-							.filter(as -> as.compare(workflowAccessions(), magic, fileAccessions, limsKeys)))//
+							.filter(as -> as.compare(workflowAccessions(), Long.toString(majorOliveVersion),
+									fileAccessions, limsKeys)))//
 					.sorted()//
 					.findFirst();
 			if (current.isPresent()) {
@@ -370,9 +365,9 @@ public final class WorkflowAction extends Action {
 				annotationArgs.add("--workflow-run-accession");
 				annotationArgs.add(Long.toString(runAccession));
 				annotationArgs.add("--key");
-				annotationArgs.add("magic");
+				annotationArgs.add("major_olive_version");
 				annotationArgs.add("--value");
-				annotationArgs.add(magic);
+				annotationArgs.add(Long.toString(majorOliveVersion));
 				final ProcessBuilder annotationBuilder = new ProcessBuilder(annotationArgs);
 				annotationBuilder.environment().put("SEQWARE_SETTINGS", settingsPath);
 				annotationBuilder.environment().remove("CLASSPATH");
@@ -418,7 +413,7 @@ public final class WorkflowAction extends Action {
 	@Override
 	public final ObjectNode toJson(ObjectMapper mapper) {
 		final ObjectNode node = mapper.createObjectNode();
-		node.put("magic", magic);
+		node.put("majorOliveVersion", majorOliveVersion);
 		limsKeys.stream().map(k -> {
 			final ObjectNode key = mapper.createObjectNode();
 			key.put("provider", k.getProvider());

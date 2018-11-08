@@ -14,7 +14,7 @@ import ca.on.oicr.gsi.shesmu.ActionState;
 public class AnalysisState implements Comparable<AnalysisState> {
 	private final String fileSWIDSToRun;
 	private final List<LimsKey> limsKeys;
-	private final SortedSet<String> magic;
+	private final SortedSet<String> majorOliveVersion;
 	private final ActionState state;
 	private final long workflowAccession;
 	private final int workflowRunAccession;
@@ -33,7 +33,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
 		state = NiassaServer.processingStateToActionState(source.getWorkflowRunStatus());
 		workflowAccession = source.getWorkflowId();
 		workflowRunAccession = source.getWorkflowRunId();
-		magic = source.getWorkflowRunAttributes().getOrDefault("magic", Collections.emptySortedSet());
+		majorOliveVersion = source.getWorkflowRunAttributes().getOrDefault("magic", Collections.emptySortedSet());
 	}
 
 	/**
@@ -47,9 +47,9 @@ public class AnalysisState implements Comparable<AnalysisState> {
 		}
 		return comparison;
 	}
-	public boolean compare(LongStream workflowAccessions, String magic, String fileAccessions, List<? extends LimsKey>limsKeys) {
+	public boolean compare(LongStream workflowAccessions, String majorOliveVersion, String fileAccessions, List<? extends LimsKey>limsKeys) {
 		if (workflowAccessions.noneMatch(a -> workflowAccession == a)
-				|| !this.magic.isEmpty() && !this.magic.contains(magic)
+				|| !this.majorOliveVersion.isEmpty() && !this.majorOliveVersion.contains(majorOliveVersion)
 				|| !this.fileSWIDSToRun.equals(fileAccessions) || this.limsKeys.size() != limsKeys.size()) {
 			return false;
 		}
