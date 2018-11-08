@@ -27,7 +27,7 @@ public class WorkflowActionRepository extends FileBackedArbitraryDefinitionRepos
 		writer.println("  ]).reduce((acc, val) => acc.concat(val), [");
 		writer.println("    title(a, `Workflow ${a.workflowAccession}`),");
 		writer.println("    text(`Workflow Run Accession: ${a.workflowRunAccession || 'Unknown'}`),");
-		writer.println("    text(`Magic: ${a.magic}`),");
+		writer.println("    text(`Major Olive Version: ${a.majorOliveVersion}`),");
 		writer.println("    text(`Input File Accessions: ${a.fileAccessions || 'None'}`),");
 		writer.println("    text(`Parent Accessions: ${a.parentAccessions || 'None'}`),");
 		writer.println("  ].concat(Object.entries(a.ini).map(i => text(`INI ${i[0]} = ${i[1]}`)))));");
