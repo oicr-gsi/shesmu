@@ -172,7 +172,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
 	@Override
 	public final boolean typeCheck(Consumer<String> errorHandler) {
-		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size();
+		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size() && discriminators.stream().filter(discriminator -> discriminator.typeCheck(errorHandler)).count() == discriminators.size();
 	}
 
 }

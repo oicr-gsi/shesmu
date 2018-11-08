@@ -1,0 +1,7 @@
+Input test;
+
+Olive
+ Group
+    z = Max library_size
+  By v = workflow_version[0]
+ Run ok With ok = z == 307 && v == 1;
