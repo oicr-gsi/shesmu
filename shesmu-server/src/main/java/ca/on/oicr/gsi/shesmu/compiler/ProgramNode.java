@@ -135,12 +135,12 @@ public class ProgramNode {
 
 		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
 				.count() == olives.size();
-		ok &= olives.stream().allMatch(olive -> olive.resolveTypes(userDefinedTypes::get, errorHandler));
-		ok &= olives.stream()
+		ok = ok && olives.stream().allMatch(olive -> olive.resolveTypes(userDefinedTypes::get, errorHandler));
+		ok = ok && olives.stream()
 				.allMatch(olive -> olive.collectFunctions(
 						name -> userDefinedFunctions.containsKey(name) || definedFunctions.apply(name) != null,
 						f -> userDefinedFunctions.put(f.name(), f), errorHandler));
-		ok &= olives.stream()
+		ok = ok && olives.stream()
 				.filter(olive -> olive.resolveDefinitions(definedOlives,
 						n -> userDefinedFunctions.containsKey(n) ? userDefinedFunctions.get(n)
 								: definedFunctions.apply(n),
@@ -148,19 +148,13 @@ public class ProgramNode {
 				.count() == olives.size();
 
 		// Resolve variables
-		if (ok) {
-			ok = olives.stream().filter(
-					olive -> olive.resolve(inputFormatDefinition, inputFormatDefinitions, errorHandler, constants))
-					.count() == olives.size();
-		}
-		if (ok) {
-			ok = olives.stream().filter(olive -> olive.checkVariableStream(errorHandler)).count() == olives.size();
-		}
+		ok = ok && olives.stream()
+				.filter(olive -> olive.resolve(inputFormatDefinition, inputFormatDefinitions, errorHandler, constants))
+				.count() == olives.size();
+		ok = ok && olives.stream().filter(olive -> olive.checkVariableStream(errorHandler)).count() == olives.size();
 
 		// Type check the resolved structure
-		if (ok) {
-			ok = olives.stream().filter(olive -> olive.typeCheck(errorHandler)).count() == olives.size();
-		}
+		ok = ok && olives.stream().filter(olive -> olive.typeCheck(errorHandler)).count() == olives.size();
 		return ok;
 	}
 
