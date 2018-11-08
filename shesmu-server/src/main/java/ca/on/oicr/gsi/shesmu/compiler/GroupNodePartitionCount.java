@@ -38,7 +38,7 @@ public class GroupNodePartitionCount extends GroupNode {
 	}
 
 	@Override
-	public boolean resolve(NameDefinitions defs,NameDefinitions outerDefs,  Consumer<String> errorHandler) {
+	public boolean resolve(NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler) {
 		return condition.resolve(defs, errorHandler);
 	}
 

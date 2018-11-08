@@ -45,6 +45,11 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		final Set<String> joinedNames = inputFormat.baseStreamVariables()//
 				.map(Target::name)//
@@ -74,6 +79,11 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 			return ClauseStreamOrder.TRANSFORMED;
 		}
 		return state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override

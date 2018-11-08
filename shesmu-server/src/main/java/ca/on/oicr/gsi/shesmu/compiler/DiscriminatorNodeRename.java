@@ -13,8 +13,8 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 
 public class DiscriminatorNodeRename extends DiscriminatorNode {
 
-	private ExpressionNode expression;
-	private String name;
+	private final ExpressionNode expression;
+	private final String name;
 
 	public DiscriminatorNodeRename(int line, int column, String name, ExpressionNode expression) {
 		super(line, column);
@@ -28,6 +28,23 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
 	}
 
 	@Override
+	public VariableInformation dashboard() {
+		final Set<String> freeStreamVariables = new HashSet<>();
+		expression.collectFreeVariables(freeStreamVariables, Flavour::isStream);
+		return new VariableInformation(name, expression.type(), freeStreamVariables.stream(), Behaviour.PASSTHROUGH);
+	}
+
+	@Override
+	public Flavour flavour() {
+		return Flavour.STREAM;
+	}
+
+	@Override
+	public String name() {
+		return name;
+	}
+
+	@Override
 	public void render(RegroupVariablesBuilder builder) {
 		builder.addKey(expression.type().asmType(), name, expression::render);
 	}
@@ -36,7 +53,7 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
 	public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
 		boolean ok = expression.resolve(defs, errorHandler);
 		if (ok) {
-			Set<String> freeStreamVariables = new HashSet<>();
+			final Set<String> freeStreamVariables = new HashSet<>();
 			expression.collectFreeVariables(freeStreamVariables, Flavour::isStream);
 			if (freeStreamVariables.isEmpty()) {
 				errorHandler.accept(String.format("%d:%d: New variable “%s” in By does not use any stream variables.",
@@ -45,13 +62,6 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
 			}
 		}
 		return ok;
-	}
-
-	@Override
-	public VariableInformation dashboard() {
-		Set<String> freeStreamVariables = new HashSet<>();
-		expression.collectFreeVariables(freeStreamVariables, Flavour::isStream);
-		return new VariableInformation(name, expression.type(), freeStreamVariables.stream(), Behaviour.PASSTHROUGH);
 	}
 
 	@Override
@@ -68,16 +78,6 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		return expression.typeCheck(errorHandler);
-	}
-
-	@Override
-	public Flavour flavour() {
-		return Flavour.STREAM;
-	}
-
-	@Override
-	public String name() {
-		return name;
 	}
 
 }

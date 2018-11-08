@@ -35,6 +35,11 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		return new OliveClauseRow("Let", line, column, false, true, arguments.stream()//
 				.map(arg -> {
@@ -53,6 +58,11 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 			return ClauseStreamOrder.TRANSFORMED;
 		}
 		return state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override

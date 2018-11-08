@@ -28,6 +28,11 @@ public class GroupNodeWithDefault extends GroupNode {
 	}
 
 	@Override
+	public String name() {
+		return inner.name();
+	}
+
+	@Override
 	public void render(Regrouper regroup, RootBuilder builder) {
 		inner.render(regroup, initial, builder);
 	}
@@ -46,6 +51,11 @@ public class GroupNodeWithDefault extends GroupNode {
 	}
 
 	@Override
+	public Imyhat type() {
+		return inner.type();
+	}
+
+	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		boolean ok = inner.typeCheck(errorHandler) & initial.typeCheck(errorHandler);
 		if (ok && !inner.type().isSame(initial.type())) {
@@ -53,16 +63,6 @@ public class GroupNodeWithDefault extends GroupNode {
 			ok = false;
 		}
 		return ok;
-	}
-
-	@Override
-	public String name() {
-		return inner.name();
-	}
-
-	@Override
-	public Imyhat type() {
-		return inner.type();
 	}
 
 }

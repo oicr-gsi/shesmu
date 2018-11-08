@@ -19,7 +19,7 @@ public class ImyhatNodeObject extends ImyhatNode {
 
 	@Override
 	public Imyhat render(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-		Map<String, Long> fieldCounts = types.stream()//
+		final Map<String, Long> fieldCounts = types.stream()//
 				.map(Pair::first)//
 				.collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 		if (fieldCounts.entrySet().stream()//

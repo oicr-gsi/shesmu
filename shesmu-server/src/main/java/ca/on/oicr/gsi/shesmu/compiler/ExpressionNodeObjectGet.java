@@ -22,9 +22,9 @@ public class ExpressionNodeObjectGet extends ExpressionNode {
 
 	private final ExpressionNode expression;
 
-	private int index = -1;
-
 	private final String field;
+
+	private int index = -1;
 
 	private Imyhat type = Imyhat.BAD;
 

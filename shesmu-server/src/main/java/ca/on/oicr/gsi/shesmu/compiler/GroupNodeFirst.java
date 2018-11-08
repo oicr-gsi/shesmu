@@ -37,13 +37,13 @@ public final class GroupNodeFirst extends GroupNodeDefaultable {
 	}
 
 	@Override
-	public void render(Regrouper regroup, RootBuilder rootBuilder) {
-		regroup.addFirst(expression.type().asmType(), name(), expression::render);
+	public void render(Regrouper regroup, ExpressionNode initial, RootBuilder rootBuilder) {
+		regroup.addFirst(expression.type().asmType(), name(), expression::render, initial::render);
 	}
 
 	@Override
-	public void render(Regrouper regroup, ExpressionNode initial, RootBuilder rootBuilder) {
-		regroup.addFirst(expression.type().asmType(), name(), expression::render, initial::render);
+	public void render(Regrouper regroup, RootBuilder rootBuilder) {
+		regroup.addFirst(expression.type().asmType(), name(), expression::render);
 	}
 
 	@Override

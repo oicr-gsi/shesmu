@@ -59,6 +59,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		return new OliveClauseRow("Monitor", line, column, false, false, labels.stream()//
 				.map(label -> {
@@ -78,6 +83,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
 	private List<String> labelNames() {
 		return labels.stream().map(MonitorArgumentNode::name).collect(Collectors.toList());
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	private void render(Renderer renderer) {

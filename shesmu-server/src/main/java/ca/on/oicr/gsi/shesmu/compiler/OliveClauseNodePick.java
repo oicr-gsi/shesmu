@@ -42,6 +42,11 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	}
 
 	@Override
+	public int column() {
+		return column;
+	}
+
+	@Override
 	public OliveClauseRow dashboard() {
 		final Set<String> inputs = new TreeSet<>();
 		extractor.collectFreeVariables(inputs, Flavour::isStream);
@@ -66,6 +71,11 @@ public class OliveClauseNodePick extends OliveClauseNode {
 			extractor.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
 		}
 		return state;
+	}
+
+	@Override
+	public int line() {
+		return line;
 	}
 
 	@Override
