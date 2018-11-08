@@ -10,7 +10,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 public class VariableInformation {
 
 	public enum Behaviour {
-		DEFINITION, OBSERVER, PASSTHROUGH
+		DEFINITION, DEFINITION_BY, OBSERVER, PASSTHROUGH
 	}
 
 	private final Behaviour behaviour;

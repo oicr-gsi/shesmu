@@ -30,6 +30,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 
 public class MetroDiagram {
 	private static final class DeathChecker implements Predicate<OliveClauseRow> {
@@ -165,7 +166,7 @@ public class MetroDiagram {
 								.filter(var -> var.name().equals(name))//
 								.map(Target::type)//
 								.findFirst()//
-								.orElse(Imyhat.BAD), "", colour, 1, colour, metroStart);
+								.orElse(Imyhat.BAD), "", colour, 1, colour, metroStart, true);
 					} catch (XMLStreamException e) {
 						throw new RuntimeException(e);
 					}
@@ -221,10 +222,12 @@ public class MetroDiagram {
 				final Pair<Integer, Integer> currentPoint = new Pair<>(outputVariableColumns.get(variable.name()), row);
 				switch (variable.behaviour()) {
 				case DEFINITION:
+				case DEFINITION_BY:
 					// If we have a defined variable, then it always needs to be drawn
 					final MetroDiagram newVariable = new MetroDiagram(textLayer, connectorLayer, variable.name(),
 							variable.type(), from(variable, variables), idGen.getAndIncrement(), row,
-							outputVariableColumns.get(variable.name()), metroStart);
+							outputVariableColumns.get(variable.name()), metroStart,
+							variable.behaviour() == Behaviour.DEFINITION);
 					variable.inputs().forEach(input -> {
 						try {
 							variables.get(input).drawConnector(newVariable.start());
@@ -313,7 +316,7 @@ public class MetroDiagram {
 	private final String title;
 
 	private MetroDiagram(List<DelayedXml> textLayer, XMLStreamWriter connectorLayer, String name, Imyhat type,
-			String from, int colour, int row, int column, long metroStart) throws XMLStreamException {
+			String from, int colour, int row, int column, long metroStart, boolean dot) throws XMLStreamException {
 		this.textLayer = textLayer;
 		this.connectorLayer = connectorLayer;
 		title = name + " (" + type.name() + ")";
@@ -321,7 +324,11 @@ public class MetroDiagram {
 		this.colour = COLOURS[colour % COLOURS.length];
 		start = new Pair<>(column, row);
 		segments.offer(start);
-		drawDot(start, "defined" + from);
+		if (dot) {
+			drawDot(start, "defined" + from);
+		} else {
+			drawSquare(start);
+		}
 		final long x = metroStart + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
 		final long y = SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
 		textLayer.add(textWriter -> {
