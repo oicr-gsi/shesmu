@@ -1,32 +1,14 @@
 package ca.on.oicr.gsi.shesmu.gsistd.input;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import ca.on.oicr.gsi.provenance.ProviderLoader;
-
 public final class Utils {
 	private static final Pattern LANE_NUMBER = Pattern.compile("^.*_(\\d+)$");
-
-	public static final Optional<ProviderLoader> LOADER = Optional.ofNullable(System.getenv("PROVENANCE_SETTINGS"))//
-			.map(Paths::get)//
-			.flatMap(path -> {
-				try {
-					return Optional.of(new ProviderLoader(new String(Files.readAllBytes(path))));
-
-				} catch (final Exception e) {
-					e.printStackTrace();
-					return Optional.empty();
-				}
-			});
 
 	public static long parseLaneNumber(String laneName) {
 		try {
@@ -49,9 +31,6 @@ public final class Utils {
 		}
 	}
 
-	public static <T> void setProvider(Map<String, T> source, BiConsumer<String, T> consumer) {
-		source.entrySet().stream().forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
-	}
 
 	public static <T> Optional<T> singleton(Collection<T> items, Consumer<String> isBad, boolean required) {
 		if (items == null) {
