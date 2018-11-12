@@ -29,7 +29,7 @@ public class Query {
 
 		@Override
 		public Filter convert() {
-			return ActionProcessor.added(Optional.ofNullable(start).map(Instant::ofEpochSecond),
+			return ActionProcessor.added(Optional.ofNullable(start).map(Instant::ofEpochMilli),
 					Optional.ofNullable(end).map(Instant::ofEpochMilli));
 		}
 
@@ -58,7 +58,7 @@ public class Query {
 
 		@Override
 		public Filter convert() {
-			return ActionProcessor.checked(Optional.ofNullable(start).map(Instant::ofEpochSecond),
+			return ActionProcessor.checked(Optional.ofNullable(start).map(Instant::ofEpochMilli),
 					Optional.ofNullable(end).map(Instant::ofEpochMilli));
 		}
 
@@ -153,7 +153,7 @@ public class Query {
 
 		@Override
 		public Filter convert() {
-			return ActionProcessor.statusChanged(Optional.ofNullable(start).map(Instant::ofEpochSecond),
+			return ActionProcessor.statusChanged(Optional.ofNullable(start).map(Instant::ofEpochMilli),
 					Optional.ofNullable(end).map(Instant::ofEpochMilli));
 		}
 

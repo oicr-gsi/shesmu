@@ -510,7 +510,7 @@ function makeFilters() {
   if (selectedStates.length) {
     filters.push({ type: "status", states: selectedStates });
   }
-  for (let span of ["added", "checked"]) {
+  for (let span of ["added", "checked", "statuschanged"]) {
     const start = parseEpoch(`${span}Start`);
     const end = parseEpoch(`${span}End`);
     if (start !== null && end != null) {
@@ -814,6 +814,7 @@ function formatBin(name) {
   switch (name) {
     case "added":
     case "checked":
+    case "statuschanged":
       return x => {
         const d = new Date(x * 1000);
         let diff = Math.ceil((new Date() - d) / 1000);
