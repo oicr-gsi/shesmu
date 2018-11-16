@@ -6,6 +6,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -115,6 +116,7 @@ public abstract class RootBuilder {
 	private final Type selfType;
 
 	private int streamId;
+	private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
 	public RootBuilder(Instant compileTime, String name, String path, InputFormatDefinition inputFormatDefinition,
 			Supplier<Stream<ConstantDefinition>> constants) {
@@ -169,14 +171,42 @@ public abstract class RootBuilder {
 						.filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE && signableNames.contains(t.name())));
 	}
 
-	public Stream<LoadableValue> constants() {
-		return constants.get().map(ConstantDefinition::asLoadable);
+	public Stream<LoadableValue> constants(boolean allowUserDefined) {
+		final Stream<LoadableValue> externalConstants = constants.get().map(ConstantDefinition::asLoadable);
+		return allowUserDefined ? Stream.concat(userDefinedConstants.stream(), externalConstants) : externalConstants;
 	}
 
 	/**
 	 * Create a new class for this program.
 	 */
 	protected abstract ClassVisitor createClassVisitor();
+
+	public void defineConstant(String name, Type type, Consumer<GeneratorAdapter> loader) {
+		final String fieldName = name + "$constant";
+		classVisitor.visitField(Opcodes.ACC_PRIVATE, fieldName, type.getDescriptor(), null, null).visitEnd();
+
+		runMethod.loadThis();
+		loader.accept(runMethod);
+		runMethod.putField(selfType, fieldName, type);
+		userDefinedConstants.add(new LoadableValue() {
+
+			@Override
+			public void accept(Renderer renderer) {
+				renderer.methodGen().loadThis();
+				renderer.methodGen().getField(selfType, fieldName, type);
+			}
+
+			@Override
+			public String name() {
+				return name;
+			}
+
+			@Override
+			public Type type() {
+				return type;
+			}
+		});
+	}
 
 	/**
 	 * Complete bytecode generation.
@@ -292,8 +322,8 @@ public abstract class RootBuilder {
 	 *
 	 * No stream variables are available in this context
 	 */
-	public final Renderer rootRenderer() {
-		return new Renderer(this, runMethod, -1, null, constants(), (renderer, name) -> {
+	public final Renderer rootRenderer(boolean allowUserDefined) {
+		return new Renderer(this, runMethod, -1, null, constants(allowUserDefined), (renderer, name) -> {
 			throw new IllegalArgumentException(
 					String.format("Signature variable %s not defined in root context.", name));
 		});

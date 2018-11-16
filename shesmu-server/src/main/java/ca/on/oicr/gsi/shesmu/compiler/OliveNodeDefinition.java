@@ -7,12 +7,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -51,7 +49,8 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 	}
 
 	@Override
-	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives, Consumer<String> errorHandler) {
+	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+			Map<String, Target> definedConstants, Consumer<String> errorHandler) {
 		if (definedOlives.containsKey(name)) {
 			final OliveNodeDefinition other = definedOlives.get(name);
 			errorHandler.accept(String.format("%d:%d: Duplicate definition of “Define %s”. Previous entry on %d:%d.",
@@ -82,7 +81,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	public Optional<Stream<Target>> outputStreamVariables(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<ConstantDefinition>> constants) {
+			ConstantRetriever constants) {
 		if (outputStreamVariables != null || resolve(inputFormatDefinition, definedFormats, errorHandler, constants)) {
 			return Optional.of(outputStreamVariables.stream());
 		}
@@ -107,7 +106,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 	@Override
 	public boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<ConstantDefinition>> constants) {
+			ConstantRetriever constants) {
 		if (resolveLock) {
 			errorHandler.accept(String.format("%d:%d: Olive definition %s includes itself.", line, column, name));
 			return false;
@@ -117,7 +116,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 		}
 		resolveLock = true;
 		final NameDefinitions result = clauses().stream().reduce(
-				NameDefinitions.root(inputFormatDefinition, Stream.concat(parameters.stream(), constants.get())),
+				NameDefinitions.root(inputFormatDefinition, Stream.concat(parameters.stream(), constants.get(true))),
 				(defs, clause) -> clause.resolve(inputFormatDefinition, definedFormats, defs, constants, errorHandler),
 				(a, b) -> {
 					throw new UnsupportedOperationException();

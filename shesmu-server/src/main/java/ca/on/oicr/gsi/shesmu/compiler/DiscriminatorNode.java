@@ -13,7 +13,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 /**
  * An expression in the Shesmu language
  */
-public abstract class DiscriminatorNode extends DefinedTarget {
+public abstract class DiscriminatorNode implements DefinedTarget {
 
 	public static Parser parse(Parser input, Consumer<DiscriminatorNode> output) {
 		final AtomicReference<String> name = new AtomicReference<>();

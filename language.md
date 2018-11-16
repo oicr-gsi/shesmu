@@ -396,8 +396,17 @@ Functions may use constants or previously defined functions (either built-in or
 defined in the file). Functions cannot be defined recursively. The return type
 is determined automatically.
 
+## Constants
+Constants may be defined intermixed with olives and functions, after the
+`Input` and any `TypeAlias` definitions:
+
+    myval = 3 * 12;
+
+Constants may use functions defined in this file. However, functions cannot use
+constants nor can constants use other constants. Olives may use constants.
+
 ## Expressions
-Shesmu has the following expressions, for lowest precedence to highest precendence.
+Shesmu has the following expressions, for lowest precedence to highest precedence.
 
 ### Switch Selections
 - `Switch` _refexpr_ (`When` _testexpr_ `Then` _valueexpr_)\* `Else` _altexpr_

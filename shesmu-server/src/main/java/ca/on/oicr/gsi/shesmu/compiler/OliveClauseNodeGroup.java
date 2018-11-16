@@ -10,12 +10,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -123,8 +121,8 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
 	@Override
 	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
-			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs, ConstantRetriever constants,
+			Consumer<String> errorHandler) {
 		boolean ok = //
 				children.stream()//
 						.filter(child -> child.resolve(defs, defs, errorHandler))//
@@ -172,7 +170,9 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
 	@Override
 	public final boolean typeCheck(Consumer<String> errorHandler) {
-		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size() && discriminators.stream().filter(discriminator -> discriminator.typeCheck(errorHandler)).count() == discriminators.size();
+		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size()
+				&& discriminators.stream().filter(discriminator -> discriminator.typeCheck(errorHandler))
+						.count() == discriminators.size();
 	}
 
 }

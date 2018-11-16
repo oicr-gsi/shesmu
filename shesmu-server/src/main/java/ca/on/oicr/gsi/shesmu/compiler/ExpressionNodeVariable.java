@@ -87,7 +87,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
 
 	@Override
 	public boolean typeCheck(Consumer<String> errorHandler) {
-		boolean ok = !target.type().isBad();
+		final boolean ok = !target.type().isBad();
 		if (!ok) {
 			errorHandler.accept(
 					String.format("%d:%d: Variable %s is bad but still being type checked. This is a compiler bug.",

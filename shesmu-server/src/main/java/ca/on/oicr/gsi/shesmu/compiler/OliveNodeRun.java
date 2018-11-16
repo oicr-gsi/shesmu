@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,7 +15,6 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -55,7 +53,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 	}
 
 	@Override
-	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives, Consumer<String> errorHandler) {
+	public boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
+			Map<String, Target> definedConstants, Consumer<String> errorHandler) {
 		return true;
 	}
 
@@ -99,9 +98,9 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 	@Override
 	public boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<ConstantDefinition>> constants) {
+			ConstantRetriever constants) {
 		final NameDefinitions defs = clauses().stream().reduce(
-				NameDefinitions.root(inputFormatDefinition, constants.get()),
+				NameDefinitions.root(inputFormatDefinition, constants.get(true)),
 				(d, clause) -> clause.resolve(inputFormatDefinition, definedFormats, d, constants, errorHandler),
 				(a, b) -> {
 					throw new UnsupportedOperationException();

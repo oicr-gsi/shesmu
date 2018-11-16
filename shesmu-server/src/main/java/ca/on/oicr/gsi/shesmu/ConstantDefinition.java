@@ -35,7 +35,7 @@ import ca.on.oicr.gsi.shesmu.util.server.BaseHotloadingCompiler;
  * is that it has no direct interaction with any other part of the Shesmu
  * script.
  */
-public abstract class ConstantDefinition extends Target {
+public abstract class ConstantDefinition implements Target {
 
 	private class ConstantCompiler extends BaseHotloadingCompiler {
 

@@ -19,7 +19,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
  * Also tracks if the program has resolved all variables so far.
  */
 public class NameDefinitions {
-	public static class DefaultStreamTarget extends Target {
+	public static class DefaultStreamTarget implements Target {
 		private final String name;
 		private final boolean signable;
 		private final Imyhat type;

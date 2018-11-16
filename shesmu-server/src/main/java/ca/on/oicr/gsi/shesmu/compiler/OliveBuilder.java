@@ -142,7 +142,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 	 * Generate bytecode for the olive and create a method to consume the result.
 	 */
 	public final Renderer finish() {
-		final GeneratorAdapter runMethod = owner.rootRenderer().methodGen();
+		final GeneratorAdapter runMethod = owner.rootRenderer(true).methodGen();
 		final int startTime = runMethod.newLocal(LONG_TYPE);
 		runMethod.invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
 		runMethod.storeLocal(startTime);
@@ -152,7 +152,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 		runMethod.invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
 		runMethod.checkCast(A_STREAM_TYPE);
 
-		steps.forEach(step -> step.accept(owner.rootRenderer()));
+		steps.forEach(step -> step.accept(owner.rootRenderer(true)));
 
 		runMethod.dup();
 
@@ -196,7 +196,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	@Override
 	public Stream<LoadableValue> loadableValues() {
-		return owner.constants();
+		return owner.constants(true);
 	}
 
 	@Override

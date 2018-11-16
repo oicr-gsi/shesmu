@@ -120,9 +120,10 @@ public class ProgramNode {
 		final Set<String> metricNames = new HashSet<>();
 		final Map<String, List<Imyhat>> dumpers = new HashMap<>();
 		final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
+		final Map<String, Target> userDefinedConstants = new HashMap<>();
 		final Map<String, Imyhat> userDefinedTypes = Stream.<Target>concat(//
 				inputFormatDefinition.baseStreamVariables(), //
-				NameDefinitions.signatureVariables())//
+				NameDefinitions.signatureVariables().<Target>map(x -> x))//
 				.collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
 
 		for (final TypeAliasNode alias : typeAliases) {
@@ -133,7 +134,8 @@ public class ProgramNode {
 			userDefinedTypes.put(alias.name(), type);
 		}
 
-		boolean ok = olives.stream().filter(olive -> olive.collectDefinitions(definedOlives, errorHandler))
+		boolean ok = olives.stream()
+				.filter(olive -> olive.collectDefinitions(definedOlives, userDefinedConstants, errorHandler))
 				.count() == olives.size();
 		ok = ok && olives.stream().allMatch(olive -> olive.resolveTypes(userDefinedTypes::get, errorHandler));
 		ok = ok && olives.stream()
@@ -148,9 +150,12 @@ public class ProgramNode {
 				.count() == olives.size();
 
 		// Resolve variables
-		ok = ok && olives.stream()
-				.filter(olive -> olive.resolve(inputFormatDefinition, inputFormatDefinitions, errorHandler, constants))
-				.count() == olives.size();
+		ok = ok && olives.stream().filter(olive -> olive.resolve(inputFormatDefinition, inputFormatDefinitions,
+				errorHandler, allowUserDefined -> {
+					final Stream<ConstantDefinition> externalConstants = constants.get();
+					return allowUserDefined ? Stream.concat(userDefinedConstants.values().stream(), externalConstants)
+							: externalConstants;
+				})).count() == olives.size();
 		ok = ok && olives.stream().filter(olive -> olive.checkVariableStream(errorHandler)).count() == olives.size();
 
 		// Type check the resolved structure
