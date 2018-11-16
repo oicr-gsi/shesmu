@@ -8,12 +8,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -136,6 +134,24 @@ public abstract class OliveNode {
 			}
 			return result;
 		});
+		ROOTS.addRaw("constant declaration", (input, output) -> {
+			final AtomicReference<String> name = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> body = new AtomicReference<>();
+			final Parser result = input//
+					.whitespace()//
+					.identifier(name::set)//
+					.whitespace()//
+					.symbol("=")//
+					.whitespace()//
+					.then(ExpressionNode::parse, body::set)//
+					.whitespace()//
+					.symbol(";")//
+					.whitespace();
+			if (result.isGood()) {
+				output.accept(new OliveNodeConstant(input.line(), input.column(), name.get(), body.get()));
+			}
+			return result;
+		});
 	}
 
 	/**
@@ -149,7 +165,7 @@ public abstract class OliveNode {
 	 * Create {@link OliveDefineBuilder} instances for this olive, if required
 	 *
 	 * This is part of bytecode generation and happens well after
-	 * {@link #collectDefinitions(Map, Consumer)}
+	 * {@link #collectDefinitions(Map, Map, Consumer)}
 	 */
 	public abstract void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
@@ -165,7 +181,7 @@ public abstract class OliveNode {
 	 * {@link #build(RootBuilder, Map)}
 	 */
 	public abstract boolean collectDefinitions(Map<String, OliveNodeDefinition> definedOlives,
-			Consumer<String> errorHandler);
+			Map<String, Target> definedConstants, Consumer<String> errorHandler);
 
 	public abstract boolean collectFunctions(Predicate<String> isDefined, Consumer<FunctionDefinition> defineFunctions,
 			Consumer<String> errorHandler);
@@ -183,7 +199,7 @@ public abstract class OliveNode {
 	 */
 	public abstract boolean resolve(InputFormatDefinition inputFormatDefinition,
 			Function<String, InputFormatDefinition> definedFormats, Consumer<String> errorHandler,
-			Supplier<Stream<ConstantDefinition>> constants);
+			ConstantRetriever constants);
 
 	/**
 	 * Resolve all non-variable definitions

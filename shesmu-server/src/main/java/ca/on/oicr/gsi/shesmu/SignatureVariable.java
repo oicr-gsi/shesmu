@@ -11,7 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
  * A special stream variable that can generate a signature based on other
  * signable variables in the input
  */
-public abstract class SignatureVariable extends Target {
+public abstract class SignatureVariable implements Target {
 
 	private final String name;
 	private final SignatureStorage storage;

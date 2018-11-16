@@ -16,7 +16,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
  *
  * Also usable as the variable definition for the result
  */
-public abstract class GroupNode extends DefinedTarget {
+public abstract class GroupNode implements DefinedTarget {
 	private interface ParseGroup {
 		GroupNode make(int line, int column, String name);
 

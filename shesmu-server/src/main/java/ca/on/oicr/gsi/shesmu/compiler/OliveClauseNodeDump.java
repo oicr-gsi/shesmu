@@ -8,15 +8,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
@@ -118,8 +115,8 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 
 	@Override
 	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
-			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs, ConstantRetriever constants,
+			Consumer<String> errorHandler) {
 		return defs.fail(columns.stream()//
 				.filter(e -> e.resolve(defs, errorHandler))//
 				.count() == columns.size());

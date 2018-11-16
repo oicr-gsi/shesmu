@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,7 +16,6 @@ import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -114,8 +112,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 
 	@Override
 	public final NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
-			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs, ConstantRetriever constants,
+			Consumer<String> errorHandler) {
 		inputFormat = definedFormats.apply(format);
 		if (inputFormat == null) {
 			errorHandler.accept(String.format("%d:%d: Unknown input format “%s” in LeftJoin.", line, column, format));

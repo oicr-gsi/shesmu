@@ -7,15 +7,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
@@ -128,8 +125,8 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
 	@Override
 	public NameDefinitions resolve(InputFormatDefinition inputFormatDefinition,
-			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs,
-			Supplier<Stream<ConstantDefinition>> constants, Consumer<String> errorHandler) {
+			Function<String, InputFormatDefinition> definedFormats, NameDefinitions defs, ConstantRetriever constants,
+			Consumer<String> errorHandler) {
 		return defs.fail(labels.stream().filter(arg -> arg.resolve(defs, errorHandler)).count() == labels.size());
 	}
 

@@ -1,0 +1,6 @@
+Input test;
+
+mylist = [1,2];
+Olive
+ Where (For x In mylist: Count) == 2
+ Run ok With ok = True;

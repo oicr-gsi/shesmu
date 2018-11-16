@@ -9,7 +9,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 /**
  * A parameter to a “Define” olive
  */
-public class OliveParameter extends Target {
+public class OliveParameter implements Target {
 
 	public static Parser parse(Parser parser, Consumer<OliveParameter> output) {
 		final AtomicReference<ImyhatNode> type = new AtomicReference<>();

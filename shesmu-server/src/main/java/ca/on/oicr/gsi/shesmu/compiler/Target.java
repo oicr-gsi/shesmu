@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 /**
  * A defined variable in a program
  */
-public abstract class Target {
+public interface Target {
 	public enum Flavour {
 		CONSTANT(false), LAMBDA(false), PARAMETER(false), STREAM(true), STREAM_SIGNABLE(true), STREAM_SIGNATURE(true);
 		private final boolean isStream;
@@ -44,15 +44,15 @@ public abstract class Target {
 	/**
 	 * What category of variables this one belongs to
 	 */
-	public abstract Flavour flavour();
+	Flavour flavour();
 
 	/**
 	 * The Shemsu name for this variable
 	 */
-	public abstract String name();
+	String name();
 
 	/**
 	 * The Shesmu type for this variable
 	 */
-	public abstract Imyhat type();
+	Imyhat type();
 }

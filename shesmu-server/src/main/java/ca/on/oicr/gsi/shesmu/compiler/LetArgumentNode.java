@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 
-public class LetArgumentNode extends Target {
+public class LetArgumentNode implements Target {
 	public static Parser parse(Parser input, Consumer<LetArgumentNode> output) {
 		final AtomicReference<String> name = new AtomicReference<>();
 		final AtomicReference<ExpressionNode> expression = new AtomicReference<ExpressionNode>();
