@@ -61,7 +61,7 @@ public abstract class BaseOliveBuilder {
 			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
 			false);
 	private static final Method METHOD_ACTION_GENERATOR__MEASURE_FLOW = new Method("measureFlow", A_STREAM_TYPE,
-			new Type[] { A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE });
+			new Type[] { A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, INT_TYPE, INT_TYPE });
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
 			new Type[] { A_FUNCTION_TYPE });
 	private static final Method METHOD_COMPARATOR__REVERSED = new Method("reversed", A_COMPARATOR_TYPE, new Type[] {});
@@ -127,6 +127,7 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().loadThis();
 			renderer.methodGen().swap();
 			renderer.methodGen().loadArg(1);
+			loadOwnerSourceLocation(renderer.methodGen());
 			NameDefinitions.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
 			for (int i = 0; i < arglist.size(); i++) {
 				arglist.get(i).accept(renderer);
@@ -340,6 +341,8 @@ public abstract class BaseOliveBuilder {
 	 */
 	public abstract Stream<LoadableValue> loadableValues();
 
+	protected abstract void loadOwnerSourceLocation(GeneratorAdapter method);
+
 	protected abstract void loadSigner(SignatureVariable variable, Renderer renderer);
 
 	/**
@@ -350,6 +353,7 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().push(filename);
 			renderer.methodGen().push(line);
 			renderer.methodGen().push(column);
+			loadOwnerSourceLocation(renderer.methodGen());
 			renderer.methodGen().invokeStatic(A_ACTION_GENERATOR_TYPE, METHOD_ACTION_GENERATOR__MEASURE_FLOW);
 		});
 

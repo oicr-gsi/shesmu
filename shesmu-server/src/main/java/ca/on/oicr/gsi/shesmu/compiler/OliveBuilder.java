@@ -200,6 +200,12 @@ public final class OliveBuilder extends BaseOliveBuilder {
 	}
 
 	@Override
+	protected void loadOwnerSourceLocation(GeneratorAdapter method) {
+		method.push(line);
+		method.push(column);
+	}
+
+	@Override
 	protected void loadSigner(SignatureVariable signer, Renderer renderer) {
 		switch (signer.storage()) {
 		case STATIC_FIELD:

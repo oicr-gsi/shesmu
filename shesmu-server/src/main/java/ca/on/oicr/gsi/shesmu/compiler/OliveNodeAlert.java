@@ -109,7 +109,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 		final Set<String> ttlInputs = new HashSet<>();
 		ttl.collectFreeVariables(ttlInputs, Flavour::isStream);
 
-		return Stream.of(new OliveTable("Alert", line, column, false, clauses().stream().map(OliveClauseNode::dashboard), //
+		return Stream.of(new OliveTable("Alert", line, column, false, clauses().stream().flatMap(OliveClauseNode::dashboard), //
 				Stream.concat(//
 						Stream.of(labels, annotations)//
 								.flatMap(List::stream)//

@@ -43,11 +43,11 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
+	public Stream<OliveClauseRow> dashboard() {
 		final Set<String> inputs = new TreeSet<>();
 		expression.collectFreeVariables(inputs, Flavour::isStream);
-		return new OliveClauseRow("Reject", line, column, true, false, inputs.stream()//
-				.map(n -> new VariableInformation(n, Imyhat.BOOLEAN, Stream.of(n), Behaviour.OBSERVER)));
+		return Stream.of(new OliveClauseRow("Reject", line, column, true, false, inputs.stream()//
+				.map(n -> new VariableInformation(n, Imyhat.BOOLEAN, Stream.of(n), Behaviour.OBSERVER))));
 	}
 
 	@Override

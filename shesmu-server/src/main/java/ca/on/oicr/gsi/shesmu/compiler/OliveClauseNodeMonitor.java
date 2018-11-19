@@ -8,6 +8,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -61,15 +62,15 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Monitor", line, column, false, false, labels.stream()//
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Monitor", line, column, false, false, labels.stream()//
 				.map(label -> {
 					final Set<String> inputs = new TreeSet<>();
 					label.collectFreeVariables(inputs, Flavour::isStream);
 					return new VariableInformation(metricName + "{" + label.name() + "}", Imyhat.STRING,
 							inputs.stream(), Behaviour.DEFINITION);
 
-				}));
+				})));
 	}
 
 	@Override

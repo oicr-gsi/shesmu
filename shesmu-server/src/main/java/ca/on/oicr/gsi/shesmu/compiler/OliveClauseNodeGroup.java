@@ -70,8 +70,8 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Group", line, column, true, true, //
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Group", line, column, true, true, //
 				Stream.concat(//
 						children.stream()//
 								.map(child -> {
@@ -81,7 +81,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 											Behaviour.DEFINITION);
 								}), //
 						discriminators.stream()//
-								.map(DiscriminatorNode::dashboard)));
+								.map(DiscriminatorNode::dashboard))));
 	}
 
 	@Override

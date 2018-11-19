@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
@@ -37,13 +38,13 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Let", line, column, false, true, arguments.stream()//
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Let", line, column, false, true, arguments.stream()//
 				.map(arg -> {
 					final Set<String> inputs = new HashSet<>();
 					arg.collectFreeVariables(inputs, Flavour::isStream);
 					return new VariableInformation(arg.name(), arg.type(), inputs.stream(), Behaviour.DEFINITION);
-				}));
+				})));
 	}
 
 	@Override

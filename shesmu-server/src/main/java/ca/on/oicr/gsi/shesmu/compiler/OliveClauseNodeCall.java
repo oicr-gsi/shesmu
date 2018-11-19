@@ -15,8 +15,6 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
-import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
-import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 
 public class OliveClauseNodeCall extends OliveClauseNode {
 
@@ -39,15 +37,8 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		final String prettyName = name + "(" + (target.parameterCount() == 0 ? "" : "...") + ")";
-		return new OliveClauseRow(prettyName, line, column, true, !target.isRoot(), //
-				Stream.concat(//
-						target.inputVariables()//
-								.map(n -> new VariableInformation(n, Imyhat.BAD, Stream.of(n), Behaviour.OBSERVER)),
-						target.outputStreamVariables()//
-								.map(var -> new VariableInformation(var.name(), var.type(), Stream.empty(),
-										Behaviour.DEFINITION))));
+	public Stream<OliveClauseRow> dashboard() {
+		return target.dashboardInner();
 	}
 
 	@Override

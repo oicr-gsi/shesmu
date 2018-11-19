@@ -45,17 +45,17 @@ public class OliveClauseNodePick extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
+	public Stream<OliveClauseRow> dashboard() {
 		final Set<String> inputs = new TreeSet<>();
 		extractor.collectFreeVariables(inputs, Flavour::isStream);
-		return new OliveClauseRow("Pick " + (max ? "Max" : "Min"), line, column, true, false, //
+		return Stream.of(new OliveClauseRow("Pick " + (max ? "Max" : "Min"), line, column, true, false, //
 				Stream.concat(//
 						inputs.stream()//
 								.map(n -> new VariableInformation(n, Imyhat.BOOLEAN, Stream.of(n), Behaviour.OBSERVER)), //
 						discriminatorVariables.stream()//
 								.map(discriminator -> new VariableInformation(discriminator.name(),
 										discriminator.type(), Stream.of(discriminator.name()),
-										Behaviour.PASSTHROUGH))));
+										Behaviour.PASSTHROUGH)))));
 	}
 
 	@Override

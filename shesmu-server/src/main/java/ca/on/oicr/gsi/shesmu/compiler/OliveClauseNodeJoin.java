@@ -39,10 +39,10 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Join", line, column, true, false, inputFormat.baseStreamVariables()//
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Join", line, column, true, false, inputFormat.baseStreamVariables()//
 				.map(variable -> new VariableInformation(variable.name(), variable.type(), Stream.empty(),
-						Behaviour.DEFINITION)));
+						Behaviour.DEFINITION))));
 	}
 
 	@Override

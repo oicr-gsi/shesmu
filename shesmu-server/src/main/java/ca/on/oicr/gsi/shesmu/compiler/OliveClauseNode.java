@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
@@ -224,7 +225,7 @@ public abstract class OliveClauseNode {
 
 	public abstract int column();
 
-	public abstract OliveClauseRow dashboard();
+	public abstract Stream<OliveClauseRow> dashboard();
 
 	/**
 	 * Check whether the variable stream is acceptable to the clause

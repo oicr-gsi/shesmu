@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -33,7 +34,7 @@ public abstract class ActionGenerator {
 
 	public static final Gauge OLIVE_FLOW = Gauge
 			.build("shesmu_olive_data_flow", "The number of items passing through each olive clause.")
-			.labelNames("filename", "line", "column").register();
+			.labelNames("filename", "line", "column", "olive_line", "olive_column").register();
 
 	@RuntimeInterop
 	public static final Gauge OLIVE_RUN_TIME = Gauge
@@ -41,9 +42,12 @@ public abstract class ActionGenerator {
 			.register();
 
 	@RuntimeInterop
-	public static <T> Stream<T> measureFlow(Stream<T> input, String fileName, int line, int column) {
-		final Gauge.Child child = OLIVE_FLOW.labels(fileName, Integer.toString(line), Integer.toString(column));
-		return input.peek(x -> child.inc());
+	public static <T> Stream<T> measureFlow(Stream<T> input, String fileName, int line, int column, int oliveLine,
+			int oliveColumn) {
+		final Gauge.Child child = OLIVE_FLOW.labels(fileName, Integer.toString(line), Integer.toString(column),
+				Integer.toString(oliveLine), Integer.toString(oliveColumn));
+		final AtomicLong counter = new AtomicLong();
+		return input.peek(x -> counter.incrementAndGet()).onClose(() -> child.set(counter.get()));
 	}
 
 	private final List<Collector> collectors = new ArrayList<>();

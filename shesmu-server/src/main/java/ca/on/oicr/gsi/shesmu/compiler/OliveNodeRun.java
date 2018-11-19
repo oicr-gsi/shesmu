@@ -60,15 +60,15 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 
 	@Override
 	public Stream<OliveTable> dashboard() {
-		return Stream.of(
-				new OliveTable("Run " + actionName, line, column, true, clauses().stream().map(OliveClauseNode::dashboard), //
-						arguments.stream()//
-								.map(arg -> {
-									final Set<String> inputs = new HashSet<>();
-									arg.collectFreeVariables(inputs, Flavour::isStream);
-									return new VariableInformation(arg.name(), arg.type(), inputs.parallelStream(),
-											Behaviour.DEFINITION);
-								})));
+		return Stream.of(new OliveTable("Run " + actionName, line, column, true,
+				clauses().stream().flatMap(OliveClauseNode::dashboard), //
+				arguments.stream()//
+						.map(arg -> {
+							final Set<String> inputs = new HashSet<>();
+							arg.collectFreeVariables(inputs, Flavour::isStream);
+							return new VariableInformation(arg.name(), arg.type(), inputs.parallelStream(),
+									Behaviour.DEFINITION);
+						})));
 	}
 
 	@Override

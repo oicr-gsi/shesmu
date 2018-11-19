@@ -1,10 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -14,13 +12,12 @@ import ca.on.oicr.gsi.shesmu.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
-import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 
 public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	private final int column;
-	private final Set<String> inputVariables = new HashSet<>();
 	private final int line;
 	private final String name;
 	private List<Target> outputStreamVariables;
@@ -63,12 +60,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	@Override
 	public Stream<OliveTable> dashboard() {
-		return Stream.of(new OliveTable("Define " + name, line, column, false,
-				clauses().stream().map(OliveClauseNode::dashboard), Stream.empty()));
+		return Stream.empty();
 	}
 
-	public Stream<String> inputVariables() {
-		return inputVariables.stream();
+	public Stream<OliveClauseRow> dashboardInner() {
+		return clauses().stream().flatMap(OliveClauseNode::dashboard);
 	}
 
 	public boolean isRoot() {
@@ -124,8 +120,6 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 		if (result.isGood()) {
 			outputStreamVariables = result.stream().filter(target -> target.flavour().isStream())
 					.collect(Collectors.toList());
-			clauses().stream().findFirst().ifPresent(
-					c -> c.dashboard().variables().flatMap(VariableInformation::inputs).forEach(inputVariables::add));
 		}
 		resolveLock = false;
 		return result.isGood();

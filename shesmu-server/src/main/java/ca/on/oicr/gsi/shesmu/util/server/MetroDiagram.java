@@ -182,8 +182,8 @@ public class MetroDiagram {
 						writeClause(writer, currentRow, clause.syntax(),
 								clause.measuredFlow()
 										? (long) ActionGenerator.OLIVE_FLOW.labels(filename,
-												Integer.toString(clause.line()), Integer.toString(clause.column()))
-												.get()
+												Integer.toString(clause.line()), Integer.toString(clause.column()),
+												Integer.toString(olive.line()), Integer.toString(olive.column())).get()
 										: null,
 								new SourceLocation(filename, clause.line(), clause.column(), timestamp));
 					} catch (XMLStreamException e) {
