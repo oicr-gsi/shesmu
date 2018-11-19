@@ -293,7 +293,7 @@ public abstract class RootBuilder {
 	 * No stream variables are available in this context
 	 */
 	public final Renderer rootRenderer() {
-		return new Renderer(this, runMethod, -1, null, Stream.empty(), (renderer, name) -> {
+		return new Renderer(this, runMethod, -1, null, constants(), (renderer, name) -> {
 			throw new IllegalArgumentException(
 					String.format("Signature variable %s not defined in root context.", name));
 		});
