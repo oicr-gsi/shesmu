@@ -32,6 +32,8 @@ public class GitHubBranchesApiRepository implements GithubBranchesRepository {
 
 			@Override
 			protected Stream<GithubBranchValue> fetch(Instant lastUpdated) throws Exception {
+				if (!configuration.isPresent())
+					return Stream.empty();
 				final Configuration c = configuration.get();
 				try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(
 						String.format("https://api.github.com/repos/%s/%s/branches", c.getOwner(), c.getRepo())))) {
