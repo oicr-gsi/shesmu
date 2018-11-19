@@ -79,10 +79,9 @@ public abstract class BaseJsonInputRepository<V> implements InputRepository<V> {
 
 			@Override
 			protected Stream<V> fetch(Instant lastUpdated) throws Exception {
-				final String url = config.map(Configuration::getUrl).orElse(null);
-				if (url == null) {
-					throw new IllegalStateException();
-				}
+				if (!config.isPresent())
+					return Stream.empty();
+				final String url = config.map(Configuration::getUrl).get();
 				try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(url));
 						JsonParser parser = RuntimeSupport.MAPPER.getFactory()
 								.createParser(response.getEntity().getContent())) {

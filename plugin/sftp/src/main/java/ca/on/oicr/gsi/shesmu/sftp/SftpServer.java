@@ -40,6 +40,8 @@ public class SftpServer extends AutoUpdatingJsonFile<Configuration> implements F
 
 		@Override
 		protected Optional<Pair<SSHClient, SFTPClient>> fetch(Instant lastUpdated) throws Exception {
+			if (!configuration.isPresent())
+				return Optional.empty();
 			final SSHClient client = new SSHClient();
 			client.loadKnownHosts();
 
