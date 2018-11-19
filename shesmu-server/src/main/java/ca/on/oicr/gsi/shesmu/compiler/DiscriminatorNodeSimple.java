@@ -34,7 +34,7 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
 	@Override
 	public VariableInformation dashboard() {
-		return new VariableInformation(name, target.type(), Stream.of(name), Behaviour.PASSTHROUGH);
+		return new VariableInformation(name, target.type(), Stream.of(name), Behaviour.DEFINITION_BY);
 	}
 
 	@Override
