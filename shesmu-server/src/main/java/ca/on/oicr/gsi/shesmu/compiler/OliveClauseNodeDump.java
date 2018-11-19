@@ -59,8 +59,8 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Dump", line, column, false, false, columns.stream()//
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Dump", line, column, false, false, columns.stream()//
 				.map(new Function<ExpressionNode, VariableInformation>() {
 					private int index;
 
@@ -72,7 +72,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 								expression.type(), inputs.stream(), Behaviour.DEFINITION);
 
 					}
-				}));
+				})));
 	}
 
 	@Override

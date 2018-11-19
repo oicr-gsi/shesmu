@@ -64,15 +64,15 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Monitor", line, column, false, false, labels.stream()//
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Monitor", line, column, false, false, labels.stream()//
 				.map(label -> {
 					final Set<String> inputs = new TreeSet<>();
 					label.collectFreeVariables(inputs, Flavour::isStream);
 					return new VariableInformation(metricName + "{" + label.name() + "}", Imyhat.STRING,
 							inputs.stream(), Behaviour.DEFINITION);
 
-				}));
+				})));
 	}
 
 	@Override

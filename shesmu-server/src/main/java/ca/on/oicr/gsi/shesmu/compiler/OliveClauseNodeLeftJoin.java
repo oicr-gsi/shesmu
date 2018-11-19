@@ -50,11 +50,11 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
+	public Stream<OliveClauseRow> dashboard() {
 		final Set<String> joinedNames = inputFormat.baseStreamVariables()//
 				.map(Target::name)//
 				.collect(Collectors.toSet());
-		return new OliveClauseRow("LeftJoin", line, column, true, true, //
+		return Stream.of(new OliveClauseRow("LeftJoin", line, column, true, true, //
 				Stream.concat(//
 						children.stream()//
 								.map(child -> {
@@ -67,7 +67,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 						discriminators.stream()//
 								.map(discriminator -> new VariableInformation(discriminator.name(),
 										discriminator.type(), Stream.of(discriminator.name()),
-										Behaviour.PASSTHROUGH))));
+										Behaviour.PASSTHROUGH)))));
 	}
 
 	@Override

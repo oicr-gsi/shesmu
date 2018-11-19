@@ -24,11 +24,11 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 
 	public OliveDefineBuilder(RootBuilder owner, int oliveId, Stream<? extends Target> parameters) {
 		super(owner, oliveId, owner.inputFormatDefinition().type());
-		this.parameters = parameters.map(Pair.number(2 + (int) NameDefinitions.signatureVariables().count()))
+		this.parameters = parameters.map(Pair.number(4 + (int) NameDefinitions.signatureVariables().count()))
 				.map(Pair.transform(LoadParameter::new)).collect(Collectors.toList());
 		method = new Method(String.format("olive_matcher_%d", oliveId), A_STREAM_TYPE, Stream.concat(//
 				Stream.concat(//
-						Stream.of(A_STREAM_TYPE, A_FUNCTION_TYPE), //
+						Stream.of(A_STREAM_TYPE, A_FUNCTION_TYPE, Type.INT_TYPE, Type.INT_TYPE), //
 						NameDefinitions.signatureVariables().map(SignatureVariable::storageType)), //
 				this.parameters.stream().map(LoadableValue::type)).toArray(Type[]::new));
 		signerPrefix = String.format("olive_matcher_%d$", oliveId);
@@ -70,7 +70,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 		renderer.methodGen().visitCode();
 		NameDefinitions.signatureVariables().map(Pair.number()).forEach(pair -> {
 			renderer.methodGen().loadThis();
-			renderer.methodGen().loadArg(pair.first() + 2);
+			renderer.methodGen().loadArg(pair.first() + 4);
 			renderer.methodGen().putField(owner.selfType(), signerPrefix + pair.second().name(),
 					pair.second().storageType());
 		});
@@ -86,6 +86,12 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 	@Override
 	public Stream<LoadableValue> loadableValues() {
 		return Stream.concat(parameters.stream(), owner.constants());
+	}
+
+	@Override
+	protected void loadOwnerSourceLocation(GeneratorAdapter method) {
+		method.loadArg(2);
+		method.loadArg(3);
 	}
 
 	@Override

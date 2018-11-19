@@ -227,7 +227,7 @@ public abstract class OliveClauseNode {
 
 	public abstract int column();
 
-	public abstract OliveClauseRow dashboard();
+	public abstract Stream<OliveClauseRow> dashboard();
 
 	/**
 	 * Check whether the variable stream is acceptable to the clause

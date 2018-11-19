@@ -72,8 +72,8 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 	}
 
 	@Override
-	public OliveClauseRow dashboard() {
-		return new OliveClauseRow("Group", line, column, true, true, //
+	public Stream<OliveClauseRow> dashboard() {
+		return Stream.of(new OliveClauseRow("Group", line, column, true, true, //
 				Stream.concat(//
 						children.stream()//
 								.map(child -> {
@@ -83,7 +83,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 											Behaviour.DEFINITION);
 								}), //
 						discriminators.stream()//
-								.map(DiscriminatorNode::dashboard)));
+								.map(DiscriminatorNode::dashboard))));
 	}
 
 	@Override
@@ -172,7 +172,9 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
 	@Override
 	public final boolean typeCheck(Consumer<String> errorHandler) {
-		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size() && discriminators.stream().filter(discriminator -> discriminator.typeCheck(errorHandler)).count() == discriminators.size();
+		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size()
+				&& discriminators.stream().filter(discriminator -> discriminator.typeCheck(errorHandler))
+						.count() == discriminators.size();
 	}
 
 }
