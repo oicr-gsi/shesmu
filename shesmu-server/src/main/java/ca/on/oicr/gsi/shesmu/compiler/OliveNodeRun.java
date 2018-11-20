@@ -62,7 +62,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 	@Override
 	public Stream<OliveTable> dashboard() {
 		return Stream.of(
-				new OliveTable("Run " + actionName, line, column, clauses().stream().map(OliveClauseNode::dashboard), //
+				new OliveTable("Run " + actionName, line, column, true, clauses().stream().map(OliveClauseNode::dashboard), //
 						arguments.stream()//
 								.map(arg -> {
 									final Set<String> inputs = new HashSet<>();

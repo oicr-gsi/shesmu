@@ -196,26 +196,29 @@ public final class Server implements ServerConfig {
 
 							fileTable.olives().forEach(olive -> {
 								try {
-									writer.writeStartElement("p");
-									writer.writeAttribute("id",
-											String.format("%1$s:%2$d:%3$d:%4$d", fileTable.filename(), olive.line(),
-													olive.column(), fileTable.timestamp().toEpochMilli()));
-									writer.writeAttribute("class", "olive");
+									if (olive.producesActions()) {
+										writer.writeStartElement("p");
+										writer.writeAttribute("id",
+												String.format("%1$s:%2$d:%3$d:%4$d", fileTable.filename(), olive.line(),
+														olive.column(), fileTable.timestamp().toEpochMilli()));
+										writer.writeAttribute("class", "olive");
 
-									String filterForOlive = String.format("filterForOlive('%1$s', %2$d, %3$d, %4$d)",
-											fileTable.filename(), olive.line(), olive.column(),
-											fileTable.timestamp().toEpochMilli());
+										String filterForOlive = String.format(
+												"filterForOlive('%1$s', %2$d, %3$d, %4$d)", fileTable.filename(),
+												olive.line(), olive.column(), fileTable.timestamp().toEpochMilli());
 
-									for (Pair<String, String> button : Arrays.asList(
-											new Pair<>("listActionsPopup", "🔍 List Actions"),
-											new Pair<>("queryStatsPopup", "📈 Stats on Actions"))) {
-										writer.writeStartElement("span");
-										writer.writeAttribute("class", "load");
-										writer.writeAttribute("onclick", button.first() + "(" + filterForOlive + ")");
-										writer.writeCharacters(button.second());
+										for (Pair<String, String> button : Arrays.asList(
+												new Pair<>("listActionsPopup", "🔍 List Actions"),
+												new Pair<>("queryStatsPopup", "📈 Stats on Actions"))) {
+											writer.writeStartElement("span");
+											writer.writeAttribute("class", "load");
+											writer.writeAttribute("onclick",
+													button.first() + "(" + filterForOlive + ")");
+											writer.writeCharacters(button.second());
+											writer.writeEndElement();
+										}
 										writer.writeEndElement();
 									}
-									writer.writeEndElement();
 
 									writer.writeStartElement("div");
 									writer.writeAttribute("class", "indent");
