@@ -70,8 +70,9 @@ public class CompiledGenerator extends ActionGenerator {
 		@Override
 		public synchronized Optional<Integer> update() {
 			try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
-				final HotloadingCompiler compiler = new HotloadingCompiler(SOURCES::get, DefinitionRepository::allFunctions,
-						DefinitionRepository::allActions, DefinitionRepository::allConstants);
+				final HotloadingCompiler compiler = new HotloadingCompiler(SOURCES::get,
+						DefinitionRepository::allFunctions, DefinitionRepository::allActions,
+						DefinitionRepository::allConstants);
 				final Optional<ActionGenerator> result = compiler.compile(fileName, ft -> dashboard = ft);
 				sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
 				result.ifPresent(x -> {
@@ -127,9 +128,13 @@ public class CompiledGenerator extends ActionGenerator {
 	public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
-		InputFormatDefinition.formats()
-				.forEach(format -> INPUT_RECORDS.labels(format.name()).set(format.input(format.itemClass()).count()));
-		ActionGenerator.OLIVE_FLOW.clear();
+		InputFormatDefinition.formats().forEach(format -> {
+			try {
+				INPUT_RECORDS.labels(format.name()).set(format.input(format.itemClass()).count());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
 		scripts().forEach(script -> script.run(consumer, input));
 	}
 
