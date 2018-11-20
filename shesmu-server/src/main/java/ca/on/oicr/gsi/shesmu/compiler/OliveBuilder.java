@@ -48,6 +48,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
 	private static final Method METHOD_GAUGE__LABELS = new Method("labels", Type.getType(Object.class),
 			new Type[] { Type.getType(String[].class) });
 
+	private static final Method METHOD_STREAM__CLOSE = new Method("close", VOID_TYPE, new Type[] {});
+
 	private static final Method METHOD_STREAM__FOR_EACH = new Method("forEach", VOID_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
 
@@ -152,6 +154,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 		steps.forEach(step -> step.accept(owner.rootRenderer()));
 
+		runMethod.dup();
+
 		runMethod.loadThis();
 		runMethod.loadArg(0);
 		final Method method = new Method(String.format("olive_%d_consume", oliveId), VOID_TYPE,
@@ -162,6 +166,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
 				LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE), handle,
 				Type.getMethodType(VOID_TYPE, currentType()));
 		runMethod.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
+
+		runMethod.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__CLOSE);
 
 		runMethod.getStatic(A_ACTION_GENERATOR_TYPE, "OLIVE_RUN_TIME", A_GAUGE_TYPE);
 		runMethod.push(2);
