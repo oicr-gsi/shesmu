@@ -64,7 +64,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	@Override
 	public Stream<OliveTable> dashboard() {
-		return Stream.of(new OliveTable("Define " + name, line, column,
+		return Stream.of(new OliveTable("Define " + name, line, column, false,
 				clauses().stream().map(OliveClauseNode::dashboard), Stream.empty()));
 	}
 
