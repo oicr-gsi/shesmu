@@ -66,8 +66,9 @@ class NiassaServer extends AutoUpdatingJsonFile<Configuration> implements FileBa
 			if (metadata == null) {
 				return Stream.empty();
 			}
-			return RuntimeSupport.stream(metadata.getAnalysisProvenance())//
-					.filter(ap -> ap.getSkip() != null && ap.getSkip()).flatMap(ap -> ap.getIusLimsKeys().stream())//
+			return metadata.getAnalysisProvenance().stream()//
+					.filter(ap -> ap.getSkip() != null && ap.getSkip() && ap.getWorkflowId() == null)//
+					.flatMap(ap -> ap.getIusLimsKeys().stream())//
 					.map(iusLimsKey -> {
 						final Tuple limsKey = new Tuple(iusLimsKey.getLimsKey().getId(),
 								iusLimsKey.getLimsKey().getVersion(), iusLimsKey.getLimsKey().getProvider());
