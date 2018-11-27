@@ -458,21 +458,7 @@ export function clearLocations() {
 
 export function addLocationForm() {
   const element = document.getElementById("newLocation");
-  const match = element.value
-    .trim()
-    .match(/^(.*\.(shesmu|actnow))(:(\d+)(:(\d+))?)?$/);
-  if (match == null) {
-    element.className = "error";
-    return;
-  }
-  element.className = "";
-  const sourceLocation = {
-    file: match[1],
-    line: typeof match[4] == "undefined" ? null : parseInt(match[4]),
-    column: typeof match[6] == "undefined" ? null : parseInt(match[6]),
-    time: null
-  };
-  element.value = "";
+  const sourceLocation = JSON.parse(element.options[element.selectedIndex].value);
   const index = locations.findIndex(
     l =>
       l.file === sourceLocation.file &&
