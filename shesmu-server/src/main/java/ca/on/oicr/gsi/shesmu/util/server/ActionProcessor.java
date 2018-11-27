@@ -66,6 +66,10 @@ public final class ActionProcessor implements ActionConsumer {
 			expiryTime = Instant.now().plusSeconds(ttl);
 		}
 
+		public String expiryTime() {
+			return DateTimeFormatter.ISO_INSTANT.format(expiryTime);
+		}
+
 		public Map<String, String> getAnnotations() {
 			return annotations;
 		}
@@ -120,10 +124,6 @@ public final class ActionProcessor implements ActionConsumer {
 
 		public void setStartsAt(String startsAt) {
 			this.startsAt = startsAt;
-		}
-
-		public String expiryTime() {
-			return DateTimeFormatter.ISO_INSTANT.format(expiryTime);
 		}
 
 	}
@@ -561,6 +561,8 @@ public final class ActionProcessor implements ActionConsumer {
 
 	private volatile boolean running = true;
 
+	private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
+
 	public ActionProcessor(String baseUri) {
 		super();
 		this.baseUri = baseUri;
@@ -594,7 +596,9 @@ public final class ActionProcessor implements ActionConsumer {
 			information.lastAdded = Instant.now();
 			isDuplicate = true;
 		}
-		information.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochMilli(time)));
+		final SourceLocation location = new SourceLocation(filename, line, column, Instant.ofEpochMilli(time));
+		information.locations.add(location);
+		sourceLocations.add(location);
 		lastAdd.setToCurrentTime();
 		return isDuplicate;
 	}
@@ -620,6 +624,15 @@ public final class ActionProcessor implements ActionConsumer {
 			alert.expiresIn(ttl);
 		}
 		return false;
+	}
+
+	public void alerts(Consumer<Alert> consumer) {
+		try (AutoCloseable lock = alertLock.acquire()) {
+			alerts.values().stream()//
+					.forEach(consumer);
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(ArrayNode output,
@@ -696,6 +709,10 @@ public final class ActionProcessor implements ActionConsumer {
 			}
 		}
 		return output;
+	}
+
+	public Stream<SourceLocation> sources() {
+		return sourceLocations.stream();
 	}
 
 	/**
@@ -844,15 +861,6 @@ public final class ActionProcessor implements ActionConsumer {
 			} catch (final InterruptedException e) {
 				// Either interrupted to stop or just going to process early
 			}
-		}
-	}
-
-	public void alerts(Consumer<Alert> consumer) {
-		try (AutoCloseable lock = alertLock.acquire()) {
-			alerts.values().stream()//
-					.forEach(consumer);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 }

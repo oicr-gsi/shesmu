@@ -11,6 +11,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,6 +37,7 @@ import org.apache.http.client.utils.URIBuilder;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -401,10 +404,47 @@ public final class Server implements ServerConfig {
 						writer.writeComment("");
 						writer.writeEndElement();
 						writer.writeStartElement("td");
-						writer.writeStartElement("input");
-						writer.writeAttribute("type", "text");
+						writer.writeStartElement("select");
 						writer.writeAttribute("id", "newLocation");
-						writer.writeComment("");
+						final Instant now = Instant.now();
+						processor.sources()//
+								.collect(Collectors.groupingBy(SourceLocation::fileName)).entrySet().stream()//
+								.flatMap(entry -> {
+									final Query.LocationJson file = new Query.LocationJson();
+									file.setFile(entry.getKey());
+									final Instant max = entry.getValue().stream().map(SourceLocation::time)
+											.max(Comparator.naturalOrder()).get();
+									return Stream.concat(Stream.of(new Pair<>(entry.getKey(), file)),
+											entry.getValue().stream()//
+													.flatMap(location -> {
+														final Query.LocationJson fileLineColTime = new Query.LocationJson();
+														fileLineColTime.setFile(location.fileName());
+														fileLineColTime.setLine(location.line());
+														fileLineColTime.setColumn(location.column());
+														fileLineColTime.setTime(location.time().toEpochMilli());
+
+														final String timeLabel = location.time().equals(max) ? "current"
+																: Duration.between(location.time(), now).toString();
+
+														return Stream.of(new Pair<>(
+																location.fileName() + ":" + location.line() + ":"
+																		+ location.column() + "[" + timeLabel + "]",
+																fileLineColTime));
+													}));
+								})//
+								.sorted(Comparator.comparing(Pair::first))//
+								.forEach(p -> {
+									try {
+										writer.writeStartElement("option");
+										writer.writeAttribute("value",
+												RuntimeSupport.MAPPER.writeValueAsString(p.second()));
+										writer.writeCharacters(p.first());
+										writer.writeEndElement();
+									} catch (XMLStreamException | JsonProcessingException e) {
+										e.printStackTrace();
+									}
+
+								});
 						writer.writeEndElement();
 						writer.writeStartElement("span");
 						writer.writeAttribute("class", "load");
