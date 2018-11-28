@@ -223,6 +223,7 @@ public final class RuntimeSupport {
 			Comparator<T> comparator) {
 		final Map<Holder<T>, List<T>> groups = input
 				.collect(Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
+		input.close();
 		return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
 	}
 
@@ -284,6 +285,7 @@ public final class RuntimeSupport {
 	@RuntimeInterop
 	public static <I, O> Stream<O> regroup(Stream<I> input, Function<I, O> makeKey, BiConsumer<O, I> collector) {
 		final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
+		input.close();
 		return groups.entrySet().stream().peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))
 				.map(Entry::getKey);
 	}
