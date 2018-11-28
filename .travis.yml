@@ -30,3 +30,10 @@ script: ./.travis-build.sh
 cache:
   directories:
     - "$HOME/.m2"
+    - "$HOME/.sonar/cache"
+addons:
+  sonarcloud:
+    organization: "oicr-gsi"
+    token:
+      secure: "Wp9xElIJStdsCvgbIxXGUK80P54PYGrD0Jmym8yE/dupHkoRdum7SJZoQkZYpHxU6j0QLvU0EBuWjvSmXwBA8s0VEqDIhF9jkjELYph2EcY/lTRxkoh4wIw2Tc/1GVfd2Pymeyqb8s5EwoHqm4AFr9twb/TfbQFk0L4P4gr6soB24qFKBE+B6uk2Fvz0U28qTwL3jHIxWDSoZi6bfcbgjAAkR654izTt6Q07vSWZDUWiKbiteEkYaYmWldbcZXNut3/hjT1x1llyVLTxzUHvoeed+34yhZg4bTc/ix5RhSGGAUymQOtDK0x3ujJKOwwFsMJ/82WhYbWdxwWzjIa3j6/ROGFvnSzfQYG3XmWjuRlaGyT96ZQhU2dtpmbIfyOHWdBeG+JcnfAmQx5KppodY25j8Zls2tuvExGOwMsBk7rjzN0tyVPBpXRfIbH3UMjliZ1/IxB+RYQ6BInqxqoc3P7qhl6F8yVB3XL4iPYJkwBbVqgEWTOTZq43Q7OaZPx+cYmJblwMTGlFCGvHoYf8fSYEHeTAtyWKwputp2UvESJCRJvDtO3cqAXjv1m8tq4xqZCl34uU5EJ4nPhWvTDY7tm9iybTCgg35xHShrHBxnhfjBR5CQl2bFtbeUfsJTqs6EesaSgXedQzUE9W0WIC6V/gwhNwgbaCwjZSgPp3b58="
+
