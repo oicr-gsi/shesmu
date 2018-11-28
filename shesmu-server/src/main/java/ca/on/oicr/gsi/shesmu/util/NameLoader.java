@@ -24,7 +24,10 @@ public final class NameLoader<T> {
 	 *            a function to extract a name from each
 	 */
 	public NameLoader(Stream<T> data, Function<T, String> getName) {
-		items = data.collect(Collectors.toMap(getName, Function.identity()));
+		items = data.collect(Collectors.toMap(getName, Function.identity(), (a, b) -> {
+			System.err.printf("Duplicated names for %s. Randomly picking one of: %s %s\n", getName.apply(a), a, b);
+			return a;
+		}));
 	}
 
 	/**
