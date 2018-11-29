@@ -4,7 +4,7 @@ set -eu
 
 case "${JAVA_HOME}" in
 	*8*)
-		PINERY=plugin/seqware+pinery
+		PINERY=plugin/niassa+pinery
 		SONAR=true
 		;;
 	*)
