@@ -59,7 +59,7 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
 	@Override
 	public void render(RootBuilder builder, BaseOliveBuilder oliveBuilder,
 			Map<String, OliveDefineBuilder> definitions) {
-		final JoinBuilder join = oliveBuilder.join(inputFormat.type());
+		final JoinBuilder join = oliveBuilder.join(line, column, inputFormat.type());
 		joins.forEach(a -> a.accept(join));
 		join.finish();
 

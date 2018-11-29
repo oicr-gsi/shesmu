@@ -74,7 +74,7 @@ public class ListNodeFlatten extends ListNode {
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
 		collectFreeVariables(freeVariables, Flavour::needsCapture);
-		final Renderer renderer = builder.flatten(incomingName, type, builder.renderer().allValues()
+		final Renderer renderer = builder.flatten(line(), column(), incomingName, type, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		final JavaStreamBuilder flattenBuilder = source.render(renderer);

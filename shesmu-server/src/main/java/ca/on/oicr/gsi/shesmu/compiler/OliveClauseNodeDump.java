@@ -89,7 +89,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
 		columns.forEach(e -> e.collectFreeVariables(freeVariables, Flavour::needsCapture));
-		final Renderer renderer = oliveBuilder.peek(oliveBuilder.loadableValues()
+		final Renderer renderer = oliveBuilder.peek("Dump " + dumper, line, column, oliveBuilder.loadableValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		render(builder, renderer);

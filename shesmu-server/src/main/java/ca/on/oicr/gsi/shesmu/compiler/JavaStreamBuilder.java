@@ -34,7 +34,7 @@ import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
  */
 public final class JavaStreamBuilder {
 	public interface RenderSubsampler {
-		void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType);
+		void render(Renderer renderer, int previousLocal, Type streamType);
 	}
 
 	private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
@@ -131,17 +131,12 @@ public final class JavaStreamBuilder {
 
 	private final Renderer renderer;
 
-	int steps;
-
-	private final int streamId;
-
 	private final Type streamType;
 
-	public JavaStreamBuilder(RootBuilder owner, Renderer renderer, Type streamType, int streamId, Imyhat initialType) {
+	public JavaStreamBuilder(RootBuilder owner, Renderer renderer, Type streamType, Imyhat initialType) {
 		this.owner = owner;
 		this.renderer = renderer;
 		this.streamType = streamType;
-		this.streamId = streamId;
 		currentType = initialType;
 
 	}
@@ -161,10 +156,11 @@ public final class JavaStreamBuilder {
 		renderer.methodGen().checkCast(resultType);
 	}
 
-	private final Renderer comparator(String name, Imyhat targetType, LoadableValue... capturedVariables) {
+	private final Renderer comparator(int line, int column, String syntax, String name, Imyhat targetType,
+			LoadableValue... capturedVariables) {
 		final Imyhat sortType = currentType;
 
-		final Method method = new Method(String.format("chain_%d_%d_compare", streamId, steps++),
+		final Method method = new Method(String.format("For ⋯ %s %d:%d ⚖️", syntax, line, column),
 				targetType.boxedAsmType(), parameterTypes(owner, false, capturedVariables, streamType, sortType));
 		renderer.methodGen().loadThis();
 		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -190,9 +186,9 @@ public final class JavaStreamBuilder {
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__DISTINCT);
 	}
 
-	public final Renderer filter(String name, LoadableValue... capturedVariables) {
+	public final Renderer filter(int line, int column, String name, LoadableValue... capturedVariables) {
 		final Imyhat filterType = currentType;
-		final Method method = new Method(String.format("chain_%d_%d_filter", streamId, steps++), BOOLEAN_TYPE,
+		final Method method = new Method(String.format("For ⋯ Where %d:%d", line, column), BOOLEAN_TYPE,
 				parameterTypes(owner, false, capturedVariables, streamType, filterType));
 		renderer.methodGen().loadThis();
 		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -212,17 +208,18 @@ public final class JavaStreamBuilder {
 	public final void finish() {
 	}
 
-	public Renderer first(Imyhat targetType, LoadableValue... capturedVariables) {
+	public Renderer first(int line, int column, Imyhat targetType, LoadableValue... capturedVariables) {
 		finish();
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FIND_FIRST);
-		return optional(targetType, capturedVariables);
+		return optional(line, column, "First", targetType, capturedVariables);
 	}
 
-	public final Renderer flatten(String name, Imyhat newType, LoadableValue... capturedVariables) {
+	public final Renderer flatten(int line, int column, String name, Imyhat newType,
+			LoadableValue... capturedVariables) {
 		final Imyhat oldType = currentType;
 		currentType = newType;
 
-		final Method method = new Method(String.format("chain_%d_%d_flatten", streamId, steps++), A_STREAM_TYPE,
+		final Method method = new Method(String.format("For ⋯ Flatten %d:%d", line, column), A_STREAM_TYPE,
 				parameterTypes(owner, false, capturedVariables, streamType, oldType));
 		renderer.methodGen().loadThis();
 		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -244,11 +241,11 @@ public final class JavaStreamBuilder {
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__LIMIT);
 	}
 
-	public final Renderer map(String name, Imyhat newType, LoadableValue... capturedVariables) {
+	public final Renderer map(int line, int column, String name, Imyhat newType, LoadableValue... capturedVariables) {
 		final Imyhat oldType = currentType;
 		currentType = newType;
 
-		final Method method = new Method(String.format("chain_%d_%d_map", streamId, steps++), newType.asmType(),
+		final Method method = new Method(String.format("For ⋯ Map %d:%d", line, column), newType.asmType(),
 				parameterTypes(owner, false, capturedVariables, streamType, oldType));
 		renderer.methodGen().loadThis();
 		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -265,10 +262,11 @@ public final class JavaStreamBuilder {
 				parameters(capturedVariables, streamType, name, oldType.asmType()), renderer.signerEmitter());
 	}
 
-	public final Renderer match(Match matchType, String name, LoadableValue... capturedVariables) {
+	public final Renderer match(int line, int column, Match matchType, String name,
+			LoadableValue... capturedVariables) {
 		finish();
-		final Method method = new Method(String.format("chain_%d_match", streamId), BOOLEAN_TYPE,
-				parameterTypes(owner, false, capturedVariables, streamType, currentType));
+		final Method method = new Method(String.format("For ⋯ %s %d:%d", matchType.syntax(), line, column),
+				BOOLEAN_TYPE, parameterTypes(owner, false, capturedVariables, streamType, currentType));
 		renderer.methodGen().loadThis();
 		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
 		renderer.loadStream();
@@ -284,20 +282,22 @@ public final class JavaStreamBuilder {
 				parameters(capturedVariables, streamType, name, currentType.asmType()), renderer.signerEmitter());
 	}
 
-	public Pair<Renderer, Renderer> optima(boolean max, String name, Imyhat targetType,
+	public Pair<Renderer, Renderer> optima(int line, int column, boolean max, String name, Imyhat targetType,
 			LoadableValue... capturedVariables) {
-		final Renderer extractRenderer = comparator(name, targetType, capturedVariables);
+		final Renderer extractRenderer = comparator(line, column, max ? "Max" : "Min", name, targetType,
+				capturedVariables);
 
 		finish();
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, max ? METHOD_STREAM__MAX : METHOD_STREAM__MIN);
 
-		return new Pair<>(extractRenderer, optional(currentType, capturedVariables));
+		return new Pair<>(extractRenderer, optional(line, column, max ? "Max" : "Min", currentType, capturedVariables));
 	}
 
-	private Renderer optional(Imyhat targetType, LoadableValue... capturedVariables) {
+	private Renderer optional(int line, int column, String syntax, Imyhat targetType,
+			LoadableValue... capturedVariables) {
 
-		final Method defaultMethod = new Method(String.format("chain_%d_default", streamId), targetType.asmType(),
-				parameterTypes(owner, false, capturedVariables, streamType));
+		final Method defaultMethod = new Method(String.format("For ⋯ %s Default %d:%d", syntax, line, column),
+				targetType.asmType(), parameterTypes(owner, false, capturedVariables, streamType));
 
 		renderer.methodGen().loadThis();
 		Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -317,10 +317,11 @@ public final class JavaStreamBuilder {
 				renderer.signerEmitter());
 	}
 
-	public Renderer reduce(String name, Imyhat accumulatorType, String accumulatorName, Consumer<Renderer> initial,
-			LoadableValue... capturedVariables) {
+	public Renderer reduce(int line, int column, String name, Imyhat accumulatorType, String accumulatorName,
+			Consumer<Renderer> initial, LoadableValue... capturedVariables) {
 
-		final Method defaultMethod = new Method(String.format("chain_%d_reduce", streamId), accumulatorType.asmType(),
+		final Method defaultMethod = new Method(String.format("For ⋯ Reduce %d:%d", line, column),
+				accumulatorType.asmType(),
 				parameterTypes(owner, false, capturedVariables, streamType, accumulatorType, currentType));
 
 		finish();
@@ -392,22 +393,21 @@ public final class JavaStreamBuilder {
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SKIP);
 	}
 
-	public final Renderer sort(String name, Imyhat targetType, LoadableValue... capturedVariables) {
-		final Renderer sortMethod = comparator(name, targetType, capturedVariables);
+	public final Renderer sort(int line, int column, String name, Imyhat targetType,
+			LoadableValue... capturedVariables) {
+		final Renderer sortMethod = comparator(line, column, "Sort", name, targetType, capturedVariables);
 		renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__SORTED);
 		return sortMethod;
 	}
 
 	public final void subsample(List<RenderSubsampler> renderers) {
-		final String prefix = String.format("chain_%d_%d_", streamId, steps++);
 		final int local = renderer.methodGen().newLocal(A_SUBSAMPLER_TYPE);
 		renderer.methodGen().newInstance(A_START_TYPE);
 		renderer.methodGen().dup();
 		renderer.methodGen().invokeConstructor(A_START_TYPE, DEFAULT_CTOR);
 		renderer.methodGen().storeLocal(local);
-		int index = 0;
 		for (final RenderSubsampler subsample : renderers) {
-			subsample.render(renderer, local, prefix, index++, renderer.streamType());
+			subsample.render(renderer, local, renderer.streamType());
 		}
 		renderer.methodGen().loadLocal(local);
 		renderer.methodGen().swap();

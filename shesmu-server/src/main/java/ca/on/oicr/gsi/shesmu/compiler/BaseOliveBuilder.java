@@ -92,14 +92,11 @@ public abstract class BaseOliveBuilder {
 
 	protected final Type initialType;
 
-	protected final int oliveId;
-
 	protected final RootBuilder owner;
 	protected final List<Consumer<Renderer>> steps = new ArrayList<>();
 
-	public BaseOliveBuilder(RootBuilder owner, int oliveId, Type initialType) {
+	public BaseOliveBuilder(RootBuilder owner, Type initialType) {
 		this.owner = owner;
-		this.oliveId = oliveId;
 		this.initialType = initialType;
 		currentType = initialType;
 
@@ -158,9 +155,9 @@ public abstract class BaseOliveBuilder {
 	 * @return a method generator for the body of the clause
 	 */
 	@SafeVarargs
-	public final Renderer filter(LoadableValue... capturedVariables) {
+	public final Renderer filter(int line, int column, LoadableValue... capturedVariables) {
 		final Type type = currentType;
-		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), BOOLEAN_TYPE,
+		final Method method = new Method(String.format("Where %d:%d", line, column), BOOLEAN_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
 						.toArray(Type[]::new));
 		steps.add(renderer -> {
@@ -180,14 +177,14 @@ public abstract class BaseOliveBuilder {
 				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
-	public final JoinBuilder join(Type innerType) {
-		final String className = String.format("shesmu/dyn/Join%d$%d", oliveId, steps.size());
+	public final JoinBuilder join(int line, int column, Type innerType) {
+		final String className = String.format("shesmu/dyn/Join_%d_%d", line, column);
 
 		final Type oldType = currentType;
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method flatMapMethod = new Method(String.format("join_%d_%d", oliveId, steps.size()), A_STREAM_TYPE,
+		final Method flatMapMethod = new Method(String.format("Join %d:%d", line, column), A_STREAM_TYPE,
 				new Type[] { A_FUNCTION_TYPE, oldType });
 
 		steps.add(renderer -> {
@@ -225,21 +222,20 @@ public abstract class BaseOliveBuilder {
 		return new JoinBuilder(owner, newType, oldType, innerType);
 	}
 
-	public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(Type innerType,
+	public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(int line, int column, Type innerType,
 			LoadableValue... capturedVariables) {
-		final String joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary%d$%d", oliveId, steps.size());
-		final String outputClassName = String.format("shesmu/dyn/LeftJoin%d$%d", oliveId, steps.size());
+		final String joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
+		final String outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column, steps.size());
 
 		final Type oldType = currentType;
 		final Type joinedType = Type.getObjectType(joinedClassName);
 		final Type newType = Type.getObjectType(outputClassName);
 		currentType = newType;
 
-		final Method newMethod = new Method(String.format("leftjoin_%d_%d_new", oliveId, steps.size()), newType,
+		final Method newMethod = new Method(String.format("LeftJoin %d:%d✨", line, column), newType,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(joinedType))
 						.toArray(Type[]::new));
-		final Method collectMethod = new Method(String.format("leftjoin_%d_%d_collect", oliveId, steps.size()),
-				VOID_TYPE,
+		final Method collectMethod = new Method(String.format("LeftJoin %d:%d 🧲", line, column), VOID_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, joinedType))
 						.toArray(Type[]::new));
 
@@ -276,10 +272,10 @@ public abstract class BaseOliveBuilder {
 
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_LEFT_JOIN);
 
-			renderer.methodGen().invokeDynamic(
-					"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
-					Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
-							outputClassName, "$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
+			renderer.methodGen().invokeDynamic("test", Type.getMethodDescriptor(A_PREDICATE_TYPE),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_INVOKEVIRTUAL, outputClassName, RegroupVariablesBuilder.METHOD_IS_OK.getName(),
+							RegroupVariablesBuilder.METHOD_IS_OK.getDescriptor(), false),
 					Type.getMethodType(BOOLEAN_TYPE, newType));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 
@@ -298,14 +294,14 @@ public abstract class BaseOliveBuilder {
 				outputClassName, newMethodGen, collectedMethodGen, capturedVariables.length));
 	}
 
-	public final LetBuilder let(LoadableValue... capturedVariables) {
-		final String className = String.format("shesmu/dyn/Let%d$%d", oliveId, steps.size());
+	public final LetBuilder let(int line, int column, LoadableValue... capturedVariables) {
+		final String className = String.format("shesmu/dyn/Let_%d_%d", line, column);
 
 		final Type oldType = currentType;
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method createMethod = new Method(String.format("let_%d_%d", oliveId, steps.size()), newType,
+		final Method createMethod = new Method(String.format("Let %d:%d", line, column), newType,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
 						.toArray(Type[]::new));
 
@@ -372,9 +368,11 @@ public abstract class BaseOliveBuilder {
 	 *            the variables needed in the method that computes the label values
 	 * @return
 	 */
-	public Renderer monitor(String metricName, String help, List<String> names, LoadableValue[] capturedVariables) {
+	public Renderer monitor(int line, int column, String metricName, String help, List<String> names,
+			LoadableValue[] capturedVariables) {
 		final Type type = currentType;
-		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), A_OBJECT_ARRAY_TYPE,
+		final Method method = new Method(String.format("Monitor %s %d:%d", metricName, line, column),
+				A_OBJECT_ARRAY_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
 						.toArray(Type[]::new));
 
@@ -396,9 +394,9 @@ public abstract class BaseOliveBuilder {
 				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
-	public Renderer peek(LoadableValue[] capturedVariables) {
+	public Renderer peek(String action, int line, int column, LoadableValue[] capturedVariables) {
 		final Type type = currentType;
-		final Method method = new Method(String.format("olive_%d_%d", oliveId, steps.size()), VOID_TYPE,
+		final Method method = new Method(String.format("%s %d:%d", action, line, column), VOID_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
 						.toArray(Type[]::new));
 		steps.add(renderer -> {
@@ -431,7 +429,7 @@ public abstract class BaseOliveBuilder {
 	 *            any captures that are needed by the comparison expression
 	 * @return a new method that must return a value to be compared for a input row
 	 */
-	public Renderer pick(Imyhat compareType, boolean max, Stream<Target> discriminators,
+	public Renderer pick(int line, int column, Imyhat compareType, boolean max, Stream<Target> discriminators,
 			LoadableValue[] capturedVariables) {
 		final Type streamType = currentType;
 
@@ -439,13 +437,13 @@ public abstract class BaseOliveBuilder {
 				.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
 				.toArray(Type[]::new);
 
-		final Method hashCodeMethod = new Method(String.format("pick_%d_%d_hash", oliveId, steps.size()), INT_TYPE,
+		final Method hashCodeMethod = new Method(String.format("Pick %d:%d hash", line, column), INT_TYPE,
 				new Type[] { streamType });
 
-		final Method equalsMethod = new Method(String.format("pick_%d_%d_equals", oliveId, steps.size()), BOOLEAN_TYPE,
+		final Method equalsMethod = new Method(String.format("Pick %d:%d equals", line, column), BOOLEAN_TYPE,
 				new Type[] { streamType, streamType });
 
-		final Method extractMethod = new Method(String.format("pick_%d_%d_ex", oliveId, steps.size()),
+		final Method extractMethod = new Method(String.format("Pick %d:%d 🔍", line, column),
 				compareType.boxedAsmType(),
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(streamType))
 						.toArray(Type[]::new));
@@ -541,17 +539,17 @@ public abstract class BaseOliveBuilder {
 
 	}
 
-	public final RegroupVariablesBuilder regroup(LoadableValue... capturedVariables) {
-		final String className = String.format("shesmu/dyn/Group%d$%d", oliveId, steps.size());
+	public final RegroupVariablesBuilder regroup(int line, int column, LoadableValue... capturedVariables) {
+		final String className = String.format("shesmu/dyn/Group_%d_%d", line, column);
 
 		final Type oldType = currentType;
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method newMethod = new Method(String.format("group_%d_%d_new", oliveId, steps.size()), newType,
+		final Method newMethod = new Method(String.format("Group %d:%d ✨", line, column), newType,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
 						.toArray(Type[]::new));
-		final Method collectMethod = new Method(String.format("group_%d_%d_collect", oliveId, steps.size()), VOID_TYPE,
+		final Method collectMethod = new Method(String.format("Group %d:%d 🧲", line, column), VOID_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, oldType))
 						.toArray(Type[]::new));
 
@@ -578,10 +576,10 @@ public abstract class BaseOliveBuilder {
 							Type.getMethodType(VOID_TYPE, newType, oldType));
 
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
-			renderer.methodGen().invokeDynamic(
-					"test", Type.getMethodDescriptor(A_PREDICATE_TYPE), LAMBDA_METAFACTORY_BSM,
-					Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL, className,
-							"$isOk", Type.getMethodDescriptor(BOOLEAN_TYPE), false),
+			renderer.methodGen().invokeDynamic("test", Type.getMethodDescriptor(A_PREDICATE_TYPE),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_INVOKEVIRTUAL, className, RegroupVariablesBuilder.METHOD_IS_OK.getName(),
+							RegroupVariablesBuilder.METHOD_IS_OK.getDescriptor(), false),
 					Type.getMethodType(BOOLEAN_TYPE, newType));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});

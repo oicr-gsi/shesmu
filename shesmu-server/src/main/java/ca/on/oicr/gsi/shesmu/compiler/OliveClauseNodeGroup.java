@@ -109,7 +109,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 		children.stream().forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
 		oliveBuilder.line(line);
-		final RegroupVariablesBuilder regroup = oliveBuilder.regroup(oliveBuilder.loadableValues()
+		final RegroupVariablesBuilder regroup = oliveBuilder.regroup(line, column, oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 
 		discriminators.forEach(d -> d.render(regroup));

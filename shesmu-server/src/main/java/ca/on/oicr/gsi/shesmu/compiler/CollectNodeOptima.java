@@ -21,7 +21,7 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 
 	@Override
 	protected Pair<Renderer, Renderer> makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.optima(max, name(), selector.type(), loadables);
+		return builder.optima(line(), column(), max, name(), selector.type(), loadables);
 	}
 
 	@Override

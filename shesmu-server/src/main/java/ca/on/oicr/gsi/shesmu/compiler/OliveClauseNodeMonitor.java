@@ -106,8 +106,8 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 		labels.forEach(arg -> arg.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
 		oliveBuilder.line(line);
-		final Renderer renderer = oliveBuilder.monitor(metricName, help, labelNames(), oliveBuilder.loadableValues()
-				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
+		final Renderer renderer = oliveBuilder.monitor(line, column, metricName, help, labelNames(), oliveBuilder
+				.loadableValues().filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		render(renderer);
 		renderer.methodGen().returnValue();

@@ -106,7 +106,7 @@ public class CollectNodeConcatenate extends CollectNode {
 		final Set<String> freeVariables = new HashSet<>();
 		getter.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
-		final Renderer mapMethod = builder.map(name, Imyhat.STRING, builder.renderer().allValues()
+		final Renderer mapMethod = builder.map(line(), column(), name, Imyhat.STRING, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		mapMethod.methodGen().visitCode();
 		getter.render(mapMethod);

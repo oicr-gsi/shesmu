@@ -17,7 +17,7 @@ public class ListNodeFilter extends ListNodeWithExpression {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.filter(name(), loadables);
+		return builder.filter(line(), column(), name(), loadables);
 	}
 
 	@Override
