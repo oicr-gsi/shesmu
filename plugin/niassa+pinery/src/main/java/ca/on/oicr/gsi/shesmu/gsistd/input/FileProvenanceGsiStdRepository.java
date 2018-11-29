@@ -153,7 +153,7 @@ public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 
 		@Override
 		public void start() {
-			// Do nothing.
+			update();
 		}
 
 		@Override
