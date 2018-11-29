@@ -47,12 +47,7 @@ public class SftpServer extends AutoUpdatingJsonFile<Configuration> implements F
 
 			client.connect(configuration.get().getHost(), configuration.get().getPort());
 			client.authPublickey(configuration.get().getUser());
-			final SFTPClient sftp = client.newSFTPClient();
-			if (sftp == null) {
-				client.close();
-				throw new IllegalStateException();
-			}
-			return Optional.of(new Pair<>(client, sftp));
+			return Optional.of(new Pair<>(client, client.newSFTPClient()));
 		}
 
 	}
@@ -64,7 +59,9 @@ public class SftpServer extends AutoUpdatingJsonFile<Configuration> implements F
 
 		@Override
 		protected Optional<FileAttributes> fetch(String fileName, Instant lastUpdated) throws IOException {
-			final SFTPClient client = connection.get().map(Pair::second).get();
+			final SFTPClient client = connection.get().map(Pair::second).orElse(null);
+			if (client == null)
+				return Optional.empty();
 			final FileAttributes attributes = client.statExistence(fileName);
 
 			return Optional.of(attributes == null ? NXFILE : attributes);

@@ -85,14 +85,6 @@ public abstract class DiscriminatorNode implements DefinedTarget {
 			Consumer<String> errorHandler);
 
 	/**
-	 * The type of this discriminator
-	 *
-	 * This should return {@link Imyhat#BAD} if no type can be determined
-	 */
-	@Override
-	public abstract Imyhat type();
-
-	/**
 	 * Perform type checking on this discriminator and its children.
 	 *
 	 * @param errorHandler

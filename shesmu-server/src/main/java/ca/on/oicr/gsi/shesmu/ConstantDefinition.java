@@ -77,7 +77,7 @@ public abstract class ConstantDefinition implements Target {
 		}
 	}
 
-	public static abstract class ConstantList<T> extends ConstantDefinition {
+	public abstract static class ConstantList<T> extends ConstantDefinition {
 
 		private final List<T> values;
 
@@ -131,7 +131,7 @@ public abstract class ConstantDefinition implements Target {
 			"bootstrap", Type.getMethodDescriptor(Type.getType(CallSite.class),
 					Type.getType(MethodHandles.Lookup.class), A_STRING_TYPE, Type.getType(MethodType.class)),
 			false);
-	private static Method INSTANT_CTOR = new Method("ofEpochMilli", Imyhat.DATE.asmType(),
+	private static final Method INSTANT_CTOR = new Method("ofEpochMilli", Imyhat.DATE.asmType(),
 			new Type[] { Type.LONG_TYPE });
 
 	private static final Method LOAD_METHOD = new Method("load", Type.VOID_TYPE, new Type[] { A_JSON_OBJECT_TYPE });

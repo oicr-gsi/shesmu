@@ -34,6 +34,9 @@ public final class RunScannerClient extends AutoUpdatingJsonFile<Configuration> 
 
 		@Override
 		protected Optional<ObjectNode> fetch(String runName, Instant lastUpdated) throws Exception {
+			if (!url.isPresent()) {
+				return Optional.empty();
+			}
 			final HttpGet request = new HttpGet(String.format("%s/run/%s", url.get(), new URLCodec().encode(runName)));
 			try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
 				if (response.getStatusLine().getStatusCode() != 200) {

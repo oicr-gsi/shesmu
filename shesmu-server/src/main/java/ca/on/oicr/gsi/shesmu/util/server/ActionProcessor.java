@@ -859,7 +859,7 @@ public final class ActionProcessor implements ActionConsumer {
 			try {
 				Thread.sleep(60_000);
 			} catch (final InterruptedException e) {
-				// Either interrupted to stop or just going to process early
+				Thread.currentThread().interrupt();
 			}
 		}
 	}

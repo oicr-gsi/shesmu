@@ -28,7 +28,7 @@ public class RateLimitThrottler implements Throttler {
 		private int delay = 10_000;
 		private Instant lastTime = Instant.now();
 		private final String service;
-		private int tokens;
+		private long tokens;
 
 		public TokenBucket(Path fileName) {
 			super(fileName, RateLimitConfiguration.class);
@@ -39,7 +39,7 @@ public class RateLimitThrottler implements Throttler {
 			if (!services.contains(service)) {
 				return true;
 			}
-			final int newTokens = (int) (Duration.between(lastTime, Instant.now()).toMillis() / delay);
+			final long newTokens = Duration.between(lastTime, Instant.now()).toMillis() / delay;
 			lastTime = lastTime.plusMillis(delay * newTokens);
 			tokens = Math.min(tokens + newTokens, capacity);
 			tokenCount.labels(service).set(tokens);
