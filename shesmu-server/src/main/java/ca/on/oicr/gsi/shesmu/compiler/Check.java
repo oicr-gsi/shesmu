@@ -120,7 +120,7 @@ public final class Check extends Compiler {
 				e.printStackTrace();
 				fileOk = false;
 			}
-			System.err.printf("%s\033[0m\t%s\n", fileOk ? "\033[1;36mOK" : "\033[1;31mFAIL", file);
+			System.err.printf("%s\033[0m\t%s%n", fileOk ? "\033[1;36mOK" : "\033[1;31mFAIL", file);
 			return fileOk;
 		});
 		System.exit(ok ? 0 : 1);
@@ -284,7 +284,7 @@ public final class Check extends Compiler {
 
 	@Override
 	protected void errorHandler(String message) {
-		System.out.printf("%s:%s\n", fileName, message);
+		System.out.printf("%s:%s%n", fileName, message);
 	}
 
 	@Override

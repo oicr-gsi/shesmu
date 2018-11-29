@@ -1304,7 +1304,7 @@ public final class Server implements ServerConfig {
 		try {
 			Thread.sleep(5000);
 		} catch (final InterruptedException e) {
-			// Meh.
+			Thread.currentThread().interrupt();
 		}
 		final long pluginCount = DefinitionRepository.allConstants().count();
 		System.out.printf("Found %d plugins\n", pluginCount);

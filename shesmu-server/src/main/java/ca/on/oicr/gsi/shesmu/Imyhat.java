@@ -1134,7 +1134,7 @@ public abstract class Imyhat {
 	public <T> Set<T> newSet() {
 		@SuppressWarnings("unchecked")
 		final Comparator<T> comparator = (Comparator<T>) comparator();
-		return new TreeSet<T>(comparator);
+		return new TreeSet<>(comparator);
 	}
 
 	protected abstract void packJson(ArrayNode array, Object value);

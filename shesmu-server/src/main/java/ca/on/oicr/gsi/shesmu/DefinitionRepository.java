@@ -10,7 +10,7 @@ import java.util.stream.StreamSupport;
  * Shesmu programs
  */
 public interface DefinitionRepository extends LoadedConfiguration {
-	final static ServiceLoader<DefinitionRepository> LOADER = ServiceLoader.load(DefinitionRepository.class);
+	static final ServiceLoader<DefinitionRepository> LOADER = ServiceLoader.load(DefinitionRepository.class);
 
 	/**
 	 * Get all the constants available

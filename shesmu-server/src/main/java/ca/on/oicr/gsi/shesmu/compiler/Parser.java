@@ -243,11 +243,11 @@ public abstract class Parser {
 		Parser parse(Parser parser, Consumer<T> output);
 	}
 
-	private static Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
+	private static final Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
 
-	public static Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
+	public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
 
-	private static Pattern WHITESPACE = Pattern.compile("[\\t ]+");
+	private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
 
 	private static CharSequence consume(CharSequence input, int offset) {
 		return input.subSequence(offset, input.length());
