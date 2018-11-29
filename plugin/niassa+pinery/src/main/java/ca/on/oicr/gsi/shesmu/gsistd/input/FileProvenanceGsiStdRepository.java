@@ -123,7 +123,7 @@ public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 
 		private final ItemCache cache;
 
-		private Optional<DefaultProvenanceClient> client;
+		private Optional<DefaultProvenanceClient> client = Optional.empty();
 
 		private final Path fileName;
 
