@@ -129,7 +129,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 		final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
 		clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
 		oliveBuilder.line(line);
-		final Renderer action = oliveBuilder.finish();
+		final Renderer action = oliveBuilder.finish("Alert");
 		action.methodGen().visitCode();
 		action.methodGen().visitLineNumber(line, action.methodGen().mark());
 

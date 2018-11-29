@@ -61,12 +61,12 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 	private final String signerPrefix;
 
-	public OliveBuilder(RootBuilder owner, int oliveId, Type initialType, int line, int column,
+	public OliveBuilder(RootBuilder owner, Type initialType, int line, int column,
 			Stream<Target> signableNames) {
-		super(owner, oliveId, initialType);
+		super(owner, initialType);
 		this.line = line;
 		this.column = column;
-		signerPrefix = String.format("olive_%d$$", oliveId);
+		signerPrefix = String.format("Olive %d:%d ", line, column);
 		final List<Target> signables = signableNames.collect(Collectors.toList());
 		NameDefinitions.signatureVariables().forEach(signer -> {
 			final String name = signerPrefix + signer.name();
@@ -141,7 +141,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 	/**
 	 * Generate bytecode for the olive and create a method to consume the result.
 	 */
-	public final Renderer finish() {
+	public final Renderer finish(String actionName) {
 		final GeneratorAdapter runMethod = owner.rootRenderer(true).methodGen();
 		final int startTime = runMethod.newLocal(LONG_TYPE);
 		runMethod.invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
@@ -158,7 +158,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 		runMethod.loadThis();
 		runMethod.loadArg(0);
-		final Method method = new Method(String.format("olive_%d_consume", oliveId), VOID_TYPE,
+		final Method method = new Method(String.format("%s %d:%d", actionName, line, column), VOID_TYPE,
 				new Type[] { A_CONSUMER_TYPE, currentType() });
 		final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), method.getName(),
 				method.getDescriptor(), false);

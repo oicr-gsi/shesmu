@@ -91,8 +91,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 		children.stream().forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
 		oliveBuilder.line(line);
-		final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin = oliveBuilder.leftJoin(inputFormat.type(),
-				oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))
+		final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin = oliveBuilder.leftJoin(line, column,
+				inputFormat.type(), oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))
 						.toArray(LoadableValue[]::new));
 		joins.forEach(a -> a.accept(leftJoin.first()));
 		leftJoin.first().finish();

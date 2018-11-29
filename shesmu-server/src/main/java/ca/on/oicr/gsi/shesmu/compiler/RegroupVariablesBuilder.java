@@ -791,7 +791,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
 
 	private static final Method METHOD_IMYHAT__NEW_SET = new Method("newSet", A_SET_TYPE, new Type[] {});
-	private static final Method METHOD_IS_OK = new Method("$isOk", BOOLEAN_TYPE, new Type[] {});
+	static final Method METHOD_IS_OK = new Method("is ok?", BOOLEAN_TYPE, new Type[] {});
 	private static final Method METHOD_PARTITION_COUNT__ACCUMULATE = new Method("accumulate", VOID_TYPE,
 			new Type[] { BOOLEAN_TYPE });
 	private static final Method METHOD_PARTITION_COUNT__TO_TUPLE = new Method("toTuple", A_TUPLE_TYPE, new Type[] {});

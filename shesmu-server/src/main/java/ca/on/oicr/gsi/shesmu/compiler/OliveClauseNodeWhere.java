@@ -64,7 +64,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 		final Set<String> freeVariables = new HashSet<>();
 		expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
-		final Renderer filter = oliveBuilder.filter(oliveBuilder.loadableValues()
+		final Renderer filter = oliveBuilder.filter(line, column, oliveBuilder.loadableValues()
 				.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 		filter.methodGen().visitCode();
 		expression.render(filter);

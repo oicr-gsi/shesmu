@@ -37,7 +37,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
 	@Override
 	public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
-		definitions.put(name, builder.buildDefineOlive(parameters.stream()));
+		definitions.put(name, builder.buildDefineOlive(name, parameters.stream()));
 	}
 
 	@Override

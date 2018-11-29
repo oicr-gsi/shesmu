@@ -22,16 +22,16 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 
 	private final String signerPrefix;
 
-	public OliveDefineBuilder(RootBuilder owner, int oliveId, Stream<? extends Target> parameters) {
-		super(owner, oliveId, owner.inputFormatDefinition().type());
+	public OliveDefineBuilder(RootBuilder owner, String name, Stream<? extends Target> parameters) {
+		super(owner, owner.inputFormatDefinition().type());
 		this.parameters = parameters.map(Pair.number(4 + (int) NameDefinitions.signatureVariables().count()))
 				.map(Pair.transform(LoadParameter::new)).collect(Collectors.toList());
-		method = new Method(String.format("olive_matcher_%d", oliveId), A_STREAM_TYPE, Stream.concat(//
+		method = new Method(String.format("Define %s", name), A_STREAM_TYPE, Stream.concat(//
 				Stream.concat(//
 						Stream.of(A_STREAM_TYPE, A_FUNCTION_TYPE, Type.INT_TYPE, Type.INT_TYPE), //
 						NameDefinitions.signatureVariables().map(SignatureVariable::storageType)), //
 				this.parameters.stream().map(LoadableValue::type)).toArray(Type[]::new));
-		signerPrefix = String.format("olive_matcher_%d$", oliveId);
+		signerPrefix = String.format("Define %s ", name);
 		NameDefinitions.signatureVariables().forEach(signer -> {
 			owner.classVisitor.visitField(Opcodes.ACC_PRIVATE, signerPrefix + signer.name(),
 					signer.storageType().getDescriptor(), null, null).visitEnd();

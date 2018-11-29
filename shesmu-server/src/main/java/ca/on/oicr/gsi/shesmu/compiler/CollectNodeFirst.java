@@ -17,8 +17,8 @@ public class CollectNodeFirst extends CollectNodeWithDefault {
 
 	@Override
 	protected Pair<Renderer, Renderer> makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		final Renderer map = builder.map(name(), type(), loadables);
-		final Renderer alternative = builder.first(type(), loadables);
+		final Renderer map = builder.map(line(), column(), name(), type(), loadables);
+		final Renderer alternative = builder.first(line(), column(),type(), loadables);
 		return new Pair<>(map, alternative);
 	}
 

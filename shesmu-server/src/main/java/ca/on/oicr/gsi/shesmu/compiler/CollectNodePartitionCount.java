@@ -59,7 +59,7 @@ public class CollectNodePartitionCount extends CollectNode {
 	public void render(JavaStreamBuilder builder) {
 		final Set<String> freeVariables = new HashSet<>();
 		expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
-		final Renderer renderer = builder.map(name, Imyhat.BOOLEAN, builder.renderer().allValues()
+		final Renderer renderer = builder.map(line(), column(), name, Imyhat.BOOLEAN, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		expression.render(renderer);

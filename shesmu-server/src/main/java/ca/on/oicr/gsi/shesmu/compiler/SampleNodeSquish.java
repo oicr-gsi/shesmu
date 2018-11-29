@@ -50,7 +50,7 @@ public class SampleNodeSquish extends SampleNode {
 	}
 
 	@Override
-	public void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType) {
+	public void render(Renderer renderer, int previousLocal, Type streamType) {
 		renderer.methodGen().newInstance(A_SQUISH_TYPE);
 		renderer.methodGen().dup();
 		renderer.methodGen().loadLocal(previousLocal);

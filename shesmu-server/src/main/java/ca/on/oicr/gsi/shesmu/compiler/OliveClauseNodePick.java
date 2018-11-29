@@ -83,9 +83,9 @@ public class OliveClauseNodePick extends OliveClauseNode {
 		extractor.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
 		oliveBuilder.line(line);
-		final Renderer extractorMethod = oliveBuilder.pick(extractor.type(), max, discriminatorVariables.stream(),
-				oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))
-						.toArray(LoadableValue[]::new));
+		final Renderer extractorMethod = oliveBuilder.pick(line, column, extractor.type(), max,
+				discriminatorVariables.stream(), oliveBuilder.loadableValues()
+						.filter(value -> freeVariables.contains(value.name())).toArray(LoadableValue[]::new));
 		extractorMethod.methodGen().visitCode();
 		extractor.render(extractorMethod);
 		extractorMethod.methodGen().box(extractor.type().asmType());

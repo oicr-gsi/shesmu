@@ -87,7 +87,7 @@ public abstract class FileBackedArbitraryDefinitionRepository<T extends FileBack
 			final MethodHandle handle = MH_SUPPLIER_GET//
 					.bindTo(supplier)//
 					.asType(MethodType.methodType(clazz));
-			final String fixedName = name + " " + clazz.getCanonicalName().replace('.', ':');
+			final String fixedName = name + " " + clazz.getCanonicalName().replace('.', '·');
 			register(fixedName, handle);
 			actions.put(name, new ActionDefinition(name, Type.getType(clazz), description, //
 					Stream.concat(parameters, AnnotationUtils.findActionDefinitionsByAnnotation(clazz))) {

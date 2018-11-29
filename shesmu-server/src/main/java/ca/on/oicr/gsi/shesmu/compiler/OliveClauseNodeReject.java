@@ -70,7 +70,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
 		final Set<String> freeVariables = new HashSet<>();
 		expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 		handlers.forEach(handler -> handler.collectFreeVariables(freeVariables));
-		final Renderer renderer = oliveBuilder.filter(oliveBuilder.loadableValues()
+		final Renderer renderer = oliveBuilder.filter(line, column, oliveBuilder.loadableValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 
 		renderer.methodGen().visitCode();

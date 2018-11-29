@@ -55,7 +55,7 @@ public final class CollectNodeMatches extends CollectNode {
 		final Set<String> freeVariables = new HashSet<>();
 		selector.collectFreeVariables(freeVariables, Flavour::needsCapture);
 		freeVariables.remove(name);
-		final Renderer renderer = builder.match(matchType, name, builder.renderer().allValues()
+		final Renderer renderer = builder.match(line(), column(), matchType, name, builder.renderer().allValues()
 				.filter(v -> freeVariables.contains(v.name())).toArray(LoadableValue[]::new));
 		renderer.methodGen().visitCode();
 		selector.render(renderer);

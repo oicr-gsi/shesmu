@@ -6,13 +6,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.objectweb.asm.Type;
-
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 
-public abstract class SampleNode {
+public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler {
 
 	public enum Consumption {
 		BAD, GREEDY, LIMITED
@@ -65,8 +63,6 @@ public abstract class SampleNode {
 	public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
 	public abstract Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler);
-
-	public abstract void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType);
 
 	public abstract boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler);
 

@@ -16,7 +16,7 @@ public class ListNodeSort extends ListNodeWithExpression {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.sort(name(), expression.type(), loadables);
+		return builder.sort(line(), column(), name(), expression.type(), loadables);
 	}
 
 	@Override

@@ -68,7 +68,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
 		arguments.forEach(argument -> argument.collectFreeVariables(freeVariables, Flavour::needsCapture));
-		final LetBuilder let = oliveBuilder.let(oliveBuilder.loadableValues()
+		final LetBuilder let = oliveBuilder.let(line, column, oliveBuilder.loadableValues()
 				.filter(loadable -> freeVariables.contains(loadable.name())).toArray(LoadableValue[]::new));
 		arguments.forEach(argument -> argument.render(let));
 		let.finish();

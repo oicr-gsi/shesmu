@@ -92,12 +92,14 @@ public class SampleNodeFixedWithCondition extends SampleNode {
 	}
 
 	@Override
-	public void render(Renderer renderer, int previousLocal, String prefix, int index, Type streamType) {
+	public void render(Renderer renderer, int previousLocal, Type streamType) {
 		final Set<String> freeVariables = new HashSet<>();
 		conditionExpression.collectFreeVariables(freeVariables, Flavour::needsCapture);
 		final LoadableValue[] capturedVariables = renderer.allValues()
 				.filter(v -> freeVariables.contains(v.name()) && !name.equals(v.name())).toArray(LoadableValue[]::new);
-		final Method method = new Method(String.format("%s_%d_condition", prefix, index), BOOLEAN_TYPE,
+		final Method method = new Method(
+				String.format("For ⋯ Subsample ⋯ %d:%d", conditionExpression.line(), conditionExpression.column()),
+				BOOLEAN_TYPE,
 				JavaStreamBuilder.parameterTypes(renderer.root(), false, capturedVariables, streamType, type));
 		final Renderer conditionRenderer = new Renderer(renderer.root(),
 				new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, renderer.root().classVisitor),

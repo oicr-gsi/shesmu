@@ -20,7 +20,7 @@ public class ListNodeMap extends ListNodeWithExpression {
 
 	@Override
 	protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-		return builder.map(name(), expression.type(), loadables);
+		return builder.map(line(), column(), name(), expression.type(), loadables);
 	}
 
 	@Override

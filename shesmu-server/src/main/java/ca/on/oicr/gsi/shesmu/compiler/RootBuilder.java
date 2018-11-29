@@ -106,8 +106,6 @@ public abstract class RootBuilder {
 
 	private final InputFormatDefinition inputFormatDefinition;
 
-	private int oliveId = 0;
-
 	private final String path;
 
 	private final GeneratorAdapter runMethod;
@@ -115,7 +113,6 @@ public abstract class RootBuilder {
 	private final Label runStartLabel;
 	private final Type selfType;
 
-	private int streamId;
 	private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
 	public RootBuilder(Instant compileTime, String name, String path, InputFormatDefinition inputFormatDefinition,
@@ -154,8 +151,8 @@ public abstract class RootBuilder {
 	/**
 	 * Create a new “Define” olive
 	 */
-	public OliveDefineBuilder buildDefineOlive(Stream<? extends Target> parameters) {
-		return new OliveDefineBuilder(this, oliveId++, parameters);
+	public OliveDefineBuilder buildDefineOlive(String name, Stream<? extends Target> parameters) {
+		return new OliveDefineBuilder(this, name, parameters);
 	}
 
 	/**
@@ -166,7 +163,7 @@ public abstract class RootBuilder {
 	 * @param signableNames
 	 */
 	public final OliveBuilder buildRunOlive(int line, int column, Set<String> signableNames) {
-		return new OliveBuilder(this, oliveId++, inputFormatDefinition.type(), line, column,
+		return new OliveBuilder(this, inputFormatDefinition.type(), line, column,
 				inputFormatDefinition.baseStreamVariables()
 						.filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE && signableNames.contains(t.name())));
 	}
@@ -311,10 +308,6 @@ public abstract class RootBuilder {
 		}
 		methodGen.loadThis();
 		methodGen.getField(selfType, fieldName, A_GAUGE_TYPE);
-	}
-
-	int nextStreamId() {
-		return streamId++;
 	}
 
 	/**
