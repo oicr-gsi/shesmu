@@ -31,7 +31,7 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
 	public VariableInformation dashboard() {
 		final Set<String> freeStreamVariables = new HashSet<>();
 		expression.collectFreeVariables(freeStreamVariables, Flavour::isStream);
-		return new VariableInformation(name, expression.type(), freeStreamVariables.stream(), Behaviour.PASSTHROUGH);
+		return new VariableInformation(name, expression.type(), freeStreamVariables.stream(), Behaviour.DEFINITION_BY);
 	}
 
 	@Override
