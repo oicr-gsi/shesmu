@@ -225,7 +225,7 @@ public abstract class BaseOliveBuilder {
 	public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(int line, int column, Type innerType,
 			LoadableValue... capturedVariables) {
 		final String joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
-		final String outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column, steps.size());
+		final String outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column);
 
 		final Type oldType = currentType;
 		final Type joinedType = Type.getObjectType(joinedClassName);
