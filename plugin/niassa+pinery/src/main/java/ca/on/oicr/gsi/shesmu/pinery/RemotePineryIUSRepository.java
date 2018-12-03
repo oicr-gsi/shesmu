@@ -43,7 +43,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 	private class PinerySource extends AutoUpdatingJsonFile<ObjectNode> {
 		private final class ItemCache extends ValueCache<Stream<PineryIUSValue>> {
 			private ItemCache(Path fileName) {
-				super("pinery " + fileName.toString(), 15, ReplacingRecord::new);
+				super("pinery " + fileName.toString(), 30, ReplacingRecord::new);
 			}
 
 			@Override

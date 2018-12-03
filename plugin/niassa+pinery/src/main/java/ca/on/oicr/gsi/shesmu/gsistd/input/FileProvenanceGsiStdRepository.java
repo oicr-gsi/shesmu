@@ -45,7 +45,7 @@ public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 		private class ItemCache extends ValueCache<Stream<GsiStdValue>> {
 
 			public ItemCache() {
-				super("pipedev " + fileName.toString(), 15, ReplacingRecord::new);
+				super("pipedev " + fileName.toString(), 60, ReplacingRecord::new);
 			}
 
 			@Override
