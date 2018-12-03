@@ -2,10 +2,15 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 
 /** Bean for on-disk Guanyin service configuration files */
 public class Configuration {
+  private String cromwell;
   private String drmaa;
   private String drmaaPsk;
   private String guanyin;
   private String script;
+
+  public String getCromwell() {
+    return cromwell;
+  }
 
   public String getDrmaa() {
     return drmaa;
@@ -21,6 +26,10 @@ public class Configuration {
 
   public String getScript() {
     return script;
+  }
+
+  public void setCromwell(String cromwell) {
+    this.cromwell = cromwell;
   }
 
   public void setDrmaa(String drmaa) {

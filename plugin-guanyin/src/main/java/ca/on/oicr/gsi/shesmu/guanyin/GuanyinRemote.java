@@ -15,6 +15,7 @@ import org.apache.http.client.methods.HttpGet;
 
 public class GuanyinRemote extends JsonPluginFile<Configuration> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
+
   private Optional<Configuration> configuration = Optional.empty();
   private final Definer definer;
 
@@ -29,6 +30,9 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
         configuration -> {
           renderer.link("DRMAAWS", configuration.getDrmaa(), configuration.getDrmaa());
           renderer.link("观音", configuration.getGuanyin(), configuration.getGuanyin());
+          if (configuration.getCromwell() != null) {
+            renderer.link("Cromwell", configuration.getCromwell(), configuration.getCromwell());
+          }
           renderer.line("Script", configuration.getScript());
         });
   }
@@ -43,6 +47,10 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
   public String script() {
     return configuration.get().getScript();
+  }
+
+  public String cromwellUrl() {
+    return configuration.get().getCromwell();
   }
 
   @Override
