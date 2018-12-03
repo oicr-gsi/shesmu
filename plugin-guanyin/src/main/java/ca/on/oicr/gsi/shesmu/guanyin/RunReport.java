@@ -3,9 +3,14 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 import ca.on.oicr.gsi.prometheus.*;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.WorkflowIdAndStatus;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -28,6 +33,23 @@ import org.apache.http.impl.client.HttpClients;
  * attempt to run it using DRMAAWS.
  */
 public class RunReport extends JsonParameterisedAction {
+  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final String WDL =
+      "version 1.0\n"
+          + "workflow guanyin {\n"
+          + "  call report\n"
+          + "}\n"
+          + "task report {\n"
+          + "  input {\n"
+          + "    String script\n"
+          + "    String guanyin\n"
+          + "    Int record\n"
+          + "  }\n"
+          + "  command <<<\n"
+          + " ~{script} ~{guanyin}/reportdb/record/~{record} \n"
+          + "  >>>\n"
+          + "}\n";
   private static final Counter drmaaRequestErrors =
       Counter.build(
               "shesmu_drmaa_request_errors",
@@ -39,8 +61,6 @@ public class RunReport extends JsonParameterisedAction {
           "shesmu_drmaa_request_time",
           "The request time latency to launch a remote action.",
           "target");
-  static final ObjectMapper MAPPER = new ObjectMapper();
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   private static final Counter 观音RequestErrors =
       Counter.build(
               "shesmu_guanyin_request_errors",
@@ -52,15 +72,7 @@ public class RunReport extends JsonParameterisedAction {
           "shesmu_guanyin_request_time",
           "The request time latency to launch a remote action.",
           "target");
-
-  public static String printHexBinary(byte[] data) {
-    final StringBuilder buffer = new StringBuilder();
-    for (byte b : data) {
-      buffer.append(String.format("%0x", b));
-    }
-    return buffer.toString();
-  }
-
+  private WorkflowIdAndStatus cromwellId;
   private final GuanyinRemote owner;
   private final ObjectNode parameters;
   private final long reportId;
@@ -74,6 +86,27 @@ public class RunReport extends JsonParameterisedAction {
     this.reportId = reportId;
     this.reportName = reportName;
     parameters = rootParameters.putObject("parameters");
+  }
+
+  private ActionState actionStatusFromCromwell(WorkflowIdAndStatus id) {
+    if (id == null || id.getStatus() == null) {
+      return ActionState.UNKNOWN;
+    }
+    switch (id.getStatus()) {
+      case "Submitted":
+        return ActionState.WAITING;
+      case "Running":
+        return ActionState.INFLIGHT;
+      case "Aborting":
+        return ActionState.FAILED;
+      case "Aborted":
+        return ActionState.FAILED;
+      case "Failed":
+        return ActionState.FAILED;
+      case "Succeeded":
+        return ActionState.SUCCEEDED;
+    }
+    return ActionState.UNKNOWN;
   }
 
   @Override
@@ -192,7 +225,44 @@ public class RunReport extends JsonParameterisedAction {
         return ActionState.FAILED;
       }
     }
-    // Now that exists, try to run it via DRMAA
+    // Now that exists, try to run it via Cromwell if configured
+    if (owner.cromwellUrl() != null) {
+      try {
+        ApiClient apiClient = new ApiClient();
+        apiClient.setBasePath(owner.cromwellUrl());
+        WorkflowsApi wfApi = new WorkflowsApi(apiClient);
+        if (cromwellId == null && create) {
+          ObjectNode inputs = MAPPER.createObjectNode();
+          inputs.put("guanyin.report.script", owner.script());
+          inputs.put("guanyin.report.guanyin", owner.观音Url());
+          inputs.put("guanyin.report.record", reportRecordId.getAsLong());
+          cromwellId =
+              wfApi.submit(
+                  "v1",
+                  WDL,
+                  null,
+                  false,
+                  MAPPER.writeValueAsString(inputs),
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  "WDL",
+                  null,
+                  "1.0",
+                  null,
+                  null);
+        } else if (cromwellId != null) {
+          cromwellId = wfApi.status("v1", cromwellId.getId());
+        }
+        return actionStatusFromCromwell(cromwellId);
+      } catch (ApiException | JsonProcessingException e) {
+        e.printStackTrace();
+        return ActionState.FAILED;
+      }
+    }
+    // Otherwise, try to run it via DRMAA
     final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", owner.drmaaUrl()));
     try {
       final ObjectNode drmaaParameters = MAPPER.createObjectNode();
@@ -237,6 +307,14 @@ public class RunReport extends JsonParameterisedAction {
     }
   }
 
+  public static String printHexBinary(byte[] data) {
+    final StringBuilder buffer = new StringBuilder();
+    for (byte b : data) {
+      buffer.append(String.format("%0x", b));
+    }
+    return buffer.toString();
+  }
+
   @Override
   public int priority() {
     return 0;
@@ -266,6 +344,11 @@ public class RunReport extends JsonParameterisedAction {
     node.put("reportId", reportId);
     node.put("script", owner.script());
     node.set("parameters", parameters);
+    if (cromwellId != null) {
+      node.put(
+          "crowellUrl",
+          String.format("%s/api/workflows/v1/%s/status", owner.cromwellUrl(), cromwellId.getId()));
+    }
     reportRecordId.ifPresent(
         id -> node.put("url", String.format("%s/reportdb/record/%d", owner.观音Url(), id)));
     return node;
