@@ -62,16 +62,25 @@ public abstract class OliveClauseNode {
 		}
 		final Parser leftJoinParser = input.keyword("LeftJoin");
 		if (leftJoinParser.isGood()) {
-			final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
 			final AtomicReference<String> format = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
+			final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
 			final Parser result = leftJoinParser//
 					.whitespace()//
+					.then(ExpressionNode::parse, outerKey::set)//
+					.whitespace()//
+					.keyword("To")//
+					.whitespace()//
 					.identifier(format::set)//
+					.whitespace()//
+					.then(ExpressionNode::parse, innerKey::set)//
 					.whitespace()//
 					.list(groups::set, GroupNode::parse, ',')//
 					.whitespace();
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeLeftJoin(input.line(), input.column(), format.get(), groups.get()));
+				output.accept(new OliveClauseNodeLeftJoin(input.line(), input.column(), format.get(), outerKey.get(),
+						innerKey.get(), groups.get()));
 			}
 			return result;
 		}
@@ -110,14 +119,23 @@ public abstract class OliveClauseNode {
 		}
 		final Parser joinParser = input.keyword("Join");
 		if (joinParser.isGood()) {
+			final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
 			final AtomicReference<String> format = new AtomicReference<>();
+			final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
 			final Parser result = joinParser//
 					.whitespace()//
+					.then(ExpressionNode::parse, outerKey::set)//
+					.whitespace()//
+					.keyword("To")//
+					.whitespace()//
 					.identifier(format::set)//
+					.whitespace()//
+					.then(ExpressionNode::parse, innerKey::set)//
 					.whitespace();
 
 			if (result.isGood()) {
-				output.accept(new OliveClauseNodeJoin(input.line(), input.column(), format.get()));
+				output.accept(new OliveClauseNodeJoin(input.line(), input.column(), format.get(), outerKey.get(),
+						innerKey.get()));
 			}
 			return result;
 		}

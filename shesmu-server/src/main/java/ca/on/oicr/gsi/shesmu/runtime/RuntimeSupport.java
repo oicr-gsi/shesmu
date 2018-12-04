@@ -146,6 +146,20 @@ public final class RuntimeSupport {
 		return Optional.ofNullable(System.getenv("SHESMU_DATA"));
 	}
 
+	@RuntimeInterop
+	public static <I, N, K, O> Stream<O> join(Stream<I> input, Stream<N> inner, Function<I, K> makeOuterKey,
+			Function<N, K> makeInnerKey, BiFunction<I, N, O> joiner) {
+		final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
+		input.close();
+		final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
+		inner.close();
+		return inputGroups.entrySet().stream()//
+				.flatMap(e -> innerGroups.getOrDefault(e.getKey(), Collections.emptyList()).stream()//
+						.flatMap(n -> e.getValue().stream()//
+								.map(i -> joiner.apply(i, n))));
+
+	}
+
 	/**
 	 * Left join a stream of input against another input format
 	 *
@@ -153,12 +167,14 @@ public final class RuntimeSupport {
 	 *            the stream to be joined against
 	 * @param inner
 	 *            the type of the inner (right) input stream
-	 * @param inputLoader
-	 *            a function to load this input format
 	 * @param joiner
 	 *            a function to create an intermediate joined type from the two
 	 *            types
-	 * @param makeKey
+	 * @param makeOuterKey
+	 *            create the joining key from an outer record
+	 * @param makeInnerKey
+	 *            create the joining key from an inner record
+	 * @param makeOutput
 	 *            a function to create a new output type; it must accept a joined
 	 *            type where the right side will be null
 	 * @param collector
@@ -167,14 +183,24 @@ public final class RuntimeSupport {
 	 * @return
 	 */
 	@RuntimeInterop
-	public static <I, N, J, O> Stream<O> leftJoin(Stream<I> input, Class<N> inner,
-			Function<Class<N>, Stream<N>> inputLoader, BiFunction<I, N, J> joiner, Function<J, O> makeKey,
+	public static <I, N, K, J, O> Stream<O> leftJoin(Stream<I> input, Stream<N> inner, Function<I, K> makeOuterKey,
+			Function<N, K> makeInnerKey, BiFunction<I, N, J> joiner, Function<J, O> makeOutput,
 			BiConsumer<O, J> collector) {
-		return input.map(left -> {
-			final O output = makeKey.apply(joiner.apply(left, null));
-			inputLoader.apply(inner).forEach(right -> collector.accept(output, joiner.apply(left, right)));
-			return output;
-		});
+		final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
+		input.close();
+		final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
+
+		return inputGroups.entrySet().stream()//
+				.flatMap(e -> {
+					final List<N> innerData = innerGroups.getOrDefault(e.getKey(), Collections.emptyList());
+
+					return e.getValue().stream()//
+							.map(left -> {
+								final O output = makeOutput.apply(joiner.apply(left, null));
+								innerData.forEach(right -> collector.accept(output, joiner.apply(left, right)));
+								return output;
+							});
+				});
 	}
 
 	public static <T> Optional<T> merge(Optional<T> left, Optional<T> right,

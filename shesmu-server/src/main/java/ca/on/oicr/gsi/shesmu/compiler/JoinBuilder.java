@@ -13,16 +13,23 @@ public class JoinBuilder {
 
 	private final ClassVisitor classVisitor;
 
+	private final Renderer innerKeyMethod;
+
 	private final Type innerType;
 
 	private final Type joinType;
 
+	private final Renderer outerKeyMethod;
+
 	private final Type outerType;
 
-	public JoinBuilder(RootBuilder owner, Type joinType, Type outerType, Type innerType) {
+	public JoinBuilder(RootBuilder owner, Type joinType, Type outerType, Type innerType, Renderer outerKeyMethod,
+			Renderer innerKeyMethod) {
 		this.joinType = joinType;
 		this.outerType = outerType;
 		this.innerType = innerType;
+		this.outerKeyMethod = outerKeyMethod;
+		this.innerKeyMethod = innerKeyMethod;
 		classVisitor = owner.createClassVisitor();
 		classVisitor.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, joinType.getInternalName(), null,
 				A_OBJECT_TYPE.getInternalName(), null);
@@ -62,6 +69,14 @@ public class JoinBuilder {
 
 	public void finish() {
 		classVisitor.visitEnd();
+	}
+
+	public Renderer innerKey() {
+		return innerKeyMethod;
+	}
+
+	public Renderer outerKey() {
+		return outerKeyMethod;
 	}
 
 }
