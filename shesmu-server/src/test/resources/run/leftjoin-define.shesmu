@@ -1,9 +1,9 @@
 Input test;
 
 Define foo()
- LeftJoin inner_test
+ LeftJoin library_size To inner_test l
     ls = List l;
 
 Olive
  foo()
- Run ok With ok = (For l In ls: Count) == 2;
+ Run ok With ok = (For l In ls: Count) == 1;

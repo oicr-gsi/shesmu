@@ -307,8 +307,8 @@ format) using a `Join` clause:
 
     Olive
       Where workflow == "BamQC 2.7+"
-      Join qc_data
-      Where path == qc_file && passed
+      Join {path} To qc_data {qc_file}
+      Where passed
       Run fastqc With
         memory = 4Gi,
         input = path;
@@ -323,8 +323,8 @@ There is a `LeftJoin` clause that works like a `Join` and a `Group` clause at on
 
     Olive
       Where workflow == "BamQC 2.7+"
-      LeftJoin qc_data
-        passed_count = Where path == qc_file && passed Count
+      LeftJoin {path} To qc_data {qc_file}
+        passed_count = Where passed Count
       Where passed_count > 0
       Run fastqc With
         memory = 4Gi,

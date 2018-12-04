@@ -104,8 +104,8 @@ public class RunTest {
 	private static final List<ConstantDefinition> CONSTANTS = Arrays
 			.asList(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
 
-	private static InnerTestValue[] INNER_TEST_DATA = new InnerTestValue[] { new InnerTestValue(1, "a"),
-			new InnerTestValue(2, "b") };
+	private static InnerTestValue[] INNER_TEST_DATA = new InnerTestValue[] { new InnerTestValue(300, "a"),
+			new InnerTestValue(307, "b") };
 	public static final NameLoader<InputFormatDefinition> INPUT_FORMATS = new NameLoader<>(Stream.of(//
 			new BaseInputFormatDefinition<TestValue, TestRepository>("test", TestValue.class, TestRepository.class) {
 			}, //
@@ -241,7 +241,7 @@ public class RunTest {
 				System.err.printf("FAIL %s\n", file.getFileName());
 				return true;
 			}
-		} catch (Exception | VerifyError e) {
+		} catch (Exception | VerifyError | BootstrapMethodError e) {
 			System.err.printf("EXCP %s\n", file.getFileName());
 			e.printStackTrace();
 			return true;

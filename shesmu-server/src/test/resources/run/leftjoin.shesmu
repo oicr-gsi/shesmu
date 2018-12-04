@@ -1,6 +1,6 @@
 Input test;
 
 Olive
- LeftJoin inner_test
+ LeftJoin True To inner_test True
     ls = List l
  Run ok With ok = (For l In ls: Count) == 2;

@@ -34,11 +34,16 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 	private InputFormatDefinition inputFormat;
 	private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
 	protected final int line;
+	private final ExpressionNode outerKey;
+	private final ExpressionNode innerKey;
 
-	public OliveClauseNodeLeftJoin(int line, int column, String format, List<GroupNode> children) {
+	public OliveClauseNodeLeftJoin(int line, int column, String format, ExpressionNode outerKey,
+			ExpressionNode innerKey, List<GroupNode> children) {
 		this.line = line;
 		this.column = column;
 		this.format = format;
+		this.outerKey = outerKey;
+		this.innerKey = innerKey;
 		this.children = children;
 	}
 
@@ -89,12 +94,27 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 			Map<String, OliveDefineBuilder> definitions) {
 		final Set<String> freeVariables = new HashSet<>();
 		children.stream().forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
+		outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
+		innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
 		oliveBuilder.line(line);
-		final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin = oliveBuilder.leftJoin(line, column,
-				inputFormat.type(), oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))
+		final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin = oliveBuilder.leftJoin(line, column, inputFormat.type(),
+				outerKey.type(), oliveBuilder.loadableValues().filter(value -> freeVariables.contains(value.name()))
 						.toArray(LoadableValue[]::new));
 		joins.forEach(a -> a.accept(leftJoin.first()));
+
+		leftJoin.first().outerKey().methodGen().visitCode();
+		outerKey.render(leftJoin.first().outerKey());
+		leftJoin.first().outerKey().methodGen().returnValue();
+		leftJoin.first().outerKey().methodGen().visitMaxs(0, 0);
+		leftJoin.first().outerKey().methodGen().visitEnd();
+
+		leftJoin.first().innerKey().methodGen().visitCode();
+		innerKey.render(leftJoin.first().innerKey());
+		leftJoin.first().innerKey().methodGen().returnValue();
+		leftJoin.first().innerKey().methodGen().visitMaxs(0, 0);
+		leftJoin.first().innerKey().methodGen().visitEnd();
+
 		leftJoin.first().finish();
 
 		discriminators.forEach(discriminator -> {
@@ -105,6 +125,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 			});
 		});
 		children.stream().forEach(group -> group.render(leftJoin.second(), builder));
+
 		leftJoin.second().finish();
 
 		oliveBuilder.measureFlow(builder.sourcePath(), line, column);
@@ -176,7 +197,9 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 						group.name()));
 			}
 			return group.resolve(joinedDefs, defs, errorHandler) && !isDuplicate;
-		}).count() == children.size();
+		}).count() == children.size()//
+				& outerKey.resolve(defs, errorHandler)
+				& innerKey.resolve(defs.replaceStream(inputFormat.baseStreamVariables(), true), errorHandler);
 
 		return defs.replaceStream(Stream.concat(discriminators.stream(), children.stream()), ok);
 	}
@@ -194,12 +217,18 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 					"%d:%d: Duplicate collected variables in “LeftJoin” clause. Should be: %s", line, column,
 					children.stream().map(GroupNode::name).sorted().distinct().collect(Collectors.joining(", "))));
 		}
-		return ok;
+		return ok & outerKey.resolveFunctions(definedFunctions, errorHandler)
+				& innerKey.resolveFunctions(definedFunctions, errorHandler);
 	}
 
 	@Override
 	public final boolean typeCheck(Consumer<String> errorHandler) {
-		return children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size();
+		boolean ok = outerKey.typeCheck(errorHandler) & innerKey.typeCheck(errorHandler);
+		if (ok && !outerKey.type().isSame(innerKey.type())) {
+			innerKey.typeError(outerKey.type().name(), innerKey.type(), errorHandler);
+			ok = false;
+		}
+		return ok & children.stream().filter(group -> group.typeCheck(errorHandler)).count() == children.size();
 	}
 
 }

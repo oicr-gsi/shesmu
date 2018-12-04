@@ -73,7 +73,7 @@ public abstract class BaseOliveBuilder {
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
 
 	protected static final Method METHOD_LEFT_JOIN = new Method("leftJoin", A_STREAM_TYPE, new Type[] { A_STREAM_TYPE,
-			Type.getType(Class.class), A_FUNCTION_TYPE, A_BIFUNCTION_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
+			A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
 	protected static final Method METHOD_PICK = new Method("pick", A_STREAM_TYPE,
@@ -82,8 +82,8 @@ public abstract class BaseOliveBuilder {
 			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
 	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
-	protected static final Method METHOD_STREAM__FLAT_MAP = new Method("flatMap", A_STREAM_TYPE,
-			new Type[] { A_FUNCTION_TYPE });
+	protected static final Method METHOD_RUNTIME_SUPPORT__JOIN = new Method("join", A_STREAM_TYPE,
+			new Type[] { A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE });
 	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
 	protected static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
@@ -177,53 +177,67 @@ public abstract class BaseOliveBuilder {
 				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 	}
 
-	public final JoinBuilder join(int line, int column, Type innerType) {
-		final String className = String.format("shesmu/dyn/Join_%d_%d", line, column);
+	public final JoinBuilder join(int line, int column, Type innerType, Imyhat keyType,
+			LoadableValue... capturedVariables) {
+		final String className = String.format("shesmu/dyn/Join %d:%d", line, column);
 
 		final Type oldType = currentType;
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method flatMapMethod = new Method(String.format("Join %d:%d", line, column), A_STREAM_TYPE,
-				new Type[] { A_FUNCTION_TYPE, oldType });
+		final Method outerKeyMethod = new Method(String.format("Join %d:%d Outer 🔑", line, column), keyType.asmType(),
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
+						.toArray(Type[]::new));
+		final Method innerKeyMethod = new Method(String.format("Join %d:%d Inner 🔑", line, column), keyType.asmType(),
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(innerType))
+						.toArray(Type[]::new));
+
+		final Type[] captureTypes = Stream
+				.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
+				.toArray(Type[]::new);
 
 		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
 			renderer.methodGen().loadArg(1);
-			renderer.methodGen()
-					.invokeDynamic("apply",
-							Type.getMethodDescriptor(A_FUNCTION_TYPE, new Type[] { owner.selfType(), A_FUNCTION_TYPE }),
-							LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-									flatMapMethod.getName(), flatMapMethod.getDescriptor(), false),
-							Type.getMethodType(A_STREAM_TYPE, oldType));
-			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLAT_MAP);
+			renderer.methodGen().push(innerType);
+			renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
+			renderer.methodGen().checkCast(A_STREAM_TYPE);
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), outerKeyMethod.getName(),
+							outerKeyMethod.getDescriptor(), false),
+					Type.getMethodType(keyType.boxedAsmType(), oldType));
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), innerKeyMethod.getName(),
+							innerKeyMethod.getDescriptor(), false),
+					Type.getMethodType(keyType.boxedAsmType(), innerType));
+
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_BIFUNCTION_TYPE, new Type[] {}),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_NEWINVOKESPECIAL, newType.getInternalName(), "<init>",
+							Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
+					Type.getMethodType(newType, oldType, innerType));
+
+			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JOIN);
 		});
 
-		final GeneratorAdapter flatMapMethodGen = new GeneratorAdapter(Opcodes.ACC_PUBLIC, flatMapMethod, null, null,
-				owner.classVisitor);
-		flatMapMethodGen.visitCode();
-		flatMapMethodGen.loadArg(0);
-		flatMapMethodGen.push(innerType);
-		flatMapMethodGen.invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
-		flatMapMethodGen.checkCast(A_STREAM_TYPE);
-
-		flatMapMethodGen.loadArg(1);
-		flatMapMethodGen.invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, new Type[] { oldType }),
-				LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-				new Handle(Opcodes.H_NEWINVOKESPECIAL, newType.getInternalName(), "<init>",
-						Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
-				Type.getMethodType(newType, innerType));
-		flatMapMethodGen.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
-		flatMapMethodGen.returnValue();
-		flatMapMethodGen.visitMaxs(0, 0);
-		flatMapMethodGen.visitEnd();
-
-		return new JoinBuilder(owner, newType, oldType, innerType);
+		final Renderer outerKeyMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, outerKeyMethod, null, null, owner.classVisitor),
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		final Renderer innerKeyMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, innerKeyMethod, null, null, owner.classVisitor),
+				capturedVariables.length, innerType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		return new JoinBuilder(owner, newType, oldType, innerType, outerKeyMethodGen, innerKeyMethodGen);
 	}
 
 	public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(int line, int column, Type innerType,
-			LoadableValue... capturedVariables) {
+			Imyhat keyType, LoadableValue... capturedVariables) {
 		final String joinedClassName = String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
 		final String outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column);
 
@@ -235,6 +249,14 @@ public abstract class BaseOliveBuilder {
 		final Method newMethod = new Method(String.format("LeftJoin %d:%d✨", line, column), newType,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(joinedType))
 						.toArray(Type[]::new));
+		final Method outerKeyMethod = new Method(String.format("LeftJoin %d:%d Outer 🔑", line, column),
+				keyType.asmType(),
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
+						.toArray(Type[]::new));
+		final Method innerKeyMethod = new Method(String.format("LeftJoin %d:%d Inner 🔑", line, column),
+				keyType.asmType(),
+				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(innerType))
+						.toArray(Type[]::new));
 		final Method collectMethod = new Method(String.format("LeftJoin %d:%d 🧲", line, column), VOID_TYPE,
 				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, joinedType))
 						.toArray(Type[]::new));
@@ -244,8 +266,26 @@ public abstract class BaseOliveBuilder {
 				.toArray(Type[]::new);
 
 		steps.add(renderer -> {
-			renderer.methodGen().push(innerType);
 			renderer.methodGen().loadArg(1);
+			renderer.methodGen().push(innerType);
+			renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
+			renderer.methodGen().checkCast(A_STREAM_TYPE);
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), outerKeyMethod.getName(),
+							outerKeyMethod.getDescriptor(), false),
+					Type.getMethodType(keyType.boxedAsmType(), oldType));
+
+			renderer.methodGen().loadThis();
+			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
+			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
+					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
+					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), innerKeyMethod.getName(),
+							innerKeyMethod.getDescriptor(), false),
+					Type.getMethodType(keyType.boxedAsmType(), innerType));
 
 			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_BIFUNCTION_TYPE, new Type[] {}),
 					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
@@ -285,13 +325,20 @@ public abstract class BaseOliveBuilder {
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
 				capturedVariables.length, joinedType, RootBuilder.proxyCaptured(0, capturedVariables),
 				this::emitSigner);
+		final Renderer outerKeyMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, outerKeyMethod, null, null, owner.classVisitor),
+				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		final Renderer innerKeyMethodGen = new Renderer(owner,
+				new GeneratorAdapter(Opcodes.ACC_PUBLIC, innerKeyMethod, null, null, owner.classVisitor),
+				capturedVariables.length, innerType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
 		final Renderer collectedMethodGen = new Renderer(owner,
 				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
 				capturedVariables.length + 1, joinedType, RootBuilder.proxyCaptured(0, capturedVariables),
 				this::emitSigner);
 
-		return new Pair<>(new JoinBuilder(owner, joinedType, oldType, innerType), new RegroupVariablesBuilder(owner,
-				outputClassName, newMethodGen, collectedMethodGen, capturedVariables.length));
+		return new Pair<>(new JoinBuilder(owner, joinedType, oldType, innerType, outerKeyMethodGen, innerKeyMethodGen),
+				new RegroupVariablesBuilder(owner, outputClassName, newMethodGen, collectedMethodGen,
+						capturedVariables.length));
 	}
 
 	public final LetBuilder let(int line, int column, LoadableValue... capturedVariables) {

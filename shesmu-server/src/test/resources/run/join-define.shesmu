@@ -1,7 +1,7 @@
 Input test;
 
 Define foo()
- Join inner_test
+ Join True To inner_test True
  Group ls = List l By accession;
 
 Olive
