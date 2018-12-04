@@ -200,6 +200,11 @@ public abstract class Imyhat {
 		public Object unpackJson(JsonNode node) {
 			return RuntimeSupport.stream(node.elements()).map(inner::unpackJson).collect(Collectors.toSet());
 		}
+
+		@Override
+		public String wdlInputType() {
+			return "Array[" + inner.wdlInputType() + "]";
+		}
 	}
 
 	public static final class ObjectImyhat extends Imyhat {
@@ -345,6 +350,11 @@ public abstract class Imyhat {
 							e -> e.getValue().first().unpackJson(node.get(e.getKey()))));
 		}
 
+		@Override
+		public String wdlInputType() {
+			return "Object";
+		}
+
 	}
 
 	public static final class TupleImyhat extends Imyhat {
@@ -474,6 +484,15 @@ public abstract class Imyhat {
 			return new Tuple(elements);
 		}
 
+		@Override
+		public String wdlInputType() {
+			String wdl = types[types.length - 1].wdlInputType();
+			for (int i = types.length - 2; i >= 0; i--) {
+				wdl = "Pair[" + types[i].wdlInputType() + "," + wdl + "]";
+			}
+			return wdl;
+		}
+
 	}
 
 	private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
@@ -558,6 +577,11 @@ public abstract class Imyhat {
 			return null;
 		}
 
+		@Override
+		public String wdlInputType() {
+			return "Object";
+		}
+
 	};
 
 	public static final BaseImyhat BOOLEAN = new BaseImyhat() {
@@ -637,6 +661,11 @@ public abstract class Imyhat {
 			return node.asBoolean();
 		}
 
+		@Override
+		public String wdlInputType() {
+			return "Boolean";
+		}
+
 	};
 
 	private static final Map<String, CallSite> callsites = new HashMap<>();
@@ -712,6 +741,11 @@ public abstract class Imyhat {
 		@Override
 		public Object unpackJson(JsonNode node) {
 			return Instant.ofEpochMilli(node.asLong());
+		}
+
+		@Override
+		public String wdlInputType() {
+			return "String";
 		}
 
 	};
@@ -791,6 +825,11 @@ public abstract class Imyhat {
 		@Override
 		public Object unpackJson(JsonNode node) {
 			return node.asLong();
+		}
+
+		@Override
+		public String wdlInputType() {
+			return "Int";
 		}
 
 	};
@@ -887,6 +926,11 @@ public abstract class Imyhat {
 		public Object unpackJson(JsonNode node) {
 			return node.asText();
 		}
+
+		@Override
+		public String wdlInputType() {
+			return "String";
+		}
 	};
 	protected static final Method METHOD_OBJECT__TO_STRING = new Method("toString", A_STRING_TYPE, new Type[] {});
 	public static final BaseImyhat PATH = new BaseImyhat() {
@@ -960,6 +1004,11 @@ public abstract class Imyhat {
 		@Override
 		public Object unpackJson(JsonNode node) {
 			return Paths.get(node.asText());
+		}
+
+		@Override
+		public String wdlInputType() {
+			return "File";
 		}
 	};
 
@@ -1243,6 +1292,11 @@ public abstract class Imyhat {
 	public final String toString() {
 		return descriptor();
 	}
+
+	/**
+	 * Convert a Shesmu type to its equivalent WDL type
+	 */
+	public abstract String wdlInputType();
 
 	/**
 	 * Extract a value stored in a JSON document into the matching Java object for
