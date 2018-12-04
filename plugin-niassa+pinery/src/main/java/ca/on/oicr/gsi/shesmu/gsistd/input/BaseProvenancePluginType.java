@@ -1,8 +1,6 @@
 package ca.on.oicr.gsi.shesmu.gsistd.input;
 
-import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
-import ca.on.oicr.gsi.provenance.ProviderLoader;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
@@ -15,31 +13,26 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
+
+import javax.xml.stream.XMLStreamException;
 import java.lang.invoke.MethodHandles;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
-import org.kohsuke.MetaInfServices;
 
-@MetaInfServices
-public class FileProvenanceGsiStdRepository
-    extends PluginFileType<FileProvenanceGsiStdRepository.PipeDevConfiguration> {
-
-  class PipeDevConfiguration extends PluginFile {
+public abstract class BaseProvenancePluginType<C extends AutoCloseable> extends PluginFileType<BaseProvenancePluginType.FileConfiguration> {
+  class FileConfiguration extends PluginFile {
     private class ItemCache extends ValueCache<Stream<GsiStdValue>> {
 
       public ItemCache() {
-        super("pipedev " + fileName().toString(), 60, ReplacingRecord::new);
+        super(name + " " + fileName().toString(), 60, ReplacingRecord::new);
       }
 
       @Override
@@ -48,9 +41,9 @@ public class FileProvenanceGsiStdRepository
         final AtomicInteger badVersions = new AtomicInteger();
         final Map<String, Integer> badSetCounts = new TreeMap<>();
         return client
-            .map(c -> IUSUtils.stream(c.getFileProvenance(PROVENANCE_FILTER)))
-            .orElseGet(Stream::empty) //
-            .filter(fp -> fp.getSkip() == null || fp.getSkip().equals("false")) //
+            .map(BaseProvenancePluginType.this::fetch)
+            .orElseGet(Stream::empty)
+            .filter(fp -> fp.getSkip() == null || fp.getSkip().equals("false"))
             .map(
                 fp -> {
                   final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
@@ -62,65 +55,62 @@ public class FileProvenanceGsiStdRepository
                               true)
                           .map(IusLimsKey::getLimsKey);
                   final GsiStdValue result =
-                      new GsiStdValue( //
-                          fp.getFileSWID().toString(), //
-                          Paths.get(fp.getFilePath()), //
-                          fp.getFileMetaType(), //
-                          fp.getFileMd5sum(), //
-                          IUSUtils.parseLong(fp.getFileSize()), //
-                          fp.getWorkflowName(), //
+                      new GsiStdValue(
+                          fp.getFileSWID().toString(),
+                          Paths.get(fp.getFilePath()),
+                          fp.getFileMetaType(),
+                          fp.getFileMd5sum(),
+                          IUSUtils.parseLong(fp.getFileSize()),
+                          fp.getWorkflowName(),
                           Optional.ofNullable(fp.getWorkflowRunSWID())
                               .map(Object::toString)
-                              .orElse(""), //
+                              .orElse(""),
                           parseWorkflowVersion(
                               fp.getWorkflowVersion(),
                               () -> {
                                 badVersions.incrementAndGet();
                                 badRecord.set(true);
-                              }), //
+                              }),
                           IUSUtils.singleton(
                                   fp.getStudyTitles(),
                                   reason -> badSetInRecord.add("study:" + reason),
                                   true)
-                              .orElse(""), //
+                              .orElse(""),
                           IUSUtils.singleton(
                                   fp.getSampleNames(),
                                   reason -> badSetInRecord.add("librarynames:" + reason),
                                   true)
-                              .orElse(""), //
+                              .orElse(""),
                           IUSUtils.singleton(
                                   fp.getRootSampleNames(),
                                   reason -> badSetInRecord.add("samplenames:" + reason),
                                   true)
-                              .orElse(""), //
-                          packIUS(fp), //
+                              .orElse(""),
+                          packIUS(fp),
                           limsAttr(
                                   fp, "geo_library_source_template_type", badSetInRecord::add, true)
-                              .orElse(""), //
-                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add, true).orElse(""), //
-                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add, true)
-                              .orElse(""), //
+                              .orElse(""),
+                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add, true).orElse(""),
+                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""),
                           limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add, false)
-                              .orElse(""), //
+                              .orElse(""),
                           limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add, false)
-                              .orElse(""), //
-                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add, false)
-                              .orElse(""), //
-                          limsAttr(fp, "geo_group_id", badSetInRecord::add, false).orElse(""), //
+                              .orElse(""),
+                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add, false).orElse(""),
+                          limsAttr(fp, "geo_group_id", badSetInRecord::add, false).orElse(""),
                           limsAttr(fp, "geo_group_id_description", badSetInRecord::add, false)
-                              .orElse(""), //
+                              .orElse(""),
                           limsAttr(fp, "geo_library_size_code", badSetInRecord::add, false)
                               .map(IUSUtils::parseLong)
-                              .orElse(0L), //
-                          limsAttr(fp, "geo_library_type", badSetInRecord::add, false)
-                              .orElse(""), //
-                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add, false).orElse(""), //
-                          fp.getLastModified().toInstant(), //
+                              .orElse(0L),
+                          limsAttr(fp, "geo_library_type", badSetInRecord::add, false).orElse(""),
+                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
+                          fp.getLastModified().toInstant(),
                           new Tuple(
                               limsKey.map(LimsKey::getId).orElse(""),
                               limsKey.map(LimsKey::getVersion).orElse(""),
-                              limsKey.map(LimsKey::getProvider).orElse("")), //
-                          fp.getLastModified().toInstant(), //
+                              limsKey.map(LimsKey::getProvider).orElse("")),
+                          fp.getLastModified().toInstant(),
                           "file_provenance");
 
                   if (!badSetInRecord.isEmpty()) {
@@ -129,8 +119,8 @@ public class FileProvenanceGsiStdRepository
                     return null;
                   }
                   return badRecord.get() ? null : result;
-                }) //
-            .filter(Objects::nonNull) //
+                })
+            .filter(Objects::nonNull)
             .onClose(
                 () -> {
                   badSetError.labels(fileName().toString()).set(badSets.get());
@@ -152,18 +142,23 @@ public class FileProvenanceGsiStdRepository
 
     private final ItemCache cache;
 
-    private Optional<DefaultProvenanceClient> client = Optional.empty();
+    private Optional<C> client = Optional.empty();
 
     private boolean ok;
 
-    public PipeDevConfiguration(Path fileName, String instanceName) {
+    public FileConfiguration(Path fileName, String instanceName) {
       super(fileName, instanceName);
       cache = new ItemCache();
     }
 
     @Override
     public void configuration(SectionRenderer renderer) throws XMLStreamException {
-      renderer.line("Configuration Good?", ok ? "Yes" : "No");
+          renderer.line("Configuration Good?", ok ? "Yes" : "No");
+        }
+
+    @Override
+    public void stop() {
+      client.ifPresent(BaseProvenancePluginType::close);
     }
 
     @ShesmuInputSource
@@ -174,16 +169,10 @@ public class FileProvenanceGsiStdRepository
     @Override
     public Optional<Integer> update() {
       try {
-        final DefaultProvenanceClient client = new DefaultProvenanceClient();
-        final ProviderLoader loader =
-            new ProviderLoader(new String(Files.readAllBytes(fileName())));
-        setProvider(
-            loader.getAnalysisProvenanceProviders(), client::registerAnalysisProvenanceProvider);
-        setProvider(loader.getLaneProvenanceProviders(), client::registerLaneProvenanceProvider);
-        setProvider(
-            loader.getSampleProvenanceProviders(), client::registerSampleProvenanceProvider);
-        this.client = Optional.of(client);
+        Optional<C> oldClient = client;
+        this.client = Optional.of(createClient(fileName()));
         cache.invalidate();
+        oldClient.ifPresent(BaseProvenancePluginType::close);
         ok = true;
       } catch (final Exception e) {
         e.printStackTrace();
@@ -216,7 +205,7 @@ public class FileProvenanceGsiStdRepository
 
   private static final Pattern COLON = Pattern.compile(":");
 
-  private static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER =
+  public static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER =
       new EnumMap<>(FileProvenanceFilter.class);
 
   private static final Pattern WORKFLOW_VERSION2 = Pattern.compile("^(\\d+)\\.(\\d+)$");
@@ -228,6 +217,14 @@ public class FileProvenanceGsiStdRepository
     PROVENANCE_FILTER.put(
         FileProvenanceFilter.workflow_run_status, Collections.singleton("completed"));
     PROVENANCE_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("false"));
+  }
+
+  private static void close(AutoCloseable client) {
+    try {
+      client.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   private static Optional<String> limsAttr(
@@ -260,16 +257,19 @@ public class FileProvenanceGsiStdRepository
     return new Tuple(0L, 0L, 0L);
   }
 
-  public static <T> void setProvider(Map<String, T> source, BiConsumer<String, T> consumer) {
-    source.entrySet().stream().forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
+  private final String name;
+
+  public BaseProvenancePluginType(String name, String extension) {
+    super(MethodHandles.lookup(), FileConfiguration.class, extension);
+    this.name = name;
   }
 
-  public FileProvenanceGsiStdRepository() {
-    super(MethodHandles.lookup(), PipeDevConfiguration.class, ".pipedev");
-  }
+  protected abstract C createClient(Path fileName) throws Exception;
+
+  protected abstract Stream<? extends FileProvenance> fetch(C client);
 
   @Override
-  public PipeDevConfiguration create(Path filePath, String instanceName, Definer definer) {
-    return new PipeDevConfiguration(filePath, instanceName);
+  public final FileConfiguration create(Path filePath, String instanceName, Definer definer) {
+    return new FileConfiguration(filePath, instanceName);
   }
 }
