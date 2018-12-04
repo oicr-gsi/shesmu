@@ -28,7 +28,7 @@ public final class RunScannerClient extends AutoUpdatingJsonFile<Configuration> 
 	private class RunCache extends KeyValueCache<String, Optional<NotificationDto>> {
 
 		public RunCache(Path fileName) {
-			super("runscanner " + fileName.toString(), 15, SimpleRecord::new);
+			super("runscanner " + fileName.toString(), 30, SimpleRecord::new);
 		}
 
 		@Override
