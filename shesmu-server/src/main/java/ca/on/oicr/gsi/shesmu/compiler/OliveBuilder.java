@@ -6,6 +6,7 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
+import java.lang.invoke.LambdaMetafactory;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -137,6 +138,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
 			throw new UnsupportedOperationException();
 		}
 	}
+	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
+			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
+			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+			false);
 
 	/**
 	 * Generate bytecode for the olive and create a method to consume the result.

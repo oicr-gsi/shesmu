@@ -2,14 +2,10 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.VOID_TYPE;
 
-import java.lang.invoke.LambdaMetafactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -20,9 +16,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -42,24 +36,18 @@ public abstract class BaseOliveBuilder {
 	private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
 	private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
 	private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
-	protected static final Type A_COMPARATOR_TYPE = Type.getType(Comparator.class);
+	private static final Type A_COMPARATOR_TYPE = Type.getType(Comparator.class);
 	protected static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
 	protected static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
-	protected static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
-	protected static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
-	protected static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
+	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
+	private static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
 	protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-	protected static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
-	protected static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
-	protected static final Type A_SET_TYPE = Type.getType(Set.class);
+	private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
+	private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 	protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
 	protected static final Type A_STRING_TYPE = Type.getType(String.class);
-	protected static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
+	private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
 
-	protected static final Handle LAMBDA_METAFACTORY_BSM = new Handle(Opcodes.H_INVOKESTATIC,
-			Type.getType(LambdaMetafactory.class).getInternalName(), "metafactory",
-			"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-			false);
 	private static final Method METHOD_ACTION_GENERATOR__MEASURE_FLOW = new Method("measureFlow", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, INT_TYPE, INT_TYPE });
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
@@ -72,20 +60,20 @@ public abstract class BaseOliveBuilder {
 
 	private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
 
-	protected static final Method METHOD_LEFT_JOIN = new Method("leftJoin", A_STREAM_TYPE, new Type[] { A_STREAM_TYPE,
+	private static final Method METHOD_LEFT_JOIN = new Method("leftJoin", A_STREAM_TYPE, new Type[] { A_STREAM_TYPE,
 			A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
-	protected static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
+	private static final Method METHOD_MONITOR = new Method("monitor", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE });
-	protected static final Method METHOD_PICK = new Method("pick", A_STREAM_TYPE,
+	private static final Method METHOD_PICK = new Method("pick", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_TO_INT_FUNCTION_TYPE, A_BIPREDICATE_TYPE, A_COMPARATOR_TYPE });
-	protected static final Method METHOD_REGROUP = new Method("regroup", A_STREAM_TYPE,
+	private static final Method METHOD_REGROUP = new Method("regroup", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE });
-	protected static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
+	private static final Method METHOD_STREAM__FILTER = new Method("filter", A_STREAM_TYPE,
 			new Type[] { A_PREDICATE_TYPE });
-	protected static final Method METHOD_RUNTIME_SUPPORT__JOIN = new Method("join", A_STREAM_TYPE,
+	private static final Method METHOD_RUNTIME_SUPPORT__JOIN = new Method("join", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE });
-	protected static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
-	protected static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE,
+	private static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
+	private static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE,
 			new Type[] { A_CONSUMER_TYPE });
 
 	private Type currentType;
@@ -157,24 +145,13 @@ public abstract class BaseOliveBuilder {
 	@SafeVarargs
 	public final Renderer filter(int line, int column, LoadableValue... capturedVariables) {
 		final Type type = currentType;
-		final Method method = new Method(String.format("Where %d:%d", line, column), BOOLEAN_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
-						.toArray(Type[]::new));
+		final LambdaBuilder lambda = new LambdaBuilder(owner, String.format("Where %d:%d", line, column),
+				LambdaBuilder.predicate(type), capturedVariables);
 		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("test",
-					Type.getMethodDescriptor(A_PREDICATE_TYPE,
-							Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(BOOLEAN_TYPE, type));
+			lambda.push(renderer);
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
-		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		return lambda.renderer(type, this::emitSigner);
 	}
 
 	public final JoinBuilder join(int line, int column, Type innerType, Imyhat keyType,
@@ -185,16 +162,12 @@ public abstract class BaseOliveBuilder {
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method outerKeyMethod = new Method(String.format("Join %d:%d Outer 🔑", line, column), keyType.asmType(),
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
-						.toArray(Type[]::new));
-		final Method innerKeyMethod = new Method(String.format("Join %d:%d Inner 🔑", line, column), keyType.asmType(),
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(innerType))
-						.toArray(Type[]::new));
-
-		final Type[] captureTypes = Stream
-				.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
-				.toArray(Type[]::new);
+		final LambdaBuilder outerKeyLambda = new LambdaBuilder(owner,
+				String.format("Join %d:%d Outer 🔑", line, column), LambdaBuilder.function(keyType, oldType),
+				capturedVariables);
+		final LambdaBuilder innerKeyLambda = new LambdaBuilder(owner,
+				String.format("Join %d:%d Inner 🔑", line, column), LambdaBuilder.function(keyType, innerType),
+				capturedVariables);
 
 		steps.add(renderer -> {
 			renderer.methodGen().loadArg(1);
@@ -202,37 +175,15 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
 			renderer.methodGen().checkCast(A_STREAM_TYPE);
 
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), outerKeyMethod.getName(),
-							outerKeyMethod.getDescriptor(), false),
-					Type.getMethodType(keyType.boxedAsmType(), oldType));
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), innerKeyMethod.getName(),
-							innerKeyMethod.getDescriptor(), false),
-					Type.getMethodType(keyType.boxedAsmType(), innerType));
-
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_BIFUNCTION_TYPE, new Type[] {}),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_NEWINVOKESPECIAL, newType.getInternalName(), "<init>",
-							Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
-					Type.getMethodType(newType, oldType, innerType));
+			outerKeyLambda.push(renderer);
+			innerKeyLambda.push(renderer);
+			LambdaBuilder.pushNew(renderer, LambdaBuilder.bifunction(newType, oldType, innerType));
 
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JOIN);
 		});
 
-		final Renderer outerKeyMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, outerKeyMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
-		final Renderer innerKeyMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, innerKeyMethod, null, null, owner.classVisitor),
-				capturedVariables.length, innerType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
+		final Renderer innerKeyMethodGen = innerKeyLambda.renderer(oldType, this::emitSigner);
 		return new JoinBuilder(owner, newType, oldType, innerType, outerKeyMethodGen, innerKeyMethodGen);
 	}
 
@@ -246,24 +197,16 @@ public abstract class BaseOliveBuilder {
 		final Type newType = Type.getObjectType(outputClassName);
 		currentType = newType;
 
-		final Method newMethod = new Method(String.format("LeftJoin %d:%d✨", line, column), newType,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(joinedType))
-						.toArray(Type[]::new));
-		final Method outerKeyMethod = new Method(String.format("LeftJoin %d:%d Outer 🔑", line, column),
-				keyType.asmType(),
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
-						.toArray(Type[]::new));
-		final Method innerKeyMethod = new Method(String.format("LeftJoin %d:%d Inner 🔑", line, column),
-				keyType.asmType(),
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(innerType))
-						.toArray(Type[]::new));
-		final Method collectMethod = new Method(String.format("LeftJoin %d:%d 🧲", line, column), VOID_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, joinedType))
-						.toArray(Type[]::new));
-
-		final Type[] captureTypes = Stream
-				.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
-				.toArray(Type[]::new);
+		final LambdaBuilder newMethod = new LambdaBuilder(owner, String.format("LeftJoin %d:%d✨", line, column),
+				LambdaBuilder.function(newType, joinedType), capturedVariables);
+		final LambdaBuilder outerKeyLambda = new LambdaBuilder(owner,
+				String.format("LeftJoin %d:%d Outer 🔑", line, column), LambdaBuilder.function(keyType, oldType),
+				capturedVariables);
+		final LambdaBuilder innerKeyLambda = new LambdaBuilder(owner,
+				String.format("LeftJoin %d:%d Inner 🔑", line, column), LambdaBuilder.function(keyType, innerType),
+				capturedVariables);
+		final LambdaBuilder collectLambda = new LambdaBuilder(owner, String.format("LeftJoin %d:%d 🧲", line, column),
+				LambdaBuilder.biconsumer(newType, joinedType), capturedVariables);
 
 		steps.add(renderer -> {
 			renderer.methodGen().loadArg(1);
@@ -271,70 +214,24 @@ public abstract class BaseOliveBuilder {
 			renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
 			renderer.methodGen().checkCast(A_STREAM_TYPE);
 
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), outerKeyMethod.getName(),
-							outerKeyMethod.getDescriptor(), false),
-					Type.getMethodType(keyType.boxedAsmType(), oldType));
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), innerKeyMethod.getName(),
-							innerKeyMethod.getDescriptor(), false),
-					Type.getMethodType(keyType.boxedAsmType(), innerType));
-
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_BIFUNCTION_TYPE, new Type[] {}),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_NEWINVOKESPECIAL, joinedType.getInternalName(), "<init>",
-							Type.getMethodDescriptor(Type.VOID_TYPE, oldType, innerType), false),
-					Type.getMethodType(joinedType, oldType, innerType));
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic(
-					"apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes), LAMBDA_METAFACTORY_BSM,
-					Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
-							owner.selfType().getInternalName(), newMethod.getName(), newMethod.getDescriptor(), false),
-					Type.getMethodType(newType, joinedType));
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen()
-					.invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
-							LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
-							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-									collectMethod.getName(), collectMethod.getDescriptor(), false),
-							Type.getMethodType(VOID_TYPE, newType, joinedType));
+			outerKeyLambda.push(renderer);
+			innerKeyLambda.push(renderer);
+			LambdaBuilder.pushNew(renderer, LambdaBuilder.bifunction(joinedType, oldType, innerType));
+			newMethod.push(renderer);
+			collectLambda.push(renderer);
 
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_LEFT_JOIN);
 
-			renderer.methodGen().invokeDynamic("test", Type.getMethodDescriptor(A_PREDICATE_TYPE),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, outputClassName, RegroupVariablesBuilder.METHOD_IS_OK.getName(),
-							RegroupVariablesBuilder.METHOD_IS_OK.getDescriptor(), false),
-					Type.getMethodType(BOOLEAN_TYPE, newType));
+			LambdaBuilder.pushVirtual(renderer, RegroupVariablesBuilder.METHOD_IS_OK.getName(),
+					LambdaBuilder.predicate(newType));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 
 		});
 
-		final Renderer newMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
-				capturedVariables.length, joinedType, RootBuilder.proxyCaptured(0, capturedVariables),
-				this::emitSigner);
-		final Renderer outerKeyMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, outerKeyMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
-		final Renderer innerKeyMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, innerKeyMethod, null, null, owner.classVisitor),
-				capturedVariables.length, innerType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
-		final Renderer collectedMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
-				capturedVariables.length + 1, joinedType, RootBuilder.proxyCaptured(0, capturedVariables),
-				this::emitSigner);
+		final Renderer newMethodGen = newMethod.renderer(joinedType, this::emitSigner);
+		final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
+		final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType, this::emitSigner);
+		final Renderer collectedMethodGen = collectLambda.renderer(joinedType, 1, this::emitSigner);
 
 		return new Pair<>(new JoinBuilder(owner, joinedType, oldType, innerType, outerKeyMethodGen, innerKeyMethodGen),
 				new RegroupVariablesBuilder(owner, outputClassName, newMethodGen, collectedMethodGen,
@@ -342,35 +239,21 @@ public abstract class BaseOliveBuilder {
 	}
 
 	public final LetBuilder let(int line, int column, LoadableValue... capturedVariables) {
-		final String className = String.format("shesmu/dyn/Let_%d_%d", line, column);
+		final String className = String.format("shesmu/dyn/Let %d:%d", line, column);
 
 		final Type oldType = currentType;
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method createMethod = new Method(String.format("Let %d:%d", line, column), newType,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
-						.toArray(Type[]::new));
+		final LambdaBuilder createLambda = new LambdaBuilder(owner, String.format("Let %d:%d", line, column),
+				LambdaBuilder.function(newType, oldType), capturedVariables);
 
 		steps.add(renderer -> {
-			final Type[] captureTypes = Stream
-					.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
-					.toArray(Type[]::new);
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen()
-					.invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-							LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-									createMethod.getName(), createMethod.getDescriptor(), false),
-							Type.getMethodType(newType, oldType));
+			createLambda.push(renderer);
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
 		});
 
-		final Renderer createMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, createMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		final Renderer createMethodGen = createLambda.renderer(oldType, this::emitSigner);
 
 		return new LetBuilder(owner, newType, createMethodGen);
 	}
@@ -418,49 +301,27 @@ public abstract class BaseOliveBuilder {
 	public Renderer monitor(int line, int column, String metricName, String help, List<String> names,
 			LoadableValue[] capturedVariables) {
 		final Type type = currentType;
-		final Method method = new Method(String.format("Monitor %s %d:%d", metricName, line, column),
-				A_OBJECT_ARRAY_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
-						.toArray(Type[]::new));
+		final LambdaBuilder lambda = new LambdaBuilder(owner,
+				String.format("Monitor %s %d:%d", metricName, line, column),
+				LambdaBuilder.function(A_OBJECT_ARRAY_TYPE, type), capturedVariables);
 
 		steps.add(renderer -> {
 			owner.loadGauge(metricName, help, names, renderer.methodGen());
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("apply",
-					Type.getMethodDescriptor(A_FUNCTION_TYPE,
-							Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(A_OBJECT_TYPE, type));
+			lambda.push(renderer);
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_MONITOR);
 		});
-		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		return lambda.renderer(type, this::emitSigner);
 	}
 
 	public Renderer peek(String action, int line, int column, LoadableValue[] capturedVariables) {
 		final Type type = currentType;
-		final Method method = new Method(String.format("%s %d:%d", action, line, column), VOID_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(type))
-						.toArray(Type[]::new));
+		final LambdaBuilder lambda = new LambdaBuilder(owner, String.format("%s %d:%d", action, line, column),
+				LambdaBuilder.consumer(type), capturedVariables);
 		steps.add(renderer -> {
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			final Handle handle = new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-					method.getName(), method.getDescriptor(), false);
-			renderer.methodGen().invokeDynamic("accept",
-					Type.getMethodDescriptor(A_CONSUMER_TYPE,
-							Stream.concat(Stream.of(owner.selfType()),
-									Arrays.stream(capturedVariables).map(LoadableValue::type)).toArray(Type[]::new)),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE), handle,
-					Type.getMethodType(VOID_TYPE, type));
+			lambda.push(renderer);
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__PEEK);
 		});
-		return new Renderer(owner, new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-				capturedVariables.length, type, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
+		return lambda.renderer(type, this::emitSigner);
 	}
 
 	/**
@@ -480,57 +341,30 @@ public abstract class BaseOliveBuilder {
 			LoadableValue[] capturedVariables) {
 		final Type streamType = currentType;
 
-		final Type[] captureTypes = Stream
-				.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
-				.toArray(Type[]::new);
+		final LambdaBuilder hashCodeLambda = new LambdaBuilder(owner, String.format("Pick %d:%d hash", line, column),
+				LambdaBuilder.toIntFunction(streamType));
 
-		final Method hashCodeMethod = new Method(String.format("Pick %d:%d hash", line, column), INT_TYPE,
-				new Type[] { streamType });
+		final LambdaBuilder equalsLambda = new LambdaBuilder(owner, String.format("Pick %d:%d equals", line, column),
+				LambdaBuilder.bipredicate(streamType, streamType), capturedVariables);
 
-		final Method equalsMethod = new Method(String.format("Pick %d:%d equals", line, column), BOOLEAN_TYPE,
-				new Type[] { streamType, streamType });
-
-		final Method extractMethod = new Method(String.format("Pick %d:%d 🔍", line, column),
-				compareType.boxedAsmType(),
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(streamType))
-						.toArray(Type[]::new));
+		final LambdaBuilder extractLambda = new LambdaBuilder(owner, String.format("Pick %d:%d 🔍", line, column),
+				LambdaBuilder.function(compareType.boxedAsmType(), streamType), capturedVariables);
 
 		steps.add(renderer -> {
-			renderer.methodGen()
-					.invokeDynamic("applyAsInt", Type.getMethodDescriptor(A_TO_INT_FUNCTION_TYPE),
-							LAMBDA_METAFACTORY_BSM, Type.getMethodType(INT_TYPE, A_OBJECT_TYPE),
-							new Handle(Opcodes.H_INVOKESTATIC, owner.selfType().getInternalName(),
-									hashCodeMethod.getName(), hashCodeMethod.getDescriptor(), false),
-							Type.getMethodType(INT_TYPE, streamType));
-
-			renderer.methodGen().invokeDynamic("test", Type.getMethodDescriptor(A_BIPREDICATE_TYPE),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKESTATIC, owner.selfType().getInternalName(), equalsMethod.getName(),
-							equalsMethod.getDescriptor(), false),
-					Type.getMethodType(BOOLEAN_TYPE, streamType, streamType));
-
-			renderer.methodGen().loadThis();
-			for (final LoadableValue value : capturedVariables) {
-				value.accept(renderer);
-			}
-			renderer.methodGen().invokeDynamic("apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(), extractMethod.getName(),
-							extractMethod.getDescriptor(), false),
-					Type.getMethodType(compareType.boxedAsmType(), streamType));
+			hashCodeLambda.push(renderer);
+			equalsLambda.push(renderer);
+			extractLambda.push(renderer);
 			renderer.invokeInterfaceStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
 			if (max) {
 				renderer.methodGen().invokeInterface(A_COMPARATOR_TYPE, METHOD_COMPARATOR__REVERSED);
 			}
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_PICK);
 		});
-		final GeneratorAdapter hashCodeGenerator = new GeneratorAdapter(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-				hashCodeMethod, null, null, owner.classVisitor);
+		final GeneratorAdapter hashCodeGenerator = hashCodeLambda.methodGen();
 		hashCodeGenerator.visitCode();
 		hashCodeGenerator.push(0);
 
-		final GeneratorAdapter equalsGenerator = new GeneratorAdapter(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-				equalsMethod, null, null, owner.classVisitor);
+		final GeneratorAdapter equalsGenerator = equalsLambda.methodGen();
 		equalsGenerator.visitCode();
 		final Label end = equalsGenerator.newLabel();
 
@@ -579,10 +413,7 @@ public abstract class BaseOliveBuilder {
 		equalsGenerator.visitMaxs(0, 0);
 		equalsGenerator.visitEnd();
 
-		return new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, extractMethod, null, null, owner.classVisitor),
-				capturedVariables.length, streamType, RootBuilder.proxyCaptured(0, capturedVariables),
-				this::emitSigner);
+		return extractLambda.renderer(streamType, this::emitSigner);
 
 	}
 
@@ -593,53 +424,24 @@ public abstract class BaseOliveBuilder {
 		final Type newType = Type.getObjectType(className);
 		currentType = newType;
 
-		final Method newMethod = new Method(String.format("Group %d:%d ✨", line, column), newType,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(oldType))
-						.toArray(Type[]::new));
-		final Method collectMethod = new Method(String.format("Group %d:%d 🧲", line, column), VOID_TYPE,
-				Stream.concat(Arrays.stream(capturedVariables).map(LoadableValue::type), Stream.of(newType, oldType))
-						.toArray(Type[]::new));
+		final LambdaBuilder newLambda = new LambdaBuilder(owner, String.format("Group %d:%d ✨", line, column),
+				LambdaBuilder.function(newType, oldType), capturedVariables);
+		final LambdaBuilder collectLambda = new LambdaBuilder(owner, String.format("Group %d:%d 🧲", line, column),
+				LambdaBuilder.biconsumer(newType, oldType), capturedVariables);
 
 		steps.add(renderer -> {
-			final Type[] captureTypes = Stream
-					.concat(Stream.of(owner.selfType()), Arrays.stream(capturedVariables).map(LoadableValue::type))
-					.toArray(Type[]::new);
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen().invokeDynamic(
-					"apply", Type.getMethodDescriptor(A_FUNCTION_TYPE, captureTypes), LAMBDA_METAFACTORY_BSM,
-					Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE), new Handle(Opcodes.H_INVOKEVIRTUAL,
-							owner.selfType().getInternalName(), newMethod.getName(), newMethod.getDescriptor(), false),
-					Type.getMethodType(newType, oldType));
-
-			renderer.methodGen().loadThis();
-			Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-			renderer.methodGen()
-					.invokeDynamic("accept", Type.getMethodDescriptor(A_BICONSUMER_TYPE, captureTypes),
-							LAMBDA_METAFACTORY_BSM, Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
-							new Handle(Opcodes.H_INVOKEVIRTUAL, owner.selfType().getInternalName(),
-									collectMethod.getName(), collectMethod.getDescriptor(), false),
-							Type.getMethodType(VOID_TYPE, newType, oldType));
-
+			newLambda.push(renderer);
+			collectLambda.push(renderer);
 			renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP);
-			renderer.methodGen().invokeDynamic("test", Type.getMethodDescriptor(A_PREDICATE_TYPE),
-					LAMBDA_METAFACTORY_BSM, Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
-					new Handle(Opcodes.H_INVOKEVIRTUAL, className, RegroupVariablesBuilder.METHOD_IS_OK.getName(),
-							RegroupVariablesBuilder.METHOD_IS_OK.getDescriptor(), false),
-					Type.getMethodType(BOOLEAN_TYPE, newType));
+
+			LambdaBuilder.pushVirtual(renderer, RegroupVariablesBuilder.METHOD_IS_OK.getName(),
+					LambdaBuilder.predicate(newType));
 			renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
 		});
 
-		final Renderer newMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, newMethod, null, null, owner.classVisitor),
-				capturedVariables.length, oldType, RootBuilder.proxyCaptured(0, capturedVariables), this::emitSigner);
-		final Renderer collectedMethodGen = new Renderer(owner,
-				new GeneratorAdapter(Opcodes.ACC_PUBLIC, collectMethod, null, null, owner.classVisitor),
-				capturedVariables.length + 1, oldType, RootBuilder.proxyCaptured(0, capturedVariables),
-				this::emitSigner);
+		final Renderer newRenderer = newLambda.renderer(oldType, this::emitSigner);
+		final Renderer collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
 
-		return new RegroupVariablesBuilder(owner, className, newMethodGen, collectedMethodGen,
-				capturedVariables.length);
+		return new RegroupVariablesBuilder(owner, className, newRenderer, collectedRenderer, capturedVariables.length);
 	}
 }
