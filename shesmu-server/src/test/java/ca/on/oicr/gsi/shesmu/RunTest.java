@@ -241,7 +241,7 @@ public class RunTest {
 				System.err.printf("FAIL %s\n", file.getFileName());
 				return true;
 			}
-		} catch (Exception | VerifyError | BootstrapMethodError e) {
+		} catch (Exception | VerifyError | BootstrapMethodError | IncompatibleClassChangeError e) {
 			System.err.printf("EXCP %s\n", file.getFileName());
 			e.printStackTrace();
 			return true;

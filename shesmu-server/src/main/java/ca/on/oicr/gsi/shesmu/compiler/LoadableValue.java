@@ -18,4 +18,5 @@ public abstract class LoadableValue implements Consumer<Renderer> {
 	 * The Java/ASM type for this value
 	 */
 	public abstract Type type();
+
 }
