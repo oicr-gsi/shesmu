@@ -19,6 +19,7 @@ import org.objectweb.asm.commons.Method;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.shesmu.util.input.BaseInputFormatDefinition;
@@ -207,7 +208,7 @@ public class RunTest {
 	}
 
 	private Stream<FunctionDefinition> functions() {
-		return Stream.of(INT2STR, INT2DATE);
+		return Stream.concat(Stream.of(INT2STR, INT2DATE), new StandardDefinitions().functions());
 	}
 
 	@Test

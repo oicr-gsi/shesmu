@@ -13,7 +13,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 
 public abstract class ImyhatNode {
 
-	private static final Imyhat[] BASE_TYPES = new Imyhat[] { Imyhat.BOOLEAN, Imyhat.DATE, Imyhat.INTEGER,
+	private static final Imyhat[] BASE_TYPES = new Imyhat[] { Imyhat.BOOLEAN, Imyhat.DATE, Imyhat.INTEGER, Imyhat.PATH,
 			Imyhat.STRING };
 
 	public static boolean isBaseType(String name) {

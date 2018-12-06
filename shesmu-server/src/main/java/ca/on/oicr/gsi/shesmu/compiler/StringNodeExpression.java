@@ -51,11 +51,9 @@ public class StringNodeExpression extends StringNode {
 			renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__STR);
 		} else if (expression.type().isSame(Imyhat.INTEGER)) {
 			renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__LONG);
-		} else if (expression.type().isSame(Imyhat.DATE)) {
+		} else {
 			renderer.methodGen().invokeVirtual(A_OBJECT_TYPE, METHOD_OBJECT__TO_STRING);
 			renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__STR);
-		} else {
-			throw new UnsupportedOperationException();
 		}
 	}
 
@@ -79,7 +77,7 @@ public class StringNodeExpression extends StringNode {
 	public boolean typeCheck(Consumer<String> errorHandler) {
 		if (expression.typeCheck(errorHandler)) {
 			final Imyhat innerType = expression.type();
-			if (Stream.of(Imyhat.INTEGER, Imyhat.DATE, Imyhat.STRING).noneMatch(innerType::isSame)) {
+			if (Stream.of(Imyhat.INTEGER, Imyhat.DATE, Imyhat.PATH, Imyhat.STRING).noneMatch(innerType::isSame)) {
 				errorHandler.accept(String.format("%d:%d: Cannot convert type %s to string in interpolation.",
 						expression.line(), expression.column(), innerType.name()));
 				return false;

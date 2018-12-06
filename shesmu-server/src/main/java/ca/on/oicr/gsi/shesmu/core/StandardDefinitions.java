@@ -1,8 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core;
 
 import java.io.PrintStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.stream.Stream;
@@ -27,29 +25,6 @@ import ca.on.oicr.gsi.status.ConfigurationSection;
  */
 @MetaInfServices(DefinitionRepository.class)
 public final class StandardDefinitions implements DefinitionRepository {
-
-	/**
-	 * Get the directory name of a path
-	 */
-	public static String dir_name(String input) {
-		final Path path = Paths.get(input).getParent();
-		return path == null ? "" : path.toString();
-	}
-
-	/**
-	 * Get the file name (basename) of a path
-	 */
-	public static String file_name(String input) {
-		return Paths.get(input).getFileName().toString();
-
-	}
-
-	/**
-	 * Join two paths
-	 */
-	public static String join_path(String dir, String file) {
-		return Paths.get(dir).resolve(file).toString();
-	}
 
 	/**
 	 * Truncate a time stamp to midnight
@@ -88,16 +63,22 @@ public final class StandardDefinitions implements DefinitionRepository {
 			FunctionDefinition.staticMethod("start_of_day", StandardDefinitions.class, "start_of_day",
 					"Rounds a date-time to the previous midnight.", Imyhat.DATE,
 					new FunctionParameter("date", Imyhat.DATE)),
-			FunctionDefinition.staticMethod("join_path", StandardDefinitions.class, "join_path",
-					"Combines two well-formed paths. If the second path is absolute, the first is discarded; if not, they are combined.",
-					Imyhat.STRING, new FunctionParameter("working directory", Imyhat.STRING),
-					new FunctionParameter("child path", Imyhat.STRING)),
-			FunctionDefinition.staticMethod("file_name", StandardDefinitions.class, "file_name",
-					"Extracts the last element in a path.", Imyhat.STRING,
-					new FunctionParameter("input path", Imyhat.STRING)),
-			FunctionDefinition.staticMethod("dir_name", StandardDefinitions.class, "dir_name",
-					"Extracts all but the last elements in a path (i.e., the containing directory).", Imyhat.STRING,
-					new FunctionParameter("input path", Imyhat.STRING)),
+			FunctionDefinition.virtualMethod("path_file", "getFileName", "Extracts the last element in a path.",
+					Imyhat.PATH, new FunctionParameter("input path", Imyhat.PATH)),
+			FunctionDefinition.virtualMethod("path_dir", "getParent",
+					"Extracts all but the last elements in a path (i.e., the containing directory).", Imyhat.PATH,
+					new FunctionParameter("input path", Imyhat.PATH)),
+			FunctionDefinition.virtualMethod("path_normalize", "normalize",
+					"Normalize a path (i.e., remove any ./ and ../ in the path).", Imyhat.PATH,
+					new FunctionParameter("input path", Imyhat.PATH)),
+			FunctionDefinition.virtualMethod("path_resolve", "resolve",
+					"Creates a new path of resolving one path as if in the directory of the other.", Imyhat.PATH,
+					new FunctionParameter("directory path", Imyhat.PATH),
+					new FunctionParameter("path to resolve", Imyhat.PATH)),
+			FunctionDefinition.virtualMethod("path_relativize", "relativize",
+					"Creates a new path of relativize one path as if in the directory of the other.", Imyhat.PATH,
+					new FunctionParameter("directory path", Imyhat.PATH),
+					new FunctionParameter("path to relativize", Imyhat.PATH)),
 			FunctionDefinition.staticMethod("version_at_least", StandardDefinitions.class, "version_at_least",
 					"Checks whether the supplied version tuple is the same or greater than version numbers provided.",
 					Imyhat.BOOLEAN,

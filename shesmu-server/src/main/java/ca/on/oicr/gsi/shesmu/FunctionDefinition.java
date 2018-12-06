@@ -85,8 +85,14 @@ public interface FunctionDefinition {
 
 			@Override
 			public void render(GeneratorAdapter methodGen) {
-				methodGen.invokeVirtual(parameters[0].type().asmType(), new Method(methodName, returnType.asmType(),
-						Stream.of(parameters).skip(1).map(p -> p.type().asmType()).toArray(Type[]::new)));
+				Method method = new Method(methodName, returnType.asmType(),
+						Stream.of(parameters).skip(1).map(p -> p.type().asmType()).toArray(Type[]::new));
+				Imyhat owner = parameters[0].type();
+				if (owner.javaType().isInterface()) {
+					methodGen.invokeInterface(owner.asmType(), method);
+				} else {
+					methodGen.invokeVirtual(owner.asmType(), method);
+				}
 			}
 
 			@Override

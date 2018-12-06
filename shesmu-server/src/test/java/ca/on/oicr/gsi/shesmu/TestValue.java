@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
@@ -11,7 +13,7 @@ public class TestValue {
 	private final String accession;
 	private final long file_size;
 	private final long library_size;
-	private final String path;
+	private final Path path;
 	private final String project;
 	private final Instant timestamp;
 	private final String workflow;
@@ -22,7 +24,7 @@ public class TestValue {
 			String project, long library_size, Instant timestamp) {
 		super();
 		this.accession = accession;
-		this.path = path;
+		this.path = Paths.get(path);
 		this.file_size = file_size;
 		this.workflow = workflow;
 		this.workflow_version = workflow_version;
@@ -54,8 +56,8 @@ public class TestValue {
 		return library_size;
 	}
 
-	@ShesmuVariable(type = "s")
-	public String path() {
+	@ShesmuVariable
+	public Path path() {
 		return path;
 	}
 

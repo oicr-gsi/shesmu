@@ -41,6 +41,7 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<Integer> INT_SUFFIX = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION = new Parser.ParseDispatch<>();
+	private static final Pattern PATH = Pattern.compile("^([^\\\\']|\\\\')+");
 	public static final Pattern REGEX = Pattern.compile("^/(([^/\n]|\\\\/)*)/");
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_TIGHT = new Parser.ParseDispatch<>();
@@ -199,6 +200,17 @@ public abstract class ExpressionNode {
 			}
 			return result;
 
+		});
+		TERMINAL.addSymbol("'", (p, o) -> {
+			final AtomicReference<String> path = new AtomicReference<>();
+			final Parser result = p//
+					.regex(PATH, m -> path.set(m.group(0).replace("\\'", "'")), "Expected path.")//
+					.symbol("'")//
+					.whitespace();
+			if (p.isGood()) {
+				o.accept(new ExpressionNodePathLiteral(p.line(), p.column(), path.get()));
+			}
+			return result;
 		});
 		TERMINAL.addSymbol("(", (p, o) -> {
 			final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
