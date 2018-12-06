@@ -1,7 +1,7 @@
 Input test;
 
 Olive
- Reject path != "/foo1" {
+ Reject path != '/foo1' {
    Dump workflow To somefile
  }
- Run ok With ok = path == "/foo1";
+ Run ok With ok = path == '/foo1';

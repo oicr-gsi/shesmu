@@ -5,6 +5,8 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -481,6 +483,7 @@ public abstract class Imyhat {
 	private static final Type A_SET_TYPE = Type.getType(Set.class);
 
 	private static final Type A_STRING_TYPE = Type.getType(String.class);
+	private static final Type A_PATH_TYPE = Type.getType(Path.class);
 	private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
 	public static final Imyhat BAD = new Imyhat() {
 
@@ -885,6 +888,80 @@ public abstract class Imyhat {
 			return node.asText();
 		}
 	};
+	protected static final Method METHOD_OBJECT__TO_STRING = new Method("toString", A_STRING_TYPE, new Type[] {});
+	public static final BaseImyhat PATH = new BaseImyhat() {
+
+		@Override
+		public Type asmType() {
+			return A_PATH_TYPE;
+		}
+
+		@Override
+		public Comparator<?> comparator() {
+			return Comparator.naturalOrder();
+		}
+
+		@Override
+		public void consume(ImyhatDispatcher dispatcher, Object value) {
+			dispatcher.consume((String) value);
+		}
+
+		@Override
+		public Object defaultValue() {
+			return Paths.get(".");
+		}
+
+		@Override
+		public String descriptor() {
+			return "p";
+		}
+
+		@Override
+		public boolean isOrderable() {
+			return false;
+		}
+
+		@Override
+		public String javaScriptParser() {
+			return "parser.p";
+		}
+
+		@Override
+		public Class<?> javaType() {
+			return Path.class;
+		}
+
+		@Override
+		public String name() {
+			return "path";
+		}
+
+		@Override
+		protected void packJson(ArrayNode array, Object value) {
+			array.add(((Path) value).toString());
+		}
+
+		@Override
+		public void packJson(ObjectNode node, String key, Object value) {
+			node.put(key, ((Path) value).toString());
+		}
+
+		@Override
+		public Object parse(String s) {
+			return Paths.get(s);
+		}
+
+		@Override
+		public void streamJson(GeneratorAdapter method) {
+			method.invokeVirtual(A_PATH_TYPE, METHOD_OBJECT__TO_STRING);
+			method.invokeVirtual(A_JSON_GENERATOR_TYPE, METHOD_JSON_GENERATOR__WRITE_STRING);
+		}
+
+		@Override
+		public Object unpackJson(JsonNode node) {
+			return Paths.get(node.asText());
+		}
+	};
 
 	/**
 	 * A bootstrap method that returns the appropriate {@link Imyhat} from a
@@ -954,14 +1031,14 @@ public abstract class Imyhat {
 	 * Parse a name which must be one of the base types (no lists or tuples)
 	 */
 	public static BaseImyhat forName(String s) {
-		return Stream.of(BOOLEAN, DATE, INTEGER, STRING)//
+		return Stream.of(BOOLEAN, DATE, INTEGER, PATH, STRING)//
 				.filter(t -> t.name().equals(s))//
 				.findAny()//
 				.orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
 	}
 
 	public static Optional<BaseImyhat> of(Class<?> c) {
-		return Stream.of(BOOLEAN, DATE, INTEGER, STRING)//
+		return Stream.of(BOOLEAN, DATE, INTEGER, PATH, STRING)//
 				.filter(t -> t.javaType().equals(c))//
 				.findAny();
 	}
@@ -1004,6 +1081,9 @@ public abstract class Imyhat {
 		case 'i':
 			output.set(input.subSequence(1, input.length()));
 			return INTEGER;
+		case 'p':
+			output.set(input.subSequence(1, input.length()));
+			return PATH;
 		case 's':
 			output.set(input.subSequence(1, input.length()));
 			return STRING;

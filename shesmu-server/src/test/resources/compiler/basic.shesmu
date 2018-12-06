@@ -7,7 +7,7 @@ Define standard_execution()
 Define standard_fastq(string s)
   Where workflow == {"BamQC 2.7+", 3 }[0]
   Where project == "foo"
-  Where str_len(path) == file_size;
+  Where str_len("{path}") == file_size;
 
 Define standard_bam()
   Where project == "bar"
@@ -19,7 +19,7 @@ Define standard_bamqc()
 
 Olive
   standard_fastq("a")
-  Group files = List path By accession, project
+  Group files = List "{path}" By accession, project
   Run fastqc With
     memory = 4Gi,
     input = files;

@@ -77,6 +77,7 @@ syn keyword shesmuType boolean date integer string
 syn match shesmuConstant "\<\d\+\>" display
 syn match shesmuConstant "\<\d\+[kMG]i\=\>" display
 syn match shesmuConstant "\<\d\+\(weeks\|days\|hours\|mins\)\>" display
+syn match shesmuConstant "'\([^\\']\|\\'\)\+\'" display
 syn match shesmuIdentifier "\<[a-z][a-z_]*\>\s*=[^=>]" display
 syn match shesmuDate "Date\s*\d\d\d\d-\d\d-\d\d\(T\d\d\:\d\d:\d\d\(Z\|[+-]\d\d\(:\d\d\)\=\)\)\=" display
 syn match shesmuComment /#.*$/ contains=shesmuTodo,@Spell display

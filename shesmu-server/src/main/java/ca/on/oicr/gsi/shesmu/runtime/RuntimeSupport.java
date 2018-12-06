@@ -76,6 +76,8 @@ public final class RuntimeSupport {
 
 	}
 
+	public static final String[] EMPTY = new String[0];
+
 	private static final Map<String, CallSite> callsites = new HashMap<>();
 
 	public static final ObjectMapper MAPPER = new ObjectMapper();

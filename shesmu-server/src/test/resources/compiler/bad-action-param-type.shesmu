@@ -1,7 +1,7 @@
 Input test;
 
 Olive
-  Group files = List path By accession
+  Group files = List "{path}" By accession
   Run fastqc With
     memory = "bad",
     input = files;

@@ -366,6 +366,7 @@ machine-to-machine communication.
 | List       | `[`_inner_`]`                                      | `a`_inner_ |
 | Tuple      | `{`_t1_`,`_t2_`,` ...`}`                           | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 | NamedTuple | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
+| Path       | `path`                                             | `p`        |
 
 Every input variable's type is available as _name_`_type`. For instance, the
 `shesmu` input format has the variable `locations`, so `locations_type` will be
@@ -575,6 +576,11 @@ tuple is determined based on the elements.
 - `[`_expr_`,` _expr_`,` ...`]`
 
 Creates a new list from the specified elements. All the expressions must be of the same type.
+
+#### Path Literals
+- `'`path`'`
+
+Paths are UNIX-like paths that can be manipulated. They may contain `\'` if necessary.
 
 #### String Literal
 - `"`parts`"`

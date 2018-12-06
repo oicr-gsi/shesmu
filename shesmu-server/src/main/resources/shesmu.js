@@ -264,6 +264,18 @@ export const parser = {
       }
     };
   },
+  p: function(input) {
+    let match = input.match(/^\s*'(([^"\\]|\\")*)'/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: match[1].replace("\\'", "'")
+      };
+    } else {
+      return { good: false, input: input, error: "Expected path." };
+    }
+  },
   s: function(input) {
     let match = input.match(/^\s*"(([^"\\]|\\")*)"/);
     if (match) {
