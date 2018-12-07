@@ -33,6 +33,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -88,6 +90,7 @@ import io.prometheus.client.hotspot.DefaultExports;
 
 @SuppressWarnings("restriction")
 public final class Server implements ServerConfig {
+
 	private static class EmergencyThrottlerHandler implements HttpHandler {
 		private final boolean state;
 
@@ -114,6 +117,8 @@ public final class Server implements ServerConfig {
 		final Server s = new Server(8081);
 		s.start();
 	}
+
+	public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
 	private final CompiledGenerator compiler = new CompiledGenerator();
 	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();

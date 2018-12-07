@@ -8,10 +8,9 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.definitions.FileBackedConfiguration;
@@ -21,7 +20,6 @@ import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 
 public class GuanyinFile extends AutoUpdatingJsonFile<Configuration> implements FileBackedConfiguration {
-	static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
 	private Optional<Configuration> configuration = Optional.empty();
 	private final UserDefiner definer;
@@ -61,7 +59,7 @@ public class GuanyinFile extends AutoUpdatingJsonFile<Configuration> implements 
 
 	@Override
 	protected Optional<Integer> update(Configuration configuration) {
-		try (CloseableHttpResponse response = HTTP_CLIENT
+		try (CloseableHttpResponse response = Server.HTTP_CLIENT
 				.execute(new HttpGet(configuration.getGuanyin() + "/reportdb/reports"))) {
 			definer.clearActions();
 			for (final ReportDto report : RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
