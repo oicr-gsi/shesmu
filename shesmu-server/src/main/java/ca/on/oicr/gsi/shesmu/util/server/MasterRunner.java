@@ -1,5 +1,8 @@
 package ca.on.oicr.gsi.shesmu.util.server;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
@@ -29,8 +32,7 @@ public class MasterRunner {
 	private final ActionGenerator generator;
 	private final ActionConsumer consumer;
 
-	private volatile boolean running;
-	private final Thread thread = new Thread(this::run, "master_runner");
+	private ScheduledFuture<?> scheduled;
 
 	public MasterRunner(ActionGenerator generator, ActionConsumer consumer) {
 		this.generator = generator;
@@ -38,55 +40,48 @@ public class MasterRunner {
 	}
 
 	private void run() {
-		while (running) {
-			lastRun.setToCurrentTime();
-			try (AutoCloseable timer = runTime.start()) {
-				final AtomicInteger currentActionDuplicates = new AtomicInteger();
-				final AtomicInteger currentAlertDuplicates = new AtomicInteger();
-				generator.run(new ActionConsumer() {
+		lastRun.setToCurrentTime();
+		try (AutoCloseable timer = runTime.start()) {
+			final AtomicInteger currentActionDuplicates = new AtomicInteger();
+			final AtomicInteger currentAlertDuplicates = new AtomicInteger();
+			generator.run(new ActionConsumer() {
 
-					@Override
-					public boolean accept(Action action, String filename, int line, int column, long time) {
+				@Override
+				public boolean accept(Action action, String filename, int line, int column, long time) {
 
-						final boolean isDuplicated = consumer.accept(action, filename, line, column, time);
-						if (isDuplicated) {
-							currentActionDuplicates.incrementAndGet();
-						}
-						return isDuplicated;
+					final boolean isDuplicated = consumer.accept(action, filename, line, column, time);
+					if (isDuplicated) {
+						currentActionDuplicates.incrementAndGet();
 					}
+					return isDuplicated;
+				}
 
-					@Override
-					public boolean accept(String[] labels, String[] annotation, long ttl) throws Exception {
-						final boolean isDuplicated = consumer.accept(labels, annotation, ttl);
-						if (isDuplicated) {
-							currentAlertDuplicates.incrementAndGet();
-						}
-						return isDuplicated;
+				@Override
+				public boolean accept(String[] labels, String[] annotation, long ttl) throws Exception {
+					final boolean isDuplicated = consumer.accept(labels, annotation, ttl);
+					if (isDuplicated) {
+						currentAlertDuplicates.incrementAndGet();
 					}
-				}, InputFormatDefinition::all);
-				actionDuplicates.set(currentActionDuplicates.get());
-				alertDuplicates.set(currentAlertDuplicates.get());
-			} catch (final Exception e) {
-				e.printStackTrace();
-				errors.inc();
-			}
-			try {
-				Thread.sleep(5 * 60_000);
-			} catch (final InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+					return isDuplicated;
+				}
+			}, InputFormatDefinition::all);
+			actionDuplicates.set(currentActionDuplicates.get());
+			alertDuplicates.set(currentAlertDuplicates.get());
+		} catch (final Exception e) {
+			e.printStackTrace();
+			errors.inc();
 		}
-
 	}
 
-	public void start() {
-		running = true;
-		thread.start();
+	public void start(ScheduledExecutorService executor) {
+		if (scheduled != null) {
+			scheduled.cancel(true);
+		}
+		scheduled = executor.scheduleWithFixedDelay(this::run, 5, 5, TimeUnit.MINUTES);
 	}
 
 	public void stop() {
-		running = false;
-		thread.interrupt();
+		scheduled.cancel(true);
 	}
 
 }

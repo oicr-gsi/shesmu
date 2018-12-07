@@ -14,13 +14,15 @@ import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -120,10 +122,17 @@ public final class Server implements ServerConfig {
 
 	public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
-	private final CompiledGenerator compiler = new CompiledGenerator();
+	private final CompiledGenerator compiler;
 	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
+
+	private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(
+			Runtime.getRuntime().availableProcessors());
+
 	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
+
 	private final Semaphore inputDownloadSemaphore = new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
+
+	private final MasterRunner master;
 
 	private final ActionProcessor processor = new ActionProcessor(localname());
 
@@ -131,11 +140,11 @@ public final class Server implements ServerConfig {
 
 	private final StaticActions staticActions = new StaticActions(processor);
 
-	private final MasterRunner z_master = new MasterRunner(compiler, processor);
-
 	public Server(int port) throws IOException {
 		server = HttpServer.create(new InetSocketAddress(port), 0);
-		server.setExecutor(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+		server.setExecutor(executor);
+		compiler = new CompiledGenerator(executor);
+		master = new MasterRunner(compiler, processor);
 
 		add("/", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -186,6 +195,12 @@ public final class Server implements ServerConfig {
 								TableWriter.render(writer, (row) -> {
 									row.write(false, "Input format", fileTable.format().name());
 									row.write(false, "Last Compiled", fileTable.timestamp().toString());
+									if (CompiledGenerator.didFileTimeout(fileTable.filename())) {
+										row.write(
+												Collections
+														.singleton(new Pair<>("style", "color:red; font-weight:bold;")),
+												"Run time", "TIMED OUT");
+									}
 								});
 								writer.writeStartElement("p");
 								writer.writeAttribute("onclick", "toggleBytecode(this)");
@@ -280,28 +295,6 @@ public final class Server implements ServerConfig {
 						"document.getElementById(\"listActionsButton\").addEventListener(\"click\", listActions);" + //
 						"document.getElementById(\"queryStatsButton\").addEventListener(\"click\", queryStats);" + //
 						"document.getElementById(\"showQueryButton\").addEventListener(\"click\", showQuery);"));
-					}
-
-					private void writeDateRange(XMLStreamWriter writer, String name, String description)
-							throws XMLStreamException {
-						writer.writeStartElement("tr");
-						writer.writeStartElement("td");
-						writer.writeCharacters(description);
-						writer.writeEndElement();
-						writer.writeStartElement("td");
-						writer.writeStartElement("input");
-						writer.writeAttribute("type", "text");
-						writer.writeAttribute("id", name + "Start");
-						writer.writeComment("");
-						writer.writeEndElement();
-						writer.writeCharacters(" to ");
-						writer.writeStartElement("input");
-						writer.writeAttribute("type", "text");
-						writer.writeAttribute("id", name + "End");
-						writer.writeComment("");
-						writer.writeEndElement();
-						writer.writeEndElement();
-						writer.writeEndElement();
 					}
 
 					@Override
@@ -490,6 +483,28 @@ public final class Server implements ServerConfig {
 						writer.writeEndElement();
 						writer.writeStartElement("p");
 						writer.writeCharacters("Click any cell or heading in summary tables to view matching results.");
+						writer.writeEndElement();
+					}
+
+					private void writeDateRange(XMLStreamWriter writer, String name, String description)
+							throws XMLStreamException {
+						writer.writeStartElement("tr");
+						writer.writeStartElement("td");
+						writer.writeCharacters(description);
+						writer.writeEndElement();
+						writer.writeStartElement("td");
+						writer.writeStartElement("input");
+						writer.writeAttribute("type", "text");
+						writer.writeAttribute("id", name + "Start");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeCharacters(" to ");
+						writer.writeStartElement("input");
+						writer.writeAttribute("type", "text");
+						writer.writeAttribute("id", name + "End");
+						writer.writeComment("");
+						writer.writeEndElement();
+						writer.writeEndElement();
 						writer.writeEndElement();
 					}
 				}.renderPage(os);
@@ -1319,9 +1334,9 @@ public final class Server implements ServerConfig {
 		compiler.start();
 		staticActions.start();
 		System.out.println("Starting action processor...");
-		processor.start();
+		processor.start(executor);
 		System.out.println("Starting scheduler...");
-		z_master.start();
+		master.start(executor);
 	}
 
 }

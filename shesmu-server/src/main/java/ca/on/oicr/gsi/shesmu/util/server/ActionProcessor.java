@@ -16,6 +16,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -557,16 +560,11 @@ public final class ActionProcessor implements ActionConsumer {
 
 	private final String baseUri;
 
-	private final Thread processing = new Thread(this::update, "action-processor");
-
-	private volatile boolean running = true;
-
 	private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
 
 	public ActionProcessor(String baseUri) {
 		super();
 		this.baseUri = baseUri;
-		Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 		ShesmuIntrospectionProcessorRepository.supplier = () -> actions.entrySet().stream()//
 				.map(entry -> new ShesmuIntrospectionValue(entry.getKey(), //
 						entry.getValue().lastStateTransition, //
@@ -716,10 +714,10 @@ public final class ActionProcessor implements ActionConsumer {
 	}
 
 	/**
-	 * Begin the action processor's thread
+	 * Begin the action processor
 	 */
-	public void start() {
-		processing.start();
+	public ScheduledFuture<?> start(ScheduledExecutorService executor) {
+		return executor.scheduleWithFixedDelay(this::update, 5, 5, TimeUnit.MINUTES);
 	}
 
 	private Stream<Entry<Action, Information>> startStream(Filter... filters) {
@@ -762,16 +760,6 @@ public final class ActionProcessor implements ActionConsumer {
 	}
 
 	/**
-	 * Stop the action processors thread
-	 *
-	 * There maybe some delay as the currently processed action must finish
-	 */
-	public void stop() {
-		running = false;
-		processing.interrupt();
-	}
-
-	/**
 	 * Stream all the actions in the processor matching a filter set
 	 *
 	 * @param filters
@@ -803,64 +791,56 @@ public final class ActionProcessor implements ActionConsumer {
 	}
 
 	private void update() {
-		while (running) {
-			byte[] alertJson = null;
-			try (AutoCloseable lock = alertLock.acquire()) {
-				alertJson = RuntimeSupport.MAPPER.writeValueAsBytes(//
-						alerts.values().stream()//
-								.filter(Alert::isLive)//
-								.collect(Collectors.toList()));
-			} catch (final Exception e) {
-				e.printStackTrace();
+		byte[] alertJson = null;
+		try (AutoCloseable lock = alertLock.acquire()) {
+			alertJson = RuntimeSupport.MAPPER.writeValueAsBytes(//
+					alerts.values().stream()//
+							.filter(Alert::isLive)//
+							.collect(Collectors.toList()));
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+		if (alertJson != null) {
+			for (final AlertSink sink : AlertSink.SINKS) {
+				sink.push(alertJson);
 			}
-			if (alertJson != null) {
-				for (final AlertSink sink : AlertSink.SINKS) {
-					sink.push(alertJson);
-				}
-			}
+		}
 
-			final Instant now = Instant.now();
-			actions.entrySet().stream()//
-					.sorted(Comparator.comparingInt(e -> e.getKey().priority()))//
-					.filter(entry -> entry.getValue().lastState != ActionState.SUCCEEDED
-							&& Duration.between(entry.getValue().lastChecked, now).toMinutes() >= Math.max(5,
-									entry.getKey().retryMinutes()))//
-					.forEach(entry -> {
-						entry.getValue().lastChecked = Instant.now();
-						final ActionState oldState = entry.getValue().lastState;
-						final boolean oldThrown = entry.getValue().thrown;
-						try {
-							entry.getValue().lastState = entry.getKey().perform();
-						} catch (final Exception e) {
-							entry.getValue().lastState = ActionState.UNKNOWN;
-							entry.getValue().thrown = true;
-							e.printStackTrace();
-						}
-						if (oldState != entry.getValue().lastState) {
-							entry.getValue().lastStateTransition = Instant.now();
-							stateCount.labels(oldState.name()).dec();
-							stateCount.labels(entry.getValue().lastState.name()).inc();
-						}
-						actionThrows.inc((entry.getValue().thrown ? 0 : 1) - (oldThrown ? 0 : 1));
-					});
-			lastRun.setToCurrentTime();
-			final Map<ActionState, List<Information>> lastTransitions = actions.values().stream()//
-					.collect(Collectors.groupingBy((Information i) -> i.lastState));
-			for (final ActionState state : ActionState.values()) {
-				final long time = lastTransitions.getOrDefault(state, Collections.emptyList()).stream()//
-						.map(i -> i.lastStateTransition)//
-						.sorted()//
-						.findFirst()//
-						.orElse(Instant.now())//
-						.getEpochSecond();
-				oldest.labels(state.name()).set(time);
-			}
-
-			try {
-				Thread.sleep(60_000);
-			} catch (final InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+		final Instant now = Instant.now();
+		actions.entrySet().stream()//
+				.sorted(Comparator.comparingInt(e -> e.getKey().priority()))//
+				.filter(entry -> entry.getValue().lastState != ActionState.SUCCEEDED
+						&& Duration.between(entry.getValue().lastChecked, now).toMinutes() >= Math.max(5,
+								entry.getKey().retryMinutes()))//
+				.forEach(entry -> {
+					entry.getValue().lastChecked = Instant.now();
+					final ActionState oldState = entry.getValue().lastState;
+					final boolean oldThrown = entry.getValue().thrown;
+					try {
+						entry.getValue().lastState = entry.getKey().perform();
+					} catch (final Exception e) {
+						entry.getValue().lastState = ActionState.UNKNOWN;
+						entry.getValue().thrown = true;
+						e.printStackTrace();
+					}
+					if (oldState != entry.getValue().lastState) {
+						entry.getValue().lastStateTransition = Instant.now();
+						stateCount.labels(oldState.name()).dec();
+						stateCount.labels(entry.getValue().lastState.name()).inc();
+					}
+					actionThrows.inc((entry.getValue().thrown ? 0 : 1) - (oldThrown ? 0 : 1));
+				});
+		lastRun.setToCurrentTime();
+		final Map<ActionState, List<Information>> lastTransitions = actions.values().stream()//
+				.collect(Collectors.groupingBy((Information i) -> i.lastState));
+		for (final ActionState state : ActionState.values()) {
+			final long time = lastTransitions.getOrDefault(state, Collections.emptyList()).stream()//
+					.map(i -> i.lastStateTransition)//
+					.sorted()//
+					.findFirst()//
+					.orElse(Instant.now())//
+					.getEpochSecond();
+			oldest.labels(state.name()).set(time);
 		}
 	}
 }
