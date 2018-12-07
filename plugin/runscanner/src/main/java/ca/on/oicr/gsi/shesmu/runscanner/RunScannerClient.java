@@ -9,11 +9,10 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.commons.codec.net.URLCodec;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 import ca.on.oicr.gsi.runscanner.dto.IlluminaNotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.NotificationDto;
+import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
 import ca.on.oicr.gsi.shesmu.util.cache.KeyValueCache;
@@ -37,7 +36,7 @@ public final class RunScannerClient extends AutoUpdatingJsonFile<Configuration> 
 				return Optional.empty();
 			}
 			final HttpGet request = new HttpGet(String.format("%s/run/%s", url.get(), new URLCodec().encode(runName)));
-			try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+			try (CloseableHttpResponse response = Server.HTTP_CLIENT.execute(request)) {
 				if (response.getStatusLine().getStatusCode() != 200) {
 					return Optional.empty();
 				}
@@ -49,8 +48,6 @@ public final class RunScannerClient extends AutoUpdatingJsonFile<Configuration> 
 		}
 
 	}
-
-	private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
 	private final RunCache runCache;
 	private Optional<String> url = Optional.empty();

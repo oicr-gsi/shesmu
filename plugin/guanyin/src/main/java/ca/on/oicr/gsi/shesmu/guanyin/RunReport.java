@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionState;
+import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.Throttler;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.definitions.JsonParameterised;
@@ -125,7 +126,7 @@ public class RunReport extends Action implements JsonParameterised {
 		request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
 		request.setEntity(body);
 		try (AutoCloseable timer = 观音RequestTime.start(owner.观音Url());
-				CloseableHttpResponse response = GuanyinFile.HTTP_CLIENT.execute(request)) {
+				CloseableHttpResponse response = Server.HTTP_CLIENT.execute(request)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
 				showError(response, "Error from Guanyin: ");
 				观音RequestErrors.labels(owner.观音Url()).inc();
@@ -156,7 +157,7 @@ public class RunReport extends Action implements JsonParameterised {
 			createRequest.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
 			createRequest.setEntity(body);
 			try (AutoCloseable timer = 观音RequestTime.start(owner.观音Url());
-					CloseableHttpResponse response = GuanyinFile.HTTP_CLIENT.execute(createRequest)) {
+					CloseableHttpResponse response = Server.HTTP_CLIENT.execute(createRequest)) {
 				if (response.getStatusLine().getStatusCode() != 200) {
 					showError(response, "Error from Guanyin: ");
 					观音RequestErrors.labels(owner.观音Url()).inc();
@@ -194,7 +195,7 @@ public class RunReport extends Action implements JsonParameterised {
 			return ActionState.FAILED;
 		}
 		try (AutoCloseable timer = drmaaRequestTime.start(owner.drmaaUrl());
-				CloseableHttpResponse response = GuanyinFile.HTTP_CLIENT.execute(drmaaRequest)) {
+				CloseableHttpResponse response = Server.HTTP_CLIENT.execute(drmaaRequest)) {
 			if (response.getStatusLine().getStatusCode() != 200) {
 				showError(response, "Error from DRMAA: ");
 				drmaaRequestErrors.labels(owner.drmaaUrl()).inc();

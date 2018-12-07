@@ -9,10 +9,9 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.MetaInfServices;
 
+import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingJsonFile;
@@ -35,7 +34,7 @@ public class GitHubBranchesApiRepository implements GithubBranchesRepository {
 				if (!configuration.isPresent())
 					return Stream.empty();
 				final Configuration c = configuration.get();
-				try (CloseableHttpResponse response = HTTP_CLIENT.execute(new HttpGet(
+				try (CloseableHttpResponse response = Server.HTTP_CLIENT.execute(new HttpGet(
 						String.format("https://api.github.com/repos/%s/%s/branches", c.getOwner(), c.getRepo())))) {
 					return Stream
 							.of(RuntimeSupport.MAPPER.readValue(response.getEntity().getContent(),
@@ -100,8 +99,6 @@ public class GitHubBranchesApiRepository implements GithubBranchesRepository {
 	}
 
 	public static final String EXTENSION = ".github";
-
-	private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
 	private final AutoUpdatingDirectory<GitHubRemote> sources;
 
