@@ -4,6 +4,11 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -99,6 +104,9 @@ public class CompiledGenerator extends ActionGenerator {
 			.build("shesmu_input_records", "The number of records for each input format.").labelNames("format")
 			.register();
 
+	public static final Gauge OLIVE_WATCHDOG = Gauge
+			.build("shesmu_run_overtime", "Whether the input format or olive file failed to finish within deadline.")
+			.labelNames("name").register();
 	private static final NameLoader<InputFormatDefinition> SOURCES = new NameLoader<>(InputFormatDefinition.formats(),
 			InputFormatDefinition::name);
 
@@ -106,9 +114,16 @@ public class CompiledGenerator extends ActionGenerator {
 			.build("shesmu_source_valid", "Whether the source file has been successfully compiled.")
 			.labelNames("filename").register();
 
+	public static boolean didFileTimeout(String fileName) {
+		return OLIVE_WATCHDOG.labels(fileName).get() > 0;
+	}
+
 	private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
 
-	public CompiledGenerator() {
+	private final ScheduledExecutorService executor;
+
+	public CompiledGenerator(ScheduledExecutorService executor) {
+		this.executor = executor;
 	}
 
 	public Stream<FileTable> dashboard() {
@@ -128,14 +143,56 @@ public class CompiledGenerator extends ActionGenerator {
 	public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
-		InputFormatDefinition.formats().forEach(format -> {
-			try {
-				INPUT_RECORDS.labels(format.name()).set(format.input(format.itemClass()).count());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		});
-		scripts().forEach(script -> script.run(consumer, input));
+		Stream.<Runnable>concat(InputFormatDefinition.formats()//
+				.map(format -> new Runnable() {
+					@Override
+					public void run() {
+						try {
+							INPUT_RECORDS.labels(format.name()).set(format.input(format.itemClass()).count());
+						} catch (final Exception e) {
+							e.printStackTrace();
+						}
+					}
+
+					@Override
+					public String toString() {
+						return format.name();
+					}
+
+				}), //
+				scripts().map(script -> new Runnable() {
+
+					@Override
+					public void run() {
+						script.run(consumer, input);
+					}
+
+					@Override
+					public String toString() {
+						return script.fileName.toString();
+					}
+
+				}))//
+				.forEach(runnable -> {
+					final Future<?> future = executor.submit(runnable);
+					boolean ok;
+					try {
+						future.get(20, TimeUnit.MINUTES);
+						ok = true;
+					} catch (InterruptedException e) {
+						ok = false;
+						future.cancel(true);
+						Thread.currentThread().interrupt();
+					} catch (ExecutionException e) {
+						ok = false;
+						future.cancel(true);
+						e.getCause().printStackTrace();
+					} catch (TimeoutException e) {
+						ok = false;
+						future.cancel(true);
+					}
+					OLIVE_WATCHDOG.labels(runnable.toString()).set(ok ? 0 : 1);
+				});
 	}
 
 	private Stream<Script> scripts() {
