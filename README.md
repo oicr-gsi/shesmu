@@ -29,6 +29,16 @@ be placed (see below). Shesmu can read many `.shesmu` scripts containing
 multiple olives from `/srv/shesmu`. If you don't know how to write them, just
 create an empty file and Shesmu will start with that.
 
+### Docker Setup
+You can build and run the container with:
+
+    docker build -t shesmu:latest .
+
+Which will build all of the plugins available. Then run with:
+
+    docker run -p 8081:8081 --mount type=bind,source=/srv/shesmu,target=/srv/shesmu shesmu:latest
+
+### Local Setup
 Now, compile the main server using Maven with Java 8:
 
     cd shesmu-server

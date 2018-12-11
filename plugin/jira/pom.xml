@@ -10,6 +10,21 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  <repositories>
+    <repository>
+      <id>atlassian-public</id>
+      <url>https://maven.atlassian.com/content/repositories/atlassian-public/</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
@@ -91,14 +106,14 @@
                   <shadedPattern>com.atlassian.javax.ws</shadedPattern>
                 </relocation>
               </relocations>
-                <filters>
-                    <filter>
-                        <artifact>*:*:*:*</artifact>
-                        <excludes>
-                            <exclude>log4j.properties</exclude>
-                        </excludes>
-                    </filter>
-                </filters>
+              <filters>
+                <filter>
+                  <artifact>*:*:*:*</artifact>
+                  <excludes>
+                    <exclude>log4j.properties</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>

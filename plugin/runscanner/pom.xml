@@ -10,6 +10,41 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  <repositories>
+    <repository>
+      <id>release.gsi</id>
+      <name>GSI Releases Maven Repository</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/gsi-release</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>snapshots.gsi</id>
+      <name>GSI Releases Maven Snapshot Repository</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/gsi-snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>dependencies.gsi</id>
+      <name>GSI Dependencies Maven Snapshot Repository</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/gsi-dependencies</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
