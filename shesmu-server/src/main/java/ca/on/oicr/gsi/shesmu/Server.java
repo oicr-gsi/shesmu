@@ -126,7 +126,7 @@ public final class Server implements ServerConfig {
 	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
 
 	private final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(
-			Runtime.getRuntime().availableProcessors());
+			10 * Runtime.getRuntime().availableProcessors());
 
 	private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
 
