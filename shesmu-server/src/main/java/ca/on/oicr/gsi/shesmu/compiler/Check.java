@@ -111,7 +111,7 @@ public final class Check extends Compiler {
 		final NameLoader<ActionDefinition> actions = new NameLoader<>(fetch(remote, "actions").map(Check::makeAction),
 				ActionDefinition::name);
 
-		final boolean ok = Stream.of(files).allMatch(file -> {
+		final boolean ok = Stream.of(files).filter(file -> {
 			boolean fileOk;
 			try {
 				fileOk = new Check(file, inputFormats, functions, actions).compile(Files.readAllBytes(Paths.get(file)),
@@ -122,7 +122,7 @@ public final class Check extends Compiler {
 			}
 			System.err.printf("%s\033[0m\t%s%n", fileOk ? "\033[1;36mOK" : "\033[1;31mFAIL", file);
 			return fileOk;
-		});
+		}).count() == files.length;
 		System.exit(ok ? 0 : 1);
 	}
 
