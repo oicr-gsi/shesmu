@@ -91,7 +91,10 @@ public abstract class ExpressionNode {
 		});
 		ARITHMETIC_DISJUNCTION.addSymbol("+", arithmetic("+", //
 				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.ADD),
-				ArithmeticOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds")));
+				ArithmeticOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds"), //
+				ArithmeticOperation.virtualMethod(Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve"), //
+				ArithmeticOperation.staticMethod(Imyhat.PATH, Imyhat.STRING, Imyhat.PATH, A_RUNTIME_SUPPORT_TYPE,
+						"resolvePath")));
 		ARITHMETIC_DISJUNCTION.addSymbol("-", arithmetic("-", //
 				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.SUB), //
 				ArithmeticOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds"), //

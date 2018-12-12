@@ -76,9 +76,10 @@ public final class RuntimeSupport {
 
 	}
 
-	public static final String[] EMPTY = new String[0];
-
 	private static final Map<String, CallSite> callsites = new HashMap<>();
+
+	@RuntimeInterop
+	public static final String[] EMPTY = new String[0];
 
 	public static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -324,6 +325,11 @@ public final class RuntimeSupport {
 	public static String removeExtension(Path fileName, String extension) {
 		final String fileNamePart = fileName.getFileName().toString();
 		return fileNamePart.substring(0, fileNamePart.length() - extension.length());
+	}
+
+	@RuntimeInterop
+	public static Path resolvePath(Path path, String str) {
+		return path.resolve(str);
 	}
 
 	public static <T> Stream<T> reverse(Stream<T> input) {
