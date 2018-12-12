@@ -42,7 +42,7 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION = new Parser.ParseDispatch<>();
 	private static final Pattern PATH = Pattern.compile("^([^\\\\']|\\\\')+");
-	public static final Pattern REGEX = Pattern.compile("^/(([^/\n]|\\\\/)*)/");
+	public static final Pattern REGEX = Pattern.compile("^/(([^\\\\/\n]|\\\\.)*)/");
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_TIGHT = new Parser.ParseDispatch<>();
 	private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
