@@ -16,19 +16,21 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 
 /**
  * An expression in the Shesmu language
  */
 public abstract class ExpressionNode {
-	interface BinaryExpression {
-		ExpressionNode create(int line, int column, ExpressionNode left, ExpressionNode right);
-	}
 
 	interface UnaryExpression {
 		ExpressionNode create(int line, int column, ExpressionNode node);
@@ -49,6 +51,8 @@ public abstract class ExpressionNode {
 	private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY = new Parser.ParseDispatch<>();
 
 	static {
+		final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
+
 		INT_SUFFIX.addKeyword("Gi", just(1024 * 1024 * 1024));
 		INT_SUFFIX.addKeyword("Mi", just(1024 * 1024));
 		INT_SUFFIX.addKeyword("ki", just(1024));
@@ -61,9 +65,9 @@ public abstract class ExpressionNode {
 		INT_SUFFIX.addKeyword("mins", just(60));
 		INT_SUFFIX.addKeyword("", just(1));
 
-		LOGICAL_DISJUNCTION.addSymbol("||", just(ExpressionNodeLogicalOr::new));
+		LOGICAL_DISJUNCTION.addSymbol("||", arithmetic("||", ArithmeticOperation.shortCircuit(GeneratorAdapter.NE)));
 
-		LOGICAL_CONJUNCTION.addSymbol("&&", just(ExpressionNodeLogicalAnd::new));
+		LOGICAL_CONJUNCTION.addSymbol("&&", arithmetic("&&", ArithmeticOperation.shortCircuit(GeneratorAdapter.EQ)));
 
 		for (final Comparison comparison : Comparison.values()) {
 			COMPARISON.addSymbol(comparison.symbol(), (p, o) -> {
@@ -85,12 +89,21 @@ public abstract class ExpressionNode {
 			}
 			return result;
 		});
-		ARITHMETIC_DISJUNCTION.addSymbol("+", just(ExpressionNodeArithmeticAdd::new));
-		ARITHMETIC_DISJUNCTION.addSymbol("-", just(ExpressionNodeArithmeticSubtract::new));
+		ARITHMETIC_DISJUNCTION.addSymbol("+", arithmetic("+", //
+				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.ADD),
+				ArithmeticOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds")));
+		ARITHMETIC_DISJUNCTION.addSymbol("-", arithmetic("-", //
+				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.SUB), //
+				ArithmeticOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds"), //
+				ArithmeticOperation.staticMethod(Imyhat.DATE, Imyhat.DATE, Imyhat.INTEGER, A_RUNTIME_SUPPORT_TYPE,
+						"difference")));
 
-		ARITHMETIC_CONJUNCTION.addSymbol("*", just(ExpressionNodeArithmeticMultiply::new));
-		ARITHMETIC_CONJUNCTION.addSymbol("/", just(ExpressionNodeArithmeticDivide::new));
-		ARITHMETIC_CONJUNCTION.addSymbol("%", just(ExpressionNodeArithmeticModulo::new));
+		ARITHMETIC_CONJUNCTION.addSymbol("*", arithmetic("*", //
+				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.MUL)));
+		ARITHMETIC_CONJUNCTION.addSymbol("/", arithmetic("/", //
+				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.DIV)));
+		ARITHMETIC_CONJUNCTION.addSymbol("%", arithmetic("%", //
+				ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.REM)));
 
 		SUFFIX_LOOSE.addKeyword("In", (p, o) -> {
 			final AtomicReference<ExpressionNode> collection = new AtomicReference<>();
@@ -260,9 +273,11 @@ public abstract class ExpressionNode {
 		});
 	}
 
-	private static Parser.Rule<BinaryOperator<ExpressionNode>> just(BinaryExpression creator) {
+	private static Parser.Rule<BinaryOperator<ExpressionNode>> arithmetic(String symbol,
+			ArithmeticOperation... operations) {
 		return (p, o) -> {
-			o.accept((l, r) -> creator.create(p.line(), p.column(), l, r));
+			o.accept((l, r) -> new ExpressionNodeBinary(() -> Stream.of(operations), symbol, p.line(), p.column(), l,
+					r));
 			return p;
 		};
 	}
