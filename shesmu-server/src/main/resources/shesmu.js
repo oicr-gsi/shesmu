@@ -402,6 +402,10 @@ function addType(typeName) {
 
 export function addTypeForm() {
   const element = document.getElementById("newType");
+  if (element.selectedIndex < 0) {
+    return;
+  }
+
   addType(element.value.trim());
   element.remove(element.selectedIndex);
 }
@@ -470,7 +474,12 @@ export function clearLocations() {
 
 export function addLocationForm() {
   const element = document.getElementById("newLocation");
-  const sourceLocation = JSON.parse(element.options[element.selectedIndex].value);
+  if (element.selectedIndex < 0) {
+    return;
+  }
+  const sourceLocation = JSON.parse(
+    element.options[element.selectedIndex].value
+  );
   const index = locations.findIndex(
     l =>
       l.file === sourceLocation.file &&

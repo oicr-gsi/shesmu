@@ -404,6 +404,7 @@ public final class Server implements ServerConfig {
 						writer.writeStartElement("td");
 						writer.writeStartElement("select");
 						writer.writeAttribute("id", "newLocation");
+						writer.writeComment("");
 						final Instant now = Instant.now();
 						processor.sources()//
 								.collect(Collectors.groupingBy(SourceLocation::fileName)).entrySet().stream()//
