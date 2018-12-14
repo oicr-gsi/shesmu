@@ -276,6 +276,7 @@ public final class Server implements ServerConfig {
 						"clearTypes," + //
 						"fillNewTypeSelect," + //
 						"listActions," + //
+						"purge," + //
 						"queryStats," + //
 						"showQuery" + //
 						"} from \"./shesmu.js\";" + //
@@ -293,6 +294,7 @@ public final class Server implements ServerConfig {
 								+ //
 						"document.getElementById(\"clearTypesButton\").addEventListener(\"click\", clearTypes);" + //
 						"document.getElementById(\"listActionsButton\").addEventListener(\"click\", listActions);" + //
+						"document.getElementById(\"purgeButton\").addEventListener(\"click\", purge);" + //
 						"document.getElementById(\"queryStatsButton\").addEventListener(\"click\", queryStats);" + //
 						"document.getElementById(\"showQueryButton\").addEventListener(\"click\", showQuery);"));
 					}
@@ -472,6 +474,11 @@ public final class Server implements ServerConfig {
 						writer.writeAttribute("class", "load");
 						writer.writeAttribute("id", "showQueryButton");
 						writer.writeCharacters("🛈 Show Request");
+						writer.writeEndElement();
+						writer.writeStartElement("span");
+						writer.writeAttribute("class", "load");
+						writer.writeAttribute("id", "purgeButton");
+						writer.writeCharacters("☠️ PURGE");
 						writer.writeEndElement();
 						writer.writeEndElement();
 						writer.writeEndElement();
@@ -1024,6 +1031,23 @@ public final class Server implements ServerConfig {
 			}
 		});
 
+		add("/purge", t -> {
+			final FilterJson[] filters;
+			try {
+				filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FilterJson[].class);
+			} catch (final Exception e) {
+				t.sendResponseHeaders(400, 0);
+				try (OutputStream os = t.getResponseBody()) {
+				}
+				return;
+			}
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				RuntimeSupport.MAPPER.writeValue(os, processor.purge(
+						Stream.of(filters).filter(Objects::nonNull).map(FilterJson::convert).toArray(Filter[]::new)));
+			}
+		});
+
 		add("/currentalerts", t -> {
 			t.getResponseHeaders().set("Content-type", "application/json");
 			t.sendResponseHeaders(200, 0);
@@ -1188,6 +1212,7 @@ public final class Server implements ServerConfig {
 		add("/shesmu.js", "text/javascript");
 		add("/shesmu.svg", "image/svg+xml");
 		add("/favicon.png", "image/png");
+		add("/thorschariot.gif", "image/gif");
 		add("/swagger.json", "application/json");
 		add("/api-docs/favicon-16x16.png", "image/png");
 		add("/api-docs/favicon-32x32.png", "image/png");
