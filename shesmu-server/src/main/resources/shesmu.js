@@ -854,6 +854,49 @@ function setColorIntensity(element, value, maximum) {
   )}%)`;
 }
 
+export function purge() {
+  const filters = makeFilters();
+  const targetElement = document.getElementById("results");
+  if (filters.length == 0) {
+    while (targetElement.hasChildNodes()) {
+      targetElement.removeChild(targetElement.lastChild);
+    }
+    const sarcasm = document.createElement("P");
+    sarcasm.innerText =
+      "Yeah, no. You can't nuke all the actions. Maybe try a subset.";
+    targetElement.appendChild(sarcasm);
+    const purgeButton = document.createElement("SPAN");
+    purgeButton.className = "load";
+    purgeButton.innerText = "🔥 NUKE IT ALL FROM ORBIT 🔥";
+    targetElement.appendChild(purgeButton);
+    purgeButton.onclick = () => {
+      purgeActions(filters, targetElement, () => {});
+    };
+  } else {
+    purgeActions(filters, targetElement, () => {});
+  }
+}
+
+function purgeActions(filters, targetElement, callback) {
+  results(
+    targetElement,
+    "/purge",
+    JSON.stringify(filters),
+    (container, data) => {
+      const message = document.createElement("P");
+      message.innerText = `Removed ${data} actions.`;
+      if (data) {
+        message.appendChild(document.createElement("BR"));
+        const image = document.createElement("IMG");
+        image.src = "thorschariot.gif";
+        message.appendChild(image);
+      }
+      container.appendChild(message);
+      callback();
+    }
+  );
+}
+
 function getStats(filters, targetElement, onActionPage) {
   results(
     targetElement,
@@ -865,48 +908,70 @@ function getStats(filters, targetElement, onActionPage) {
       }
 
       const drillDown = document.createElement("DIV");
+      let selectedElement = null;
+      const makeClick = (clickable, filters) => {
+        clickable.onclick = () => {
+          if (selectedElement) {
+            selectedElement.classList.remove("userselected");
+          }
+          selectedElement = clickable;
+          selectedElement.classList.add("userselected");
+          while (drillDown.hasChildNodes()) {
+            drillDown.removeChild(drillDown.lastChild);
+          }
+          const clickResult = document.createElement("DIV");
+          const toolBar = document.createElement("P");
+          const listButton = document.createElement("SPAN");
+          listButton.className = "load";
+          listButton.innerText = "🔍 List";
+          toolBar.appendChild(listButton);
+          const statsButton = document.createElement("SPAN");
+          statsButton.className = "load";
+          statsButton.innerText = "📈 Stats";
+          toolBar.appendChild(statsButton);
+          const jsonButton = document.createElement("SPAN");
+          jsonButton.className = "load";
+          jsonButton.innerText = "🛈 Show Request";
+          toolBar.appendChild(jsonButton);
+          const purgeButton = document.createElement("SPAN");
+          purgeButton.className = "load";
+          purgeButton.innerText = "☠️ PURGE";
+          toolBar.appendChild(purgeButton);
+          listButton.onclick = () => {
+            nextPage(
+              {
+                filters: filters,
+                limit: 25,
+                skip: 0
+              },
+              clickResult,
+              onActionPage
+            );
+          };
+          statsButton.onclick = () => {
+            getStats(filters, clickResult, onActionPage);
+          };
+          jsonButton.onclick = () => {
+            showFilterJson(filters, clickResult);
+          };
+          purgeButton.onclick = () => {
+            purgeActions(filters, targetElement, () => {
+              const refreshToolbar = document.createElement("DIV");
+              const refreshButton = document.createElement("SPAN");
+              refreshButton.className = "load";
+              refreshButton.innerText = "🔄 Refresh";
+              refreshToolbar.appendChild(refreshButton);
+              targetElement.appendChild(refreshToolbar);
+              refreshButton.onclick = () =>
+                getStats(filters, targetElement, onActionPage);
+            });
+          };
+          drillDown.appendChild(toolBar);
+          drillDown.appendChild(clickResult);
+        };
+      };
       data.forEach(stat => {
         const element = document.createElement("DIV");
-        const makeClick = (clickable, filters) => {
-          clickable.onclick = () => {
-            while (drillDown.hasChildNodes()) {
-              drillDown.removeChild(drillDown.lastChild);
-            }
-            const clickResult = document.createElement("DIV");
-            const toolBar = document.createElement("P");
-            const listButton = document.createElement("SPAN");
-            listButton.className = "load";
-            listButton.innerText = "🔍 List";
-            toolBar.appendChild(listButton);
-            const statsButton = document.createElement("SPAN");
-            statsButton.className = "load";
-            statsButton.innerText = "📈 Stats";
-            toolBar.appendChild(statsButton);
-            const jsonButton = document.createElement("SPAN");
-            jsonButton.className = "load";
-            jsonButton.innerText = "🛈 Show Request";
-            toolBar.appendChild(jsonButton);
-            listButton.onclick = () => {
-              nextPage(
-                {
-                  filters: filters,
-                  limit: 25,
-                  skip: 0
-                },
-                clickResult,
-                onActionPage
-              );
-            };
-            statsButton.onclick = () => {
-              getStats(filters, clickResult, onActionPage);
-            };
-            jsonButton.onclick = () => {
-              showFilterJson(filters, clickResult);
-            };
-            drillDown.appendChild(toolBar);
-            drillDown.appendChild(clickResult);
-          };
-        };
         switch (stat.type) {
           case "text":
             (() => {
@@ -953,6 +1018,10 @@ function getStats(filters, targetElement, onActionPage) {
                     while (drillDown.hasChildNodes()) {
                       drillDown.removeChild(drillDown.lastChild);
                     }
+                    if (selectedElement) {
+                      selectedElement.classList.remove("userselected");
+                    }
+                    selectedElement = null;
                   };
                 }
               });

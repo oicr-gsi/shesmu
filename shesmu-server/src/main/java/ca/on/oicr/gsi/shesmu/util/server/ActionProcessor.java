@@ -696,6 +696,12 @@ public final class ActionProcessor implements ActionConsumer {
 		boundaries.add(bin.name(max.get(), 0));
 	}
 
+	public long purge(Filter... filters) {
+		final Set<Action> deadActions = startStream(filters).map(Entry::getKey).collect(Collectors.toSet());
+		actions.keySet().removeAll(deadActions);
+		return deadActions.size();
+	}
+
 	private Map<String, String> repack(String[] input, String name) {
 		if (input.length % 2 != 0) {
 			throw new IllegalArgumentException(name + " must be paired.");

@@ -143,3 +143,11 @@ max-height: 90vh;
 overflow: auto;
 }
 
+th {
+color: grey;
+}
+
+.userselected {
+font-weight: bold;
+font-style: italic;
+}
