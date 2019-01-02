@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.gsistd.input;
 
+import java.nio.file.Paths;
 import java.time.Instant;
 
 import org.kohsuke.MetaInfServices;
@@ -23,7 +24,7 @@ public class GsiStdJsonRepository extends BaseJsonInputRepository<GsiStdValue> i
 		final JsonNode workflowVersion = node.get("workflow_version");
 		final JsonNode lims = node.get("lims");
 		return new GsiStdValue(node.get("accession").asText(), //
-				node.get("path").asText(), //
+				Paths.get(node.get("path").asText()), //
 				node.get("metatype").asText(), //
 				node.get("md5").asText(), //
 				node.get("file_size").asLong(), //

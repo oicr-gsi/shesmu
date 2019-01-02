@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.gsistd.input;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -63,7 +64,7 @@ public class FileProvenanceGsiStdRepository implements GsiStdRepository {
 									.map(IusLimsKey::getLimsKey);
 							final GsiStdValue result = new GsiStdValue(//
 									fp.getFileSWID().toString(), //
-									fp.getFilePath(), //
+									Paths.get(fp.getFilePath()), //
 									fp.getFileMetaType(), //
 									fp.getFileMd5sum(), //
 									Utils.parseLong(fp.getFileSize()), //

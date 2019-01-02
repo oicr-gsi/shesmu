@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core.input.shesmu;
 
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,8 +27,8 @@ public class ShesmuIntrospectionValue {
 		this.checked = checked;
 		this.generated = generated;
 		this.state = state;
-		this.locations = locations.stream()
-				.map(l -> new Tuple(l.fileName(), Long.valueOf(l.line()), Long.valueOf(l.column()), l.time()))
+		this.locations = locations.stream().map(
+				l -> new Tuple(Long.valueOf(l.column()), Paths.get(l.fileName()), Long.valueOf(l.line()), l.time()))
 				.collect(Collectors.toSet());
 	}
 
@@ -46,7 +47,7 @@ public class ShesmuIntrospectionValue {
 		return generated;
 	}
 
-	@ShesmuVariable(type = "at4siid")
+	@ShesmuVariable(type = "ao4column$ifile$pline$itime$d")
 	public Set<Tuple> locations() {
 		return locations;
 	}

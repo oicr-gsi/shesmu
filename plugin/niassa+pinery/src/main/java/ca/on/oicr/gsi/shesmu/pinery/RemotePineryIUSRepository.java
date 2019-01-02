@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +79,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 
 							runDirectories.put(lp.getSequencerRunName(), runDirectory);
 							final PineryIUSValue result = new PineryIUSValue(//
-									runDirectory, //
+									Paths.get(runDirectory), //
 									"", //
 									"", //
 									"", //
@@ -122,7 +123,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 							}
 							final Set<String> badSetInRecord = new TreeSet<>();
 							final PineryIUSValue result = new PineryIUSValue(//
-									runDirectory, //
+									Paths.get(runDirectory), //
 									sp.getStudyTitle(), //
 									sp.getSampleName(), //
 									sp.getRootSampleName(), //

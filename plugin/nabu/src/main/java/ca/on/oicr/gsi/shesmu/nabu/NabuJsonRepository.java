@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -40,7 +41,7 @@ public class NabuJsonRepository extends BaseJsonInputRepository<NabuValue> imple
 
 		return new NabuValue(//
 				node.get("fileswid").asInt(), //
-				node.get("filepath").asText(), //
+				Paths.get(node.get("filepath").asText()), //
 				status, //
 				node.get("username").asText(), //
 				node.get("comment").asText(""), //
