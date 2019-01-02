@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.gsistd.input;
 
+import java.nio.file.Path;
 import java.time.Instant;
 
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
@@ -27,7 +28,7 @@ public final class GsiStdValue {
 	private final Tuple lims;
 	private final String md5;
 	private final String metatype;
-	private final String path;
+	private final Path path;
 	private final String project;
 	private final String source;
 	private final String targeted_resequencing;
@@ -40,7 +41,7 @@ public final class GsiStdValue {
 	private final String workflow_accession;
 	private final Tuple workflow_version;
 
-	public GsiStdValue(String accession, String path, String metatype, String md5, long file_size, String workflow,
+	public GsiStdValue(String accession, Path path, String metatype, String md5, long file_size, String workflow,
 			String workflow_accession, Tuple workflow_version, String project, String library_name, String donor,
 			Tuple ius, String library_design, String tissue_type, String tissue_origin, String tissue_prep,
 			String targeted_resequencing, String tissue_region, String group_id, String group_desc, long library_size,
@@ -359,7 +360,7 @@ public final class GsiStdValue {
 	}
 
 	@ShesmuVariable
-	public String path() {
+	public Path path() {
 		return path;
 	}
 

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
+import java.nio.file.Path;
 import java.time.Instant;
 
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
@@ -22,7 +23,7 @@ public final class PineryIUSValue {
 	private final long library_size;
 	private final String library_type;
 	private final Tuple lims;
-	private final String path;
+	private final Path path;
 	private final String project;
 	private final String targeted_resequencing;
 	private final Instant timestamp;
@@ -32,7 +33,7 @@ public final class PineryIUSValue {
 	private final String tissue_type;
 
 	public PineryIUSValue(//
-			String path, //
+			Path path, //
 			String project, //
 			String library_name, //
 			String donor, Tuple ius, //
@@ -283,7 +284,7 @@ public final class PineryIUSValue {
 	}
 
 	@ShesmuVariable
-	public String path() {
+	public Path path() {
 		return path;
 	}
 

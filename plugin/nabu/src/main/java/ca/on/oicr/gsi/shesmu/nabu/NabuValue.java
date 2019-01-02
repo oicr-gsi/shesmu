@@ -1,19 +1,20 @@
 package ca.on.oicr.gsi.shesmu.nabu;
 
+import java.nio.file.Path;
 import java.time.Instant;
 
 import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 public class NabuValue {
 	private final String comment;
-	private final String filepath;
+	private final Path filepath;
 	private final long fileswid;
 	private final String project;
 	private final Instant qcdate;
 	private final String qcstatus;
 	private final String username;
 
-	public NabuValue(long fileswid, String filepath, String qcstatus, String username, String comment, String project,
+	public NabuValue(long fileswid, Path filepath, String qcstatus, String username, String comment, String project,
 			Instant qcdate) {
 		super();
 		this.fileswid = fileswid;
@@ -31,7 +32,7 @@ public class NabuValue {
 	}
 
 	@ShesmuVariable
-	public String filepath() {
+	public Path filepath() {
 		return filepath;
 	}
 

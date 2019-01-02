@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
+import java.nio.file.Paths;
 import java.time.Instant;
 
 import org.kohsuke.MetaInfServices;
@@ -22,7 +23,7 @@ public class PineryIUSJsonRepository extends BaseJsonInputRepository<PineryIUSVa
 		final JsonNode ius = node.get("ius");
 		final JsonNode lims = node.get("lims");
 		return new PineryIUSValue(//
-				node.get("path").asText(), //
+				Paths.get(node.get("path").asText()), //
 				node.get("project").asText(), //
 				node.get("library_name").asText(), //
 				node.get("donor").asText(), //
