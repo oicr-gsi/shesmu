@@ -57,8 +57,8 @@ plugin interfaces avoid as much of the JVM internals as possible, but some is
 required.
 
 There are plenty of tutorials on JVM internals, but the [DZone bytecode
-tutorial](https://dzone.com/articles/nominalized-adjectives-as-names-for-decorators)
-is one of the better ones.
+tutorial](https://dzone.com/articles/introduction-to-java-bytecode) is one of
+the better ones.
 
 Bytecode is written using [ASM's
 `GeneratorAdapter`](https://static.javadoc.io/org.ow2.asm/asm/5.2/org/objectweb/asm/commons/GeneratorAdapter.html)
@@ -132,6 +132,7 @@ necessary to convert a JSON document back into an interpretable format.
 | Date      | number of milliseconds since epoch |
 | List      | array                              |
 | Tuple     | array                              |
+| Object    | object                             |
 
 ## Writing a Plugin
 Each plugin can be considered separately, but a JAR file can deliver multiple

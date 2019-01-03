@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/** The types, as written in the script */
 public abstract class ImyhatNode {
 
   private static final Imyhat[] BASE_TYPES =

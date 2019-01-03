@@ -10,7 +10,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-/** Creates bytecode for a “Define”-style olive to be used in “Call” clauses */
+/** Creates bytecode for a “Define”-style olive to be used in call clauses */
 public final class OliveDefineBuilder extends BaseOliveBuilder {
 
   private final Method method;

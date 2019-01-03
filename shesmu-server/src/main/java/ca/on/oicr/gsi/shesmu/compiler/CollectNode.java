@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/** The terminal operations in <tt>For</tt> expressions */
 public abstract class CollectNode {
   private interface DefaultContructor {
     CollectNode create(int line, int column, ExpressionNode selector, ExpressionNode alternative);

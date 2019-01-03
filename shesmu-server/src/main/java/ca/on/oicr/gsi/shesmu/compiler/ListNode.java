@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/** One of the stream modification operations in a <tt>For</tt> expression */
 public abstract class ListNode {
   private interface ListNodeConstructor {
     public ListNode build(int line, int column, ExpressionNode expression);

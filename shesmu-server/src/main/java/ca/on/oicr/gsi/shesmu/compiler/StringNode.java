@@ -10,7 +10,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-/** A “part” in a string literal */
+/**
+ * A “part” in a string literal
+ *
+ * <p>Either a string literal or an expression that can be converted to a string literal
+ */
 public abstract class StringNode {
   private static final Pattern DATE_FORMAT = Pattern.compile("^[GyMdhHmsSEDFwWakKz]");
   private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt{])");
