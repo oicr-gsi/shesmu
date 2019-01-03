@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-/** An expression in the Shesmu language */
+/** One of the <tt>By</tt> clauses in <tt>Group</tt> clause */
 public abstract class DiscriminatorNode implements DefinedTarget {
 
   public static Parser parse(Parser input, Consumer<DiscriminatorNode> output) {

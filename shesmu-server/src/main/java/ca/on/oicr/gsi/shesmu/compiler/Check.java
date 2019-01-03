@@ -70,52 +70,43 @@ public final class Check extends Compiler {
     try {
       final CommandLine cmd = parser.parse(options, args);
 
-      if (cmd.hasOption("h")) {
-        final HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("Shesmu Compiler", options);
-        System.exit(0);
-        return;
-      }
-      if (cmd.hasOption('r')) {
-        remote = cmd.getOptionValue('r');
-      }
-      if (cmd.getArgs().length == 0) {
-        System.err.println("At least one file must be specified to compile.");
-        System.exit(1);
-        return;
-      }
-      files = cmd.getArgs();
-    } catch (final ParseException e) {
-      System.err.println(e.getMessage());
-      System.exit(1);
-      return;
-    }
-    final List<ConstantDefinition> constants =
-        fetch(remote, "constants")
-            .map(
-                o ->
-                    new ConstantDefinition(
-                        o.get("name").asText(),
-                        Imyhat.parse(o.get("type").asText()),
-                        o.get("description").asText()) {
+			if (cmd.hasOption("h")) {
+				final HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp("Shesmu Compiler", options);
+				System.exit(0);
+				return;
+			}
+			if (cmd.hasOption('r')) {
+				remote = cmd.getOptionValue('r');
+			}
+			if (cmd.getArgs().length == 0) {
+				System.err.println("At least one file must be specified to compile.");
+				System.exit(1);
+				return;
+			}
+			files = cmd.getArgs();
+		} catch (final ParseException e) {
+			System.err.println(e.getMessage());
+			System.exit(1);
+			return;
+		}
+		final List<ConstantDefinition> constants = fetch(remote, "constants")//
+				.map(o -> new ConstantDefinition(o.get("name").asText(), Imyhat.parse(o.get("type").asText()),
+						o.get("description").asText()) {
 
-                      @Override
-                      protected void load(GeneratorAdapter methodGen) {
-                        throw new UnsupportedOperationException();
-                      }
-                    })
-            .collect(Collectors.toList());
-    final NameLoader<InputFormatDefinition> inputFormats =
-        new NameLoader<>(
-            fetch(remote, "variables", ObjectNode.class)
-                .map(Check::makeInputFormat)
-                .orElse(Stream.empty()),
-            InputFormatDefinition::name);
-    final NameLoader<FunctionDefinition> functions =
-        new NameLoader<>(
-            fetch(remote, "functions").map(Check::makeFunction), FunctionDefinition::name);
-    final NameLoader<ActionDefinition> actions =
-        new NameLoader<>(fetch(remote, "actions").map(Check::makeAction), ActionDefinition::name);
+					@Override
+					protected void load(GeneratorAdapter methodGen) {
+						throw new UnsupportedOperationException();
+					}
+				})//
+				.collect(Collectors.toList());
+		final NameLoader<InputFormatDefinition> inputFormats = new NameLoader<>(
+				fetch(remote, "variables", ObjectNode.class).map(Check::makeInputFormat).orElse(Stream.empty()),
+				InputFormatDefinition::name);
+		final NameLoader<FunctionDefinition> functions = new NameLoader<>(
+				fetch(remote, "functions").map(Check::makeFunction), FunctionDefinition::name);
+		final NameLoader<ActionDefinition> actions = new NameLoader<>(fetch(remote, "actions").map(Check::makeAction),
+				ActionDefinition::name);
 
     final boolean ok =
         Stream.of(files)

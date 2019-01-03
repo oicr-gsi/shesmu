@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.Imyhat;
 import java.util.function.Consumer;
 import org.objectweb.asm.Type;
 
+/** Build a grouping operation */
 public interface Regrouper {
 
   /**

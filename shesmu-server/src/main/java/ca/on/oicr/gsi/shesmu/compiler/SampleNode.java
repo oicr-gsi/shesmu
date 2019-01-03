@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/** Perform a subsampling operation in a <tt>Subsample<tt> clause in a <tt>For</tt> expression */
 public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler {
 
   public enum Consumption {
@@ -62,6 +63,12 @@ public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler {
 
   public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
+  /**
+   * Check if there will be items left to subsample
+   *
+   * <p>Some operations consume all of the input and so operations that consume limited amounts of
+   * input should not be after those that consume all of the input.
+   */
   public abstract Consumption consumptionCheck(Consumption previous, Consumer<String> errorHandler);
 
   public abstract boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler);

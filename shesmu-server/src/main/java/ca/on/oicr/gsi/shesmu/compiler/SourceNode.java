@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/** The provider of a stream of items for a <tt>For</tt> expression */
 public abstract class SourceNode {
 
   private static final Parser.ParseDispatch<SourceNode> DISPATCH = new Parser.ParseDispatch<>();
@@ -95,25 +96,25 @@ public abstract class SourceNode {
 
   public abstract Ordering ordering();
 
-  /** Produce bytecode for this expression */
+  /** Produce bytecode for this source */
   public abstract JavaStreamBuilder render(Renderer renderer);
 
-  /** Resolve all variable definitions in this expression and its children. */
+  /** Resolve all variable definitions in this source and its children. */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
-  /** Resolve all function definitions in this expression */
+  /** Resolve all function definitions in this source */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
 
   /**
-   * The type of this expression
+   * The type of the items in the resulting stream
    *
    * <p>This should return {@link Imyhat#BAD} if no type can be determined
    */
   public abstract Imyhat streamType();
 
   /**
-   * Perform type checking on this expression and its children.
+   * Perform type checking on this source and its children.
    *
    * @param errorHandler
    * @return

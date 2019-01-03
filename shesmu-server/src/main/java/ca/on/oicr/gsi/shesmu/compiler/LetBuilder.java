@@ -9,6 +9,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+/** Build a new class for holding the new variables defined by a <tt>Let</tt> clause */
 public class LetBuilder {
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 

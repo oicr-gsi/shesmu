@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/** Representation of a complete Shesmu script */
 public class ProgramNode {
   /** Parse a file of olive nodes */
   public static boolean parseFile(
