@@ -27,7 +27,13 @@ import io.prometheus.client.Gauge.Timer;
  * Compiles a user-specified file into a usable program and updates it as
  * necessary
  */
-public class CompiledGenerator extends ActionGenerator {
+public class CompiledGenerator {
+
+	private interface LimitedRunnable extends Runnable {
+		String name();
+
+		int timeout();
+	}
 
 	private final class Script implements WatchedFileListener {
 		private FileTable dashboard;
@@ -118,9 +124,9 @@ public class CompiledGenerator extends ActionGenerator {
 		return OLIVE_WATCHDOG.labels(fileName).get() > 0;
 	}
 
-	private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
-
 	private final ScheduledExecutorService executor;
+
+	private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
 
 	public CompiledGenerator(ScheduledExecutorService executor) {
 		this.executor = executor;
@@ -139,12 +145,17 @@ public class CompiledGenerator extends ActionGenerator {
 		scripts().forEach(script -> script.errorHtml(renderer));
 	}
 
-	@Override
 	public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
-		Stream.<Runnable>concat(InputFormatDefinition.formats()//
-				.map(format -> new Runnable() {
+		Stream.<LimitedRunnable>concat(InputFormatDefinition.formats()//
+				.map(format -> new LimitedRunnable() {
+
+					@Override
+					public String name() {
+						return format.name();
+					}
+
 					@Override
 					public void run() {
 						try {
@@ -154,13 +165,17 @@ public class CompiledGenerator extends ActionGenerator {
 						}
 					}
 
-					@Override
-					public String toString() {
-						return format.name();
+					public int timeout() {
+						return 20;
 					}
 
 				}), //
-				scripts().map(script -> new Runnable() {
+				scripts().map(script -> new LimitedRunnable() {
+
+					@Override
+					public String name() {
+						return script.fileName.toString();
+					}
 
 					@Override
 					public void run() {
@@ -168,8 +183,8 @@ public class CompiledGenerator extends ActionGenerator {
 					}
 
 					@Override
-					public String toString() {
-						return script.fileName.toString();
+					public int timeout() {
+						return script.generator.timeout();
 					}
 
 				}))//
@@ -177,7 +192,7 @@ public class CompiledGenerator extends ActionGenerator {
 					final Future<?> future = executor.submit(runnable);
 					boolean ok;
 					try {
-						future.get(20, TimeUnit.MINUTES);
+						future.get(runnable.timeout(), TimeUnit.SECONDS);
 						ok = true;
 					} catch (InterruptedException e) {
 						ok = false;
@@ -191,7 +206,7 @@ public class CompiledGenerator extends ActionGenerator {
 						ok = false;
 						future.cancel(true);
 					}
-					OLIVE_WATCHDOG.labels(runnable.toString()).set(ok ? 0 : 1);
+					OLIVE_WATCHDOG.labels(runnable.name()).set(ok ? 0 : 1);
 				});
 	}
 

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,6 +29,7 @@ public class ProgramNode {
 	public static boolean parseFile(CharSequence input, Consumer<ProgramNode> output, ErrorConsumer errorHandler) {
 		final AtomicReference<Pair<Integer, Integer>> start = new AtomicReference<>();
 		final AtomicReference<String> inputFormat = new AtomicReference<>();
+		final AtomicReference<List<PragmaNode>> pragmas = new AtomicReference<>();
 		final AtomicReference<List<TypeAliasNode>> typeAliases = new AtomicReference<>();
 		final AtomicReference<List<OliveNode>> olives = new AtomicReference<>();
 		final Parser result = Parser.start(input, errorHandler)//
@@ -39,13 +41,14 @@ public class ProgramNode {
 				.whitespace()//
 				.symbol(";")//
 				.whitespace()//
+				.list(pragmas::set, PragmaNode::parse)//
 				.list(typeAliases::set, TypeAliasNode::parse)//
 				.list(olives::set, OliveNode::parse)//
 				.whitespace();
 		if (result.isGood()) {
 			if (result.isEmpty()) {
 				output.accept(new ProgramNode(start.get().first(), start.get().second(), inputFormat.get(),
-						typeAliases.get(), olives.get()));
+						pragmas.get(), typeAliases.get(), olives.get()));
 				return true;
 			} else {
 				errorHandler.raise(result.line(), result.column(), "Junk at end of file.");
@@ -66,11 +69,15 @@ public class ProgramNode {
 
 	private final List<TypeAliasNode> typeAliases;
 
-	public ProgramNode(int line, int column, String input, List<TypeAliasNode> typeAliases, List<OliveNode> olives) {
+	private final List<PragmaNode> pragmas;
+
+	public ProgramNode(int line, int column, String input, List<PragmaNode> pragmas, List<TypeAliasNode> typeAliases,
+			List<OliveNode> olives) {
 		super();
 		this.line = line;
 		this.column = column;
 		this.input = input;
+		this.pragmas = pragmas;
 		this.typeAliases = typeAliases;
 		this.olives = olives;
 	}
@@ -89,8 +96,15 @@ public class ProgramNode {
 	 */
 	public void render(RootBuilder builder) {
 		final Map<String, OliveDefineBuilder> definitions = new HashMap<>();
+		pragmas.forEach(pragma -> pragma.renderGuard(builder));
 		olives.forEach(olive -> olive.build(builder, definitions));
 		olives.forEach(olive -> olive.render(builder, definitions));
+	}
+
+	public int timeout() {
+		AtomicInteger timeout = new AtomicInteger(20);
+		pragmas.forEach(pragma -> pragma.timeout(timeout));
+		return timeout.get();
 	}
 
 	/**

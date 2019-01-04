@@ -30,6 +30,11 @@ public abstract class ActionGenerator {
 			// Do nothing.
 		}
 
+		@Override
+		public int timeout() {
+			return 1;
+		}
+
 	};
 
 	public static final Gauge OLIVE_FLOW = Gauge
@@ -100,6 +105,11 @@ public abstract class ActionGenerator {
 	 */
 	@RuntimeInterop
 	public abstract <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input);
+
+	/**
+	 * The maximum runtime of this script, in seconds.
+	 */
+	public abstract int timeout();
 
 	/**
 	 * Remove all Prometheus monitoring for this program.

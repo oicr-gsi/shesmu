@@ -92,7 +92,7 @@ public abstract class Compiler {
 			}
 			final List<Textifier> bytecode = new ArrayList<>();
 			final RootBuilder builder = new RootBuilder(compileTime, name, path, program.get().inputFormatDefinition(),
-					constants) {
+					program.get().timeout(), constants) {
 				@Override
 				protected ClassVisitor createClassVisitor() {
 					final ClassVisitor outputVisitor = Compiler.this.createClassVisitor();
