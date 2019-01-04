@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.VOID_TYPE;
+import static org.objectweb.asm.Type.INT_TYPE;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
@@ -60,6 +61,7 @@ public abstract class RootBuilder {
 	private static final Method METHOD_ACTION_GENERATOR__RUN = new Method("run", VOID_TYPE,
 			new Type[] { A_ACTION_CONSUMER_TYPE, A_FUNCTION_TYPE });
 
+	private static final Method METHOD_ACTION_GENERATOR__TIMEOUT = new Method("timeout", INT_TYPE, new Type[] {});
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,
 			new Type[] { A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE });
 	private final static Method METHOD_DUMPER__FIND = new Method("find", A_DUMPER_TYPE,
@@ -116,7 +118,7 @@ public abstract class RootBuilder {
 	private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
 	public RootBuilder(Instant compileTime, String name, String path, InputFormatDefinition inputFormatDefinition,
-			Supplier<Stream<ConstantDefinition>> constants) {
+			int timeout, Supplier<Stream<ConstantDefinition>> constants) {
 		this.compileTime = compileTime.toEpochMilli();
 		this.path = path;
 		this.inputFormatDefinition = inputFormatDefinition;
@@ -146,6 +148,30 @@ public abstract class RootBuilder {
 		classInitMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, CTOR_CLASS, null, null,
 				classVisitor);
 		classInitMethod.visitCode();
+
+		final GeneratorAdapter timeoutMethod = new GeneratorAdapter(Opcodes.ACC_PRIVATE,
+				METHOD_ACTION_GENERATOR__TIMEOUT, null, null, classVisitor);
+		timeoutMethod.visitCode();
+		timeoutMethod.push(timeout);
+		timeoutMethod.returnValue();
+		timeoutMethod.visitMaxs(0, 0);
+		timeoutMethod.visitEnd();
+
+	}
+
+	/**
+	 * Add a check that will stop processing olives
+	 * 
+	 * @param predicate
+	 *            generate code that leaves a boolean value on the stack; if the
+	 *            value is true, the script will be aborted
+	 */
+	public void addGuard(Consumer<GeneratorAdapter> predicate) {
+		predicate.accept(runMethod);
+		final Label skip = runMethod.newLabel();
+		runMethod.ifZCmp(GeneratorAdapter.EQ, skip);
+		runMethod.visitInsn(Opcodes.RETURN);
+		runMethod.mark(skip);
 	}
 
 	/**

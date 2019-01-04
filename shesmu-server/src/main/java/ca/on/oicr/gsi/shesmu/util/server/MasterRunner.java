@@ -9,6 +9,7 @@ import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.InputRepository;
 import io.prometheus.client.Counter;
@@ -29,12 +30,12 @@ public class MasterRunner {
 			.register();
 	private static final LatencyHistogram runTime = new LatencyHistogram("shesmu_run_time",
 			"The time the script takes to run on all the input.");
-	private final ActionGenerator generator;
+	private final CompiledGenerator generator;
 	private final ActionConsumer consumer;
 
 	private ScheduledFuture<?> scheduled;
 
-	public MasterRunner(ActionGenerator generator, ActionConsumer consumer) {
+	public MasterRunner(CompiledGenerator generator, ActionConsumer consumer) {
 		this.generator = generator;
 		this.consumer = consumer;
 	}

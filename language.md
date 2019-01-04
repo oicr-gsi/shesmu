@@ -352,6 +352,16 @@ deduplicate it from other alerts. The `Annotations` section define information
 that is passed to Alert Manager that gets overwritten. For details, see the
 [Alert Manager](https://prometheus.io/docs/alerting/clients/) documentation.
 
+## Pragmas
+After the `Input` line, various script modifiers can be added.
+
+### Timeouts
+- `Timeout` _integer_ `;`
+
+Stop the script after _integer_ seconds. The usual integer suffixes, especially
+`minutes` and `hours` can be added here. When a script runs over its time
+budget, the Prometheus variable `shesmu_run_overtime` will be set. 
+
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a descriptor that is used for

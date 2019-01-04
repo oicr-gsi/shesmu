@@ -1,4 +1,5 @@
 Input test;
+Timeout 1hours;
 
 mylist = [1,2];
 Olive

@@ -62,6 +62,7 @@ syn keyword shesmuKeyword Squish
 syn keyword shesmuKeyword Subsample
 syn keyword shesmuKeyword Switch
 syn keyword shesmuKeyword Then
+syn keyword shesmuKeyword Timeout
 syn keyword shesmuKeyword To
 syn keyword shesmuKeyword TypeAlias
 syn keyword shesmuKeyword When
