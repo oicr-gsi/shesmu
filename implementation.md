@@ -266,6 +266,34 @@ or
 and
 [`SftpServer`](plugin/sftp/src/main/java/ca/on/oicr/gsi/shesmu/sftp/SftpServer.java).
 
+### Decorate Input Formats
+When modifying an existing input format, it is preferable to slowly transition
+olives to new new format rather than changing the format and fixing the
+fallout. To make this easier, `DecoratedInputFormatDefinition` is available.
+
+Suppose there is a format _fmt_, backed by data class _I_, and there is going
+to be _fmt2_ developed.
+
+1. Create a new class _O_ which has a single field _I_ set by the constructor.
+1. Create delegation methods from _O_ to _I_ for all the methods decorated with
+   `@ShesmuVariable`. Copy the annotation.
+1. Create new `equals` and `hashCode` methods that use the delegated methods.
+1. Change the input format definition for _I_ from _fmt_ to _fmt2_.
+1. Create a class, _OF_, that extends `DecoratedInputFormatDefinition<`_I_`,`_O_`>`.
+1. In the _OF_ constructor, call `super("`_fmt_`", `_I_`.class, `_O_`.class);`.
+1. Decorate _OF_ with `@MetaInfServices(InputFormatDefinition.class)`.
+1. Implement the `wrap` method _OF_ to call the constructor for _O_.
+1. Change _I_ as desired. Refactor _O_ accordingly to keep the outputs the same.
+1. Release this version of Shesmu.
+1. Transition all olives to use `Input `_fmt2_`;`.
+1. Delete _O_ and _OF_ when no longer required.
+
+A [worked example](examples/input_format_migration) shows this process. For
+this example, the type of the `accession` variable is being changed from
+`string` to `integer`. This first step shows the original state and the second
+step shows the state with the decorator in place. After migration,
+`OldExampleValue` and `OldExampleInputFormatDefinition` can be deleted.
+
 #### Constants
 A constant is a value that can be generated with no input. It need not actually
 be constant (_e.g._, `now` is a constant). The Shesmu compiler will arbitrarily
