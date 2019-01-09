@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
@@ -26,7 +25,7 @@ public abstract class ActionGenerator {
 	public static final ActionGenerator NULL = new ActionGenerator() {
 
 		@Override
-		public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
+		public void run(ActionConsumer consumer, InputProvider input) {
 			// Do nothing.
 		}
 
@@ -104,7 +103,7 @@ public abstract class ActionGenerator {
 	 *            a problem for the Shesmu script.
 	 */
 	@RuntimeInterop
-	public abstract <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input);
+	public abstract void run(ActionConsumer consumer, InputProvider input);
 
 	/**
 	 * The maximum runtime of this script, in seconds.

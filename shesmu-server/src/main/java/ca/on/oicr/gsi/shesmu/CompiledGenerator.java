@@ -9,7 +9,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +59,7 @@ public class CompiledGenerator {
 			}
 		}
 
-		public synchronized <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
+		public synchronized void run(ActionConsumer consumer, InputProvider input) {
 			try {
 				generator.run(consumer, input);
 			} catch (final Exception e) {
@@ -145,7 +144,7 @@ public class CompiledGenerator {
 		scripts().forEach(script -> script.errorHtml(renderer));
 	}
 
-	public <T> void run(ActionConsumer consumer, Function<Class<T>, Stream<T>> input) {
+	public void run(ActionConsumer consumer, InputProvider input) {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
 		Stream.<LimitedRunnable>concat(InputFormatDefinition.formats()//

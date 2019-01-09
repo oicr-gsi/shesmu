@@ -28,7 +28,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 				.map(Pair.transform(LoadParameter::new)).collect(Collectors.toList());
 		method = new Method(String.format("Define %s", name), A_STREAM_TYPE, Stream.concat(//
 				Stream.concat(//
-						Stream.of(A_STREAM_TYPE, A_FUNCTION_TYPE, Type.INT_TYPE, Type.INT_TYPE), //
+						Stream.of(A_STREAM_TYPE, A_INPUT_PROVIDER_TYPE, Type.INT_TYPE, Type.INT_TYPE), //
 						NameDefinitions.signatureVariables().map(SignatureVariable::storageType)), //
 				this.parameters.stream().map(LoadableValue::type)).toArray(Type[]::new));
 		signerPrefix = String.format("Define %s ", name);

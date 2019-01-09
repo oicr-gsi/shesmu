@@ -154,8 +154,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
 		runMethod.loadArg(1);
 		runMethod.push(initialType);
-		runMethod.invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
-		runMethod.checkCast(A_STREAM_TYPE);
+		runMethod.invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
 		steps.forEach(step -> step.accept(owner.rootRenderer(true)));
 
