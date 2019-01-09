@@ -153,6 +153,8 @@ public final class IniParam implements ActionParameterDefinition {
 					return FILE_SWID;
 				case "integer":
 					return INTEGER;
+				case "path":
+					return PATH;
 				case "processingSWID":
 					return PROCESSING_SWID;
 				case "string":
@@ -408,7 +410,22 @@ public final class IniParam implements ActionParameterDefinition {
 		}
 
 	};
+	/**
+	 * Save a path
+	 */
+	public static final Stringifier PATH = new Stringifier() {
 
+		@Override
+		public void stringify(GeneratorAdapter methodGen, Type actionType, int actionLocal) {
+			methodGen.invokeVirtual(A_OBJECT_TYPE, OBJECT__TO_STRING);
+		}
+
+		@Override
+		public Imyhat type() {
+			return Imyhat.PATH;
+		}
+
+	};
 	private static final Method STRING_BUILDER__APPEND = new Method("append", A_STRING_BUILDER_TYPE,
 			new Type[] { A_STRING_TYPE });
 
