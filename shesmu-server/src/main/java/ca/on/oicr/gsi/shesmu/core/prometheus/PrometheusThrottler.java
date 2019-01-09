@@ -47,7 +47,7 @@ public class PrometheusThrottler implements Throttler {
 			protected Stream<AlertDto> fetch(Instant lastUpdated) throws Exception {
 				final String url = configuration.map(Configuration::getAlertmanager).orElse(null);
 				if (url == null) {
-					throw new IllegalStateException();
+					return Stream.empty();
 				}
 				try (CloseableHttpResponse response = HTTP_CLIENT
 						.execute(new HttpGet(String.format("%s/api/v1/alerts", url)))) {
