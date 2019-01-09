@@ -3,16 +3,16 @@ package ca.on.oicr.gsi.shesmu;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
@@ -27,12 +27,6 @@ import io.prometheus.client.Gauge.Timer;
  * necessary
  */
 public class CompiledGenerator {
-
-	private interface LimitedRunnable extends Runnable {
-		String name();
-
-		int timeout();
-	}
 
 	private final class Script implements WatchedFileListener {
 		private FileTable dashboard;
@@ -108,7 +102,8 @@ public class CompiledGenerator {
 	public static final Gauge INPUT_RECORDS = Gauge
 			.build("shesmu_input_records", "The number of records for each input format.").labelNames("format")
 			.register();
-
+	public static final LatencyHistogram INPUT_FETCH_TIME = new LatencyHistogram("shesmu_input_fetch_time",
+			"The number of records for each input format.", "format");
 	public static final Gauge OLIVE_WATCHDOG = Gauge
 			.build("shesmu_run_overtime", "Whether the input format or olive file failed to finish within deadline.")
 			.labelNames("name").register();
@@ -147,66 +142,56 @@ public class CompiledGenerator {
 	public void run(ActionConsumer consumer, InputProvider input) {
 		// Load all the input data in an attempt to cache it before any olives try to
 		// use it. This avoids making the first olive seem really slow.
-		Stream.<LimitedRunnable>concat(InputFormatDefinition.formats()//
-				.map(format -> new LimitedRunnable() {
-
-					@Override
-					public String name() {
-						return format.name();
-					}
-
-					@Override
-					public void run() {
-						try {
-							INPUT_RECORDS.labels(format.name()).set(format.input(format.itemClass()).count());
+		// TODO: collect only the formats that olives are currently using
+		final InputProvider cache = new InputProvider() {
+			final Map<Class<?>, List<?>> data = InputFormatDefinition.formats()//
+					.collect(Collectors.toMap(InputFormatDefinition::itemClass, format -> {
+						try (AutoCloseable timer = INPUT_FETCH_TIME.start(format.name());
+								AutoCloseable inflight = Server.inflightCloseable("Fetching " + format.name())) {
+							final List<Object> results = format.input(format.itemClass()).collect(Collectors.toList());
+							INPUT_RECORDS.labels(format.name()).set(results.size());
+							return results;
 						} catch (final Exception e) {
 							e.printStackTrace();
+							return Collections.emptyList();
 						}
-					}
+					}));
 
-					public int timeout() {
-						return 20;
-					}
+			@Override
+			public <X> Stream<X> fetch(Class<X> format) {
+				return data.getOrDefault(format, Collections.emptyList()).stream().map(format::cast);
+			}
+		};
 
-				}), //
-				scripts().map(script -> new LimitedRunnable() {
+		final List<CompletableFuture<?>> futures = scripts()//
+				.map(script -> {
+					final Runnable inflight = Server.inflight(script.fileName.toString());
+					// For each script, create two futures: one that runs the olive script and
+					// return true and one that will wait for the timeout and return false
+					final CompletableFuture<Boolean> timeoutFuture = new CompletableFuture<>();
+					final CompletableFuture<Boolean> processFuture = CompletableFuture.supplyAsync(() -> {
+						// We wait to schedule the timeout for when the script is actually starting
+						executor.schedule(() -> timeoutFuture.complete(false), script.generator.timeout(),
+								TimeUnit.SECONDS);
 
-					@Override
-					public String name() {
-						return script.fileName.toString();
-					}
+						script.run(consumer, cache);
+						return true;
+					}, executor);
 
-					@Override
-					public void run() {
-						script.run(consumer, input);
-					}
-
-					@Override
-					public int timeout() {
-						return script.generator.timeout();
-					}
-
-				}))//
-				.forEach(runnable -> {
-					final Future<?> future = executor.submit(runnable);
-					boolean ok;
-					try {
-						future.get(runnable.timeout(), TimeUnit.SECONDS);
-						ok = true;
-					} catch (InterruptedException e) {
-						ok = false;
-						future.cancel(true);
-						Thread.currentThread().interrupt();
-					} catch (ExecutionException e) {
-						ok = false;
-						future.cancel(true);
-						e.getCause().printStackTrace();
-					} catch (TimeoutException e) {
-						ok = false;
-						future.cancel(true);
-					}
-					OLIVE_WATCHDOG.labels(runnable.name()).set(ok ? 0 : 1);
-				});
+					// Then create another future that waits for either of the above to finish and
+					// nukes the other
+					return CompletableFuture.anyOf(timeoutFuture, processFuture).thenAccept(obj -> {
+						final boolean ok = (Boolean) obj;
+						OLIVE_WATCHDOG.labels(script.fileName.toString()).set(ok ? 0 : 1);
+						(ok ? timeoutFuture : processFuture).cancel(true);
+						inflight.run();
+					});
+				}) //
+				.collect(Collectors.toList());
+		// Now wait for all of those tasks to finish
+		for (CompletableFuture<?> future : futures) {
+			future.join();
+		}
 	}
 
 	private Stream<Script> scripts() {
