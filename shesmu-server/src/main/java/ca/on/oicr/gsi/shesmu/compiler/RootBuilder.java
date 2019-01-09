@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -32,6 +31,7 @@ import ca.on.oicr.gsi.shesmu.Dumper;
 import ca.on.oicr.gsi.shesmu.DumperSource;
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.InputProvider;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import io.prometheus.client.Gauge;
 
@@ -44,7 +44,7 @@ public abstract class RootBuilder {
 	private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
 	private static final Type A_DUMPER_SOURCE_TYPE = Type.getType(DumperSource.class);
 	private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
-	private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
+	private static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
 	private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
 	private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
 	private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
@@ -59,7 +59,7 @@ public abstract class RootBuilder {
 	private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE = new Method("clearGauge", VOID_TYPE,
 			new Type[] {});
 	private static final Method METHOD_ACTION_GENERATOR__RUN = new Method("run", VOID_TYPE,
-			new Type[] { A_ACTION_CONSUMER_TYPE, A_FUNCTION_TYPE });
+			new Type[] { A_ACTION_CONSUMER_TYPE, A_INPUT_PROVIDER_TYPE });
 
 	private static final Method METHOD_ACTION_GENERATOR__TIMEOUT = new Method("timeout", INT_TYPE, new Type[] {});
 	private static final Method METHOD_BUILD_GAUGE = new Method("buildGauge", A_GAUGE_TYPE,

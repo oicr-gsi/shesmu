@@ -24,6 +24,7 @@ import org.objectweb.asm.commons.Method;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.InputProvider;
 import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
@@ -47,7 +48,9 @@ public abstract class BaseOliveBuilder {
 	protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
 	protected static final Type A_STRING_TYPE = Type.getType(String.class);
 	private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
-
+	protected static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
+	protected static final Method METHOD_INPUT_PROVIDER__FETCH = new Method("fetch", A_STREAM_TYPE,
+			new Type[] { Type.getType(Class.class) });
 	private static final Method METHOD_ACTION_GENERATOR__MEASURE_FLOW = new Method("measureFlow", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, INT_TYPE, INT_TYPE });
 	private static final Method METHOD_COMPARATOR__COMPARING = new Method("comparing", A_COMPARATOR_TYPE,
@@ -73,8 +76,7 @@ public abstract class BaseOliveBuilder {
 	private static final Method METHOD_RUNTIME_SUPPORT__JOIN = new Method("join", A_STREAM_TYPE,
 			new Type[] { A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE });
 	private static final Method METHOD_STREAM__MAP = new Method("map", A_STREAM_TYPE, new Type[] { A_FUNCTION_TYPE });
-	private static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE,
-			new Type[] { A_CONSUMER_TYPE });
+	private static final Method METHOD_STREAM__PEEK = new Method("peek", A_STREAM_TYPE, new Type[] { A_CONSUMER_TYPE });
 
 	private Type currentType;
 
@@ -172,8 +174,7 @@ public abstract class BaseOliveBuilder {
 		steps.add(renderer -> {
 			renderer.methodGen().loadArg(1);
 			renderer.methodGen().push(innerType);
-			renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
-			renderer.methodGen().checkCast(A_STREAM_TYPE);
+			renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
 			outerKeyLambda.push(renderer);
 			innerKeyLambda.push(renderer);
@@ -211,8 +212,7 @@ public abstract class BaseOliveBuilder {
 		steps.add(renderer -> {
 			renderer.methodGen().loadArg(1);
 			renderer.methodGen().push(innerType);
-			renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
-			renderer.methodGen().checkCast(A_STREAM_TYPE);
+			renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
 			outerKeyLambda.push(renderer);
 			innerKeyLambda.push(renderer);
