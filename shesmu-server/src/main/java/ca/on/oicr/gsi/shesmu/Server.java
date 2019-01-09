@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
@@ -110,8 +111,21 @@ public final class Server implements ServerConfig {
 
 	}
 
+	public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+
+	private static final Map<String, Instant> INFLIGHT = new ConcurrentHashMap<>();
+
 	private static final LatencyHistogram responseTime = new LatencyHistogram("shesmu_http_request_time",
 			"The time to respond to an HTTP request.", "url");
+
+	public static Runnable inflight(String name) {
+		INFLIGHT.putIfAbsent(name, Instant.now());
+		return () -> INFLIGHT.remove(name);
+	}
+
+	public static AutoCloseable inflightCloseable(String name) {
+		return inflight(name)::run;
+	}
 
 	public static void main(String[] args) throws Exception {
 		DefaultExports.initialize();
@@ -119,8 +133,6 @@ public final class Server implements ServerConfig {
 		final Server s = new Server(8081);
 		s.start();
 	}
-
-	public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
 	private final CompiledGenerator compiler;
 	private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
@@ -179,6 +191,23 @@ public final class Server implements ServerConfig {
 			}
 		});
 
+		add("/inflightdash", t -> {
+			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+			t.sendResponseHeaders(200, 0);
+			try (OutputStream os = t.getResponseBody()) {
+				new TablePage(this, "Inflight Process", "Started", "Duration") {
+					final Instant now = Instant.now();
+
+					@Override
+					protected void writeRows(TableRowWriter writer) {
+						for (Entry<String, Instant> inflight : INFLIGHT.entrySet()) {
+							writer.write(false, inflight.getKey(), inflight.getValue().toString(),
+									Duration.between(inflight.getValue(), now).toString());
+						}
+					}
+				}.renderPage(os);
+			}
+		});
 		add("/olivedash", t -> {
 			t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
 			t.sendResponseHeaders(200, 0);
@@ -1336,6 +1365,7 @@ public final class Server implements ServerConfig {
 						NavigationMenu.item("signaturedefs", "Signatures")), //
 				NavigationMenu.submenu("Tools", //
 						NavigationMenu.item("typedefs", "Type Converter"), //
+						NavigationMenu.item("inflightdash", "Active Server Processes"), //
 						NavigationMenu.item("dumpdefs", "Detected Definition Plugins"), //
 						NavigationMenu.item("dumprtb", "Runtime Binding Spy"), //
 						NavigationMenu.item("dumpadr", "Arbitrary Binding Spy")));

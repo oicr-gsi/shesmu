@@ -41,6 +41,7 @@ import ca.on.oicr.gsi.shesmu.Action;
 import ca.on.oicr.gsi.shesmu.ActionConsumer;
 import ca.on.oicr.gsi.shesmu.ActionState;
 import ca.on.oicr.gsi.shesmu.AlertSink;
+import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.SourceLocation;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionProcessorRepository;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
@@ -798,7 +799,8 @@ public final class ActionProcessor implements ActionConsumer {
 
 	private void update() {
 		byte[] alertJson = null;
-		try (AutoCloseable lock = alertLock.acquire()) {
+		try (AutoCloseable lock = alertLock.acquire();
+				AutoCloseable inflight = Server.inflightCloseable("Push alerts")) {
 			alertJson = RuntimeSupport.MAPPER.writeValueAsBytes(//
 					alerts.values().stream()//
 							.filter(Alert::isLive)//
@@ -822,7 +824,8 @@ public final class ActionProcessor implements ActionConsumer {
 					entry.getValue().lastChecked = Instant.now();
 					final ActionState oldState = entry.getValue().lastState;
 					final boolean oldThrown = entry.getValue().thrown;
-					try {
+					try (AutoCloseable inflight = Server.inflightCloseable(String
+							.format("Performing action %s of type %s", entry.getValue(), entry.getKey().type()))) {
 						entry.getValue().lastState = entry.getKey().perform();
 					} catch (final Exception e) {
 						entry.getValue().lastState = ActionState.UNKNOWN;
