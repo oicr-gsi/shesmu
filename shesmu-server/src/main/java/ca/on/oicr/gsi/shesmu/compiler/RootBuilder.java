@@ -149,7 +149,7 @@ public abstract class RootBuilder {
 				classVisitor);
 		classInitMethod.visitCode();
 
-		final GeneratorAdapter timeoutMethod = new GeneratorAdapter(Opcodes.ACC_PRIVATE,
+		final GeneratorAdapter timeoutMethod = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
 				METHOD_ACTION_GENERATOR__TIMEOUT, null, null, classVisitor);
 		timeoutMethod.visitCode();
 		timeoutMethod.push(timeout);
