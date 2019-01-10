@@ -52,7 +52,8 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 					final Map<String, Integer> badSetCounts = new TreeMap<>();
 					final Map<String, String> runDirectories = new HashMap<>();
 					final Set<String> completeRuns = c.getSequencerRun().all().stream()//
-							.filter(run -> run.getState().equals("Completed"))//
+							.filter(run -> run.getState().equals("Completed") && run != null
+									&& !run.getRunDirectory().equals(""))//
 							.map(RunDto::getName)//
 							.collect(Collectors.toSet());
 					return Stream.concat(//
