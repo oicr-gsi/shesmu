@@ -50,7 +50,7 @@
     <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
       <artifactId>pipedev-provenance-impl</artifactId>
-      <version>2.4-SNAPSHOT</version>
+      <version>2.4.5</version>
     </dependency>
   </dependencies>
   <build>

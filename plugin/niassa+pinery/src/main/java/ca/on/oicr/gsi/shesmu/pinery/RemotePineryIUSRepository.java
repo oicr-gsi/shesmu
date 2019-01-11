@@ -49,6 +49,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 				}
 				final PineryConfiguration cfg = config.get();
 				try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
+					final String version = cfg.getVersion() == null ? "v1" : cfg.getVersion();
 					final Map<String, Integer> badSetCounts = new TreeMap<>();
 					final Map<String, String> runDirectories = new HashMap<>();
 					final Set<String> completeRuns = c.getSequencerRun().all().stream()//
@@ -57,8 +58,8 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 							.map(RunDto::getName)//
 							.collect(Collectors.toSet());
 					return Stream.concat(//
-							lanes(c, cfg.getProvider(), badSetCounts, runDirectories, completeRuns::contains), //
-							samples(c, cfg.getProvider(), badSetCounts, runDirectories, completeRuns::contains))//
+							lanes(c, cfg.getProvider(), version, badSetCounts, runDirectories, completeRuns::contains), //
+							samples(c, cfg.getProvider(), version, badSetCounts, runDirectories, completeRuns::contains))//
 							.onClose(() -> badSetCounts.entrySet()
 									.forEach(e -> badSetMap
 											.labels(Stream.concat(Stream.of(fileName().toString()),
@@ -67,10 +68,10 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 				}
 			}
 
-			private Stream<PineryIUSValue> lanes(PineryClient client, String provider,
+			private Stream<PineryIUSValue> lanes(PineryClient client,  String version, String provider,
 					Map<String, Integer> badSetCounts, Map<String, String> runDirectories, Predicate<String> goodRun)
 					throws HttpResponseException {
-				return Utils.stream(client.getLaneProvenance().all())//
+				return Utils.stream(client.getLaneProvenance().version(version))//
 						.filter(lp -> goodRun.test(lp.getSequencerRunName()))//
 						.filter(lp -> lp.getSkip() == null || !lp.getSkip())//
 						.map(lp -> {
@@ -112,10 +113,10 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 						.filter(Objects::nonNull);
 			}
 
-			private Stream<PineryIUSValue> samples(PineryClient client, String provider,
+			private Stream<PineryIUSValue> samples(PineryClient client, String version, String provider,
 					Map<String, Integer> badSetCounts, Map<String, String> runDirectories, Predicate<String> goodRun)
 					throws HttpResponseException {
-				return Utils.stream(client.getSampleProvenance().all())//
+				return Utils.stream(client.getSampleProvenance().version(version))//
 						.filter(sp -> goodRun.test(sp.getSequencerRunName()))//
 						.map(sp -> {
 							final String runDirectory = runDirectories.get(sp.getSequencerRunName());
