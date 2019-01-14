@@ -15,7 +15,7 @@ public abstract class PragmaNode {
 					.integer(timeout::set, 10)//
 					.dispatch(ExpressionNode.INT_SUFFIX, multiplier::set)//
 					.whitespace()//
-					.keyword(";")//
+					.symbol(";")//
 					.whitespace();
 			if (result.isGood()) {
 				o.accept(new PragmaNodeTimeout((int) (timeout.get() * multiplier.get())));
