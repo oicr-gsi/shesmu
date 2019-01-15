@@ -204,7 +204,7 @@ public class Query {
 
 		@Override
 		public boolean test(T t) {
-			return ++count < limit;
+			return count++ < limit;
 		}
 
 	}
