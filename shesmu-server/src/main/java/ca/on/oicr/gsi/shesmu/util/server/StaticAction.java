@@ -3,22 +3,22 @@ package ca.on.oicr.gsi.shesmu.util.server;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class StaticAction {
-	private String action;
-	private ObjectNode parameters;
+  private String action;
+  private ObjectNode parameters;
 
-	public String getAction() {
-		return action;
-	}
+  public String getAction() {
+    return action;
+  }
 
-	public ObjectNode getParameters() {
-		return parameters;
-	}
+  public ObjectNode getParameters() {
+    return parameters;
+  }
 
-	public void setAction(String action) {
-		this.action = action;
-	}
+  public void setAction(String action) {
+    this.action = action;
+  }
 
-	public void setParameters(ObjectNode parameters) {
-		this.parameters = parameters;
-	}
+  public void setParameters(ObjectNode parameters) {
+    this.parameters = parameters;
+  }
 }

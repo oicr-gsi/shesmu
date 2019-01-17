@@ -4,13 +4,12 @@ import java.util.function.Consumer;
 
 public class ListNodeLimit extends ListNodeBaseRange {
 
-	public ListNodeLimit(int line, int column, ExpressionNode expression) {
-		super(line, column, expression);
-	}
+  public ListNodeLimit(int line, int column, ExpressionNode expression) {
+    super(line, column, expression);
+  }
 
-	@Override
-	protected void render(JavaStreamBuilder builder, Consumer<Renderer> expression) {
-		builder.limit(expression);
-	}
-
+  @Override
+  protected void render(JavaStreamBuilder builder, Consumer<Renderer> expression) {
+    builder.limit(expression);
+  }
 }

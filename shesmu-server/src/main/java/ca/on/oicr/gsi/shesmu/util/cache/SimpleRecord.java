@@ -7,60 +7,59 @@ import java.util.Optional;
 /**
  * Hold on to a single value
  *
- * If the value could not be fetched, the previous value will be used instead.
+ * <p>If the value could not be fetched, the previous value will be used instead.
  */
 public final class SimpleRecord<V> implements Record<Optional<V>> {
 
-	private final Updater<Optional<V>> fetcher;
-	private Instant fetchTime = Instant.EPOCH;
-	private final Owner owner;
-	private Optional<V> value;
+  private final Updater<Optional<V>> fetcher;
+  private Instant fetchTime = Instant.EPOCH;
+  private final Owner owner;
+  private Optional<V> value;
 
-	public SimpleRecord(Owner owner, Updater<Optional<V>> fetcher) {
-		this.owner = owner;
-		this.fetcher = fetcher;
-		Optional<V> value;
-		try {
-			value = fetcher.update(fetchTime);
-			fetchTime = Instant.now();
-		} catch (final Exception e) {
-			e.printStackTrace();
-			value = Optional.empty();
-		}
-		this.value = value;
-	}
+  public SimpleRecord(Owner owner, Updater<Optional<V>> fetcher) {
+    this.owner = owner;
+    this.fetcher = fetcher;
+    Optional<V> value;
+    try {
+      value = fetcher.update(fetchTime);
+      fetchTime = Instant.now();
+    } catch (final Exception e) {
+      e.printStackTrace();
+      value = Optional.empty();
+    }
+    this.value = value;
+  }
 
-	@Override
-	public void invalidate() {
-		fetchTime = Instant.EPOCH;
-	}
+  @Override
+  public void invalidate() {
+    fetchTime = Instant.EPOCH;
+  }
 
-	@Override
-	public Instant lastUpdate() {
-		return fetchTime;
-	}
+  @Override
+  public Instant lastUpdate() {
+    return fetchTime;
+  }
 
-	@Override
-	public synchronized Optional<V> refresh() {
-		final Instant now = Instant.now();
-		if (Duration.between(fetchTime, now).toMinutes() > owner.ttl()) {
-			try (AutoCloseable timer = refreshLatency.start(owner.name())) {
-				final Optional<V> buffer = fetcher.update(fetchTime);
-				if (buffer.isPresent()) {
-					value = buffer;
-					fetchTime = Instant.now();
-				}
-			} catch (final Exception e) {
-				e.printStackTrace();
-				staleRefreshError.labels(owner.name()).inc();
-			}
-		}
-		return value;
-	}
+  @Override
+  public synchronized Optional<V> refresh() {
+    final Instant now = Instant.now();
+    if (Duration.between(fetchTime, now).toMinutes() > owner.ttl()) {
+      try (AutoCloseable timer = refreshLatency.start(owner.name())) {
+        final Optional<V> buffer = fetcher.update(fetchTime);
+        if (buffer.isPresent()) {
+          value = buffer;
+          fetchTime = Instant.now();
+        }
+      } catch (final Exception e) {
+        e.printStackTrace();
+        staleRefreshError.labels(owner.name()).inc();
+      }
+    }
+    return value;
+  }
 
-	@Override
-	public int collectionSize() {
-		return value.isPresent() ? 1 : 0;
-	}
-
+  @Override
+  public int collectionSize() {
+    return value.isPresent() ? 1 : 0;
+  }
 }

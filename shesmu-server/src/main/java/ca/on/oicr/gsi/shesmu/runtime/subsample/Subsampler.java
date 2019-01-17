@@ -7,15 +7,13 @@ import java.util.stream.Stream;
 
 public abstract class Subsampler<T> {
 
-	public Subsampler() {
-	}
+  public Subsampler() {}
 
-	protected abstract int subsample(List<T> input, List<T> output);
+  protected abstract int subsample(List<T> input, List<T> output);
 
-	public Stream<T> subsample(Stream<T> input) {
-		final List<T> output = new ArrayList<>();
-		subsample(input.collect(Collectors.toList()), output);
-		return output.stream();
-	}
-
+  public Stream<T> subsample(Stream<T> input) {
+    final List<T> output = new ArrayList<>();
+    subsample(input.collect(Collectors.toList()), output);
+    return output.stream();
+  }
 }

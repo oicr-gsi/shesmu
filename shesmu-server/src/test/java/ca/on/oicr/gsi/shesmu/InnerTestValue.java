@@ -4,23 +4,22 @@ import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
 
 public class InnerTestValue {
 
-	private final long l;
-	private final String s;
+  private final long l;
+  private final String s;
 
-	public InnerTestValue(long l, String s) {
-		super();
-		this.l = l;
-		this.s = s;
-	}
+  public InnerTestValue(long l, String s) {
+    super();
+    this.l = l;
+    this.s = s;
+  }
 
-	@ShesmuVariable
-	public long l() {
-		return l;
-	}
+  @ShesmuVariable
+  public long l() {
+    return l;
+  }
 
-	@ShesmuVariable(type = "s")
-	public String s() {
-		return s;
-	}
-
+  @ShesmuVariable(type = "s")
+  public String s() {
+    return s;
+  }
 }

@@ -1,5 +1,9 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.prometheus.client.Gauge;
 import java.io.File;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -34,334 +38,320 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import io.prometheus.client.Gauge;
-/**
- * Utilities for making bytecode generation easier
- */
+/** Utilities for making bytecode generation easier */
 public final class RuntimeSupport {
-	private static class Holder<T> {
+  private static class Holder<T> {
 
-		private final BiPredicate<T, T> equals;
-		private final int hashCode;
-		private final T item;
+    private final BiPredicate<T, T> equals;
+    private final int hashCode;
+    private final T item;
 
-		public Holder(BiPredicate<T, T> equals, int hashCode, T item) {
-			this.equals = equals;
-			this.hashCode = hashCode;
-			this.item = item;
-		}
+    public Holder(BiPredicate<T, T> equals, int hashCode, T item) {
+      this.equals = equals;
+      this.hashCode = hashCode;
+      this.item = item;
+    }
 
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof Holder) {
-				@SuppressWarnings("unchecked")
-				final Holder<T> other = (Holder<T>) obj;
-				return equals.test(other.unbox(), item);
-			}
-			return false;
-		}
+    @Override
+    public boolean equals(Object obj) {
+      if (obj instanceof Holder) {
+        @SuppressWarnings("unchecked")
+        final Holder<T> other = (Holder<T>) obj;
+        return equals.test(other.unbox(), item);
+      }
+      return false;
+    }
 
-		@Override
-		public int hashCode() {
-			return hashCode;
-		}
+    @Override
+    public int hashCode() {
+      return hashCode;
+    }
 
-		public T unbox() {
-			return item;
-		}
+    public T unbox() {
+      return item;
+    }
+  }
 
-	}
+  private static final Map<String, CallSite> callsites = new HashMap<>();
 
-	private static final Map<String, CallSite> callsites = new HashMap<>();
+  @RuntimeInterop public static final String[] EMPTY = new String[0];
 
-	@RuntimeInterop
-	public static final String[] EMPTY = new String[0];
+  public static final ObjectMapper MAPPER = new ObjectMapper();
 
-	public static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final Pattern PATH_SEPARATOR = Pattern.compile(Pattern.quote(File.pathSeparator));
 
-	private static final Pattern PATH_SEPARATOR = Pattern.compile(Pattern.quote(File.pathSeparator));
+  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
+      new BinaryOperator<Object>() {
 
-	public static final BinaryOperator<?> USELESS_BINARY_OPERATOR = new BinaryOperator<Object>() {
+        @Override
+        public Object apply(Object t, Object u) {
+          throw new UnsupportedOperationException();
+        }
+      };
 
-		@Override
-		public Object apply(Object t, Object u) {
-			throw new UnsupportedOperationException();
-		}
-	};
+  static {
+    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+    MAPPER.registerModule(new JavaTimeModule());
+  }
 
-	static {
-		MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-		MAPPER.registerModule(new JavaTimeModule());
-	}
+  /**
+   * Put a formatted date-time into a string builder
+   *
+   * @param builder the string builder to append to
+   * @param instant the instant to use
+   * @param format the format code for {@link DateTimeFormatter}
+   */
+  @RuntimeInterop
+  public static StringBuilder appendFormatted(
+      StringBuilder builder, Instant instant, String format) {
+    return builder.append(toString(instant, format));
+  }
 
-	/**
-	 * Put a formatted date-time into a string builder
-	 *
-	 * @param builder
-	 *            the string builder to append to
-	 * @param instant
-	 *            the instant to use
-	 * @param format
-	 *            the format code for {@link DateTimeFormatter}
-	 */
-	@RuntimeInterop
-	public static StringBuilder appendFormatted(StringBuilder builder, Instant instant, String format) {
-		return builder.append(toString(instant, format));
-	}
+  /**
+   * Write a zero-padded number to a string builder
+   *
+   * @param builder the string builder to append to
+   * @param value the number of append
+   * @param width the number of digits the number should be
+   */
+  @RuntimeInterop
+  public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
+    final String result = Long.toString(value);
+    for (int padding = width - result.length(); padding > 0; padding--) {
+      builder.append("0");
+    }
+    return builder.append(result);
+  }
 
-	/**
-	 * Write a zero-padded number to a string builder
-	 *
-	 * @param builder
-	 *            the string builder to append to
-	 * @param value
-	 *            the number of append
-	 * @param width
-	 *            the number of digits the number should be
-	 */
-	@RuntimeInterop
-	public static StringBuilder appendFormatted(StringBuilder builder, long value, int width) {
-		final String result = Long.toString(value);
-		for (int padding = width - result.length(); padding > 0; padding--) {
-			builder.append("0");
-		}
-		return builder.append(result);
-	}
+  public static Optional<Stream<Path>> dataPaths() {
+    return environmentVariable().map(RuntimeSupport::parsePaths);
+  }
 
-	public static Optional<Stream<Path>> dataPaths() {
-		return environmentVariable().map(RuntimeSupport::parsePaths);
-	}
+  /** Determine the difference between two instants, in seconds. */
+  @RuntimeInterop
+  public static long difference(Instant left, Instant right) {
+    return Duration.between(right, left).getSeconds();
+  }
 
-	/**
-	 * Determine the difference between two instants, in seconds.
-	 */
-	@RuntimeInterop
-	public static long difference(Instant left, Instant right) {
-		return Duration.between(right, left).getSeconds();
-	}
+  public static Optional<String> environmentVariable() {
+    return Optional.ofNullable(System.getenv("SHESMU_DATA"));
+  }
 
-	public static Optional<String> environmentVariable() {
-		return Optional.ofNullable(System.getenv("SHESMU_DATA"));
-	}
+  @RuntimeInterop
+  public static <I, N, K, O> Stream<O> join(
+      Stream<I> input,
+      Stream<N> inner,
+      Function<I, K> makeOuterKey,
+      Function<N, K> makeInnerKey,
+      BiFunction<I, N, O> joiner) {
+    final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
+    input.close();
+    final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
+    inner.close();
+    return inputGroups
+        .entrySet()
+        .stream()
+        .flatMap(
+            e ->
+                innerGroups
+                    .getOrDefault(e.getKey(), Collections.emptyList())
+                    .stream()
+                    .flatMap(n -> e.getValue().stream().map(i -> joiner.apply(i, n))));
+  }
 
-	@RuntimeInterop
-	public static <I, N, K, O> Stream<O> join(Stream<I> input, Stream<N> inner, Function<I, K> makeOuterKey,
-			Function<N, K> makeInnerKey, BiFunction<I, N, O> joiner) {
-		final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
-		input.close();
-		final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
-		inner.close();
-		return inputGroups.entrySet().stream()//
-				.flatMap(e -> innerGroups.getOrDefault(e.getKey(), Collections.emptyList()).stream()//
-						.flatMap(n -> e.getValue().stream()//
-								.map(i -> joiner.apply(i, n))));
+  /**
+   * Left join a stream of input against another input format
+   *
+   * @param input the stream to be joined against
+   * @param inner the type of the inner (right) input stream
+   * @param joiner a function to create an intermediate joined type from the two types
+   * @param makeOuterKey create the joining key from an outer record
+   * @param makeInnerKey create the joining key from an inner record
+   * @param makeOutput a function to create a new output type; it must accept a joined type where
+   *     the right side will be null
+   * @param collector a function that processes joined inputs with both right and left values to an
+   *     output
+   * @return
+   */
+  @RuntimeInterop
+  public static <I, N, K, J, O> Stream<O> leftJoin(
+      Stream<I> input,
+      Stream<N> inner,
+      Function<I, K> makeOuterKey,
+      Function<N, K> makeInnerKey,
+      BiFunction<I, N, J> joiner,
+      Function<J, O> makeOutput,
+      BiConsumer<O, J> collector) {
+    final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
+    input.close();
+    final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
 
-	}
+    return inputGroups
+        .entrySet()
+        .stream()
+        .flatMap(
+            e -> {
+              final List<N> innerData =
+                  innerGroups.getOrDefault(e.getKey(), Collections.emptyList());
 
-	/**
-	 * Left join a stream of input against another input format
-	 *
-	 * @param input
-	 *            the stream to be joined against
-	 * @param inner
-	 *            the type of the inner (right) input stream
-	 * @param joiner
-	 *            a function to create an intermediate joined type from the two
-	 *            types
-	 * @param makeOuterKey
-	 *            create the joining key from an outer record
-	 * @param makeInnerKey
-	 *            create the joining key from an inner record
-	 * @param makeOutput
-	 *            a function to create a new output type; it must accept a joined
-	 *            type where the right side will be null
-	 * @param collector
-	 *            a function that processes joined inputs with both right and left
-	 *            values to an output
-	 * @return
-	 */
-	@RuntimeInterop
-	public static <I, N, K, J, O> Stream<O> leftJoin(Stream<I> input, Stream<N> inner, Function<I, K> makeOuterKey,
-			Function<N, K> makeInnerKey, BiFunction<I, N, J> joiner, Function<J, O> makeOutput,
-			BiConsumer<O, J> collector) {
-		final Map<K, List<I>> inputGroups = input.collect(Collectors.groupingBy(makeOuterKey));
-		input.close();
-		final Map<K, List<N>> innerGroups = inner.collect(Collectors.groupingBy(makeInnerKey));
+              return e.getValue()
+                  .stream()
+                  .map(
+                      left -> {
+                        final O output = makeOutput.apply(joiner.apply(left, null));
+                        innerData.forEach(
+                            right -> collector.accept(output, joiner.apply(left, right)));
+                        return output;
+                      });
+            });
+  }
 
-		return inputGroups.entrySet().stream()//
-				.flatMap(e -> {
-					final List<N> innerData = innerGroups.getOrDefault(e.getKey(), Collections.emptyList());
+  public static <T> Optional<T> merge(
+      Optional<T> left, Optional<T> right, BiFunction<? super T, ? super T, ? extends T> merge) {
+    if (left.isPresent() && right.isPresent()) {
+      return Optional.of(merge.apply(left.get(), right.get()));
+    }
+    if (left.isPresent()) {
+      return left;
+    }
+    return right;
+  }
 
-					return e.getValue().stream()//
-							.map(left -> {
-								final O output = makeOutput.apply(joiner.apply(left, null));
-								innerData.forEach(right -> collector.accept(output, joiner.apply(left, right)));
-								return output;
-							});
-				});
-	}
+  /**
+   * Add Prometheus monitoring to a stream.
+   *
+   * @param input the stream to monitor
+   * @param gauge the gauge to write the output to
+   * @param computeValues a function to compute the values of the labels for the gauge; the order is
+   *     preserved
+   */
+  @RuntimeInterop
+  public static <T> Stream<T> monitor(
+      Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
+    return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
+  }
 
-	public static <T> Optional<T> merge(Optional<T> left, Optional<T> right,
-			BiFunction<? super T, ? super T, ? extends T> merge) {
-		if (left.isPresent() && right.isPresent()) {
-			return Optional.of(merge.apply(left.get(), right.get()));
-		}
-		if (left.isPresent()) {
-			return left;
-		}
-		return right;
-	}
+  public static Stream<Path> parsePaths(String pathVariable) {
+    return PATH_SEPARATOR.splitAsStream(pathVariable).map(Paths::get);
+  }
 
-	/**
-	 * Add Prometheus monitoring to a stream.
-	 *
-	 * @param input
-	 *            the stream to monitor
-	 * @param gauge
-	 *            the gauge to write the output to
-	 * @param computeValues
-	 *            a function to compute the values of the labels for the gauge; the
-	 *            order is preserved
-	 */
-	@RuntimeInterop
-	public static <T> Stream<T> monitor(Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
-		return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
-	}
+  /**
+   * Pick the first value for sorted groups of items.
+   *
+   * @param input the stream of input items
+   * @param hashCode the hashing for the grouping of interest over the input type
+   * @param equals a equality for the grouping of interest over the input type
+   * @param comparator the sorting operating to be performed on the grouped input
+   */
+  @RuntimeInterop
+  public static <T> Stream<T> pick(
+      Stream<T> input,
+      ToIntFunction<T> hashCode,
+      BiPredicate<T, T> equals,
+      Comparator<T> comparator) {
+    final Map<Holder<T>, List<T>> groups =
+        input.collect(
+            Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
+    input.close();
+    return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
+  }
 
-	public static Stream<Path> parsePaths(String pathVariable) {
-		return PATH_SEPARATOR.splitAsStream(pathVariable).map(Paths::get);
-	}
+  public static String printHexBinary(byte[] values) {
+    final StringBuilder builder = new StringBuilder(values.length * 2);
+    for (final byte b : values) {
+      builder.append(String.format("%02X", b));
+    }
+    return builder.toString();
+  }
 
-	/**
-	 * Pick the first value for sorted groups of items.
-	 *
-	 * @param input
-	 *            the stream of input items
-	 * @param hashCode
-	 *            the hashing for the grouping of interest over the input type
-	 * @param equals
-	 *            a equality for the grouping of interest over the input type
-	 * @param comparator
-	 *            the sorting operating to be performed on the grouped input
-	 */
-	@RuntimeInterop
-	public static <T> Stream<T> pick(Stream<T> input, ToIntFunction<T> hashCode, BiPredicate<T, T> equals,
-			Comparator<T> comparator) {
-		final Map<Holder<T>, List<T>> groups = input
-				.collect(Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
-		input.close();
-		return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
-	}
+  /**
+   * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular expression (which is
+   * the method name). s
+   */
+  @RuntimeInterop
+  public static CallSite regexBootstrap(
+      Lookup lookup, String signature, MethodType type, String regex)
+      throws NoSuchMethodException, IllegalAccessException {
+    if (!type.returnType().equals(Pattern.class)) {
+      throw new IllegalArgumentException("Method cannot return non-Pattern type.");
+    }
+    if (type.parameterCount() != 0) {
+      throw new IllegalArgumentException("Method must take exactly no arguments.");
+    }
+    if (callsites.containsKey(regex)) {
+      return callsites.get(regex);
+    }
+    final Pattern pattern = Pattern.compile(regex);
+    final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Pattern.class, pattern));
+    callsites.put(regex, callsite);
+    return callsite;
+  }
 
-	public static String printHexBinary(byte[] values) {
-		final StringBuilder builder = new StringBuilder(values.length * 2);
-		for (final byte b : values) {
-			builder.append(String.format("%02X", b));
-		}
-		return builder.toString();
-	}
+  /**
+   * Group a stream of input and output the grouped output stream.
+   *
+   * @param <O> the output type of the grouping. It must have the following behaviour:
+   *     <ul>
+   *       <li>they must have a single argument constructor that selects all the group-by elements
+   *           out of the input type
+   *       <li>the must have additional fields to collect the “grouped” elements into collections
+   *       <li>the must have a an {{@link #equals(Object)} and {@link #hashCode()} methods that
+   *           return true if the group-by fields are identical but ignore the grouped collections
+   *     </ul>
+   *
+   * @param input the stream to consume
+   * @param makeKey the constructor that makes an output item for an input item
+   * @param collector a function that adds all of the “collected” input data to an output value
+   * @return the grouped output stream
+   */
+  @RuntimeInterop
+  public static <I, O> Stream<O> regroup(
+      Stream<I> input, Function<I, O> makeKey, BiConsumer<O, I> collector) {
+    final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
+    input.close();
+    return groups
+        .entrySet()
+        .stream()
+        .peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))
+        .map(Entry::getKey);
+  }
 
-	/**
-	 * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular
-	 * expression (which is the method name). s
-	 */
-	@RuntimeInterop
-	public static CallSite regexBootstrap(Lookup lookup, String signature, MethodType type, String regex)
-			throws NoSuchMethodException, IllegalAccessException {
-		if (!type.returnType().equals(Pattern.class)) {
-			throw new IllegalArgumentException("Method cannot return non-Pattern type.");
-		}
-		if (type.parameterCount() != 0) {
-			throw new IllegalArgumentException("Method must take exactly no arguments.");
-		}
-		if (callsites.containsKey(regex)) {
-			return callsites.get(regex);
-		}
-		final Pattern pattern = Pattern.compile(regex);
-		final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Pattern.class, pattern));
-		callsites.put(regex, callsite);
-		return callsite;
-	}
+  /** Clip the extension off a file path and return just the filename */
+  public static String removeExtension(Path fileName, String extension) {
+    final String fileNamePart = fileName.getFileName().toString();
+    return fileNamePart.substring(0, fileNamePart.length() - extension.length());
+  }
 
-	/**
-	 * Group a stream of input and output the grouped output stream.
-	 *
-	 * @param <O>
-	 *            the output type of the grouping. It must have the following
-	 *            behaviour:
-	 *            <ul>
-	 *            <li>they must have a single argument constructor that selects all
-	 *            the group-by elements out of the input type
-	 *            <li>the must have additional fields to collect the “grouped”
-	 *            elements into collections
-	 *            <li>the must have a an {{@link #equals(Object)} and
-	 *            {@link #hashCode()} methods that return true if the group-by
-	 *            fields are identical but ignore the grouped collections
-	 *            </ul>
-	 *
-	 * @param input
-	 *            the stream to consume
-	 * @param makeKey
-	 *            the constructor that makes an output item for an input item
-	 * @param collector
-	 *            a function that adds all of the “collected” input data to an
-	 *            output value
-	 * @return the grouped output stream
-	 */
-	@RuntimeInterop
-	public static <I, O> Stream<O> regroup(Stream<I> input, Function<I, O> makeKey, BiConsumer<O, I> collector) {
-		final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
-		input.close();
-		return groups.entrySet().stream().peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))
-				.map(Entry::getKey);
-	}
+  @RuntimeInterop
+  public static Path resolvePath(Path path, String str) {
+    return path.resolve(str);
+  }
 
-	/**
-	 * Clip the extension off a file path and return just the filename
-	 */
-	public static String removeExtension(Path fileName, String extension) {
-		final String fileNamePart = fileName.getFileName().toString();
-		return fileNamePart.substring(0, fileNamePart.length() - extension.length());
-	}
+  public static <T> Stream<T> reverse(Stream<T> input) {
+    final List<T> data = input.collect(Collectors.toList());
+    Collections.reverse(data);
+    return data.stream();
+  }
 
-	@RuntimeInterop
-	public static Path resolvePath(Path path, String str) {
-		return path.resolve(str);
-	}
+  /** Stream an iterable object */
+  public static <T> Stream<T> stream(Iterable<T> iterable) {
+    return stream(iterable.spliterator());
+  }
 
-	public static <T> Stream<T> reverse(Stream<T> input) {
-		final List<T> data = input.collect(Collectors.toList());
-		Collections.reverse(data);
-		return data.stream();
-	}
+  /** Convert an iterator to a stream */
+  public static <T> Stream<T> stream(Iterator<T> iterator) {
+    return stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED));
+  }
 
-	/**
-	 * Stream an iterable object
-	 */
-	public static <T> Stream<T> stream(Iterable<T> iterable) {
-		return stream(iterable.spliterator());
-	}
+  public static <T> Stream<T> stream(Spliterator<T> spliterator) {
+    return StreamSupport.stream(spliterator, false);
+  }
 
-	/**
-	 * Convert an iterator to a stream
-	 */
-	public static <T> Stream<T> stream(Iterator<T> iterator) {
-		return stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED));
-	}
+  @RuntimeInterop
+  public static String toString(Instant instant, String format) {
+    return DateTimeFormatter.ofPattern(format)
+        .format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
+  }
 
-	public static <T> Stream<T> stream(Spliterator<T> spliterator) {
-		return StreamSupport.stream(spliterator, false);
-	}
-
-	@RuntimeInterop
-	public static String toString(Instant instant, String format) {
-		return DateTimeFormatter.ofPattern(format).format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
-	}
-
-	private RuntimeSupport() {
-	}
+  private RuntimeSupport() {}
 }
