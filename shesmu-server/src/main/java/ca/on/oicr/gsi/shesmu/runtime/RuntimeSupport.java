@@ -36,9 +36,9 @@ import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.prometheus.client.Gauge;
-
 /**
  * Utilities for making bytecode generation easier
  */
@@ -95,6 +95,7 @@ public final class RuntimeSupport {
 
 	static {
 		MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+		MAPPER.registerModule(new JavaTimeModule());
 	}
 
 	/**
