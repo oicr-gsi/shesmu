@@ -2,8 +2,7 @@ package ca.on.oicr.gsi.shesmu.util.cache;
 
 public interface Owner {
 
-	String name();
+  String name();
 
-	long ttl();
-
+  long ttl();
 }

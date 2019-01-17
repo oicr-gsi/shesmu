@@ -6,5 +6,5 @@ import ca.on.oicr.gsi.status.ConfigurationSection;
 
 public interface FileBackedConfiguration extends WatchedFileListener, FileBound {
 
-	public ConfigurationSection configuration();
+  public ConfigurationSection configuration();
 }

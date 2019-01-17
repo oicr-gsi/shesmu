@@ -1,40 +1,39 @@
 package ca.on.oicr.gsi.shesmu.util.definitions;
 
-import java.time.Instant;
-
 import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import java.time.Instant;
 
 public interface TypeGlue<T> {
-	TypeGlue<Boolean> BOOLEAN = new TypeGlue<Boolean>() {
+  TypeGlue<Boolean> BOOLEAN =
+      new TypeGlue<Boolean>() {
 
-		@Override
-		public Imyhat type() {
-			return Imyhat.BOOLEAN;
-		}
+        @Override
+        public Imyhat type() {
+          return Imyhat.BOOLEAN;
+        }
+      };
+  TypeGlue<Instant> DATE =
+      new TypeGlue<Instant>() {
 
-	};
-	TypeGlue<Instant> DATE = new TypeGlue<Instant>() {
+        @Override
+        public Imyhat type() {
+          return Imyhat.DATE;
+        }
+      };
+  TypeGlue<Long> LONG =
+      new TypeGlue<Long>() {
 
-		@Override
-		public Imyhat type() {
-			return Imyhat.DATE;
-		}
+        @Override
+        public Imyhat type() {
+          return Imyhat.INTEGER;
+        }
+      };
 
-	};
-	TypeGlue<Long> LONG = new TypeGlue<Long>() {
+  public static TypeGlue<Tuple> tuple(Imyhat... inner) {
+    final Imyhat tupleType = Imyhat.tuple(inner);
+    return () -> tupleType;
+  };
 
-		@Override
-		public Imyhat type() {
-			return Imyhat.INTEGER;
-		}
-
-	};
-
-	public static TypeGlue<Tuple> tuple(Imyhat... inner) {
-		final Imyhat tupleType = Imyhat.tuple(inner);
-		return () -> tupleType;
-	};
-
-	Imyhat type();
+  Imyhat type();
 }

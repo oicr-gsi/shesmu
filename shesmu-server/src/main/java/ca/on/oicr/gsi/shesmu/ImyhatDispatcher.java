@@ -5,17 +5,17 @@ import java.util.stream.Stream;
 
 public interface ImyhatDispatcher {
 
-	void consume(boolean value);
+  void consume(boolean value);
 
-	void consume(Instant value);
+  void consume(Instant value);
 
-	void consume(int position, Object value, Imyhat type);
+  void consume(int position, Object value, Imyhat type);
 
-	void consume(String field, Object value, Imyhat type);
+  void consume(String field, Object value, Imyhat type);
 
-	void consume(long value);
+  void consume(long value);
 
-	<T> void consume(Stream<T> values, Imyhat inner);
+  <T> void consume(Stream<T> values, Imyhat inner);
 
-	void consume(String value);
+  void consume(String value);
 }

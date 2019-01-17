@@ -11,9 +11,9 @@ import java.lang.annotation.Target;
 @Target(TYPE)
 @Repeatable(JsonActionParameters.class)
 public @interface JsonActionParameter {
-	public String name();
+  public String name();
 
-	public boolean required() default true;
+  public boolean required() default true;
 
-	public String type();
+  public String type();
 }

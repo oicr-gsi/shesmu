@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface ShesmuAction {
-	public String description() default "";
+  public String description() default "";
 
-	public String name() default "";
+  public String name() default "";
 }
