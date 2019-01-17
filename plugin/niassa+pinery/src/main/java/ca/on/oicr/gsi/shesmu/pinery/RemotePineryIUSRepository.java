@@ -53,13 +53,14 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 					final Map<String, Integer> badSetCounts = new TreeMap<>();
 					final Map<String, String> runDirectories = new HashMap<>();
 					final Set<String> completeRuns = c.getSequencerRun().all().stream()//
-							.filter(run -> run.getState().equals("Completed") && run != null
+							.filter(run -> run.getState().equals("Completed") && run.getRunDirectory() != null
 									&& !run.getRunDirectory().equals(""))//
 							.map(RunDto::getName)//
 							.collect(Collectors.toSet());
 					return Stream.concat(//
-							lanes(c, cfg.getProvider(), version, badSetCounts, runDirectories, completeRuns::contains), //
-							samples(c, cfg.getProvider(), version, badSetCounts, runDirectories, completeRuns::contains))//
+							lanes(c, version, cfg.getProvider(), badSetCounts, runDirectories, completeRuns::contains), //
+							samples(c, version, cfg.getProvider(), badSetCounts, runDirectories,
+									completeRuns::contains))//
 							.onClose(() -> badSetCounts.entrySet()
 									.forEach(e -> badSetMap
 											.labels(Stream.concat(Stream.of(fileName().toString()),
@@ -68,7 +69,7 @@ public class RemotePineryIUSRepository implements PineryIUSRepository {
 				}
 			}
 
-			private Stream<PineryIUSValue> lanes(PineryClient client,  String version, String provider,
+			private Stream<PineryIUSValue> lanes(PineryClient client, String version, String provider,
 					Map<String, Integer> badSetCounts, Map<String, String> runDirectories, Predicate<String> goodRun)
 					throws HttpResponseException {
 				return Utils.stream(client.getLaneProvenance().version(version))//
