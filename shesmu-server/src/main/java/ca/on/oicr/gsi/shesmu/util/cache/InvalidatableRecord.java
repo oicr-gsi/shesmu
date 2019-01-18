@@ -30,12 +30,6 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
     this.fetcher = fetcher;
     this.isValid = isValid;
     this.destructor = destructor;
-    try {
-      value = fetcher.update(lastUpdated);
-      lastUpdated = Instant.now();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
   }
 
   @Override

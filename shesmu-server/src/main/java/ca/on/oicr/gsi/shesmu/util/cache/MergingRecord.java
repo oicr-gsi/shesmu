@@ -37,18 +37,7 @@ public final class MergingRecord<V, I> implements Record<Stream<V>> {
     this.owner = owner;
     this.fetcher = fetcher;
     this.getId = getId;
-    List<V> value;
-    try {
-      value =
-          Optional.of(fetcher.update(fetchTime))
-              .orElse(Stream.empty())
-              .collect(Collectors.toList());
-      fetchTime = Instant.now();
-    } catch (final Exception e) {
-      e.printStackTrace();
-      value = Collections.emptyList();
-    }
-    this.value = value;
+    this.value = Collections.emptyList();
   }
 
   @Override

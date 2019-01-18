@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,18 +20,7 @@ public final class ReplacingRecord<V> implements Record<Stream<V>> {
   public ReplacingRecord(Owner owner, Updater<Stream<V>> fetcher) {
     this.owner = owner;
     this.fetcher = fetcher;
-    List<V> value;
-    try {
-      value =
-          Optional.ofNullable(fetcher.update(fetchTime))
-              .orElse(Stream.empty())
-              .collect(Collectors.toList());
-      fetchTime = Instant.now();
-    } catch (final Exception e) {
-      e.printStackTrace();
-      value = Collections.emptyList();
-    }
-    this.value = value;
+    this.value = Collections.emptyList();
   }
 
   @Override
