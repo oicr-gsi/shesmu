@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -153,11 +154,13 @@ public class CompiledGenerator {
   public void run(ActionConsumer consumer, InputProvider input) {
     // Load all the input data in an attempt to cache it before any olives try to
     // use it. This avoids making the first olive seem really slow.
-    // TODO: collect only the formats that olives are currently using
+    final Set<Class<?>> usedFormats =
+        scripts().flatMap(s -> s.generator.inputs()).collect(Collectors.toSet());
     final InputProvider cache =
         new InputProvider() {
           final Map<Class<?>, List<?>> data =
               InputFormatDefinition.formats()
+                  .filter(format -> usedFormats.contains(format.itemClass()))
                   .collect(
                       Collectors.toMap(
                           InputFormatDefinition::itemClass,

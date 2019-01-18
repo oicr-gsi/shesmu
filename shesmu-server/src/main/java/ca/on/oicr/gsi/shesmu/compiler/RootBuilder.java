@@ -36,6 +36,7 @@ import org.objectweb.asm.commons.Method;
 /** Helper to build an {@link ActionGenerator} */
 public abstract class RootBuilder {
 
+  private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(ActionConsumer.class);
   private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
   private static final Type A_DUMPER_SOURCE_TYPE = Type.getType(DumperSource.class);
@@ -78,6 +79,9 @@ public abstract class RootBuilder {
   private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
 
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
+  private static final Method METHOD_ACTION_GENERATOR__INPUTS =
+      new Method("inputs", A_STREAM_TYPE, new Type[] {});
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   public static Stream<LoadableValue> proxyCaptured(
       int offset, LoadableValue... capturedVariables) {
@@ -127,6 +131,7 @@ public abstract class RootBuilder {
   private final Label runStartLabel;
   private final Type selfType;
 
+  private final Set<Type> usedFormats = new HashSet<>();
   private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
   public RootBuilder(
@@ -141,6 +146,7 @@ public abstract class RootBuilder {
     this.inputFormatDefinition = inputFormatDefinition;
     this.constants = constants;
     selfType = Type.getObjectType(name);
+    usedFormats.add(inputFormatDefinition.type());
 
     classVisitor = createClassVisitor();
     classVisitor.visit(
@@ -314,6 +320,29 @@ public abstract class RootBuilder {
     clearGaugeMethod.visitMaxs(0, 0);
     clearGaugeMethod.visitEnd();
 
+    GeneratorAdapter inputFormatsMethod =
+        new GeneratorAdapter(
+            Opcodes.ACC_PUBLIC, METHOD_ACTION_GENERATOR__INPUTS, null, null, classVisitor);
+    inputFormatsMethod.visitCode();
+    inputFormatsMethod.push(usedFormats.size());
+    inputFormatsMethod.newArray(A_OBJECT_TYPE);
+    int index = 0;
+    for (Type format : usedFormats) {
+      inputFormatsMethod.dup();
+      inputFormatsMethod.push(index++);
+      inputFormatsMethod.push(format);
+      inputFormatsMethod.arrayStore(A_OBJECT_TYPE);
+    }
+    inputFormatsMethod.visitMethodInsn(
+        Opcodes.INVOKESTATIC,
+        A_STREAM_TYPE.getInternalName(),
+        "of",
+        Type.getMethodDescriptor(A_STREAM_TYPE, Type.getType(Object[].class)),
+        true);
+    inputFormatsMethod.returnValue();
+    inputFormatsMethod.visitMaxs(0, 0);
+    inputFormatsMethod.visitEnd();
+
     classVisitor.visitEnd();
   }
 
@@ -348,6 +377,10 @@ public abstract class RootBuilder {
     }
     methodGen.loadThis();
     methodGen.getField(selfType, fieldName, A_DUMPER_TYPE);
+  }
+
+  public final void useInputFormat(Type format) {
+    usedFormats.add(format);
   }
 
   public final void loadGauge(

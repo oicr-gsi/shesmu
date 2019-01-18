@@ -31,6 +31,11 @@ public abstract class ActionGenerator {
         public int timeout() {
           return 1;
         }
+
+        @Override
+        public Stream<Class<?>> inputs() {
+          return Stream.empty();
+        }
       };
 
   public static final Gauge OLIVE_FLOW =
@@ -100,6 +105,9 @@ public abstract class ActionGenerator {
    */
   @RuntimeInterop
   public abstract void run(ActionConsumer consumer, InputProvider input);
+
+  /** All of the input formats that are used by this generator. */
+  public abstract Stream<Class<?>> inputs();
 
   /** The maximum runtime of this script, in seconds. */
   public abstract int timeout();
