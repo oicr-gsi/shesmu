@@ -19,15 +19,7 @@ public final class SimpleRecord<V> implements Record<Optional<V>> {
   public SimpleRecord(Owner owner, Updater<Optional<V>> fetcher) {
     this.owner = owner;
     this.fetcher = fetcher;
-    Optional<V> value;
-    try {
-      value = fetcher.update(fetchTime);
-      fetchTime = Instant.now();
-    } catch (final Exception e) {
-      e.printStackTrace();
-      value = Optional.empty();
-    }
-    this.value = value;
+    this.value = Optional.empty();
   }
 
   @Override
