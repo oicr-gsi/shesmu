@@ -193,6 +193,8 @@ public abstract class BaseOliveBuilder {
     final Type newType = Type.getObjectType(className);
     currentType = newType;
 
+    owner.useInputFormat(innerType);
+
     final LambdaBuilder outerKeyLambda =
         new LambdaBuilder(
             owner,
@@ -235,6 +237,8 @@ public abstract class BaseOliveBuilder {
     final Type joinedType = Type.getObjectType(joinedClassName);
     final Type newType = Type.getObjectType(outputClassName);
     currentType = newType;
+
+    owner.useInputFormat(innerType);
 
     final LambdaBuilder newMethod =
         new LambdaBuilder(

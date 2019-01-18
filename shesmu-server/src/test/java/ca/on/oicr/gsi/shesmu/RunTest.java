@@ -13,7 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -52,6 +54,22 @@ public class RunTest {
 
     public boolean ok() {
       return bad == 0 && good > 0;
+    }
+  }
+
+  private class InputProviderChecker implements InputProvider {
+    private final Set<Class<?>> usedFormats = new HashSet<>();
+
+    public <T> Stream<T> fetch(Class<T> clazz) {
+      usedFormats.add(clazz);
+      return clazz.equals(InnerTestValue.class)
+          ? Stream.of(INNER_TEST_DATA).map(clazz::cast)
+          : Stream.of(TEST_DATA).map(clazz::cast);
+    }
+
+    public boolean ok(ActionGenerator generator) {
+      return generator.inputs().count() == usedFormats.size()
+          && generator.inputs().allMatch(usedFormats::contains);
     }
   }
 
@@ -98,7 +116,6 @@ public class RunTest {
 
   private static final List<ConstantDefinition> CONSTANTS =
       Arrays.asList(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
-
   private static InnerTestValue[] INNER_TEST_DATA =
       new InnerTestValue[] {new InnerTestValue(300, "a"), new InnerTestValue(307, "b")};
   public static final NameLoader<InputFormatDefinition> INPUT_FORMATS =
@@ -109,6 +126,7 @@ public class RunTest {
               new BaseInputFormatDefinition<InnerTestValue, InnerTestRepository>(
                   "inner_test", InnerTestValue.class, InnerTestRepository.class) {}),
           InputFormatDefinition::name);
+
   private static final FunctionDefinition INT2DATE =
       new FunctionDefinition() {
         @Override
@@ -216,12 +234,6 @@ public class RunTest {
     return Stream.of(OK_ACTION_DEFINITION);
   }
 
-  private <T> Stream<T> data(Class<T> clazz) {
-    return clazz.equals(InnerTestValue.class)
-        ? Stream.of(INNER_TEST_DATA).map(clazz::cast)
-        : Stream.of(TEST_DATA).map(clazz::cast);
-  }
-
   private Stream<FunctionDefinition> functions() {
     return Stream.concat(Stream.of(INT2STR, INT2DATE), new StandardDefinitions().functions());
   }
@@ -251,8 +263,9 @@ public class RunTest {
       final ActionGenerator generator = compiler.compile(file, null).orElse(ActionGenerator.NULL);
       compiler.errors().forEach(System.err::println);
       final ActionChecker checker = new ActionChecker();
-      generator.run(checker, this::data);
-      if (checker.ok()) {
+      final InputProviderChecker input = new InputProviderChecker();
+      generator.run(checker, input);
+      if (checker.ok() && input.ok(generator)) {
         System.err.printf("OK %s\n", file.getFileName());
         return false;
       } else {
