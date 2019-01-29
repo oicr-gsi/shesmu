@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -70,15 +71,20 @@ public class JoinBuilder {
     ctor.visitEnd();
   }
 
-  public void add(Type fieldType, String name, boolean outer) {
+  public void add(Target target, boolean outer) {
     final Type targetType = outer ? outerType : innerType;
-    final Method getMethod = new Method(name, fieldType, new Type[] {});
+    final Method getMethod =
+        new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {});
     final GeneratorAdapter getter =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
     getter.visitCode();
     getter.loadThis();
     getter.getField(joinType, outer ? "outer" : "inner", targetType);
-    getter.invokeVirtual(targetType, getMethod);
+    if (target instanceof InputVariable) {
+      ((InputVariable) target).extract(getter);
+    } else {
+      getter.invokeVirtual(targetType, getMethod);
+    }
     getter.returnValue();
     getter.visitMaxs(0, 0);
     getter.visitEnd();

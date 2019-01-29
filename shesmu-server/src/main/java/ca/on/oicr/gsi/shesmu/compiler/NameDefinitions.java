@@ -1,13 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,29 +43,24 @@ public class NameDefinitions {
     }
   }
 
-  private static final ServiceLoader<SignatureVariable> SIGNATURE_VARIABLE_LOADER =
-      ServiceLoader.load(SignatureVariable.class);
-
   /**
    * Create a new collection of variables from the parameters provided.
    *
    * @param parameters the parameters for this environment
    */
   public static NameDefinitions root(
-      InputFormatDefinition inputFormatDefinition, Stream<? extends Target> parameters) {
+      InputFormatDefinition inputFormatDefinition,
+      Stream<? extends Target> parameters,
+      Stream<SignatureDefinition> signatureVariables) {
     return new NameDefinitions(
         Stream.concat(
                 parameters.filter(
                     variable ->
                         variable.flavour() == Flavour.PARAMETER
                             || variable.flavour() == Flavour.CONSTANT),
-                Stream.concat(inputFormatDefinition.baseStreamVariables(), signatureVariables()))
+                Stream.concat(inputFormatDefinition.baseStreamVariables(), signatureVariables))
             .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
         true);
-  }
-
-  public static Stream<SignatureVariable> signatureVariables() {
-    return RuntimeSupport.stream(SIGNATURE_VARIABLE_LOADER);
   }
 
   private final boolean isGood;

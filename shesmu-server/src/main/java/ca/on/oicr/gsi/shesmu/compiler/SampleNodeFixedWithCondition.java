@@ -2,9 +2,9 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.FixedWithConditions;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 import java.lang.invoke.LambdaMetafactory;
@@ -122,7 +122,8 @@ public class SampleNodeFixedWithCondition extends SampleNode {
                 Opcodes.ACC_PRIVATE, method, null, null, renderer.root().classVisitor),
             capturedVariables.length,
             streamType,
-            JavaStreamBuilder.parameters(capturedVariables, streamType, name, type.asmType()),
+            JavaStreamBuilder.parameters(
+                capturedVariables, streamType, name, type.apply(TypeUtils.TO_ASM)),
             renderer.signerEmitter());
     conditionRenderer.methodGen().visitCode();
     conditionExpression.render(conditionRenderer);
@@ -154,7 +155,7 @@ public class SampleNodeFixedWithCondition extends SampleNode {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(BOOLEAN_TYPE, type.asmType()));
+            Type.getMethodType(BOOLEAN_TYPE, type.apply(TypeUtils.TO_ASM)));
     renderer.methodGen().invokeConstructor(A_FIXEDWITHCONDITION_TYPE, CTOR);
     renderer.methodGen().storeLocal(previousLocal);
   }

@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
 public final class CollectNodeOptima extends CollectNodeWithDefault {
@@ -16,7 +16,7 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 
   @Override
   protected void finishMethod(Renderer renderer) {
-    renderer.methodGen().box(selector.type().asmType());
+    renderer.methodGen().box(selector.type().apply(TypeUtils.TO_ASM));
   }
 
   @Override

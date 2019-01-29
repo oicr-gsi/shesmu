@@ -1,7 +1,8 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.BiConsumer;

@@ -11,7 +11,7 @@ class LoadParameter extends LoadableValue {
     super();
     this.index = index;
     name = source.name();
-    type = source.type().asmType();
+    type = source.type().apply(TypeUtils.TO_ASM);
   }
 
   @Override

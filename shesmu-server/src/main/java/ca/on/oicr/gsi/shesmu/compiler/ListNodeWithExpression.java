@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -100,7 +100,7 @@ public abstract class ListNodeWithExpression extends ListNode {
     method.methodGen().visitEnd();
   }
 
-  /** Resolve all variable definitions in this expression and its children. */
+  /** Resolve all variable plugins in this expression and its children. */
   @Override
   public final Optional<String> resolve(
       String name, NameDefinitions defs, Consumer<String> errorHandler) {
@@ -115,7 +115,7 @@ public abstract class ListNodeWithExpression extends ListNode {
     return true;
   }
 
-  /** Resolve all functions definitions in this expression */
+  /** Resolve all functions plugins in this expression */
   @Override
   public final boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {

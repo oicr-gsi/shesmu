@@ -1,17 +1,20 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -292,21 +295,23 @@ public abstract class OliveClauseNode {
       Map<String, OliveDefineBuilder> definitions);
 
   /**
-   * Resolve all variable definitions in this clause
+   * Resolve all variable plugins in this clause
    *
    * @param inputFormatDefinition the input format for this olive
    * @param definedFormats the function to find input formats by name
-   * @param defs the variable definitions available to this clause
-   * @return the variable definitions available to the next clause
+   * @param defs the variable plugins available to this clause
+   * @param signatureDefinitions
+   * @return the variable plugins available to the next clause
    */
   public abstract NameDefinitions resolve(
       InputFormatDefinition inputFormatDefinition,
       Function<String, InputFormatDefinition> definedFormats,
       NameDefinitions defs,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       ConstantRetriever constants,
       Consumer<String> errorHandler);
 
-  /** Resolve all non-variable definitions */
+  /** Resolve all non-variable plugins */
   public abstract boolean resolveDefinitions(
       Map<String, OliveNodeDefinition> definedOlives,
       Function<String, FunctionDefinition> definedFunctions,

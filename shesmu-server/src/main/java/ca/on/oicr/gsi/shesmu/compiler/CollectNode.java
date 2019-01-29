@@ -1,11 +1,12 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatentationType;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
-import ca.on.oicr.gsi.shesmu.compiler.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -172,10 +173,10 @@ public abstract class CollectNode {
 
   public abstract void render(JavaStreamBuilder builder);
 
-  /** Resolve all variable definitions in this expression and its children. */
+  /** Resolve all variable plugins in this expression and its children. */
   public abstract boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler);
 
-  /** Resolve all functions definitions in this expression */
+  /** Resolve all functions plugins in this expression */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
 

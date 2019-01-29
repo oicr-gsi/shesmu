@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
-import ca.on.oicr.gsi.shesmu.runtime.Tuple;
-import ca.on.oicr.gsi.shesmu.util.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;

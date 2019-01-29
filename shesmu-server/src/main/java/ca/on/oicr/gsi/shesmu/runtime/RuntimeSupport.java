@@ -1,7 +1,12 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
 import java.io.File;
@@ -20,13 +25,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -36,7 +38,6 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /** Utilities for making bytecode generation easier */
 public final class RuntimeSupport {
@@ -70,6 +71,14 @@ public final class RuntimeSupport {
     public T unbox() {
       return item;
     }
+  }
+
+  public static void packJson(Imyhat type, ObjectNode node, String name, Object value) {
+    type.accept(new PackJsonObject(node, name), value);
+  }
+
+  static void packJson(Imyhat type, ArrayNode node, Object value) {
+    type.accept(new PackJsonArray(node), value);
   }
 
   private static final Map<String, CallSite> callsites = new HashMap<>();
@@ -206,17 +215,6 @@ public final class RuntimeSupport {
             });
   }
 
-  public static <T> Optional<T> merge(
-      Optional<T> left, Optional<T> right, BiFunction<? super T, ? super T, ? extends T> merge) {
-    if (left.isPresent() && right.isPresent()) {
-      return Optional.of(merge.apply(left.get(), right.get()));
-    }
-    if (left.isPresent()) {
-      return left;
-    }
-    return right;
-  }
-
   /**
    * Add Prometheus monitoring to a stream.
    *
@@ -331,20 +329,6 @@ public final class RuntimeSupport {
     final List<T> data = input.collect(Collectors.toList());
     Collections.reverse(data);
     return data.stream();
-  }
-
-  /** Stream an iterable object */
-  public static <T> Stream<T> stream(Iterable<T> iterable) {
-    return stream(iterable.spliterator());
-  }
-
-  /** Convert an iterator to a stream */
-  public static <T> Stream<T> stream(Iterator<T> iterator) {
-    return stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED));
-  }
-
-  public static <T> Stream<T> stream(Spliterator<T> spliterator) {
-    return StreamSupport.stream(spliterator, false);
   }
 
   @RuntimeInterop

@@ -2,7 +2,18 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
+import ca.on.oicr.gsi.shesmu.compiler.Renderer;
+import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.ratelimit.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -13,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -48,7 +60,7 @@ public class CompilerTest {
     }
 
     @Override
-    public ActionState perform() {
+    public ActionState perform(ActionServices services) {
       return ActionState.SUCCEEDED;
     }
 
@@ -69,41 +81,64 @@ public class CompilerTest {
   }
 
   private static class TestActionDefinition extends ActionDefinition {
+
     public TestActionDefinition(
-        String name, Type type, String description, Stream<ActionParameterDefinition> parameters) {
-      super(name, type, description, parameters);
+        String name, String description, Stream<ActionParameterDefinition> parameters) {
+      super(name, description, parameters);
     }
 
     @Override
     public void initialize(GeneratorAdapter methodGen) {
-      methodGen.newInstance(type());
+      methodGen.newInstance(Type.getType(TestAction.class));
       methodGen.dup();
-      methodGen.invokeConstructor(type(), new Method("<init>", Type.VOID_TYPE, new Type[] {}));
+      methodGen.invokeConstructor(
+          Type.getType(TestAction.class), new Method("<init>", Type.VOID_TYPE, new Type[] {}));
     }
+  }
+
+  public static ActionParameterDefinition forField(String name, Imyhat type, boolean required) {
+    return new ActionParameterDefinition() {
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public boolean required() {
+        return required;
+      }
+
+      @Override
+      public void store(Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
+        renderer.methodGen().loadLocal(actionLocal);
+        renderer.methodGen().checkCast(Type.getType(TestAction.class));
+        loadParameter.accept(renderer);
+        renderer
+            .methodGen()
+            .putField(Type.getType(TestAction.class), name, type.apply(TypeUtils.TO_ASM));
+      }
+
+      @Override
+      public Imyhat type() {
+        return type;
+      }
+    };
   }
 
   private final ActionDefinition ACTIONS[] =
       new ActionDefinition[] {
         new TestActionDefinition(
             "fastqc",
-            Type.getType(TestAction.class),
             "TEST",
             Stream.of(
-                ActionParameterDefinition.forField("memory", "memory", Imyhat.INTEGER, true),
-                ActionParameterDefinition.forField(
-                    "input", "input", Imyhat.STRING.asList(), true))),
-        new TestActionDefinition(
-            "ok",
-            Type.getType(TestAction.class),
-            "TEST",
-            Stream.of(ActionParameterDefinition.forField("ok", "ok", Imyhat.BOOLEAN, true))),
+                forField("memory", Imyhat.INTEGER, true),
+                forField("input", Imyhat.STRING.asList(), true))),
+        new TestActionDefinition("ok", "TEST", Stream.of(forField("ok", Imyhat.BOOLEAN, true))),
         new TestActionDefinition(
             "optional",
-            Type.getType(TestAction.class),
             "TEST",
             Stream.of(
-                ActionParameterDefinition.forField("junk", "junk", Imyhat.BOOLEAN, true),
-                ActionParameterDefinition.forField("ok", "ok", Imyhat.BOOLEAN, false))),
+                forField("junk", Imyhat.BOOLEAN, true), forField("ok", Imyhat.BOOLEAN, false))),
       };
 
   public final class CompilerHarness extends Compiler {
@@ -205,7 +240,12 @@ public class CompilerTest {
       // Attempt to compile and throw away whether the compiler was successful; we
       // know everything based on the errors generated.
       compiler.compile(
-          Files.readAllBytes(file), "dyn/shesmu/Program", file.toString(), CONSTANTS::stream, null);
+          Files.readAllBytes(file),
+          "dyn/shesmu/Program",
+          file.toString(),
+          CONSTANTS::stream,
+          Stream::empty,
+          null);
       return new Pair<>(file, compiler.ok());
     } catch (final Exception e) {
       e.printStackTrace();

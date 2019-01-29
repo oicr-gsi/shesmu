@@ -1,7 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -53,7 +54,7 @@ public class LetArgumentNode implements Target {
   }
 
   public void render(LetBuilder let) {
-    let.add(expression.type().asmType(), name, expression::render);
+    let.add(expression.type().apply(TypeUtils.TO_ASM), name, expression::render);
   }
 
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {

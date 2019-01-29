@@ -1,18 +1,19 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.VOID_TYPE;
-
-import ca.on.oicr.gsi.shesmu.ActionConsumer;
-import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.Dumper;
-import ca.on.oicr.gsi.shesmu.DumperSource;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.InputProvider;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import io.prometheus.client.Gauge;
+import org.objectweb.asm.*;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -25,25 +26,21 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.Method;
+
+import static org.objectweb.asm.Type.INT_TYPE;
+import static org.objectweb.asm.Type.VOID_TYPE;
 
 /** Helper to build an {@link ActionGenerator} */
 public abstract class RootBuilder {
 
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
-  private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(ActionConsumer.class);
   private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
-  private static final Type A_DUMPER_SOURCE_TYPE = Type.getType(DumperSource.class);
   private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
-  private static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
   private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+  private static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 
   private static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -63,7 +60,9 @@ public abstract class RootBuilder {
   private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE =
       new Method("clearGauge", VOID_TYPE, new Type[] {});
   private static final Method METHOD_ACTION_GENERATOR__RUN =
-      new Method("run", VOID_TYPE, new Type[] {A_ACTION_CONSUMER_TYPE, A_INPUT_PROVIDER_TYPE});
+      new Method("run", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE, A_INPUT_PROVIDER_TYPE});
+  private static final Method METHOD_ACTION_GENERATOR__RUN_PREPARE =
+      new Method("prepare", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE});
 
   private static final Method METHOD_ACTION_GENERATOR__TIMEOUT =
       new Method("timeout", INT_TYPE, new Type[] {});
@@ -77,11 +76,13 @@ public abstract class RootBuilder {
   private static final Method METHOD_DUMPER__START = new Method("start", VOID_TYPE, new Type[] {});
   private static final Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
   private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
-
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
+
+  private static final Method METHOD_OLIVE_SERVICES__FIND_DUMPER =
+      new Method(
+          "findDumper", A_DUMPER_TYPE, new Type[] {A_STRING_TYPE, Type.getType(Imyhat[].class)});
   private static final Method METHOD_ACTION_GENERATOR__INPUTS =
       new Method("inputs", A_STREAM_TYPE, new Type[] {});
-  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   public static Stream<LoadableValue> proxyCaptured(
       int offset, LoadableValue... capturedVariables) {
@@ -110,8 +111,6 @@ public abstract class RootBuilder {
 
   final GeneratorAdapter classInitMethod;
   final ClassVisitor classVisitor;
-  private final GeneratorAdapter clearGaugeMethod;
-
   final long compileTime;
 
   private final Supplier<Stream<ConstantDefinition>> constants;
@@ -128,10 +127,13 @@ public abstract class RootBuilder {
 
   private final GeneratorAdapter runMethod;
 
+  private final GeneratorAdapter runPrepare;
+
   private final Label runStartLabel;
   private final Type selfType;
 
-  private final Set<Type> usedFormats = new HashSet<>();
+  private final Supplier<Stream<SignatureDefinition>> signatures;
+  private final Set<String> usedFormats = new HashSet<>();
   private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
   public RootBuilder(
@@ -140,13 +142,15 @@ public abstract class RootBuilder {
       String path,
       InputFormatDefinition inputFormatDefinition,
       int timeout,
-      Supplier<Stream<ConstantDefinition>> constants) {
+      Supplier<Stream<ConstantDefinition>> constants,
+      Supplier<Stream<SignatureDefinition>> signatures) {
+    this.signatures = signatures;
     this.compileTime = compileTime.toEpochMilli();
     this.path = path;
     this.inputFormatDefinition = inputFormatDefinition;
     this.constants = constants;
     selfType = Type.getObjectType(name);
-    usedFormats.add(inputFormatDefinition.type());
+    usedFormats.add(inputFormatDefinition.name());
 
     classVisitor = createClassVisitor();
     classVisitor.visit(
@@ -162,10 +166,10 @@ public abstract class RootBuilder {
     ctor.loadThis();
     ctor.invokeConstructor(A_ACTION_GENERATOR_TYPE, CTOR_DEFAULT);
 
-    clearGaugeMethod =
+    runPrepare =
         new GeneratorAdapter(
-            Opcodes.ACC_PRIVATE, METHOD_ACTION_GENERATOR__CLEAR_GAUGE, null, null, classVisitor);
-    clearGaugeMethod.visitCode();
+            Opcodes.ACC_PRIVATE, METHOD_ACTION_GENERATOR__RUN_PREPARE, null, null, classVisitor);
+    runPrepare.visitCode();
 
     runMethod =
         new GeneratorAdapter(
@@ -176,7 +180,8 @@ public abstract class RootBuilder {
             classVisitor);
     runMethod.visitCode();
     runMethod.loadThis();
-    runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__CLEAR_GAUGE);
+    runMethod.loadArg(0);
+    runMethod.invokeVirtual(selfType, METHOD_ACTION_GENERATOR__RUN_PREPARE);
     runStartLabel = runMethod.mark();
 
     classInitMethod =
@@ -222,7 +227,7 @@ public abstract class RootBuilder {
   public final OliveBuilder buildRunOlive(int line, int column, Set<String> signableNames) {
     return new OliveBuilder(
         this,
-        inputFormatDefinition.type(),
+        inputFormatDefinition,
         line,
         column,
         inputFormatDefinition
@@ -284,10 +289,6 @@ public abstract class RootBuilder {
 
     dumpers.forEach(
         dumper -> {
-          clearGaugeMethod.loadThis();
-          clearGaugeMethod.getField(selfType, dumper, A_DUMPER_TYPE);
-          clearGaugeMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__START);
-
           runMethod.loadThis();
           runMethod.getField(selfType, dumper, A_DUMPER_TYPE);
           runMethod.invokeInterface(A_DUMPER_TYPE, METHOD_DUMPER__STOP);
@@ -312,13 +313,13 @@ public abstract class RootBuilder {
 
     gauges.forEach(
         gauge -> {
-          clearGaugeMethod.loadThis();
-          clearGaugeMethod.getField(selfType, gauge, A_GAUGE_TYPE);
-          clearGaugeMethod.invokeVirtual(A_GAUGE_TYPE, METHOD_GAUGE__CLEAR);
+          runPrepare.loadThis();
+          runPrepare.getField(selfType, gauge, A_GAUGE_TYPE);
+          runPrepare.invokeVirtual(A_GAUGE_TYPE, METHOD_GAUGE__CLEAR);
         });
-    clearGaugeMethod.visitInsn(Opcodes.RETURN);
-    clearGaugeMethod.visitMaxs(0, 0);
-    clearGaugeMethod.visitEnd();
+    runPrepare.visitInsn(Opcodes.RETURN);
+    runPrepare.visitMaxs(0, 0);
+    runPrepare.visitEnd();
 
     GeneratorAdapter inputFormatsMethod =
         new GeneratorAdapter(
@@ -327,7 +328,7 @@ public abstract class RootBuilder {
     inputFormatsMethod.push(usedFormats.size());
     inputFormatsMethod.newArray(A_OBJECT_TYPE);
     int index = 0;
-    for (Type format : usedFormats) {
+    for (String format : usedFormats) {
       inputFormatsMethod.dup();
       inputFormatsMethod.push(index++);
       inputFormatsMethod.push(format);
@@ -351,36 +352,32 @@ public abstract class RootBuilder {
   }
 
   public void loadDumper(String dumper, GeneratorAdapter methodGen, Imyhat... types) {
-    final String fieldName = "d$" + dumper;
+    final String fieldName = "Dumper " + dumper;
     if (!dumpers.contains(fieldName)) {
       classVisitor
           .visitField(Opcodes.ACC_PRIVATE, fieldName, A_DUMPER_TYPE.getDescriptor(), null, null)
           .visitEnd();
-      ctor.loadThis();
-      ctor.push(dumper);
-      ctor.push(types.length);
-      ctor.newArray(A_IMYHAT_TYPE);
+      runPrepare.loadThis();
+      runPrepare.loadArg(0);
+      runPrepare.push(dumper);
+      runPrepare.push(types.length);
+      runPrepare.newArray(A_IMYHAT_TYPE);
       for (int i = 0; i < types.length; i++) {
-        ctor.dup();
-        ctor.push(i);
-        ctor.invokeDynamic(types[i].descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
-        ctor.arrayStore(A_IMYHAT_TYPE);
+        runPrepare.dup();
+        runPrepare.push(i);
+        runPrepare.invokeDynamic(types[i].descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+        runPrepare.arrayStore(A_IMYHAT_TYPE);
       }
-      ctor.visitMethodInsn(
-          Opcodes.INVOKESTATIC,
-          A_DUMPER_SOURCE_TYPE.getInternalName(),
-          METHOD_DUMPER__FIND.getName(),
-          METHOD_DUMPER__FIND.getDescriptor(),
-          true);
-      ctor.putField(selfType, fieldName, A_DUMPER_TYPE);
+      runPrepare.invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__FIND_DUMPER);
+      runPrepare.putField(selfType, fieldName, A_DUMPER_TYPE);
       dumpers.add(fieldName);
     }
     methodGen.loadThis();
     methodGen.getField(selfType, fieldName, A_DUMPER_TYPE);
   }
 
-  public final void useInputFormat(Type format) {
-    usedFormats.add(format);
+  public final void useInputFormat(InputFormatDefinition format) {
+    usedFormats.add(format.name());
   }
 
   public final void loadGauge(
@@ -411,7 +408,7 @@ public abstract class RootBuilder {
   }
 
   /**
-   * Get the renderer for {@link ActionGenerator#run(Consumer, Supplier)}
+   * Get the renderer for {@link ActionGenerator#run(OliveServices, InputProvider)}
    *
    * <p>No stream variables are available in this context
    */
@@ -431,6 +428,10 @@ public abstract class RootBuilder {
   /** Get the type of the class being generated */
   public final Type selfType() {
     return selfType;
+  }
+
+  public Stream<SignatureDefinition> signatureVariables() {
+    return signatures.get();
   }
 
   public String sourcePath() {

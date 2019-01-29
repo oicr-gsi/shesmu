@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,7 +40,7 @@ public class ExpressionNodeContains extends ExpressionNode {
     needle.render(renderer);
     renderer.mark(line());
 
-    renderer.methodGen().box(needle.type().asmType());
+    renderer.methodGen().box(needle.type().apply(TypeUtils.TO_ASM));
     renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__CONTAINS);
   }
 

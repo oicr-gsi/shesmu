@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -36,12 +36,16 @@ public class GroupNodeOptima extends GroupNodeDefaultable {
   @Override
   public void render(Regrouper regroup, ExpressionNode initial, RootBuilder builder) {
     regroup.addOptima(
-        expression.type().asmType(), name(), max, expression::render, initial::render);
+        expression.type().apply(TypeUtils.TO_ASM),
+        name(),
+        max,
+        expression::render,
+        initial::render);
   }
 
   @Override
   public void render(Regrouper regroup, RootBuilder rootBuilder) {
-    regroup.addOptima(expression.type().asmType(), name(), max, expression::render);
+    regroup.addOptima(expression.type().apply(TypeUtils.TO_ASM), name(), max, expression::render);
   }
 
   @Override

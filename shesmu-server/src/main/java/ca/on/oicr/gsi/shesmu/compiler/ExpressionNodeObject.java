@@ -1,10 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class ExpressionNodeObject extends ExpressionNode {
               renderer.methodGen().dup();
               renderer.methodGen().push(index.getAndIncrement());
               field.second().render(renderer);
-              renderer.methodGen().box(field.second().type().asmType());
+              renderer.methodGen().box(field.second().type().apply(TypeUtils.TO_ASM));
               renderer.methodGen().arrayStore(A_OBJECT_TYPE);
             });
     renderer.mark(line());

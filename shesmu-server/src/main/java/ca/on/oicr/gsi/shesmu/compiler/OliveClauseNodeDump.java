@@ -1,15 +1,16 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.Dumper;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -128,7 +130,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
       renderer.methodGen().dup();
       renderer.methodGen().push(it);
       columns.get(it).render(renderer);
-      renderer.methodGen().box(columns.get(it).type().asmType());
+      renderer.methodGen().box(columns.get(it).type().apply(TypeUtils.TO_ASM));
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
     renderer.methodGen().invokeInterface(A_DUMPER_TYPE, DUMPER__WRITE);
@@ -139,6 +141,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
       InputFormatDefinition inputFormatDefinition,
       Function<String, InputFormatDefinition> definedFormats,
       NameDefinitions defs,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       ConstantRetriever constants,
       Consumer<String> errorHandler) {
     return defs.fail(

@@ -1,12 +1,15 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -133,7 +136,8 @@ public class ProgramNode {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Consumer<String> errorHandler,
-      Supplier<Stream<ConstantDefinition>> constants) {
+      Supplier<Stream<ConstantDefinition>> constants,
+      Supplier<Stream<SignatureDefinition>> signatures) {
 
     inputFormatDefinition = inputFormatDefinitions.apply(input);
     if (inputFormatDefinition == null) {
@@ -150,8 +154,7 @@ public class ProgramNode {
     final Map<String, Target> userDefinedConstants = new HashMap<>();
     final Map<String, Imyhat> userDefinedTypes =
         Stream.<Target>concat(
-                inputFormatDefinition.baseStreamVariables(),
-                NameDefinitions.signatureVariables().<Target>map(x -> x))
+                inputFormatDefinition.baseStreamVariables(), signatures.get().<Target>map(x -> x))
             .collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
 
     for (final TypeAliasNode alias : typeAliases) {
@@ -215,6 +218,7 @@ public class ProgramNode {
                         olive ->
                             olive.resolve(
                                 inputFormatDefinition,
+                                signatures,
                                 inputFormatDefinitions,
                                 errorHandler,
                                 allowUserDefined -> {

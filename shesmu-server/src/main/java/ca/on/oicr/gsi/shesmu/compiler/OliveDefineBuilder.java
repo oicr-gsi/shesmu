@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.SignatureVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,10 +19,10 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
   private final String signerPrefix;
 
   public OliveDefineBuilder(RootBuilder owner, String name, Stream<? extends Target> parameters) {
-    super(owner, owner.inputFormatDefinition().type());
+    super(owner, owner.inputFormatDefinition());
     this.parameters =
         parameters
-            .map(Pair.number(4 + (int) NameDefinitions.signatureVariables().count()))
+            .map(Pair.number(4 + (int) owner.signatureVariables().count()))
             .map(Pair.transform(LoadParameter::new))
             .collect(Collectors.toList());
     method =
@@ -33,11 +33,12 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
                     Stream.concat(
                         Stream.of(
                             A_STREAM_TYPE, A_INPUT_PROVIDER_TYPE, Type.INT_TYPE, Type.INT_TYPE),
-                        NameDefinitions.signatureVariables().map(SignatureVariable::storageType)),
+                        owner.signatureVariables().map(SignatureDefinition::storageType)),
                     this.parameters.stream().map(LoadableValue::type))
                 .toArray(Type[]::new));
     signerPrefix = String.format("Define %s ", name);
-    NameDefinitions.signatureVariables()
+    owner
+        .signatureVariables()
         .forEach(
             signer -> {
               owner
@@ -53,19 +54,21 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
   }
 
   @Override
-  protected void emitSigner(SignatureVariable signer, Renderer renderer) {
+  protected void emitSigner(SignatureDefinition signer, Renderer renderer) {
     final String name = signerPrefix + signer.name();
     switch (signer.storage()) {
-      case STATIC_METHOD:
+      case DYNAMIC:
         renderer.methodGen().loadThis();
         renderer.methodGen().getField(owner.selfType(), name, A_FUNCTION_TYPE);
         renderer.loadStream();
         renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
-        renderer.methodGen().unbox(signer.type().asmType());
+        renderer.methodGen().unbox(signer.type().apply(TypeUtils.TO_ASM));
         break;
-      case STATIC_FIELD:
+      case STATIC:
         renderer.methodGen().loadThis();
-        renderer.methodGen().getField(owner.selfType(), name, signer.type().asmType());
+        renderer
+            .methodGen()
+            .getField(owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
         break;
       default:
         throw new UnsupportedOperationException();
@@ -87,7 +90,8 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
             parameters.stream(),
             this::emitSigner);
     renderer.methodGen().visitCode();
-    NameDefinitions.signatureVariables()
+    owner
+        .signatureVariables()
         .map(Pair.number())
         .forEach(
             pair -> {
@@ -120,7 +124,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
   }
 
   @Override
-  protected void loadSigner(SignatureVariable signer, Renderer renderer) {
+  protected void loadSigner(SignatureDefinition signer, Renderer renderer) {
     final String name = signerPrefix + signer.name();
     renderer.methodGen().loadThis();
     renderer.methodGen().getField(owner.selfType(), name, signer.storageType());

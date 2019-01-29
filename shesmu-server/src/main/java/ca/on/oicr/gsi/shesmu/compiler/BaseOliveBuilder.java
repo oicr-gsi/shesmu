@@ -4,10 +4,12 @@ import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputProvider;
-import ca.on.oicr.gsi.shesmu.SignatureVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
 import java.util.ArrayList;
@@ -46,7 +48,7 @@ public abstract class BaseOliveBuilder {
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
   protected static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
   protected static final Method METHOD_INPUT_PROVIDER__FETCH =
-      new Method("fetch", A_STREAM_TYPE, new Type[] {Type.getType(Class.class)});
+      new Method("fetch", A_STREAM_TYPE, new Type[] {A_STRING_TYPE});
   private static final Method METHOD_ACTION_GENERATOR__MEASURE_FLOW =
       new Method(
           "measureFlow",
@@ -106,15 +108,15 @@ public abstract class BaseOliveBuilder {
 
   private Type currentType;
 
-  protected final Type initialType;
+  protected final InputFormatDefinition initialFormat;
 
   protected final RootBuilder owner;
   protected final List<Consumer<Renderer>> steps = new ArrayList<>();
 
-  public BaseOliveBuilder(RootBuilder owner, Type initialType) {
+  public BaseOliveBuilder(RootBuilder owner, InputFormatDefinition initialFormat) {
     this.owner = owner;
-    this.initialType = initialType;
-    currentType = initialType;
+    this.initialFormat = initialFormat;
+    currentType = initialFormat.type();
   }
 
   /**
@@ -140,7 +142,7 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().swap();
           renderer.methodGen().loadArg(1);
           loadOwnerSourceLocation(renderer.methodGen());
-          NameDefinitions.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
+          owner.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
           for (int i = 0; i < arglist.size(); i++) {
             arglist.get(i).accept(renderer);
           }
@@ -159,7 +161,7 @@ public abstract class BaseOliveBuilder {
     return currentType;
   }
 
-  protected abstract void emitSigner(SignatureVariable name, Renderer renderer);
+  protected abstract void emitSigner(SignatureDefinition name, Renderer renderer);
 
   /**
    * Create a “Where” clause in a olive.
@@ -186,7 +188,11 @@ public abstract class BaseOliveBuilder {
   }
 
   public final JoinBuilder join(
-      int line, int column, Type innerType, Imyhat keyType, LoadableValue... capturedVariables) {
+      int line,
+      int column,
+      InputFormatDefinition innerType,
+      Imyhat keyType,
+      LoadableValue... capturedVariables) {
     final String className = String.format("shesmu/dyn/Join %d:%d", line, column);
 
     final Type oldType = currentType;
@@ -205,18 +211,19 @@ public abstract class BaseOliveBuilder {
         new LambdaBuilder(
             owner,
             String.format("Join %d:%d Inner 🔑", line, column),
-            LambdaBuilder.function(keyType, innerType),
+            LambdaBuilder.function(keyType, innerType.type()),
             capturedVariables);
 
     steps.add(
         renderer -> {
           renderer.methodGen().loadArg(1);
-          renderer.methodGen().push(innerType);
+          renderer.methodGen().push(innerType.name());
           renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
           outerKeyLambda.push(renderer);
           innerKeyLambda.push(renderer);
-          LambdaBuilder.pushNew(renderer, LambdaBuilder.bifunction(newType, oldType, innerType));
+          LambdaBuilder.pushNew(
+              renderer, LambdaBuilder.bifunction(newType, oldType, innerType.type()));
 
           renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JOIN);
         });
@@ -224,11 +231,15 @@ public abstract class BaseOliveBuilder {
     final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
     final Renderer innerKeyMethodGen = innerKeyLambda.renderer(oldType, this::emitSigner);
     return new JoinBuilder(
-        owner, newType, oldType, innerType, outerKeyMethodGen, innerKeyMethodGen);
+        owner, newType, oldType, innerType.type(), outerKeyMethodGen, innerKeyMethodGen);
   }
 
   public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(
-      int line, int column, Type innerType, Imyhat keyType, LoadableValue... capturedVariables) {
+      int line,
+      int column,
+      InputFormatDefinition innerType,
+      Imyhat keyType,
+      LoadableValue... capturedVariables) {
     final String joinedClassName =
         String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
     final String outputClassName = String.format("shesmu/dyn/LeftJoin %d:%d", line, column);
@@ -256,7 +267,7 @@ public abstract class BaseOliveBuilder {
         new LambdaBuilder(
             owner,
             String.format("LeftJoin %d:%d Inner 🔑", line, column),
-            LambdaBuilder.function(keyType, innerType),
+            LambdaBuilder.function(keyType, innerType.type()),
             capturedVariables);
     final LambdaBuilder collectLambda =
         new LambdaBuilder(
@@ -268,12 +279,13 @@ public abstract class BaseOliveBuilder {
     steps.add(
         renderer -> {
           renderer.methodGen().loadArg(1);
-          renderer.methodGen().push(innerType);
+          renderer.methodGen().push(innerType.name());
           renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
           outerKeyLambda.push(renderer);
           innerKeyLambda.push(renderer);
-          LambdaBuilder.pushNew(renderer, LambdaBuilder.bifunction(joinedType, oldType, innerType));
+          LambdaBuilder.pushNew(
+              renderer, LambdaBuilder.bifunction(joinedType, oldType, innerType.type()));
           newMethod.push(renderer);
           collectLambda.push(renderer);
 
@@ -288,12 +300,12 @@ public abstract class BaseOliveBuilder {
 
     final Renderer newMethodGen = newMethod.renderer(joinedType, this::emitSigner);
     final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
-    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType, this::emitSigner);
+    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), this::emitSigner);
     final Renderer collectedMethodGen = collectLambda.renderer(joinedType, 1, this::emitSigner);
 
     return new Pair<>(
         new JoinBuilder(
-            owner, joinedType, oldType, innerType, outerKeyMethodGen, innerKeyMethodGen),
+            owner, joinedType, oldType, innerType.type(), outerKeyMethodGen, innerKeyMethodGen),
         new RegroupVariablesBuilder(
             owner, outputClassName, newMethodGen, collectedMethodGen, capturedVariables.length));
   }
@@ -332,7 +344,7 @@ public abstract class BaseOliveBuilder {
 
   protected abstract void loadOwnerSourceLocation(GeneratorAdapter method);
 
-  protected abstract void loadSigner(SignatureVariable variable, Renderer renderer);
+  protected abstract void loadSigner(SignatureDefinition variable, Renderer renderer);
 
   /** Measure how much data goes through this olive clause. */
   public final void measureFlow(String filename, int line, int column) {
@@ -432,7 +444,7 @@ public abstract class BaseOliveBuilder {
         new LambdaBuilder(
             owner,
             String.format("Pick %d:%d 🔍", line, column),
-            LambdaBuilder.function(compareType.boxedAsmType(), streamType),
+            LambdaBuilder.function(compareType.apply(TypeUtils.TO_BOXED_ASM), streamType),
             capturedVariables);
 
     steps.add(
@@ -457,34 +469,53 @@ public abstract class BaseOliveBuilder {
     discriminators.forEach(
         discriminator -> {
           final Method getter =
-              new Method(discriminator.name(), discriminator.type().asmType(), new Type[] {});
+              new Method(
+                  discriminator.name(),
+                  discriminator.type().apply(TypeUtils.TO_ASM),
+                  new Type[] {});
           equalsGenerator.loadArg(0);
-          equalsGenerator.invokeVirtual(streamType, getter);
+          if (discriminator instanceof InputVariable) {
+            ((InputVariable) discriminator).extract(equalsGenerator);
+          } else {
+            equalsGenerator.invokeVirtual(streamType, getter);
+          }
           equalsGenerator.loadArg(1);
-          equalsGenerator.invokeVirtual(streamType, getter);
-          switch (discriminator.type().asmType().getSort()) {
+          if (discriminator instanceof InputVariable) {
+            ((InputVariable) discriminator).extract(equalsGenerator);
+          } else {
+            equalsGenerator.invokeVirtual(streamType, getter);
+          }
+          switch (discriminator.type().apply(TypeUtils.TO_ASM).getSort()) {
             case Type.ARRAY:
             case Type.OBJECT:
               equalsGenerator.invokeVirtual(A_OBJECT_TYPE, METHOD_EQUALS);
               equalsGenerator.ifZCmp(GeneratorAdapter.EQ, end);
               break;
             default:
-              equalsGenerator.ifCmp(discriminator.type().asmType(), GeneratorAdapter.NE, end);
+              equalsGenerator.ifCmp(
+                  discriminator.type().apply(TypeUtils.TO_ASM), GeneratorAdapter.NE, end);
           }
 
           hashCodeGenerator.push(31);
           hashCodeGenerator.math(GeneratorAdapter.MUL, INT_TYPE);
           hashCodeGenerator.loadArg(0);
-          hashCodeGenerator.invokeVirtual(streamType, getter);
-          switch (discriminator.type().asmType().getSort()) {
+          if (discriminator instanceof InputVariable) {
+            ((InputVariable) discriminator).extract(hashCodeGenerator);
+          } else {
+            hashCodeGenerator.invokeVirtual(streamType, getter);
+          }
+          switch (discriminator.type().apply(TypeUtils.TO_ASM).getSort()) {
             case Type.ARRAY:
             case Type.OBJECT:
               hashCodeGenerator.invokeVirtual(A_OBJECT_TYPE, METHOD_HASH_CODE);
               break;
             default:
               hashCodeGenerator.invokeStatic(
-                  discriminator.type().boxedAsmType(),
-                  new Method("hashCode", INT_TYPE, new Type[] {discriminator.type().asmType()}));
+                  discriminator.type().apply(TypeUtils.TO_BOXED_ASM),
+                  new Method(
+                      "hashCode",
+                      INT_TYPE,
+                      new Type[] {discriminator.type().apply(TypeUtils.TO_ASM)}));
               break;
           }
           hashCodeGenerator.math(GeneratorAdapter.ADD, INT_TYPE);

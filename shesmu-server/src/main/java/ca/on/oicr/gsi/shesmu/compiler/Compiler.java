@@ -1,11 +1,13 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
+import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
+import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,6 +70,7 @@ public abstract class Compiler {
       String name,
       String path,
       Supplier<Stream<ConstantDefinition>> constants,
+      Supplier<Stream<SignatureDefinition>> signatures,
       Consumer<FileTable> dashboardOutput) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
     final MaxParseError maxParseError = new MaxParseError();
@@ -85,7 +88,8 @@ public abstract class Compiler {
                 this::getFunction,
                 this::getAction,
                 this::errorHandler,
-                constants)) {
+                constants,
+                signatures)) {
       final Instant compileTime = Instant.now();
       if (dashboardOutput != null && skipRender) {
         dashboardOutput.accept(
@@ -102,7 +106,8 @@ public abstract class Compiler {
               path,
               program.get().inputFormatDefinition(),
               program.get().timeout(),
-              constants) {
+              constants,
+              signatures) {
             @Override
             protected ClassVisitor createClassVisitor() {
               final ClassVisitor outputVisitor = Compiler.this.createClassVisitor();

@@ -1,9 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -614,10 +615,10 @@ public abstract class ExpressionNode {
   /** Produce bytecode for this expression */
   public abstract void render(Renderer renderer);
 
-  /** Resolve all variable definitions in this expression and its children. */
+  /** Resolve all variable plugins in this expression and its children. */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
-  /** Resolve all function definitions in this expression */
+  /** Resolve all function plugins in this expression */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
 

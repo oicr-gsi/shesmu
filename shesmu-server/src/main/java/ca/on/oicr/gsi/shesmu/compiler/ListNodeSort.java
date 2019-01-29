@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
 public class ListNodeSort extends ListNodeWithExpression {
@@ -10,7 +10,7 @@ public class ListNodeSort extends ListNodeWithExpression {
 
   @Override
   protected void finishMethod(Renderer renderer) {
-    renderer.methodGen().box(expression.type().asmType());
+    renderer.methodGen().box(expression.type().apply(TypeUtils.TO_ASM));
   }
 
   @Override

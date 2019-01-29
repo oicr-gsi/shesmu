@@ -1,14 +1,15 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
@@ -50,10 +52,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 
                 @Override
                 public void store(
-                    Renderer renderer,
-                    Type owner,
-                    int arrayLocal,
-                    Consumer<Renderer> loadParameter) {
+                    Renderer renderer, int arrayLocal, Consumer<Renderer> loadParameter) {
                   renderer.methodGen().loadLocal(arrayLocal);
                   renderer.methodGen().push(index * 2);
                   renderer.methodGen().push(argument.name());
@@ -189,6 +188,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
   @Override
   public boolean resolve(
       InputFormatDefinition inputFormatDefinition,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       Function<String, InputFormatDefinition> definedFormats,
       Consumer<String> errorHandler,
       ConstantRetriever constants) {
@@ -196,10 +196,16 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
         clauses()
             .stream()
             .reduce(
-                NameDefinitions.root(inputFormatDefinition, constants.get(true)),
+                NameDefinitions.root(
+                    inputFormatDefinition, constants.get(true), signatureDefinitions.get()),
                 (d, clause) ->
                     clause.resolve(
-                        inputFormatDefinition, definedFormats, d, constants, errorHandler),
+                        inputFormatDefinition,
+                        definedFormats,
+                        d,
+                        signatureDefinitions,
+                        constants,
+                        errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });

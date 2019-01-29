@@ -5,9 +5,9 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
-import ca.on.oicr.gsi.shesmu.runtime.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -42,7 +42,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
           .methodGen()
           .invokeVirtual(self, new Method(fieldName, A_SET_TYPE, new Type[] {}));
       loader.accept(collectRenderer);
-      collectRenderer.methodGen().box(valueType.asmType());
+      collectRenderer.methodGen().box(valueType.apply(TypeUtils.TO_ASM));
       collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
       collectRenderer.methodGen().pop();
     }

@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -46,7 +46,7 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
 
   @Override
   public void render(RegroupVariablesBuilder builder) {
-    builder.addKey(expression.type().asmType(), name, expression::render);
+    builder.addKey(expression.type().apply(TypeUtils.TO_ASM), name, expression::render);
   }
 
   @Override

@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.description;
 
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;

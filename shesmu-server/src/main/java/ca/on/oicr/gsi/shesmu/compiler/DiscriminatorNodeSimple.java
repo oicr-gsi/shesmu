@@ -1,9 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -48,14 +49,19 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
   @Override
   public void render(RegroupVariablesBuilder builder) {
     builder.addKey(
-        target.type().asmType(),
+        target.type().apply(TypeUtils.TO_ASM),
         name,
         context -> {
           context.loadStream();
-          context
-              .methodGen()
-              .invokeVirtual(
-                  context.streamType(), new Method(name, target.type().asmType(), new Type[] {}));
+          if (target instanceof InputVariable) {
+            ((InputVariable) target).extract(context.methodGen());
+          } else {
+            context
+                .methodGen()
+                .invokeVirtual(
+                    context.streamType(),
+                    new Method(name, target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
+          }
         });
   }
 

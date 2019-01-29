@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -37,12 +37,13 @@ public final class GroupNodeFirst extends GroupNodeDefaultable {
 
   @Override
   public void render(Regrouper regroup, ExpressionNode initial, RootBuilder rootBuilder) {
-    regroup.addFirst(expression.type().asmType(), name(), expression::render, initial::render);
+    regroup.addFirst(
+        expression.type().apply(TypeUtils.TO_ASM), name(), expression::render, initial::render);
   }
 
   @Override
   public void render(Regrouper regroup, RootBuilder rootBuilder) {
-    regroup.addFirst(expression.type().asmType(), name(), expression::render);
+    regroup.addFirst(expression.type().apply(TypeUtils.TO_ASM), name(), expression::render);
   }
 
   @Override

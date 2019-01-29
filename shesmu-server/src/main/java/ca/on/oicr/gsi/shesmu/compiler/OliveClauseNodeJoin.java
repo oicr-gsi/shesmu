@@ -1,14 +1,15 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -88,7 +90,7 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
         oliveBuilder.join(
             line,
             column,
-            innerInputFormat.type(),
+            innerInputFormat,
             outerKey.type(),
             oliveBuilder
                 .loadableValues()
@@ -118,6 +120,7 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
       InputFormatDefinition inputFormatDefinition,
       Function<String, InputFormatDefinition> definedFormats,
       NameDefinitions defs,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       ConstantRetriever constants,
       Consumer<String> errorHandler) {
     innerInputFormat = definedFormats.apply(format);
@@ -140,10 +143,8 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
     if (duplicates.isEmpty()) {
       defs.stream()
           .filter(n -> n.flavour().isStream())
-          .forEach(n -> joins.add(jb -> jb.add(n.type().asmType(), n.name(), true)));
-      innerInputFormat
-          .baseStreamVariables()
-          .forEach(n -> joins.add(jb -> jb.add(n.type().asmType(), n.name(), false)));
+          .forEach(n -> joins.add(jb -> jb.add(n, true)));
+      innerInputFormat.baseStreamVariables().forEach(n -> joins.add(jb -> jb.add(n, false)));
     } else {
       errorHandler.accept(
           String.format(
@@ -154,11 +155,13 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
     boolean ok =
         outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
-                defs.replaceStream(innerInputFormat.baseStreamVariables(), true), errorHandler);
+                defs.replaceStream(innerInputFormat.baseStreamVariables().map(Target::wrap), true),
+                errorHandler);
     return defs.replaceStream(
         Stream.concat(
-            defs.stream().filter(n -> n.flavour().isStream()),
-            innerInputFormat.baseStreamVariables()),
+                defs.stream().filter(n -> n.flavour().isStream()),
+                innerInputFormat.baseStreamVariables())
+            .map(Target::wrap),
         duplicates.isEmpty() & ok);
   }
 

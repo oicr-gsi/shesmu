@@ -1,8 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -155,11 +156,11 @@ public abstract class ListNode {
 
   public abstract void render(JavaStreamBuilder builder);
 
-  /** Resolve all variable definitions in this expression and its children. */
+  /** Resolve all variable plugins in this expression and its children. */
   public abstract Optional<String> resolve(
       String name, NameDefinitions defs, Consumer<String> errorHandler);
 
-  /** Resolve all functions definitions in this expression */
+  /** Resolve all functions plugins in this expression */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
 
