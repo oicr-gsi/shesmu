@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.SignatureVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
@@ -61,7 +61,7 @@ public class Renderer {
 
   private final RootBuilder rootBuilder;
 
-  private final BiConsumer<SignatureVariable, Renderer> signerEmitter;
+  private final BiConsumer<SignatureDefinition, Renderer> signerEmitter;
 
   private final int streamArg;
   private final Type streamType;
@@ -72,7 +72,7 @@ public class Renderer {
       int streamArg,
       Type streamType,
       Stream<LoadableValue> loadables,
-      BiConsumer<SignatureVariable, Renderer> signerEmitter) {
+      BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
     this.rootBuilder = rootBuilder;
     this.methodGen = methodGen;
     this.streamArg = streamArg;
@@ -99,7 +99,7 @@ public class Renderer {
     loadables.get(name).accept(this);
   }
 
-  public void emitSigner(SignatureVariable name) {
+  public void emitSigner(SignatureDefinition name) {
     signerEmitter.accept(name, this);
   }
 
@@ -146,7 +146,7 @@ public class Renderer {
     return rootBuilder;
   }
 
-  public BiConsumer<SignatureVariable, Renderer> signerEmitter() {
+  public BiConsumer<SignatureDefinition, Renderer> signerEmitter() {
     return signerEmitter;
   }
 

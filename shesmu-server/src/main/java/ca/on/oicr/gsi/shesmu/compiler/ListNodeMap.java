@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
 public class ListNodeMap extends ListNodeWithExpression {

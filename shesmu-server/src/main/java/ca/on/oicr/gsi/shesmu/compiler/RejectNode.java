@@ -1,14 +1,17 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public interface RejectNode {
   void collectFreeVariables(Set<String> freeVariables);
@@ -19,6 +22,7 @@ public interface RejectNode {
       InputFormatDefinition inputFormatDefinition,
       Function<String, InputFormatDefinition> definedFormats,
       NameDefinitions defs,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       ConstantRetriever constants,
       Consumer<String> errorHandler);
 

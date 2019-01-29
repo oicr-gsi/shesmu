@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -47,7 +47,7 @@ public class ExpressionNodeList extends ExpressionNode {
         item -> {
           renderer.methodGen().dup();
           item.render(renderer);
-          renderer.methodGen().box(item.type().asmType());
+          renderer.methodGen().box(item.type().apply(TypeUtils.TO_ASM));
           renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
           renderer.methodGen().pop();
         });

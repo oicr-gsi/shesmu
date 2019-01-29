@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.description;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;

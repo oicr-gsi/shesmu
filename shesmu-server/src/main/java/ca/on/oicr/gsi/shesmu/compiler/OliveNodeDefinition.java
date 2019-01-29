@@ -1,16 +1,18 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,9 +88,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
       InputFormatDefinition inputFormatDefinition,
       Function<String, InputFormatDefinition> definedFormats,
       Consumer<String> errorHandler,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       ConstantRetriever constants) {
     if (outputStreamVariables != null
-        || resolve(inputFormatDefinition, definedFormats, errorHandler, constants)) {
+        || resolve(
+            inputFormatDefinition, signatureDefinitions, definedFormats, errorHandler, constants)) {
       return Optional.of(outputStreamVariables.stream());
     }
     return Optional.empty();
@@ -112,6 +116,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
   @Override
   public boolean resolve(
       InputFormatDefinition inputFormatDefinition,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       Function<String, InputFormatDefinition> definedFormats,
       Consumer<String> errorHandler,
       ConstantRetriever constants) {
@@ -129,10 +134,17 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
             .stream()
             .reduce(
                 NameDefinitions.root(
-                    inputFormatDefinition, Stream.concat(parameters.stream(), constants.get(true))),
+                    inputFormatDefinition,
+                    Stream.concat(parameters.stream(), constants.get(true)),
+                    signatureDefinitions.get()),
                 (defs, clause) ->
                     clause.resolve(
-                        inputFormatDefinition, definedFormats, defs, constants, errorHandler),
+                        inputFormatDefinition,
+                        definedFormats,
+                        defs,
+                        signatureDefinitions,
+                        constants,
+                        errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });

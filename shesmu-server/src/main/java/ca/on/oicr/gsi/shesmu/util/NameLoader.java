@@ -20,7 +20,7 @@ public final class NameLoader<T> {
    * @param data the stream of objects
    * @param getName a function to extract a name from each
    */
-  public NameLoader(Stream<T> data, Function<T, String> getName) {
+  public NameLoader(Stream<? extends T> data, Function<T, String> getName) {
     items =
         data.collect(
             Collectors.toMap(

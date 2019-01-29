@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -43,7 +43,7 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
 
     renderer.methodGen().push(index);
     renderer.methodGen().invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
-    renderer.methodGen().unbox(type.asmType());
+    renderer.methodGen().unbox(type.apply(TypeUtils.TO_ASM));
   }
 
   @Override

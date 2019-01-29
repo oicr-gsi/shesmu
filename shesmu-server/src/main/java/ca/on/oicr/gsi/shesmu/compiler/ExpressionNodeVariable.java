@@ -1,9 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.SignatureVariable;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -50,14 +51,18 @@ public class ExpressionNodeVariable extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     if (target.flavour() == Flavour.STREAM_SIGNATURE) {
-      renderer.emitSigner((SignatureVariable) target);
+      renderer.emitSigner((SignatureDefinition) target);
     } else if (target.flavour().isStream()) {
       renderer.loadStream();
-      renderer
-          .methodGen()
-          .invokeVirtual(
-              renderer.streamType(),
-              new Method(target.name(), target.type().asmType(), new Type[] {}));
+      if (target instanceof InputVariable) {
+        ((InputVariable) target).extract(renderer.methodGen());
+      } else {
+        renderer
+            .methodGen()
+            .invokeVirtual(
+                renderer.streamType(),
+                new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
+      }
     } else {
       renderer.emitNamed(name);
     }

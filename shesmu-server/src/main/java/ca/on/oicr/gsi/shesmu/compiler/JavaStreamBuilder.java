@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Start;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
@@ -135,7 +135,7 @@ public final class JavaStreamBuilder {
             () -> includeSelf ? Stream.of(owner.selfType()) : Stream.empty(),
             () -> Stream.of(capturedVariables).map(LoadableValue::type),
             () -> streamType == null ? Stream.empty() : Stream.of(streamType),
-            () -> Stream.of(newParameters).map(Imyhat::asmType))
+            () -> Stream.of(newParameters).map(t -> t.apply(TypeUtils.TO_ASM)))
         .flatMap(Supplier::get)
         .toArray(Type[]::new);
   }
@@ -183,7 +183,7 @@ public final class JavaStreamBuilder {
     final Method method =
         new Method(
             String.format("For ⋯ %s %d:%d ⚖️", syntax, line, column),
-            targetType.boxedAsmType(),
+            targetType.apply(TypeUtils.TO_BOXED_ASM),
             parameterTypes(owner, false, capturedVariables, streamType, sortType));
     renderer.methodGen().loadThis();
     Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -204,14 +204,15 @@ public final class JavaStreamBuilder {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(targetType.boxedAsmType(), sortType.boxedAsmType()));
+            Type.getMethodType(
+                targetType.apply(TypeUtils.TO_BOXED_ASM), sortType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer.invokeInterfaceStatic(A_COMPARATOR_TYPE, METHOD_COMPARATOR__COMPARING);
     return new Renderer(
         owner,
         new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
         capturedVariables.length,
         streamType,
-        parameters(capturedVariables, streamType, name, sortType.asmType()),
+        parameters(capturedVariables, streamType, name, sortType.apply(TypeUtils.TO_ASM)),
         renderer.signerEmitter());
   }
 
@@ -251,14 +252,14 @@ public final class JavaStreamBuilder {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(BOOLEAN_TYPE, filterType.boxedAsmType()));
+            Type.getMethodType(BOOLEAN_TYPE, filterType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
     return new Renderer(
         owner,
         new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
         capturedVariables.length,
         streamType,
-        parameters(capturedVariables, streamType, name, filterType.asmType()),
+        parameters(capturedVariables, streamType, name, filterType.apply(TypeUtils.TO_ASM)),
         renderer.signerEmitter());
   }
 
@@ -300,14 +301,14 @@ public final class JavaStreamBuilder {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(A_STREAM_TYPE, oldType.boxedAsmType()));
+            Type.getMethodType(A_STREAM_TYPE, oldType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FLAT_MAP);
     return new Renderer(
         owner,
         new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
         capturedVariables.length,
         streamType,
-        parameters(capturedVariables, streamType, name, oldType.asmType()),
+        parameters(capturedVariables, streamType, name, oldType.apply(TypeUtils.TO_ASM)),
         renderer.signerEmitter());
   }
 
@@ -324,7 +325,7 @@ public final class JavaStreamBuilder {
     final Method method =
         new Method(
             String.format("For ⋯ Map %d:%d", line, column),
-            newType.asmType(),
+            newType.apply(TypeUtils.TO_ASM),
             parameterTypes(owner, false, capturedVariables, streamType, oldType));
     renderer.methodGen().loadThis();
     Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
@@ -345,14 +346,15 @@ public final class JavaStreamBuilder {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(newType.boxedAsmType(), oldType.boxedAsmType()));
+            Type.getMethodType(
+                newType.apply(TypeUtils.TO_BOXED_ASM), oldType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__MAP);
     return new Renderer(
         owner,
         new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
         capturedVariables.length,
         streamType,
-        parameters(capturedVariables, streamType, name, oldType.asmType()),
+        parameters(capturedVariables, streamType, name, oldType.apply(TypeUtils.TO_ASM)),
         renderer.signerEmitter());
   }
 
@@ -383,14 +385,14 @@ public final class JavaStreamBuilder {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(BOOLEAN_TYPE, currentType.boxedAsmType()));
+            Type.getMethodType(BOOLEAN_TYPE, currentType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, matchType.method);
     return new Renderer(
         owner,
         new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
         capturedVariables.length,
         streamType,
-        parameters(capturedVariables, streamType, name, currentType.asmType()),
+        parameters(capturedVariables, streamType, name, currentType.apply(TypeUtils.TO_ASM)),
         renderer.signerEmitter());
   }
 
@@ -420,7 +422,7 @@ public final class JavaStreamBuilder {
     final Method defaultMethod =
         new Method(
             String.format("For ⋯ %s Default %d:%d", syntax, line, column),
-            targetType.asmType(),
+            targetType.apply(TypeUtils.TO_ASM),
             parameterTypes(owner, false, capturedVariables, streamType));
 
     renderer.methodGen().loadThis();
@@ -442,9 +444,9 @@ public final class JavaStreamBuilder {
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(A_OBJECT_TYPE),
             handle,
-            Type.getMethodType(targetType.boxedAsmType()));
+            Type.getMethodType(targetType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OR_ELSE_GET);
-    renderer.methodGen().unbox(targetType.asmType());
+    renderer.methodGen().unbox(targetType.apply(TypeUtils.TO_ASM));
 
     return new Renderer(
         owner,
@@ -467,13 +469,13 @@ public final class JavaStreamBuilder {
     final Method defaultMethod =
         new Method(
             String.format("For ⋯ Reduce %d:%d", line, column),
-            accumulatorType.asmType(),
+            accumulatorType.apply(TypeUtils.TO_ASM),
             parameterTypes(
                 owner, false, capturedVariables, streamType, accumulatorType, currentType));
 
     finish();
     initial.accept(renderer);
-    renderer.methodGen().box(accumulatorType.asmType());
+    renderer.methodGen().box(accumulatorType.apply(TypeUtils.TO_ASM));
     renderer.methodGen().loadThis();
     Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
     renderer.loadStream();
@@ -494,14 +496,14 @@ public final class JavaStreamBuilder {
             Type.getMethodType(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE),
             handle,
             Type.getMethodType(
-                accumulatorType.boxedAsmType(),
-                accumulatorType.boxedAsmType(),
-                currentType.boxedAsmType()));
+                accumulatorType.apply(TypeUtils.TO_BOXED_ASM),
+                accumulatorType.apply(TypeUtils.TO_BOXED_ASM),
+                currentType.apply(TypeUtils.TO_BOXED_ASM)));
     renderer
         .methodGen()
         .getStatic(A_RUNTIME_SUPPORT_TYPE, "USELESS_BINARY_OPERATOR", A_BINARY_OPERATOR_TYPE);
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__REDUCE);
-    renderer.methodGen().unbox(accumulatorType.asmType());
+    renderer.methodGen().unbox(accumulatorType.apply(TypeUtils.TO_ASM));
 
     return new Renderer(
         owner,
@@ -527,7 +529,7 @@ public final class JavaStreamBuilder {
 
                   @Override
                   public Type type() {
-                    return accumulatorType.asmType();
+                    return accumulatorType.apply(TypeUtils.TO_ASM);
                   }
                 },
                 new LoadableValue() {
@@ -546,7 +548,7 @@ public final class JavaStreamBuilder {
 
                   @Override
                   public Type type() {
-                    return currentType.asmType();
+                    return currentType.apply(TypeUtils.TO_ASM);
                   }
                 })),
         renderer.signerEmitter());

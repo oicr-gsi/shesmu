@@ -4,6 +4,7 @@ jdk:
   - oraclejdk8
   - oraclejdk9
 sudo: required
+install: true
 env:
   global:
     - MAVEN_SETTINGS="${TRAVIS_BUILD_DIR}/gsi-config"
@@ -11,6 +12,10 @@ env:
 matrix:
   include:
     - jdk: openjdk10
+      before_install:
+        - rm "${JAVA_HOME}/lib/security/cacerts"
+        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+    - jdk: openjdk11
       before_install:
         - rm "${JAVA_HOME}/lib/security/cacerts"
         - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"

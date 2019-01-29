@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -43,7 +43,7 @@ public abstract class ArithmeticOperation {
 
         leftValue.accept(renderer);
         rightValue.accept(renderer);
-        renderer.methodGen().math(opcode, type.asmType());
+        renderer.methodGen().math(opcode, type.apply(TypeUtils.TO_ASM));
       }
     };
   }
@@ -64,8 +64,10 @@ public abstract class ArithmeticOperation {
                 owner,
                 new Method(
                     methodName,
-                    returnType.asmType(),
-                    new Type[] {leftType.asmType(), rightType.asmType()}));
+                    returnType.apply(TypeUtils.TO_ASM),
+                    new Type[] {
+                      leftType.apply(TypeUtils.TO_ASM), rightType.apply(TypeUtils.TO_ASM)
+                    }));
       }
     };
   }
@@ -73,7 +75,10 @@ public abstract class ArithmeticOperation {
   public static ArithmeticOperation virtualMethod(
       Imyhat leftType, Imyhat rightType, Imyhat returnType, String methodName) {
     final Method method =
-        new Method(methodName, returnType.asmType(), new Type[] {rightType.asmType()});
+        new Method(
+            methodName,
+            returnType.apply(TypeUtils.TO_ASM),
+            new Type[] {rightType.apply(TypeUtils.TO_ASM)});
     return new ArithmeticOperation(leftType, rightType, returnType) {
 
       @Override
@@ -83,9 +88,9 @@ public abstract class ArithmeticOperation {
         leftValue.accept(renderer);
         rightValue.accept(renderer);
         if (leftType.javaType().isInterface()) {
-          renderer.methodGen().invokeInterface(leftType.asmType(), method);
+          renderer.methodGen().invokeInterface(leftType.apply(TypeUtils.TO_ASM), method);
         } else {
-          renderer.methodGen().invokeVirtual(leftType.asmType(), method);
+          renderer.methodGen().invokeVirtual(leftType.apply(TypeUtils.TO_ASM), method);
         }
       }
     };

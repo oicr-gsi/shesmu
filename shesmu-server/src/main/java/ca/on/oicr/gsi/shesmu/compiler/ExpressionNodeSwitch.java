@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -58,7 +58,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
       compare = Comparison.EQ::branchObject;
     }
     test.render(renderer);
-    final int local = renderer.methodGen().newLocal(test.type().asmType());
+    final int local = renderer.methodGen().newLocal(test.type().apply(TypeUtils.TO_ASM));
     renderer.methodGen().storeLocal(local);
     final Label end = renderer.methodGen().newLabel();
     final List<Runnable> createValues =

@@ -1,21 +1,33 @@
 package ca.on.oicr.gsi.shesmu;
 
-import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
-import ca.on.oicr.gsi.shesmu.runtime.Tuple;
+import ca.on.oicr.gsi.shesmu.compiler.Renderer;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
+import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.ratelimit.StandardDefinitions;
+import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
+import ca.on.oicr.gsi.shesmu.server.HotloadingCompiler;
+import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
-import ca.on.oicr.gsi.shesmu.util.input.BaseInputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.util.server.HotloadingCompiler;
+import ca.on.oicr.gsi.status.ConfigurationSection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -26,14 +38,34 @@ import org.objectweb.asm.commons.Method;
 
 public class RunTest {
 
-  private class ActionChecker implements ActionConsumer {
+  private class ActionChecker implements OliveServices {
 
     private int bad;
     private int good;
 
     @Override
+    public boolean isOverloaded(String... services) {
+      return false;
+    }
+
+    @Override
+    public Dumper findDumper(String name, Imyhat... types) {
+      return new Dumper() {
+        @Override
+        public void stop() {
+          // Do nothing.
+        }
+
+        @Override
+        public void write(Object... values) {
+          // Do nothing.
+        }
+      };
+    }
+
+    @Override
     public boolean accept(Action action, String filename, int line, int column, long time) {
-      if (action.perform() == ActionState.SUCCEEDED) {
+      if (action.perform(null) == ActionState.SUCCEEDED) {
         good++;
       } else {
         bad++;
@@ -58,13 +90,12 @@ public class RunTest {
   }
 
   private class InputProviderChecker implements InputProvider {
-    private final Set<Class<?>> usedFormats = new HashSet<>();
+    private final Set<String> usedFormats = new HashSet<>();
 
-    public <T> Stream<T> fetch(Class<T> clazz) {
-      usedFormats.add(clazz);
-      return clazz.equals(InnerTestValue.class)
-          ? Stream.of(INNER_TEST_DATA).map(clazz::cast)
-          : Stream.of(TEST_DATA).map(clazz::cast);
+    public Stream<Object> fetch(String format) {
+      usedFormats.add(format);
+    return format.equals("inner_test") ? Stream.of(INNER_TEST_DATA) : Stream.of(TEST_DATA);
+
     }
 
     public boolean ok(ActionGenerator generator) {
@@ -92,7 +123,7 @@ public class RunTest {
     }
 
     @Override
-    public ActionState perform() {
+    public ActionState perform(ActionServices services) {
       return ok ? ActionState.SUCCEEDED : ActionState.FAILED;
     }
 
@@ -116,16 +147,26 @@ public class RunTest {
 
   private static final List<ConstantDefinition> CONSTANTS =
       Arrays.asList(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
+
   private static InnerTestValue[] INNER_TEST_DATA =
       new InnerTestValue[] {new InnerTestValue(300, "a"), new InnerTestValue(307, "b")};
-  public static final NameLoader<InputFormatDefinition> INPUT_FORMATS =
-      new NameLoader<>(
-          Stream.of(
-              new BaseInputFormatDefinition<TestValue, TestRepository>(
-                  "test", TestValue.class, TestRepository.class) {},
-              new BaseInputFormatDefinition<InnerTestValue, InnerTestRepository>(
-                  "inner_test", InnerTestValue.class, InnerTestRepository.class) {}),
-          InputFormatDefinition::name);
+  public static final NameLoader<InputFormatDefinition> INPUT_FORMATS;
+
+  static {
+    NameLoader<InputFormatDefinition> inputFormats = null;
+    try {
+      inputFormats =
+          new NameLoader<>(
+              Stream.of(
+                  new AnnotatedInputFormatDefinition(new InputFormat("test", TestValue.class)),
+                  new AnnotatedInputFormatDefinition(
+                      new InputFormat("inner_test", InnerTestValue.class))),
+              InputFormatDefinition::name);
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    }
+    INPUT_FORMATS = inputFormats;
+  }
 
   private static final FunctionDefinition INT2DATE =
       new FunctionDefinition() {
@@ -202,9 +243,33 @@ public class RunTest {
   private static final ActionDefinition OK_ACTION_DEFINITION =
       new ActionDefinition(
           "ok",
-          A_OK_ACTION_TYPE,
           "For unit tests.",
-          Stream.of(ActionParameterDefinition.forField("ok", "ok", Imyhat.BOOLEAN, true))) {
+          Stream.of(
+              new ActionParameterDefinition() {
+                @Override
+                public String name() {
+                  return "ok";
+                }
+
+                @Override
+                public boolean required() {
+                  return true;
+                }
+
+                @Override
+                public void store(
+                    Renderer renderer, int actionLocal, Consumer<Renderer> loadParameter) {
+                  renderer.methodGen().loadLocal(actionLocal);
+                  renderer.methodGen().checkCast(A_OK_ACTION_TYPE);
+                  loadParameter.accept(renderer);
+                  renderer.methodGen().putField(A_OK_ACTION_TYPE, "ok", Type.BOOLEAN_TYPE);
+                }
+
+                @Override
+                public Imyhat type() {
+                  return Imyhat.BOOLEAN;
+                }
+              })) {
 
         @Override
         public void initialize(GeneratorAdapter methodGen) {
@@ -230,14 +295,6 @@ public class RunTest {
             Instant.EPOCH.plusSeconds(500))
       };
 
-  private Stream<ActionDefinition> actions() {
-    return Stream.of(OK_ACTION_DEFINITION);
-  }
-
-  private Stream<FunctionDefinition> functions() {
-    return Stream.concat(Stream.of(INT2STR, INT2DATE), new StandardDefinitions().functions());
-  }
-
   @Test
   public void testData() throws IOException {
     System.err.println("Testing data-handling code");
@@ -248,7 +305,7 @@ public class RunTest {
           files
                   .filter(Files::isRegularFile)
                   .filter(f -> f.getFileName().toString().endsWith(".shesmu"))
-                  .sorted((a, b) -> a.getFileName().compareTo(b.getFileName()))
+                  .sorted(Comparator.comparing(Path::getFileName))
                   .filter(this::testFile)
                   .count()
               == 0);
@@ -259,7 +316,40 @@ public class RunTest {
     try {
       final HotloadingCompiler compiler =
           new HotloadingCompiler(
-              INPUT_FORMATS::get, this::functions, this::actions, CONSTANTS::stream);
+              INPUT_FORMATS::get,
+              DefinitionRepository.concat(
+                  new StandardDefinitions(),
+                  new DefinitionRepository() {
+                    @Override
+                    public Stream<ActionDefinition> actions() {
+                      return Stream.of(OK_ACTION_DEFINITION);
+                    }
+
+                    @Override
+                    public Stream<ConstantDefinition> constants() {
+                      return CONSTANTS.stream();
+                    }
+
+                    @Override
+                    public Stream<FunctionDefinition> functions() {
+                      return Stream.of(INT2STR, INT2DATE);
+                    }
+
+                    @Override
+                    public Stream<SignatureDefinition> signatures() {
+                      return Stream.empty();
+                    }
+
+                    @Override
+                    public void writeJavaScriptRenderer(PrintStream writer) {
+                      // Do nothing.
+                    }
+
+                    @Override
+                    public Stream<ConfigurationSection> listConfiguration() {
+                      return Stream.empty();
+                    }
+                  }));
       final ActionGenerator generator = compiler.compile(file, null).orElse(ActionGenerator.NULL);
       compiler.errors().forEach(System.err::println);
       final ActionChecker checker = new ActionChecker();

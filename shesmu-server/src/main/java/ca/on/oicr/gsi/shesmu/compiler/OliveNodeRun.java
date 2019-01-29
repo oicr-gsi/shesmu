@@ -1,20 +1,23 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
@@ -31,6 +34,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   private ActionDefinition definition;
 
   private final int line;
+  private static final Type A_ACTION_TYPE = Type.getType(Action.class);
 
   public OliveNodeRun(
       int line,
@@ -94,7 +98,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     action.methodGen().visitCode();
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     definition.initialize(action.methodGen());
-    final int local = action.methodGen().newLocal(definition.type());
+    final int local = action.methodGen().newLocal(A_ACTION_TYPE);
     action.methodGen().storeLocal(local);
 
     arguments.forEach(
@@ -103,7 +107,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
         });
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     action.methodGen().loadLocal(local);
-    action.methodGen().invokeVirtual(definition.type(), METHOD_ACTION__PREPARE);
+    action.methodGen().invokeVirtual(A_ACTION_TYPE, METHOD_ACTION__PREPARE);
     oliveBuilder.emitAction(action.methodGen(), local);
     action.methodGen().visitInsn(Opcodes.RETURN);
     action.methodGen().visitMaxs(0, 0);
@@ -113,6 +117,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   @Override
   public boolean resolve(
       InputFormatDefinition inputFormatDefinition,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       Function<String, InputFormatDefinition> definedFormats,
       Consumer<String> errorHandler,
       ConstantRetriever constants) {
@@ -120,10 +125,16 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
         clauses()
             .stream()
             .reduce(
-                NameDefinitions.root(inputFormatDefinition, constants.get(true)),
+                NameDefinitions.root(
+                    inputFormatDefinition, constants.get(true), signatureDefinitions.get()),
                 (d, clause) ->
                     clause.resolve(
-                        inputFormatDefinition, definedFormats, d, constants, errorHandler),
+                        inputFormatDefinition,
+                        definedFormats,
+                        d,
+                        signatureDefinitions,
+                        constants,
+                        errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });

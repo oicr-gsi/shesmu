@@ -1,10 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.ActionGenerator;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +13,8 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /** An olive stanza declaration */
 public abstract class OliveNodeWithClauses extends OliveNode {
@@ -59,16 +62,17 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   @Override
   public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
-  /** Resolve all variable definitions */
+  /** Resolve all variable plugins */
   @Override
   public abstract boolean resolve(
       InputFormatDefinition inputFormatDefinition,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       Function<String, InputFormatDefinition> definedFormats,
       Consumer<String> errorHandler,
       ConstantRetriever constants);
 
   /**
-   * Resolve all non-variable definitions
+   * Resolve all non-variable plugins
    *
    * <p>This does the clauses and {@link #resolveDefinitionsExtra(Map, Function, Function,
    * Consumer)}

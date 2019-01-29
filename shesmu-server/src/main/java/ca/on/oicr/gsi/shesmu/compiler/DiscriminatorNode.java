@@ -1,7 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -61,10 +62,10 @@ public abstract class DiscriminatorNode implements DefinedTarget {
   /** Produce bytecode for this discriminator */
   public abstract void render(RegroupVariablesBuilder builder);
 
-  /** Resolve all variable definitions in this discriminator and its children. */
+  /** Resolve all variable plugins in this discriminator and its children. */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
-  /** Resolve all function definitions in this discriminator */
+  /** Resolve all function plugins in this discriminator */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
 

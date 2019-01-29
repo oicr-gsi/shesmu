@@ -1,18 +1,20 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionParameter;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
@@ -45,8 +47,8 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
     method =
         new Method(
             "$" + name,
-            body.type().asmType(),
-            parameters.stream().map(p -> p.type().asmType()).toArray(Type[]::new));
+            body.type().apply(TypeUtils.TO_ASM),
+            parameters.stream().map(p -> p.type().apply(TypeUtils.TO_ASM)).toArray(Type[]::new));
   }
 
   @Override
@@ -132,6 +134,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public boolean resolve(
       InputFormatDefinition inputFormatDefinition,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       Function<String, InputFormatDefinition> definedFormats,
       Consumer<String> errorHandler,
       ConstantRetriever constants) {

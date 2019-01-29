@@ -2,30 +2,34 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
-import ca.on.oicr.gsi.shesmu.ConstantDefinition.ConstantLoader;
 import ca.on.oicr.gsi.shesmu.compiler.ImyhatNode;
-import ca.on.oicr.gsi.shesmu.compiler.NameDefinitions;
-import ca.on.oicr.gsi.shesmu.compiler.Parser;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.ConstantLoader;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.ratelimit.StandardDefinitions;
+import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.server.*;
+import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
+import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
+import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
-import ca.on.oicr.gsi.shesmu.util.definitions.FileBackedArbitraryDefinitionRepository;
-import ca.on.oicr.gsi.shesmu.util.definitions.RuntimeBinding;
-import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor;
-import ca.on.oicr.gsi.shesmu.util.server.ActionProcessor.Filter;
-import ca.on.oicr.gsi.shesmu.util.server.CurrentAlerts;
-import ca.on.oicr.gsi.shesmu.util.server.EmergencyThrottler;
-import ca.on.oicr.gsi.shesmu.util.server.FunctionRequest;
-import ca.on.oicr.gsi.shesmu.util.server.FunctionRunner;
-import ca.on.oicr.gsi.shesmu.util.server.FunctionRunnerCompiler;
-import ca.on.oicr.gsi.shesmu.util.server.MasterRunner;
-import ca.on.oicr.gsi.shesmu.util.server.MetroDiagram;
-import ca.on.oicr.gsi.shesmu.util.server.Query;
-import ca.on.oicr.gsi.shesmu.util.server.Query.FilterJson;
-import ca.on.oicr.gsi.shesmu.util.server.StaticActions;
-import ca.on.oicr.gsi.shesmu.util.server.TypeParseRequest;
-import ca.on.oicr.gsi.shesmu.util.server.TypeParseResponse;
 import ca.on.oicr.gsi.status.BasePage;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.Header;
@@ -48,6 +52,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
 import java.io.IOException;
@@ -56,21 +61,15 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.lang.invoke.MethodType;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -78,7 +77,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -88,9 +86,18 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 @SuppressWarnings("restriction")
-public final class Server implements ServerConfig {
+public final class Server implements ServerConfig, ActionServices {
+  private static final Gauge stopGauge =
+      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
+          .register();
+  private volatile boolean emergencyStop;
 
-  private static class EmergencyThrottlerHandler implements HttpHandler {
+  private void emergencyThrottle(boolean stopped) {
+    this.emergencyStop = stopped;
+    stopGauge.set(stopped ? 1 : 0);
+  }
+
+  private class EmergencyThrottlerHandler implements HttpHandler {
     private final boolean state;
 
     public EmergencyThrottlerHandler(boolean state) {
@@ -100,7 +107,7 @@ public final class Server implements ServerConfig {
 
     @Override
     public void handle(HttpExchange t) throws IOException {
-      EmergencyThrottler.set(state);
+      emergencyThrottle(state);
       t.getResponseHeaders().set("Location", "/");
       t.sendResponseHeaders(302, -1);
     }
@@ -132,10 +139,9 @@ public final class Server implements ServerConfig {
 
   private final CompiledGenerator compiler;
   private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
-
   private final ScheduledExecutorService executor =
       new ScheduledThreadPoolExecutor(10 * Runtime.getRuntime().availableProcessors());
-
+  private final DefinitionRepository definitionRepository;
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
 
   private final Semaphore inputDownloadSemaphore =
@@ -143,17 +149,66 @@ public final class Server implements ServerConfig {
 
   private final MasterRunner master;
 
-  private final ActionProcessor processor = new ActionProcessor(localname());
+  private final PluginManager pluginManager = new PluginManager();
+
+  private final ActionProcessor processor;
 
   private final HttpServer server;
 
-  private final StaticActions staticActions = new StaticActions(processor);
+  private final StaticActions staticActions;
 
   public Server(int port) throws IOException {
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(executor);
-    compiler = new CompiledGenerator(executor);
-    master = new MasterRunner(compiler, processor);
+    definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
+    compiler = new CompiledGenerator(executor, definitionRepository);
+    processor = new ActionProcessor(localname(), pluginManager, this);
+    staticActions = new StaticActions(processor, definitionRepository);
+    master =
+        new MasterRunner(
+            compiler,
+            new OliveServices() {
+              @Override
+              public boolean isOverloaded(String... services) {
+                return processor.isOverloaded(services)
+                    || pluginManager.isOverloaded(new HashSet<>(Arrays.asList(services)));
+              }
+
+              @Override
+              public Dumper findDumper(String name, Imyhat... types) {
+                return pluginManager
+                    .findDumper(name, types)
+                    .orElse(
+                        new Dumper() {
+                          @Override
+                          public void stop() {
+                            // Do nothing
+                          }
+
+                          @Override
+                          public void write(Object... values) {
+                            // Do nothing
+                          }
+                        });
+              }
+
+              @Override
+              public boolean accept(
+                  Action action, String filename, int line, int column, long time) {
+                return processor.accept(action, filename, line, column, time);
+              }
+
+              @Override
+              public boolean accept(String[] labels, String[] annotation, long ttl)
+                  throws Exception {
+                return processor.accept(labels, annotation, ttl);
+              }
+            },
+            format ->
+                Stream.concat(
+                        AnnotatedInputFormatDefinition.formats(),
+                        Stream.of(pluginManager, processor))
+                    .flatMap(source -> source.fetch(format)));
 
     add(
         "/",
@@ -167,8 +222,8 @@ public final class Server implements ServerConfig {
               protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
                 renderer.link(
                     "Emergency Stop",
-                    EmergencyThrottler.stopped() ? "/resume" : "/stopstopstop",
-                    EmergencyThrottler.stopped() ? "▶ Resume" : "⏹ STOP ALL ACTIONS");
+                    emergencyStop ? "/resume" : "/stopstopstop",
+                    emergencyStop ? "▶ Resume" : "⏹ STOP ALL ACTIONS");
                 FileWatcher.DATA_DIRECTORY
                     .paths()
                     .forEach(path -> renderer.line("Data Directory", path.toString()));
@@ -177,16 +232,8 @@ public final class Server implements ServerConfig {
 
               @Override
               public Stream<ConfigurationSection> sections() {
-                return Stream.<Supplier<Stream<? extends LoadedConfiguration>>>of(
-                        InputFormatDefinition::allConfiguration,
-                        Throttler::services,
-                        DefinitionRepository::sources,
-                        DumperSource::sources,
-                        SourceLocation::configuration,
-                        AlertSink::sinks,
-                        () -> Stream.of(staticActions))
-                    .flatMap(Supplier::get)
-                    .flatMap(LoadedConfiguration::listConfiguration);
+                return Stream.concat(
+                    pluginManager.listConfiguration(), staticActions.listConfiguration());
               }
             }.renderPage(os);
           }
@@ -310,6 +357,7 @@ public final class Server implements ServerConfig {
                                       writer.writeAttribute("style", "overflow-x:auto");
                                       MetroDiagram.draw(
                                           writer,
+                                          pluginManager,
                                           fileTable.filename(),
                                           fileTable.timestamp(),
                                           olive,
@@ -622,7 +670,8 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                DefinitionRepository.allActions()
+                definitionRepository
+                    .actions()
                     .sorted(Comparator.comparing(ActionDefinition::name))
                     .forEach(
                         action -> {
@@ -666,7 +715,7 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                InputFormatDefinition.formats()
+                AnnotatedInputFormatDefinition.formats()
                     .sorted(Comparator.comparing(InputFormatDefinition::name))
                     .forEach(
                         format -> {
@@ -719,8 +768,9 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void writeRows(TableRowWriter row) {
-                NameDefinitions.signatureVariables()
-                    .sorted(Comparator.comparing(SignatureVariable::name))
+                definitionRepository
+                    .signatures()
+                    .sorted(Comparator.comparing(SignatureDefinition::name))
                     .forEach(
                         variable -> {
                           row.write(false, variable.name(), variable.type().name());
@@ -739,7 +789,8 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                DefinitionRepository.allConstants()
+                definitionRepository
+                    .constants()
                     .sorted(Comparator.comparing(Target::name))
                     .forEach(
                         constant -> {
@@ -796,7 +847,8 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                DefinitionRepository.allFunctions()
+                definitionRepository
+                    .functions()
                     .sorted(Comparator.comparing(FunctionDefinition::name))
                     .forEach(
                         function -> {
@@ -850,7 +902,7 @@ public final class Server implements ServerConfig {
                                     function.name(),
                                     function
                                         .parameters()
-                                        .map(p -> p.type().javaScriptParser())
+                                        .map(p -> p.type().apply(TypeUtils.TO_JS_PARSER))
                                         .collect(Collectors.joining(",", "[", "]"))));
                             writer.writeCharacters("▶ Run");
                             writer.writeEndElement();
@@ -877,44 +929,17 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void writeRows(TableRowWriter row) {
-                DefinitionRepository.sources()
-                    .map(x -> x.getClass().getName())
-                    .sorted()
+                PluginManager.dumpBound()
+                    .sorted(Comparator.comparing(Pair::first))
                     .forEach(
                         x -> {
-                          row.write(false, x);
+                          row.write(false, x.first(), x.second().toString());
                         });
               }
             }.renderPage(os);
           }
         });
-    add(
-        "/dumprtb",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new TablePage(this) {
 
-              @Override
-              protected void writeRows(TableRowWriter row) {
-                RuntimeBinding.dump()
-                    .sorted(
-                        Comparator.<Pair<Pair<String, Class<?>>, MethodType>, String>comparing(
-                                x -> x.first().first())
-                            .thenComparing(x -> x.first().second().getName()))
-                    .forEach(
-                        x -> {
-                          row.write(
-                              false,
-                              x.first().first(),
-                              x.first().second().getName(),
-                              x.second().toMethodDescriptorString());
-                        });
-              }
-            }.renderPage(os);
-          }
-        });
     add(
         "/dumpadr",
         t -> {
@@ -925,7 +950,7 @@ public final class Server implements ServerConfig {
 
               @Override
               protected void writeRows(TableRowWriter row) {
-                FileBackedArbitraryDefinitionRepository.dump()
+                PluginManager.dumpArbitrary()
                     .sorted(Comparator.comparing(Pair::first))
                     .forEach(
                         x -> {
@@ -969,7 +994,7 @@ public final class Server implements ServerConfig {
                 writer.writeCharacters("Human-friendly");
                 writer.writeEndElement();
 
-                InputFormatDefinition.formats()
+                AnnotatedInputFormatDefinition.formats()
                     .sorted(Comparator.comparing(InputFormatDefinition::name))
                     .forEach(
                         format -> {
@@ -1093,7 +1118,8 @@ public final class Server implements ServerConfig {
         "/actions",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          DefinitionRepository.allActions()
+          definitionRepository
+              .actions()
               .forEach(
                   actionDefinition -> {
                     final ObjectNode obj = array.addObject();
@@ -1117,7 +1143,8 @@ public final class Server implements ServerConfig {
         "/constants",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          DefinitionRepository.allConstants()
+          definitionRepository
+              .constants()
               .forEach(
                   constant -> {
                     final ObjectNode obj = array.addObject();
@@ -1127,12 +1154,26 @@ public final class Server implements ServerConfig {
                   });
           return array;
         });
-
+    addJson(
+        "/signatures",
+        (mapper, query) -> {
+          final ArrayNode array = mapper.createArrayNode();
+          definitionRepository
+              .signatures()
+              .forEach(
+                  constant -> {
+                    final ObjectNode obj = array.addObject();
+                    obj.put("name", constant.name());
+                    obj.put("type", constant.type().descriptor());
+                  });
+          return array;
+        });
     addJson(
         "/functions",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          DefinitionRepository.allFunctions()
+          definitionRepository
+              .functions()
               .forEach(
                   function -> {
                     final ObjectNode obj = array.addObject();
@@ -1177,7 +1218,8 @@ public final class Server implements ServerConfig {
           }
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            RuntimeSupport.MAPPER.writeValue(os, query.perform(RuntimeSupport.MAPPER, processor));
+            RuntimeSupport.MAPPER.writeValue(
+                os, query.perform(RuntimeSupport.MAPPER, pluginManager::sourceUrl, processor));
           }
         });
 
@@ -1234,7 +1276,7 @@ public final class Server implements ServerConfig {
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            CurrentAlerts.pump(os);
+            os.write(processor.currentAlerts().getBytes(StandardCharsets.UTF_8));
           }
         });
 
@@ -1247,7 +1289,8 @@ public final class Server implements ServerConfig {
             loader = constantLoaders.get(query);
           } else {
             loader =
-                DefinitionRepository.allConstants()
+                definitionRepository
+                    .constants()
                     .filter(c -> c.name().equals(query))
                     .findFirst()
                     .map(ConstantDefinition::compile)
@@ -1280,7 +1323,8 @@ public final class Server implements ServerConfig {
             runner = functionRunners.get(query.getName());
           } else {
             runner =
-                DefinitionRepository.allFunctions()
+                definitionRepository
+                    .functions()
                     .filter(f -> f.name().equals(query.getName()))
                     .findFirst()
                     .map(FunctionRunnerCompiler::compile)
@@ -1307,7 +1351,7 @@ public final class Server implements ServerConfig {
         "/variables",
         (mapper, query) -> {
           final ObjectNode node = mapper.createObjectNode();
-          InputFormatDefinition.formats()
+          AnnotatedInputFormatDefinition.formats()
               .forEach(
                   source -> {
                     final ObjectNode sourceNode = node.putObject(source.name());
@@ -1322,7 +1366,7 @@ public final class Server implements ServerConfig {
           return node;
         });
 
-    InputFormatDefinition.formats()
+    AnnotatedInputFormatDefinition.formats()
         .forEach(
             format -> {
               add(
@@ -1339,9 +1383,7 @@ public final class Server implements ServerConfig {
                     try (OutputStream os = t.getResponseBody();
                         JsonGenerator jGenerator =
                             jfactory.createGenerator(os, JsonEncoding.UTF8)) {
-                      jGenerator.writeStartArray();
-                      format.write(jGenerator);
-                      jGenerator.writeEndArray();
+                      format.writeJson(jGenerator);
                       jGenerator.close();
                     } catch (final IOException e) {
                       e.printStackTrace();
@@ -1364,14 +1406,14 @@ public final class Server implements ServerConfig {
             Optional<Function<String, Imyhat>> existingTypes =
                 request.getFormat().isEmpty()
                     ? Optional.of(n -> null)
-                    : InputFormatDefinition.formats()
+                    : AnnotatedInputFormatDefinition.formats()
                         .filter(format -> format.name().equals(request.getFormat()))
                         .findAny()
                         .map(
                             format ->
                                 Stream.<Target>concat(
                                             format.baseStreamVariables(),
-                                            NameDefinitions.signatureVariables())
+                                            definitionRepository.signatures())
                                         .collect(
                                             Collectors.toMap(
                                                 udt -> udt.name() + "_type", Target::type))
@@ -1413,15 +1455,7 @@ public final class Server implements ServerConfig {
               PrintStream writer = new PrintStream(os, false, "UTF-8")) {
             writer.println(
                 "import { jsonParameters, link, text, title } from './shesmu.js';\nexport const actionRender = new Map();\n");
-            DefinitionRepository.sources()
-                .forEach(
-                    repository -> {
-                      writer.print("// ");
-                      writer.print(repository.getClass().getCanonicalName());
-                      writer.println();
-                      repository.writeJavaScriptRenderer(writer);
-                      writer.println();
-                    });
+            definitionRepository.writeJavaScriptRenderer(writer);
           }
         });
 
@@ -1559,7 +1593,6 @@ public final class Server implements ServerConfig {
             NavigationMenu.item("typedefs", "Type Converter"),
             NavigationMenu.item("inflightdash", "Active Server Processes"),
             NavigationMenu.item("dumpdefs", "Detected Definition Plugins"),
-            NavigationMenu.item("dumprtb", "Runtime Binding Spy"),
             NavigationMenu.item("dumpadr", "Arbitrary Binding Spy")));
   }
 
@@ -1567,17 +1600,14 @@ public final class Server implements ServerConfig {
     System.out.println("Starting server...");
     server.start();
     System.out.println("Waiting for files to be scanned...");
-    DefinitionRepository.sources().count();
-    Throttler.services().count();
+    pluginManager.count();
     try {
       Thread.sleep(5000);
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     }
-    final long pluginCount = DefinitionRepository.allConstants().count();
+    final long pluginCount = pluginManager.count();
     System.out.printf("Found %d plugins\n", pluginCount);
-    final long throttlerCount = Throttler.services().count();
-    System.out.printf("Found %d throttler\n", throttlerCount);
     System.out.println("Compiling script...");
     compiler.start();
     staticActions.start();
@@ -1585,5 +1615,10 @@ public final class Server implements ServerConfig {
     processor.start(executor);
     System.out.println("Starting scheduler...");
     master.start(executor);
+  }
+
+  @Override
+  public boolean isOverloaded(Set<String> services) {
+    return emergencyStop || pluginManager.isOverloaded(services);
   }
 }

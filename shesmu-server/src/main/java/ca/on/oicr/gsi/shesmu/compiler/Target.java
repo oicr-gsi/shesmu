@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 
 /** A defined variable in a program */
 public interface Target {
@@ -84,4 +84,28 @@ public interface Target {
 
   /** The Shesmu type for this variable */
   Imyhat type();
+
+  static Target wrap(Target target) {
+    if (!target.flavour().isStream) {
+      throw new IllegalArgumentException(
+          String.format("Cannot wrap %s variable %s", target.flavour().name(), target.name()));
+    }
+    return new Target() {
+
+      @Override
+      public Flavour flavour() {
+        return Flavour.STREAM;
+      }
+
+      @Override
+      public String name() {
+        return target.name();
+      }
+
+      @Override
+      public Imyhat type() {
+        return target.type();
+      }
+    };
+  }
 }

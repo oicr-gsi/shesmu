@@ -1,17 +1,19 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -81,6 +83,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
       InputFormatDefinition inputFormatDefinition,
       Function<String, InputFormatDefinition> definedFormats,
       NameDefinitions defs,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
       ConstantRetriever constants,
       Consumer<String> errorHandler) {
     final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
@@ -89,7 +92,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
             == arguments.size();
     final Optional<Stream<Target>> replacements =
         target.outputStreamVariables(
-            inputFormatDefinition, definedFormats, errorHandler, constants);
+            inputFormatDefinition, definedFormats, errorHandler, signatureDefinitions, constants);
     good = good && replacements.isPresent();
     return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
   }

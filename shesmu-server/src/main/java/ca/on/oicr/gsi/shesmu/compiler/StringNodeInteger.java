@@ -3,9 +3,9 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.util.Set;
 import java.util.function.Consumer;

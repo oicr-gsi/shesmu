@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.Imyhat;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -47,8 +47,7 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
   @Override
   public void render(Renderer renderer, int action) {
     renderer.mark(line);
-    definition.store(
-        renderer, renderer.methodGen().getLocalType(action), action, expression::render);
+    definition.store(renderer, action, expression::render);
   }
 
   /** Resolve variables in the expression of this argument */

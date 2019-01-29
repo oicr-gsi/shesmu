@@ -4,8 +4,8 @@ import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
-import ca.on.oicr.gsi.shesmu.Imyhat;
-import ca.on.oicr.gsi.shesmu.SignatureVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.lang.invoke.LambdaMetafactory;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
@@ -87,11 +87,14 @@ public final class LambdaBuilder {
       public Stream<Type> parameterTypes(AccessMode accessMode) {
         switch (accessMode) {
           case BOXED:
-            return Stream.of(parameter1Type.boxedAsmType(), parameter2Type.boxedAsmType());
+            return Stream.of(
+                parameter1Type.apply(TypeUtils.TO_BOXED_ASM),
+                parameter2Type.apply(TypeUtils.TO_BOXED_ASM));
           case ERASED:
             return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE);
           case REAL:
-            return Stream.of(parameter1Type.asmType(), parameter2Type.asmType());
+            return Stream.of(
+                parameter1Type.apply(TypeUtils.TO_ASM), parameter2Type.apply(TypeUtils.TO_ASM));
           default:
             throw new UnsupportedOperationException();
         }
@@ -268,11 +271,11 @@ public final class LambdaBuilder {
       public Stream<Type> parameterTypes(AccessMode accessMode) {
         switch (accessMode) {
           case BOXED:
-            return Stream.of(parameterType.boxedAsmType());
+            return Stream.of(parameterType.apply(TypeUtils.TO_BOXED_ASM));
           case ERASED:
             return Stream.of(A_OBJECT_TYPE);
           case REAL:
-            return Stream.of(parameterType.asmType());
+            return Stream.of(parameterType.apply(TypeUtils.TO_ASM));
           default:
             throw new UnsupportedOperationException();
         }
@@ -282,11 +285,11 @@ public final class LambdaBuilder {
       public Type returnType(AccessMode accessMode) {
         switch (accessMode) {
           case BOXED:
-            return returnType.boxedAsmType();
+            return returnType.apply(TypeUtils.TO_BOXED_ASM);
           case ERASED:
             return A_OBJECT_TYPE;
           case REAL:
-            return returnType.asmType();
+            return returnType.apply(TypeUtils.TO_ASM);
           default:
             throw new UnsupportedOperationException();
         }
@@ -325,11 +328,11 @@ public final class LambdaBuilder {
       public Type returnType(AccessMode accessMode) {
         switch (accessMode) {
           case BOXED:
-            return returnType.boxedAsmType();
+            return returnType.apply(TypeUtils.TO_BOXED_ASM);
           case ERASED:
             return A_OBJECT_TYPE;
           case REAL:
-            return returnType.asmType();
+            return returnType.apply(TypeUtils.TO_ASM);
           default:
             throw new UnsupportedOperationException();
         }
@@ -397,11 +400,11 @@ public final class LambdaBuilder {
       public Stream<Type> parameterTypes(AccessMode accessMode) {
         switch (accessMode) {
           case BOXED:
-            return Stream.of(parameterType.boxedAsmType());
+            return Stream.of(parameterType.apply(TypeUtils.TO_BOXED_ASM));
           case ERASED:
             return Stream.of(A_OBJECT_TYPE);
           case REAL:
-            return Stream.of(parameterType.asmType());
+            return Stream.of(parameterType.apply(TypeUtils.TO_ASM));
           default:
             throw new UnsupportedOperationException();
         }
@@ -623,7 +626,8 @@ public final class LambdaBuilder {
    * @param streamType the type of the stream value
    * @param signerEmitter the signature loader/generator
    */
-  public Renderer renderer(Type streamType, BiConsumer<SignatureVariable, Renderer> signerEmitter) {
+  public Renderer renderer(
+      Type streamType, BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
     return renderer(streamType, 0, signerEmitter);
   }
 
@@ -636,7 +640,7 @@ public final class LambdaBuilder {
    * @param signerEmitter the signature loader/generator
    */
   public Renderer renderer(
-      Type streamType, int streamOffset, BiConsumer<SignatureVariable, Renderer> signerEmitter) {
+      Type streamType, int streamOffset, BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
     return new Renderer(
         owner,
         methodGen(),
