@@ -336,7 +336,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "https://raw.githubusercontent.com/prometheus/alertmanager/master/api/v2/openapi.yaml#/definitions/alerts"
+                  "properties": {
+                    "annotations": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "endsAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "generatorURL": {
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "labels": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "startsAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
