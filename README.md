@@ -19,6 +19,25 @@ work--Shesmu is an empty vessel that requires plugins to find data and take
 action. The olives are supplied by a script that is compiled and run over all
 the provenance data.
 
+## Dependencies
+What Shesmu requires will depend on which plugins you enable. Plugins can be
+disabled by passing `-pl "!plugin-foo"` to disable a plugin when calling `mvn`
+commands.
+
+Build dependencies:
+
+- Java 8 or later (The Niassa + Pinery plugin does not work for Java 9+)
+- Maven 3.5 or later
+- Docker (optional) for container builds
+
+Optional runtime dependencies:
+
+- Prometheus (strongly recommended)
+- Prometheus Alert Manager (required for `Olive Alert` to work)
+- JIRA
+- GitHub
+- GitHub, GitLabs, or BitBucket for storing configuration files (recommended)
+
 ## Running an Instance
 
 Setting up Shesmu involves collecting all the necessary bits and putting them
@@ -39,7 +58,7 @@ Which will build all of the plugins available. Then run with:
     docker run -p 8081:8081 --mount type=bind,source=/srv/shesmu,target=/srv/shesmu shesmu:latest
 
 ### Local Setup
-Now, compile the main server using Maven with Java 8:
+Now, compile the main server using Maven 3.5 with Java 8:
 
     cd shesmu-server
     mvn install
