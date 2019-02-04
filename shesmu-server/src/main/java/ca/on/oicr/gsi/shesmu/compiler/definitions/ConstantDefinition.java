@@ -4,7 +4,9 @@ import ca.on.oicr.gsi.shesmu.compiler.LoadableValue;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -35,6 +37,12 @@ import org.objectweb.asm.commons.Method;
  */
 public abstract class ConstantDefinition implements Target {
 
+  /** Write the value of a constant into the <tt>value</tt> property of a JSON object. */
+  public interface ConstantLoader {
+    @RuntimeInterop
+    public void load(ObjectNode target);
+  }
+
   private class ConstantCompiler extends BaseHotloadingCompiler {
 
     public ConstantLoader compile() {
@@ -60,11 +68,14 @@ public abstract class ConstantDefinition implements Target {
           new GeneratorAdapter(Opcodes.ACC_PUBLIC, LOAD_METHOD, null, null, classVisitor);
       handle.visitCode();
       handle.invokeDynamic(type.descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+      handle.newInstance(A_PACK_JSON_OBJECT_TYPE);
+      handle.dup();
       handle.loadArg(0);
       handle.push("value");
+      handle.invokeConstructor(A_PACK_JSON_OBJECT_TYPE, PACK_JSON_OBJECT_CTOR);
       ConstantDefinition.this.load(handle);
       handle.box(type.apply(TypeUtils.TO_ASM));
-      handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__PACK_JSON);
+      handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__ACCEPT_OBJ);
       handle.visitInsn(Opcodes.RETURN);
       handle.visitMaxs(0, 0);
       handle.visitEnd();
@@ -104,28 +115,15 @@ public abstract class ConstantDefinition implements Target {
     protected abstract void write(GeneratorAdapter methodGen, T value);
   }
 
-  /** Write the value of a constant into the <tt>value</tt> property of a JSON object. */
-  public interface ConstantLoader {
-    @RuntimeInterop
-    public void load(ObjectNode target);
-  }
-
   private static final Type A_CONSTANT_LOADER_TYPE = Type.getType(ConstantLoader.class);
-
-  private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
-
-  private static final Type A_JSON_OBJECT_TYPE = Type.getType(ObjectNode.class);
-
   private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
-
+  private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+  private static final Type A_JSON_OBJECT_TYPE = Type.getType(ObjectNode.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-
+  private static final Type A_PACK_JSON_OBJECT_TYPE = Type.getType(PackJsonObject.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
-
   private static final Type A_STRING_TYPE = Type.getType(String.class);
-
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
-
   private static final Handle HANDLER_IMYHAT =
       new Handle(
           Opcodes.H_INVOKESTATIC,
@@ -139,23 +137,89 @@ public abstract class ConstantDefinition implements Target {
           false);
   private static final Method INSTANT_CTOR =
       new Method("ofEpochMilli", Imyhat.DATE.apply(TypeUtils.TO_ASM), new Type[] {Type.LONG_TYPE});
-
   private static final Method LOAD_METHOD =
       new Method("load", Type.VOID_TYPE, new Type[] {A_JSON_OBJECT_TYPE});
-
+  private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
+  private static final Method METHOD_IMYHAT__ACCEPT_OBJ =
+      new Method(
+          "accept", Type.VOID_TYPE, new Type[] {Type.getType(ImyhatConsumer.class), A_OBJECT_TYPE});
   private static final Method METHOD_IMYHAT__NEW_SET =
       new Method("newSet", A_SET_TYPE, new Type[] {});
-
-  private static final Method METHOD_IMYHAT__PACK_JSON =
-      new Method(
-          "packJson",
-          Type.VOID_TYPE,
-          new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE, A_OBJECT_TYPE});
-
-  private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
-
+  private static final Method PACK_JSON_OBJECT_CTOR =
+      new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
   private static final Method SET__ADD =
       new Method("add", Type.BOOLEAN_TYPE, new Type[] {Type.getType(Object.class)});
+  private final String description;
+  private final String name;
+  private final Imyhat type;
+  private final LoadableValue loadable =
+      new LoadableValue() {
+
+        @Override
+        public void accept(Renderer renderer) {
+          load(renderer.methodGen());
+        }
+
+        @Override
+        public String name() {
+          return name;
+        }
+
+        @Override
+        public Type type() {
+          return type.apply(TypeUtils.TO_ASM);
+        }
+      };
+
+  /**
+   * Create a new constant
+   *
+   * @param name the name of the constant, which must be valid Shesmu identifier
+   * @param type the Shemsu type of the constant
+   */
+  public ConstantDefinition(String name, Imyhat type, String description) {
+    super();
+    this.name = name;
+    this.type = type;
+    this.description = description;
+  }
+
+  /** Convert the constant into a form that can be used during bytecode generation */
+  public final LoadableValue asLoadable() {
+    return loadable;
+  }
+
+  /** Generate a class that write the constant to JSON when called. */
+  public final ConstantLoader compile() {
+    return new ConstantCompiler().compile();
+  }
+
+  /** The documentation text for a constant. */
+  public final String description() {
+    return description;
+  }
+
+  @Override
+  public final Flavour flavour() {
+    return Flavour.CONSTANT;
+  }
+
+  /**
+   * Generate bytecode in the supplied method to load this constant on the operand stack.
+   *
+   * @param methodGen the method to load the value in
+   */
+  protected abstract void load(GeneratorAdapter methodGen);
+
+  /**
+   * The name of the constant.
+   *
+   * <p>This must be a valid identifier.
+   */
+  @Override
+  public final String name() {
+    return name;
+  }
 
   /**
    * Define a boolean constant
@@ -216,79 +280,6 @@ public abstract class ConstantDefinition implements Target {
         methodGen.push(value);
       }
     };
-  }
-
-  private final String description;
-  private final LoadableValue loadable =
-      new LoadableValue() {
-
-        @Override
-        public void accept(Renderer renderer) {
-          load(renderer.methodGen());
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Type type() {
-          return type.apply(TypeUtils.TO_ASM);
-        }
-      };
-  private final String name;
-
-  private final Imyhat type;
-
-  /**
-   * Create a new constant
-   *
-   * @param name the name of the constant, which must be valid Shesmu identifier
-   * @param type the Shemsu type of the constant
-   */
-  public ConstantDefinition(String name, Imyhat type, String description) {
-    super();
-    this.name = name;
-    this.type = type;
-    this.description = description;
-  }
-
-  /** Convert the constant into a form that can be used during bytecode generation */
-  public final LoadableValue asLoadable() {
-    return loadable;
-  }
-
-  /** Generate a class that write the constant to JSON when called. */
-  public final ConstantLoader compile() {
-    return new ConstantCompiler().compile();
-  }
-
-  /** The documentation text for a constant. */
-  public final String description() {
-    return description;
-  }
-
-  @Override
-  public final Flavour flavour() {
-    return Flavour.CONSTANT;
-  }
-
-  /**
-   * Generate bytecode in the supplied method to load this constant on the operand stack.
-   *
-   * @param methodGen the method to load the value in
-   */
-  protected abstract void load(GeneratorAdapter methodGen);
-
-  /**
-   * The name of the constant.
-   *
-   * <p>This must be a valid identifier.
-   */
-  @Override
-  public final String name() {
-    return name;
   }
 
   /**
