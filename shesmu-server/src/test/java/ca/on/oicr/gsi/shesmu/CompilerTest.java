@@ -84,7 +84,7 @@ public class CompilerTest {
 
     public TestActionDefinition(
         String name, String description, Stream<ActionParameterDefinition> parameters) {
-      super(name, description, parameters);
+      super(name, description, null, parameters);
     }
 
     @Override

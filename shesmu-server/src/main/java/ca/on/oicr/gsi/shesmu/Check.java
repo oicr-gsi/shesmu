@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -100,7 +101,8 @@ public final class Check extends Compiler {
                     new ConstantDefinition(
                         o.get("name").asText(),
                         Imyhat.parse(o.get("type").asText()),
-                        o.get("description").asText()) {
+                        o.get("description").asText(),
+                        null) {
 
                       @Override
                       protected void load(GeneratorAdapter methodGen) {
@@ -166,6 +168,7 @@ public final class Check extends Compiler {
     return new ActionDefinition(
         node.get("name").asText(),
         node.get("description").asText(),
+        null,
         Utils.stream(node.get("parameters").elements()).map(Check::makeParameter)) {
 
       @Override
@@ -196,6 +199,11 @@ public final class Check extends Compiler {
       @Override
       public String name() {
         return name;
+      }
+
+      @Override
+      public Path filename() {
+        return null;
       }
 
       @Override

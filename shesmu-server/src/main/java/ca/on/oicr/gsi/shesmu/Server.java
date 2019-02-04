@@ -66,6 +66,7 @@ import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -677,6 +678,7 @@ public final class Server implements ServerConfig, ActionServices {
                         action -> {
                           try {
                             writer.writeStartElement("h1");
+                            writer.writeAttribute("id", action.name());
                             writer.writeCharacters(action.name());
                             writer.writeEndElement();
                             writer.writeStartElement("p");
@@ -685,6 +687,7 @@ public final class Server implements ServerConfig, ActionServices {
 
                             writer.writeStartElement("table");
                             writer.writeAttribute("class", "even");
+                            showSourceConfig(writer, action.filename());
                             TableRowWriter row = new TableRowWriter(writer);
                             action
                                 .parameters()
@@ -721,6 +724,7 @@ public final class Server implements ServerConfig, ActionServices {
                         format -> {
                           try {
                             writer.writeStartElement("h1");
+                            writer.writeAttribute("id", format.name());
                             writer.writeCharacters(format.name());
                             writer.writeEndElement();
 
@@ -773,7 +777,10 @@ public final class Server implements ServerConfig, ActionServices {
                     .sorted(Comparator.comparing(SignatureDefinition::name))
                     .forEach(
                         variable -> {
-                          row.write(false, variable.name(), variable.type().name());
+                          row.write(
+                              Arrays.asList(new Pair<>("id", variable.name())),
+                              variable.name(),
+                              variable.type().name());
                         });
               }
             }.renderPage(os);
@@ -796,11 +803,13 @@ public final class Server implements ServerConfig, ActionServices {
                         constant -> {
                           try {
                             writer.writeStartElement("h1");
+                            writer.writeAttribute("id", constant.name());
                             writer.writeCharacters(constant.name());
                             writer.writeEndElement();
                             writer.writeStartElement("p");
                             writer.writeCharacters(constant.description());
                             writer.writeEndElement();
+                            showSourceConfig(writer, constant.filename());
                             writer.writeStartElement("table");
                             writer.writeAttribute("class", "even");
                             writer.writeStartElement("tr");
@@ -854,11 +863,13 @@ public final class Server implements ServerConfig, ActionServices {
                         function -> {
                           try {
                             writer.writeStartElement("h1");
+                            writer.writeAttribute("id", function.name());
                             writer.writeCharacters(function.name());
                             writer.writeEndElement();
                             writer.writeStartElement("p");
                             writer.writeCharacters(function.description());
                             writer.writeEndElement();
+                            showSourceConfig(writer, function.filename());
                             writer.writeStartElement("table");
                             writer.writeAttribute("class", "even");
                             function
@@ -956,6 +967,21 @@ public final class Server implements ServerConfig, ActionServices {
                         x -> {
                           row.write(false, x.first(), x.second().toMethodDescriptorString());
                         });
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
+        "/configmap",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new TablePage(this, "Configuration File", "Kind", "Name") {
+
+              @Override
+              protected void writeRows(TableRowWriter row) {
+                pluginManager.dumpPluginConfig(row);
               }
             }.renderPage(os);
           }
@@ -1477,6 +1503,27 @@ public final class Server implements ServerConfig, ActionServices {
     add("/api-docs/swagger-ui.js", "text/javascript");
   }
 
+  private void showSourceConfig(XMLStreamWriter writer, Path filename) {
+    if (filename != null) {
+      pluginManager
+          .sourceUrl(filename.toString(), 1, 1, Instant.EPOCH)
+          .findFirst()
+          .ifPresent(
+              l -> {
+                try {
+                  writer.writeStartElement("p");
+                  writer.writeStartElement("a");
+                  writer.writeAttribute("href", l);
+                  writer.writeCharacters("View Configuration File");
+                  writer.writeEndElement();
+                  writer.writeEndElement();
+                } catch (XMLStreamException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    }
+  }
+
   /** Add a new service endpoint with Prometheus monitoring */
   private void add(String url, HttpHandler handler) {
     server.createContext(
@@ -1591,6 +1638,7 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.submenu(
             "Tools",
             NavigationMenu.item("typedefs", "Type Converter"),
+            NavigationMenu.item("configmap", "Plugin Configuration"),
             NavigationMenu.item("inflightdash", "Active Server Processes"),
             NavigationMenu.item("dumpdefs", "Detected Definition Plugins"),
             NavigationMenu.item("dumpadr", "Arbitrary Binding Spy")));

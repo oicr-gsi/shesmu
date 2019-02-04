@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -9,21 +10,31 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public abstract class ActionDefinition {
 
   private final String description;
+  private final Path filename;
 
   private final String name;
 
   private final List<ActionParameterDefinition> parameters;
 
   public ActionDefinition(
-      String name, String description, Stream<ActionParameterDefinition> parameters) {
+      String name,
+      String description,
+      Path filename,
+      Stream<ActionParameterDefinition> parameters) {
     this.name = name;
     this.description = description;
+    this.filename = filename;
     this.parameters = parameters.collect(Collectors.toList());
   }
 
   /** A human-readable explanation of what this action does and where it came from. */
   public final String description() {
     return description;
+  }
+
+  /** The configuration file associated with this parameter, if one exists. */
+  public Path filename() {
+    return filename;
   }
 
   /**

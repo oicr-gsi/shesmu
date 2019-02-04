@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.ratelimit.signers.SignatureCount;
 import ca.on.oicr.gsi.shesmu.ratelimit.signers.SignatureNames;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.function.Consumer;
@@ -54,7 +55,8 @@ public final class StandardDefinitions implements DefinitionRepository {
         new ConstantDefinition(
             "now",
             Imyhat.DATE,
-            "The current timestamp. This is fetched every time this constant is referenced, so now != now.") {
+            "The current timestamp. This is fetched every time this constant is referenced, so now != now.",
+            null) {
 
           @Override
           protected void load(GeneratorAdapter methodGen) {
@@ -146,6 +148,11 @@ public final class StandardDefinitions implements DefinitionRepository {
           }
 
           @Override
+          public Path filename() {
+            return null;
+          }
+
+          @Override
           public Stream<FunctionParameter> parameters() {
             return Stream.of(new FunctionParameter("str", Imyhat.STRING));
           }
@@ -177,6 +184,7 @@ public final class StandardDefinitions implements DefinitionRepository {
       new ActionDefinition(
           "nothing",
           "Does absolutely nothing and ignores the value provided. Useful for debugging.",
+          null,
           Stream.of(
               new ActionParameterDefinition() {
 
