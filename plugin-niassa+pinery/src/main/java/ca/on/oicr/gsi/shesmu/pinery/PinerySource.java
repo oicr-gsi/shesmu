@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
-import ca.on.oicr.gsi.shesmu.gsistd.input.IUSUtils;
+import ca.on.oicr.gsi.shesmu.cerberus.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.gsistd.niassa;
+package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;

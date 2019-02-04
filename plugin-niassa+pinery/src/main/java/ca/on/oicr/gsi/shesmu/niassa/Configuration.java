@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.gsistd.niassa;
+package ca.on.oicr.gsi.shesmu.niassa;
 
 public class Configuration {
   private String jar;
