@@ -10,7 +10,7 @@ import java.time.Instant;
  *
  * <p>This is one “row” in the information being fed into Shesmu
  */
-public final class GsiStdValue {
+public final class CerberusFileProvenanceValue {
   private final String accession;
   private final Instant completed_date;
   private final String donor;
@@ -39,7 +39,7 @@ public final class GsiStdValue {
   private final String workflow_accession;
   private final Tuple workflow_version;
 
-  public GsiStdValue(
+  public CerberusFileProvenanceValue(
       String accession,
       Path path,
       String metatype,
@@ -124,7 +124,7 @@ public final class GsiStdValue {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final GsiStdValue other = (GsiStdValue) obj;
+    final CerberusFileProvenanceValue other = (CerberusFileProvenanceValue) obj;
     if (accession == null) {
       if (other.accession != null) {
         return false;

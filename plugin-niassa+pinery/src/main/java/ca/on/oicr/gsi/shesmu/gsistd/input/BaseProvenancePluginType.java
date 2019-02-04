@@ -13,8 +13,6 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
-
-import javax.xml.stream.XMLStreamException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,17 +24,19 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
 
-public abstract class BaseProvenancePluginType<C extends AutoCloseable> extends PluginFileType<BaseProvenancePluginType.FileConfiguration> {
+public abstract class BaseProvenancePluginType<C extends AutoCloseable>
+    extends PluginFileType<BaseProvenancePluginType.FileConfiguration> {
   class FileConfiguration extends PluginFile {
-    private class ItemCache extends ValueCache<Stream<GsiStdValue>> {
+    private class ItemCache extends ValueCache<Stream<CerberusFileProvenanceValue>> {
 
       public ItemCache() {
         super(name + " " + fileName().toString(), 60, ReplacingRecord::new);
       }
 
       @Override
-      protected Stream<GsiStdValue> fetch(Instant lastUpdated) throws Exception {
+      protected Stream<CerberusFileProvenanceValue> fetch(Instant lastUpdated) throws Exception {
         final AtomicInteger badSets = new AtomicInteger();
         final AtomicInteger badVersions = new AtomicInteger();
         final Map<String, Integer> badSetCounts = new TreeMap<>();
@@ -54,8 +54,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable> extends 
                               reason -> badSetInRecord.add("limskey:" + reason),
                               true)
                           .map(IusLimsKey::getLimsKey);
-                  final GsiStdValue result =
-                      new GsiStdValue(
+                  final CerberusFileProvenanceValue result =
+                      new CerberusFileProvenanceValue(
                           fp.getFileSWID().toString(),
                           Paths.get(fp.getFilePath()),
                           fp.getFileMetaType(),
@@ -153,8 +153,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable> extends 
 
     @Override
     public void configuration(SectionRenderer renderer) throws XMLStreamException {
-          renderer.line("Configuration Good?", ok ? "Yes" : "No");
-        }
+      renderer.line("Configuration Good?", ok ? "Yes" : "No");
+    }
 
     @Override
     public void stop() {
@@ -162,7 +162,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable> extends 
     }
 
     @ShesmuInputSource
-    public Stream<GsiStdValue> stream() {
+    public Stream<CerberusFileProvenanceValue> stream() {
       return cache.get();
     }
 
