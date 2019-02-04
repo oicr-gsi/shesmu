@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.gsistd.input;
+package ca.on.oicr.gsi.shesmu.cerberus;
 
 import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
 import ca.on.oicr.gsi.provenance.ProviderLoader;

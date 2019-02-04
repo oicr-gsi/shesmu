@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.gsistd.niassa;
+package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
