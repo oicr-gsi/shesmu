@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -96,7 +97,7 @@ public abstract class ConstantDefinition implements Target {
     private final List<T> values;
 
     public ConstantList(String name, Imyhat type, Stream<T> values, String description) {
-      super(name, type.asList(), description);
+      super(name, type.asList(), description, null);
       this.values = values.collect(Collectors.toList());
     }
 
@@ -151,6 +152,7 @@ public abstract class ConstantDefinition implements Target {
       new Method("add", Type.BOOLEAN_TYPE, new Type[] {Type.getType(Object.class)});
   private final String description;
   private final String name;
+  private final Path path;
   private final Imyhat type;
   private final LoadableValue loadable =
       new LoadableValue() {
@@ -177,11 +179,12 @@ public abstract class ConstantDefinition implements Target {
    * @param name the name of the constant, which must be valid Shesmu identifier
    * @param type the Shemsu type of the constant
    */
-  public ConstantDefinition(String name, Imyhat type, String description) {
+  public ConstantDefinition(String name, Imyhat type, String description, Path path) {
     super();
     this.name = name;
     this.type = type;
     this.description = description;
+    this.path = path;
   }
 
   /** Convert the constant into a form that can be used during bytecode generation */
@@ -211,6 +214,10 @@ public abstract class ConstantDefinition implements Target {
    */
   protected abstract void load(GeneratorAdapter methodGen);
 
+  public final Path filename() {
+    return path;
+  }
+
   /**
    * The name of the constant.
    *
@@ -227,7 +234,7 @@ public abstract class ConstantDefinition implements Target {
    * @param name the name, which must be a valid Shesmu identifier
    */
   public static ConstantDefinition of(String name, boolean value, String description) {
-    return new ConstantDefinition(name, Imyhat.BOOLEAN, description) {
+    return new ConstantDefinition(name, Imyhat.BOOLEAN, description, null) {
 
       @Override
       protected void load(GeneratorAdapter methodGen) {
@@ -242,7 +249,7 @@ public abstract class ConstantDefinition implements Target {
    * @param name the name, which must be a valid Shesmu identifier
    */
   public static ConstantDefinition of(String name, Instant value, String description) {
-    return new ConstantDefinition(name, Imyhat.DATE, description) {
+    return new ConstantDefinition(name, Imyhat.DATE, description, null) {
 
       @Override
       protected void load(GeneratorAdapter methodGen) {
@@ -258,7 +265,7 @@ public abstract class ConstantDefinition implements Target {
    * @param name the name, which must be a valid Shesmu identifier
    */
   public static ConstantDefinition of(String name, long value, String description) {
-    return new ConstantDefinition(name, Imyhat.INTEGER, description) {
+    return new ConstantDefinition(name, Imyhat.INTEGER, description, null) {
 
       @Override
       protected void load(GeneratorAdapter methodGen) {
@@ -273,7 +280,7 @@ public abstract class ConstantDefinition implements Target {
    * @param name the name, which must be a valid Shesmu identifier
    */
   public static ConstantDefinition of(String name, String value, String description) {
-    return new ConstantDefinition(name, Imyhat.STRING, description) {
+    return new ConstantDefinition(name, Imyhat.STRING, description, null) {
 
       @Override
       protected void load(GeneratorAdapter methodGen) {

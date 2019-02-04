@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler.definitions;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -18,8 +19,8 @@ public interface FunctionDefinition {
    * @param methodName the name of the static method
    * @param description the help text for the method
    * @param returnType the return type of the method (the appropriate Java type will be matched)
-   * @param argumentTypes the types of the arguments to the method (the appropriate Java types will
-   *     be matched)
+   * @param parameters the types of the arguments to the method (the appropriate Java types will be
+   *     matched)
    */
   public static FunctionDefinition staticMethod(
       String name,
@@ -38,6 +39,11 @@ public interface FunctionDefinition {
       @Override
       public String name() {
         return name;
+      }
+
+      @Override
+      public Path filename() {
+        return null;
       }
 
       @Override
@@ -88,6 +94,11 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public Path filename() {
+        return null;
+      }
+
+      @Override
       public Stream<FunctionParameter> parameters() {
         return Stream.of(parameters);
       }
@@ -127,6 +138,8 @@ public interface FunctionDefinition {
 
   /** The name of the function. */
   String name();
+
+  Path filename();
 
   /** The parameters of the function, in order */
   Stream<FunctionParameter> parameters();

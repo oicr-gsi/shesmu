@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,6 +92,11 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public Path filename() {
+    return null;
   }
 
   @Override

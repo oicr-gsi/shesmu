@@ -94,8 +94,7 @@ public class RunTest {
 
     public Stream<Object> fetch(String format) {
       usedFormats.add(format);
-    return format.equals("inner_test") ? Stream.of(INNER_TEST_DATA) : Stream.of(TEST_DATA);
-
+      return format.equals("inner_test") ? Stream.of(INNER_TEST_DATA) : Stream.of(TEST_DATA);
     }
 
     public boolean ok(ActionGenerator generator) {
@@ -181,6 +180,11 @@ public class RunTest {
         }
 
         @Override
+        public Path filename() {
+          return null;
+        }
+
+        @Override
         public Stream<FunctionParameter> parameters() {
           return Stream.of(new FunctionParameter("arg", Imyhat.INTEGER));
         }
@@ -218,6 +222,11 @@ public class RunTest {
         }
 
         @Override
+        public Path filename() {
+          return null;
+        }
+
+        @Override
         public Stream<FunctionParameter> parameters() {
           return Stream.of(new FunctionParameter("arg", Imyhat.INTEGER));
         }
@@ -244,6 +253,7 @@ public class RunTest {
       new ActionDefinition(
           "ok",
           "For unit tests.",
+          null,
           Stream.of(
               new ActionParameterDefinition() {
                 @Override

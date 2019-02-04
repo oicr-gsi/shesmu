@@ -35,6 +35,7 @@ import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
+import ca.on.oicr.gsi.status.TableRowWriter;
 import java.io.PrintStream;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -49,13 +50,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiFunction;
@@ -77,7 +72,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public final class PluginManager
     implements DefinitionRepository, InputProvider, SourceLoctionLinker {
   private interface Binder<D> {
-    D bind(String name, String path);
+    D bind(String name, Path path);
   }
 
   private interface DynamicInvoker {
@@ -95,8 +90,9 @@ public final class PluginManager
           String name,
           MethodHandle handle,
           String description,
+          Path filename,
           Stream<ActionParameterDefinition> parameters) {
-        super(name, description, parameters);
+        super(name, description, filename, parameters);
         fixedName = name + " action";
         callsite = installArbitrary(fixedName, handle);
       }
@@ -115,8 +111,8 @@ public final class PluginManager
       private final String fixedName;
 
       public ArbitraryConstantDefinition(
-          String name, MethodHandle target, Imyhat returnType, String description) {
-        super(name, returnType, description);
+          String name, MethodHandle target, Imyhat returnType, String description, Path path) {
+        super(name, returnType, description, path);
         final MethodHandle handle = target.asType(MethodType.methodType(returnType.javaType()));
 
         fixedName = name + " " + returnType.descriptor();
@@ -164,16 +160,19 @@ public final class PluginManager
       private final String fixedName;
       private final String name;
       private final FunctionParameter[] parameters;
+      private final Path path;
       private final Imyhat returnType;
 
       public ArbitraryFunctionDefinition(
           String name,
           String description,
+          Path path,
           MethodHandle handle,
           Imyhat returnType,
           FunctionParameter... parameters) {
         this.name = name;
         this.description = description;
+        this.path = path;
         this.returnType = returnType;
         this.parameters = parameters;
 
@@ -198,6 +197,11 @@ public final class PluginManager
       @Override
       public String name() {
         return name;
+      }
+
+      @Override
+      public Path filename() {
+        return path;
       }
 
       @Override
@@ -270,28 +274,27 @@ public final class PluginManager
 
         final String instanceName =
             RuntimeSupport.removeExtension(instance.fileName(), fileFormat.extension());
-        final String fileName = path.toString();
 
         // Now expose all our plugins to the olive compiler
         constantsFromAnnotations =
             constantTemplates
                 .stream()
-                .map(t -> t.bind(instanceName, fileName))
+                .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         functionsFromAnnotations =
             functionTemplates
                 .stream()
-                .map(t -> t.bind(instanceName, fileName))
+                .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         actionsFromAnnotations =
             actionTemplates
                 .stream()
-                .map(t -> t.bind(instanceName, fileName))
+                .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
         signaturesFromAnnotations =
             signatureTemplates
                 .stream()
-                .map(t -> t.bind(instanceName, fileName))
+                .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
       }
 
@@ -342,6 +345,7 @@ public final class PluginManager
                 name,
                 handle,
                 description,
+                instance.fileName(),
                 Stream.concat(
                     parameters.map(p -> new InvokeDynamicActionParameterDescriptor(name, p)),
                     InvokeDynamicActionParameterDescriptor.findActionDefinitionsByAnnotation(
@@ -353,7 +357,11 @@ public final class PluginManager
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                name, MethodHandles.constant(type.javaType(), value), type, description));
+                name,
+                MethodHandles.constant(type.javaType(), value),
+                type,
+                description,
+                instance.fileName()));
       }
 
       @Override
@@ -365,7 +373,8 @@ public final class PluginManager
                 name,
                 MethodHandles.constant(type.type().javaType(), value),
                 type.type(),
-                description));
+                description,
+                instance.fileName()));
       }
 
       @Override
@@ -375,7 +384,11 @@ public final class PluginManager
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                name, MH_SUPPLIER_GET.bindTo(constant), returnType.type(), description));
+                name,
+                MH_SUPPLIER_GET.bindTo(constant),
+                returnType.type(),
+                description,
+                instance.fileName()));
       }
 
       @Override
@@ -404,7 +417,8 @@ public final class PluginManager
                         Stream.of(parameters).map(p -> p.type().javaType()).toArray(Class[]::new)));
         functions.put(
             name,
-            new ArbitraryFunctionDefinition(name, description, handle, returnType, parameters));
+            new ArbitraryFunctionDefinition(
+                name, description, instance.fileName(), handle, returnType, parameters));
       }
 
       @Override
@@ -426,6 +440,7 @@ public final class PluginManager
             new ArbitraryFunctionDefinition(
                 name,
                 description,
+                instance.fileName(),
                 handle,
                 returnType.type(),
                 new FunctionParameter(parameterDescription, parameterType.type())));
@@ -470,6 +485,11 @@ public final class PluginManager
               @Override
               public String name() {
                 return name;
+              }
+
+              @Override
+              public Path filename() {
+                return instance.fileName();
               }
 
               @Override
@@ -776,11 +796,12 @@ public final class PluginManager
                 new ActionDefinition(
                     name.replace("$", instance),
                     mangleDescription(annotation.description(), instance, path),
+                    path,
                     parameters.stream()) {
 
                   @Override
                   public void initialize(GeneratorAdapter methodGen) {
-                    invoker.write(methodGen, path);
+                    invoker.write(methodGen, path.toString());
                   }
                 });
       } else {
@@ -789,6 +810,7 @@ public final class PluginManager
                 name,
                 fileFormat.lookup().unreflect(method),
                 annotation.description(),
+                null,
                 parameters.stream()));
       }
     }
@@ -813,17 +835,19 @@ public final class PluginManager
                   new ConstantDefinition(
                       name.replace("$", instanceName),
                       returnType,
-                      mangleDescription(annotation.description(), instanceName, path)) {
+                      mangleDescription(annotation.description(), instanceName, path),
+                      path) {
 
                     @Override
                     protected void load(GeneratorAdapter methodGen) {
-                      invoker.write(methodGen, path);
+                      invoker.write(methodGen, path.toString());
                     }
                   });
         } else {
           final MethodHandle handle = fileFormat.lookup().unreflect(method);
           staticConstants.add(
-              new ArbitraryConstantDefinition(name, handle, returnType, annotation.description()));
+              new ArbitraryConstantDefinition(
+                  name, handle, returnType, annotation.description(), null));
         }
       } else {
         final FunctionParameter[] functionParameters =
@@ -866,13 +890,18 @@ public final class PluginManager
                     }
 
                     @Override
+                    public Path filename() {
+                      return path;
+                    }
+
+                    @Override
                     public Stream<FunctionParameter> parameters() {
                       return Stream.of(functionParameters);
                     }
 
                     @Override
                     public void render(GeneratorAdapter methodGen) {
-                      invoker.write(methodGen, path);
+                      invoker.write(methodGen, path.toString());
                     }
 
                     @Override
@@ -889,7 +918,7 @@ public final class PluginManager
           final MethodHandle handle = fileFormat.lookup().unreflect(method);
           staticFunctions.add(
               new ArbitraryFunctionDefinition(
-                  name, annotation.description(), handle, returnType, functionParameters));
+                  name, annotation.description(), null, handle, returnType, functionParameters));
         }
       }
     }
@@ -921,7 +950,7 @@ public final class PluginManager
 
                     @Override
                     protected void newInstance(GeneratorAdapter method) {
-                      invoker.write(method, path);
+                      invoker.write(method, path.toString());
                     }
                   });
         } else {
@@ -931,7 +960,7 @@ public final class PluginManager
 
                     @Override
                     protected void newInstance(GeneratorAdapter method) {
-                      invoker.write(method, path);
+                      invoker.write(method, path.toString());
                     }
                   });
         }
@@ -1128,8 +1157,8 @@ public final class PluginManager
     return CONFIG_FILE_INSTANCES.stream();
   }
 
-  private static String mangleDescription(String description, String instanceName, String path) {
-    return description.replace("{instance}", instanceName).replace("{file}", path);
+  private static String mangleDescription(String description, String instanceName, Path path) {
+    return description.replace("{instance}", instanceName).replace("{file}", path.toString());
   }
 
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
@@ -1195,6 +1224,85 @@ public final class PluginManager
   @Override
   public Stream<ConfigurationSection> listConfiguration() {
     return formatTypes.stream().flatMap(FormatTypeWrapper::listConfiguration);
+  }
+
+  private void dumpConfig(
+      TableRowWriter writer,
+      String context,
+      Stream<ActionDefinition> actions,
+      Stream<ConstantDefinition> constants,
+      Stream<FunctionDefinition> functions,
+      Stream<String> inputFormats,
+      Stream<SignatureDefinition> signatures) {
+    actions.forEach(
+        action ->
+            writer.write(
+                Arrays.asList(
+                    new Pair<>("onclick", "window.location = 'actiondefs#" + action.name() + "'")),
+                context,
+                "Action",
+                action.name()));
+    constants.forEach(
+        constant ->
+            writer.write(
+                Arrays.asList(
+                    new Pair<>(
+                        "onclick", "window.location = 'constantdefs#" + constant.name() + "'")),
+                context,
+                "Constant",
+                constant.name()));
+    functions.forEach(
+        function ->
+            writer.write(
+                Arrays.asList(
+                    new Pair<>(
+                        "onclick", "window.location = 'functiondefs#" + function.name() + "'")),
+                context,
+                "Function",
+                function.name()));
+    inputFormats.forEach(
+        format ->
+            writer.write(
+                Arrays.asList(new Pair<>("onclick", "window.location = 'inputdefs#" + format)),
+                context,
+                "Input Source",
+                format));
+
+    signatures.forEach(
+        signature ->
+            writer.write(
+                Arrays.asList(
+                    new Pair<>(
+                        "onclick", "window.location = 'signaturedefs#" + signature.name() + "'")),
+                context,
+                "Signature",
+                signature.name()));
+  }
+
+  public void dumpPluginConfig(TableRowWriter writer) {
+    for (final FormatTypeWrapper<?, ?> type : formatTypes) {
+      dumpConfig(
+          writer,
+          type.fileFormat.extension() + " Plugin",
+          type.staticActions.stream(),
+          type.staticConstants.stream(),
+          type.staticFunctions.stream(),
+          type.staticSources.keySet().stream(),
+          type.staticSignatures.stream());
+      type.configuration
+          .stream()
+          .forEach(
+              c -> {
+                dumpConfig(
+                    writer,
+                    c.instance.fileName().toString(),
+                    c.actions(),
+                    c.constants(),
+                    c.functions(),
+                    type.dynamicSources.keySet().stream(),
+                    c.signatures());
+              });
+    }
   }
 
   public void pushAlerts(String alertJson) {
