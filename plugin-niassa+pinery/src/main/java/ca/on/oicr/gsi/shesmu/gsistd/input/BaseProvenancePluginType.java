@@ -76,6 +76,9 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   reason -> badSetInRecord.add("study:" + reason),
                                   true)
                               .orElse(""),
+                              limsAttr(
+                                      fp, "geo_organism", badSetInRecord::add, true)
+                                      .orElse(""),
                           IUSUtils.singleton(
                                   fp.getSampleNames(),
                                   reason -> badSetInRecord.add("librarynames:" + reason),
