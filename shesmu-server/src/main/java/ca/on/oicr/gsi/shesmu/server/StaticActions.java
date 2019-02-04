@@ -125,13 +125,15 @@ public class StaticActions implements LoadedConfiguration {
 
           @Override
           public void emit(SectionRenderer renderer) throws XMLStreamException {
-            configuration
-                .stream()
-                .sorted(Comparator.comparing(StaticActionFile::fileName))
-                .forEach(
-                    config -> {
-                      renderer.line(config.fileName().toString(), config.lastCount);
-                    });
+            if (configuration != null) {
+              configuration
+                  .stream()
+                  .sorted(Comparator.comparing(StaticActionFile::fileName))
+                  .forEach(
+                      config -> {
+                        renderer.line(config.fileName().toString(), config.lastCount);
+                      });
+            }
           }
         });
   }
