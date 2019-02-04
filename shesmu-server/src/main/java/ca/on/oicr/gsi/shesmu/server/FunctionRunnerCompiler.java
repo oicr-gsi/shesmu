@@ -7,7 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -62,12 +62,13 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_JSON_NODE_TYPE});
   private static final Method METHOD_IMYHAT__APPLY =
       new Method("apply", A_OBJECT_TYPE, new Type[] {Type.getType(ImyhatTransformer.class)});
-  private static final Method METHOD_IMYHAT__APPLY_OBJ =
+  private static final Method METHOD_IMYHAT__ACCEPT_OBJ =
       new Method(
-          "apply", A_OBJECT_TYPE, new Type[] {Type.getType(ImyhatFunction.class), A_OBJECT_TYPE});
+          "accept", Type.VOID_TYPE, new Type[] {Type.getType(ImyhatConsumer.class), A_OBJECT_TYPE});
   private static final Type A_PACK_JSON_OBJECT_TYPE = Type.getType(PackJsonObject.class);
+  private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
   private static final Method PACK_JSON_OBJECT_CTOR =
-      new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_TYPE, A_STRING_TYPE});
+      new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
 
   public static FunctionRunner compile(FunctionDefinition function) {
     return new FunctionRunnerCompiler(function).compile();
@@ -119,14 +120,14 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
               handle.dup();
               handle.loadArg(0);
               handle.push(type.first());
-              handle.invokeVirtual(A_JSON_OBJECT_TYPE, JSON_ARRAY__GET);
+              handle.invokeVirtual(A_JSON_ARRAY_TYPE, JSON_ARRAY__GET);
               handle.invokeConstructor(A_JSON_UNPACK_TYPE, METHOD_JSON_UNPACK__CTOR);
               handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__APPLY);
               handle.unbox(type.second().apply(TypeUtils.TO_ASM));
             });
     function.render(handle);
     handle.box(function.returnType().apply(TypeUtils.TO_ASM));
-    handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__APPLY_OBJ);
+    handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__ACCEPT_OBJ);
     handle.visitInsn(Opcodes.RETURN);
     handle.visitMaxs(0, 0);
     handle.visitEnd();

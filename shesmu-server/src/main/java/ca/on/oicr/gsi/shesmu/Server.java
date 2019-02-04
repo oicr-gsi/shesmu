@@ -1484,7 +1484,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           try (AutoCloseable timer = responseTime.start(url)) {
             handler.handle(t);
-          } catch (final Exception e) {
+          } catch (final Throwable e) {
             e.printStackTrace();
             throw new IOException(e);
           }
