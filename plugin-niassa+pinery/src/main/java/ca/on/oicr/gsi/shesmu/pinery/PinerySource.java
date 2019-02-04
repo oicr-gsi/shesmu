@@ -66,29 +66,29 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         final Set<String> completeRuns =
             c.getSequencerRun()
                 .all()
-                .stream() //
+                .stream()
                 .filter(
                     run ->
                         run.getState().equals("Completed")
                             && run.getRunDirectory() != null
-                            && !run.getRunDirectory().equals("")) //
-                .map(RunDto::getName) //
+                            && !run.getRunDirectory().equals(""))
+                .map(RunDto::getName)
                 .collect(Collectors.toSet());
-        return Stream.concat( //
+        return Stream.concat(
                 lanes(
                     c,
                     version,
                     cfg.getProvider(),
                     badSetCounts,
                     runDirectories,
-                    completeRuns::contains), //
+                    completeRuns::contains),
                 samples(
                     c,
                     version,
                     cfg.getProvider(),
                     badSetCounts,
                     runDirectories,
-                    completeRuns::contains)) //
+                    completeRuns::contains))
             .onClose(
                 () ->
                     badSetCounts
@@ -113,9 +113,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Map<String, String> runDirectories,
         Predicate<String> goodRun)
         throws HttpResponseException {
-      return Utils.stream(client.getLaneProvenance().version(version)) //
-          .filter(lp -> goodRun.test(lp.getSequencerRunName())) //
-          .filter(lp -> lp.getSkip() == null || !lp.getSkip()) //
+      return Utils.stream(client.getLaneProvenance().version(version))
+          .filter(lp -> goodRun.test(lp.getSequencerRunName()))
+          .filter(lp -> lp.getSkip() == null || !lp.getSkip())
           .map(
               lp -> {
                 final Set<String> badSetInRecord = new TreeSet<>();
@@ -128,33 +128,34 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
                 runDirectories.put(lp.getSequencerRunName(), runDirectory);
                 final PineryIUSValue result =
-                    new PineryIUSValue( //
-                        Paths.get(runDirectory), //
-                        "", //
-                        "", //
-                        "", //
+                    new PineryIUSValue(
+                        Paths.get(runDirectory),
+                        "",
+                        "",
+                        "",
+                        "",
                         new Tuple(
                             lp.getSequencerRunName(),
                             IUSUtils.parseLaneNumber(lp.getLaneNumber()),
-                            "NoIndex"), //
-                        "", //
-                        "", //
-                        "", //
-                        "", //
-                        "", //
-                        "", //
-                        "", //
-                        "", //
-                        0L, //
-                        "", //
-                        "", //
+                            "NoIndex"),
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        0L,
+                        "",
+                        "",
                         lp.getLastModified() == null
                             ? Instant.EPOCH
-                            : lp.getLastModified().toInstant(), //
-                        new Tuple(lp.getLaneProvenanceId(), lp.getVersion(), provider), //
+                            : lp.getLastModified().toInstant(),
+                        new Tuple(lp.getLaneProvenanceId(), lp.getVersion(), provider),
                         lp.getCreatedDate() == null
                             ? Instant.EPOCH
-                            : lp.getCreatedDate().toInstant(), //
+                            : lp.getCreatedDate().toInstant(),
                         false);
 
                 if (badSetInRecord.isEmpty()) {
@@ -163,7 +164,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                   badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
                   return null;
                 }
-              }) //
+              })
           .filter(Objects::nonNull);
     }
 
@@ -175,8 +176,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Map<String, String> runDirectories,
         Predicate<String> goodRun)
         throws HttpResponseException {
-      return Utils.stream(client.getSampleProvenance().version(version)) //
-          .filter(sp -> goodRun.test(sp.getSequencerRunName())) //
+      return Utils.stream(client.getSampleProvenance().version(version))
+          .filter(sp -> goodRun.test(sp.getSequencerRunName()))
           .map(
               sp -> {
                 final String runDirectory = runDirectories.get(sp.getSequencerRunName());
@@ -185,40 +186,40 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 }
                 final Set<String> badSetInRecord = new TreeSet<>();
                 final PineryIUSValue result =
-                    new PineryIUSValue( //
-                        Paths.get(runDirectory), //
-                        sp.getStudyTitle(), //
-                        sp.getSampleName(), //
-                        sp.getRootSampleName(), //
+                    new PineryIUSValue(
+                        Paths.get(runDirectory),
+                        sp.getStudyTitle(),
+                        limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
+                        sp.getSampleName(),
+                        sp.getRootSampleName(),
                         new Tuple(
                             sp.getSequencerRunName(),
                             IUSUtils.parseLaneNumber(sp.getLaneNumber()),
-                            sp.getIusTag()), //
+                            sp.getIusTag()),
                         limsAttr(sp, "geo_library_source_template_type", badSetInRecord::add, true)
-                            .orElse(""), //
-                        limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""), //
-                        limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""), //
+                            .orElse(""),
+                        limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""),
+                        limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""),
                         limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false)
-                            .orElse(""), //
+                            .orElse(""),
                         limsAttr(sp, "geo_targeted_resequencing", badSetInRecord::add, false)
-                            .orElse(""), //
-                        limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false)
-                            .orElse(""), //
-                        limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""), //
+                            .orElse(""),
+                        limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false).orElse(""),
+                        limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""),
                         limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
-                            .orElse(""), //
+                            .orElse(""),
                         limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false)
                             .map(IUSUtils::parseLong)
-                            .orElse(0L), //
-                        limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""), //
-                        limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""), //
+                            .orElse(0L),
+                        limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""),
+                        limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
                         sp.getLastModified() == null
                             ? Instant.EPOCH
-                            : sp.getLastModified().toInstant(), //
-                        new Tuple(sp.getSampleProvenanceId(), sp.getVersion(), provider), //
+                            : sp.getLastModified().toInstant(),
+                        new Tuple(sp.getSampleProvenanceId(), sp.getVersion(), provider),
                         sp.getCreatedDate() == null
                             ? Instant.EPOCH
-                            : sp.getCreatedDate().toInstant(), //
+                            : sp.getCreatedDate().toInstant(),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
@@ -227,7 +228,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                   badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
                   return null;
                 }
-              }) //
+              })
           .filter(Objects::nonNull);
     }
 
@@ -267,9 +268,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       description = "Projects marked active from in Pinery defined in {file}.")
   public Set<String> activeProjects() {
     return projects
-        .get() //
-        .filter(SampleProjectDto::isActive) //
-        .map(SampleProjectDto::getName) //
+        .get()
+        .filter(SampleProjectDto::isActive)
+        .map(SampleProjectDto::getName)
         .collect(Collectors.toSet());
   }
 
@@ -278,10 +279,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       type = "as",
       description = "All projects from in Pinery defined in {file}.")
   public Set<String> allProjects() {
-    return projects
-        .get() //
-        .map(SampleProjectDto::getName) //
-        .collect(Collectors.toSet());
+    return projects.get().map(SampleProjectDto::getName).collect(Collectors.toSet());
   }
 
   @Override

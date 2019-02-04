@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Objects;
 
 /** IUS information from Pinery */
 public final class PineryIUSValue {
@@ -19,6 +20,7 @@ public final class PineryIUSValue {
   private final long library_size;
   private final String library_type;
   private final Tuple lims;
+  private final String organism;
   private final Path path;
   private final String project;
   private final String targeted_resequencing;
@@ -28,29 +30,31 @@ public final class PineryIUSValue {
   private final String tissue_region;
   private final String tissue_type;
 
-  public PineryIUSValue( //
-      Path path, //
-      String project, //
-      String library_name, //
+  public PineryIUSValue(
+      Path path,
+      String project,
+      String organism,
+      String library_name,
       String donor,
-      Tuple ius, //
-      String library_design, //
-      String tissue_type, //
-      String tissue_origin, //
-      String tissue_prep, //
-      String targeted_resequencing, //
-      String tissue_region, //
-      String group_id, //
-      String group_desc, //
-      long library_size, //
-      String library_type, //
-      String kit, //
-      Instant timestamp, //
-      Tuple lims, //
-      Instant completed_date, //
+      Tuple ius,
+      String library_design,
+      String tissue_type,
+      String tissue_origin,
+      String tissue_prep,
+      String targeted_resequencing,
+      String tissue_region,
+      String group_id,
+      String group_desc,
+      long library_size,
+      String library_type,
+      String kit,
+      Instant timestamp,
+      Tuple lims,
+      Instant completed_date,
       boolean is_sample) {
     super();
     this.path = path;
+    this.organism = organism;
     this.is_sample = is_sample;
     this.project = project;
     this.library_name = library_name;
@@ -82,128 +86,32 @@ public final class PineryIUSValue {
     return donor;
   }
 
-  @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final PineryIUSValue other = (PineryIUSValue) obj;
-    if (donor == null) {
-      if (other.donor != null) {
-        return false;
-      }
-    } else if (!donor.equals(other.donor)) {
-      return false;
-    }
-    if (group_desc == null) {
-      if (other.group_desc != null) {
-        return false;
-      }
-    } else if (!group_desc.equals(other.group_desc)) {
-      return false;
-    }
-    if (group_id == null) {
-      if (other.group_id != null) {
-        return false;
-      }
-    } else if (!group_id.equals(other.group_id)) {
-      return false;
-    }
-    if (ius == null) {
-      if (other.ius != null) {
-        return false;
-      }
-    } else if (!ius.equals(other.ius)) {
-      return false;
-    }
-    if (library_design == null) {
-      if (other.library_design != null) {
-        return false;
-      }
-    } else if (!library_design.equals(other.library_design)) {
-      return false;
-    }
-    if (library_name == null) {
-      if (other.library_name != null) {
-        return false;
-      }
-    } else if (!library_name.equals(other.library_name)) {
-      return false;
-    }
-    if (library_size != other.library_size) {
-      return false;
-    }
-    if (library_type == null) {
-      if (other.library_type != null) {
-        return false;
-      }
-    } else if (!library_type.equals(other.library_type)) {
-      return false;
-    }
-    if (path == null) {
-      if (other.path != null) {
-        return false;
-      }
-    } else if (!path.equals(other.path)) {
-      return false;
-    }
-    if (project == null) {
-      if (other.project != null) {
-        return false;
-      }
-    } else if (!project.equals(other.project)) {
-      return false;
-    }
-    if (targeted_resequencing == null) {
-      if (other.targeted_resequencing != null) {
-        return false;
-      }
-    } else if (!targeted_resequencing.equals(other.targeted_resequencing)) {
-      return false;
-    }
-    if (timestamp == null) {
-      if (other.timestamp != null) {
-        return false;
-      }
-    } else if (!timestamp.equals(other.timestamp)) {
-      return false;
-    }
-    if (tissue_origin == null) {
-      if (other.tissue_origin != null) {
-        return false;
-      }
-    } else if (!tissue_origin.equals(other.tissue_origin)) {
-      return false;
-    }
-    if (tissue_prep == null) {
-      if (other.tissue_prep != null) {
-        return false;
-      }
-    } else if (!tissue_prep.equals(other.tissue_prep)) {
-      return false;
-    }
-    if (tissue_region == null) {
-      if (other.tissue_region != null) {
-        return false;
-      }
-    } else if (!tissue_region.equals(other.tissue_region)) {
-      return false;
-    }
-    if (tissue_type == null) {
-      if (other.tissue_type != null) {
-        return false;
-      }
-    } else if (!tissue_type.equals(other.tissue_type)) {
-      return false;
-    }
-    return true;
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    PineryIUSValue that = (PineryIUSValue) o;
+    return is_sample == that.is_sample
+        && library_size == that.library_size
+        && completed_date.equals(that.completed_date)
+        && donor.equals(that.donor)
+        && group_desc.equals(that.group_desc)
+        && group_id.equals(that.group_id)
+        && ius.equals(that.ius)
+        && kit.equals(that.kit)
+        && library_design.equals(that.library_design)
+        && library_name.equals(that.library_name)
+        && library_type.equals(that.library_type)
+        && lims.equals(that.lims)
+        && path.equals(that.path)
+        && organism.equals(that.organism)
+        && project.equals(that.project)
+        && targeted_resequencing.equals(that.targeted_resequencing)
+        && timestamp.equals(that.timestamp)
+        && tissue_origin.equals(that.tissue_origin)
+        && tissue_prep.equals(that.tissue_prep)
+        && tissue_region.equals(that.tissue_region)
+        && tissue_type.equals(that.tissue_type);
   }
 
   @ShesmuVariable(signable = true)
@@ -216,29 +124,30 @@ public final class PineryIUSValue {
     return group_id;
   }
 
-  @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + (donor == null ? 0 : donor.hashCode());
-    result = prime * result + (group_desc == null ? 0 : group_desc.hashCode());
-    result = prime * result + (group_id == null ? 0 : group_id.hashCode());
-    result = prime * result + (ius == null ? 0 : ius.hashCode());
-    result = prime * result + (library_design == null ? 0 : library_design.hashCode());
-    result = prime * result + (library_name == null ? 0 : library_name.hashCode());
-    result = prime * result + (int) (library_size ^ library_size >>> 32);
-    result = prime * result + (library_type == null ? 0 : library_type.hashCode());
-    result = prime * result + (path == null ? 0 : path.hashCode());
-    result = prime * result + (project == null ? 0 : project.hashCode());
-    result =
-        prime * result + (targeted_resequencing == null ? 0 : targeted_resequencing.hashCode());
-    result = prime * result + (timestamp == null ? 0 : timestamp.hashCode());
-    result = prime * result + (tissue_origin == null ? 0 : tissue_origin.hashCode());
-    result = prime * result + (tissue_prep == null ? 0 : tissue_prep.hashCode());
-    result = prime * result + (tissue_region == null ? 0 : tissue_region.hashCode());
-    result = prime * result + (tissue_type == null ? 0 : tissue_type.hashCode());
-    return result;
+    return Objects.hash(
+        completed_date,
+        donor,
+        group_desc,
+        group_id,
+        is_sample,
+        ius,
+        kit,
+        library_design,
+        library_name,
+        library_size,
+        library_type,
+        lims,
+        path,
+        organism,
+        project,
+        targeted_resequencing,
+        timestamp,
+        tissue_origin,
+        tissue_prep,
+        tissue_region,
+        tissue_type);
   }
 
   @ShesmuVariable
@@ -279,6 +188,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(type = "t3sss")
   public Tuple lims() {
     return lims;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String organism() {
+    return organism;
   }
 
   @ShesmuVariable
