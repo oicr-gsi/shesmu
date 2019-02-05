@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.net.URI;
+import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -73,14 +74,6 @@ public abstract class BaseTicketAction extends Action {
     this.connection = connection;
   }
 
-  protected final ActionState badIssue() {
-    issueBad.labels(connection.url()).inc();
-    issueUrl = null;
-    return ActionState.FAILED;
-  }
-
-  protected abstract Comment comment();
-
   protected final ActionState createIssue(ActionServices services, String description) {
     if (services.isOverloaded("jira", connection.projectKey())) {
       return ActionState.THROTTLED;
@@ -93,10 +86,9 @@ public abstract class BaseTicketAction extends Action {
     issueType.put("name", type);
     final IssueInput input =
         IssueInput.createWithFields(
-            new FieldInput(
-                IssueFieldId.PROJECT_FIELD, new ComplexIssueInputFieldValue(project)), //
-            new FieldInput(IssueFieldId.SUMMARY_FIELD, summary), //
-            new FieldInput(IssueFieldId.DESCRIPTION_FIELD, description), //
+            new FieldInput(IssueFieldId.PROJECT_FIELD, new ComplexIssueInputFieldValue(project)),
+            new FieldInput(IssueFieldId.SUMMARY_FIELD, asciiOnly(summary)),
+            new FieldInput(IssueFieldId.DESCRIPTION_FIELD, asciiOnly(description)),
             new FieldInput(
                 IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)));
 
@@ -113,6 +105,10 @@ public abstract class BaseTicketAction extends Action {
     connection.invalidate();
     issues.add(result.getKey());
     return ActionState.SUCCEEDED;
+  }
+
+  private String asciiOnly(String value) {
+    return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("[^\\x00-\\x7F]", "");
   }
 
   @Override
@@ -224,7 +220,8 @@ public abstract class BaseTicketAction extends Action {
    * is allowed for the issue and doesn't require any input. It then attempts to change the issue in
    * JIRA.
    */
-  private final Optional<ActionState> transitionIssue(ActionServices services, Issue issue) {
+  private final Optional<ActionState> transitionIssue(
+      ActionServices services, Issue issue, Comment comment) {
     if (isInTargetState(issue)) {
       return Optional.of(ActionState.SUCCEEDED);
     }
@@ -244,7 +241,7 @@ public abstract class BaseTicketAction extends Action {
               connection
                   .client()
                   .getIssueClient()
-                  .transition(issue, new TransitionInput(t.getId(), comment()))
+                  .transition(issue, new TransitionInput(t.getId(), comment))
                   .claim();
               connection.invalidate();
               issues.add(issue.getKey());
@@ -259,14 +256,16 @@ public abstract class BaseTicketAction extends Action {
    * The {@link #processTransition(Optional, Supplier)} decides how to proceed at each step allow
    * all of the actions to be processed; or only some.
    */
-  protected final ActionState transitionIssues(ActionServices services, Stream<Issue> issues) {
-    return issues //
+  protected final ActionState transitionIssues(
+      ActionServices services, Stream<Issue> issues, String commentText) {
+    final Comment comment = commentText == null ? null : Comment.valueOf(asciiOnly(commentText));
+    return issues
         .sorted(Comparator.comparingInt(issue -> isInTargetState(issue) ? 0 : 1))
         .<Optional<ActionState>>reduce(
-            emptyTransitionState, //
-            (acc, issue) -> processTransition(acc, () -> transitionIssue(services, issue)), //
+            emptyTransitionState,
+            (acc, issue) -> processTransition(acc, () -> transitionIssue(services, issue, comment)),
             (a, b) ->
-                Utils.merge(a, b, (aa, bb) -> aa.sortPriority() > bb.sortPriority() ? aa : bb)) //
+                Utils.merge(a, b, (aa, bb) -> aa.sortPriority() > bb.sortPriority() ? aa : bb))
         .orElse(ActionState.FAILED);
   }
 }
