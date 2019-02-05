@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.jira;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import java.util.List;
 import java.util.Optional;
@@ -21,11 +20,6 @@ public final class FileTicket extends BaseTicketAction {
   }
 
   @Override
-  protected Comment comment() {
-    return null;
-  }
-
-  @Override
   protected boolean isInTargetState(Stream<String> closedStates, Predicate<String> matchesIssue) {
     return closedStates.noneMatch(matchesIssue);
   }
@@ -36,7 +30,7 @@ public final class FileTicket extends BaseTicketAction {
     if (matches.isEmpty()) {
       return createIssue(services, description);
     }
-    return transitionIssues(services, matches.stream());
+    return transitionIssues(services, matches.stream(), null);
   }
 
   /**

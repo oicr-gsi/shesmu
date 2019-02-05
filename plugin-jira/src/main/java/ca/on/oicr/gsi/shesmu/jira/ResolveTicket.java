@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import com.atlassian.jira.rest.client.api.domain.Comment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -20,18 +19,13 @@ public final class ResolveTicket extends BaseTicketAction {
   }
 
   @Override
-  protected Comment comment() {
-    return comment == null ? null : Comment.valueOf(comment);
-  }
-
-  @Override
   protected boolean isInTargetState(Stream<String> closedStates, Predicate<String> matchesIssue) {
     return closedStates.anyMatch(matchesIssue);
   }
 
   @Override
   protected ActionState perform(ActionServices services, Stream<Issue> issues) {
-    return transitionIssues(services, issues);
+    return transitionIssues(services, issues, comment);
   }
 
   /**
