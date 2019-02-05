@@ -24,7 +24,7 @@ public class PackStreaming implements ImyhatConsumer {
     try {
       generator.writeBoolean(value);
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -33,7 +33,7 @@ public class PackStreaming implements ImyhatConsumer {
     try {
       generator.writeNumber(value.toEpochMilli());
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -42,7 +42,7 @@ public class PackStreaming implements ImyhatConsumer {
     try {
       generator.writeNumber(value);
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -51,7 +51,7 @@ public class PackStreaming implements ImyhatConsumer {
     try {
       generator.writeString(value.toString());
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -62,7 +62,7 @@ public class PackStreaming implements ImyhatConsumer {
       values.forEach(value -> inner.accept(this, value));
       generator.writeEndArray();
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -71,7 +71,7 @@ public class PackStreaming implements ImyhatConsumer {
     try {
       generator.writeString(value);
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -90,7 +90,7 @@ public class PackStreaming implements ImyhatConsumer {
           });
       generator.writeEndObject();
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 
@@ -103,7 +103,7 @@ public class PackStreaming implements ImyhatConsumer {
           .forEach(field -> field.type().accept(this, field.value()));
       generator.writeEndArray();
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new RuntimeException(e);
     }
   }
 }
