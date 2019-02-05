@@ -22,6 +22,7 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.ratelimit.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.*;
@@ -165,6 +166,11 @@ public final class Server implements ServerConfig, ActionServices {
     compiler = new CompiledGenerator(executor, definitionRepository);
     processor = new ActionProcessor(localname(), pluginManager, this);
     staticActions = new StaticActions(processor, definitionRepository);
+    final InputProvider inputProvider =
+        format ->
+            Stream.concat(
+                    AnnotatedInputFormatDefinition.formats(), Stream.of(pluginManager, processor))
+                .flatMap(source -> source.fetch(format));
     master =
         new MasterRunner(
             compiler,
@@ -205,11 +211,7 @@ public final class Server implements ServerConfig, ActionServices {
                 return processor.accept(labels, annotation, ttl);
               }
             },
-            format ->
-                Stream.concat(
-                        AnnotatedInputFormatDefinition.formats(),
-                        Stream.of(pluginManager, processor))
-                    .flatMap(source -> source.fetch(format)));
+            inputProvider);
 
     add(
         "/",
@@ -1409,8 +1411,7 @@ public final class Server implements ServerConfig, ActionServices {
                     try (OutputStream os = t.getResponseBody();
                         JsonGenerator jGenerator =
                             jfactory.createGenerator(os, JsonEncoding.UTF8)) {
-                      format.writeJson(jGenerator);
-                      jGenerator.close();
+                      format.writeJson(jGenerator, inputProvider);
                     } catch (final IOException e) {
                       e.printStackTrace();
                     } finally {

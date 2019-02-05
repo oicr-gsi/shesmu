@@ -332,7 +332,10 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
               MethodHandleProxies.asInterfaceInstance(
                   JsonFieldWriter.class,
                   MethodHandles.collectArguments(
-                      MH_IMYHAT__ACCEPT.bindTo(type), 0, MH_PACK_STREAMING__CTOR))));
+                      MethodHandles.collectArguments(
+                          MH_IMYHAT__ACCEPT.bindTo(type), 0, MH_PACK_STREAMING__CTOR),
+                      1,
+                      handle.asType(MethodType.methodType(Object.class, Object.class))))));
     }
     local = new AutoUpdatingDirectory<>("." + format.name() + "-input", LocalJsonFile::new);
     remotes = new AutoUpdatingDirectory<>("." + format.name() + "-remote", RemoteJsonSource::new);
@@ -382,21 +385,23 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
         remotes.stream().flatMap(RemoteJsonSource::variables));
   }
 
-  public void writeJson(JsonGenerator generator) throws IOException {
+  public void writeJson(JsonGenerator generator, InputProvider inputProvider) throws IOException {
     generator.writeStartArray();
-    variables.forEach(
-        value -> {
-          try {
-            generator.writeStartObject();
-            generator.writeEndObject();
-            for (Pair<String, JsonFieldWriter> fieldWriter : fieldWriters) {
-              generator.writeFieldName(fieldWriter.first());
-              fieldWriter.second().write(generator, value);
-            }
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    inputProvider
+        .fetch(format.name())
+        .forEach(
+            value -> {
+              try {
+                generator.writeStartObject();
+                for (Pair<String, JsonFieldWriter> fieldWriter : fieldWriters) {
+                  generator.writeFieldName(fieldWriter.first());
+                  fieldWriter.second().write(generator, value);
+                }
+                generator.writeEndObject();
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            });
     generator.writeEndArray();
   }
 }
