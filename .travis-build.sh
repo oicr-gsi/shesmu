@@ -4,16 +4,14 @@ set -eu
 
 case "${JAVA_HOME}" in
 	*8*)
-		PINERY=
 		SONAR=true
 		;;
 	*)
-		PINERY="-pl !plugin-niassa+pinery"
 		SONAR=false
 		;;
 esac
 
-mvn ${PINERY} clean install
+mvn clean install
 echo ${SONAR} ${TRAVIS_PULL_REQUEST}  ${TRAVIS_PULL_REQUEST_SLUG} ${TRAVIS_REPO_SLUG}
 if ${SONAR}
 then
