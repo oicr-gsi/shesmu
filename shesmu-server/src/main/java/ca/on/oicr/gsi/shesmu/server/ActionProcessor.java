@@ -52,7 +52,8 @@ import org.apache.http.client.utils.URIBuilder;
 /**
  * Background process for launching actions and reporting the results
  *
- * <p>This class collects actions and tries to {@link Action#perform()} until successful.
+ * <p>This class collects actions and tries to {@link Action#perform(ActionServices)} until
+ * successful.
  */
 public final class ActionProcessor implements OliveServices, InputProvider {
 
