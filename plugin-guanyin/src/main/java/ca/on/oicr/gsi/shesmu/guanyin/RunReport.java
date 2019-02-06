@@ -143,7 +143,7 @@ public class RunReport extends JsonParameterisedAction {
     request.setEntity(body);
     try (AutoCloseable timer = 观音RequestTime.start(owner.观音Url());
         CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-      if (response.getStatusLine().getStatusCode() != 200) {
+      if (response.getStatusLine().getStatusCode() / 100 != 2) {
         showError(response, "Error from Guanyin: ");
         观音RequestErrors.labels(owner.观音Url()).inc();
         return ActionState.FAILED;
@@ -178,7 +178,7 @@ public class RunReport extends JsonParameterisedAction {
       createRequest.setEntity(body);
       try (AutoCloseable timer = 观音RequestTime.start(owner.观音Url());
           CloseableHttpResponse response = HTTP_CLIENT.execute(createRequest)) {
-        if (response.getStatusLine().getStatusCode() != 200) {
+        if (response.getStatusLine().getStatusCode() / 100 != 2) {
           showError(response, "Error from Guanyin: ");
           观音RequestErrors.labels(owner.观音Url()).inc();
           return ActionState.FAILED;
