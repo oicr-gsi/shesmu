@@ -98,7 +98,7 @@ public final class PluginManager
           Stream<ActionParameterDefinition> parameters) {
         super(name, description, parameters);
         fixedName = name + " action";
-        callsite = installArbitrary(fixedName, handle);
+        callsite = installArbitrary(fixedName, handle.asType(MethodType.methodType(Action.class)));
       }
 
       @Override
@@ -734,10 +734,13 @@ public final class PluginManager
       return CONFIG_FILE_ARBITRARY_BINDINGS.upsert(fixedName, handle);
     }
 
-    private DynamicInvoker installMethod(Method method, String prefix)
+    private DynamicInvoker installMethod(Method method, String prefix, Class<?> returnType)
         throws IllegalAccessException {
       final String mangledMethodName = prefix + method.getName();
-      final MethodHandle handle = fileFormat.lookup().unreflect(method);
+      MethodHandle handle = fileFormat.lookup().unreflect(method);
+      if (returnType != null) {
+        handle = handle.asType(handle.type().changeReturnType(returnType));
+      }
       final String methodDescriptor =
           handle.type().dropParameterTypes(0, 1).toMethodDescriptorString();
       CONFIG_FILE_METHOD_BINDINGS.put(
@@ -770,7 +773,7 @@ public final class PluginManager
                   method.getReturnType().asSubclass(Action.class), fileFormat.lookup())
               .collect(Collectors.toList());
       if (isInstance) {
-        final DynamicInvoker invoker = installMethod(method, "action");
+        final DynamicInvoker invoker = installMethod(method, "action", Action.class);
         actionTemplates.add(
             (instance, path) ->
                 new ActionDefinition(
@@ -807,7 +810,7 @@ public final class PluginManager
 
       if (method.getParameterCount() == offset) {
         if (isInstance) {
-          final DynamicInvoker invoker = installMethod(method, "");
+          final DynamicInvoker invoker = installMethod(method, "", null);
           constantTemplates.add(
               (instanceName, path) ->
                   new ConstantDefinition(
@@ -850,7 +853,7 @@ public final class PluginManager
                     })
                 .toArray(FunctionParameter[]::new);
         if (isInstance) {
-          final DynamicInvoker invoker = installMethod(method, "");
+          final DynamicInvoker invoker = installMethod(method, "", null);
           functionTemplates.add(
               (instanceName, path) ->
                   new FunctionDefinition() {
@@ -913,7 +916,7 @@ public final class PluginManager
                 method.getName(), method.getDeclaringClass().getName(), annotation.type()));
       }
       if (isInstance) {
-        final DynamicInvoker invoker = installMethod(method, "signer");
+        final DynamicInvoker invoker = installMethod(method, "signer", null);
         if (isDynamic) {
           signatureTemplates.add(
               (instance, path) ->
