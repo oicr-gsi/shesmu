@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit;
+package ca.on.oicr.gsi.shesmu.core;
 
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
@@ -8,13 +8,13 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForDynamicSigner;
+import ca.on.oicr.gsi.shesmu.core.signers.JsonSigner;
+import ca.on.oicr.gsi.shesmu.core.signers.SHA1DigestSigner;
+import ca.on.oicr.gsi.shesmu.core.signers.SignatureCount;
+import ca.on.oicr.gsi.shesmu.core.signers.SignatureNames;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.ratelimit.signers.JsonSigner;
-import ca.on.oicr.gsi.shesmu.ratelimit.signers.SHA1DigestSigner;
-import ca.on.oicr.gsi.shesmu.ratelimit.signers.SignatureCount;
-import ca.on.oicr.gsi.shesmu.ratelimit.signers.SignatureNames;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import java.io.PrintStream;
 import java.nio.file.Path;

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit.linker;
+package ca.on.oicr.gsi.shesmu.gitlink;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;

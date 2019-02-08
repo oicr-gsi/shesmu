@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit;
+package ca.on.oicr.gsi.shesmu.core;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;

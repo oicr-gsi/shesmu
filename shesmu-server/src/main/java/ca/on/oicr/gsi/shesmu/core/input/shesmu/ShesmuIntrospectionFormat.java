@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit.input.shesmu;
+package ca.on.oicr.gsi.shesmu.core.input.shesmu;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
 import org.kohsuke.MetaInfServices;

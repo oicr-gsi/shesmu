@@ -2,12 +2,12 @@ package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.Server;
+import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.ratelimit.input.shesmu.ShesmuIntrospectionValue;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
