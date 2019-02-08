@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit.linker;
+package ca.on.oicr.gsi.shesmu.gitlink;
 
 public class GitConfiguration {
   private String prefix;

@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit.constants;
+package ca.on.oicr.gsi.shesmu.core.constants;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;

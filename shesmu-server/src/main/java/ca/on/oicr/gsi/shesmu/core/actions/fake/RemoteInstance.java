@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit.actions.fake;
+package ca.on.oicr.gsi.shesmu.core.actions.fake;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;

@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -10,7 +11,6 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.ratelimit.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;

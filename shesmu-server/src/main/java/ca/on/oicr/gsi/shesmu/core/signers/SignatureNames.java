@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.ratelimit.signers;
+package ca.on.oicr.gsi.shesmu.core.signers;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
