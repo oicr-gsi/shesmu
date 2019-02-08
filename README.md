@@ -166,21 +166,29 @@ A _input format_ is the type of data that Shesmu olives process--that is, the
 variables that are available to Shesmu programs. The actual data comes from a
 matching _input data repository_ and many repositories can provide the same format.
 
-- `gsi_std` is the default format. It contains a mix of analysis provenance
-  information tied back to LIMS provenance data.
+- `pinery_ius` contains lane and sequenced sample information from
+  [Pinery](https://github.com/oicr-gsi/pinery).
+- `cerberus_fp` contains a mix of analysis provenance information tied back to
+	Pinery LIMS provenance data from
+  [Cerberus](https://github.com/oicr-gsi/cerberus) or
+  [PipeDev](https://github.com/oicr-gsi/pipedev).
 - `nabu` has file QC information from [Nabu](https://github.com/oicr-gsi/nabu).
+- `shesmu` provides information about the actions stored in Shesmu.
 
-### Inputs Repositories (_gsi_std_)
+### Inputs Repositories
 This is where Shesmu gets provenance data for olives to ingest. The following
-are available:
+are always available:
 
-- Pinery+SeqWare (in the `source-pinery` directory). Set `PROVENANCE_SETTINGS`
-  to the file containing the provenance settings.
-- JSON files. Create a JSON file ending in `.gsi_std` containing an array of
-  objects. This can be copied from a running Shesmu instance at `/input/gsi_std`.
-- JSON URLs. Create a JSON file ending in `.gsi_std-remote` containing an
+- JSON files. Create a JSON file ending in `.`_format_`-input` containing an array of
+  objects. This can be copied from a running Shesmu instance at `/input/`_format_.
+- JSON URLs. Create a JSON file ending in `.`_format_`-remote` containing an
   object `{"url": ..., "ttl": ...}` where _url_ is the URL to download the data
   and _ttl_ is the number of second to cache the data for.
+
+Each format may offer additional plugins to collect data. `pinery_ius` can be
+fed from Pinery instances defined in `.pinery` files. `cerberus_fp` can be fed
+from Cerberus instances defined in `.cerberus` files and from file provenance
+configuration defined in `.pipedev` files.
 
 ### Constant Inputs
 Constant values can also be included in a Shesmu script. The following are available:

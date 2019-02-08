@@ -14,10 +14,10 @@ _run_.
 First, we need to specify the type of information to be processed. All the
 olives in a file share the same _input format_. At the top of the file:
 
-    Input gsi_std;
+    Input cerberus_fp;
 
 This doesn't specify where the data comes from, but what kind of data will be
-provided. Analysis provenance coupled with LIMS data is known as `gsi_std`.
+provided. Analysis provenance coupled with LIMS data is known as `cerberus_fp`.
 
 Shesmu will find sources that can provide data in this format. Imagine this as
 a large table: the columns will be _variables_ available and the olive will
@@ -886,7 +886,7 @@ so the action that produces the BAM does not need to be re-run. However,
 changing the tissue type affects the variant caller, so it should be triggered
 to rerun even though the input BAM is not changed.
 
-    Input gsi_std;
+    Input cerberus_fp;
     
     Olive
       Where metatype == "application/bam"
@@ -913,7 +913,7 @@ means if there was a sample swap and both tissues belong to a different donor,
 the signatures will change and the action will be different and, therefore,
 re-run, even though the donor is not directly included in the parameters to the
 action.  Not all values are included. The `metatype` is considered immutable in
-the `gsi_std` format and not included in the signature. The input format
+the `cerberus_fp` format and not included in the signature. The input format
 decides what variables may be included in the signature.
 
 Of course, the donor and tissue type could be included as arguments to the
@@ -923,7 +923,7 @@ signature is a short hand that includes the correct information.
 
 Now, suppose we wish to compare possible variants that are in two organs of interest:
 
-    Input gsi_std;
+    Input cerberus_fp;
     
     Olive
       Where metatype == "application/bam"
