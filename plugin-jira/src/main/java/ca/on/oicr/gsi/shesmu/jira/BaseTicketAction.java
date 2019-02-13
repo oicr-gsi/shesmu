@@ -5,15 +5,9 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import com.atlassian.jira.rest.client.api.domain.BasicIssue;
-import com.atlassian.jira.rest.client.api.domain.Comment;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
+import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.Transition.Field;
-import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
-import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
-import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
-import com.atlassian.jira.rest.client.api.domain.input.TransitionInput;
+import com.atlassian.jira.rest.client.api.domain.input.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
@@ -21,8 +15,6 @@ import java.net.URI;
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -74,25 +66,29 @@ public abstract class BaseTicketAction extends Action {
     this.connection = connection;
   }
 
-  protected final ActionState createIssue(ActionServices services, String description) {
+  protected final ActionState createIssue(
+      ActionServices services, String description, String assignee) {
     if (services.isOverloaded("jira", connection.projectKey())) {
       return ActionState.THROTTLED;
     }
     issueCreates.labels(connection.url(), connection.projectKey()).inc();
 
-    final Map<String, Object> project = new HashMap<>();
-    project.put("key", connection.projectKey());
-    final Map<String, Object> issueType = new HashMap<>();
-    issueType.put("name", type);
-    final IssueInput input =
-        IssueInput.createWithFields(
-            new FieldInput(IssueFieldId.PROJECT_FIELD, new ComplexIssueInputFieldValue(project)),
-            new FieldInput(IssueFieldId.SUMMARY_FIELD, asciiOnly(summary)),
-            new FieldInput(IssueFieldId.DESCRIPTION_FIELD, asciiOnly(description)),
-            new FieldInput(
-                IssueFieldId.ISSUE_TYPE_FIELD, new ComplexIssueInputFieldValue(issueType)));
+    final IssueInputBuilder inputBuilder = new IssueInputBuilder();
+    for (IssueType issueType : connection.client().getMetadataClient().getIssueTypes().claim()) {
+      if (issueType.getName().equals(type)) {
+        inputBuilder.setIssueType(issueType);
+        break;
+      }
+    }
+    inputBuilder.setProjectKey(connection.projectKey());
+    inputBuilder.setSummary(asciiOnly(summary));
+    inputBuilder.setDescription(asciiOnly(description));
+    if (assignee != null && !assignee.isEmpty()) {
+      inputBuilder.setAssigneeName(assignee);
+    }
 
-    final BasicIssue result = connection.client().getIssueClient().createIssue(input).claim();
+    final BasicIssue result =
+        connection.client().getIssueClient().createIssue(inputBuilder.build()).claim();
     issueUrl = result.getSelf();
     connection
         .client()

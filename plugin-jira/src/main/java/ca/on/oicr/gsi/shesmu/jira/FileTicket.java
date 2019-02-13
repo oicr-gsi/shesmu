@@ -13,6 +13,9 @@ import java.util.stream.Stream;
 
 public final class FileTicket extends BaseTicketAction {
 
+  @ActionParameter(required = false)
+  public String assignee;
+
   @ActionParameter public String description;
 
   public FileTicket(JiraConnection connection) {
@@ -28,7 +31,7 @@ public final class FileTicket extends BaseTicketAction {
   protected ActionState perform(ActionServices services, Stream<Issue> results) {
     final List<Issue> matches = results.collect(Collectors.toList());
     if (matches.isEmpty()) {
-      return createIssue(services, description);
+      return createIssue(services, description, assignee);
     }
     return transitionIssues(services, matches.stream(), null);
   }
