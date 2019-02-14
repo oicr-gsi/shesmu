@@ -314,7 +314,7 @@ public class RunReport extends JsonParameterisedAction {
   public static String printHexBinary(byte[] data) {
     final StringBuilder buffer = new StringBuilder();
     for (byte b : data) {
-      buffer.append(String.format("%0x", b));
+      buffer.append(String.format("%02x", b));
     }
     return buffer.toString();
   }
