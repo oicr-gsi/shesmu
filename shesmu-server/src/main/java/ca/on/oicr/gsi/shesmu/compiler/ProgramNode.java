@@ -118,7 +118,7 @@ public class ProgramNode {
   }
 
   public int timeout() {
-    AtomicInteger timeout = new AtomicInteger(20);
+    AtomicInteger timeout = new AtomicInteger(20 * 60);
     pragmas.forEach(pragma -> pragma.timeout(timeout));
     return timeout.get();
   }
