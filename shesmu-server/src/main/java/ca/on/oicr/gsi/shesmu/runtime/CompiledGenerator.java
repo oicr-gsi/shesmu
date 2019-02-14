@@ -14,12 +14,9 @@ import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Timer;
-
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -129,6 +126,9 @@ public class CompiledGenerator {
 
   private final ScheduledExecutorService executor;
 
+  private final ExecutorService workExecutor =
+      Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
+
   private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
   private final DefinitionRepository definitionRepository;
 
@@ -206,7 +206,7 @@ public class CompiledGenerator {
                             script.run(consumer, cache);
                             return true;
                           },
-                          executor);
+                          workExecutor);
 
                   // Then create another future that waits for either of the above to finish and
                   // nukes the other
