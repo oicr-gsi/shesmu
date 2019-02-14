@@ -282,8 +282,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @ShesmuInputSource
-  public Stream<PineryIUSValue> stream() {
+  public Stream<PineryIUSValue> streamIUS() {
     return cache.get();
+  }
+
+  @ShesmuInputSource
+  public Stream<PineryProjectValue> streamProjects() {
+    return projects.get().map(PineryProjectValue::new);
   }
 
   @Override
