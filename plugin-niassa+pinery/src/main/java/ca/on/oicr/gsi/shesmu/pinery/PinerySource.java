@@ -28,26 +28,6 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
-  private class ProjectCache extends ValueCache<Stream<SampleProjectDto>> {
-
-    public ProjectCache(Path fileName) {
-      super(
-          "pinery_projects " + fileName.toString(),
-          3600,
-          MergingRecord.by(SampleProjectDto::getName));
-    }
-
-    @Override
-    protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
-      if (!config.isPresent()) return Stream.empty();
-      try (final PineryClient client = new PineryClient(config.get().getUrl())) {
-        return client.getSampleProject().all().stream();
-      }
-    }
-  };
-
   private final class ItemCache extends ValueCache<Stream<PineryIUSValue>> {
     private ItemCache(Path fileName) {
       super("pinery " + fileName.toString(), 30, ReplacingRecord::new);
@@ -231,12 +211,25 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
               })
           .filter(Objects::nonNull);
     }
-
-    @ShesmuInputSource
-    public Stream<PineryIUSValue> stream() {
-      return cache.get();
-    }
   }
+
+  private class ProjectCache extends ValueCache<Stream<SampleProjectDto>> {
+
+    public ProjectCache(Path fileName) {
+      super(
+          "pinery_projects " + fileName.toString(),
+          3600,
+          MergingRecord.by(SampleProjectDto::getName));
+    }
+
+    @Override
+    protected Stream<SampleProjectDto> fetch(Instant lastUpdated) throws Exception {
+      if (!config.isPresent()) return Stream.empty();
+      try (final PineryClient client = new PineryClient(config.get().getUrl())) {
+        return client.getSampleProject().all().stream();
+      }
+    }
+  };
 
   private static Optional<String> limsAttr(
       SampleProvenance sp, String key, Consumer<String> isBad, boolean required) {
@@ -244,17 +237,16 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
   }
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge badSetMap =
       Gauge.build(
               "shesmu_pinery_bad_set",
               "The number of provenace records with sets not containing exactly one item.")
           .labelNames("target", "property", "reason")
           .register();
-
-  private Optional<PineryConfiguration> config = Optional.empty();
-
-  private final ProjectCache projects;
   private final ItemCache cache;
+  private Optional<PineryConfiguration> config = Optional.empty();
+  private final ProjectCache projects;
 
   public PinerySource(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, PineryConfiguration.class);
@@ -287,6 +279,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     final Optional<String> url = config.map(PineryConfiguration::getUrl);
     renderer.link("URL", url.orElse("about:blank"), url.orElse("Unknown"));
     renderer.line("Provider", config.map(PineryConfiguration::getProvider).orElse("Unknown"));
+  }
+
+  @ShesmuInputSource
+  public Stream<PineryIUSValue> stream() {
+    return cache.get();
   }
 
   @Override
