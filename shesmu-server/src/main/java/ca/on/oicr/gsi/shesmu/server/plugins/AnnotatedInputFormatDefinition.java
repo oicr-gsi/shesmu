@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InvalidatableRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
@@ -35,7 +36,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,11 +80,32 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private class LocalJsonFile implements WatchedFileListener {
-    private final Path fileName;
-    private List<Object> values = Collections.emptyList();
+    private final ValueCache<Optional<List<Object>>> values;
+    private volatile boolean dirty = true;
 
     public LocalJsonFile(Path fileName) {
-      this.fileName = fileName;
+      values =
+          new ValueCache<Optional<List<Object>>>(
+              format.name() + " " + fileName,
+              Integer.MAX_VALUE,
+              InvalidatableRecord.checking(l -> dirty, x -> {})) {
+            @Override
+            protected Optional<List<Object>> fetch(Instant lastUpdated) throws Exception {
+              dirty = false;
+              try {
+                List<Object> result =
+                    Stream.of(
+                            RuntimeSupport.MAPPER.readValue(fileName.toFile(), ObjectNode[].class))
+                        .map(AnnotatedInputFormatDefinition.this::readJson)
+                        .collect(Collectors.toList());
+                JsonPluginFile.GOOD_JSON.labels(fileName.toString()).set(1);
+                return Optional.of(result);
+              } catch (Exception e) {
+                JsonPluginFile.GOOD_JSON.labels(fileName.toString()).set(0);
+                throw e;
+              }
+            }
+          };
     }
 
     @Override
@@ -97,21 +118,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
     @Override
     public Optional<Integer> update() {
-      try {
-        values =
-            Stream.of(RuntimeSupport.MAPPER.readValue(fileName.toFile(), ObjectNode[].class))
-                .map(AnnotatedInputFormatDefinition.this::readJson)
-                .collect(Collectors.toList());
-        JsonPluginFile.GOOD_JSON.labels(fileName.toString()).set(1);
-      } catch (Exception e) {
-        e.printStackTrace();
-        JsonPluginFile.GOOD_JSON.labels(fileName.toString()).set(0);
-      }
+      dirty = true;
       return Optional.empty();
     }
 
     public Stream<Object> variables() {
-      return values.stream();
+      return values.get().map(List::stream).orElseGet(Stream::empty);
     }
   }
 
