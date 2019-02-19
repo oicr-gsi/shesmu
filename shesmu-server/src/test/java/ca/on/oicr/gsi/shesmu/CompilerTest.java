@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -72,6 +73,11 @@ public class CompilerTest {
     @Override
     public long retryMinutes() {
       return 0;
+    }
+
+    @Override
+    public boolean search(Pattern query) {
+      return false;
     }
 
     @Override

@@ -530,6 +530,21 @@ function makeFilters() {
   if (locations.length > 0) {
     filters.push({ type: "sourcelocation", locations: locations });
   }
+  const text = document.getElementById("searchText").value.trim();
+  if (text) {
+    const searchType = document.getElementById("searchType");
+    switch (searchType.options[searchType.selectedIndex].value) {
+      case "text":
+        filters.push({ type: "text", matchCase: true, text: text });
+        break;
+      case "texti":
+        filters.push({ type: "text", matchCase: false, text: text });
+        break;
+      case "regex":
+        filters.push({ type: "regex", pattern: text });
+        break;
+    }
+  }
   return filters;
 }
 

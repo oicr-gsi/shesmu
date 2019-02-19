@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /** Translate JSON-formatted queries into Java objects and perform the query */
@@ -81,13 +82,32 @@ public class Query {
     @Type(value = FilterStatus.class, name = "status"),
     @Type(value = FilterAdded.class, name = "added"),
     @Type(value = FilterChecked.class, name = "checked"),
+    @Type(value = FilterRegex.class, name = "regex"),
     @Type(value = FilterSourceFile.class, name = "sourcefile"),
     @Type(value = FilterSourceLocation.class, name = "sourcelocation"),
     @Type(value = FilterStatusChanged.class, name = "statuschanged"),
+    @Type(value = FilterText.class, name = "text"),
     @Type(value = FilterType.class, name = "type")
   })
   public abstract static class FilterJson {
     public abstract Filter convert();
+  }
+
+  public static class FilterRegex extends FilterJson {
+    private String pattern;
+
+    @Override
+    public Filter convert() {
+      return ActionProcessor.textSearch(Pattern.compile(pattern));
+    }
+
+    public String getPattern() {
+      return pattern;
+    }
+
+    public void setPattern(String pattern) {
+      this.pattern = pattern;
+    }
   }
 
   public static class FilterSourceFile extends FilterJson {
@@ -167,6 +187,34 @@ public class Query {
 
     public void setStart(Long start) {
       this.start = start;
+    }
+  }
+
+  public static class FilterText extends FilterJson {
+    private boolean matchCase;
+    private String text;
+
+    @Override
+    public Filter convert() {
+      return ActionProcessor.textSearch(
+          Pattern.compile(
+              "^.*" + Pattern.quote(text) + ".*$", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
+    }
+
+    public String getText() {
+      return text;
+    }
+
+    public boolean isMatchCase() {
+      return matchCase;
+    }
+
+    public void setMatchCase(boolean matchCase) {
+      this.matchCase = matchCase;
+    }
+
+    public void setText(String text) {
+      this.text = text;
     }
   }
 
