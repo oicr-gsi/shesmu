@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -134,6 +135,11 @@ public class RunTest {
     @Override
     public long retryMinutes() {
       return 15;
+    }
+
+    @Override
+    public boolean search(Pattern query) {
+      return false;
     }
 
     @Override

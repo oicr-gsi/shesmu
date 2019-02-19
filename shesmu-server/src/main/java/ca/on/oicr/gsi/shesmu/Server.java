@@ -600,6 +600,35 @@ public final class Server implements ServerConfig, ActionServices {
 
                 writer.writeStartElement("tr");
                 writer.writeStartElement("td");
+                writer.writeCharacters("Text");
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("input");
+                writer.writeAttribute("type", "input");
+                writer.writeAttribute("id", "searchText");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeCharacters(" ");
+                writer.writeStartElement("select");
+                writer.writeAttribute("id", "searchType");
+                writer.writeStartElement("option");
+                writer.writeAttribute("value", "text");
+                writer.writeCharacters("Text (Case-sensitive)");
+                writer.writeEndElement();
+                writer.writeStartElement("option");
+                writer.writeAttribute("value", "texti");
+                writer.writeCharacters("Text (Case-insensitive)");
+                writer.writeEndElement();
+                writer.writeStartElement("option");
+                writer.writeAttribute("value", "regex");
+                writer.writeCharacters("Regular Expression");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
                 writer.writeComment("");
                 writer.writeEndElement();
                 writer.writeStartElement("td");

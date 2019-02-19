@@ -450,6 +450,11 @@ public final class WorkflowAction extends Action {
   }
 
   @Override
+  public boolean search(Pattern query) {
+    return ini.values().stream().anyMatch(v -> query.matcher(v.toString()).matches());
+  }
+
+  @Override
   public final ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put("majorOliveVersion", majorOliveVersion);

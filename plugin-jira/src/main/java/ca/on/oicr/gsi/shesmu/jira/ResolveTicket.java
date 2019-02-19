@@ -8,6 +8,7 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public final class ResolveTicket extends BaseTicketAction {
@@ -37,6 +38,11 @@ public final class ResolveTicket extends BaseTicketAction {
       Optional<ActionState> accumulator, Supplier<Optional<ActionState>> transitionIssue) {
     return Utils.merge(
         accumulator, transitionIssue.get(), (a, b) -> a.sortPriority() > b.sortPriority() ? a : b);
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return query.matcher(summary).matches() || comment != null && query.matcher(comment).matches();
   }
 
   @Override

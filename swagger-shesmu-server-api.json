@@ -28,10 +28,12 @@
           "mapping": {
             "added": "#/components/schemas/FilterAfter",
             "checked": "#/components/schemas/FilterChecked",
+            "regex": "#/components/schemas/FilterRegex",
             "sourcefile": "#/components/schemas/FilterSourceFile",
             "sourcelocation": "#/components/schemas/FilterSourceLocation",
             "status": "#/components/schemas/FilterStatus",
             "statuschanged": "#/components/schemas/FilterStatusChanged",
+            "text": "#/components/schemas/FilterText",
             "type": "#/components/schemas/FilterType"
           },
           "propertyName": "type"
@@ -44,6 +46,9 @@
             "$ref": "#/components/schemas/FilterChecked"
           },
           {
+            "$ref": "#/components/schemas/FilterRegex"
+          },
+          {
             "$ref": "#/components/schemas/FilterSourceFile"
           },
           {
@@ -54,6 +59,9 @@
           },
           {
             "$ref": "#/components/schemas/FilterStatusChanged"
+          },
+          {
+            "$ref": "#/components/schemas/FilterText"
           },
           {
             "$ref": "#/components/schemas/FilterType"
@@ -88,6 +96,15 @@
           },
           "type": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterRegex": {
+        "properties": {
+          "pattern": {
+            "description": "a Java regular expression the action must match",
+            "type": "regex"
           }
         },
         "type": "object"
@@ -160,6 +177,19 @@
           },
           "type": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterText": {
+        "properties": {
+          "text": {
+            "description": "text which must appear in the action",
+            "type": "string"
+          },
+          "matchCase": {
+            "description": "whether the text must match as provided or if the case can be different",
+            "type": "boolean"
           }
         },
         "type": "object"

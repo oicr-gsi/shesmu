@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.regex.Pattern;
 
 public class NothingAction extends Action {
 
@@ -58,6 +59,11 @@ public class NothingAction extends Action {
   @Override
   public long retryMinutes() {
     return 10;
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return query.matcher(value).matches();
   }
 
   @Override

@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
@@ -56,6 +57,28 @@ import org.apache.http.client.utils.URIBuilder;
  * successful.
  */
 public final class ActionProcessor implements OliveServices, InputProvider {
+
+  private interface Bin<T> extends Comparator<T> {
+    long bucket(T min, long width, T value);
+
+    T extract(Entry<Action, Information> input);
+
+    String name();
+
+    JsonNode name(T min, long offset);
+
+    long span(T min, T max);
+  }
+
+  private interface Property<T> {
+    Stream<T> extract(Entry<Action, Information> input);
+
+    JsonNode json(T input);
+
+    String name();
+
+    String name(T input);
+  }
 
   public static final class Alert {
     private Map<String, String> annotations = new TreeMap<>();
@@ -131,18 +154,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     }
   }
 
-  private interface Bin<T> extends Comparator<T> {
-    long bucket(T min, long width, T value);
-
-    T extract(Entry<Action, Information> input);
-
-    String name();
-
-    JsonNode name(T min, long offset);
-
-    long span(T min, T max);
-  }
-
   /** A filter all the actions based on some criteria */
   public abstract static class Filter {
     protected abstract boolean check(Action action, Information info);
@@ -210,190 +221,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
     protected abstract Instant get(Information info);
   }
-
-  private interface Property<T> {
-    Stream<T> extract(Entry<Action, Information> input);
-
-    JsonNode json(T input);
-
-    String name();
-
-    String name(T input);
-  }
-
-  private static final Property<ActionState> ACTION_STATE =
-      new Property<ActionState>() {
-
-        @Override
-        public Stream<ActionState> extract(Entry<Action, Information> input) {
-          return Stream.of(input.getValue().lastState);
-        }
-
-        @Override
-        public JsonNode json(ActionState input) {
-          return JSON_FACTORY.textNode(input.name());
-        }
-
-        @Override
-        public String name() {
-          return "status";
-        }
-
-        @Override
-        public String name(ActionState input) {
-          return input.name();
-        }
-      };
-
-  private static final Gauge actionThrows =
-      Gauge.build(
-              "shesmu_action_perform_throw",
-              "The number of actions that threw an exception in their last attempt.")
-          .register();
-
-  private static final Bin<Instant> ADDED =
-      new InstantBin() {
-
-        @Override
-        public Instant extract(Entry<Action, Information> input) {
-          return input.getValue().lastAdded;
-        }
-
-        @Override
-        public String name() {
-          return "added";
-        }
-      };
-
-  private static final AtomicLong alertIdGenerator = new AtomicLong();
-
-  private static final Bin<Instant> CHECKED =
-      new InstantBin() {
-
-        @Override
-        public Instant extract(Entry<Action, Information> input) {
-          return input.getValue().lastChecked;
-        }
-
-        @Override
-        public String name() {
-          return "checked";
-        }
-      };
-
-  private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
-
-  private static final Gauge lastAdd =
-      Gauge.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
-  private static final Gauge lastRun =
-      Gauge.build("shesmu_action_perform_last_time", "The last time the actions were processed.")
-          .register();
-  private static final Gauge oldest =
-      Gauge.build("shesmu_action_oldest_time", "The oldest action in a particular state.")
-          .labelNames("state")
-          .register();
-
-  private static final Property<String> SOURCE_FILE =
-      new Property<String>() {
-
-        @Override
-        public Stream<String> extract(Entry<Action, Information> input) {
-          return input.getValue().locations.stream().map(SourceLocation::fileName);
-        }
-
-        @Override
-        public JsonNode json(String input) {
-          return JSON_FACTORY.textNode(input);
-        }
-
-        @Override
-        public String name() {
-          return "sourcefile";
-        }
-
-        @Override
-        public String name(String input) {
-          return input;
-        }
-      };
-
-  private static final Property<SourceLocation> SOURCE_LOCATION =
-      new Property<SourceLocation>() {
-
-        @Override
-        public Stream<SourceLocation> extract(Entry<Action, Information> input) {
-          return input.getValue().locations.stream();
-        }
-
-        @Override
-        public JsonNode json(SourceLocation input) {
-          final ObjectNode node = JSON_FACTORY.objectNode();
-          node.put("file", input.fileName());
-          node.put("line", input.line());
-          node.put("column", input.column());
-          node.put("time", input.time().toEpochMilli());
-
-          return node;
-        }
-
-        @Override
-        public String name() {
-          return "sourcelocation";
-        }
-
-        @Override
-        public String name(SourceLocation input) {
-          return String.format(
-              "%s:%d:%d[%s]",
-              input.fileName(),
-              input.line(),
-              input.column(),
-              DateTimeFormatter.ISO_INSTANT.format(input.time()));
-        }
-      };
-
-  private static final Gauge stateCount =
-      Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
-          .labelNames("state")
-          .register();
-
-  private static final Bin<Instant> STATUS_CHANGED =
-      new InstantBin() {
-
-        @Override
-        public Instant extract(Entry<Action, Information> input) {
-          return input.getValue().lastStateTransition;
-        }
-
-        @Override
-        public String name() {
-          return "statuschanged";
-        }
-      };
-
-  private static final Property<String> TYPE =
-      new Property<String>() {
-
-        @Override
-        public Stream<String> extract(Entry<Action, Information> input) {
-          return Stream.of(input.getKey().type());
-        }
-
-        @Override
-        public JsonNode json(String input) {
-          return JSON_FACTORY.textNode(input);
-        }
-
-        @Override
-        public String name() {
-          return "type";
-        }
-
-        @Override
-        public String name(String input) {
-          return input;
-        }
-      };
 
   /**
    * Check that an action was last added in the time range provided
@@ -530,6 +357,20 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     };
   }
 
+  /**
+   * Check that an action matches the regular expression provided
+   *
+   * @param pattern the pattern
+   */
+  public static Filter textSearch(Pattern pattern) {
+    return new Filter() {
+      @Override
+      protected boolean check(Action action, Information info) {
+        return action.search(pattern);
+      }
+    };
+  }
+
   /** Check that an action has one of the types specified */
   public static Filter type(String... types) {
     final Set<String> set = Stream.of(types).collect(Collectors.toSet());
@@ -542,14 +383,175 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     };
   }
 
+  private static final Bin<Instant> ADDED =
+      new InstantBin() {
+
+        @Override
+        public Instant extract(Entry<Action, Information> input) {
+          return input.getValue().lastAdded;
+        }
+
+        @Override
+        public String name() {
+          return "added";
+        }
+      };
+  private static final Bin<Instant> CHECKED =
+      new InstantBin() {
+
+        @Override
+        public Instant extract(Entry<Action, Information> input) {
+          return input.getValue().lastChecked;
+        }
+
+        @Override
+        public String name() {
+          return "checked";
+        }
+      };
+  private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
+  private static final Property<ActionState> ACTION_STATE =
+      new Property<ActionState>() {
+
+        @Override
+        public Stream<ActionState> extract(Entry<Action, Information> input) {
+          return Stream.of(input.getValue().lastState);
+        }
+
+        @Override
+        public JsonNode json(ActionState input) {
+          return JSON_FACTORY.textNode(input.name());
+        }
+
+        @Override
+        public String name() {
+          return "status";
+        }
+
+        @Override
+        public String name(ActionState input) {
+          return input.name();
+        }
+      };
+  private static final Property<String> SOURCE_FILE =
+      new Property<String>() {
+
+        @Override
+        public Stream<String> extract(Entry<Action, Information> input) {
+          return input.getValue().locations.stream().map(SourceLocation::fileName);
+        }
+
+        @Override
+        public JsonNode json(String input) {
+          return JSON_FACTORY.textNode(input);
+        }
+
+        @Override
+        public String name() {
+          return "sourcefile";
+        }
+
+        @Override
+        public String name(String input) {
+          return input;
+        }
+      };
+  private static final Property<SourceLocation> SOURCE_LOCATION =
+      new Property<SourceLocation>() {
+
+        @Override
+        public Stream<SourceLocation> extract(Entry<Action, Information> input) {
+          return input.getValue().locations.stream();
+        }
+
+        @Override
+        public JsonNode json(SourceLocation input) {
+          final ObjectNode node = JSON_FACTORY.objectNode();
+          node.put("file", input.fileName());
+          node.put("line", input.line());
+          node.put("column", input.column());
+          node.put("time", input.time().toEpochMilli());
+
+          return node;
+        }
+
+        @Override
+        public String name() {
+          return "sourcelocation";
+        }
+
+        @Override
+        public String name(SourceLocation input) {
+          return String.format(
+              "%s:%d:%d[%s]",
+              input.fileName(),
+              input.line(),
+              input.column(),
+              DateTimeFormatter.ISO_INSTANT.format(input.time()));
+        }
+      };
+  private static final Bin<Instant> STATUS_CHANGED =
+      new InstantBin() {
+
+        @Override
+        public Instant extract(Entry<Action, Information> input) {
+          return input.getValue().lastStateTransition;
+        }
+
+        @Override
+        public String name() {
+          return "statuschanged";
+        }
+      };
+  private static final Property<String> TYPE =
+      new Property<String>() {
+
+        @Override
+        public Stream<String> extract(Entry<Action, Information> input) {
+          return Stream.of(input.getKey().type());
+        }
+
+        @Override
+        public JsonNode json(String input) {
+          return JSON_FACTORY.textNode(input);
+        }
+
+        @Override
+        public String name() {
+          return "type";
+        }
+
+        @Override
+        public String name(String input) {
+          return input;
+        }
+      };
+  private static final Gauge actionThrows =
+      Gauge.build(
+              "shesmu_action_perform_throw",
+              "The number of actions that threw an exception in their last attempt.")
+          .register();
+  private static final AtomicLong alertIdGenerator = new AtomicLong();
+  private static final Gauge lastAdd =
+      Gauge.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
+  private static final Gauge lastRun =
+      Gauge.build("shesmu_action_perform_last_time", "The last time the actions were processed.")
+          .register();
+  private static final Gauge oldest =
+      Gauge.build("shesmu_action_oldest_time", "The oldest action in a particular state.")
+          .labelNames("state")
+          .register();
+  private static final Gauge stateCount =
+      Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
+          .labelNames("state")
+          .register();
+  private final ActionServices actionServices;
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
-
   private final AutoLock alertLock = new AutoLock();
-
   private final Map<Map<String, String>, Alert> alerts = new HashMap<>();
-
   private final String baseUri;
-
+  private String currentAlerts = "[]";
+  private final PluginManager manager;
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
 
   public ActionProcessor(String baseUri, PluginManager manager, ActionServices actionServices) {
@@ -669,6 +671,33 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     }
   }
 
+  public String currentAlerts() {
+    return currentAlerts;
+  }
+
+  @Override
+  public Stream<Object> fetch(String format) {
+    return format.equals("shesmu")
+        ? actions
+            .entrySet()
+            .stream()
+            .map(
+                entry ->
+                    new ShesmuIntrospectionValue(
+                        entry.getKey(),
+                        entry.getValue().lastStateTransition,
+                        entry.getValue().lastChecked,
+                        entry.getValue().lastAdded,
+                        entry.getValue().lastState,
+                        entry.getValue().locations))
+        : Stream.empty();
+  }
+
+  @Override
+  public Dumper findDumper(String name, Imyhat... types) {
+    return null;
+  }
+
   private <T> void histogram(
       ArrayNode output, int count, List<Entry<Action, Information>> input, Bin<T> bin) {
     final Optional<T> min = input.stream().map(bin::extract).min(bin);
@@ -695,6 +724,11 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       counts.add(buckets[i]);
     }
     boundaries.add(bin.name(max.get(), 0));
+  }
+
+  @Override
+  public boolean isOverloaded(String... services) {
+    return false;
   }
 
   public long purge(Filter... filters) {
@@ -807,15 +841,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
             });
   }
 
-  private String currentAlerts = "[]";
-
-  public String currentAlerts() {
-    return currentAlerts;
-  }
-
-  private final PluginManager manager;
-  private final ActionServices actionServices;
-
   private void update() {
     try (AutoCloseable lock = alertLock.acquire();
         AutoCloseable inflight = Server.inflightCloseable("Push alerts")) {
@@ -877,33 +902,5 @@ public final class ActionProcessor implements OliveServices, InputProvider {
               .getEpochSecond();
       oldest.labels(state.name()).set(time);
     }
-  }
-
-  @Override
-  public Stream<Object> fetch(String format) {
-    return format.equals("shesmu")
-        ? actions
-            .entrySet()
-            .stream()
-            .map(
-                entry ->
-                    new ShesmuIntrospectionValue(
-                        entry.getKey(),
-                        entry.getValue().lastStateTransition,
-                        entry.getValue().lastChecked,
-                        entry.getValue().lastAdded,
-                        entry.getValue().lastState,
-                        entry.getValue().locations))
-        : Stream.empty();
-  }
-
-  @Override
-  public boolean isOverloaded(String... services) {
-    return false;
-  }
-
-  @Override
-  public Dumper findDumper(String name, Imyhat... types) {
-    return null;
   }
 }

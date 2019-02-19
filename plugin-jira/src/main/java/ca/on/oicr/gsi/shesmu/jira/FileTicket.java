@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,11 @@ public final class FileTicket extends BaseTicketAction {
   protected Optional<ActionState> processTransition(
       Optional<ActionState> accumulator, Supplier<Optional<ActionState>> transitionIssue) {
     return accumulator.isPresent() ? accumulator : transitionIssue.get();
+  }
+
+  @Override
+  public boolean search(Pattern query) {
+    return query.matcher(summary).matches() || query.matcher(description).matches();
   }
 
   @Override

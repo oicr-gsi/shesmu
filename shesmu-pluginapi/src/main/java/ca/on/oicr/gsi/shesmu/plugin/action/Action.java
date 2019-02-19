@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.regex.Pattern;
 
 /**
  * An action that can be performed as a result of the decision-making process
@@ -59,6 +60,9 @@ public abstract class Action {
    * return a constant.
    */
   public abstract long retryMinutes();
+
+  /** Check if the action matches the regex query supplied by the user */
+  public abstract boolean search(Pattern query);
 
   /**
    * Render the action to JSON for display by the front end.
