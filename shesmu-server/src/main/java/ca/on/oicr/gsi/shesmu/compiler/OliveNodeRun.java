@@ -91,10 +91,15 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 
   @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+    final Set<String> captures = new HashSet<>();
+    arguments.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
     final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
-    final Renderer action = oliveBuilder.finish("Run " + actionName);
+    final Renderer action =
+        oliveBuilder.finish(
+            "Run " + actionName,
+            oliveBuilder.loadableValues().filter(v -> captures.contains(v.name())));
     action.methodGen().visitCode();
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     definition.initialize(action.methodGen());

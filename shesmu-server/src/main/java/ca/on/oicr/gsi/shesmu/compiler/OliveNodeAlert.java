@@ -154,10 +154,17 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 
   @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+    final Set<String> captures = new HashSet<>();
+    ttl.collectFreeVariables(captures, Flavour::needsCapture);
+    labels.forEach(label -> label.collectFreeVariables(captures, Flavour::needsCapture));
+    annotations.forEach(
+        annotation -> annotation.collectFreeVariables(captures, Flavour::needsCapture));
     final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
-    final Renderer action = oliveBuilder.finish("Alert");
+    final Renderer action =
+        oliveBuilder.finish(
+            "Alert", oliveBuilder.loadableValues().filter(v -> captures.contains(v.name())));
     action.methodGen().visitCode();
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
 

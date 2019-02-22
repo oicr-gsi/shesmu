@@ -124,7 +124,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
    * <p>Consume an action from the stack and queue to be executed by the server
    *
    * @param methodGen the method generator, which must be the method generator produced by {@link
-   *     #finish()}
+   *     #finish(String,Stream)}
    */
   public void emitAction(GeneratorAdapter methodGen, int local) {
     methodGen.loadArg(0);
@@ -183,73 +183,72 @@ public final class OliveBuilder extends BaseOliveBuilder {
           false);
 
   /** Generate bytecode for the olive and create a method to consume the result. */
-  public final Renderer finish(String actionName) {
-    final GeneratorAdapter runMethod = owner.rootRenderer(true).methodGen();
-    final int startTime = runMethod.newLocal(LONG_TYPE);
-    runMethod.invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
-    runMethod.storeLocal(startTime);
+  public final Renderer finish(String actionName, Stream<LoadableValue> captures) {
+    final LambdaBuilder consumer =
+        new LambdaBuilder(
+            owner,
+            String.format("%s %d:%d", actionName, line, column),
+            LambdaBuilder.consumer(currentType()),
+            Stream.concat(
+                    Stream.of(
+                        new LoadableValue() {
+                          @Override
+                          public String name() {
+                            return "Olive Services";
+                          }
 
-    runMethod.loadArg(1);
-    runMethod.push(initialFormat.name());
-    runMethod.invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
+                          @Override
+                          public Type type() {
+                            return A_ACTION_CONSUMER_TYPE;
+                          }
+
+                          @Override
+                          public void accept(Renderer renderer) {
+                            renderer.methodGen().loadArg(0);
+                          }
+                        }),
+                    captures)
+                .toArray(LoadableValue[]::new));
+    final Renderer runMethod = owner.rootRenderer(true);
+    final int startTime = runMethod.methodGen().newLocal(LONG_TYPE);
+    runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
+    runMethod.methodGen().storeLocal(startTime);
+
+    runMethod.methodGen().loadArg(1);
+    runMethod.methodGen().push(initialFormat.name());
+    runMethod.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
     steps.forEach(step -> step.accept(owner.rootRenderer(true)));
 
-    runMethod.dup();
+    runMethod.methodGen().dup();
 
-    runMethod.loadThis();
-    runMethod.loadArg(0);
-    final Method method =
-        new Method(
-            String.format("%s %d:%d", actionName, line, column),
-            VOID_TYPE,
-            new Type[] {A_CONSUMER_TYPE, currentType()});
-    final Handle handle =
-        new Handle(
-            Opcodes.H_INVOKEVIRTUAL,
-            owner.selfType().getInternalName(),
-            method.getName(),
-            method.getDescriptor(),
-            false);
-    runMethod.invokeDynamic(
-        "accept",
-        Type.getMethodDescriptor(A_CONSUMER_TYPE, owner.selfType(), A_CONSUMER_TYPE),
-        LAMBDA_METAFACTORY_BSM,
-        Type.getMethodType(VOID_TYPE, A_OBJECT_TYPE),
-        handle,
-        Type.getMethodType(VOID_TYPE, currentType()));
-    runMethod.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
+    consumer.push(runMethod);
+    runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
 
-    runMethod.invokeInterface(A_STREAM_TYPE, METHOD_STREAM__CLOSE);
+    runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__CLOSE);
 
-    runMethod.getStatic(A_ACTION_GENERATOR_TYPE, "OLIVE_RUN_TIME", A_GAUGE_TYPE);
-    runMethod.push(2);
-    runMethod.newArray(A_STRING_TYPE);
-    runMethod.dup();
-    runMethod.push(0);
-    runMethod.push(owner.sourcePath());
-    runMethod.arrayStore(A_STRING_TYPE);
-    runMethod.dup();
-    runMethod.push(1);
-    runMethod.push(Integer.toString(line));
-    runMethod.arrayStore(A_STRING_TYPE);
-    runMethod.invokeVirtual(A_GAUGE_TYPE, METHOD_GAUGE__LABELS);
-    runMethod.checkCast(A_CHILD_TYPE);
-    runMethod.invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
-    runMethod.loadLocal(startTime);
-    runMethod.math(GeneratorAdapter.SUB, LONG_TYPE);
-    runMethod.cast(LONG_TYPE, DOUBLE_TYPE);
-    runMethod.push(Collector.NANOSECONDS_PER_SECOND);
-    runMethod.math(GeneratorAdapter.DIV, DOUBLE_TYPE);
-    runMethod.invokeVirtual(A_CHILD_TYPE, METHOD_CHILD__SET);
+    runMethod.methodGen().getStatic(A_ACTION_GENERATOR_TYPE, "OLIVE_RUN_TIME", A_GAUGE_TYPE);
+    runMethod.methodGen().push(2);
+    runMethod.methodGen().newArray(A_STRING_TYPE);
+    runMethod.methodGen().dup();
+    runMethod.methodGen().push(0);
+    runMethod.methodGen().push(owner.sourcePath());
+    runMethod.methodGen().arrayStore(A_STRING_TYPE);
+    runMethod.methodGen().dup();
+    runMethod.methodGen().push(1);
+    runMethod.methodGen().push(Integer.toString(line));
+    runMethod.methodGen().arrayStore(A_STRING_TYPE);
+    runMethod.methodGen().invokeVirtual(A_GAUGE_TYPE, METHOD_GAUGE__LABELS);
+    runMethod.methodGen().checkCast(A_CHILD_TYPE);
+    runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
+    runMethod.methodGen().loadLocal(startTime);
+    runMethod.methodGen().math(GeneratorAdapter.SUB, LONG_TYPE);
+    runMethod.methodGen().cast(LONG_TYPE, DOUBLE_TYPE);
+    runMethod.methodGen().push(Collector.NANOSECONDS_PER_SECOND);
+    runMethod.methodGen().math(GeneratorAdapter.DIV, DOUBLE_TYPE);
+    runMethod.methodGen().invokeVirtual(A_CHILD_TYPE, METHOD_CHILD__SET);
 
-    return new Renderer(
-        owner,
-        new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-        1,
-        currentType(),
-        loadableValues(),
-        this::emitSigner);
+    return consumer.renderer(currentType(), this::emitSigner);
   }
 
   @Override

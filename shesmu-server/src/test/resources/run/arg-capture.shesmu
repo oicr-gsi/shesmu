@@ -1,0 +1,5 @@
+Input test;
+
+foo = True;
+
+Olive Run ok With ok = foo;
