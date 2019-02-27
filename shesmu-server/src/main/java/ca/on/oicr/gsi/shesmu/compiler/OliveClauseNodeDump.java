@@ -130,7 +130,7 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
       renderer.methodGen().dup();
       renderer.methodGen().push(it);
       columns.get(it).render(renderer);
-      renderer.methodGen().box(columns.get(it).type().apply(TypeUtils.TO_ASM));
+      renderer.methodGen().valueOf(columns.get(it).type().apply(TypeUtils.TO_ASM));
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
     renderer.methodGen().invokeInterface(A_DUMPER_TYPE, DUMPER__WRITE);

@@ -57,7 +57,7 @@ public class ExpressionNodeObject extends ExpressionNode {
               renderer.methodGen().dup();
               renderer.methodGen().push(index.getAndIncrement());
               field.second().render(renderer);
-              renderer.methodGen().box(field.second().type().apply(TypeUtils.TO_ASM));
+              renderer.methodGen().valueOf(field.second().type().apply(TypeUtils.TO_ASM));
               renderer.methodGen().arrayStore(A_OBJECT_TYPE);
             });
     renderer.mark(line());

@@ -46,7 +46,7 @@ public abstract class SignatureVariableForDynamicSigner extends SignatureDefinit
                 initialType,
                 new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
           }
-          method.box(target.type().apply(TypeUtils.TO_ASM));
+          method.valueOf(target.type().apply(TypeUtils.TO_ASM));
           method.invokeInterface(A_DYNAMIC_SIGNER_TYPE, METHOD_DYNAMIC_SIGNER__ADD_VARIABLE);
         });
     method.invokeInterface(A_DYNAMIC_SIGNER_TYPE, METHOD_DYNAMIC_SIGNER__FINISH);
