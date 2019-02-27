@@ -42,7 +42,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
           .methodGen()
           .invokeVirtual(self, new Method(fieldName, A_SET_TYPE, new Type[] {}));
       loader.accept(collectRenderer);
-      collectRenderer.methodGen().box(valueType.apply(TypeUtils.TO_ASM));
+      collectRenderer.methodGen().valueOf(valueType.apply(TypeUtils.TO_ASM));
       collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
       collectRenderer.methodGen().pop();
     }

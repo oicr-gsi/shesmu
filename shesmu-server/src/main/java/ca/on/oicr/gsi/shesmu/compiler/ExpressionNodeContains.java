@@ -40,7 +40,7 @@ public class ExpressionNodeContains extends ExpressionNode {
     needle.render(renderer);
     renderer.mark(line());
 
-    renderer.methodGen().box(needle.type().apply(TypeUtils.TO_ASM));
+    renderer.methodGen().valueOf(needle.type().apply(TypeUtils.TO_ASM));
     renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__CONTAINS);
   }
 

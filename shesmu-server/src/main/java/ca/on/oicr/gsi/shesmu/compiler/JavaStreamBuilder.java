@@ -475,7 +475,7 @@ public final class JavaStreamBuilder {
 
     finish();
     initial.accept(renderer);
-    renderer.methodGen().box(accumulatorType.apply(TypeUtils.TO_ASM));
+    renderer.methodGen().valueOf(accumulatorType.apply(TypeUtils.TO_ASM));
     renderer.methodGen().loadThis();
     Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
     renderer.loadStream();

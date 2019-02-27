@@ -115,7 +115,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
                 .toArray(LoadableValue[]::new));
     extractorMethod.methodGen().visitCode();
     extractor.render(extractorMethod);
-    extractorMethod.methodGen().box(extractor.type().apply(TypeUtils.TO_ASM));
+    extractorMethod.methodGen().valueOf(extractor.type().apply(TypeUtils.TO_ASM));
     extractorMethod.methodGen().returnValue();
     extractorMethod.methodGen().visitMaxs(0, 0);
     extractorMethod.methodGen().visitEnd();

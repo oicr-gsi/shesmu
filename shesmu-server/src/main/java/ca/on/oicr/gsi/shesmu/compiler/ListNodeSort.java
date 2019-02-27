@@ -10,7 +10,7 @@ public class ListNodeSort extends ListNodeWithExpression {
 
   @Override
   protected void finishMethod(Renderer renderer) {
-    renderer.methodGen().box(expression.type().apply(TypeUtils.TO_ASM));
+    renderer.methodGen().valueOf(expression.type().apply(TypeUtils.TO_ASM));
   }
 
   @Override

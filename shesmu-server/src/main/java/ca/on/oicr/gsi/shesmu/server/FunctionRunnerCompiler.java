@@ -126,7 +126,7 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
               handle.unbox(type.second().apply(TypeUtils.TO_ASM));
             });
     function.render(handle);
-    handle.box(function.returnType().apply(TypeUtils.TO_ASM));
+    handle.valueOf(function.returnType().apply(TypeUtils.TO_ASM));
     handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__ACCEPT_OBJ);
     handle.visitInsn(Opcodes.RETURN);
     handle.visitMaxs(0, 0);

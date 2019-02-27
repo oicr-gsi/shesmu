@@ -75,7 +75,7 @@ public abstract class ConstantDefinition implements Target {
       handle.push("value");
       handle.invokeConstructor(A_PACK_JSON_OBJECT_TYPE, PACK_JSON_OBJECT_CTOR);
       ConstantDefinition.this.load(handle);
-      handle.box(type.apply(TypeUtils.TO_ASM));
+      handle.valueOf(type.apply(TypeUtils.TO_ASM));
       handle.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__ACCEPT_OBJ);
       handle.visitInsn(Opcodes.RETURN);
       handle.visitMaxs(0, 0);

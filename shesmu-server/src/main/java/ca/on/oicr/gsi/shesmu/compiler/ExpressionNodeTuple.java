@@ -47,7 +47,7 @@ public class ExpressionNodeTuple extends ExpressionNode {
       renderer.methodGen().dup();
       renderer.methodGen().push(index);
       items.get(index).render(renderer);
-      renderer.methodGen().box(items.get(index).type().apply(TypeUtils.TO_ASM));
+      renderer.methodGen().valueOf(items.get(index).type().apply(TypeUtils.TO_ASM));
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
     renderer.mark(line());

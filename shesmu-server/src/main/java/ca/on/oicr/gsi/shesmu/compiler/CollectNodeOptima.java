@@ -16,7 +16,7 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 
   @Override
   protected void finishMethod(Renderer renderer) {
-    renderer.methodGen().box(selector.type().apply(TypeUtils.TO_ASM));
+    renderer.methodGen().valueOf(selector.type().apply(TypeUtils.TO_ASM));
   }
 
   @Override
