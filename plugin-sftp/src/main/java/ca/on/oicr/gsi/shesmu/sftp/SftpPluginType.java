@@ -23,6 +23,7 @@ public class SftpPluginType extends PluginFileType<SftpServer> {
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    // No actions.
+    writer.println(
+        "actionRender.set('sftp-symlink', a => [title(a, `Create Symlink on ${a.instance}`), text(`${a.link} → ${a.target}`)])");
   }
 }
