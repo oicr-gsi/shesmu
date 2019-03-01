@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InvalidatableRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
@@ -10,18 +12,16 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.prometheus.client.Counter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import javax.xml.stream.XMLStreamException;
 import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.sftp.FileAttributes;
-import net.schmizz.sshj.sftp.SFTPClient;
+import net.schmizz.sshj.sftp.*;
 
 public class SftpServer extends JsonPluginFile<Configuration> {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
   private class ConnectionCache extends ValueCache<Optional<Pair<SSHClient, SFTPClient>>> {
 
     public ConnectionCache(Path fileName) {
@@ -67,8 +67,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final FileAttributes NXFILE = new FileAttributes.Builder().withSize(-1).build();
-
+  private static final Counter symlinkErrors =
+      Counter.build(
+              "shesmu_sftp_symlink_errors",
+              "The number of errors communicating with the SFTP server while trying to create a symlink.")
+          .labelNames("target")
+          .register();
   private Optional<Configuration> configuration = Optional.empty();
   private final ConnectionCache connection;
   private final FileAttributeCache fileAttributes;
@@ -109,6 +115,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     return fileAttributes.get(fileName).map(FileAttributes::getSize).orElse(errorValue);
   }
 
+  @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
+  public SymlinkAction $_symlink() {
+    return new SymlinkAction(this);
+  }
+
   @Override
   public void configuration(SectionRenderer renderer) throws XMLStreamException {
     renderer.line("Filename", fileName().toString());
@@ -119,6 +130,44 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           renderer.line("User", configuration.getUser());
         });
     renderer.line("Active", connection.get().isPresent() ? "Yes" : "No");
+  }
+
+  synchronized Pair<ActionState, Boolean> makeSymlink(
+      String link, String target, boolean fileInTheWay) {
+    final Optional<SFTPClient> client = connection.get().map(Pair::second);
+    if (!client.isPresent()) {
+      return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
+    }
+    try {
+      final SFTPClient sftp = client.get();
+      // Because this library thinks that a file not existing is an error state worthy of exception,
+      // it throws whenever stat or lstat is called. There's a wrapper for stat that catches the
+      // exception and returns null, but there's no equivalent for lstat, so we reproduce that catch
+      // logic here.
+      try {
+        final FileAttributes attributes = sftp.lstat(link);
+        // File exists and it is a symlink
+        if (attributes.getType() == FileMode.Type.SYMLINK && sftp.readlink(link).equals(target)) {
+          // It's what we want; done
+          return new Pair<>(ActionState.SUCCEEDED, false);
+        }
+        // It exists and it's not already a symlink to what we want; bail
+        return new Pair<>(ActionState.FAILED, true);
+      } catch (SFTPException sftpe) {
+        if (sftpe.getStatusCode() == Response.StatusCode.NO_SUCH_FILE) {
+          // File does not exist, create it.
+          sftp.symlink(link, target);
+          return new Pair<>(ActionState.SUCCEEDED, false);
+        } else {
+          throw sftpe;
+        }
+      }
+
+    } catch (IOException e) {
+      e.printStackTrace();
+      symlinkErrors.labels(name()).inc();
+      return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
+    }
   }
 
   @Override
