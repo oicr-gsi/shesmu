@@ -16,7 +16,7 @@ public class WorkflowConfiguration {
   private long[] previousAccessions;
   private String[] services;
 
-  public void define(NiassaServer server, Definer definer, Configuration value) {
+  public void define(Definer<NiassaServer> definer, Configuration value) {
     final String description = //
         String.format(
                 "Runs SeqWare/Niassa workflow %d using %s with settings in %s.", //
@@ -36,7 +36,7 @@ public class WorkflowConfiguration {
         WorkflowAction.class,
         () ->
             new WorkflowAction(
-                server,
+                definer,
                 getLanes(),
                 accession,
                 previousAccessions,

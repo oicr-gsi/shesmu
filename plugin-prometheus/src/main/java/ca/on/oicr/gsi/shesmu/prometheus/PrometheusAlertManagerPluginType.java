@@ -136,7 +136,8 @@ public class PrometheusAlertManagerPluginType
   }
 
   @Override
-  public AlertManagerEndpoint create(Path filePath, String instanceName, Definer definer) {
+  public AlertManagerEndpoint create(
+      Path filePath, String instanceName, Definer<AlertManagerEndpoint> definer) {
     return new AlertManagerEndpoint(filePath, instanceName);
   }
 }

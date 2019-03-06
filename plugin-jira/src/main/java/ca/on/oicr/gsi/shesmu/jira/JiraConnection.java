@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -94,6 +96,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private List<String> closeActions = Collections.emptyList();
 
   private List<String> closedStatuses = Collections.emptyList();
+  private final Supplier<JiraConnection> definer;
 
   private final IssueCache issues;
 
@@ -107,9 +110,10 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
 
   private String user;
 
-  public JiraConnection(Path fileName, String instanceName) {
+  public JiraConnection(Path fileName, String instanceName, Definer<JiraConnection> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     issues = new IssueCache(fileName);
+    this.definer = definer;
   }
 
   public JiraRestClient client() {
@@ -182,12 +186,12 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
 
   @ShesmuAction(description = "Closes any JIRA tickets with a matching summary. Defined in {file}.")
   public ResolveTicket resolve_ticket_$() {
-    return new ResolveTicket(this);
+    return new ResolveTicket(definer);
   }
 
   @ShesmuAction(description = "Opens (or re-opens) a JIRA ticket. Defined in {file}.")
   public FileTicket ticket_$() {
-    return new FileTicket(this);
+    return new FileTicket(definer);
   }
 
   @Override

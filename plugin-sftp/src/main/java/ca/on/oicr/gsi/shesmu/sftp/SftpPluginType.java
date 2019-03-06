@@ -17,8 +17,8 @@ public class SftpPluginType extends PluginFileType<SftpServer> {
   }
 
   @Override
-  public SftpServer create(Path filePath, String instanceName, Definer definer) {
-    return new SftpServer(filePath, instanceName);
+  public SftpServer create(Path filePath, String instanceName, Definer<SftpServer> definer) {
+    return new SftpServer(filePath, instanceName, definer);
   }
 
   @Override

@@ -31,7 +31,10 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
   class DumperConfiguration extends JsonPluginFile<ObjectNode> {
     private Map<String, Path> paths = Collections.emptyMap();
 
-    public DumperConfiguration(Path fileName, String instanceName, Definer definer) {
+    public DumperConfiguration(
+        Path fileName,
+        String instanceName,
+        Definer<TsvDumperFileType.DumperConfiguration> definer) {
       super(fileName, instanceName, MAPPER, ObjectNode.class);
     }
 
@@ -98,7 +101,8 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
   }
 
   @Override
-  public DumperConfiguration create(Path filePath, String instanceName, Definer definer) {
+  public DumperConfiguration create(
+      Path filePath, String instanceName, Definer<DumperConfiguration> definer) {
     return new DumperConfiguration(filePath, instanceName, definer);
   }
 }

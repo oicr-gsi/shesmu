@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -96,10 +97,10 @@ public final class WorkflowAction extends Action {
 
   private final long workflowAccession;
 
-  private final NiassaServer server;
+  private final Supplier<NiassaServer> server;
 
   public WorkflowAction(
-      NiassaServer server,
+      Supplier<NiassaServer> server,
       LanesType laneType,
       long workflowAccession,
       long[] previousAccessions,
@@ -222,6 +223,7 @@ public final class WorkflowAction extends Action {
             Collections.singleton(Integer.toString(runAccession)));
         final ActionState state =
             server
+                .get()
                 .metadata()
                 .getAnalysisProvenance(query)
                 .stream()
@@ -245,6 +247,7 @@ public final class WorkflowAction extends Action {
               .flatMap(
                   accession ->
                       server
+                          .get()
                           .analysisCache()
                           .get(accession) //
                           .filter(
@@ -299,9 +302,11 @@ public final class WorkflowAction extends Action {
                     key ->
                         new Pair<>(
                             server
+                                .get()
                                 .metadata()
                                 .addIUS( //
                                     server
+                                        .get()
                                         .metadata()
                                         .addLimsKey( //
                                             key.getProvider(), //
@@ -359,7 +364,7 @@ public final class WorkflowAction extends Action {
         runArgs.add(iusAccessions);
       }
       runArgs.add("--host");
-      runArgs.add(server.host());
+      runArgs.add(server.get().host());
       final ProcessBuilder builder = new ProcessBuilder(runArgs);
       builder.environment().put("SEQWARE_SETTINGS", settingsPath);
       builder.environment().remove("CLASSPATH");
@@ -388,7 +393,7 @@ public final class WorkflowAction extends Action {
       }
       success &= scheduleExitCode == 0;
       if (success) {
-        workflowAccessions().forEach(server.analysisCache()::invalidate);
+        workflowAccessions().forEach(server.get().analysisCache()::invalidate);
         final ArrayList<String> annotationArgs = new ArrayList<>();
         annotationArgs.add("java");
         annotationArgs.add("-jar");
@@ -422,7 +427,7 @@ public final class WorkflowAction extends Action {
       // Indicate if we managed to schedule the workflow; if we did, mark ourselves
       // dirty so there is a delay before our next query.
       (success ? runCreated : runFailed)
-          .labels(server.url(), Long.toString(workflowAccession))
+          .labels(server.get().url(), Long.toString(workflowAccession))
           .inc();
       return success ? ActionState.QUEUED : ActionState.FAILED;
     } catch (final Exception e) {

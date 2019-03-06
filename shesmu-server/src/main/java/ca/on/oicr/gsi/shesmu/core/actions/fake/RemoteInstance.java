@@ -22,11 +22,11 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
 
   private String allow = ".*";
 
-  private final Definer definer;
+  private final Definer<RemoteInstance> definer;
 
   private String url = "<unknown>";
 
-  public RemoteInstance(Path fileName, String instanceName, Definer definer) {
+  public RemoteInstance(Path fileName, String instanceName, Definer<RemoteInstance> definer) {
     super(fileName, instanceName, FakeAction.MAPPER, Configuration.class);
     this.definer = definer;
   }

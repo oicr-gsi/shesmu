@@ -25,7 +25,8 @@ public class TableFunctionFileType extends PluginFileType<TableFunctionFile> {
   }
 
   @Override
-  public TableFunctionFile create(Path filePath, String instanceName, Definer definer) {
+  public TableFunctionFile create(
+      Path filePath, String instanceName, Definer<TableFunctionFile> definer) {
     return new TableFunctionFile(filePath, instanceName, definer);
   }
 }

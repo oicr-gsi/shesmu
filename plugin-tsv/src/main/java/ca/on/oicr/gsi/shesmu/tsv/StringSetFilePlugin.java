@@ -24,7 +24,7 @@ public class StringSetFilePlugin extends PluginFileType<StringSetFile> {
   }
 
   @Override
-  public StringSetFile create(Path filePath, String instanceName, Definer definer) {
+  public StringSetFile create(Path filePath, String instanceName, Definer<StringSetFile> definer) {
     return new StringSetFile(filePath, instanceName);
   }
 }

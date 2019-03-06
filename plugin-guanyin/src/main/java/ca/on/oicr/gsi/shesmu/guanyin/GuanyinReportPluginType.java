@@ -17,7 +17,7 @@ public class GuanyinReportPluginType extends PluginFileType<GuanyinRemote> {
   }
 
   @Override
-  public GuanyinRemote create(Path filePath, String instanceName, Definer definer) {
+  public GuanyinRemote create(Path filePath, String instanceName, Definer<GuanyinRemote> definer) {
     return new GuanyinRemote(filePath, instanceName, definer);
   }
 

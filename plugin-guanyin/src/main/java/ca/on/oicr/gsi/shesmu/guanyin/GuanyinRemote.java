@@ -17,9 +17,9 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private Optional<Configuration> configuration = Optional.empty();
-  private final Definer definer;
+  private final Definer<GuanyinRemote> definer;
 
-  public GuanyinRemote(Path fileName, String instanceName, Definer definer) {
+  public GuanyinRemote(Path fileName, String instanceName, Definer<GuanyinRemote> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
   }
@@ -77,14 +77,14 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
             actionName,
             description,
             RunReport.class,
-            () -> new RunReport(this, reportId, reportName), //
+            () -> new RunReport(definer, reportId, reportName), //
             report
                 .getPermittedParameters() //
                 .entrySet()
                 .stream() //
                 .map(
                     e ->
-                        new JsonParameter(
+                        new JsonParameter<>(
                             e.getKey(),
                             e.getValue().isRequired(),
                             Imyhat.parse(e.getValue().getType()))));

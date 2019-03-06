@@ -27,7 +27,8 @@ public class FakeRemoteDefinitionInstance extends PluginFileType<RemoteInstance>
   }
 
   @Override
-  public RemoteInstance create(Path filePath, String instanceName, Definer definer) {
+  public RemoteInstance create(
+      Path filePath, String instanceName, Definer<RemoteInstance> definer) {
     return new RemoteInstance(filePath, instanceName, definer);
   }
 }

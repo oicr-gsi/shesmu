@@ -97,7 +97,8 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
   }
 
   @Override
-  public ScheduleReader create(Path filePath, String instanceName, Definer definer) {
+  public ScheduleReader create(
+      Path filePath, String instanceName, Definer<MaintenanceSchedule.ScheduleReader> definer) {
     return new ScheduleReader(filePath, instanceName);
   }
 }

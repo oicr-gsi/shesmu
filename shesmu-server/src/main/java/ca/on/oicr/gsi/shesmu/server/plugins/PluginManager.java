@@ -45,6 +45,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -246,7 +247,7 @@ public final class PluginManager
       }
     }
 
-    private class FileWrapper implements WatchedFileListener, Definer {
+    private class FileWrapper implements WatchedFileListener, Definer<T> {
       private final Map<String, ActionDefinition> actions = new ConcurrentHashMap<>();
 
       private final List<ActionDefinition> actionsFromAnnotations;
@@ -544,6 +545,44 @@ public final class PluginManager
         return Stream.concat(functions.values().stream(), functionsFromAnnotations.stream());
       }
 
+      /**
+       * Get the instance this wrapper holds
+       *
+       * <p>We want plugins to be deletable, but we also need to ensure that the object graph
+       * connecting the instance, this wrapper, the olives, and any actions defined by this instance
+       * remain connected.
+       *
+       * <p>The graph looks like this:
+       *
+       * <ul>
+       *   <li>the wrapper holds a reference to the instance
+       *   <li>the wrapper holds a reference to a call site holding the instance (hencefore, the
+       *       instance callsite)
+       *   <li>the plugin manager holds a reference to the wrapper iff the configuration file exists
+       *       on disk
+       *   <li>the plugin manager holds a weak reference to the wrapper
+       *   <li>the olive holds a reference to the instance callsite for any annotation-defined
+       *       action, constant, function, or signer
+       *   <li>the bootstrap method has a weak reference to the instance callsite
+       *   <li>the wrapper holds a reference to all the callsites for user-defined actions,
+       *       constants, functions or signers
+       *   <li>the olive holds a reference to any of the user-defined callsites
+       * </ul>
+       *
+       * Under this model, the entire object graph can be strongly referenced if the configuration
+       * file is present and/or an olive is using annotation-defined things. If the file goes away
+       * on disk, and any user-defined things exist that reference the disk, the wrapper may be
+       * garbage collected. If the file reappears, any functions, constants, or signers in the olive
+       * will be reattached to the new instance. However, any actions that have been handed off to
+       * the schedule will not be updated. Therefore, an action must never hold a reference to an
+       * instance; it should hold an instance to this class as a supplier of the instance. If there
+       * are no actions generated, then the whole graph can be collected.
+       */
+      @Override
+      public T get() {
+        return instance;
+      }
+
       public boolean isOverloaded(Set<String> services) {
         return instance.isOverloaded(services);
       }
@@ -591,6 +630,7 @@ public final class PluginManager
     private List<FunctionDefinition> staticFunctions = new ArrayList<>();
     private List<SignatureDefinition> staticSignatures = new ArrayList<>();
     private Map<String, Queue<InputDataSource>> staticSources = new ConcurrentHashMap<>();
+    private Map<Path, WeakReference<FileWrapper>> wrappers = new ConcurrentHashMap<>();
 
     public FormatTypeWrapper(F fileFormat) {
       this.fileFormat = fileFormat;
@@ -612,7 +652,12 @@ public final class PluginManager
         System.err.println(
             "Failed to access a method. Did you give the correct instance of Lookup?");
       }
-      configuration = new AutoUpdatingDirectory<>(fileFormat.extension(), FileWrapper::new);
+      // Keep plugin configurations in a separate map so if we get back a deleted configuration
+      // file, we can reanimate the existing instance rather than creating a new one.
+      configuration =
+          new AutoUpdatingDirectory<>(
+              fileFormat.extension(),
+              p -> wrappers.computeIfAbsent(p, x -> new WeakReference<>(new FileWrapper(x))).get());
     }
 
     public final Stream<ActionDefinition> actions() {

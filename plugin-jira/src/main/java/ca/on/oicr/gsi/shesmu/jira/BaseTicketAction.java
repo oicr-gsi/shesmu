@@ -46,7 +46,7 @@ public abstract class BaseTicketAction extends Action {
           .labelNames("url", "project")
           .register();
 
-  private final JiraConnection connection;
+  private final Supplier<JiraConnection> connection;
 
   private final Optional<ActionState> emptyTransitionState;
 
@@ -60,7 +60,9 @@ public abstract class BaseTicketAction extends Action {
   public String type = "Task";
 
   public BaseTicketAction(
-      JiraConnection connection, String jsonName, Optional<ActionState> emptyTransitionState) {
+      Supplier<JiraConnection> connection,
+      String jsonName,
+      Optional<ActionState> emptyTransitionState) {
     super(jsonName);
     this.emptyTransitionState = emptyTransitionState;
     this.connection = connection;
@@ -68,19 +70,20 @@ public abstract class BaseTicketAction extends Action {
 
   protected final ActionState createIssue(
       ActionServices services, String description, String assignee) {
-    if (services.isOverloaded("jira", connection.projectKey())) {
+    if (services.isOverloaded("jira", connection.get().projectKey())) {
       return ActionState.THROTTLED;
     }
-    issueCreates.labels(connection.url(), connection.projectKey()).inc();
+    issueCreates.labels(connection.get().url(), connection.get().projectKey()).inc();
 
     final IssueInputBuilder inputBuilder = new IssueInputBuilder();
-    for (IssueType issueType : connection.client().getMetadataClient().getIssueTypes().claim()) {
+    for (IssueType issueType :
+        connection.get().client().getMetadataClient().getIssueTypes().claim()) {
       if (issueType.getName().equals(type)) {
         inputBuilder.setIssueType(issueType);
         break;
       }
     }
-    inputBuilder.setProjectKey(connection.projectKey());
+    inputBuilder.setProjectKey(connection.get().projectKey());
     inputBuilder.setSummary(asciiOnly(summary));
     inputBuilder.setDescription(asciiOnly(description));
     if (assignee != null && !assignee.isEmpty()) {
@@ -88,9 +91,10 @@ public abstract class BaseTicketAction extends Action {
     }
 
     final BasicIssue result =
-        connection.client().getIssueClient().createIssue(inputBuilder.build()).claim();
+        connection.get().client().getIssueClient().createIssue(inputBuilder.build()).claim();
     issueUrl = result.getSelf();
     connection
+        .get()
         .client()
         .getIssueClient()
         .updateIssue(
@@ -98,7 +102,7 @@ public abstract class BaseTicketAction extends Action {
             IssueInput.createWithFields(
                 new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot"))))
         .claim();
-    connection.invalidate();
+    connection.get().invalidate();
     issues.add(result.getKey());
     return ActionState.SUCCEEDED;
   }
@@ -147,7 +151,7 @@ public abstract class BaseTicketAction extends Action {
 
   private boolean isInTargetState(Issue issue) {
     return isInTargetState(
-        connection.closedStatuses(), issue.getStatus().getName()::equalsIgnoreCase);
+        connection.get().closedStatuses(), issue.getStatus().getName()::equalsIgnoreCase);
   }
 
   protected abstract boolean isInTargetState(
@@ -158,16 +162,17 @@ public abstract class BaseTicketAction extends Action {
     if (connection == null) {
       return ActionState.FAILED;
     }
-    requests.labels(connection.url(), connection.projectKey()).inc();
+    requests.labels(connection.get().url(), connection.get().projectKey()).inc();
     try {
       return perform(
           services,
           connection
+              .get()
               .issues() //
               .filter(issue -> issue.getSummary().equals(summary)) //
               .peek(issue -> issues.add(issue.getKey())));
     } catch (final Exception e) {
-      failure.labels(connection.url(), connection.projectKey()).inc();
+      failure.labels(connection.get().url(), connection.get().projectKey()).inc();
       e.printStackTrace();
       return ActionState.UNKNOWN;
     }
@@ -198,9 +203,9 @@ public abstract class BaseTicketAction extends Action {
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
-    node.put("projectKey", connection.projectKey());
+    node.put("projectKey", connection.get().projectKey());
     node.put("summary", summary);
-    node.put("instanceUrl", connection.url());
+    node.put("instanceUrl", connection.get().url());
     node.put("url", issueUrl == null ? null : issueUrl.toString());
     issues.forEach(node.putArray("issues")::add);
     return node;
@@ -221,25 +226,27 @@ public abstract class BaseTicketAction extends Action {
     if (isInTargetState(issue)) {
       return Optional.of(ActionState.SUCCEEDED);
     }
-    return Utils.stream(connection.client().getIssueClient().getTransitions(issue).claim()) //
+    return Utils.stream(
+            connection.get().client().getIssueClient().getTransitions(issue).claim()) //
         .filter(
             t ->
-                transitionActions(connection).anyMatch(t.getName()::equalsIgnoreCase)
+                transitionActions(connection.get()).anyMatch(t.getName()::equalsIgnoreCase)
                     && Utils.stream(t.getFields()).noneMatch(Field::isRequired)) //
         .findAny() //
         .map(
             t -> {
-              if (services.isOverloaded("jira", connection.projectKey())) {
+              if (services.isOverloaded("jira", connection.get().projectKey())) {
                 return ActionState.THROTTLED;
               }
-              issueUpdates.labels(connection.url(), connection.projectKey()).inc();
+              issueUpdates.labels(connection.get().url(), connection.get().projectKey()).inc();
               issueUrl = issue.getSelf();
               connection
+                  .get()
                   .client()
                   .getIssueClient()
                   .transition(issue, new TransitionInput(t.getId(), comment))
                   .claim();
-              connection.invalidate();
+              connection.get().invalidate();
               issues.add(issue.getKey());
               return ActionState.SUCCEEDED;
             });

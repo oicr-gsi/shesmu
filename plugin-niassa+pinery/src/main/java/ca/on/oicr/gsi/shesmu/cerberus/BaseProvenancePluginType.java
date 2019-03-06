@@ -76,9 +76,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   reason -> badSetInRecord.add("study:" + reason),
                                   true)
                               .orElse(""),
-                              limsAttr(
-                                      fp, "geo_organism", badSetInRecord::add, true)
-                                      .orElse(""),
+                          limsAttr(fp, "geo_organism", badSetInRecord::add, true).orElse(""),
                           IUSUtils.singleton(
                                   fp.getSampleNames(),
                                   reason -> badSetInRecord.add("librarynames:" + reason),
@@ -263,7 +261,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
   private final String name;
 
   public BaseProvenancePluginType(String name, String extension) {
-    super(MethodHandles.lookup(), FileConfiguration.class, extension);
+    super(MethodHandles.lookup(), BaseProvenancePluginType.FileConfiguration.class, extension);
     this.name = name;
   }
 
@@ -272,7 +270,10 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
   protected abstract Stream<? extends FileProvenance> fetch(C client);
 
   @Override
-  public final FileConfiguration create(Path filePath, String instanceName, Definer definer) {
+  public final FileConfiguration create(
+      Path filePath,
+      String instanceName,
+      Definer<BaseProvenancePluginType.FileConfiguration> definer) {
     return new FileConfiguration(filePath, instanceName);
   }
 }
