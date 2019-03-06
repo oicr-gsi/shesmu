@@ -84,7 +84,7 @@ public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenB
   }
 
   @Override
-  public TokenBucket create(Path filePath, String instanceName, Definer definer) {
+  public TokenBucket create(Path filePath, String instanceName, Definer<TokenBucket> definer) {
     return new TokenBucket(filePath, instanceName);
   }
 }

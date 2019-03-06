@@ -114,7 +114,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final AnalysisCache analysisCache;
   private Optional<Configuration> configuration = Optional.empty();
 
-  private final Definer definer;
+  private final Definer<NiassaServer> definer;
 
   private String host;
 
@@ -122,7 +122,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final ValueCache<Stream<Pair<Tuple, Tuple>>> skipCache;
   private String url;
 
-  public NiassaServer(Path fileName, String instanceNane, Definer definer) {
+  public NiassaServer(Path fileName, String instanceNane, Definer<NiassaServer> definer) {
     super(fileName, instanceNane, MAPPER, Configuration.class);
     this.definer = definer;
     analysisCache = new AnalysisCache(fileName);
@@ -186,7 +186,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     for (final WorkflowConfiguration wc : value.getWorkflows()) {
       WorkflowAction.MAX_IN_FLIGHT.putIfAbsent(
           wc.getAccession(), new Semaphore(wc.getMaxInFlight()));
-      wc.define(this, definer, value);
+      wc.define(definer, value);
     }
     configuration = Optional.of(value);
     return Optional.empty();

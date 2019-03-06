@@ -14,7 +14,8 @@ public class RunScannerPluginType extends PluginFileType<RunScannerClient> {
   }
 
   @Override
-  public RunScannerClient create(Path filePath, String instanceName, Definer definer) {
+  public RunScannerClient create(
+      Path filePath, String instanceName, Definer<RunScannerClient> definer) {
     return new RunScannerClient(filePath, instanceName);
   }
 

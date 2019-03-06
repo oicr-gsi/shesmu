@@ -15,7 +15,8 @@ public class JsonFileDefinitionFileType extends PluginFileType<JsonFileDefinitio
   }
 
   @Override
-  public JsonFileDefinitionFile create(Path filePath, String instanceName, Definer definer) {
+  public JsonFileDefinitionFile create(
+      Path filePath, String instanceName, Definer<JsonFileDefinitionFile> definer) {
     return new JsonFileDefinitionFile(filePath, instanceName, definer);
   }
 }

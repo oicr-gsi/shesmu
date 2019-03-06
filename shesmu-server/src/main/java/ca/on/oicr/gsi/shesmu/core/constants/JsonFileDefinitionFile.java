@@ -61,9 +61,10 @@ public class JsonFileDefinitionFile extends JsonPluginFile<ObjectNode> {
 
   private final Set<String> badKeys = new ConcurrentSkipListSet<>();
 
-  private final Definer definer;
+  private final Definer<JsonFileDefinitionFile> definer;
 
-  public JsonFileDefinitionFile(Path fileName, String instanceName, Definer definer) {
+  public JsonFileDefinitionFile(
+      Path fileName, String instanceName, Definer<JsonFileDefinitionFile> definer) {
     super(fileName, instanceName, MAPPER, ObjectNode.class);
     this.definer = definer;
   }

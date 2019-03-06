@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public class SymlinkAction extends Action {
@@ -19,12 +20,12 @@ public class SymlinkAction extends Action {
               "The number of non-symlink files preventing the creation of a symlink.")
           .labelNames("target")
           .register();
-  private final SftpServer connection;
+  private final Supplier<SftpServer> connection;
   private boolean fileInTheWay;
   private String link;
   private String target;
 
-  public SymlinkAction(SftpServer connection) {
+  public SymlinkAction(Supplier<SftpServer> connection) {
     super("sftp-symlink");
     this.connection = connection;
   }
@@ -51,10 +52,11 @@ public class SymlinkAction extends Action {
   public ActionState perform(ActionServices services) {
     // The logic for creating the symlink happens in the other class so that it can make serialised
     // requests to the remote end
-    final Pair<ActionState, Boolean> result = connection.makeSymlink(link, target, fileInTheWay);
+    final Pair<ActionState, Boolean> result =
+        connection.get().makeSymlink(link, target, fileInTheWay);
     if (result.second() != fileInTheWay) {
       filesInTheWay
-          .labels(connection.name())
+          .labels(connection.get().name())
           .inc((result.second() ? 1 : 0) - (fileInTheWay ? 1 : 0));
       fileInTheWay = result.second();
     }
@@ -86,7 +88,7 @@ public class SymlinkAction extends Action {
     final ObjectNode node = mapper.createObjectNode();
     node.put("link", link);
     node.put("target", target);
-    node.put("instance", connection.name());
+    node.put("instance", connection.get().name());
     return node;
   }
 }

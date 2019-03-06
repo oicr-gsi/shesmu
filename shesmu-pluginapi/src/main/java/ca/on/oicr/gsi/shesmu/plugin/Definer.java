@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * Interface to define a actions, constants, functions, and signatures that can be used by olives
  */
-public interface Definer {
+public interface Definer<T> extends Supplier<T> {
   /** Remove all defined actions */
   void clearActions();
 

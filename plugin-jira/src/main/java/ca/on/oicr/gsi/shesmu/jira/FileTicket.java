@@ -19,7 +19,7 @@ public final class FileTicket extends BaseTicketAction {
 
   @ActionParameter public String description;
 
-  public FileTicket(JiraConnection connection) {
+  public FileTicket(Supplier<JiraConnection> connection) {
     super(connection, "jira-open-ticket", Optional.empty());
   }
 

@@ -15,7 +15,7 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
   }
 
   @Override
-  public PinerySource create(Path filePath, String instanceName, Definer definer) {
+  public PinerySource create(Path filePath, String instanceName, Definer<PinerySource> definer) {
     return new PinerySource(filePath, instanceName);
   }
 

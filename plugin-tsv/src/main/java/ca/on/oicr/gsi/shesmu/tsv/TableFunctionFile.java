@@ -59,7 +59,7 @@ class TableFunctionFile extends PluginFile {
 
   private boolean good;
 
-  public TableFunctionFile(Path fileName, String instanceName, Definer definer) {
+  public TableFunctionFile(Path fileName, String instanceName, Definer<TableFunctionFile> definer) {
     super(fileName, instanceName);
     this.definer = definer;
   }

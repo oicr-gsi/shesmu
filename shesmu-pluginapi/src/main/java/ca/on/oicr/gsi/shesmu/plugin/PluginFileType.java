@@ -49,12 +49,16 @@ public abstract class PluginFileType<T extends PluginFile> {
    *
    * <p>This is called when a new configuration file is discovered on disk
    *
+   * <p>Anything callback defined using this {@link Definer} or any action created from an {@link
+   * ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction} annotated method must <b>not</b> hold a
+   * reference to {@link T}; it <b>must</b> use the {@link Definer#get()} method
+   *
    * @param filePath the path to the configuration file
    * @param instanceName the name of the instance, based on the configuration file name
    * @param definer an interface to create actions, constants, and functions rather than using
    *     annotations
    */
-  public abstract T create(Path filePath, String instanceName, Definer definer);
+  public abstract T create(Path filePath, String instanceName, Definer<T> definer);
 
   /** The file extension to monitor for */
   public final String extension() {

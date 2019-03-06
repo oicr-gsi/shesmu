@@ -15,8 +15,9 @@ public final class JiraPluginType extends PluginFileType<JiraConnection> {
   }
 
   @Override
-  public JiraConnection create(Path filePath, String instanceName, Definer definer) {
-    return new JiraConnection(filePath, instanceName);
+  public JiraConnection create(
+      Path filePath, String instanceName, Definer<JiraConnection> definer) {
+    return new JiraConnection(filePath, instanceName, definer);
   }
 
   @Override

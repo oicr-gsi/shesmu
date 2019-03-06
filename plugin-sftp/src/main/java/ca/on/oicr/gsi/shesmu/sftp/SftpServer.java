@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.xml.stream.XMLStreamException;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.sftp.*;
@@ -77,12 +78,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           .register();
   private Optional<Configuration> configuration = Optional.empty();
   private final ConnectionCache connection;
+  private final Supplier<SftpServer> supplier;
   private final FileAttributeCache fileAttributes;
 
-  public SftpServer(Path fileName, String instanceName) {
+  public SftpServer(Path fileName, String instanceName, Supplier<SftpServer> supplier) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     fileAttributes = new FileAttributeCache(fileName);
     connection = new ConnectionCache(fileName);
+    this.supplier = supplier;
   }
 
   @ShesmuMethod(
@@ -117,7 +120,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
   @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
   public SymlinkAction $_symlink() {
-    return new SymlinkAction(this);
+    return new SymlinkAction(supplier);
   }
 
   @Override

@@ -15,7 +15,7 @@ public class WorkflowActionRepository extends PluginFileType<NiassaServer> {
   }
 
   @Override
-  public NiassaServer create(Path filePath, String instanceName, Definer definer) {
+  public NiassaServer create(Path filePath, String instanceName, Definer<NiassaServer> definer) {
     return new NiassaServer(filePath, instanceName, definer);
   }
 

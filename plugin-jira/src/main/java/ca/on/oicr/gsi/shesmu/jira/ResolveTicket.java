@@ -15,7 +15,7 @@ public final class ResolveTicket extends BaseTicketAction {
 
   @ActionParameter public String comment;
 
-  public ResolveTicket(JiraConnection connection) {
+  public ResolveTicket(Supplier<JiraConnection> connection) {
     super(connection, "jira-close-ticket", Optional.of(ActionState.SUCCEEDED));
   }
 
