@@ -195,13 +195,13 @@ public final class PluginManager
       }
 
       @Override
-      public String name() {
-        return name;
+      public Path filename() {
+        return path;
       }
 
       @Override
-      public Path filename() {
-        return path;
+      public String name() {
+        return name;
       }
 
       @Override
@@ -483,13 +483,13 @@ public final class PluginManager
               }
 
               @Override
-              public String name() {
-                return name;
+              public Path filename() {
+                return instance.fileName();
               }
 
               @Override
-              public Path filename() {
-                return instance.fileName();
+              public String name() {
+                return name;
               }
 
               @Override
@@ -668,7 +668,7 @@ public final class PluginManager
                   "Method %s of %s has ShesmuSigner annotation but is not virtual.",
                   method.getName(), method.getDeclaringClass().getName()));
         }
-        processSourceMethod(sourceAnnotation, method, true);
+        processSourceMethod(method, true);
       }
     }
 
@@ -723,7 +723,7 @@ public final class PluginManager
                   "Method %s of %s has ShesmuInputSource annotation but is not static.",
                   method.getName(), method.getDeclaringClass().getName()));
         }
-        processSourceMethod(sourceAnnotation, method, false);
+        processSourceMethod(method, false);
       }
     }
 
@@ -888,13 +888,13 @@ public final class PluginManager
                     }
 
                     @Override
-                    public String name() {
-                      return name.replace("$", instanceName);
+                    public Path filename() {
+                      return path;
                     }
 
                     @Override
-                    public Path filename() {
-                      return path;
+                    public String name() {
+                      return name.replace("$", instanceName);
                     }
 
                     @Override
@@ -980,8 +980,7 @@ public final class PluginManager
       }
     }
 
-    private void processSourceMethod(
-        ShesmuInputSource annotation, Method method, boolean isInstance)
+    private void processSourceMethod(Method method, boolean isInstance)
         throws IllegalAccessException {
       if (!Stream.class.equals(method.getReturnType())) {
         throw new IllegalArgumentException(
@@ -1050,80 +1049,6 @@ public final class PluginManager
     }
   }
 
-  private static final String BSM_DESCRIPTOR_ARBITRARY =
-      Type.getMethodDescriptor(
-          Type.getType(CallSite.class),
-          Type.getType(MethodHandles.Lookup.class),
-          Type.getType(String.class),
-          Type.getType(MethodType.class));
-
-  private static final Handle BSM_HANDLE =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getType(PluginManager.class).getInternalName(),
-          "bootstrap",
-          Type.getMethodDescriptor(
-              Type.getType(CallSite.class),
-              Type.getType(Lookup.class),
-              Type.getType(String.class),
-              Type.getType(MethodType.class),
-              Type.getType(String.class)),
-          false);
-
-  private static final Handle BSM_HANDLE_ARBITRARY =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getType(PluginManager.class).getInternalName(),
-          "bootstrap",
-          BSM_DESCRIPTOR_ARBITRARY,
-          false);
-
-  private static final CallSiteRegistry<String> CONFIG_FILE_ARBITRARY_BINDINGS =
-      new CallSiteRegistry<>();
-
-  private static final CallSiteRegistry<String> CONFIG_FILE_INSTANCES = new CallSiteRegistry<>();
-
-  private static final Map<Pair<Class<?>, String>, MethodHandle> CONFIG_FILE_METHOD_BINDINGS =
-      new ConcurrentHashMap<>();
-
-  @SuppressWarnings("rawtypes")
-  private static final ServiceLoader<PluginFileType> FILE_FORMATS =
-      ServiceLoader.load(PluginFileType.class);
-
-  private static final MethodHandle MH_BIFUNCTION_APPLY;
-
-  private static final MethodHandle MH_FUNCTION_APPLY;
-
-  private static final MethodHandle MH_SUPPLIER_GET;
-
-  private static final MethodHandle MH_VARIADICFUNCTION_APPLY;
-
-  static {
-    try {
-      MH_SUPPLIER_GET =
-          MethodHandles.publicLookup()
-              .findVirtual(Supplier.class, "get", MethodType.methodType(Object.class));
-      MH_FUNCTION_APPLY =
-          MethodHandles.publicLookup()
-              .findVirtual(
-                  Function.class, "apply", MethodType.methodType(Object.class, Object.class));
-      MH_BIFUNCTION_APPLY =
-          MethodHandles.publicLookup()
-              .findVirtual(
-                  BiFunction.class,
-                  "apply",
-                  MethodType.methodType(Object.class, Object.class, Object.class));
-      MH_VARIADICFUNCTION_APPLY =
-          MethodHandles.publicLookup()
-              .findVirtual(
-                  VariadicFunction.class,
-                  "apply",
-                  MethodType.methodType(Object.class, Object[].class));
-    } catch (NoSuchMethodException | IllegalAccessException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
     return CONFIG_FILE_ARBITRARY_BINDINGS.get(methodName);
   }
@@ -1164,19 +1089,76 @@ public final class PluginManager
     return description.replace("{instance}", instanceName).replace("{file}", path.toString());
   }
 
+  private static final String BSM_DESCRIPTOR_ARBITRARY =
+      Type.getMethodDescriptor(
+          Type.getType(CallSite.class),
+          Type.getType(MethodHandles.Lookup.class),
+          Type.getType(String.class),
+          Type.getType(MethodType.class));
+  private static final Handle BSM_HANDLE =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getType(PluginManager.class).getInternalName(),
+          "bootstrap",
+          Type.getMethodDescriptor(
+              Type.getType(CallSite.class),
+              Type.getType(Lookup.class),
+              Type.getType(String.class),
+              Type.getType(MethodType.class),
+              Type.getType(String.class)),
+          false);
+  private static final Handle BSM_HANDLE_ARBITRARY =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getType(PluginManager.class).getInternalName(),
+          "bootstrap",
+          BSM_DESCRIPTOR_ARBITRARY,
+          false);
+  private static final CallSiteRegistry<String> CONFIG_FILE_ARBITRARY_BINDINGS =
+      new CallSiteRegistry<>();
+  private static final CallSiteRegistry<String> CONFIG_FILE_INSTANCES = new CallSiteRegistry<>();
+  private static final Map<Pair<Class<?>, String>, MethodHandle> CONFIG_FILE_METHOD_BINDINGS =
+      new ConcurrentHashMap<>();
+
+  @SuppressWarnings("rawtypes")
+  private static final ServiceLoader<PluginFileType> FILE_FORMATS =
+      ServiceLoader.load(PluginFileType.class);
+
+  private static final MethodHandle MH_BIFUNCTION_APPLY;
+  private static final MethodHandle MH_FUNCTION_APPLY;
+  private static final MethodHandle MH_SUPPLIER_GET;
+  private static final MethodHandle MH_VARIADICFUNCTION_APPLY;
+
+  static {
+    try {
+      MH_SUPPLIER_GET =
+          MethodHandles.publicLookup()
+              .findVirtual(Supplier.class, "get", MethodType.methodType(Object.class));
+      MH_FUNCTION_APPLY =
+          MethodHandles.publicLookup()
+              .findVirtual(
+                  Function.class, "apply", MethodType.methodType(Object.class, Object.class));
+      MH_BIFUNCTION_APPLY =
+          MethodHandles.publicLookup()
+              .findVirtual(
+                  BiFunction.class,
+                  "apply",
+                  MethodType.methodType(Object.class, Object.class, Object.class));
+      MH_VARIADICFUNCTION_APPLY =
+          MethodHandles.publicLookup()
+              .findVirtual(
+                  VariadicFunction.class,
+                  "apply",
+                  MethodType.methodType(Object.class, Object[].class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
 
   public PluginManager() {
-    formatTypes =
-        Utils.stream(FILE_FORMATS)
-            .map(
-                new Function<PluginFileType, FormatTypeWrapper<?, ?>>() {
-                  @Override
-                  public FormatTypeWrapper<?, ?> apply(PluginFileType pluginFileType) {
-                    return new FormatTypeWrapper<>(pluginFileType);
-                  }
-                })
-            .collect(Collectors.toList());
+    formatTypes = Utils.stream(FILE_FORMATS).map(ff -> create(ff)).collect(Collectors.toList());
   }
 
   @Override
@@ -1190,7 +1172,90 @@ public final class PluginManager
   }
 
   public long count() {
-    return formatTypes.stream().count();
+    return (long) formatTypes.size();
+  }
+
+  private FormatTypeWrapper<?, ?> create(PluginFileType<?> pluginFileType) {
+    return new FormatTypeWrapper<>(pluginFileType);
+  }
+
+  private void dumpConfig(
+      TableRowWriter writer,
+      String context,
+      Stream<ActionDefinition> actions,
+      Stream<ConstantDefinition> constants,
+      Stream<FunctionDefinition> functions,
+      Stream<String> inputFormats,
+      Stream<SignatureDefinition> signatures) {
+    actions.forEach(
+        action ->
+            writer.write(
+                Collections.singletonList(
+                    new Pair<>("onclick", "window.location = 'actiondefs#" + action.name() + "'")),
+                context,
+                "Action",
+                action.name()));
+    constants.forEach(
+        constant ->
+            writer.write(
+                Collections.singletonList(
+                    new Pair<>(
+                        "onclick", "window.location = 'constantdefs#" + constant.name() + "'")),
+                context,
+                "Constant",
+                constant.name()));
+    functions.forEach(
+        function ->
+            writer.write(
+                Collections.singletonList(
+                    new Pair<>(
+                        "onclick", "window.location = 'functiondefs#" + function.name() + "'")),
+                context,
+                "Function",
+                function.name()));
+    inputFormats.forEach(
+        format ->
+            writer.write(
+                Collections.singletonList(
+                    new Pair<>("onclick", "window.location = 'inputdefs#" + format)),
+                context,
+                "Input Source",
+                format));
+
+    signatures.forEach(
+        signature ->
+            writer.write(
+                Collections.singletonList(
+                    new Pair<>(
+                        "onclick", "window.location = 'signaturedefs#" + signature.name() + "'")),
+                context,
+                "Signature",
+                signature.name()));
+  }
+
+  public void dumpPluginConfig(TableRowWriter writer) {
+    for (final FormatTypeWrapper<?, ?> type : formatTypes) {
+      dumpConfig(
+          writer,
+          type.fileFormat.extension() + " Plugin",
+          type.staticActions.stream(),
+          type.staticConstants.stream(),
+          type.staticFunctions.stream(),
+          type.staticSources.keySet().stream(),
+          type.staticSignatures.stream());
+      type.configuration
+          .stream()
+          .forEach(
+              c ->
+                  dumpConfig(
+                      writer,
+                      c.instance.fileName().toString(),
+                      c.actions(),
+                      c.constants(),
+                      c.functions(),
+                      type.dynamicSources.keySet().stream(),
+                      c.signatures()));
+    }
   }
 
   @Override
@@ -1227,85 +1292,6 @@ public final class PluginManager
   @Override
   public Stream<ConfigurationSection> listConfiguration() {
     return formatTypes.stream().flatMap(FormatTypeWrapper::listConfiguration);
-  }
-
-  private void dumpConfig(
-      TableRowWriter writer,
-      String context,
-      Stream<ActionDefinition> actions,
-      Stream<ConstantDefinition> constants,
-      Stream<FunctionDefinition> functions,
-      Stream<String> inputFormats,
-      Stream<SignatureDefinition> signatures) {
-    actions.forEach(
-        action ->
-            writer.write(
-                Arrays.asList(
-                    new Pair<>("onclick", "window.location = 'actiondefs#" + action.name() + "'")),
-                context,
-                "Action",
-                action.name()));
-    constants.forEach(
-        constant ->
-            writer.write(
-                Arrays.asList(
-                    new Pair<>(
-                        "onclick", "window.location = 'constantdefs#" + constant.name() + "'")),
-                context,
-                "Constant",
-                constant.name()));
-    functions.forEach(
-        function ->
-            writer.write(
-                Arrays.asList(
-                    new Pair<>(
-                        "onclick", "window.location = 'functiondefs#" + function.name() + "'")),
-                context,
-                "Function",
-                function.name()));
-    inputFormats.forEach(
-        format ->
-            writer.write(
-                Arrays.asList(new Pair<>("onclick", "window.location = 'inputdefs#" + format)),
-                context,
-                "Input Source",
-                format));
-
-    signatures.forEach(
-        signature ->
-            writer.write(
-                Arrays.asList(
-                    new Pair<>(
-                        "onclick", "window.location = 'signaturedefs#" + signature.name() + "'")),
-                context,
-                "Signature",
-                signature.name()));
-  }
-
-  public void dumpPluginConfig(TableRowWriter writer) {
-    for (final FormatTypeWrapper<?, ?> type : formatTypes) {
-      dumpConfig(
-          writer,
-          type.fileFormat.extension() + " Plugin",
-          type.staticActions.stream(),
-          type.staticConstants.stream(),
-          type.staticFunctions.stream(),
-          type.staticSources.keySet().stream(),
-          type.staticSignatures.stream());
-      type.configuration
-          .stream()
-          .forEach(
-              c -> {
-                dumpConfig(
-                    writer,
-                    c.instance.fileName().toString(),
-                    c.actions(),
-                    c.constants(),
-                    c.functions(),
-                    type.dynamicSources.keySet().stream(),
-                    c.signatures());
-              });
-    }
   }
 
   public void pushAlerts(String alertJson) {
