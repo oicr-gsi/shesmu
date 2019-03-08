@@ -1,9 +1,7 @@
 package ca.on.oicr.gsi.shesmu.maintenance;
 
 import com.github.lgooddatepicker.tableeditors.DateTimeTableEditor;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
+import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,17 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JToolBar;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 
@@ -125,6 +113,8 @@ public class Editor extends JFrame {
     toolbar.add(sort);
     final JButton save = new JButton("Save");
     toolbar.add(save);
+    final JButton expand = new JButton("Expand");
+    toolbar.add(expand);
     final DateTableModel model = new DateTableModel();
     final JTable table =
         new JTable(model) {
@@ -206,6 +196,59 @@ public class Editor extends JFrame {
           if (table.isEditing()) table.getCellEditor().stopCellEditing();
           loadFile.run();
           model.fireTableStructureChanged();
+        });
+    expand.addActionListener(
+        event -> {
+          if (table.getSelectedRowCount() == 0) {
+            JOptionPane.showMessageDialog(
+                this, "Please select rows first.", "Maintenance Editor", JOptionPane.ERROR_MESSAGE);
+          } else {
+            final JSpinner spinner = new JSpinner();
+            ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(4);
+            final JComboBox<ChronoUnit> units =
+                new JComboBox<>(
+                    Stream.of(ChronoUnit.values())
+                        .filter(
+                            u ->
+                                u.ordinal() > ChronoUnit.SECONDS.ordinal()
+                                    && u.ordinal() < ChronoUnit.MONTHS.ordinal())
+                        .toArray(ChronoUnit[]::new));
+            final JPanel input = new JPanel(new GridBagLayout());
+            final GridBagConstraints labelConstraints = new GridBagConstraints();
+            labelConstraints.gridwidth = 2;
+            final GridBagConstraints spinnerConstraints = new GridBagConstraints();
+            spinnerConstraints.gridy = 1;
+            spinnerConstraints.anchor = GridBagConstraints.LINE_END;
+            spinnerConstraints.weightx = 1.0;
+            spinnerConstraints.insets = new Insets(0, 0, 0, 5);
+            final GridBagConstraints unitsConstraints = new GridBagConstraints();
+            unitsConstraints.gridx = 1;
+            unitsConstraints.gridy = 1;
+            input.add(
+                new JLabel("Push start time earlier and end time later by:"), labelConstraints);
+            input.add(spinner, spinnerConstraints);
+            input.add(units, unitsConstraints);
+            if (JOptionPane.showOptionDialog(
+                    this,
+                    input,
+                    "Expand Windows - Maintenance Editor",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    null,
+                    null)
+                == JOptionPane.OK_OPTION) {
+              if (table.isEditing()) table.getCellEditor().stopCellEditing();
+              final long value = (Integer) spinner.getValue();
+              final ChronoUnit unit = (ChronoUnit) units.getSelectedItem();
+              for (int row : table.getSelectedRows()) {
+                LocalDateTime[] times = model.rows.get(row);
+                times[0] = times[0].minus(value, unit);
+                times[1] = times[1].plus(value, unit);
+              }
+              model.fireTableDataChanged();
+            }
+          }
         });
   }
 
