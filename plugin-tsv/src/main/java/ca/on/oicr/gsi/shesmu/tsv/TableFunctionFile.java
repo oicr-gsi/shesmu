@@ -84,6 +84,7 @@ class TableFunctionFile extends PluginFile {
           TAB.splitAsStream(lines.get(0)).map(Imyhat::forName).collect(Collectors.toList());
       if (types.size() < 2) {
         tableBad.labels(fileName().toString()).set(1);
+        System.err.printf("%s header has too few columns: %d\n", fileName(), types.size());
         return Optional.empty();
       }
 
@@ -92,6 +93,7 @@ class TableFunctionFile extends PluginFile {
 
       if (grid.stream().anyMatch(columns -> columns.length != types.size())) {
         tableBad.labels(fileName().toString()).set(1);
+        System.err.printf("%s has row with columns not matching header\n", fileName());
         return Optional.empty();
       }
 
