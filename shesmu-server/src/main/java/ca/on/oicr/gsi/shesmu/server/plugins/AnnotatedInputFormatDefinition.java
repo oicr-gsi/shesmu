@@ -55,10 +55,10 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 /** Define a <tt>Input</tt> format for olives to consume */
 public final class AnnotatedInputFormatDefinition implements InputFormatDefinition, InputProvider {
   public static final class Configuration {
-    private long ttl;
+    private int ttl;
     private String url;
 
-    public long getTtl() {
+    public int getTtl() {
       return ttl;
     }
 
@@ -66,7 +66,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       return url;
     }
 
-    public void setTtl(long ttl) {
+    public void setTtl(int ttl) {
       this.ttl = ttl;
     }
 
@@ -183,6 +183,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
         config =
             Optional.of(RuntimeSupport.MAPPER.readValue(fileName.toFile(), Configuration.class));
         cache.invalidate();
+        cache.ttl(config.get().getTtl());
       } catch (IOException e) {
         e.printStackTrace();
       }
