@@ -1,13 +1,13 @@
-# Guanyin
+# Guanyin Plugin
 [Guanyin](https://github.com/oicr-gsi/guanyin) is a report-tracking application.
 It records which reports have been run, and with what parameters.
-The Guanyin plugin for Shesmu can allow Shesmu to launch reports to be run 
-through a [DRMAA](http://www.drmaa.org/) web service. Before launching a report
-action, Shesmu first checks with Guanyin to see if the report has already been
-run.
+The Guanyin plugin for Shesmu can allow Shesmu to launch reports to be run
+through a [DRMAA](http://www.drmaa.org/) web service or
+[Cromwell](https://github.com/broadinstitute/cromwell). Before launching a
+report action, Shesmu first checks with Guanyin to see if the report has
+already been run.
 
 ## Launch Custom Reports with Guanyin
-
 Shesmu frequently scans the input data and generates the set of actions to be
 launched for that data. Since Shesmu is stateless, a record of which actions
 have been launched must be stored elsewhere, or else Shesmu will launch the same
@@ -99,10 +99,8 @@ The
 [language.md](https://github.com/oicr-gsi/shesmu/blob/master/language.md#olives-and-clauses)
 document describes the Shesmu language that is used in the olives. The process
 of writing a Guanyin report olive is much the same as that for writing and
-testing [any other
-olive](https://github.com/oicr-gsi/shesmu/blob/master/launch-actions.md). The
-biggest change is that the action name in the `Run <action-name> With` clause
-must match the `<action-name>` of the [Guanyin report action
-script](#guanyin-report-action-script) above, and the key-value pairs in the
-`With` clause must be of the same type as declared in the [Guanyin report action
-JSON file](#guanyin-report-action-json-file) above.
+testing any other olive. The biggest change is that the action name in the `Run
+<action-name> With` clause must match the `<action-name>` of the [Guanyin
+report action script](#guanyin-report-action-script) above, and the key-value
+pairs in the `With` clause must be of the same type as declared in the [Guanyin
+report action JSON file](#guanyin-report-action-json-file) above.
