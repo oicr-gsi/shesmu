@@ -733,7 +733,10 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
   public long purge(Filter... filters) {
     final Set<Action> deadActions =
-        startStream(filters).map(Entry::getKey).collect(Collectors.toSet());
+        startStream(filters)
+            .peek(e -> stateCount.labels(e.getValue().lastState.name()).dec())
+            .map(Entry::getKey)
+            .collect(Collectors.toSet());
     actions.keySet().removeAll(deadActions);
     return deadActions.size();
   }
