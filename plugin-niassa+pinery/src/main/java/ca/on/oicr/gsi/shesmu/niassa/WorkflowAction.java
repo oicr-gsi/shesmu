@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
+import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
@@ -10,19 +11,22 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
+import io.seqware.Engines;
+import io.seqware.pipeline.SqwKeys;
+import io.seqware.pipeline.api.Scheduler;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
 
 /**
  * Action to run a SeqWare/Niassa workflow
@@ -34,17 +38,13 @@ import java.util.stream.Stream;
  */
 public final class WorkflowAction extends Action {
 
-  private static final Pattern COMMA = Pattern.compile(",");
-
   static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
-      Comparator.comparing(LimsKey::getProvider) //
-          .thenComparing(Comparator.comparing(LimsKey::getId)) //
-          .thenComparing(Comparator.comparing(LimsKey::getVersion));
+      Comparator.comparing(LimsKey::getProvider)
+          .thenComparing(LimsKey::getId)
+          .thenComparing(LimsKey::getVersion);
 
-  static final Map<Long, Semaphore> MAX_IN_FLIGHT = new HashMap<>();
-
-  private static final Pattern RUN_SWID_LINE =
-      Pattern.compile(".*Created workflow run with SWID: (\\d+).*");
+  static final Map<Long, Pair<AtomicInteger, AtomicInteger>> MAX_IN_FLIGHT =
+      new ConcurrentHashMap<>();
 
   private static final Gauge runCreated =
       Gauge.build("shesmu_niassa_run_created", "The number of workflow runs launched.")
@@ -57,147 +57,70 @@ public final class WorkflowAction extends Action {
           .labelNames("target", "workflow")
           .create();
 
-  private static void repackIntegers(ObjectNode node, String name, String ids) {
-    COMMA
-        .splitAsStream(ids)
-        .map(Long::parseUnsignedLong)
-        .sorted()
-        .forEach(node.putArray(name)::add);
-  }
-
   private String fileAccessions;
 
   private final Set<Integer> fileSwids = new TreeSet<>();
 
   private boolean first = true;
-
-  private long id;
-
+  private boolean hasLaunched;
   private boolean inflight = false;
-
   Properties ini = new Properties();
-
-  protected final String jarPath;
-
+  private final LanesType lanesType;
+  private List<StringableLimsKey> limsKeys = Collections.emptyList();
   private long majorOliveVersion;
-
-  private String parentAccessions;
-
   private final Set<Integer> parentSwids = new TreeSet<>();
-
   private final long[] previousAccessions;
-
   private int runAccession;
-
-  private final Set<String> services;
-
-  private final String settingsPath;
-
-  private int waitForSomeoneToRerunIt;
-
-  private final long workflowAccession;
-
   private final Supplier<NiassaServer> server;
+  private final Set<String> services;
+  private int waitForSomeoneToRerunIt;
+  private final long workflowAccession;
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
       LanesType laneType,
       long workflowAccession,
       long[] previousAccessions,
-      String jarPath,
-      String settingsPath,
       String[] services) {
     super("niassa");
     this.server = server;
     this.lanesType = laneType;
     this.workflowAccession = workflowAccession;
     this.previousAccessions = previousAccessions;
-    this.jarPath = jarPath;
-    this.settingsPath = settingsPath;
     this.services = Stream.of(services).collect(Collectors.toSet());
   }
 
-  final String addFileSwid(String id) {
-    fileSwids.add(Integer.parseUnsignedInt(id));
-    return id;
+  @Override
+  public void accepted() {
+    MAX_IN_FLIGHT.get(workflowAccession).first().decrementAndGet();
   }
 
-  final String addProcessingSwid(String id) {
+  final void addFileSwid(String id) {
+    fileSwids.add(Integer.parseUnsignedInt(id));
+  }
+
+  final void addProcessingSwid(String id) {
     parentSwids.add(Integer.parseUnsignedInt(id));
-    return id;
   }
 
   @Override
-  @SuppressWarnings("checkstyle:CyclomaticComplexity")
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final WorkflowAction other = (WorkflowAction) obj;
-    if (fileAccessions == null) {
-      if (other.fileAccessions != null) {
-        return false;
-      }
-    } else if (!fileAccessions.equals(other.fileAccessions)) {
-      return false;
-    }
-    if (jarPath == null) {
-      if (other.jarPath != null) {
-        return false;
-      }
-    } else if (!jarPath.equals(other.jarPath)) {
-      return false;
-    }
-    if (limsKeys == null) {
-      if (other.limsKeys != null) {
-        return false;
-      }
-    } else if (!limsKeys.equals(other.limsKeys)) {
-      return false;
-    }
-    if (majorOliveVersion != other.majorOliveVersion) {
-      return false;
-    }
-    if (settingsPath == null) {
-      if (other.settingsPath != null) {
-        return false;
-      }
-    } else if (!settingsPath.equals(other.settingsPath)) {
-      return false;
-    }
-    if (workflowAccession != other.workflowAccession) {
-      return false;
-    }
-    return true;
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    WorkflowAction that = (WorkflowAction) o;
+    return majorOliveVersion == that.majorOliveVersion
+        && workflowAccession == that.workflowAccession
+        && Objects.equals(fileSwids, that.fileSwids)
+        && Objects.equals(parentSwids, that.parentSwids)
+        && Objects.equals(limsKeys, that.limsKeys);
   }
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + (fileAccessions == null ? 0 : fileAccessions.hashCode());
-    result = prime * result + (jarPath == null ? 0 : jarPath.hashCode());
-    result = prime * result + (limsKeys == null ? 0 : limsKeys.hashCode());
-    result = prime * result + Long.hashCode(majorOliveVersion);
-    result = prime * result + (settingsPath == null ? 0 : settingsPath.hashCode());
-    result = prime * result + (int) (workflowAccession ^ workflowAccession >>> 32);
-    return result;
+    return Objects.hash(fileSwids, majorOliveVersion, parentSwids, workflowAccession, limsKeys);
   }
 
-  @ActionParameter(name = "major_olive_version")
-  public final void majorOliveVersion(long majorOliveVersion) {
-    this.majorOliveVersion = majorOliveVersion;
-  }
-
-  private List<StringableLimsKey> limsKeys = Collections.emptyList();
-
-  void lanes(Set<? extends Object> input) {
+  void lanes(Set<?> input) {
     limsKeys =
         input
             .stream()
@@ -206,7 +129,10 @@ public final class WorkflowAction extends Action {
             .collect(Collectors.toList());
   }
 
-  private final LanesType lanesType;
+  @ActionParameter(name = "major_olive_version")
+  public final void majorOliveVersion(long majorOliveVersion) {
+    this.majorOliveVersion = majorOliveVersion;
+  }
 
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
@@ -214,7 +140,15 @@ public final class WorkflowAction extends Action {
     if (actionServices.isOverloaded(services)) {
       return ActionState.THROTTLED;
     }
+    // If this is the first time we're called, then consult the startup counter to determine if we
+    // should attempt to launch; if a pile of actions are created on startup, we will consult the
+    // analysis provenance and, if we find nothing, yield, so that other actions can find
+    // potentially in-flight jobs and update the max-in-flight lock.
+    final boolean shouldWait =
+        first && MAX_IN_FLIGHT.get(workflowAccession).first().incrementAndGet() < 1;
+    first = false;
     try {
+      // If we know our workflow run, check its status
       if (runAccession != 0) {
         final Map<FileProvenanceFilter, Set<String>> query =
             new EnumMap<>(FileProvenanceFilter.class);
@@ -227,8 +161,8 @@ public final class WorkflowAction extends Action {
                 .metadata()
                 .getAnalysisProvenance(query)
                 .stream()
-                .findFirst() //
-                .map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus())) //
+                .findFirst()
+                .map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus()))
                 .orElse(ActionState.UNKNOWN);
         if (state == ActionState.FAILED && ++waitForSomeoneToRerunIt > 5) {
           // We've previously found or created a run accession for this action, but it's
@@ -240,32 +174,35 @@ public final class WorkflowAction extends Action {
         }
         return state;
       }
-      // Read the FPR cache to determine if this workflow has already been run
+      // Read the analysis provenance cache to determine if this workflow has already been run
       final Optional<AnalysisState> current =
-          workflowAccessions() //
-              .boxed() //
+          workflowAccessions()
+              .boxed()
               .flatMap(
                   accession ->
                       server
                           .get()
                           .analysisCache()
-                          .get(accession) //
+                          .get(accession)
                           .filter(
                               as ->
                                   as.compare(
                                       workflowAccessions(),
                                       Long.toString(majorOliveVersion),
                                       fileAccessions,
-                                      limsKeys))) //
-              .sorted() //
+                                      limsKeys)))
+              .sorted()
               .findFirst();
       if (current.isPresent()) {
+        // We found a matching workflow run in analysis provenance
         runAccession = current.get().workflowRunAccession();
         final ActionState state = current.get().state();
         final boolean isDone = state == ActionState.SUCCEEDED || state == ActionState.FAILED;
         if (inflight && isDone) {
+          // If we've transitioned from a running state to a non-running state, then release a
+          // max-in-flight lock
           inflight = false;
-          MAX_IN_FLIGHT.get(workflowAccession).release();
+          MAX_IN_FLIGHT.get(workflowAccession).second().incrementAndGet();
         } else if (!inflight && !isDone) {
           // This is the case where the server has restarted and we find our Niassa job
           // is already running, but we haven't counted in our max-in-flight, so, we keep
@@ -275,63 +212,103 @@ public final class WorkflowAction extends Action {
           // We can overrun the max-in-flight by r*m where r is the number of Shesmu
           // restarts since any workflow last finished and m is the max-in-flight, but we
           // work hard to make this a worst-case scenario.
-          if (MAX_IN_FLIGHT.get(workflowAccession).tryAcquire()) {
-            inflight = true;
-          }
+          MAX_IN_FLIGHT.get(workflowAccession).second().decrementAndGet();
+          inflight = true;
         }
         return state;
       }
 
-      // This is to avoid overruning the max-in-flight after a restart by giving all
-      // actions a chance to check if they are already running and acquire a lock.
-      if (first) {
-        first = false;
+      // This is to avoid overrunning the max-in-flight after a restart by giving all
+      // actions a chance to check if they are already running and acquire a lock. Once a server
+      // reaches steady state, new actions shouldn't have to wait.
+      if (shouldWait) {
+        return ActionState.WAITING;
+      }
+      // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
+      // human needs to rescue us.
+      if (hasLaunched) {
+        return ActionState.FAILED;
+      }
+
+      // Try to decrement the max-in-flight lock; if it was previously greater than zero, then we
+      // can launch; decrement the lock if there was capacity; otherwise, leave it alone
+      if (MAX_IN_FLIGHT.get(workflowAccession).second().getAndUpdate(x -> x < 1 ? x : x - 1) > 0) {
         return ActionState.WAITING;
       }
 
-      if (!MAX_IN_FLIGHT.get(workflowAccession).tryAcquire()) {
-        return ActionState.WAITING;
-      }
-
-      final String iusAccessions;
+      final List<String> iusAccessions;
       if (lanesType != null) {
         final List<Pair<Integer, StringableLimsKey>> iusLimsKeys =
             limsKeys
-                .stream() //
+                .stream()
                 .map(
                     key ->
                         new Pair<>(
                             server
                                 .get()
                                 .metadata()
-                                .addIUS( //
+                                .addIUS(
                                     server
                                         .get()
                                         .metadata()
-                                        .addLimsKey( //
-                                            key.getProvider(), //
-                                            key.getId(), //
-                                            key.getVersion(), //
-                                            key.getLastModified()), //
-                                    false), //
+                                        .addLimsKey(
+                                            key.getProvider(),
+                                            key.getId(),
+                                            key.getVersion(),
+                                            key.getLastModified()),
+                                    false),
                             key))
                 .collect(Collectors.toList());
         ini.setProperty(
             "lanes",
             iusLimsKeys
-                .stream() //
-                .map(p -> p.second().asLaneString(p.first())) //
+                .stream()
+                .map(p -> p.second().asLaneString(p.first()))
                 .collect(Collectors.joining(lanesType.delimiter())));
         iusAccessions =
             iusLimsKeys
-                .stream() //
-                .map(Pair::first) //
-                .sorted() //
-                .map(Object::toString) //
-                .collect(Collectors.joining(","));
+                .stream()
+                .map(Pair::first)
+                .sorted()
+                .map(Object::toString)
+                .collect(Collectors.toList());
       } else {
-        iusAccessions = "";
+        iusAccessions = Collections.emptyList();
       }
+
+      final List<String> fileLimsKeyAccessions =
+          fileSwids
+              .stream()
+              .flatMap(
+                  fileSwid -> {
+                    final Map<FileProvenanceFilter, Set<String>> query =
+                        new EnumMap<>(FileProvenanceFilter.class);
+                    query.put(
+                        FileProvenanceFilter.file,
+                        Collections.singleton(Integer.toString(fileSwid)));
+                    return server.get().metadata().getAnalysisProvenance(query).stream();
+                  })
+              .flatMap(ap -> ap.getIusLimsKeys().stream())
+              .map(IusLimsKey::getLimsKey)
+              .sorted(LIMS_KEY_COMPARATOR)
+              .distinct()
+              .map(
+                  key ->
+                      Integer.toString(
+                          server
+                              .get()
+                              .metadata()
+                              .addIUS(
+                                  server
+                                      .get()
+                                      .metadata()
+                                      .addLimsKey(
+                                          key.getProvider(),
+                                          key.getId(),
+                                          key.getVersion(),
+                                          key.getLastModified()),
+                                  false)))
+              .collect(Collectors.toList());
 
       final File iniFile = File.createTempFile("niassa", ".ini");
       iniFile.deleteOnExit();
@@ -339,89 +316,46 @@ public final class WorkflowAction extends Action {
         ini.store(out, String.format("Generated by Shesmu for workflow %d", workflowAccession));
       }
 
-      // Create a command line to invoke the workflow scheduler
-      final ArrayList<String> runArgs = new ArrayList<>();
-      runArgs.add("java");
-      runArgs.add("-jar");
-      runArgs.add(jarPath);
-      runArgs.add("--plugin");
-      runArgs.add("io.seqware.pipeline.plugins.WorkflowScheduler");
-      runArgs.add("--");
-      runArgs.add("--workflow-accession");
-      runArgs.add(Long.toString(workflowAccession));
-      runArgs.add("--ini-files");
-      runArgs.add(iniFile.getAbsolutePath());
-      if (!fileAccessions.isEmpty()) {
-        runArgs.add("--input-files");
-        runArgs.add(fileAccessions);
-      }
-      if (!parentAccessions.isEmpty()) {
-        runArgs.add("--parent-accessions");
-        runArgs.add(parentAccessions);
-      }
-      if (!iusAccessions.isEmpty()) {
-        runArgs.add("--link-workflow-run-to-parents");
-        runArgs.add(iusAccessions);
-      }
-      runArgs.add("--host");
-      runArgs.add(server.get().host());
-      final ProcessBuilder builder = new ProcessBuilder(runArgs);
-      builder.environment().put("SEQWARE_SETTINGS", settingsPath);
-      builder.environment().remove("CLASSPATH");
-      final Process process = builder.start();
-      runAccession = 0;
-      boolean success = true;
-      try (OutputStream stdin = process.getOutputStream();
-          Scanner stdout = new Scanner(process.getInputStream());
-          InputStream stderr = process.getErrorStream()) {
-        final String line = stdout.useDelimiter("\\Z").next();
-        final Matcher matcher = RUN_SWID_LINE.matcher(line);
-        if (matcher.matches()) {
-          runAccession = Integer.parseUnsignedInt(matcher.group(1));
-        } else {
-          System.err.printf(
-              "Failed to get workflow run accession for Niassa job for workflow %d\n",
-              workflowAccession);
-          success = false;
-        }
-      }
-      final int scheduleExitCode = process.waitFor();
-      if (scheduleExitCode != 0) {
-        System.err.printf(
-            "Failed to schedule Niassa workflow %d: exited %d\n",
-            workflowAccession, scheduleExitCode);
-      }
-      success &= scheduleExitCode == 0;
-      if (success) {
-        workflowAccessions().forEach(server.get().analysisCache()::invalidate);
-        final ArrayList<String> annotationArgs = new ArrayList<>();
-        annotationArgs.add("java");
-        annotationArgs.add("-jar");
-        annotationArgs.add(jarPath);
-        annotationArgs.add("--plugin");
-        annotationArgs.add("net.sourceforge.seqware.pipeline.plugins.AttributeAnnotator");
-        annotationArgs.add("--");
-        annotationArgs.add("--workflow-run-accession");
-        annotationArgs.add(Long.toString(runAccession));
-        annotationArgs.add("--key");
-        annotationArgs.add("major_olive_version");
-        annotationArgs.add("--value");
-        annotationArgs.add(Long.toString(majorOliveVersion));
-        final ProcessBuilder annotationBuilder = new ProcessBuilder(annotationArgs);
-        annotationBuilder.environment().put("SEQWARE_SETTINGS", settingsPath);
-        annotationBuilder.environment().remove("CLASSPATH");
-        final Process annotationProcess = annotationBuilder.start();
-        annotationProcess.getInputStream().close();
-        annotationProcess.getOutputStream().close();
-        annotationProcess.getErrorStream().close();
-        final int annotationExitCode = annotationProcess.waitFor();
-        if (annotationExitCode != 0) {
-          System.err.printf(
-              "Failed to annotate Niassa workflow run %d: exited %d\n",
-              runAccession, annotationExitCode);
-        }
-
-        success = annotationExitCode == 0;
+      boolean success;
+      try {
+        final Scheduler scheduler =
+            new Scheduler(
+                server.get().metadata(),
+                server
+                    .get()
+                    .settings()
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Object::toString, Object::toString)));
+        runAccession =
+            scheduler
+                .scheduleInstalledBundle(
+                    Long.toString(workflowAccession),
+                    Collections.singletonList(iniFile.getAbsolutePath()),
+                    true,
+                    parentSwids.stream().map(Object::toString).collect(Collectors.toList()),
+                    Stream.concat(iusAccessions.stream(), fileLimsKeyAccessions.stream())
+                        .collect(Collectors.toList()),
+                    Collections.emptyList(),
+                    server.get().host(),
+                    server
+                        .get()
+                        .settings()
+                        .getProperty(
+                            SqwKeys.SW_DEFAULT_WORKFLOW_ENGINE.getSettingKey(),
+                            Engines.DEFAULT_ENGINE),
+                    fileSwids)
+                .getReturnValue();
+        server.get().analysisCache().invalidate(workflowAccession);
+        WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+        attribute.setTag("major_olive_version");
+        attribute.setValue(Long.toString(majorOliveVersion));
+        server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+        success = runAccession != 0;
+      } catch (Exception e) {
+        // Suppress all the batshit crazy errors this thing can throw
+        e.printStackTrace();
+        success = false;
       }
 
       // Indicate if we managed to schedule the workflow; if we did, mark ourselves
@@ -429,6 +363,7 @@ public final class WorkflowAction extends Action {
       (success ? runCreated : runFailed)
           .labels(server.get().url(), Long.toString(workflowAccession))
           .inc();
+      hasLaunched = true;
       return success ? ActionState.QUEUED : ActionState.FAILED;
     } catch (final Exception e) {
       e.printStackTrace();
@@ -440,13 +375,17 @@ public final class WorkflowAction extends Action {
   public final void prepare() {
     fileAccessions =
         fileSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
-    parentAccessions =
-        parentSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
   }
 
   @Override
   public final int priority() {
     return 0;
+  }
+
+  @Override
+  public void purgeCleanup() {
+    if (first) MAX_IN_FLIGHT.get(workflowAccession).first().incrementAndGet();
+    if (inflight) MAX_IN_FLIGHT.get(workflowAccession).second().incrementAndGet();
   }
 
   @Override
@@ -476,18 +415,14 @@ public final class WorkflowAction extends Action {
             })
         .forEach(node.putArray("limsKeys")::add);
     final ObjectNode iniJson = node.putObject("ini");
-    ini.entrySet()
-        .stream()
-        .forEach(e -> iniJson.put(e.getKey().toString(), e.getValue().toString()));
+    ini.forEach((key, value) -> iniJson.put(key.toString(), value.toString()));
     node.put("workflowAccession", workflowAccession);
-    node.put("workflowRunAccession", runAccession);
-    node.put("jarPath", jarPath);
-    node.put("settingsPath", settingsPath);
-    if (id != 0) {
-      node.put("workflowRunId", id);
+    if (runAccession != 0) {
+      node.put("workflowRunAccession", runAccession);
     }
-    repackIntegers(node, "fileAccessions", fileAccessions);
-    repackIntegers(node, "parentAccessions", parentAccessions);
+
+    fileSwids.forEach(node.putArray("fileAccessions")::add);
+    parentSwids.forEach(node.putArray("parentAccessions")::add);
     final ObjectNode iniNode = node.putObject("ini");
     ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
 

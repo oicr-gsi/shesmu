@@ -1,12 +1,11 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import java.util.Collections;
-import java.util.List;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -22,33 +21,50 @@ public class AnalysisState implements Comparable<AnalysisState> {
     return workflowRunAccession;
   }
 
-  public AnalysisState(AnalysisProvenance source) {
+  public AnalysisState(Pair<Integer, Integer> accessions, List<AnalysisProvenance> source) {
     fileSWIDSToRun =
         source
-            .getWorkflowRunInputFileIds()
-            .stream() //
-            .map(Object::toString) //
+            .stream()
+            .flatMap(s -> s.getWorkflowRunInputFileIds().stream())
+            .sorted()
+            .distinct()
+            .map(Object::toString)
             .collect(Collectors.joining(","));
     limsKeys =
         source
-            .getIusLimsKeys()
-            .stream() //
-            .map(IusLimsKey::getLimsKey) //
-            .sorted(WorkflowAction.LIMS_KEY_COMPARATOR) //
+            .stream()
+            .flatMap(s -> s.getIusLimsKeys().stream())
+            .map(IusLimsKey::getLimsKey)
+            .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
+            .distinct()
             .collect(Collectors.toList());
-    state = NiassaServer.processingStateToActionState(source.getWorkflowRunStatus());
-    workflowAccession = source.getWorkflowId();
-    workflowRunAccession = source.getWorkflowRunId();
+    state =
+        source
+            .stream()
+            .map(AnalysisProvenance::getWorkflowRunStatus)
+            .map(NiassaServer::processingStateToActionState)
+            .sorted(Comparator.comparing(ActionState::sortPriority))
+            .findFirst()
+            .get();
+    workflowRunAccession = accessions.first();
+    workflowAccession = accessions.second();
     majorOliveVersion =
-        source.getWorkflowRunAttributes().getOrDefault("magic", Collections.emptySortedSet());
+        source
+            .stream()
+            .flatMap(
+                s ->
+                    s.getWorkflowRunAttributes()
+                        .getOrDefault("magic", Collections.emptySortedSet())
+                        .stream())
+            .collect(Collectors.toCollection(TreeSet::new));
   }
 
   /** Sort so that the latest, most successful run is first. */
   @Override
   public int compareTo(AnalysisState other) {
-    int comparison = state.sortPriority() - other.state.sortPriority();
+    int comparison = Integer.compare(state.sortPriority(), other.state.sortPriority());
     if (comparison == 0) {
-      comparison = -Integer.compare(other.workflowRunAccession, workflowRunAccession);
+      comparison = Integer.compare(other.workflowRunAccession, workflowRunAccession);
     }
     return comparison;
   }

@@ -21,7 +21,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import net.sourceforge.seqware.common.metadata.Metadata;
@@ -49,9 +50,13 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
       return metadata
           .getAnalysisProvenance(filters)
-          .stream() //
-          .filter(ap -> ap.getWorkflowId() != null && (ap.getSkip() == null || !ap.getSkip())) //
-          .map(AnalysisState::new);
+          .stream()
+          .filter(ap -> ap.getWorkflowId() != null && (ap.getSkip() == null || !ap.getSkip()))
+          .collect(
+              Collectors.groupingBy(ap -> new Pair<>(ap.getWorkflowRunId(), ap.getWorkflowId())))
+          .entrySet()
+          .stream()
+          .map(e -> new AnalysisState(e.getKey(), e.getValue()));
     }
   }
 
@@ -67,9 +72,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       }
       return metadata
           .getAnalysisProvenance()
-          .stream() //
-          .filter(ap -> ap.getSkip() != null && ap.getSkip() && ap.getWorkflowId() == null) //
-          .flatMap(ap -> ap.getIusLimsKeys().stream()) //
+          .stream()
+          .filter(ap -> ap.getSkip() != null && ap.getSkip() && ap.getWorkflowId() == null)
+          .flatMap(ap -> ap.getIusLimsKeys().stream())
           .map(
               iusLimsKey -> {
                 final Tuple limsKey =
@@ -138,7 +143,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     renderer.line("Filename", fileName().toString());
     configuration.ifPresent(
         c -> {
-          renderer.line("JAR File", c.getJar());
           renderer.line("Settings", c.getSettings());
           renderer.line("Registered Workflows Count", c.getWorkflows().length);
         });
@@ -157,13 +161,17 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   public boolean $_is_skipped(
       @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
       @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
-    return skipCache
-        .get() //
-        .anyMatch(new Pair<>(ius, lims)::equals);
+    return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
+  }
+
+  private Properties settings = new Properties();
+
+  public Properties settings() {
+    return settings;
   }
 
   @Override
-  protected Optional<Integer> update(Configuration value) {
+  protected synchronized Optional<Integer> update(Configuration value) {
     // Read the settings
     final Properties settings = new Properties();
     try (InputStream settingsInput = new FileInputStream(value.getSettings())) {
@@ -179,14 +187,17 @@ class NiassaServer extends JsonPluginFile<Configuration> {
             settings.getProperty("SW_REST_PASS"));
     host = settings.getProperty("SW_HOST", host);
     url = settings.getProperty("SW_REST_URL", url);
+    this.settings = settings;
     analysisCache.invalidateAll();
     skipCache.invalidate();
     definer.clearActions();
 
     for (final WorkflowConfiguration wc : value.getWorkflows()) {
       WorkflowAction.MAX_IN_FLIGHT.putIfAbsent(
-          wc.getAccession(), new Semaphore(wc.getMaxInFlight()));
-      wc.define(definer, value);
+          wc.getAccession(),
+          new Pair<>(
+              new AtomicInteger(wc.getMaxInFlight()), new AtomicInteger(wc.getMaxInFlight())));
+      wc.define(definer);
     }
     configuration = Optional.of(value);
     return Optional.empty();

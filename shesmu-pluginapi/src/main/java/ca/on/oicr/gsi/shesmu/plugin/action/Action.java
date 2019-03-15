@@ -24,6 +24,16 @@ public abstract class Action {
     this.type = type;
   }
 
+  /**
+   * Called when an action is accepted into the scheduler.
+   *
+   * <p>Since the scheduler will deduplicate the same action many times, most actions are fated to
+   * die quickly. This method will be called to indicate that this instance of the object will
+   * actually be used. It is called after {@link #prepare()} and before {@link
+   * #perform(ActionServices)}.
+   */
+  public void accepted() {}
+
   @Override
   public abstract boolean equals(Object other);
 
@@ -50,6 +60,9 @@ public abstract class Action {
    * priority. This method should return a constant.
    */
   public abstract int priority();
+
+  /** If an action is deleted, do any necessary state clean up */
+  public void purgeCleanup() {}
 
   /**
    * The number of minutes to wait before attempting to retry this action.
