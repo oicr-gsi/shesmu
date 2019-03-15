@@ -1,13 +1,11 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Configuration {
-  private String jar;
   private String settings;
   private WorkflowConfiguration[] workflows;
-
-  public String getJar() {
-    return jar;
-  }
 
   public String getSettings() {
     return settings;
@@ -15,10 +13,6 @@ public class Configuration {
 
   public WorkflowConfiguration[] getWorkflows() {
     return workflows;
-  }
-
-  public void setJar(String jar) {
-    this.jar = jar;
   }
 
   public void setSettings(String settings) {

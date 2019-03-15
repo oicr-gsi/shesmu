@@ -16,47 +16,35 @@ public class WorkflowConfiguration {
   private long[] previousAccessions;
   private String[] services;
 
-  public void define(Definer<NiassaServer> definer, Configuration value) {
-    final String description = //
+  public void define(Definer<NiassaServer> definer) {
+    final String description =
         String.format(
-                "Runs SeqWare/Niassa workflow %d using %s with settings in %s.", //
-                accession, //
-                value.getJar(), //
-                value.getSettings())
+                "Runs SeqWare/Niassa workflow %d with settings in %s.",
+                accession, definer.get().fileName())
             + (previousAccessions.length == 0
                 ? ""
-                : LongStream.of(getPreviousAccessions()) //
-                    .sorted() //
-                    .mapToObj(Long::toString) //
+                : LongStream.of(getPreviousAccessions())
+                    .sorted()
+                    .mapToObj(Long::toString)
                     .collect(
                         Collectors.joining(", ", " Considered equivalent to workflows: ", "")));
     definer.defineAction(
         name,
         description,
         WorkflowAction.class,
-        () ->
-            new WorkflowAction(
-                definer,
-                getLanes(),
-                accession,
-                previousAccessions,
-                value.getJar(),
-                value.getSettings(),
-                services), //
-        Stream.concat( //
-            makeLanesParam(), //
-            Stream.of(getParameters()).map(IniParam::parameter)));
+        () -> new WorkflowAction(definer, getLanes(), accession, previousAccessions, services),
+        Stream.concat(makeLanesParam(), Stream.of(getParameters()).map(IniParam::parameter)));
   }
 
   Stream<CustomActionParameter<WorkflowAction, ?>> makeLanesParam() {
     return getLanes() == null
         ? Stream.empty()
         : Stream.of(
-            new CustomActionParameter<WorkflowAction, Set<? extends Object>>(
+            new CustomActionParameter<WorkflowAction, Set<?>>(
                 "lanes", true, getLanes().innerType().asList()) {
 
               @Override
-              public void store(WorkflowAction action, Set<? extends Object> lanes) {
+              public void store(WorkflowAction action, Set<?> lanes) {
                 action.lanes(lanes);
               }
             });

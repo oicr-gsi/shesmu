@@ -572,6 +572,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     Information information;
     boolean isDuplicate;
     if (!actions.containsKey(action)) {
+      action.accepted();
       information = new Information();
       actions.put(action, information);
       stateCount.labels(ActionState.UNKNOWN.name()).inc();
@@ -737,6 +738,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
             .peek(e -> stateCount.labels(e.getValue().lastState.name()).dec())
             .map(Entry::getKey)
             .collect(Collectors.toSet());
+    deadActions.forEach(Action::purgeCleanup);
     actions.keySet().removeAll(deadActions);
     return deadActions.size();
   }
@@ -878,10 +880,13 @@ public final class ActionProcessor implements OliveServices, InputProvider {
                           "Performing action %s of type %s",
                           entry.getValue(), entry.getKey().type()))) {
                 entry.getValue().lastState = entry.getKey().perform(actionServices);
-              } catch (final Exception e) {
+              } catch (final Throwable e) {
                 entry.getValue().lastState = ActionState.UNKNOWN;
                 entry.getValue().thrown = true;
                 e.printStackTrace();
+                if (e instanceof Error) {
+                  throw (Error) e;
+                }
               }
               if (oldState != entry.getValue().lastState) {
                 entry.getValue().lastStateTransition = Instant.now();
