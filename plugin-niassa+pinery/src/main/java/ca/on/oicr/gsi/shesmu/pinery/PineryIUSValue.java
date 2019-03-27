@@ -8,6 +8,7 @@ import java.util.Objects;
 
 /** IUS information from Pinery */
 public final class PineryIUSValue {
+  private final String bases_mask;
   private final Instant completed_date;
   private final String donor;
   private final String group_desc;
@@ -51,10 +52,12 @@ public final class PineryIUSValue {
       Instant timestamp,
       Tuple lims,
       Instant completed_date,
+      String bases_mask,
       boolean is_sample) {
     super();
     this.path = path;
     this.organism = organism;
+    this.bases_mask = bases_mask;
     this.is_sample = is_sample;
     this.project = project;
     this.library_name = library_name;
@@ -76,6 +79,11 @@ public final class PineryIUSValue {
     this.completed_date = completed_date;
   }
 
+  @ShesmuVariable(signable = true)
+  public String bases_mask() {
+    return bases_mask;
+  }
+
   @ShesmuVariable
   public Instant completed_date() {
     return completed_date;
@@ -93,6 +101,7 @@ public final class PineryIUSValue {
     PineryIUSValue that = (PineryIUSValue) o;
     return is_sample == that.is_sample
         && library_size == that.library_size
+        && bases_mask.equals(that.bases_mask)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
         && group_desc.equals(that.group_desc)
@@ -103,8 +112,8 @@ public final class PineryIUSValue {
         && library_name.equals(that.library_name)
         && library_type.equals(that.library_type)
         && lims.equals(that.lims)
-        && path.equals(that.path)
         && organism.equals(that.organism)
+        && path.equals(that.path)
         && project.equals(that.project)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
@@ -127,6 +136,7 @@ public final class PineryIUSValue {
   @Override
   public int hashCode() {
     return Objects.hash(
+        bases_mask,
         completed_date,
         donor,
         group_desc,
@@ -139,8 +149,8 @@ public final class PineryIUSValue {
         library_size,
         library_type,
         lims,
-        path,
         organism,
+        path,
         project,
         targeted_resequencing,
         timestamp,

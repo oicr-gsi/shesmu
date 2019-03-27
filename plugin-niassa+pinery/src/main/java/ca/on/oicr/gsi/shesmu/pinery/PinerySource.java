@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
@@ -42,7 +43,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
         final String version = cfg.getVersion() == null ? "v1" : cfg.getVersion();
         final Map<String, Integer> badSetCounts = new TreeMap<>();
-        final Map<String, String> runDirectories = new HashMap<>();
+        final Map<String, Pair<String, String>> runDirectoriesAndMasks = new HashMap<>();
         final Set<String> completeRuns =
             c.getSequencerRun()
                 .all()
@@ -60,14 +61,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     version,
                     cfg.getProvider(),
                     badSetCounts,
-                    runDirectories,
+                    runDirectoriesAndMasks,
                     completeRuns::contains),
                 samples(
                     c,
                     version,
                     cfg.getProvider(),
                     badSetCounts,
-                    runDirectories,
+                    runDirectoriesAndMasks,
                     completeRuns::contains))
             .onClose(
                 () ->
@@ -90,7 +91,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String version,
         String provider,
         Map<String, Integer> badSetCounts,
-        Map<String, String> runDirectories,
+        Map<String, Pair<String, String>> runDirectoriesAndMasks,
         Predicate<String> goodRun)
         throws HttpResponseException {
       return Utils.stream(client.getLaneProvenance().version(version))
@@ -105,8 +106,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             reason -> badSetInRecord.add("run_dir:" + reason),
                             true)
                         .orElse("");
-
-                runDirectories.put(lp.getSequencerRunName(), runDirectory);
+                final String basesMask =
+                    IUSUtils.singleton(
+                            lp.getSequencerRunAttributes().get("run_bases_mask"),
+                            reason -> badSetInRecord.add("bases_mask:" + reason),
+                            true)
+                        .orElse("");
+                runDirectoriesAndMasks.put(
+                    lp.getSequencerRunName(), new Pair<>(runDirectory, basesMask));
                 final PineryIUSValue result =
                     new PineryIUSValue(
                         Paths.get(runDirectory),
@@ -136,6 +143,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         lp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : lp.getCreatedDate().toInstant(),
+                        basesMask,
                         false);
 
                 if (badSetInRecord.isEmpty()) {
@@ -153,21 +161,22 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String version,
         String provider,
         Map<String, Integer> badSetCounts,
-        Map<String, String> runDirectories,
+        Map<String, Pair<String, String>> runDirectoriesAndMasks,
         Predicate<String> goodRun)
         throws HttpResponseException {
       return Utils.stream(client.getSampleProvenance().version(version))
           .filter(sp -> goodRun.test(sp.getSequencerRunName()))
           .map(
               sp -> {
-                final String runDirectory = runDirectories.get(sp.getSequencerRunName());
-                if (runDirectory == null) {
+                final Pair<String, String> runDirectoryAndMask =
+                    runDirectoriesAndMasks.get(sp.getSequencerRunName());
+                if (runDirectoryAndMask == null) {
                   return null;
                 }
                 final Set<String> badSetInRecord = new TreeSet<>();
                 final PineryIUSValue result =
                     new PineryIUSValue(
-                        Paths.get(runDirectory),
+                        Paths.get(runDirectoryAndMask.first()),
                         sp.getStudyTitle(),
                         limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
                         sp.getSampleName(),
@@ -200,6 +209,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : sp.getCreatedDate().toInstant(),
+                        runDirectoryAndMask.second(),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
