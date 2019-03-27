@@ -10,10 +10,15 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
 public final class StringSetFile extends PluginFile {
 
+  private static final Predicate<String> GOOD_LINE = Pattern.compile("^\\s*[^#].*$").asPredicate();
   private static final Gauge badFile =
       Gauge.build(
               "shesmu_auto_update_bad_string_constants_file",
@@ -41,8 +46,8 @@ public final class StringSetFile extends PluginFile {
 
   @Override
   public Optional<Integer> update() {
-    try {
-      values = new TreeSet<>(Files.readAllLines(fileName()));
+    try (Stream<String> lines = Files.lines(fileName())) {
+      values = lines.filter(GOOD_LINE).collect(Collectors.toCollection(TreeSet::new));
       badFile.labels(fileName().toString()).set(0);
       good = true;
     } catch (final Exception e) {
