@@ -213,19 +213,21 @@ export const parser = {
   o: function(fieldTypes) {
     return input => {
       const output = {};
+      let first = true;
       // We're going to iterate over the keys so we get the right number of fields, but we won't actually use them directly since we don't know the order the user gave them to us in
       for (let field in Object.keys(fieldTypes)) {
-        let match = input.match(i == 0 ? /^\s*{/ : /^\s*,/);
+        let match = input.match(first ? /^\s*{/ : /^\s*,/);
         if (!match) {
           return {
             good: false,
             input: input,
-            error: i == 0 ? "Expected { for object." : "Expected , for object."
+            error: first ? "Expected { for object." : "Expected , for object."
           };
         }
+        first = false;
         const fieldStart = input
           .substring(match[0].length)
-          .match(/^\s*([a-z][a-z_])*\s*:\s*/);
+          .match(/^\s*([a-z][a-z0-9_]*)\s*=\s*/);
         if (!fieldStart) {
           return {
             good: false,
@@ -233,11 +235,11 @@ export const parser = {
             error: "Expected field name for object."
           };
         }
-        if (!output.hasOwnProperty(fieldStart[1])) {
+        if (output.hasOwnProperty(fieldStart[1])) {
           return {
             good: false,
             input: input,
-            error: `Expected field ${fieldStart[1]} in object.`
+            error: `Duplicate field ${fieldStart[1]} in object.`
           };
         }
 
