@@ -866,7 +866,7 @@ public final class PluginManager
     private void processFunctionOrConstantMethod(
         ShesmuMethod annotation, Method method, boolean isInstance, int offset)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method, true);
+      final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
       final Imyhat returnType =
           Imyhat.convert(
               String.format(
