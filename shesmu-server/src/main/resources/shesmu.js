@@ -19,7 +19,7 @@ export function fetchConstant(name, element) {
     .then(response => response.json())
     .then(data => {
       if (data.hasOwnProperty("value")) {
-        element.nextElementSibling.innerText = data.value;
+        element.nextElementSibling.innerText = JSON.stringify(data.value, null, 2);
         element.nextElementSibling.className = "data";
       } else {
         element.nextElementSibling.innerText = data.error;
@@ -71,7 +71,7 @@ export function runFunction(name, element, parameterParser) {
     .then(response => response.json())
     .then(data => {
       if (data.hasOwnProperty("value")) {
-        element.nextElementSibling.innerText = data.value;
+        element.nextElementSibling.innerText = JSON.stringify(data.value, null, 2);
         element.nextElementSibling.className = "data";
       } else {
         element.innerText = data.error;
