@@ -319,26 +319,32 @@ public final class Server implements ServerConfig, ActionServices {
                               .forEach(
                                   olive -> {
                                     try {
+                                      final String id =
+                                          String.format(
+                                              "%1$s:%2$d:%3$d:%4$d",
+                                              fileTable.filename(),
+                                              olive.line(),
+                                              olive.column(),
+                                              fileTable.timestamp().toEpochMilli());
+                                      writer.writeStartElement("div");
+                                      writer.writeAttribute("id", id);
+                                      writer.writeAttribute("class", "olive");
+
+                                      String filterForOlive =
+                                          String.format(
+                                              "filterForOlive('%1$s', %2$d, %3$d, %4$d)",
+                                              fileTable.filename(),
+                                              olive.line(),
+                                              olive.column(),
+                                              fileTable.timestamp().toEpochMilli());
+
+                                      writer.writeStartElement("p");
+                                      writer.writeStartElement("a");
+                                      writer.writeAttribute("href", "#" + id);
+                                      writer.writeAttribute("class", "load");
+                                      writer.writeCharacters("🔗 Permalink");
+                                      writer.writeEndElement();
                                       if (olive.producesActions()) {
-                                        writer.writeStartElement("p");
-                                        writer.writeAttribute(
-                                            "id",
-                                            String.format(
-                                                "%1$s:%2$d:%3$d:%4$d",
-                                                fileTable.filename(),
-                                                olive.line(),
-                                                olive.column(),
-                                                fileTable.timestamp().toEpochMilli()));
-                                        writer.writeAttribute("class", "olive");
-
-                                        String filterForOlive =
-                                            String.format(
-                                                "filterForOlive('%1$s', %2$d, %3$d, %4$d)",
-                                                fileTable.filename(),
-                                                olive.line(),
-                                                olive.column(),
-                                                fileTable.timestamp().toEpochMilli());
-
                                         for (Pair<String, String> button :
                                             Arrays.asList(
                                                 new Pair<>("listActionsPopup", "🔍 List Actions"),
@@ -352,8 +358,10 @@ public final class Server implements ServerConfig, ActionServices {
                                           writer.writeCharacters(button.second());
                                           writer.writeEndElement();
                                         }
-                                        writer.writeEndElement();
+                                      } else {
+                                        writer.writeCharacters(" Olive does not produce actions.");
                                       }
+                                      writer.writeEndElement();
 
                                       writer.writeStartElement("div");
                                       writer.writeAttribute("class", "indent");
@@ -366,6 +374,7 @@ public final class Server implements ServerConfig, ActionServices {
                                           olive,
                                           inputCount,
                                           fileTable.format());
+                                      writer.writeEndElement();
                                       writer.writeEndElement();
                                     } catch (XMLStreamException e) {
                                       throw new RuntimeException(e);

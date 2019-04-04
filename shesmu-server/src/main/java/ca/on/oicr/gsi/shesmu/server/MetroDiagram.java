@@ -61,6 +61,8 @@ public class MetroDiagram {
     void write(XMLStreamWriter writer) throws XMLStreamException;
   }
 
+  private static final double AVG_SMALL_CHAR_WIDTH = 1.871;
+
   private static final String CLAUSE_HEADER = "Clause (Line:Column)";
 
   private static final String[] COLOURS =
@@ -104,8 +106,23 @@ public class MetroDiagram {
                         ::stringWidth)
                 .max()
                 .orElse(100);
+    final List<VariableInformation> liveVariableInfo =
+        new DeathChecker().liveVariables(olive).collect(Collectors.toList());
+    final long topPadding =
+        (long)
+            Math.max(
+                SVG_ROW_HEIGHT,
+                liveVariableInfo
+                        .stream()
+                        .flatMap(VariableInformation::inputs)
+                        .mapToInt(String::length)
+                        .max()
+                        .orElse(0)
+                    * AVG_SMALL_CHAR_WIDTH
+                    * Math.sin(Math.toRadians(45)));
     final long height =
-        SVG_ROW_HEIGHT * (olive.clauses().count() + 3); // Padding + Input + Clauses + Output
+        SVG_ROW_HEIGHT * (olive.clauses().count() + 2)
+            + topPadding; // Padding (includes title) + Input + Clauses + Output
     final long width =
         metroStart
             + SVG_METRO_WIDTH
@@ -117,6 +134,7 @@ public class MetroDiagram {
                         .distinct()
                         .count()
                     + 1);
+
     writer.writeStartElement("svg");
     writer.writeDefaultNamespace(SVG_NS_URI);
     writer.writeNamespace("xlink", XLINK_NS_URI);
@@ -160,23 +178,23 @@ public class MetroDiagram {
     writer.writeAttribute("text-anchor", "end");
     writer.writeAttribute("style", "font-weight:bold");
     writer.writeAttribute("x", Long.toString(SVG_COUNT_START));
-    writer.writeAttribute("y", Long.toString(SVG_ROW_HEIGHT));
+    writer.writeAttribute("y", Long.toString(topPadding - SVG_ROW_HEIGHT + SVG_TEXT_BASELINE));
     writer.writeCharacters("Records");
     writer.writeEndElement();
     writer.writeStartElement("text");
     writer.writeAttribute("style", "font-weight:bold");
     writer.writeAttribute("x", Long.toString(SVG_TITLE_START));
-    writer.writeAttribute("y", Long.toString(SVG_ROW_HEIGHT));
+    writer.writeAttribute("y", Long.toString(topPadding - SVG_ROW_HEIGHT + SVG_TEXT_BASELINE));
     writer.writeCharacters(CLAUSE_HEADER);
     writer.writeEndElement();
 
     final AtomicInteger idGen = new AtomicInteger();
-    final AtomicInteger row = new AtomicInteger(2);
+    final AtomicInteger row = new AtomicInteger(1);
     final List<DelayedXml> textLayerBuffer = new ArrayList<>();
 
     final Map<String, MetroDiagram> initialVariables =
-        new DeathChecker()
-            .liveVariables(olive)
+        liveVariableInfo
+            .stream()
             .flatMap(VariableInformation::inputs)
             .distinct()
             .sorted()
@@ -198,9 +216,10 @@ public class MetroDiagram {
                                 .orElse(Imyhat.BAD),
                             "",
                             colour,
-                            1,
+                            0,
                             colour,
                             metroStart,
+                            topPadding,
                             true);
                       } catch (XMLStreamException e) {
                         throw new RuntimeException(e);
@@ -209,7 +228,7 @@ public class MetroDiagram {
 
     final SourceLocation source =
         new SourceLocation(filename, olive.line(), olive.column(), timestamp);
-    writeClause(writer, linker, 1, "Input", inputCount, source);
+    writeClause(writer, linker, topPadding, 0, "Input", inputCount, source);
 
     final Map<String, MetroDiagram> terminalVariables =
         olive
@@ -222,6 +241,7 @@ public class MetroDiagram {
                     writeClause(
                         writer,
                         linker,
+                        topPadding,
                         currentRow,
                         clause.syntax(),
                         clause.measuredFlow()
@@ -244,6 +264,7 @@ public class MetroDiagram {
                       textLayerBuffer,
                       writer,
                       metroStart,
+                      topPadding,
                       idGen,
                       variables,
                       clause::variables,
@@ -252,9 +273,16 @@ public class MetroDiagram {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    writeClause(writer, linker, row.get(), olive.syntax(), null, source);
+    writeClause(writer, linker, topPadding, row.get(), olive.syntax(), null, source);
     drawVariables(
-        textLayerBuffer, writer, metroStart, idGen, terminalVariables, olive::variables, row.get());
+        textLayerBuffer,
+        writer,
+        metroStart,
+        topPadding,
+        idGen,
+        terminalVariables,
+        olive::variables,
+        row.get());
     for (DelayedXml textElement : textLayerBuffer) {
       textElement.write(writer);
     }
@@ -265,6 +293,7 @@ public class MetroDiagram {
       List<DelayedXml> textLayer,
       XMLStreamWriter connectorLayer,
       long metroStart,
+      long topPadding,
       AtomicInteger idGen,
       Map<String, MetroDiagram> variables,
       Supplier<Stream<VariableInformation>> information,
@@ -300,6 +329,7 @@ public class MetroDiagram {
                             row,
                             outputVariableColumns.get(variable.name()),
                             metroStart,
+                            topPadding,
                             variable.behaviour() == Behaviour.DEFINITION);
                     variable
                         .inputs()
@@ -355,6 +385,7 @@ public class MetroDiagram {
   private static void writeClause(
       XMLStreamWriter writer,
       SourceLoctionLinker linker,
+      long topPadding,
       int row,
       String title,
       Long count,
@@ -364,7 +395,8 @@ public class MetroDiagram {
       writer.writeStartElement("text");
       writer.writeAttribute("text-anchor", "end");
       writer.writeAttribute("x", Long.toString(SVG_COUNT_START));
-      writer.writeAttribute("y", Long.toString(SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE));
+      writer.writeAttribute(
+          "y", Long.toString(topPadding + SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE));
       writer.writeCharacters(Long.toString(count));
       writer.writeEndElement();
     }
@@ -377,7 +409,8 @@ public class MetroDiagram {
     }
     writer.writeStartElement("text");
     writer.writeAttribute("x", Long.toString(SVG_TITLE_START));
-    writer.writeAttribute("y", Long.toString(SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE));
+    writer.writeAttribute(
+        "y", Long.toString(topPadding + SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE));
     writer.writeCharacters(
         String.format(
             "%s (%d:%d)%s",
@@ -391,6 +424,7 @@ public class MetroDiagram {
   private final String colour;
 
   private final XMLStreamWriter connectorLayer;
+  private final long topPadding;
 
   private final long metroStart;
 
@@ -409,10 +443,12 @@ public class MetroDiagram {
       int row,
       int column,
       long metroStart,
+      long topPadding,
       boolean dot)
       throws XMLStreamException {
     this.textLayer = textLayer;
     this.connectorLayer = connectorLayer;
+    this.topPadding = topPadding;
     title = name + " (" + type.name() + ")";
     this.metroStart = metroStart;
     this.colour = COLOURS[colour % COLOURS.length];
@@ -424,7 +460,7 @@ public class MetroDiagram {
       drawSquare(start);
     }
     final long x = metroStart + column * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2;
-    final long y = SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
+    final long y = topPadding + SVG_ROW_HEIGHT * row + SVG_ROW_HEIGHT / 2;
     textLayer.add(
         textWriter -> {
           textWriter.writeStartElement("text");
@@ -479,7 +515,8 @@ public class MetroDiagram {
               "cx",
               Long.toString(metroStart + point.first() * SVG_METRO_WIDTH + SVG_METRO_WIDTH / 2));
           textWriter.writeAttribute(
-              "cy", Long.toString(SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2));
+              "cy",
+              Long.toString(topPadding + SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2));
           textWriter.writeAttribute("fill", colour);
           textWriter.writeStartElement("title");
           textWriter.writeCharacters(title);
@@ -530,7 +567,11 @@ public class MetroDiagram {
                       - SVG_RADIUS * 2));
           textWriter.writeAttribute(
               "y",
-              Long.toString(SVG_ROW_HEIGHT * point.second() + SVG_ROW_HEIGHT / 2 - SVG_RADIUS * 2));
+              Long.toString(
+                  topPadding
+                      + SVG_ROW_HEIGHT * point.second()
+                      + SVG_ROW_HEIGHT / 2
+                      - SVG_RADIUS * 2));
           textWriter.writeAttribute("fill", colour);
           textWriter.writeStartElement("title");
           textWriter.writeCharacters("Group By ");
@@ -549,6 +590,6 @@ public class MetroDiagram {
   }
 
   private long yCoordinate(Pair<Integer, Integer> point) {
-    return point.second() * SVG_ROW_HEIGHT + SVG_ROW_HEIGHT / 2;
+    return topPadding + point.second() * SVG_ROW_HEIGHT + SVG_ROW_HEIGHT / 2;
   }
 }

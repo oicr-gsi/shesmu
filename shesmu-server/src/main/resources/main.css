@@ -118,9 +118,18 @@ pre.json {
 overflow-x: auto;
 }
 
-p.olive:target + div {
-border: 1px dotted #055;
+div.olive {
+padding:0.2em;
 }
+
+div.olive:target {
+background-color:#f5f5ff;
+}
+
+div.olive:hover {
+background-color:#f5f5f5;
+}
+
 
 .modal {
 position: fixed;
