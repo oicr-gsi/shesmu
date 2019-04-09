@@ -338,12 +338,11 @@ There is a final type of olive: one to generate an alert:
 
      Olive
        Where workflow == "BamQC 2.7+" && fize_size == 0
-       Alert Labels
+       Alert
          alertname = "BadGeneratedData",
          environment = "production",
          source = workflow
-       Annotations
-       30mins;
+       For 30mins;
 
 The final number is an expression to determine how long this alert should last.
 If the alert is not regenerated in this time period, it will expire. The
