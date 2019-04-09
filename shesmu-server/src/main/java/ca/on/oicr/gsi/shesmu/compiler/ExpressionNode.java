@@ -502,7 +502,7 @@ public abstract class ExpressionNode {
   }
 
   private static Parser parse3(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse4, COMPARISON, input, output);
+    return scanSuffixed(ExpressionNode::parse4, COMPARISON, false, input, output);
   }
 
   private static Parser parse4(Parser input, Consumer<ExpressionNode> output) {
@@ -514,7 +514,7 @@ public abstract class ExpressionNode {
   }
 
   private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, input, output);
+    return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, false, input, output);
   }
 
   private static Parser parse7(Parser input, Consumer<ExpressionNode> output) {
@@ -522,7 +522,7 @@ public abstract class ExpressionNode {
   }
 
   private static Parser parse8(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, input, output);
+    return scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, true, input, output);
   }
 
   private static Parser parse9(Parser input, Consumer<ExpressionNode> output) {
@@ -574,19 +574,25 @@ public abstract class ExpressionNode {
   private static <T> Parser scanSuffixed(
       Parser.Rule<T> child,
       Parser.ParseDispatch<UnaryOperator<T>> condensers,
+      boolean repeated,
       Parser input,
       Consumer<T> output) {
     final AtomicReference<T> node = new AtomicReference<>();
     Parser result = child.parse(input, node::set).whitespace();
-    if (result.isGood()) {
+    boolean again = true;
+    while (result.isGood() && again) {
       final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
       final Parser next = result.dispatch(condensers, modifier::set).whitespace();
       if (next.isGood()) {
         result = next;
+        node.updateAndGet(modifier.get());
+        again = repeated;
       } else {
-        modifier.set(UnaryOperator.identity());
+        again = false;
       }
-      output.accept(modifier.get().apply(node.get()));
+    }
+    if (result.isGood()) {
+      output.accept(node.get());
     }
     return result;
   }

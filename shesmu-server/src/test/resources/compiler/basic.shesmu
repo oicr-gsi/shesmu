@@ -15,7 +15,7 @@ Define standard_bam()
 
 Define standard_bamqc()
   Where project == "quux"
-  Where workflow == {"BamQC 2.7+"}[0];
+  Where workflow == {{"BamQC 2.7+"}}[0][0];
 
 Olive
   standard_fastq("a")
