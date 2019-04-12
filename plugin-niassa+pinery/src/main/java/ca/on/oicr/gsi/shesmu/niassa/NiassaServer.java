@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -30,8 +30,6 @@ import net.sourceforge.seqware.common.metadata.MetadataWS;
 import net.sourceforge.seqware.common.model.IUS;
 
 class NiassaServer extends JsonPluginFile<Configuration> {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
   private class AnalysisCache extends KeyValueCache<Long, Stream<AnalysisState>> {
     public AnalysisCache(Path fileName) {
       super(
@@ -116,14 +114,15 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   private final AnalysisCache analysisCache;
   private Optional<Configuration> configuration = Optional.empty();
 
   private final Definer<NiassaServer> definer;
-
   private String host;
-
+  private final Map<Long, Integer> maxInFlight = new ConcurrentHashMap<>();
   public Metadata metadata;
+  private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>> skipCache;
   private String url;
 
@@ -132,6 +131,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     this.definer = definer;
     analysisCache = new AnalysisCache(fileName);
     skipCache = new SkipLaneCache(fileName);
+  }
+
+  @ShesmuMethod(
+      description = "Whether an IUS and LIMS key combination has been marked as skipped in {file}.")
+  public boolean $_is_skipped(
+      @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
+      @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
+    return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
   }
 
   public KeyValueCache<Long, Stream<AnalysisState>> analysisCache() {
@@ -152,19 +159,20 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return host;
   }
 
+  public synchronized boolean maxInFlight(long workflowAccession) {
+    return analysisCache()
+            .get(workflowAccession)
+            .filter(
+                analysisState ->
+                    analysisState.state() != ActionState.FAILED
+                        && analysisState.state() != ActionState.SUCCEEDED)
+            .count()
+        >= maxInFlight.getOrDefault(workflowAccession, 0);
+  }
+
   public Metadata metadata() {
     return metadata;
   }
-
-  @ShesmuMethod(
-      description = "Whether an IUS and LIMS key combination has been marked as skipped in {file}.")
-  public boolean $_is_skipped(
-      @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
-      @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
-    return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
-  }
-
-  private Properties settings = new Properties();
 
   public Properties settings() {
     return settings;
@@ -193,10 +201,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     definer.clearActions();
 
     for (final WorkflowConfiguration wc : value.getWorkflows()) {
-      WorkflowAction.MAX_IN_FLIGHT.putIfAbsent(
-          wc.getAccession(),
-          new Pair<>(
-              new AtomicInteger(wc.getMaxInFlight()), new AtomicInteger(wc.getMaxInFlight())));
+      maxInFlight.put(wc.getAccession(), wc.getMaxInFlight());
       wc.define(definer);
     }
     configuration = Optional.of(value);

@@ -19,8 +19,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,9 +41,6 @@ public final class WorkflowAction extends Action {
           .thenComparing(LimsKey::getId)
           .thenComparing(LimsKey::getVersion);
 
-  static final Map<Long, Pair<AtomicInteger, AtomicInteger>> MAX_IN_FLIGHT =
-      new ConcurrentHashMap<>();
-
   private static final Gauge runCreated =
       Gauge.build("shesmu_niassa_run_created", "The number of workflow runs launched.")
           .labelNames("target", "workflow")
@@ -61,9 +56,7 @@ public final class WorkflowAction extends Action {
 
   private final Set<Integer> fileSwids = new TreeSet<>();
 
-  private boolean first = true;
   private boolean hasLaunched;
-  private boolean inflight = false;
   Properties ini = new Properties();
   private final LanesType lanesType;
   private List<StringableLimsKey> limsKeys = Collections.emptyList();
@@ -73,7 +66,7 @@ public final class WorkflowAction extends Action {
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final Set<String> services;
-  private int waitForSomeoneToRerunIt;
+  private ActionState lastState = ActionState.UNKNOWN;
   private final long workflowAccession;
 
   public WorkflowAction(
@@ -91,9 +84,7 @@ public final class WorkflowAction extends Action {
   }
 
   @Override
-  public void accepted() {
-    MAX_IN_FLIGHT.get(workflowAccession).first().decrementAndGet();
-  }
+  public void accepted() {}
 
   final void addFileSwid(String id) {
     fileSwids.add(Integer.parseUnsignedInt(id));
@@ -140,37 +131,27 @@ public final class WorkflowAction extends Action {
     if (actionServices.isOverloaded(services)) {
       return ActionState.THROTTLED;
     }
-    // If this is the first time we're called, then consult the startup counter to determine if we
-    // should attempt to launch; if a pile of actions are created on startup, we will consult the
-    // analysis provenance and, if we find nothing, yield, so that other actions can find
-    // potentially in-flight jobs and update the max-in-flight lock.
-    final boolean shouldWait =
-        first && MAX_IN_FLIGHT.get(workflowAccession).first().incrementAndGet() < 1;
-    first = false;
     try {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
-        final Map<FileProvenanceFilter, Set<String>> query =
-            new EnumMap<>(FileProvenanceFilter.class);
-        query.put(
-            FileProvenanceFilter.workflow_run,
-            Collections.singleton(Integer.toString(runAccession)));
         final ActionState state =
             server
                 .get()
                 .metadata()
-                .getAnalysisProvenance(query)
+                .getAnalysisProvenance(
+                    Collections.singletonMap(
+                        FileProvenanceFilter.workflow_run,
+                        Collections.singleton(Integer.toString(runAccession))))
                 .stream()
                 .findFirst()
                 .map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus()))
                 .orElse(ActionState.UNKNOWN);
-        if (state == ActionState.FAILED && ++waitForSomeoneToRerunIt > 5) {
-          // We've previously found or created a run accession for this action, but it's
-          // been in a failed state. We're really hoping that someone will manually rerun
-          // it, but that new version will have a separate workflow run SWID, so we need
-          // to forget our old ID and then find a new one.
-          runAccession = 0;
-          waitForSomeoneToRerunIt = 0;
+        if (state != lastState) {
+          lastState = state;
+          // When we are getting the analysis state, we are bypassing the analysis cache, so we may
+          // see a state transition before any of our sibling workflow runs. If we see that happen,
+          // zap the cache so they will see it.
+          server.get().analysisCache().invalidate(workflowAccession);
         }
         return state;
       }
@@ -197,42 +178,18 @@ public final class WorkflowAction extends Action {
         // We found a matching workflow run in analysis provenance
         runAccession = current.get().workflowRunAccession();
         final ActionState state = current.get().state();
-        final boolean isDone = state == ActionState.SUCCEEDED || state == ActionState.FAILED;
-        if (inflight && isDone) {
-          // If we've transitioned from a running state to a non-running state, then release a
-          // max-in-flight lock
-          inflight = false;
-          MAX_IN_FLIGHT.get(workflowAccession).second().incrementAndGet();
-        } else if (!inflight && !isDone) {
-          // This is the case where the server has restarted and we find our Niassa job
-          // is already running, but we haven't counted in our max-in-flight, so, we keep
-          // trying to acquire the lock. To prevent other jobs from acquiring all the
-          // locks, no Niassa job will start until the others have been queried at least
-          // once.
-          // We can overrun the max-in-flight by r*m where r is the number of Shesmu
-          // restarts since any workflow last finished and m is the max-in-flight, but we
-          // work hard to make this a worst-case scenario.
-          MAX_IN_FLIGHT.get(workflowAccession).second().decrementAndGet();
-          inflight = true;
-        }
         return state;
       }
 
-      // This is to avoid overrunning the max-in-flight after a restart by giving all
-      // actions a chance to check if they are already running and acquire a lock. Once a server
-      // reaches steady state, new actions shouldn't have to wait.
-      if (shouldWait) {
-        return ActionState.WAITING;
-      }
       // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
       // human needs to rescue us.
       if (hasLaunched) {
         return ActionState.FAILED;
       }
 
-      // Try to decrement the max-in-flight lock; if it was previously greater than zero, then we
-      // can launch; decrement the lock if there was capacity; otherwise, leave it alone
-      if (MAX_IN_FLIGHT.get(workflowAccession).second().getAndUpdate(x -> x < 1 ? x : x - 1) > 0) {
+      // Check if there are already too many copies of this workflow running; if so, wait until
+      // later.
+      if (server.get().maxInFlight(workflowAccession)) {
         return ActionState.WAITING;
       }
 
@@ -346,6 +303,8 @@ public final class WorkflowAction extends Action {
                             Engines.DEFAULT_ENGINE),
                     fileSwids)
                 .getReturnValue();
+        // Zap the cache so any other workflows will see this workflow running and won't exceed our
+        // budget
         server.get().analysisCache().invalidate(workflowAccession);
         WorkflowRunAttribute attribute = new WorkflowRunAttribute();
         attribute.setTag("major_olive_version");
@@ -364,9 +323,11 @@ public final class WorkflowAction extends Action {
           .labels(server.get().url(), Long.toString(workflowAccession))
           .inc();
       hasLaunched = true;
-      return success ? ActionState.QUEUED : ActionState.FAILED;
+      lastState = success ? ActionState.QUEUED : ActionState.FAILED;
+      return lastState;
     } catch (final Exception e) {
       e.printStackTrace();
+      // This might leak in-flight locks, but that's safe
       return ActionState.FAILED;
     }
   }
@@ -380,12 +341,6 @@ public final class WorkflowAction extends Action {
   @Override
   public final int priority() {
     return 0;
-  }
-
-  @Override
-  public void purgeCleanup() {
-    if (first) MAX_IN_FLIGHT.get(workflowAccession).first().incrementAndGet();
-    if (inflight) MAX_IN_FLIGHT.get(workflowAccession).second().incrementAndGet();
   }
 
   @Override
