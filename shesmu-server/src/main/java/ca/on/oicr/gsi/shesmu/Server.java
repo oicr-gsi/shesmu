@@ -274,6 +274,51 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("table");
+                writer.writeAttribute("class", "even");
+                compiler
+                    .dashboard()
+                    .forEach(
+                        fileTable -> {
+                          try {
+                            writer.writeStartElement("tr");
+                            writer.writeStartElement("th");
+                            writer.writeAttribute("colspan", "2");
+                            writer.writeCharacters(fileTable.filename());
+                            writer.writeEndElement();
+                            writer.writeEndElement();
+                          } catch (XMLStreamException e) {
+                            throw new RuntimeException(e);
+                          }
+                          fileTable
+                              .olives()
+                              .forEach(
+                                  olive -> {
+                                    try {
+
+                                      writer.writeStartElement("tr");
+                                      writer.writeAttribute(
+                                          "onclick",
+                                          String.format(
+                                              "location.hash = '%1$s:%2$d:%3$d:%4$d'",
+                                              fileTable.filename(),
+                                              olive.line(),
+                                              olive.column(),
+                                              fileTable.timestamp().toEpochMilli()));
+                                      writer.writeStartElement("td");
+                                      writer.writeCharacters(olive.syntax());
+                                      writer.writeEndElement();
+                                      writer.writeStartElement("td");
+                                      writer.writeCharacters(
+                                          String.format("%d:%d", olive.line(), olive.column()));
+                                      writer.writeEndElement();
+                                      writer.writeEndElement();
+                                    } catch (XMLStreamException e) {
+                                      throw new RuntimeException(e);
+                                    }
+                                  });
+                        });
+                writer.writeEndElement();
                 compiler
                     .dashboard()
                     .forEach(
