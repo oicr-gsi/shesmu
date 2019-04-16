@@ -403,6 +403,29 @@ public final class Server implements ServerConfig, ActionServices {
                                           writer.writeCharacters(button.second());
                                           writer.writeEndElement();
                                         }
+                                        final boolean isPaused =
+                                            processor.isPaused(
+                                                new SourceLocation(
+                                                    fileTable.filename(),
+                                                    olive.line(),
+                                                    olive.column(),
+                                                    fileTable.timestamp()));
+                                        writer.writeStartElement("span");
+                                        writer.writeAttribute("class", "load");
+                                        writer.writeAttribute(
+                                            "onclick",
+                                            String.format(
+                                                "pauseOlive(this, { 'file': '%1$s', 'line': %2$d, 'column': %3$d, 'time': %4$d} )",
+                                                fileTable.filename(),
+                                                olive.line(),
+                                                olive.column(),
+                                                fileTable.timestamp().toEpochMilli()));
+                                        writer.writeAttribute(
+                                            "is-paused", Boolean.toString(isPaused));
+                                        writer.writeCharacters(
+                                            isPaused ? "▶ Resume Actions" : "⏸ Pause Actions");
+                                        writer.writeEndElement();
+
                                       } else {
                                         writer.writeCharacters(" Olive does not produce actions.");
                                       }
@@ -1578,6 +1601,29 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
 
+    add(
+        "/pauseolive",
+        t -> {
+          final ObjectNode query =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          final SourceLocation location =
+              new SourceLocation(
+                  query.get("file").asText(""),
+                  query.get("line").asInt(0),
+                  query.get("column").asInt(0),
+                  Instant.ofEpochMilli(query.get("time").asLong(0)));
+          if (query.get("pause").asBoolean(false)) {
+            processor.pause(location);
+          } else {
+            processor.resume(location);
+          }
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            os.write(
+                Boolean.toString(processor.isPaused(location)).getBytes(StandardCharsets.UTF_8));
+          }
+        });
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("/main.css", "text/css");
@@ -1671,7 +1717,7 @@ public final class Server implements ServerConfig, ActionServices {
         Header.cssFile("/main.css"),
         Header.faviconPng(16),
         Header.jsModule(
-            "import {parser, fetchConstant, parseType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup;"));
+            "import {parser, fetchConstant, parseType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup, pauseOlive} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup; window.pauseOlive = pauseOlive;"));
   }
 
   private String localname() {
