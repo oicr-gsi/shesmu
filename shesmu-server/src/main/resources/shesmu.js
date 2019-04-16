@@ -689,11 +689,9 @@ function nextPage(query, targetElement, onActionPage) {
       (actionRender.get(action.type) || defaultRenderer)(action).forEach(
         element => tile.appendChild(element)
       );
-      const checkDate = new Date(action.lastChecked * 1000).toString();
-      const addedDate = new Date(action.lastAdded * 1000).toString();
-      const statusChangedDate = new Date(
-        action.lastStatusChange * 1000
-      ).toString();
+      const checkDate = new Date(action.lastChecked).toString();
+      const addedDate = new Date(action.lastAdded).toString();
+      const statusChangedDate = new Date(action.lastStatusChange).toString();
       tile.appendChild(
         text(`Last Checked: ${checkDate} (${action.lastChecked})`)
       );
@@ -840,7 +838,7 @@ function formatBin(name) {
     case "checked":
     case "statuschanged":
       return x => {
-        const d = new Date(x * 1000);
+        const d = new Date(x);
         let diff = Math.ceil((new Date() - d) / 1000);
         let ago = "";
         for (let span of [
