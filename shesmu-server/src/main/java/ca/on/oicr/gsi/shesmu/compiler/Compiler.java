@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,7 +91,7 @@ public abstract class Compiler {
                 this::errorHandler,
                 constants,
                 signatures)) {
-      final Instant compileTime = Instant.now();
+      final Instant compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       if (dashboardOutput != null && skipRender) {
         dashboardOutput.accept(
             program.get().dashboard(path, compileTime, "Bytecode not available."));

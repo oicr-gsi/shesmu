@@ -552,6 +552,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
   private final String baseUri;
   private String currentAlerts = "[]";
   private final PluginManager manager;
+  private final Set<SourceLocation> pausedOlives = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
 
   public ActionProcessor(String baseUri, PluginManager manager, ActionServices actionServices) {
@@ -732,6 +733,14 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return false;
   }
 
+  public void pause(SourceLocation location) {
+    pausedOlives.add(location);
+  }
+
+  public boolean isPaused(SourceLocation location) {
+    return pausedOlives.contains(location);
+  }
+
   public long purge(Filter... filters) {
     final Set<Action> deadActions =
         startStream(filters)
@@ -754,6 +763,10 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       }
     }
     return output;
+  }
+
+  public void resume(SourceLocation location) {
+    pausedOlives.remove(location);
   }
 
   public Stream<SourceLocation> sources() {
@@ -879,7 +892,10 @@ public final class ActionProcessor implements OliveServices, InputProvider {
                       String.format(
                           "Performing action %s of type %s",
                           entry.getValue(), entry.getKey().type()))) {
-                entry.getValue().lastState = entry.getKey().perform(actionServices);
+                entry.getValue().lastState =
+                    entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
+                        ? ActionState.THROTTLED
+                        : entry.getKey().perform(actionServices);
               } catch (final Throwable e) {
                 entry.getValue().lastState = ActionState.UNKNOWN;
                 entry.getValue().thrown = true;

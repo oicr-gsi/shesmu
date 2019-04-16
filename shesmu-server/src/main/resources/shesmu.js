@@ -19,7 +19,11 @@ export function fetchConstant(name, element) {
     .then(response => response.json())
     .then(data => {
       if (data.hasOwnProperty("value")) {
-        element.nextElementSibling.innerText = JSON.stringify(data.value, null, 2);
+        element.nextElementSibling.innerText = JSON.stringify(
+          data.value,
+          null,
+          2
+        );
         element.nextElementSibling.className = "data";
       } else {
         element.nextElementSibling.innerText = data.error;
@@ -71,7 +75,11 @@ export function runFunction(name, element, parameterParser) {
     .then(response => response.json())
     .then(data => {
       if (data.hasOwnProperty("value")) {
-        element.nextElementSibling.innerText = JSON.stringify(data.value, null, 2);
+        element.nextElementSibling.innerText = JSON.stringify(
+          data.value,
+          null,
+          2
+        );
         element.nextElementSibling.className = "data";
       } else {
         element.innerText = data.error;
@@ -1191,4 +1199,29 @@ export function toggleBytecode(title) {
 
   title.innerText = visible ? "⊟ Bytecode" : "⊞ Bytecode";
   title.nextSibling.style = visible ? "display: block" : "display: none";
+}
+
+export function pauseOlive(element, target) {
+  target.pause = element.getAttribute("is-paused") !== "true";
+  element.className = "busy";
+  fetch("/pauseolive", {
+    body: JSON.stringify(target),
+    method: "POST"
+  })
+    .then(response => {
+      if (response.ok) {
+        return Promise.resolve(response);
+      } else {
+        return Promise.reject(new Error("Failed to load"));
+      }
+    })
+    .then(response => response.json())
+    .then(response => {
+      element.innerText = response ? "▶ Resume Actions" : "⏸ Pause Actions";
+      element.className = "load";
+      element.setAttribute("is-paused", response);
+    })
+    .catch(function(error) {
+      element.className = "load";
+    });
 }
