@@ -491,6 +491,15 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeStartElement("tt");
                 writer.writeCharacters("EpochMilli");
                 writer.writeEndElement();
+                writer.writeCharacters(" (i.e. '");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("Date 2020-02-20");
+                writer.writeEndElement();
+                writer.writeCharacters("', '");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("EpochSecond 1582156800");
+                writer.writeEndElement();
+                writer.writeCharacters("')");
                 writer.writeEndElement();
 
                 writer.writeStartElement("table");
