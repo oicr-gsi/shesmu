@@ -184,7 +184,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
     @Override
     public final long bucket(Instant min, long width, Instant value) {
-      return (value.getEpochSecond() - min.getEpochSecond()) / width;
+      return (value.toEpochMilli() - min.toEpochMilli()) / width;
     }
 
     @Override
@@ -194,12 +194,12 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
     @Override
     public JsonNode name(Instant min, long offset) {
-      return JSON_FACTORY.numberNode(min.getEpochSecond() + offset);
+      return JSON_FACTORY.numberNode(min.toEpochMilli() + offset);
     }
 
     @Override
     public final long span(Instant min, Instant max) {
-      return max.getEpochSecond() - min.getEpochSecond();
+      return max.toEpochMilli() - min.toEpochMilli();
     }
   }
 
@@ -831,9 +831,9 @@ public final class ActionProcessor implements OliveServices, InputProvider {
             entry -> {
               final ObjectNode node = entry.getKey().toJson(mapper);
               node.put("state", entry.getValue().lastState.name());
-              node.put("lastAdded", entry.getValue().lastAdded.getEpochSecond());
-              node.put("lastChecked", entry.getValue().lastChecked.getEpochSecond());
-              node.put("lastStatusChange", entry.getValue().lastStateTransition.getEpochSecond());
+              node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
+              node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
+              node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
               node.put("type", entry.getKey().type());
               final ArrayNode locations = node.putArray("locations");
               entry
