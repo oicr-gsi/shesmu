@@ -276,7 +276,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -466,7 +466,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               public Stream<Header> headers() {
@@ -790,7 +790,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -837,7 +837,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -915,7 +915,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -975,7 +975,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1115,7 +1115,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1213,7 +1213,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               private void labelsToHtml(XMLStreamWriter writer, Map<String, String> labels)
                   throws XMLStreamException {
@@ -1702,7 +1702,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this) {
+            new BasePage(this, false) {
 
               @Override
               public Stream<Header> headers() {
