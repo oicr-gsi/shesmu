@@ -351,6 +351,40 @@ deduplicate it from other alerts. The `Annotations` section define information
 that is passed to Alert Manager that gets overwritten. For details, see the
 [Alert Manager](https://prometheus.io/docs/alerting/clients/) documentation.
 
+## Testing
+Shesmu provides three ways to check a script:
+
+- uploading a script using the UI (best for users)
+- uploading a script to a remote server (best for automation, including presubmit checks)
+- using a local copy of the Shesmu JAR and a remote server (helpful if changing the Shesmu language)
+
+To use the UI, from the Shesmu server page, choose _Tools_ then _Olive
+Checker_. Write script in the box or use the upload the button and then hit
+_Check_. If successful, the metro diagrams from the olive dashboard will be
+displayed.
+
+For the remote checking, use a command similar to the following:
+
+    curl -X POST --data-binary @${SCRIPT_FILE} http://${SERVER}:8081/check
+
+If 200 OK is returned, the script is valid. 400 Bad Request will be returned if
+there are errors and the body will contain the errors. In a presubmit check,
+the following might be useful:
+
+     for SCRIPT_FILE in path/to/*.shesmu
+     do
+             if [ $(curl -s --data-binary @"$SCRIPT_FILE" -o /dev/stderr -w "%{http_code}" -X POST http://${SERVER}:8081/check) = "200" ]
+             then
+                     echo "\033[1;36mOK\033[0m\t$SCRIPT_FILE"
+             else
+                     echo "\033[1;31mFAIL\033[0m\t$SCRIPT_FILE"
+             fi
+     done
+
+For the final method, using a local copy, build the Shesmu server, then run:
+
+     java -cp shesmu/shesmu-server/target/shesmu.jar ca.on.oicr.gsi.shesmu.Check -r http://${SERVER}:8081 ${SCRIPT_FILE}
+
 ## Pragmas
 After the `Input` line, various script modifiers can be added.
 

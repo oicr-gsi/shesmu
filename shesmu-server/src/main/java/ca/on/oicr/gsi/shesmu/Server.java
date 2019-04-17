@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.ImyhatNode;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
@@ -14,6 +15,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -31,6 +33,7 @@ import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
+import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.BasePage;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.Header;
@@ -81,11 +84,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 
 @SuppressWarnings("restriction")
 public final class Server implements ServerConfig, ActionServices {
@@ -1536,6 +1542,234 @@ public final class Server implements ServerConfig, ActionServices {
             });
 
     add(
+        "/check",
+        t -> {
+          final String script;
+          try (Scanner scanner = new Scanner(t.getRequestBody(), "utf-8")) {
+            script = scanner.useDelimiter("\\Z").next();
+          }
+          final StringBuilder errors = new StringBuilder();
+          boolean success =
+              (new Compiler(true) {
+                    private final NameLoader<FunctionDefinition> functions =
+                        new NameLoader<>(
+                            definitionRepository.functions(), FunctionDefinition::name);
+                    private final NameLoader<ActionDefinition> actions =
+                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+
+                    @Override
+                    protected ClassVisitor createClassVisitor() {
+                      throw new UnsupportedOperationException();
+                    }
+
+                    @Override
+                    protected void errorHandler(String message) {
+                      errors.append(message).append("\n");
+                    }
+
+                    @Override
+                    protected ActionDefinition getAction(String name) {
+                      return actions.get(name);
+                    }
+
+                    @Override
+                    protected FunctionDefinition getFunction(String name) {
+                      return functions.get(name);
+                    }
+
+                    @Override
+                    protected InputFormatDefinition getInputFormats(String name) {
+                      return CompiledGenerator.SOURCES.get(name);
+                    }
+                  })
+                  .compile(
+                      script,
+                      "shesmu/dyn/Checker",
+                      "Uploaded Check Script.shesmu",
+                      definitionRepository::constants,
+                      definitionRepository::signatures,
+                      x -> {});
+          t.getResponseHeaders().set("Content-type", "text/plain; charset=utf-8");
+          final byte[] errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
+          t.sendResponseHeaders(success ? 200 : 400, errorBytes.length);
+          try (OutputStream os = t.getResponseBody()) {
+            os.write(errorBytes);
+          }
+        });
+
+    add(
+        "/checkhtml",
+        t -> {
+          final String script;
+          try (Scanner scanner = new Scanner(t.getRequestBody(), "utf-8")) {
+            script = scanner.useDelimiter("\\Z").next();
+          }
+          final List<String> errors = new ArrayList<>();
+          final AtomicReference<FileTable> description = new AtomicReference<>();
+          boolean success =
+              (new Compiler(false) {
+                    private final NameLoader<FunctionDefinition> functions =
+                        new NameLoader<>(
+                            definitionRepository.functions(), FunctionDefinition::name);
+                    private final NameLoader<ActionDefinition> actions =
+                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+
+                    @Override
+                    protected ClassVisitor createClassVisitor() {
+                      return new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+                    }
+
+                    @Override
+                    protected void errorHandler(String message) {
+                      errors.add(message);
+                    }
+
+                    @Override
+                    protected ActionDefinition getAction(String name) {
+                      return actions.get(name);
+                    }
+
+                    @Override
+                    protected FunctionDefinition getFunction(String name) {
+                      return functions.get(name);
+                    }
+
+                    @Override
+                    protected InputFormatDefinition getInputFormats(String name) {
+                      return CompiledGenerator.SOURCES.get(name);
+                    }
+                  })
+                  .compile(
+                      script,
+                      "shesmu/dyn/Checker",
+                      "Uploaded Check Script.shesmu",
+                      definitionRepository::constants,
+                      definitionRepository::signatures,
+                      description::set);
+          t.getResponseHeaders().set("Content-type", "text/xml");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream output = t.getResponseBody()) {
+            final XMLOutputFactory outputFactory = XMLOutputFactory.newFactory();
+            XMLStreamWriter writer = outputFactory.createXMLStreamWriter(output);
+            writer.writeStartDocument("utf-8", "1.0");
+            writer.writeStartElement("html");
+            writer.writeStartElement("body");
+            if (success) {
+              description
+                  .get()
+                  .olives()
+                  .forEach(
+                      olive -> {
+                        try {
+                          writer.writeStartElement("div");
+                          writer.writeAttribute("class", "indent");
+                          writer.writeAttribute("style", "overflow-x:auto");
+                          MetroDiagram.draw(
+                              writer,
+                              (localFilePath, line, column, time) -> Stream.empty(),
+                              "",
+                              description.get().timestamp(),
+                              olive,
+                              null,
+                              description.get().format());
+                          writer.writeEndElement();
+                        } catch (XMLStreamException e) {
+                          throw new RuntimeException(e);
+                        }
+                      });
+              writer.writeStartElement("pre");
+              writer.writeCharacters(description.get().bytecode());
+              writer.writeEndElement();
+            } else {
+              writer.writeStartElement("h1");
+              writer.writeCharacters("Errors");
+              writer.writeEndElement();
+              for (String error : errors) {
+                writer.writeStartElement("p");
+                writer.writeCharacters(error);
+                writer.writeEndElement();
+              }
+            }
+            writer.writeEndElement();
+            writer.writeEndDocument();
+          } catch (XMLStreamException e) {
+            e.printStackTrace();
+          }
+        });
+    add(
+        "/checkdash",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this) {
+
+              @Override
+              public Stream<Header> headers() {
+                return Stream.of(
+                    Header.jsModule(
+                        "import {"
+                            + "loadFile,"
+                            + "runCheck"
+                            + "} from \"./shesmu.js\";"
+                            + "const checkButton = document.getElementById(\"checkButton\");"
+                            + "const text = document.getElementById(\"inputText\");"
+                            + "const output = document.getElementById(\"outputContainer\");"
+                            + "checkButton.addEventListener(\"click\", e => runCheck(checkButton, text.value, output));"
+                            + "document.getElementById(\"loadButton\").addEventListener(\"click\", e => loadFile(text));"));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("textarea");
+                writer.writeAttribute("id", "inputText");
+                writer.writeCharacters("Input shesmu;");
+                writer.writeEndElement();
+
+                writer.writeStartElement("p");
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load");
+                writer.writeAttribute("id", "checkButton");
+                writer.writeCharacters("✔️ Check");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load");
+                writer.writeAttribute("id", "loadButton");
+                writer.writeCharacters("⬆️ Upload File");
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "outputContainer");
+                writer.writeEndElement();
+              }
+
+              private void writeDateRange(XMLStreamWriter writer, String name, String description)
+                  throws XMLStreamException {
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters(description);
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("input");
+                writer.writeAttribute("type", "text");
+                writer.writeAttribute("id", name + "Start");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeCharacters(" to ");
+                writer.writeStartElement("input");
+                writer.writeAttribute("type", "text");
+                writer.writeAttribute("id", name + "End");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+              }
+            }.renderPage(os);
+          }
+        });
+
+    add(
         "/type",
         t -> {
           final TypeParseRequest request =
@@ -1776,6 +2010,7 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("signaturedefs", "Signatures")),
         NavigationMenu.submenu(
             "Tools",
+            NavigationMenu.item("checkdash", "Olive Checker"),
             NavigationMenu.item("typedefs", "Type Converter"),
             NavigationMenu.item("configmap", "Plugin Configuration"),
             NavigationMenu.item("inflightdash", "Active Server Processes"),

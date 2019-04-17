@@ -112,7 +112,7 @@ public class CompiledGenerator {
               "Whether the input format or olive file failed to finish within deadline.")
           .labelNames("name")
           .register();
-  private static final NameLoader<InputFormatDefinition> SOURCES =
+  public static final NameLoader<InputFormatDefinition> SOURCES =
       new NameLoader<>(AnnotatedInputFormatDefinition.formats(), InputFormatDefinition::name);
 
   private static final Gauge sourceValid =

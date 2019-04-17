@@ -1201,6 +1201,49 @@ export function toggleBytecode(title) {
   title.nextSibling.style = visible ? "display: block" : "display: none";
 }
 
+export function runCheck(button, sourceCode, outputContainer) {
+  button.className = "busy";
+  while (outputContainer.hasChildNodes()) {
+    outputContainer.removeChild(outputContainer.lastChild);
+  }
+  fetch("/checkhtml", {
+    body: sourceCode,
+    method: "POST"
+  })
+    .then(response => {
+      button.className = "load";
+      if (response.ok) {
+        return Promise.resolve(response);
+      } else {
+        return Promise.reject(new Error("Failed to load"));
+      }
+    })
+    .then(response => response.text())
+    .then(text => new window.DOMParser().parseFromString(text, "text/html"))
+    .then(response => {
+      const body = response.getElementsByTagName("body")[0];
+      while (body.children.length > 0) {
+        outputContainer.appendChild(document.adoptNode(body.children[0]));
+      }
+    })
+    .catch(function(error) {
+      outputContainer.innerText = error.message;
+    });
+}
+
+export function loadFile(textContainer) {
+  const input = document.createElement("INPUT");
+  input.type = "file";
+
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = rev => (textContainer.value = rev.target.result);
+    reader.readAsText(e.target.files[0], "UTF-8");
+  };
+
+  input.click();
+}
+
 export function pauseOlive(element, target) {
   target.pause = element.getAttribute("is-paused") !== "true";
   element.className = "busy";

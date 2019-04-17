@@ -93,7 +93,7 @@ public class MetroDiagram {
       String filename,
       Instant timestamp,
       OliveTable olive,
-      long inputCount,
+      Long inputCount,
       InputFormatDefinition format)
       throws XMLStreamException {
     final long metroStart =
@@ -174,13 +174,15 @@ public class MetroDiagram {
     writer.writeEndElement();
     writer.writeEndElement();
 
-    writer.writeStartElement("text");
-    writer.writeAttribute("text-anchor", "end");
-    writer.writeAttribute("style", "font-weight:bold");
-    writer.writeAttribute("x", Long.toString(SVG_COUNT_START));
-    writer.writeAttribute("y", Long.toString(topPadding - SVG_ROW_HEIGHT + SVG_TEXT_BASELINE));
-    writer.writeCharacters("Records");
-    writer.writeEndElement();
+    if (inputCount != null) {
+      writer.writeStartElement("text");
+      writer.writeAttribute("text-anchor", "end");
+      writer.writeAttribute("style", "font-weight:bold");
+      writer.writeAttribute("x", Long.toString(SVG_COUNT_START));
+      writer.writeAttribute("y", Long.toString(topPadding - SVG_ROW_HEIGHT + SVG_TEXT_BASELINE));
+      writer.writeCharacters("Records");
+      writer.writeEndElement();
+    }
     writer.writeStartElement("text");
     writer.writeAttribute("style", "font-weight:bold");
     writer.writeAttribute("x", Long.toString(SVG_TITLE_START));
@@ -244,7 +246,7 @@ public class MetroDiagram {
                         topPadding,
                         currentRow,
                         clause.syntax(),
-                        clause.measuredFlow()
+                        clause.measuredFlow() && inputCount != null
                             ? (long)
                                 ActionGenerator.OLIVE_FLOW
                                     .labels(
