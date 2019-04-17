@@ -313,7 +313,7 @@ public final class Check extends Compiler {
 
   private final NameLoader<InputFormatDefinition> inputFormats;
 
-  private Check(
+  Check(
       String fileName,
       NameLoader<InputFormatDefinition> inputFormats,
       NameLoader<FunctionDefinition> functions,

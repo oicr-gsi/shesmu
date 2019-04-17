@@ -73,11 +73,32 @@ public abstract class Compiler {
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures,
       Consumer<FileTable> dashboardOutput) {
+    return compile(
+        new String(input, StandardCharsets.UTF_8),
+        name,
+        path,
+        constants,
+        signatures,
+        dashboardOutput);
+  }
+  /**
+   * Compile a program
+   *
+   * @param input the bytes in the script
+   * @param name the internal name of the class to generate; it will extend {@link ActionGenerator}
+   * @param path the source file's path for debugging information
+   * @return whether compilation was successful
+   */
+  public final boolean compile(
+      String input,
+      String name,
+      String path,
+      Supplier<Stream<ConstantDefinition>> constants,
+      Supplier<Stream<SignatureDefinition>> signatures,
+      Consumer<FileTable> dashboardOutput) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
     final MaxParseError maxParseError = new MaxParseError();
-    final boolean parseOk =
-        ProgramNode.parseFile(
-            new String(input, StandardCharsets.UTF_8), program::set, maxParseError);
+    final boolean parseOk = ProgramNode.parseFile(input, program::set, maxParseError);
     if (!parseOk) {
       maxParseError.write();
     }

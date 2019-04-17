@@ -161,3 +161,8 @@ color: grey;
 font-weight: bold;
 font-style: italic;
 }
+
+textarea {
+width:100%;
+height: 50vh;
+}
