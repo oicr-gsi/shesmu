@@ -747,12 +747,16 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return false;
   }
 
+  public boolean isPaused(SourceLocation location) {
+    return pausedOlives.contains(location);
+  }
+
   public void pause(SourceLocation location) {
     pausedOlives.add(location);
   }
 
-  public boolean isPaused(SourceLocation location) {
-    return pausedOlives.contains(location);
+  public Stream<SourceLocation> pauses() {
+    return pausedOlives.stream();
   }
 
   public long purge(Filter... filters) {

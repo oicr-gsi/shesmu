@@ -325,10 +325,109 @@ public final class Server implements ServerConfig, ActionServices {
                                   });
                         });
                 writer.writeEndElement();
+                final Map<String, Instant> currentOlives =
+                    compiler
+                        .dashboard()
+                        .collect(Collectors.toMap(FileTable::filename, FileTable::timestamp));
+                final List<SourceLocation> deadPauses =
+                    processor
+                        .pauses()
+                        .filter(
+                            pause ->
+                                !currentOlives
+                                    .getOrDefault(pause.fileName(), Instant.EPOCH)
+                                    .equals(pause.time()))
+                        .collect(Collectors.toList());
+                if (!deadPauses.isEmpty()) {
+                  writer.writeStartElement("div");
+                  writer.writeAttribute("class", "state_throttled inset");
+                  writer.writeStartElement("h1");
+                  writer.writeCharacters("⚠ Pauses for Old Olives");
+                  writer.writeEndElement();
+                  writer.writeStartElement("p");
+                  writer.writeCharacters(
+                      "The following olives were paused but the olives have been replaced or deleted. They may still be throttling actions from running. If a new olive is producing the same actions, then the actions will still be throttled! Use the ");
+                  writer.writeStartElement("i");
+                  writer.writeCharacters("Stats on Actions");
+                  writer.writeEndElement();
+                  writer.writeCharacters(" button above to check for throttled actions.");
+                  writer.writeEndElement();
+                  writer.writeStartElement("table");
+                  writer.writeStartElement("tbody");
+
+                  writer.writeStartElement("tr");
+                  writer.writeStartElement("th");
+                  writer.writeCharacters("Filename");
+                  writer.writeEndElement();
+                  writer.writeStartElement("th");
+                  writer.writeCharacters("Line");
+                  writer.writeEndElement();
+                  writer.writeStartElement("th");
+                  writer.writeCharacters("Column");
+                  writer.writeEndElement();
+                  writer.writeStartElement("th");
+                  writer.writeCharacters("Timestamp");
+                  writer.writeEndElement();
+                  writer.writeStartElement("th");
+                  writer.writeComment("delete");
+                  writer.writeEndElement();
+                  writer.writeEndElement();
+                  for (SourceLocation deadPause : deadPauses) {
+                    writer.writeStartElement("tr");
+                    writer.writeStartElement("td");
+                    writer.writeCharacters(deadPause.fileName());
+                    writer.writeEndElement();
+                    writer.writeStartElement("td");
+                    writer.writeCharacters(Integer.toString(deadPause.line()));
+                    writer.writeEndElement();
+                    writer.writeStartElement("td");
+                    writer.writeCharacters(Integer.toString(deadPause.column()));
+                    writer.writeEndElement();
+                    writer.writeStartElement("td");
+                    writer.writeCharacters(deadPause.time().toString());
+                    writer.writeEndElement();
+                    writer.writeStartElement("td");
+                    writer.writeStartElement("span");
+                    writer.writeAttribute("class", "load");
+                    writer.writeAttribute(
+                        "onclick",
+                        String.format(
+                            "clearDeadPause(this.parentNode.parentNode, { 'file': '%1$s', 'line': %2$d, 'column': %3$d, 'time': %4$d }, false)",
+                            deadPause.fileName(),
+                            deadPause.line(),
+                            deadPause.column(),
+                            deadPause.time().toEpochMilli()));
+                    writer.writeCharacters("▶ Resume Actions");
+                    writer.writeEndElement();
+                    writer.writeStartElement("span");
+                    writer.writeAttribute("class", "load");
+                    writer.writeAttribute(
+                        "onclick",
+                        String.format(
+                            "clearDeadPause(this.parentNode.parentNode, { 'file': '%1$s', 'line': %2$d, 'column': %3$d, 'time': %4$d }, true)",
+                            deadPause.fileName(),
+                            deadPause.line(),
+                            deadPause.column(),
+                            deadPause.time().toEpochMilli()));
+                    writer.writeCharacters("☠️ PURGE ACTIONS");
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                  }
+
+                  writer.writeEndElement();
+                }
+
                 compiler
                     .dashboard()
                     .forEach(
                         fileTable -> {
+                          final boolean maybeHasDeadPauses =
+                              deadPauses
+                                  .stream()
+                                  .anyMatch(pause -> pause.fileName().equals(fileTable.filename()));
                           try {
                             writer.writeStartElement("h1");
                             writer.writeCharacters(fileTable.filename());
@@ -380,6 +479,18 @@ public final class Server implements ServerConfig, ActionServices {
                                       writer.writeStartElement("div");
                                       writer.writeAttribute("id", id);
                                       writer.writeAttribute("class", "olive");
+
+                                      if (maybeHasDeadPauses) {
+                                        writer.writeStartElement("p");
+                                        writer.writeAttribute("class", "state_throttled inset");
+                                        writer.writeCharacters(
+                                            "An old olive was paused and it may affect actions for the olive below. Use ");
+                                        writer.writeStartElement("i");
+                                        writer.writeCharacters("Stats on Actions");
+                                        writer.writeEndElement();
+                                        writer.writeCharacters(" to check for throttled actions.");
+                                        writer.writeEndElement();
+                                      }
 
                                       String filterForOlive =
                                           String.format(
@@ -438,7 +549,6 @@ public final class Server implements ServerConfig, ActionServices {
                                       writer.writeEndElement();
 
                                       writer.writeStartElement("div");
-                                      writer.writeAttribute("class", "indent");
                                       writer.writeAttribute("style", "overflow-x:auto");
                                       MetroDiagram.draw(
                                           writer,
@@ -1662,7 +1772,6 @@ public final class Server implements ServerConfig, ActionServices {
                       olive -> {
                         try {
                           writer.writeStartElement("div");
-                          writer.writeAttribute("class", "indent");
                           writer.writeAttribute("style", "overflow-x:auto");
                           MetroDiagram.draw(
                               writer,
@@ -1951,7 +2060,7 @@ public final class Server implements ServerConfig, ActionServices {
         Header.cssFile("/main.css"),
         Header.faviconPng(16),
         Header.jsModule(
-            "import {parser, fetchConstant, parseType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup, pauseOlive} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup; window.pauseOlive = pauseOlive;"));
+            "import {parser, fetchConstant, parseType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup, pauseOlive, clearDeadPause} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup; window.pauseOlive = pauseOlive; window.clearDeadPause = clearDeadPause;"));
   }
 
   private String localname() {

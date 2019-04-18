@@ -68,6 +68,11 @@ font-weight: bold;
 .state_unknown { border: 1px dashed #000; background-color: #fdd; }
 .state_waiting { border: 1px solid #f80; background-color: #fed; }
 
+.inset {
+padding: 0.5em;
+margin: 0.5em;
+}
+
 .action a {
 text-decoration: none;
 }

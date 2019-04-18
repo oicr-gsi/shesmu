@@ -1268,3 +1268,53 @@ export function pauseOlive(element, target) {
       element.className = "load";
     });
 }
+
+export function clearDeadPause(row, target, purgeFirst) {
+  const removePause = () => {
+    target.pause = false;
+    return fetch("/pauseolive", {
+      body: JSON.stringify(target),
+      method: "POST"
+    })
+      .then(response => {
+        if (response.ok) {
+          return Promise.resolve(response);
+        } else {
+          return Promise.reject(new Error("Failed to load"));
+        }
+      })
+      .then(response => response.json())
+      .then(response => {
+        if (!response) {
+          const tbody = row.parentNode;
+          tbody.removeChild(row);
+          if (tbody.childNodes.length == 1) {
+            const div = tbody.parentNode.parentNode;
+            div.parentNode.removeChild(div);
+          }
+        }
+      })
+      .catch(function(error) {});
+  };
+  if (purgeFirst) {
+    fetch("/purge", {
+      body: JSON.stringify([
+        {
+          type: "sourcelocation",
+          locations: [target]
+        }
+      ]),
+      method: "POST"
+    })
+      .then(response => {
+        if (response.ok) {
+          return Promise.resolve(response);
+        } else {
+          return Promise.reject(new Error("Failed to load"));
+        }
+      })
+      .then(removePause);
+  } else {
+    removePause();
+  }
+}
