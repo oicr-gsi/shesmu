@@ -63,6 +63,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
     T extract(Entry<Action, Information> input);
 
+    long minWidth();
+
     String name();
 
     JsonNode name(T min, long offset);
@@ -181,7 +183,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
   }
 
   private abstract static class InstantBin implements Bin<Instant> {
-
     @Override
     public final long bucket(Instant min, long width, Instant value) {
       return (value.toEpochMilli() - min.toEpochMilli()) / width;
@@ -190,6 +191,11 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     @Override
     public final int compare(Instant o1, Instant o2) {
       return o1.compareTo(o2);
+    }
+
+    @Override
+    public long minWidth() {
+      return 60_000;
     }
 
     @Override
@@ -707,11 +713,19 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
       return;
     }
-    final long width = bin.span(min.get(), max.get()) / count;
-    if (width == 0) {
+    long width = bin.span(min.get(), max.get()) / count;
+    final int[] buckets;
+    if (width < bin.minWidth()) {
+      // If the buckets are less than a minimum width, use buckets of the minimum width over the
+      // range
+      width = bin.minWidth();
+      buckets = new int[(int) Math.ceil(bin.span(min.get(), max.get()) / bin.minWidth()) + 1];
+    } else {
+      buckets = new int[count];
+    }
+    if (buckets.length < 2) {
       return;
     }
-    final int[] buckets = new int[count];
     for (final Entry<Action, Information> value : input) {
       final int index = (int) bin.bucket(min.get(), width, bin.extract(value));
       buckets[index >= buckets.length ? buckets.length - 1 : index]++;
