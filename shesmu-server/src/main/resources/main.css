@@ -1,173 +1,447 @@
 a:visited, a:link {
-color:#800;
+    color: #077888;
 }
 
 a text {
-fill:#800;
+    fill: #077888;
 }
 
 a:hover, a:active {
-color:#c00;
+    color: #058FAF;
 }
 
 a:hover text, a:active text {
-fill:#c00;
+    fill: #058FAF;
 }
 
-.load{
-white-space:nowrap;
-font-weight:700;
-color:#888;
-margin-left:0.5em;
-margin-right:0.5em;
-padding-left:0.2em;
-padding-right:0.2em;
-border:1px solid #888;
+.load, a.load:link, a.load:visited {
+    white-space: nowrap;
+}
+
+.load, a.load:link, a.load:visited, .add {
+    font-weight: 700;
+    color: #fff;
+    background-color: #04AA9D;
+    margin: 0.5em;
+    padding: 0.2em;
+    border: 1px solid #78C3CD;
+    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    display: inline-block;
+    border-radius: 0.1em;
 }
 
 a.load {
-text-decoration:none;
+    text-decoration: none;
 }
 
-.load:hover{
-color:#800;
-background-color:#ccc;
-border:1px solid #800;
+.load:hover {
+    background-color: #048C81;
+    border-color: #048C81;
 }
 
-.busy{
-font-weight:normal;
-color:#888;
-pointer-events:none;
+.load:active, a.load:active {
+    transform: translate(0.1em, 0.1em);
+    box-shadow: 0em 0em 5px 0px rgba(0,0,0,0.1);
 }
 
-.data{
-font-weight:normal;
-color:#000;
+.load.accessory, a.load.accessory:link, a.load.accessory:visited, .add {
+    background-color: #06AED5;
+    border-color: #06AED5;
 }
 
-.error{
-font-weight:700;
-color:#f03;
+.load.accessory:hover, a.load.accessory:hover, .add:hover {
+    background-color: #058FAF;
+    border-color: #058FAF;
+}
+
+.load.danger, a.load.danger:link, a.load.danger:visited {
+    background-color: #E0493B;
+    border-color: #E0493B;
+}
+
+.load.danger:hover {
+    background-color: #B83C31;
+}
+
+.add > div {
+    position: absolute;
+    min-width: 200px;
+    background-color: #fff;
+    border: 1px solid #058FAF;
+    box-shadow: 0.2em 0.2em 5px 0px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+    border-radius: 0.1em;
+    font-weight: normal;
+}
+
+.add:hover > div {
+    display: block;
+}
+
+.add > div > span {
+    display: block;
+    padding: 0.5em;
+    color: #058FAF;
+    background-color: #FFF;
+    max-width: 50vw;
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
+.add > div > span:hover {
+    background-color: #058FAF;
+    color: #FFF;
+}
+
+.error {
+    font-weight: 700;
+    color: #E0493B;
 }
 
 .action {
-padding: 0.2em;
-margin-bottom: 0.5em;
+    padding: 0.2em;
+    margin-bottom: 0.5em;
 }
 
 .action :first-child {
-font-weight: bold;
+    font-weight: bold;
 }
 
-.state_failed { border: 1px solid #a00; background-color: #fdd }
-.state_inflight { border: 1px solid #00a; background-color: #ddf; }
-.state_queued { border: 1px dashed #00a; background-color: #ddf; }
-.state_succeeded { border: 1px solid #000; background-color: #ddd; }
-.state_throttled { border: 1px dashed #f80; background-color: #fed; }
-.state_unknown { border: 1px dashed #000; background-color: #fdd; }
-.state_waiting { border: 1px solid #f80; background-color: #fed; }
+.statecheck {
+    display: inline-block;
+    padding: 0.1em;
+    margin: 0.1em;
+}
+
+.state_failed, #currentStates > span.failed , #newStates > span.failed {
+    border: 1px solid #E0493B;
+    background-color: #F9DDDB;
+}
+
+.state_inflight, #currentStates > span.inflight, #newStates > span.inflight {
+    border: 1px solid #04AA9D;
+    background-color: #D1EFED;
+}
+
+.state_queued, #currentStates > span.queued, #newStates > span.queued {
+    border: 1px dashed #04AA9D;
+    background-color: #D1EFED;
+}
+
+.state_succeeded, #currentStates > span.succeeded, #newStates > span.succeeded {
+    border: 1px solid #06AED5;
+    background-color: #D1F0F7;
+}
+
+.state_throttled, #currentStates > span.throttled, #newStates > span.throttled {
+    border: 1px dashed #F0C808;
+    background-color: #FCF5D2;
+}
+
+.state_unknown, #currentStates > span.unknown, #newStates > span.unknown {
+    border: 1px dashed #E0493B;
+    background-color: #F9DDDB;
+}
+
+.state_waiting, #currentStates > span.waiting, #newStates > span.waiting {
+    border: 1px solid #F0C808;
+    background-color: #FCF5D2;
+}
 
 .inset {
-padding: 0.5em;
-margin: 0.5em;
+    padding: 0.5em;
+    margin: 0.5em;
 }
 
 .action a {
-text-decoration: none;
+    text-decoration: none;
 }
 
-.action.state_unknown a:link, .actionstate_failed a.:link { color: #300; }
-.action.state_unknown a:visited, .actionstate_failed a.:visited { color: #500; }
-.action.state_unknown a:active, .actionstate_failed a.:active { color: #800; }
-.action.state_unknown a:hover, .actionstate_failed a.:hover { color: #A00; }
+.action.state_unknown a:link, .actionstate_failed a.:link {
+    color: #E0493B;
+}
 
-.action.state_queued a:link, .action.state_inflight a:link { color: #033; }
-.action.state_queued a:visited, .action.state_inflight a:visited { color: #055; }
-.action.state_queued a:active, .action.state_inflight a:active { color: #088; }
-.action.state_queued a:hover, .action.state_inflight a:hover { color: #0AA; }
+.action.state_unknown a:visited, .actionstate_failed a.:visited {
+    color: #B83C31;
+}
 
-.action.state_throttled a:link, .action.state_waiting a:link { color: #310; }
-.action.state_throttled a:visited, .action.state_waiting a:visited { color: #620; }
-.action.state_throttled a:active, .action.state_waiting a:active { color: #820; }
-.action.state_throttled a:hover, .action.state_waiting a:hover { color: #A30; }
+.action.state_unknown a:hover, .actionstate_failed a.:hover, .action.state_unknown a:active, .actionstate_failed a.:active {
+    color: #E56A5E;
+}
 
-.action.state_succeeded a:link { color: #333; }
-.action.state_succeeded a:visited { color: #555; }
-.action.state_succeeded a:active { color: #888; }
-.action.state_succeeded a:hover { color: #AAA; }
+.action.state_queued a:link, .action.state_inflight a:link {
+    color: #04AA9D;
+}
 
-#types > span, #locations > span {
-padding: 0.2em;
-border: 1px solid #888;
-background-color: #ddd;
-margin-left:1em;
-white-space:nowrap;
+.action.state_queued a:visited, .action.state_inflight a:visited {
+    color: #048C81;
+}
+
+.action.state_queued a:hover, .action.state_inflight a:hover, .action.state_queued a:active, .action.state_inflight a:active {
+    color: #31B9AE;
+}
+
+.action.state_throttled a:link, .action.state_waiting a:link {
+    color: #F0C808;
+}
+
+.action.state_throttled a:visited, .action.state_waiting a:visited {
+    color: #C5A407;
+}
+
+.action.state_throttled a:hover, .action.state_waiting a:hover, .action.state_throttled a:active, .action.state_waiting a:active {
+    color: #F2D234;
+}
+
+.action.state_succeeded a:link {
+    color: #06AED5;
+}
+
+.action.state_succeeded a:visited {
+    color: #058FAF;
+}
+
+.action.state_succeeded a:hover, .action.state_succeeded a:active {
+    color: #33BCDC;
+}
+
+.action :first-child::before {
+    opacity: 0.5;
+    font-size: 200%;
+    float: right;
+}
+
+.action.state_unknown :first-child::before {
+    content: "Unknown 🤷";
+    color: #E0493B;
+}
+
+.action.state_failed :first-child::before {
+    content: "Failed 💔";
+    color: #E0493B;
+}
+
+.action.state_queued :first-child::before {
+    content: "Queued ⌛";
+    color: #04AA9D;
+}
+
+.action.state_inflight :first-child::before {
+    content: "Inflight ✈";
+    color: #04AA9D;
+}
+
+.action.state_throttled :first-child::before {
+    content: "Throttled ✋";
+    color: #F0C808;
+}
+
+.action.state_waiting :first-child::before {
+    content: "Waiting ⌛";
+    color: #F0C808;
+}
+
+.action.state_succeeded :first-child::before {
+    content: "Succeeded ✓";
+    color: #06AED5;
+}
+
+#currentTypes > span, #currentLocations > span {
+    color: #fff;
+    background-color: #06AED5;
+}
+
+#currentStates > span , #newStates > span {
+    color: #000;
+}
+
+#currentTypes > span, #currentLocations > span, #currentStates > span {
+    padding: 0.2em;
+    border: 1px solid #058FAF;
+    margin: 0.2em;
+    white-space: nowrap;
+    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
+    border-radius: 0.1em;
+    display: inline-block;
+}
+
+#currentTypes > span span, #currentLocations > span span, #currentStates> span span {
+    cursor: pointer;
 }
 
 .label {
-display: inline-block;
-border: 1px solid #888;
-background-color: #eee;
+    display: inline-block;
+    margin: 0.2em;
+    padding: 0.2em;
+    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
+    border: 1px solid #06AED5;
+    background-color: #D1F0F7;
 }
+
+.live .label {
+    border-color: #E0493B;
+    background-color: #F9DDDB;
+}
+
 .alert + .alert {
-border-top: 1px solid #000;
+    border-top: 1px solid #000;
 }
+
 .live {
-background-color: #fee;
+    background-color: #F9DDDB;
 }
+
 .alert:target {
-font-weight: bold;
+    font-weight: bold;
 }
 
 pre.json {
-overflow-x: auto;
+    overflow-x: auto;
+    transition: max-height 0.5s ease-in-out;
+    overflow: hidden;
+}
+
+pre.json.collapsed {
+    max-height: 0px;
 }
 
 div.olive {
-padding:0.2em;
+    padding: 0.2em;
 }
 
 div.olive:target {
-background-color:#f5f5ff;
+    background-color: #D2EBEE;
+}
+
+div.olive:target feFlood {
+    flood-color: #D2EBEE;
 }
 
 div.olive:hover {
-background-color:#f5f5f5;
+    background-color: #EAF5F7;
 }
 
+div.olive:hover feFlood {
+    flood-color: #EAF5F7;
+}
 
 .modal {
-position: fixed;
-z-index: 1;
-left: 0;
-top: 0;
-margin: 0;
-width: 100%;
-height: 100%;
-overflow: none;
-background-color: rgba(0,0,0,0.4);
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgba(0,0,0,0.4);
 }
-.modal > div {
-background-color: #fefefe;
-margin: 5vh auto;
-padding: 20px;
-border: 1px solid #888;
-width: 80%;
-max-height: 90vh;
-overflow: auto;
+
+.modal.close > div {
+    background-color: #fefefe;
+    margin: 5vh auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-height: 90vh;
+    border-radius: 0.2em;
+    box-shadow: 0.2em 0.2em 5px 0px rgba(0,0,0,0.2);
+}
+
+.modal.close > div > :first-child {
+    font-size: 150%;
+    top: 0px;
+    right: 0px;
+    text-align: right;
+    cursor: pointer;
+}
+
+.modal.close > div > :first-child:hover {
+    color: #B83C31;
+}
+
+.modal.close > div > :nth-child(2) {
+    overflow: auto;
+    max-height: 85vh;
 }
 
 th {
-color: grey;
+    color: grey;
 }
 
 .userselected {
-font-weight: bold;
-font-style: italic;
+    font-weight: bold;
+    font-style: italic;
 }
 
 textarea {
-width:100%;
-height: 50vh;
+    width: 100%;
+    height: 50vh;
+}
+
+.function input {
+    width: 50vw;
+}
+
+.function td:nth-child(2) {
+    text-align: right;
+}
+
+.function td:last-child {
+    width: 51vw;
+}
+
+.function tr:last-child td:last-child {
+    text-align: right;
+}
+
+.lds-circle {
+    display: inline-block;
+    transform: translateZ(1px);
+}
+
+.lds-circle > div {
+    display: inline-block;
+    width: 51px;
+    height: 51px;
+    margin: 6px;
+    border-radius: 50%;
+    background: #06AED5;
+    animation: lds-circle 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+@keyframes lds-circle {
+    0%, 100% {
+        animation-timing-function: cubic-bezier(0.5, 0, 1, 0.5);
+    }
+
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    50% {
+        transform: rotateY(1800deg);
+        animation-timing-function: cubic-bezier(0, 0.5, 0.5, 1);
+    }
+
+    100% {
+        transform: rotateY(3600deg);
+    }
+}
+
+.modal .lds-circle {
+    position: absolute;
+    transform: translateY(-50%);
+    display: block;
+    top: calc(50% - 10vh);
+    left: calc(50% - 10vh);
+}
+
+.modal .lds-circle > div {
+    background: #D1F0F7;
+    width: 20vh;
+    height: 20vh;
 }

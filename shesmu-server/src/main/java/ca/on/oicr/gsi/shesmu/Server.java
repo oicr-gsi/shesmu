@@ -20,7 +20,6 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
-import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
@@ -303,6 +302,7 @@ public final class Server implements ServerConfig, ActionServices {
                                     try {
 
                                       writer.writeStartElement("tr");
+                                      writer.writeAttribute("style", "cursor: pointer;");
                                       writer.writeAttribute(
                                           "onclick",
                                           String.format(
@@ -388,7 +388,7 @@ public final class Server implements ServerConfig, ActionServices {
                     writer.writeEndElement();
                     writer.writeStartElement("td");
                     writer.writeStartElement("span");
-                    writer.writeAttribute("class", "load");
+                    writer.writeAttribute("class", "load danger");
                     writer.writeAttribute(
                         "onclick",
                         String.format(
@@ -400,7 +400,7 @@ public final class Server implements ServerConfig, ActionServices {
                     writer.writeCharacters("▶ Resume Actions");
                     writer.writeEndElement();
                     writer.writeStartElement("span");
-                    writer.writeAttribute("class", "load");
+                    writer.writeAttribute("class", "load danger");
                     writer.writeAttribute(
                         "onclick",
                         String.format(
@@ -447,12 +447,12 @@ public final class Server implements ServerConfig, ActionServices {
                                   }
                                 });
                             writer.writeStartElement("p");
+                            writer.writeAttribute("style", "cursor: pointer;");
                             writer.writeAttribute("onclick", "toggleBytecode(this)");
                             writer.writeCharacters("⊞ Bytecode");
                             writer.writeEndElement();
                             writer.writeStartElement("pre");
-                            writer.writeAttribute("class", "json");
-                            writer.writeAttribute("style", "display:none");
+                            writer.writeAttribute("class", "json collapsed");
                             writer.writeCharacters(fileTable.bytecode());
                             writer.writeEndElement();
                           } catch (XMLStreamException e) {
@@ -503,7 +503,7 @@ public final class Server implements ServerConfig, ActionServices {
                                       writer.writeStartElement("p");
                                       writer.writeStartElement("a");
                                       writer.writeAttribute("href", "#" + id);
-                                      writer.writeAttribute("class", "load");
+                                      writer.writeAttribute("class", "load accessory");
                                       writer.writeCharacters("🔗 Permalink");
                                       writer.writeEndElement();
                                       if (olive.producesActions()) {
@@ -528,7 +528,7 @@ public final class Server implements ServerConfig, ActionServices {
                                                     olive.column(),
                                                     fileTable.timestamp()));
                                         writer.writeStartElement("span");
-                                        writer.writeAttribute("class", "load");
+                                        writer.writeAttribute("class", "load danger");
                                         writer.writeAttribute(
                                             "onclick",
                                             String.format(
@@ -577,159 +577,12 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+              boolean lacksLocations;
 
               @Override
               public Stream<Header> headers() {
-                return Stream.of(
-                    Header.jsModule(
-                        "import {"
-                            + "addLocationForm,"
-                            + "addTypeForm,"
-                            + "clearActionStates,"
-                            + "clearLocations,"
-                            + "clearTypes,"
-                            + "fillNewTypeSelect,"
-                            + "listActions,"
-                            + "purge,"
-                            + "queryStats,"
-                            + "showQuery"
-                            + "} from \"./shesmu.js\";"
-                            + "fillNewTypeSelect();"
-                            + "document.getElementById(\"newLocation\").addEventListener(\"keyup\", function(ev) {"
-                            + "  if (ev.keyCode === 13) {"
-                            + "    addLocationForm();"
-                            + "  }"
-                            + "});"
-                            + "document.getElementById(\"newLocationButton\").addEventListener(\"click\", addLocationForm);"
-                            + "document.getElementById(\"addTypeButton\").addEventListener(\"click\", addTypeForm);"
-                            + "document.getElementById(\"clearActionStatesButton\").addEventListener(\"click\", clearActionStates);"
-                            + "document.getElementById(\"clearLocationsButton\").addEventListener(\"click\", clearLocations);"
-                            + "document.getElementById(\"clearTypesButton\").addEventListener(\"click\", clearTypes);"
-                            + "document.getElementById(\"listActionsButton\").addEventListener(\"click\", listActions);"
-                            + "document.getElementById(\"purgeButton\").addEventListener(\"click\", purge);"
-                            + "document.getElementById(\"queryStatsButton\").addEventListener(\"click\", queryStats);"
-                            + "document.getElementById(\"showQueryButton\").addEventListener(\"click\", showQuery);"));
-              }
-
-              @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement("h1");
-                writer.writeCharacters("Search");
-                writer.writeEndElement();
-                writer.writeStartElement("p");
-                writer.writeCharacters(
-                    "For dates, use the same formats used in specifying dates in olives: ");
-                writer.writeStartElement("tt");
-                writer.writeCharacters("Date");
-                writer.writeEndElement();
-                writer.writeCharacters(", ");
-                writer.writeStartElement("tt");
-                writer.writeCharacters("EpochSecond");
-                writer.writeEndElement();
-                writer.writeCharacters(", ");
-                writer.writeStartElement("tt");
-                writer.writeCharacters("EpochMilli");
-                writer.writeEndElement();
-                writer.writeCharacters(" (i.e. '");
-                writer.writeStartElement("tt");
-                writer.writeCharacters("Date 2020-02-20");
-                writer.writeEndElement();
-                writer.writeCharacters("', '");
-                writer.writeStartElement("tt");
-                writer.writeCharacters("EpochSecond 1582156800");
-                writer.writeEndElement();
-                writer.writeCharacters("')");
-                writer.writeEndElement();
-
-                writer.writeStartElement("table");
-                writer.writeAttribute("class", "even");
-                writeDateRange(writer, "added", "Time Since Action was Last Generated by an Olive");
-                writeDateRange(writer, "checked", "Last Time Action was Last Run");
-                writeDateRange(writer, "statuschanged", "Last Time Action's Status Changed");
-
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeCharacters("Status");
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                for (ActionState state : ActionState.values()) {
-                  writer.writeStartElement("label");
-                  writer.writeAttribute("class", "state_" + state.name().toLowerCase());
-                  writer.writeStartElement("input");
-                  writer.writeAttribute("type", "checkbox");
-                  writer.writeAttribute("id", "include_" + state.name());
-                  writer.writeCharacters(
-                      state.name().substring(0, 1) + state.name().substring(1).toLowerCase());
-                  writer.writeEndElement();
-                  writer.writeEndElement();
-                }
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "clearActionStatesButton");
-                writer.writeCharacters("⌫");
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeCharacters("Type");
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                writer.writeStartElement("span");
-                writer.writeAttribute("id", "types");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "clearTypesButton");
-                writer.writeCharacters("⌫");
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                writer.writeStartElement("select");
-                writer.writeAttribute("id", "newType");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "addTypeButton");
-                writer.writeCharacters("+");
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeCharacters("Source Olive");
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                writer.writeStartElement("span");
-                writer.writeAttribute("id", "locations");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "clearLocationsButton");
-                writer.writeCharacters("⌫");
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                writer.writeStartElement("select");
-                writer.writeAttribute("id", "newLocation");
-                writer.writeComment("");
                 final Instant now = Instant.now();
+                final ObjectNode locationInfo = RuntimeSupport.MAPPER.createObjectNode();
                 processor
                     .sources()
                     .collect(Collectors.groupingBy(SourceLocation::fileName))
@@ -779,24 +632,139 @@ public final class Server implements ServerConfig, ActionServices {
                                       }));
                         })
                     .sorted(Comparator.comparing(Pair::first))
-                    .forEach(
-                        p -> {
-                          try {
-                            writer.writeStartElement("option");
-                            writer.writeAttribute(
-                                "value", RuntimeSupport.MAPPER.writeValueAsString(p.second()));
-                            writer.writeCharacters(p.first());
-                            writer.writeEndElement();
-                          } catch (XMLStreamException | JsonProcessingException e) {
-                            e.printStackTrace();
-                          }
-                        });
+                    .forEach(Pair.consume(locationInfo::putPOJO));
+                lacksLocations = locationInfo.size() == 0;
+                String locations;
+                try {
+                  locations = RuntimeSupport.MAPPER.writeValueAsString(locationInfo);
+                } catch (JsonProcessingException e) {
+                  e.printStackTrace();
+                  locations = "[]";
+                }
+                return Stream.of(
+                    Header.jsModule(
+                        "import {"
+                            + "initialiseActionDash"
+                            + "} from \"./shesmu.js\";"
+                            + "initialiseActionDash("
+                            + locations
+                            + ");"));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("h1");
+                writer.writeCharacters("Search");
+                writer.writeEndElement();
+                writer.writeStartElement("p");
+                writer.writeCharacters(
+                    "For dates, use the same formats used in specifying dates in olives: ");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("Date");
+                writer.writeEndElement();
+                writer.writeCharacters(", ");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("EpochSecond");
+                writer.writeEndElement();
+                writer.writeCharacters(", ");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("EpochMilli");
+                writer.writeEndElement();
+                writer.writeCharacters(" (i.e. '");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("Date 2020-02-20");
+                writer.writeEndElement();
+                writer.writeCharacters("', '");
+                writer.writeStartElement("tt");
+                writer.writeCharacters("EpochSecond 1582156800");
+                writer.writeEndElement();
+                writer.writeCharacters("')");
+                writer.writeEndElement();
+
+                writer.writeStartElement("table");
+                writeDateRange(writer, "added", "Time Since Action was Last Generated by an Olive");
+                writeDateRange(writer, "checked", "Last Time Action was Last Run");
+                writeDateRange(writer, "statuschanged", "Last Time Action's Status Changed");
+
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters("State");
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "add");
+                writer.writeCharacters("Add ▼");
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "newStates");
+                writer.writeComment("");
+                writer.writeEndElement();
                 writer.writeEndElement();
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "newLocationButton");
-                writer.writeCharacters("+");
+                writer.writeAttribute("id", "currentStates");
+                writer.writeComment("");
                 writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "clearStatesButton");
+                writer.writeAttribute("title", "Clear States");
+                writer.writeCharacters("⌫");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters("Action Type");
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "add");
+                writer.writeCharacters("Add ▼");
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "newTypes");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("id", "currentTypes");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "clearTypesButton");
+                writer.writeAttribute("title", "Clear Action Types");
+                writer.writeCharacters("⌫");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters("Source Olive/Script");
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                if (lacksLocations) {
+                  writer.writeCharacters("No actions have been generated yet.");
+                } else {
+                  writer.writeStartElement("span");
+                  writer.writeAttribute("class", "add");
+                  writer.writeCharacters("Add ▼");
+                  writer.writeStartElement("div");
+                  writer.writeAttribute("id", "newLocations");
+                  writer.writeComment("");
+                  writer.writeEndElement();
+                  writer.writeEndElement();
+                  writer.writeStartElement("span");
+                  writer.writeAttribute("id", "currentLocations");
+                  writer.writeComment("");
+                  writer.writeEndElement();
+                  writer.writeStartElement("span");
+                  writer.writeAttribute("class", "load accessory");
+                  writer.writeAttribute("id", "clearLocationsButton");
+                  writer.writeAttribute("title", "Clear Source Olives");
+                  writer.writeCharacters("⌫");
+                  writer.writeEndElement();
+                }
                 writer.writeEndElement();
                 writer.writeEndElement();
 
@@ -811,19 +779,16 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeComment("");
                 writer.writeEndElement();
                 writer.writeCharacters(" ");
-                writer.writeStartElement("select");
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "add");
+                writer.writeStartElement("span");
                 writer.writeAttribute("id", "searchType");
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "text");
-                writer.writeCharacters("Text (Case-sensitive)");
+                writer.writeComment("searchType");
                 writer.writeEndElement();
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "texti");
-                writer.writeCharacters("Text (Case-insensitive)");
-                writer.writeEndElement();
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "regex");
-                writer.writeCharacters("Regular Expression");
+                writer.writeCharacters(" ▼");
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "searchTypes");
+                writer.writeComment("");
                 writer.writeEndElement();
                 writer.writeEndElement();
                 writer.writeEndElement();
@@ -845,12 +810,12 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeCharacters("📈 Stats");
                 writer.writeEndElement();
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
+                writer.writeAttribute("class", "load accessory");
                 writer.writeAttribute("id", "showQueryButton");
                 writer.writeCharacters("🛈 Show Request");
                 writer.writeEndElement();
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
+                writer.writeAttribute("class", "load danger");
                 writer.writeAttribute("id", "purgeButton");
                 writer.writeCharacters("☠️ PURGE");
                 writer.writeEndElement();
@@ -1044,7 +1009,7 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeEndElement();
                             showSourceConfig(writer, constant.filename());
                             writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
+                            writer.writeAttribute("class", "function even");
                             writer.writeStartElement("tr");
                             writer.writeStartElement("td");
                             writer.writeCharacters("Type");
@@ -1061,11 +1026,8 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeStartElement("span");
                             writer.writeAttribute("class", "load");
                             writer.writeAttribute(
-                                "onclick",
-                                String.format("fetchConstant('%s', this)", constant.name()));
+                                "onclick", String.format("fetchConstant('%s')", constant.name()));
                             writer.writeCharacters("▶ Get");
-                            writer.writeEndElement();
-                            writer.writeStartElement("span");
                             writer.writeEndElement();
                             writer.writeEndElement();
                             writer.writeEndElement();
@@ -1104,7 +1066,7 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeEndElement();
                             showSourceConfig(writer, function.filename());
                             writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
+                            writer.writeAttribute("class", "function");
                             function
                                 .parameters()
                                 .map(Pair.number())
@@ -1121,6 +1083,8 @@ public final class Server implements ServerConfig, ActionServices {
                                         writer.writeEndElement();
                                         writer.writeStartElement("td");
                                         writer.writeCharacters(p.second().type().name());
+                                        writer.writeEndElement();
+                                        writer.writeStartElement("td");
                                         writer.writeStartElement("input");
                                         writer.writeAttribute("type", "text");
                                         writer.writeAttribute(
@@ -1137,20 +1101,21 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeCharacters("Result: " + function.returnType().name());
                             writer.writeEndElement();
                             writer.writeStartElement("td");
+                            writer.writeComment("type");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
                             writer.writeStartElement("span");
                             writer.writeAttribute("class", "load");
                             writer.writeAttribute(
                                 "onclick",
                                 String.format(
-                                    "runFunction('%s', this, %s)",
+                                    "runFunction('%s', %s)",
                                     function.name(),
                                     function
                                         .parameters()
                                         .map(p -> p.type().apply(TypeUtils.TO_JS_PARSER))
                                         .collect(Collectors.joining(",", "[", "]"))));
                             writer.writeCharacters("▶ Run");
-                            writer.writeEndElement();
-                            writer.writeStartElement("span");
                             writer.writeEndElement();
                             writer.writeEndElement();
                             writer.writeEndElement();
@@ -1341,6 +1306,23 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
                 writer.writeStartElement("table");
+                writer.writeStartElement("tr");
+                writer.writeStartElement("th");
+                writer.writeCharacters("ID");
+                writer.writeEndElement();
+                writer.writeStartElement("th");
+                writer.writeCharacters("Labels");
+                writer.writeEndElement();
+                writer.writeStartElement("th");
+                writer.writeCharacters("Annotations");
+                writer.writeEndElement();
+                writer.writeStartElement("th");
+                writer.writeCharacters("Starts");
+                writer.writeEndElement();
+                writer.writeStartElement("th");
+                writer.writeCharacters("Expires");
+                writer.writeEndElement();
+                writer.writeEndElement();
                 processor.alerts(
                     a -> {
                       try {
@@ -1361,6 +1343,18 @@ public final class Server implements ServerConfig, ActionServices {
                         writer.writeEndElement();
                         writer.writeStartElement("td");
                         writer.writeCharacters(a.expiryTime());
+                        writer.writeEndElement();
+                        writer.writeEndElement();
+                      } catch (XMLStreamException e) {
+                        throw new RuntimeException(e);
+                      }
+                    },
+                    () -> {
+                      try {
+                        writer.writeStartElement("tr");
+                        writer.writeStartElement("td");
+                        writer.writeAttribute("colspan", "5");
+                        writer.writeCharacters("No alerts have ever fired.");
                         writer.writeEndElement();
                         writer.writeEndElement();
                       } catch (XMLStreamException e) {
@@ -1969,7 +1963,7 @@ public final class Server implements ServerConfig, ActionServices {
         });
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
-    add("/main.css", "text/css");
+    add("/main.css", "text/css; charset=utf-8");
     add("/shesmu.js", "text/javascript");
     add("/shesmu.svg", "image/svg+xml");
     add("/favicon.png", "image/png");
