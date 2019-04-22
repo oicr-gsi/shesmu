@@ -620,9 +620,13 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return false;
   }
 
-  public void alerts(Consumer<Alert> consumer) {
+  public void alerts(Consumer<Alert> consumer, Runnable noAlerts) {
     try (AutoCloseable lock = alertLock.acquire()) {
-      alerts.values().stream().forEach(consumer);
+      if (alerts.isEmpty()) {
+        noAlerts.run();
+      } else {
+        alerts.values().stream().forEach(consumer);
+      }
     } catch (final Exception e) {
       e.printStackTrace();
     }

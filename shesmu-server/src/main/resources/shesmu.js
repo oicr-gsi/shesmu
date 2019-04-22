@@ -1,15 +1,22 @@
 import { actionRender } from "./actions.js";
 
-export function fetchConstant(name, element) {
-  element.className = "busy";
-  element.innerText = "Fetching...";
-  fetch("/constant", {
-    body: JSON.stringify(name),
-    method: "POST"
-  })
+function addThrobber(container) {
+  const throbber = document.createElement("DIV");
+  throbber.className = "lds-circle";
+  throbber.appendChild(document.createElement("DIV"));
+  container.appendChild(throbber);
+}
+
+function clearChildren(container) {
+  while (container.hasChildNodes()) {
+    container.removeChild(container.lastChild);
+  }
+}
+
+function fetchJsonWithBusyDialog(url, parameters, callback) {
+  const closeBusy = makeBusyDialog();
+  fetch(url, parameters)
     .then(response => {
-      element.innerText = "🔄 Refresh";
-      element.className = "load";
       if (response.ok) {
         return Promise.resolve(response);
       } else {
@@ -17,115 +24,94 @@ export function fetchConstant(name, element) {
       }
     })
     .then(response => response.json())
-    .then(data => {
-      if (data.hasOwnProperty("value")) {
-        element.nextElementSibling.innerText = JSON.stringify(
-          data.value,
-          null,
-          2
-        );
-        element.nextElementSibling.className = "data";
-      } else {
-        element.nextElementSibling.innerText = data.error;
-        element.nextElementSibling.className = "error";
-      }
-      element.innerText = "▶ Get";
-      element.className = "load";
+    .then(response => {
+      closeBusy();
+      callback(response);
     })
-    .catch(function(error) {
-      element.nextElementSibling.innerText = error.message;
-      element.nextElementSibling.className = "error";
+    .catch(error => {
+      closeBusy();
+      output.innerText = error.message;
     });
 }
 
-export function runFunction(name, element, parameterParser) {
-  let parameters = [];
-  let paramsOk = true;
-  for (let parameter = 0; parameter < parameterParser.length; parameter++) {
-    paramsOk &= parser.parse(
-      document.getElementById(`${name}$${parameter}`).value,
-      parameterParser[parameter],
-      x => parameters.push(x),
-      message => {
-        element.nextElementSibling.innerText = `Argument ${parameter}: ${message}`;
-        element.nextElementSibling.className = "error";
+export function fetchConstant(name) {
+  fetchJsonWithBusyDialog(
+    "/constant",
+    {
+      body: JSON.stringify(name),
+      method: "POST"
+    },
+    data => {
+      const output = makePopup();
+      if (data.hasOwnProperty("value")) {
+        const dataDiv = document.createElement("pre");
+        dataDiv.className = "json";
+        dataDiv.innerText = JSON.stringify(data.value, null, 2);
+        output.appendChild(dataDiv);
+      } else {
+        output.innerText = data.error;
       }
-    );
-  }
-  if (!paramsOk) {
+    }
+  );
+}
+
+export function runFunction(name, parameterTypes) {
+  const parameters = [];
+  const errors = [];
+  if (
+    !parameterTypes.every((parameterType, parameter) =>
+      parser.parse(
+        document.getElementById(`${name}$${parameter}`).value,
+        parameterType,
+        x => parameters.push(x),
+        message => {
+          const p = document.createElement("P");
+          p.innerText = `Argument ${parameter}: ${message}`;
+          errors.push(p);
+        }
+      )
+    )
+  ) {
+    const errorDialog = makePopup();
+    errors.forEach(err => errorDialog.appendChild(err));
     return;
   }
-  element.className = "busy";
-  element.innerText = "Running...";
-  element.nextElementSibling.innerText = "";
-  element.nextElementSibling.className = "";
-  fetch("/function", {
-    body: JSON.stringify({ name: name, args: parameters }),
-    method: "POST"
-  })
-    .then(response => {
-      element.innerText = "▶ Run";
-      element.className = "load";
-      if (response.ok) {
-        return Promise.resolve(response);
-      } else {
-        return Promise.reject(new Error("Failed to load"));
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
+  fetchJsonWithBusyDialog(
+    "/function",
+    {
+      body: JSON.stringify({ name: name, args: parameters }),
+      method: "POST"
+    },
+    data => {
+      const output = makePopup();
       if (data.hasOwnProperty("value")) {
-        element.nextElementSibling.innerText = JSON.stringify(
-          data.value,
-          null,
-          2
-        );
-        element.nextElementSibling.className = "data";
+        const dataDiv = document.createElement("PRE");
+        dataDiv.className = "json";
+        dataDiv.innerText = JSON.stringify(data.value, null, 2);
+        output.appendChild(dataDiv);
       } else {
-        element.innerText = data.error;
-        element.className = "error";
+        output.innerText = data.error;
       }
-    })
-    .catch(function(error) {
-      element.innerText = error.message;
-      element.className = "error";
-    });
+    }
+  );
 }
 
 export function parseType() {
-  const humanType = document.getElementById("humanType");
-  humanType.innerText = "Prettying...";
-  const descriptorType = document.getElementById("descriptorType");
-  descriptorType.innerText = "Uglying...";
   const format = document.getElementById("format");
-  fetch("/type", {
-    body: JSON.stringify({
-      value: document.getElementById("typeValue").value,
-      format: format.options[format.selectedIndex].value
-    }),
-    method: "POST"
-  })
-    .then(response => {
-      if (response.ok) {
-        return Promise.resolve(response);
-      } else if (response.code === 400) {
-        return Promise.reject(new Error("Invalid type descriptor."));
-      } else {
-        return Promise.reject(new Error("Failed to load"));
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      humanType.innerText = data.humanName;
-      humanType.className = "data";
-      descriptorType.innerText = data.descriptor;
-      descriptorType.className = "data";
-    })
-    .catch(function(error) {
-      humanType.innerText = error.message;
-      humanType.className = "error";
-      descriptorType.innerText = "";
-    });
+  fetchJsonWithBusyDialog(
+    "/type",
+    {
+      body: JSON.stringify({
+        value: document.getElementById("typeValue").value,
+        format: format.options[format.selectedIndex].value
+      }),
+      method: "POST"
+    },
+    data => {
+      document.getElementById("humanType").innerText = data.humanName;
+      document.getElementById("descriptorType").innerText = data.descriptor;
+    }
+  );
 }
 
 export const parser = {
@@ -354,159 +340,128 @@ const actionStates = [
   "UNKNOWN",
   "WAITING"
 ];
-const types = [];
-const locations = [];
+const types = new Map();
+const locations = new Map();
+const selectedStates = new Map();
+let availableLocations;
 
-export function clearActionStates() {
-  actionStates.forEach(s => {
-    document.getElementById(`include_${s}`).checked = false;
-  });
-}
-
-function drawTypes() {
-  const container = document.getElementById("types");
-  while (container.hasChildNodes()) {
-    container.removeChild(container.lastChild);
+function clearSelectableMap(currentId, newId, stateMap, source, classForItem) {
+  stateMap.clear();
+  for (const item of source) {
+    stateMap.set(item, false);
   }
 
-  types.sort();
-  types.forEach(typeName => {
-    const element = document.createElement("SPAN");
-    element.innerText = typeName + " ";
-    const removeElement = document.createElement("SPAN");
-    removeElement.innerText = "✖";
-    removeElement.onclick = function() {
-      removeTypeName(typeName);
-    };
+  const currentElement = document.getElementById(currentId);
+  const newElement = document.getElementById(newId);
 
-    element.appendChild(removeElement);
-    container.appendChild(element);
-  });
-}
-
-function removeTypeName(typeName) {
-  const index = types.indexOf(typeName);
-  if (index > -1) {
-    types.splice(index, 1);
-    drawTypes();
-    const option = document.createElement("OPTION");
-    option.text = typeName;
-    document.getElementById("newType").add(option);
-  }
-}
-
-export function clearTypes() {
-  while (types.length) {
-    types.pop();
-  }
-  drawTypes();
-  fillNewTypeSelect();
-}
-
-function addType(typeName) {
-  if (typeName && !types.includes(typeName)) {
-    types.push(typeName);
-    drawTypes();
-  }
-}
-
-export function addTypeForm() {
-  const element = document.getElementById("newType");
-  if (element.selectedIndex < 0) {
-    return;
-  }
-
-  addType(element.value.trim());
-  element.remove(element.selectedIndex);
-}
-
-export function fillNewTypeSelect() {
-  const element = document.getElementById("newType");
-  while (element.length > 0) {
-    element.remove(0);
-  }
-  for (const typeName of actionRender.keys()) {
-    const option = document.createElement("OPTION");
-    option.text = typeName;
-    element.add(option);
-  }
-}
-
-function drawLocations() {
-  const container = document.getElementById("locations");
-  while (container.hasChildNodes()) {
-    container.removeChild(container.lastChild);
-  }
-
-  locations.sort(
-    (a, b) =>
-      a.file.localeCompare(b.file) ||
-      (a.line || 0) - (b.line || 0) ||
-      (a.column || 0) - (b.column || 0) ||
-      (a.time || 0) - (b.time || 0)
-  );
-  locations.forEach(sourceLocation => {
-    const element = document.createElement("SPAN");
-    element.innerText = `${sourceLocation.file}${
-      sourceLocation.line === null
-        ? ""
-        : ":" +
-          sourceLocation.line +
-          (sourceLocation.column === null ? "" : ":" + sourceLocation.column)
-    } `;
-    const removeElement = document.createElement("SPAN");
-    removeElement.innerText = "✖";
-    removeElement.onclick = function() {
-      const index = locations.findIndex(
-        l =>
-          l.file === sourceLocation.file &&
-          l.line === sourceLocation.line &&
-          l.column === sourceLocation.column &&
-          l.time === sourceLocation.time
-      );
-      if (index > -1) {
-        locations.splice(index, 1);
-        drawLocations();
+  function redraw() {
+    clearChildren(currentElement);
+    clearChildren(newElement);
+    for (const entry of stateMap.entries()) {
+      const element = document.createElement("SPAN");
+      element.innerText = entry[0] + " ";
+      element.className = classForItem(entry[0]);
+      (entry[1] ? currentElement : newElement).appendChild(element);
+      const toggle = () => {
+        stateMap.set(entry[0], !entry[1]);
+        redraw();
+      };
+      if (entry[1]) {
+        const removeElement = document.createElement("SPAN");
+        removeElement.innerText = "✖";
+        removeElement.onclick = toggle;
+        element.appendChild(removeElement);
+        currentElement.appendChild(document.createTextNode(" "));
+      } else {
+        element.onclick = toggle;
       }
+    }
+  }
+  redraw();
+}
+
+function clearTypes() {
+  clearSelectableMap(
+    "currentTypes",
+    "newTypes",
+    types,
+    Array.from(actionRender.keys()).sort(),
+    type => ""
+  );
+}
+
+function clearLocations() {
+  clearSelectableMap(
+    "currentLocations",
+    "newLocations",
+    locations,
+    availableLocations.keys(),
+    element => null
+  );
+}
+
+function clearStates() {
+  clearSelectableMap(
+    "currentStates",
+    "newStates",
+    selectedStates,
+    actionStates,
+    state => `${state.toLowerCase()}`
+  );
+}
+
+export function initialiseActionDash(definedLocations) {
+  availableLocations = new Map(
+    Object.entries(definedLocations).sort(entry => entry[0])
+  );
+  const searchTypeElement = document.getElementById("searchType");
+  const searchTypesElement = document.getElementById("searchTypes");
+  for (const searchDescription of [
+    ["text", "Text (Case-sensitive)", true],
+    ["texti", "Text (Case-insensitive)", false],
+    ["regex", "Regular Expression", false]
+  ]) {
+    const element = document.createElement("SPAN");
+    element.innerText = searchDescription[1];
+    element.onclick = e => {
+      searchType = searchDescription[0];
+      searchTypeElement.innerText = searchDescription[1];
     };
-
-    element.appendChild(removeElement);
-    container.appendChild(element);
-  });
-}
-
-export function clearLocations() {
-  while (locations.length) {
-    locations.pop();
+    if (searchDescription[2]) {
+      element.onclick(null);
+    }
+    searchTypesElement.appendChild(element);
   }
-  drawLocations();
-}
-
-export function addLocationForm() {
-  const element = document.getElementById("newLocation");
-  if (element.selectedIndex < 0) {
-    return;
+  document
+    .getElementById("clearStatesButton")
+    .addEventListener("click", clearStates);
+  document
+    .getElementById("clearTypesButton")
+    .addEventListener("click", clearTypes);
+  document
+    .getElementById("listActionsButton")
+    .addEventListener("click", listActions);
+  document.getElementById("purgeButton").addEventListener("click", purge);
+  document
+    .getElementById("queryStatsButton")
+    .addEventListener("click", queryStats);
+  document
+    .getElementById("showQueryButton")
+    .addEventListener("click", showQuery);
+  if (availableLocations.size > 0) {
+    document
+      .getElementById("clearLocationsButton")
+      .addEventListener("click", clearLocations);
+    clearLocations();
   }
-  const sourceLocation = JSON.parse(
-    element.options[element.selectedIndex].value
-  );
-  const index = locations.findIndex(
-    l =>
-      l.file === sourceLocation.file &&
-      l.line === sourceLocation.line &&
-      l.column === sourceLocation.column &&
-      l.time === sourceLocation.time
-  );
-  if (index == -1) {
-    locations.push(sourceLocation);
-    drawLocations();
-  }
+  clearStates();
+  clearTypes();
 }
 
 function parseEpoch(elementId) {
   const epochElement = document.getElementById(elementId);
   const epochInput = epochElement.value.trim();
-  epochElement.className = null;
+  epochElement.className = "";
   if (epochInput.length == 0) {
     return null;
   }
@@ -519,14 +474,25 @@ function parseEpoch(elementId) {
   }
 }
 
+function addFilterFromStateMap(filters, type, attribute, map, mapFunc) {
+  const values = Array.from(map.entries())
+    .filter(entry => entry[1])
+    .map(entry => mapFunc(entry[0]));
+  if (values.length > 0) {
+    filters.push({ type: type, [attribute]: values });
+  }
+}
+
+let searchType = "text";
+
 function makeFilters() {
   const filters = [];
-  const selectedStates = actionStates.filter(
-    s => document.getElementById(`include_${s}`).checked
+  addFilterFromStateMap(filters, "status", "states", selectedStates, x => x);
+  addFilterFromStateMap(filters, "type", "types", types, x => x);
+  addFilterFromStateMap(filters, "sourcelocation", "locations", locations, x =>
+    availableLocations.get(x)
   );
-  if (selectedStates.length) {
-    filters.push({ type: "status", states: selectedStates });
-  }
+
   for (let span of ["added", "checked", "statuschanged"]) {
     const start = parseEpoch(`${span}Start`);
     const end = parseEpoch(`${span}End`);
@@ -534,16 +500,10 @@ function makeFilters() {
       filters.push({ type: span, start: start, end: end });
     }
   }
-  if (types.length > 0) {
-    filters.push({ type: "type", types: types });
-  }
-  if (locations.length > 0) {
-    filters.push({ type: "sourcelocation", locations: locations });
-  }
+
   const text = document.getElementById("searchText").value.trim();
   if (text) {
-    const searchType = document.getElementById("searchType");
-    switch (searchType.options[searchType.selectedIndex].value) {
+    switch (searchType) {
       case "text":
         filters.push({ type: "text", matchCase: true, text: text });
         break;
@@ -559,9 +519,8 @@ function makeFilters() {
 }
 
 function results(container, slug, body, render) {
-  while (container.hasChildNodes()) {
-    container.removeChild(container.lastChild);
-  }
+  clearChildren(container);
+  addThrobber(container);
   fetch(slug, {
     body: body,
     method: "POST"
@@ -574,7 +533,10 @@ function results(container, slug, body, render) {
       }
     })
     .then(response => response.json())
-    .then(data => render(container, data))
+    .then(data => {
+      clearChildren(container);
+      render(container, data);
+    })
     .catch(function(error) {
       const element = document.createElement("SPAN");
       element.innerText = error.message;
@@ -583,7 +545,7 @@ function results(container, slug, body, render) {
     });
 }
 
-export function listActions() {
+function listActions() {
   const query = {
     filters: makeFilters(),
     limit: 25,
@@ -610,19 +572,36 @@ export function filterForOlive(filename, line, column, timestamp) {
 
 function makePopup() {
   const modal = document.createElement("DIV");
-  modal.className = "modal";
+  modal.className = "modal close";
+
+  const dialog = document.createElement("DIV");
+  modal.appendChild(dialog);
+
+  const closeButton = document.createElement("DIV");
+  closeButton.innerText = "✖";
+
+  dialog.appendChild(closeButton);
 
   const inner = document.createElement("DIV");
-  modal.appendChild(inner);
-  document.body.appendChild(modal);
+  dialog.appendChild(inner);
 
+  document.body.appendChild(modal);
   modal.onclick = e => {
     if (e.target == modal) {
       document.body.removeChild(modal);
     }
   };
+  closeButton.onclick = e => document.body.removeChild(modal);
 
   return inner;
+}
+
+function makeBusyDialog() {
+  const modal = document.createElement("DIV");
+  modal.className = "modal";
+  addThrobber(modal);
+  document.body.appendChild(modal);
+  return () => document.body.removeChild(modal);
 }
 
 export function listActionsPopup(filters) {
@@ -729,8 +708,9 @@ function nextPage(query, targetElement, onActionPage) {
         }
       });
       const showHide = document.createElement("P");
+      showHide.style.cursor = "pointer";
       const json = document.createElement("PRE");
-      json.className = "json";
+      json.className = "json collapsed";
       json.innerText = JSON.stringify(action, null, 2);
       tile.appendChild(showHide);
       tile.appendChild(json);
@@ -738,7 +718,7 @@ function nextPage(query, targetElement, onActionPage) {
       showHide.onclick = () => {
         visible = !visible;
         showHide.innerText = visible ? "⊟ JSON" : "⊞ JSON";
-        json.style = visible ? "display: block" : "display: none";
+        json.style.maxHeight = visible ? `${json.scrollHeight}px` : null;
       };
       showHide.onclick();
       jumble.appendChild(tile);
@@ -769,7 +749,7 @@ function nextPage(query, targetElement, onActionPage) {
           const skip = i * query.limit;
           page.innerText = `${i + 1}`;
           if (skip != query.skip) {
-            page.className = "load";
+            page.className = "load accessory";
           }
           page.onclick = () =>
             nextPage(
@@ -794,21 +774,19 @@ function nextPage(query, targetElement, onActionPage) {
   });
 }
 
-export function queryStats() {
+function queryStats() {
   getStats(makeFilters(), document.getElementById("results"), true);
 }
 
 function showFilterJson(filters, targetElement) {
-  while (targetElement.hasChildNodes()) {
-    targetElement.removeChild(targetElement.lastChild);
-  }
+  clearChildren(targetElement);
   const pre = document.createElement("PRE");
   pre.className = "json";
   pre.innerText = JSON.stringify(filters, null, 2);
   targetElement.appendChild(pre);
 }
 
-export function showQuery() {
+function showQuery() {
   showFilterJson(makeFilters(), document.getElementById("results"));
 }
 
@@ -823,7 +801,7 @@ function propertyFilterMaker(name) {
     case "type":
       return t => ({ type: "type", types: [t] });
     default:
-      return () => null;
+      return () => "";
   }
 }
 
@@ -872,24 +850,22 @@ function formatBin(name) {
 }
 
 function setColorIntensity(element, value, maximum) {
-  element.style.backgroundColor = `hsl(260, 100%, ${Math.ceil(
+  element.style.backgroundColor = `hsl(191, 95%, ${Math.ceil(
     97 - (value || 0) / maximum * 20
   )}%)`;
 }
 
-export function purge() {
+function purge() {
   const filters = makeFilters();
   const targetElement = document.getElementById("results");
   if (filters.length == 0) {
-    while (targetElement.hasChildNodes()) {
-      targetElement.removeChild(targetElement.lastChild);
-    }
+    clearChildren(targetElement);
     const sarcasm = document.createElement("P");
     sarcasm.innerText =
       "Yeah, no. You can't nuke all the actions. Maybe try a subset.";
     targetElement.appendChild(sarcasm);
     const purgeButton = document.createElement("SPAN");
-    purgeButton.className = "load";
+    purgeButton.className = "load danger";
     purgeButton.innerText = "🔥 NUKE IT ALL FROM ORBIT 🔥";
     targetElement.appendChild(purgeButton);
     purgeButton.onclick = () => {
@@ -939,9 +915,7 @@ function getStats(filters, targetElement, onActionPage) {
           }
           selectedElement = clickable;
           selectedElement.classList.add("userselected");
-          while (drillDown.hasChildNodes()) {
-            drillDown.removeChild(drillDown.lastChild);
-          }
+          clearChildren(drillDown);
           const clickResult = document.createElement("DIV");
           const toolBar = document.createElement("P");
           const listButton = document.createElement("SPAN");
@@ -953,11 +927,11 @@ function getStats(filters, targetElement, onActionPage) {
           statsButton.innerText = "📈 Stats";
           toolBar.appendChild(statsButton);
           const jsonButton = document.createElement("SPAN");
-          jsonButton.className = "load";
+          jsonButton.className = "load accessory";
           jsonButton.innerText = "🛈 Show Request";
           toolBar.appendChild(jsonButton);
           const purgeButton = document.createElement("SPAN");
-          purgeButton.className = "load";
+          purgeButton.className = "load danger";
           purgeButton.innerText = "☠️ PURGE";
           toolBar.appendChild(purgeButton);
           listButton.onclick = () => {
@@ -981,7 +955,7 @@ function getStats(filters, targetElement, onActionPage) {
             purgeActions(filters, targetElement, () => {
               const refreshToolbar = document.createElement("DIV");
               const refreshButton = document.createElement("SPAN");
-              refreshButton.className = "load";
+              refreshButton.className = "load accessory";
               refreshButton.innerText = "🔄 Refresh";
               refreshToolbar.appendChild(refreshButton);
               targetElement.appendChild(refreshToolbar);
@@ -1038,9 +1012,7 @@ function getStats(filters, targetElement, onActionPage) {
                   );
                 } else {
                   tr.onclick = () => {
-                    while (drillDown.hasChildNodes()) {
-                      drillDown.removeChild(drillDown.lastChild);
-                    }
+                    clearChildren(drillDown);
                     if (selectedElement) {
                       selectedElement.classList.remove("userselected");
                     }
@@ -1195,23 +1167,22 @@ function getStats(filters, targetElement, onActionPage) {
 }
 
 export function toggleBytecode(title) {
-  const visible = title.nextSibling.style.display != "block";
+  const visible = !title.nextSibling.style.maxHeight;
 
   title.innerText = visible ? "⊟ Bytecode" : "⊞ Bytecode";
-  title.nextSibling.style = visible ? "display: block" : "display: none";
+  title.nextSibling.style.maxHeight = visible
+    ? `${title.nextSibling.scrollHeight}px`
+    : null;
 }
 
 export function runCheck(button, sourceCode, outputContainer) {
-  button.className = "busy";
-  while (outputContainer.hasChildNodes()) {
-    outputContainer.removeChild(outputContainer.lastChild);
-  }
+  clearChildren(outputContainer);
+  addThrobber(outputContainer);
   fetch("/checkhtml", {
     body: sourceCode,
     method: "POST"
   })
     .then(response => {
-      button.className = "load";
       if (response.ok) {
         return Promise.resolve(response);
       } else {
@@ -1221,6 +1192,7 @@ export function runCheck(button, sourceCode, outputContainer) {
     .then(response => response.text())
     .then(text => new window.DOMParser().parseFromString(text, "text/html"))
     .then(response => {
+      clearChildren(outputContainer);
       const body = response.getElementsByTagName("body")[0];
       while (body.children.length > 0) {
         outputContainer.appendChild(document.adoptNode(body.children[0]));
@@ -1246,45 +1218,29 @@ export function loadFile(textContainer) {
 
 export function pauseOlive(element, target) {
   target.pause = element.getAttribute("is-paused") !== "true";
-  element.className = "busy";
-  fetch("/pauseolive", {
-    body: JSON.stringify(target),
-    method: "POST"
-  })
-    .then(response => {
-      if (response.ok) {
-        return Promise.resolve(response);
-      } else {
-        return Promise.reject(new Error("Failed to load"));
-      }
-    })
-    .then(response => response.json())
-    .then(response => {
+  fetchJsonWithBusyDialog(
+    "/pauseolive",
+    {
+      body: JSON.stringify(target),
+      method: "POST"
+    },
+    response => {
       element.innerText = response ? "▶ Resume Actions" : "⏸ Pause Actions";
-      element.className = "load";
       element.setAttribute("is-paused", response);
-    })
-    .catch(function(error) {
-      element.className = "load";
-    });
+    }
+  );
 }
 
 export function clearDeadPause(row, target, purgeFirst) {
   const removePause = () => {
     target.pause = false;
-    return fetch("/pauseolive", {
-      body: JSON.stringify(target),
-      method: "POST"
-    })
-      .then(response => {
-        if (response.ok) {
-          return Promise.resolve(response);
-        } else {
-          return Promise.reject(new Error("Failed to load"));
-        }
-      })
-      .then(response => response.json())
-      .then(response => {
+    fetchJsonWithBusyDialog(
+      "/pauseolive",
+      {
+        body: JSON.stringify(target),
+        method: "POST"
+      },
+      response => {
         if (!response) {
           const tbody = row.parentNode;
           tbody.removeChild(row);
@@ -1293,27 +1249,23 @@ export function clearDeadPause(row, target, purgeFirst) {
             div.parentNode.removeChild(div);
           }
         }
-      })
-      .catch(function(error) {});
+      }
+    );
   };
   if (purgeFirst) {
-    fetch("/purge", {
-      body: JSON.stringify([
-        {
-          type: "sourcelocation",
-          locations: [target]
-        }
-      ]),
-      method: "POST"
-    })
-      .then(response => {
-        if (response.ok) {
-          return Promise.resolve(response);
-        } else {
-          return Promise.reject(new Error("Failed to load"));
-        }
-      })
-      .then(removePause);
+    fetchJsonWithBusyDialog(
+      "/purge",
+      {
+        body: JSON.stringify([
+          {
+            type: "sourcelocation",
+            locations: [target]
+          }
+        ]),
+        method: "POST"
+      },
+      removePause
+    );
   } else {
     removePause();
   }

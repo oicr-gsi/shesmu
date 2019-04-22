@@ -96,6 +96,9 @@ public class MetroDiagram {
       Long inputCount,
       InputFormatDefinition format)
       throws XMLStreamException {
+    final String id =
+        String.format(
+            "%s:%d:%d:%d", filename, olive.column(), olive.line(), timestamp.toEpochMilli());
     final long metroStart =
         120
             + Stream.concat(
@@ -126,7 +129,7 @@ public class MetroDiagram {
     final long width =
         metroStart
             + SVG_METRO_WIDTH
-                * (Stream.<VariableInformation>concat(
+                * (Stream.concat(
                             olive.clauses().flatMap(OliveClauseRow::variables), olive.variables())
                         .flatMap(
                             variable ->
@@ -145,7 +148,7 @@ public class MetroDiagram {
 
     writer.writeStartElement("defs");
     writer.writeStartElement("filter");
-    writer.writeAttribute("id", "blur");
+    writer.writeAttribute("id", "blur-" + id);
     writer.writeAttribute("x", "0");
     writer.writeAttribute("y", "0");
     writer.writeStartElement("feFlood");
@@ -199,7 +202,6 @@ public class MetroDiagram {
             .stream()
             .flatMap(VariableInformation::inputs)
             .distinct()
-            .sorted()
             .collect(
                 Collectors.toMap(
                     Function.identity(),
@@ -209,6 +211,7 @@ public class MetroDiagram {
                         return new MetroDiagram(
                             textLayerBuffer,
                             writer,
+                            id,
                             name,
                             format
                                 .baseStreamVariables()
@@ -265,6 +268,7 @@ public class MetroDiagram {
                   return drawVariables(
                       textLayerBuffer,
                       writer,
+                      id,
                       metroStart,
                       topPadding,
                       idGen,
@@ -279,6 +283,7 @@ public class MetroDiagram {
     drawVariables(
         textLayerBuffer,
         writer,
+        id,
         metroStart,
         topPadding,
         idGen,
@@ -294,6 +299,7 @@ public class MetroDiagram {
   private static Map<String, MetroDiagram> drawVariables(
       List<DelayedXml> textLayer,
       XMLStreamWriter connectorLayer,
+      String id,
       long metroStart,
       long topPadding,
       AtomicInteger idGen,
@@ -324,6 +330,7 @@ public class MetroDiagram {
                         new MetroDiagram(
                             textLayer,
                             connectorLayer,
+                            id,
                             variable.name(),
                             variable.type(),
                             from(variable, variables),
@@ -438,6 +445,7 @@ public class MetroDiagram {
   private MetroDiagram(
       List<DelayedXml> textLayer,
       XMLStreamWriter connectorLayer,
+      String id,
       String name,
       Imyhat type,
       String from,
@@ -470,7 +478,7 @@ public class MetroDiagram {
           textWriter.writeAttribute("x", Long.toString(x + SVG_RADIUS * 2));
           textWriter.writeAttribute("y", Long.toString(y + SVG_RADIUS * 2));
           textWriter.writeAttribute("fill", "#000");
-          textWriter.writeAttribute("filter", "url(#blur)");
+          textWriter.writeAttribute("filter", "url(#blur-" + id + ")");
           textWriter.writeAttribute("font-size", Long.toString(SVG_SMALL_TEXT));
           textWriter.writeStartElement("title");
           textWriter.writeCharacters(type.name());
