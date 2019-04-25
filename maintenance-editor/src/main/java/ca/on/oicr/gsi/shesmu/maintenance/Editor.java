@@ -113,8 +113,8 @@ public class Editor extends JFrame {
     toolbar.add(sort);
     final JButton save = new JButton("Save");
     toolbar.add(save);
-    final JButton expand = new JButton("Expand");
-    toolbar.add(expand);
+    final JButton change = new JButton("Change Window");
+    toolbar.add(change);
     final DateTableModel model = new DateTableModel();
     final JTable table =
         new JTable(model) {
@@ -197,14 +197,15 @@ public class Editor extends JFrame {
           loadFile.run();
           model.fireTableStructureChanged();
         });
-    expand.addActionListener(
+    change.addActionListener(
         event -> {
           if (table.getSelectedRowCount() == 0) {
             JOptionPane.showMessageDialog(
                 this, "Please select rows first.", "Maintenance Editor", JOptionPane.ERROR_MESSAGE);
           } else {
-            final JSpinner spinner = new JSpinner();
+            final JSpinner spinner = new JSpinner(new SpinnerNumberModel(1, 0, 100, 1));
             ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(4);
+            final JComboBox<ChangeWindow> changeWindowBox = new JComboBox<>(ChangeWindow.values());
             final JComboBox<ChronoUnit> units =
                 new JComboBox<>(
                     Stream.of(ChronoUnit.values())
@@ -215,17 +216,21 @@ public class Editor extends JFrame {
                         .toArray(ChronoUnit[]::new));
             final JPanel input = new JPanel(new GridBagLayout());
             final GridBagConstraints labelConstraints = new GridBagConstraints();
-            labelConstraints.gridwidth = 2;
+            labelConstraints.gridwidth = 3;
+            final GridBagConstraints changeWindowConstraints = new GridBagConstraints();
+            changeWindowConstraints.gridx = 0;
+            changeWindowConstraints.gridy = 1;
             final GridBagConstraints spinnerConstraints = new GridBagConstraints();
+            spinnerConstraints.gridx = 1;
             spinnerConstraints.gridy = 1;
             spinnerConstraints.anchor = GridBagConstraints.LINE_END;
             spinnerConstraints.weightx = 1.0;
-            spinnerConstraints.insets = new Insets(0, 0, 0, 5);
+            spinnerConstraints.insets = new Insets(5, 5, 5, 5);
             final GridBagConstraints unitsConstraints = new GridBagConstraints();
-            unitsConstraints.gridx = 1;
+            unitsConstraints.gridx = 2;
             unitsConstraints.gridy = 1;
-            input.add(
-                new JLabel("Push start time earlier and end time later by:"), labelConstraints);
+            input.add(new JLabel("Change the time windows by:"), labelConstraints);
+            input.add(changeWindowBox, changeWindowConstraints);
             input.add(spinner, spinnerConstraints);
             input.add(units, unitsConstraints);
             if (JOptionPane.showOptionDialog(
@@ -240,11 +245,12 @@ public class Editor extends JFrame {
                 == JOptionPane.OK_OPTION) {
               if (table.isEditing()) table.getCellEditor().stopCellEditing();
               final long value = (Integer) spinner.getValue();
+              final ChangeWindow changeWindow = (ChangeWindow) changeWindowBox.getSelectedItem();
               final ChronoUnit unit = (ChronoUnit) units.getSelectedItem();
               for (int row : table.getSelectedRows()) {
                 LocalDateTime[] times = model.rows.get(row);
-                times[0] = times[0].minus(value, unit);
-                times[1] = times[1].plus(value, unit);
+                times[0] = changeWindow.changeStart(times[0], value, unit);
+                times[1] = changeWindow.changeEnd(times[1], value, unit);
               }
               model.fireTableDataChanged();
             }
