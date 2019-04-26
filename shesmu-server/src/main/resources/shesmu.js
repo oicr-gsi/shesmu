@@ -410,7 +410,9 @@ function clearStates() {
   );
 }
 
-export function initialiseActionDash(definedLocations) {
+let selectedSavedSearch = null;
+
+export function initialiseActionDash(definedLocations, serverSearches) {
   availableLocations = new Map(
     Object.entries(definedLocations).sort(entry => entry[0])
   );
@@ -441,13 +443,59 @@ export function initialiseActionDash(definedLocations) {
   document
     .getElementById("listActionsButton")
     .addEventListener("click", listActions);
-  document.getElementById("purgeButton").addEventListener("click", purge);
+  document
+    .getElementById("purgeButton")
+    .addEventListener("click", () => purge(makeFilters()));
   document
     .getElementById("queryStatsButton")
     .addEventListener("click", queryStats);
   document
+    .getElementById("copyButton")
+    .addEventListener("click", () => copyJson(makeFilters()));
+  document
     .getElementById("showQueryButton")
-    .addEventListener("click", showQuery);
+    .addEventListener("click", () =>
+      showFilterJson(makeFilters(), document.getElementById("results"))
+    );
+  document
+    .getElementById("listActionsSavedButton")
+    .addEventListener("click", () => {
+      if (selectedSavedSearch !== null) {
+        nextPage(
+          {
+            filters: selectedSavedSearch,
+            limit: 25,
+            skip: 0
+          },
+          document.getElementById("results"),
+          true
+        );
+      }
+    });
+  document
+    .getElementById("queryStatsSavedButton")
+    .addEventListener("click", () => {
+      if (selectedSavedSearch !== null) {
+        getStats(selectedSavedSearch, document.getElementById("results"), true);
+      }
+    });
+  document.getElementById("copySavedButton").addEventListener("click", () => {
+    if (selectedSavedSearch !== null) {
+      copyJson(selectedSavedSearch);
+    }
+  });
+  document
+    .getElementById("showQuerySavedButton")
+    .addEventListener("click", () => {
+      if (selectedSavedSearch !== null) {
+        showFilterJson(selectedSavedSearch, document.getElementById("results"));
+      }
+    });
+  document.getElementById("purgeSavedButton").addEventListener("click", () => {
+    if (selectedSavedSearch !== null) {
+      purge(selectedSavedSearch);
+    }
+  });
   if (availableLocations.size > 0) {
     document
       .getElementById("clearLocationsButton")
@@ -456,6 +504,206 @@ export function initialiseActionDash(definedLocations) {
   }
   clearStates();
   clearTypes();
+
+  const customSearchPane = document.getElementById("customSearchPane");
+  const savedSearchPane = document.getElementById("savedSearchPane");
+  const customSearchButton = document.getElementById("customSearchButton");
+  const savedSearchButton = document.getElementById("savedSearchButton");
+  customSearchButton.onclick = () => {
+    customSearchPane.style.display = "block";
+    customSearchButton.className = "tab selected";
+    savedSearchPane.style.display = "none";
+    savedSearchButton.className = "tab";
+  };
+  savedSearchButton.onclick = () => {
+    savedSearchPane.style.display = "block";
+    customSearchButton.className = "tab";
+    customSearchPane.style.display = "none";
+    savedSearchButton.className = "tab selected";
+  };
+
+  function showSavedSearches() {
+    selectedSavedSearch = null;
+    try {
+      savedSearches(
+        JSON.parse(localStorage.getItem("shesmu_searches") || "{}"),
+        true,
+        showSavedSearches
+      );
+    } catch (e) {
+      console.log(e);
+    }
+    savedSearches(serverSearches, false, showSavedSearches);
+  }
+  showSavedSearches();
+  document
+    .getElementById("saveSearchButton")
+    .addEventListener("click", () => saveSearch(showSavedSearches));
+  document.getElementById("pasteSearchButton").addEventListener("click", () => {
+    const [dialog, close] = makePopup(true);
+    dialog.appendChild(document.createTextNode("Save search as: "));
+    const input = document.createElement("INPUT");
+    input.type = "text";
+    dialog.appendChild(input);
+    dialog.appendChild(document.createElement("BR"));
+    dialog.appendChild(document.createTextNode("Filter JSON:"));
+    const filterJSON = document.createElement("TEXTAREA");
+    dialog.appendChild(filterJSON);
+
+    const button = document.createElement("SPAN");
+    button.className = "load";
+    button.innerText = "Save";
+    dialog.appendChild(button);
+    button.onclick = () => {
+      const name = input.value.trim();
+      let filters = null;
+      try {
+        filters = JSON.parse(filterJSON.value);
+      } catch (e) {
+        makePopup().innerText = e;
+        return;
+      }
+      if (name) {
+        let localSearches = {};
+        try {
+          localSearches = JSON.parse(
+            localStorage.getItem("shesmu_searches") || "{}"
+          );
+        } catch (e) {
+          console.log(e);
+        }
+        localSearches[name] = filters;
+        localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
+        close();
+        showSavedSearches();
+      }
+    };
+  });
+
+  document.getElementById("importButton").addEventListener("click", () => {
+    const [dialog, close] = makePopup(true);
+    const importJSON = document.createElement("TEXTAREA");
+    dialog.appendChild(importJSON);
+
+    const button = document.createElement("SPAN");
+    button.className = "load";
+    button.innerText = "Import";
+    dialog.appendChild(button);
+    button.onclick = () => {
+      let localSearches = {};
+      try {
+        localSearches = JSON.parse(
+          localStorage.getItem("shesmu_searches") || "{}"
+        );
+      } catch (e) {
+        console.log(e);
+      }
+      try {
+        for (const entry of Object.entries(JSON.parse(importJSON.value))) {
+          localSearches[entry[0]] = entry[1];
+        }
+      } catch (e) {
+        makePopup().innerText = e;
+        return;
+      }
+
+      localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
+      close();
+      showSavedSearches();
+    };
+  });
+
+  document.getElementById("exportButton").addEventListener("click", () => {
+    try {
+      copyJson(JSON.parse(localStorage.getItem("shesmu_searches") || "{}"));
+    } catch (e) {
+      console.log(e);
+    }
+  });
+}
+
+function copyJson(data) {
+  const buffer = document.getElementById("copybuffer");
+  buffer.value = JSON.stringify(data, null, 2);
+  buffer.style = "display: inline;";
+  buffer.select();
+  document.execCommand("Copy");
+  buffer.style = "display: none;";
+}
+
+function saveSearch(showSavedSearches) {
+  const filters = makeFilters();
+  const [dialog, close] = makePopup(true);
+  if (filters.length == 0) {
+    dialog.innerText = "Umm, saving an empty search seems really pointless.";
+    return;
+  }
+  dialog.appendChild(document.createTextNode("Save search as: "));
+  const input = document.createElement("INPUT");
+  input.type = "text";
+  dialog.appendChild(input);
+
+  const button = document.createElement("SPAN");
+  button.className = "load";
+  button.innerText = "Save";
+  dialog.appendChild(button);
+  button.onclick = () => {
+    const name = input.value.trim();
+    if (name) {
+      let localSearches = {};
+      try {
+        localSearches = JSON.parse(
+          localStorage.getItem("shesmu_searches") || "{}"
+        );
+      } catch (e) {
+        console.log(e);
+      }
+      localSearches[name] = filters;
+      localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
+      close();
+      showSavedSearches();
+    }
+  };
+}
+
+function savedSearches(searches, userDefined, showSavedSearches) {
+  const searchContainer = document.getElementById("savedSearches");
+  if (userDefined) {
+    clearChildren(searchContainer);
+  }
+  const results = document.getElementById("results");
+  for (const entry of Object.entries(searches)) {
+    const element = document.createElement("DIV");
+    searchContainer.appendChild(element);
+    element.innerText = entry[0];
+    element.onclick = () => {
+      for (let i = 0; i < searchContainer.children.length; i++) {
+        searchContainer.children[i].className = "";
+      }
+      element.className = "selected";
+      selectedSavedSearch = entry[1];
+    };
+    if (userDefined) {
+      const close = document.createElement("SPAN");
+      element.appendChild(close);
+      close.innerText = "✖";
+      close.onclick = () => {
+        try {
+          const localSearches = JSON.parse(
+            localStorage.getItem("shesmu_searches") || "{}"
+          );
+          delete localSearches[entry[0]];
+          localStorage.setItem(
+            "shesmu_searches",
+            JSON.stringify(localSearches)
+          );
+          showSavedSearches();
+        } catch (e) {
+          console.log(e);
+        }
+      };
+    }
+  }
 }
 
 function parseEpoch(elementId) {
@@ -538,6 +786,7 @@ function results(container, slug, body, render) {
       render(container, data);
     })
     .catch(function(error) {
+      clearChildren(container);
       const element = document.createElement("SPAN");
       element.innerText = error.message;
       element.className = "error";
@@ -570,7 +819,7 @@ export function filterForOlive(filename, line, column, timestamp) {
   ];
 }
 
-function makePopup() {
+function makePopup(returnClose) {
   const modal = document.createElement("DIV");
   modal.className = "modal close";
 
@@ -593,7 +842,7 @@ function makePopup() {
   };
   closeButton.onclick = e => document.body.removeChild(modal);
 
-  return inner;
+  return returnClose ? [inner, closeButton.onclick] : inner;
 }
 
 function makeBusyDialog() {
@@ -786,10 +1035,6 @@ function showFilterJson(filters, targetElement) {
   targetElement.appendChild(pre);
 }
 
-function showQuery() {
-  showFilterJson(makeFilters(), document.getElementById("results"));
-}
-
 function propertyFilterMaker(name) {
   switch (name) {
     case "sourcefile":
@@ -855,8 +1100,7 @@ function setColorIntensity(element, value, maximum) {
   )}%)`;
 }
 
-function purge() {
-  const filters = makeFilters();
+function purge(filters) {
   const targetElement = document.getElementById("results");
   if (filters.length == 0) {
     clearChildren(targetElement);
@@ -904,7 +1148,12 @@ function getStats(filters, targetElement, onActionPage) {
     (container, data) => {
       if (data.length == 0) {
         container.innerText = "No statistics are available.";
+        return;
       }
+      const help = document.createElement("P");
+      help.innerText =
+        "Click any cell or table heading to view matching results.";
+      targetElement.appendChild(help);
 
       const drillDown = document.createElement("DIV");
       let selectedElement = null;

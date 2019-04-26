@@ -268,8 +268,65 @@ a.load {
     display: inline-block;
 }
 
-#currentTypes > span span, #currentLocations > span span, #currentStates> span span {
+#currentTypes > span span, #currentLocations > span span, #currentStates> span span, #savedSearches > div {
     cursor: pointer;
+}
+
+#savedSearches {
+    border: 1px solid #058FAF;
+    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
+    border-radius: 0.1em;
+    display: inline-block;
+    min-width: 25vw;
+}
+
+#savedSearches > :first-child {
+    border-top-left-radius: 0.1em;
+    border-top-right-radius: 0.1em;
+}
+
+#savedSearches > :last-child {
+    border-bottom-left-radius: 0.1em;
+    border-bottom-right-radius: 0.1em;
+}
+
+#savedSearches > div {
+    color: #06AED5;
+    padding: 0.2em;
+}
+
+#savedSearches > div:hover {
+    background-color: #058FAF;
+    color: #fff;
+}
+
+#savedSearches > div.selected {
+    background-color: #06AED5;
+    color: #fff;
+}
+
+#savedSearches > div > span {
+    float: right;
+}
+
+.tab {
+    display: inline-block;
+    margin: 0.5em;
+    padding: 1em;
+    border-bottom: 0.1em solid #06AED5;
+    color: #058FAF;
+    transition: background 0.3s ease-in-out;
+}
+
+.tab.selected {
+    background-color: #D1F0F7;
+    border-bottom: 0.1em solid #058FAF;
+}
+
+.tab:hover {
+    background-color: #06AED5;
+    color: #fff;
+    border-bottom: 0.1em solid #06AED5;
 }
 
 .label {

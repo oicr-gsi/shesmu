@@ -216,3 +216,24 @@ To access data remotely, create a file ending in `.`_format_`-remote` as follows
 
 where `url` is the URL to download the data and `ttl` is the number of minutes
 to cache the data for.
+
+## Saved Searches
+Shesmu's _Actions_ dashboard provides a way to sift through the actions that
+olives have generated. It can be useful to save these searches. By clicking the
+_Save Search_, the search will be saved in the browser. They can be shared by
+clicking the clipboard icon beside a saved search to copy the search and then
+using the _Add Search_ button on the dashboard and pasting in the text
+copied. The _Import Searches_ and _Export Searches_ can also be used to copy
+all searches and upload them to a different instance.
+
+To go beyond person-to-person sharing, the search filter JSON, created by
+either clicking the _Show Search_ button, can be saved to a file ending in
+`.search` in the Shesmu configuration directory. The name of the file will be
+used as the name of the search.
+
+It is not recommended to save searches that reference a particular olive source
+location. Every time the file is updated or Shesmu is restarted, the olive's
+timestamp will be updated and the filter will no longer match. The `time`
+property in the filter can be changed to `null` to avoid this issue. Even if
+this were not the case, it is possible that the olive will move around in the
+script and the line and column that mark the start of each olive will change.
