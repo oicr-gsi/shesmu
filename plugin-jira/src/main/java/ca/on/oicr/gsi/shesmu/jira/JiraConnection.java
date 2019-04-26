@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,7 +87,16 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   protected static final String EXTENSION = ".jira";
 
   private static final Set<String> FIELDS =
-      Stream.of("summary", "issuetype", "created", "updated", "project", "status", "description")
+      Stream.of(
+              IssueFieldId.SUMMARY_FIELD,
+              IssueFieldId.ISSUE_TYPE_FIELD,
+              IssueFieldId.CREATED_FIELD,
+              IssueFieldId.UPDATED_FIELD,
+              IssueFieldId.PROJECT_FIELD,
+              IssueFieldId.STATUS_FIELD,
+              IssueFieldId.DESCRIPTION_FIELD,
+              IssueFieldId.LABELS_FIELD)
+          .map(x -> x.id)
           .collect(Collectors.toSet());
 
   private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm");
