@@ -13,13 +13,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.net.URI;
 import java.text.Normalizer;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class BaseTicketAction extends Action {
@@ -46,6 +43,8 @@ public abstract class BaseTicketAction extends Action {
           .labelNames("url", "project")
           .register();
 
+  private static final List<String> STANDARD_LABELS = Arrays.asList("shesmu", "bot");
+
   private final Supplier<JiraConnection> connection;
 
   private final Optional<ActionState> emptyTransitionState;
@@ -53,6 +52,9 @@ public abstract class BaseTicketAction extends Action {
   private final Set<String> issues = new TreeSet<>();
 
   private URI issueUrl;
+
+  @ActionParameter(required = false, type = "as")
+  public Set<String> labels = Collections.emptySet();
 
   @ActionParameter public String summary;
 
@@ -100,7 +102,12 @@ public abstract class BaseTicketAction extends Action {
         .updateIssue(
             result.getKey(),
             IssueInput.createWithFields(
-                new FieldInput(IssueFieldId.LABELS_FIELD, Arrays.asList("shesmu", "bot"))))
+                new FieldInput(
+                    IssueFieldId.LABELS_FIELD,
+                    Stream.of(STANDARD_LABELS, labels)
+                        .flatMap(Collection::stream)
+                        .distinct()
+                        .collect(Collectors.toList()))))
         .claim();
     connection.get().invalidate();
     issues.add(result.getKey());
@@ -245,6 +252,20 @@ public abstract class BaseTicketAction extends Action {
                   .client()
                   .getIssueClient()
                   .transition(issue, new TransitionInput(t.getId(), comment))
+                  .claim();
+              connection
+                  .get()
+                  .client()
+                  .getIssueClient()
+                  .updateIssue(
+                      issue.getKey(),
+                      IssueInput.createWithFields(
+                          new FieldInput(
+                              IssueFieldId.LABELS_FIELD,
+                              Stream.of(issue.getLabels(), STANDARD_LABELS, labels)
+                                  .flatMap(Collection::stream)
+                                  .distinct()
+                                  .collect(Collectors.toList()))))
                   .claim();
               connection.get().invalidate();
               issues.add(issue.getKey());
