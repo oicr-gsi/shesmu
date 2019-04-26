@@ -31,6 +31,7 @@ import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
+import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.BasePage;
@@ -159,6 +160,9 @@ public final class Server implements ServerConfig, ActionServices {
   private final PluginManager pluginManager = new PluginManager();
 
   private final ActionProcessor processor;
+
+  private final AutoUpdatingDirectory<SavedSearch> savedSearches =
+      new AutoUpdatingDirectory<>(".search", SavedSearch::new);
 
   private final HttpServer server;
 
@@ -634,12 +638,17 @@ public final class Server implements ServerConfig, ActionServices {
                     .sorted(Comparator.comparing(Pair::first))
                     .forEach(Pair.consume(locationInfo::putPOJO));
                 lacksLocations = locationInfo.size() == 0;
+                final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
+                savedSearches.stream().forEach(search -> search.write(searchInfo));
                 String locations;
+                String savedSearches;
                 try {
                   locations = RuntimeSupport.MAPPER.writeValueAsString(locationInfo);
+                  savedSearches = RuntimeSupport.MAPPER.writeValueAsString(searchInfo);
                 } catch (JsonProcessingException e) {
                   e.printStackTrace();
                   locations = "[]";
+                  savedSearches = "{}";
                 }
                 return Stream.of(
                     Header.jsModule(
@@ -648,14 +657,29 @@ public final class Server implements ServerConfig, ActionServices {
                             + "} from \"./shesmu.js\";"
                             + "initialiseActionDash("
                             + locations
+                            + ", "
+                            + savedSearches
                             + ");"));
               }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement("h1");
-                writer.writeCharacters("Search");
+                writer.writeStartElement("div");
+                writer.writeStartElement("span");
+                writer.writeAttribute("id", "customSearchButton");
+                writer.writeAttribute("class", "tab selected");
+                writer.writeCharacters("Custom Search");
                 writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("id", "savedSearchButton");
+                writer.writeAttribute("class", "tab");
+                writer.writeCharacters("Saved Searches");
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "customSearchPane");
+
                 writer.writeStartElement("p");
                 writer.writeCharacters(
                     "For dates, use the same formats used in specifying dates in olives: ");
@@ -802,35 +826,104 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeStartElement("span");
                 writer.writeAttribute("class", "load");
                 writer.writeAttribute("id", "listActionsButton");
-                writer.writeCharacters("🔍 List");
+                writer.writeCharacters("🔍 List Actions");
                 writer.writeEndElement();
                 writer.writeStartElement("span");
                 writer.writeAttribute("class", "load");
                 writer.writeAttribute("id", "queryStatsButton");
-                writer.writeCharacters("📈 Stats");
+                writer.writeCharacters("📈 Stats on Actions");
                 writer.writeEndElement();
                 writer.writeStartElement("span");
                 writer.writeAttribute("class", "load accessory");
                 writer.writeAttribute("id", "showQueryButton");
-                writer.writeCharacters("🛈 Show Request");
+                writer.writeCharacters("🛈 Show Search");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "copyButton");
+                writer.writeCharacters("📋 Copy Search");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "saveSearchButton");
+                writer.writeCharacters("💾 Save Search");
                 writer.writeEndElement();
                 writer.writeStartElement("span");
                 writer.writeAttribute("class", "load danger");
                 writer.writeAttribute("id", "purgeButton");
-                writer.writeCharacters("☠️ PURGE");
+                writer.writeCharacters("☠️ PURGE ACTIONS");
                 writer.writeEndElement();
                 writer.writeEndElement();
                 writer.writeEndElement();
 
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "savedSearchPane");
+                writer.writeAttribute("style", "display: none;");
+
+                writer.writeStartElement("div");
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "pasteSearchButton");
+                writer.writeCharacters("➕ Add Search");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "importButton");
+                writer.writeCharacters("⬆️ Import Searches");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "exportButton");
+                writer.writeCharacters("⬇️ Export Searches");
+                writer.writeEndElement();
+
+                writer.writeEndElement();
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "savedSearches");
+                writer.writeComment("");
+                writer.writeEndElement();
+
+                writer.writeStartElement("div");
+
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load");
+                writer.writeAttribute("id", "listActionsSavedButton");
+                writer.writeCharacters("🔍 List Actions");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load");
+                writer.writeAttribute("id", "queryStatsSavedButton");
+                writer.writeCharacters("📈 Stats on Actions");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "showQuerySavedButton");
+                writer.writeCharacters("🛈 Show Search");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load accessory");
+                writer.writeAttribute("id", "copySavedButton");
+                writer.writeCharacters("📋 Copy Search");
+                writer.writeEndElement();
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "load danger");
+                writer.writeAttribute("id", "purgeSavedButton");
+                writer.writeCharacters("☠️ PURGE ACTIONS");
+                writer.writeEndElement();
+                writer.writeEndElement();
                 writer.writeEndElement();
 
                 writer.writeStartElement("div");
                 writer.writeAttribute("id", "results");
                 writer.writeComment("");
                 writer.writeEndElement();
-                writer.writeStartElement("p");
-                writer.writeCharacters(
-                    "Click any cell or heading in summary tables to view matching results.");
+                writer.writeStartElement("textarea");
+                writer.writeAttribute("id", "copybuffer");
+                writer.writeAttribute("style", "display: none");
+                writer.writeCharacters("NA");
                 writer.writeEndElement();
               }
 
