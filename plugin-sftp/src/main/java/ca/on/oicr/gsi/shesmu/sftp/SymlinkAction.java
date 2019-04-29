@@ -22,8 +22,8 @@ public class SymlinkAction extends Action {
           .register();
   private final Supplier<SftpServer> connection;
   private boolean fileInTheWay;
-  private String link;
-  private String target;
+  private Path link;
+  private Path target;
 
   public SymlinkAction(Supplier<SftpServer> connection) {
     super("sftp-symlink");
@@ -45,7 +45,7 @@ public class SymlinkAction extends Action {
 
   @ActionParameter
   public void link(Path link) {
-    this.link = link.toString();
+    this.link = link;
   }
 
   @Override
@@ -53,7 +53,7 @@ public class SymlinkAction extends Action {
     // The logic for creating the symlink happens in the other class so that it can make serialised
     // requests to the remote end
     final Pair<ActionState, Boolean> result =
-        connection.get().makeSymlink(link, target, fileInTheWay);
+        connection.get().makeSymlink(link, target.toString(), fileInTheWay);
     if (result.second() != fileInTheWay) {
       filesInTheWay
           .labels(connection.get().name())
@@ -75,19 +75,19 @@ public class SymlinkAction extends Action {
 
   @Override
   public boolean search(Pattern query) {
-    return query.matcher(link).matches() || query.matcher(target).matches();
+    return query.matcher(link.toString()).matches() || query.matcher(target.toString()).matches();
   }
 
   @ActionParameter
   public void target(Path target) {
-    this.target = target.toString();
+    this.target = target;
   }
 
   @Override
   public ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
-    node.put("link", link);
-    node.put("target", target);
+    node.put("link", link.toString());
+    node.put("target", target.toString());
     node.put("instance", connection.get().name());
     return node;
   }
