@@ -136,7 +136,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   synchronized Pair<ActionState, Boolean> makeSymlink(
-      String link, String target, boolean fileInTheWay) {
+      Path link, String target, boolean fileInTheWay) {
     final Optional<SFTPClient> client = connection.get().map(Pair::second);
     if (!client.isPresent()) {
       return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
@@ -147,10 +147,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       // it throws whenever stat or lstat is called. There's a wrapper for stat that catches the
       // exception and returns null, but there's no equivalent for lstat, so we reproduce that catch
       // logic here.
+      final String linkStr = link.toString();
       try {
-        final FileAttributes attributes = sftp.lstat(link);
+        final FileAttributes attributes = sftp.lstat(linkStr);
         // File exists and it is a symlink
-        if (attributes.getType() == FileMode.Type.SYMLINK && sftp.readlink(link).equals(target)) {
+        if (attributes.getType() == FileMode.Type.SYMLINK
+            && sftp.readlink(linkStr).equals(target)) {
           // It's what we want; done
           return new Pair<>(ActionState.SUCCEEDED, false);
         }
@@ -158,8 +160,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         return new Pair<>(ActionState.FAILED, true);
       } catch (SFTPException sftpe) {
         if (sftpe.getStatusCode() == Response.StatusCode.NO_SUCH_FILE) {
+          // Create parent if necessary
+          final String dirStr = link.getParent().toString();
+          if (sftp.statExistence(dirStr) == null) {
+            sftp.mkdirs(dirStr);
+          }
+
           // File does not exist, create it.
-          sftp.symlink(link, target);
+          sftp.symlink(linkStr, target);
           return new Pair<>(ActionState.SUCCEEDED, false);
         } else {
           throw sftpe;
