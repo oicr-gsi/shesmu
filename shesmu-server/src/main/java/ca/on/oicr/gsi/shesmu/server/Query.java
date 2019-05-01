@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
@@ -19,78 +18,49 @@ import java.util.stream.Stream;
 
 /** Translate JSON-formatted queries into Java objects and perform the query */
 public class Query {
-  public static class FilterAdded extends FilterJson {
-    private Long end;
 
-    private Long start;
-
+  public static class FilterAdded extends RangeFilterJson {
     @Override
-    public Filter convert() {
-      return ActionProcessor.added(
-          Optional.ofNullable(start).map(Instant::ofEpochMilli),
-          Optional.ofNullable(end).map(Instant::ofEpochMilli));
-    }
-
-    public Long getEnd() {
-      return end;
-    }
-
-    public Long getStart() {
-      return start;
-    }
-
-    public void setEnd(Long end) {
-      this.end = end;
-    }
-
-    public void setStart(Long start) {
-      this.start = start;
+    protected Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.added(start, end);
     }
   }
 
-  public static class FilterChecked extends FilterJson {
-    private Long end;
-
-    private Long start;
-
+  public static class FilterChecked extends RangeFilterJson {
     @Override
-    public Filter convert() {
-      return ActionProcessor.checked(
-          Optional.ofNullable(start).map(Instant::ofEpochMilli),
-          Optional.ofNullable(end).map(Instant::ofEpochMilli));
-    }
-
-    public Long getEnd() {
-      return end;
-    }
-
-    public Long getStart() {
-      return start;
-    }
-
-    public void setEnd(Long end) {
-      this.end = end;
-    }
-
-    public void setStart(Long start) {
-      this.start = start;
+    public Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.checked(start, end);
     }
   }
 
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
-    @Type(value = FilterStatus.class, name = "status"),
     @Type(value = FilterAdded.class, name = "added"),
     @Type(value = FilterChecked.class, name = "checked"),
     @Type(value = FilterRegex.class, name = "regex"),
     @Type(value = FilterSourceFile.class, name = "sourcefile"),
     @Type(value = FilterSourceLocation.class, name = "sourcelocation"),
+    @Type(value = FilterStatus.class, name = "status"),
     @Type(value = FilterStatusChanged.class, name = "statuschanged"),
     @Type(value = FilterText.class, name = "text"),
     @Type(value = FilterType.class, name = "type")
   })
   public abstract static class FilterJson {
+    private boolean negate;
+
     public abstract Filter convert();
+
+    public boolean isNegate() {
+      return negate;
+    }
+
+    protected Filter maybeNegate(Filter filter) {
+      return negate ? filter.negate() : filter;
+    }
+
+    public void setNegate(boolean negate) {
+      this.negate = negate;
+    }
   }
 
   public static class FilterRegex extends FilterJson {
@@ -98,7 +68,7 @@ public class Query {
 
     @Override
     public Filter convert() {
-      return ActionProcessor.textSearch(Pattern.compile(pattern));
+      return maybeNegate(ActionProcessor.textSearch(Pattern.compile(pattern)));
     }
 
     public String getPattern() {
@@ -115,7 +85,7 @@ public class Query {
 
     @Override
     public Filter convert() {
-      return ActionProcessor.fromFile(files);
+      return maybeNegate(ActionProcessor.fromFile(files));
     }
 
     public String[] getFiles() {
@@ -132,7 +102,7 @@ public class Query {
 
     @Override
     public Filter convert() {
-      return ActionProcessor.fromFile(Stream.of(locations));
+      return maybeNegate(ActionProcessor.fromFile(Stream.of(locations)));
     }
 
     public LocationJson[] getLocations() {
@@ -149,7 +119,7 @@ public class Query {
 
     @Override
     public Filter convert() {
-      return ActionProcessor.isState(states);
+      return maybeNegate(ActionProcessor.isState(states));
     }
 
     public ActionState[] getStates() {
@@ -161,32 +131,10 @@ public class Query {
     }
   }
 
-  public static class FilterStatusChanged extends FilterJson {
-    private Long end;
-
-    private Long start;
-
+  public static class FilterStatusChanged extends RangeFilterJson {
     @Override
-    public Filter convert() {
-      return ActionProcessor.statusChanged(
-          Optional.ofNullable(start).map(Instant::ofEpochMilli),
-          Optional.ofNullable(end).map(Instant::ofEpochMilli));
-    }
-
-    public Long getEnd() {
-      return end;
-    }
-
-    public Long getStart() {
-      return start;
-    }
-
-    public void setEnd(Long end) {
-      this.end = end;
-    }
-
-    public void setStart(Long start) {
-      this.start = start;
+    public Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.statusChanged(start, end);
     }
   }
 
@@ -196,9 +144,10 @@ public class Query {
 
     @Override
     public Filter convert() {
-      return ActionProcessor.textSearch(
-          Pattern.compile(
-              "^.*" + Pattern.quote(text) + ".*$", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
+      return maybeNegate(
+          ActionProcessor.textSearch(
+              Pattern.compile(
+                  "^.*" + Pattern.quote(text) + ".*$", matchCase ? 0 : Pattern.CASE_INSENSITIVE)));
     }
 
     public String getText() {
@@ -223,7 +172,7 @@ public class Query {
 
     @Override
     public Filter convert() {
-      return ActionProcessor.type(types);
+      return maybeNegate(ActionProcessor.type(types));
     }
 
     public String[] getTypes() {
@@ -351,19 +300,51 @@ public class Query {
       if (line == null) {
         return true;
       }
-      if (location.line() != line.intValue()) {
+      if (location.line() != line) {
         return false;
       }
       if (column == null) {
         return true;
       }
-      if (location.column() != column.intValue()) {
+      if (location.column() != column) {
         return false;
       }
       if (time == null) {
         return true;
       }
-      return location.time().toEpochMilli() == time.longValue();
+      return location.time().toEpochMilli() == time;
+    }
+  }
+
+  public abstract static class RangeFilterJson extends FilterJson {
+    private Long end;
+
+    private Long start;
+
+    protected abstract Filter convert(Optional<Instant> start, Optional<Instant> end);
+
+    @Override
+    public final Filter convert() {
+      return maybeNegate(
+          convert(
+              Optional.ofNullable(start).map(Instant::ofEpochMilli),
+              Optional.ofNullable(end).map(Instant::ofEpochMilli)));
+    }
+
+    public final Long getEnd() {
+      return end;
+    }
+
+    public final Long getStart() {
+      return start;
+    }
+
+    public final void setEnd(Long end) {
+      this.end = end;
+    }
+
+    public final void setStart(Long start) {
+      this.start = start;
     }
   }
 
@@ -386,8 +367,7 @@ public class Query {
   }
 
   public Response perform(
-      ObjectMapper mapper, SourceLoctionLinker linker, ActionProcessor processor)
-      throws IOException {
+      ObjectMapper mapper, SourceLoctionLinker linker, ActionProcessor processor) {
     final Filter[] filters =
         Arrays.stream(getFilters())
             .filter(Objects::nonNull)

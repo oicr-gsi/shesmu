@@ -74,6 +74,10 @@
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
           },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "start": {
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
@@ -90,6 +94,10 @@
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
           },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "start": {
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
@@ -102,6 +110,10 @@
       },
       "FilterRegex": {
         "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "pattern": {
             "description": "a Java regular expression the action must match",
             "type": "regex"
@@ -116,6 +128,10 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
           },
           "type": {
             "type": "string"
@@ -145,6 +161,10 @@
             },
             "type": "array"
           },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "type": {
             "type": "string"
           }
@@ -153,6 +173,10 @@
       },
       "FilterStatus": {
         "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "states": {
             "items": {
               "type": "string"
@@ -171,6 +195,10 @@
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
           },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "start": {
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
@@ -181,21 +209,45 @@
         },
         "type": "object"
       },
+      "FilterStatusChangedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "FilterText": {
         "properties": {
-          "text": {
-            "description": "text which must appear in the action",
-            "type": "string"
-          },
           "matchCase": {
             "description": "whether the text must match as provided or if the case can be different",
             "type": "boolean"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "text": {
+            "description": "text which must appear in the action",
+            "type": "string"
           }
         },
         "type": "object"
       },
       "FilterType": {
         "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
           "type": {
             "type": "string"
           },
