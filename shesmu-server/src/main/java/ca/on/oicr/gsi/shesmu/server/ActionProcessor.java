@@ -252,6 +252,17 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     };
   }
 
+  /** Check that all of the filters match */
+  public static Filter and(Filter... filters) {
+    return new Filter() {
+
+      @Override
+      protected boolean check(Action action, Information info) {
+        return Stream.of(filters).allMatch(f -> f.check(action, info));
+      }
+    };
+  }
+
   private static <T> void binSummary(
       ArrayNode table, Bin<T> bin, List<Entry<Action, Information>> actions) {
     Stream.<Pair<String, BiFunction<Stream<T>, Comparator<T>, Optional<T>>>>of(
@@ -352,6 +363,17 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     };
   }
 
+  /** Check that any of the filters match */
+  public static Filter or(Filter... filters) {
+    return new Filter() {
+
+      @Override
+      protected boolean check(Action action, Information info) {
+        return Stream.of(filters).anyMatch(f -> f.check(action, info));
+      }
+    };
+  }
+
   private static <T extends Comparable<T>> void propertySummary(
       ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
     final TreeMap<T, Long> states =
@@ -400,7 +422,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       }
     };
   }
-
   /** Check that an action has one of the types specified */
   public static Filter type(String... types) {
     final Set<String> set = Stream.of(types).collect(Collectors.toSet());

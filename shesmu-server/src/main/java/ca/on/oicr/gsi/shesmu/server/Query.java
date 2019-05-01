@@ -18,11 +18,37 @@ import java.util.stream.Stream;
 
 /** Translate JSON-formatted queries into Java objects and perform the query */
 public class Query {
+  public abstract static class CollectionFilterJson extends FilterJson {
+    private FilterJson[] filters;
+
+    @Override
+    public final Filter convert() {
+      return maybeNegate(
+          convert(Stream.of(filters).map(FilterJson::convert).toArray(Filter[]::new)));
+    }
+
+    protected abstract Filter convert(Filter[] filters);
+
+    public final FilterJson[] getFilters() {
+      return filters;
+    }
+
+    public final void setFilters(FilterJson[] filters) {
+      this.filters = filters;
+    }
+  }
 
   public static class FilterAdded extends RangeFilterJson {
     @Override
     protected Filter convert(Optional<Instant> start, Optional<Instant> end) {
       return ActionProcessor.added(start, end);
+    }
+  }
+
+  public static class FilterAnd extends CollectionFilterJson {
+    @Override
+    public Filter convert(Filter[] filters) {
+      return ActionProcessor.and(filters);
     }
   }
 
@@ -36,7 +62,9 @@ public class Query {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
     @Type(value = FilterAdded.class, name = "added"),
+    @Type(value = FilterAnd.class, name = "and"),
     @Type(value = FilterChecked.class, name = "checked"),
+    @Type(value = FilterOr.class, name = "or"),
     @Type(value = FilterRegex.class, name = "regex"),
     @Type(value = FilterSourceFile.class, name = "sourcefile"),
     @Type(value = FilterSourceLocation.class, name = "sourcelocation"),
@@ -60,6 +88,13 @@ public class Query {
 
     public void setNegate(boolean negate) {
       this.negate = negate;
+    }
+  }
+
+  public static class FilterOr extends CollectionFilterJson {
+    @Override
+    public Filter convert(Filter[] filters) {
+      return ActionProcessor.or(filters);
     }
   }
 
