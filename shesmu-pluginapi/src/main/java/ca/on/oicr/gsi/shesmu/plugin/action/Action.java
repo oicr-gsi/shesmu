@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.plugin.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -36,6 +38,18 @@ public abstract class Action {
 
   @Override
   public abstract boolean equals(Object other);
+
+  /**
+   * Get the time this action was last modified outside of Shesmu
+   *
+   * <p>Since actions are associated with an external entity of some kind, get most recent
+   * update/event/completion time if available.
+   *
+   * @return the time or null, if not available
+   */
+  public Optional<Instant> externalTimestamp() {
+    return Optional.empty();
+  }
 
   @Override
   public abstract int hashCode();

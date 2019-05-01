@@ -939,6 +939,14 @@ function nextPage(query, targetElement, onActionPage) {
           })`
         )
       );
+      if (action.externalTimestamp) {
+        const externalDate = new Date(action.external).toString();
+        tile.appendChild(
+          text(
+            `External Last Modification: ${externalDate} (${action.external})`
+          )
+        );
+      }
       action.locations.forEach(l => {
         const t = `Made from ${l.file}:${l.line}:${l.column}[${new Date(
           l.time
@@ -1058,6 +1066,8 @@ function nameForBin(name) {
       return "Last Time Action was Last Run";
     case "statuschanged":
       return "Last Time Action's Status Last Changed";
+    case "external":
+      return "External Last Modification Time";
     default:
       return name;
   }
@@ -1068,6 +1078,7 @@ function formatBin(name) {
     case "added":
     case "checked":
     case "statuschanged":
+    case "external":
       return x => {
         const d = new Date(x);
         let diff = Math.ceil((new Date() - d) / 1000);

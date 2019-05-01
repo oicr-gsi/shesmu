@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.net.URI;
 import java.text.Normalizer;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class BaseTicketAction extends Action {
+  private static final List<String> STANDARD_LABELS = Arrays.asList("shesmu", "bot");
   private static final Counter failure =
       Counter.build(
               "shesmu_jira_client_failures", "Number of failed requests to the JIRA web service.")
@@ -42,16 +44,12 @@ public abstract class BaseTicketAction extends Action {
       Counter.build("shesmu_jira_client_requests", "Number of requests to the JIRA web service.")
           .labelNames("url", "project")
           .register();
-
-  private static final List<String> STANDARD_LABELS = Arrays.asList("shesmu", "bot");
-
   private final Supplier<JiraConnection> connection;
 
   private final Optional<ActionState> emptyTransitionState;
-
-  private final Set<String> issues = new TreeSet<>();
-
+  private Optional<Instant> issueLastModified = Optional.empty();
   private URI issueUrl;
+  private final Set<String> issues = new TreeSet<>();
 
   @ActionParameter(required = false, type = "as")
   public Set<String> labels = Collections.emptySet();
@@ -68,6 +66,10 @@ public abstract class BaseTicketAction extends Action {
     super(jsonName);
     this.emptyTransitionState = emptyTransitionState;
     this.connection = connection;
+  }
+
+  private String asciiOnly(String value) {
+    return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("[^\\x00-\\x7F]", "");
   }
 
   protected final ActionState createIssue(
@@ -111,11 +113,8 @@ public abstract class BaseTicketAction extends Action {
         .claim();
     connection.get().invalidate();
     issues.add(result.getKey());
+    issueLastModified = Optional.of(Instant.now());
     return ActionState.SUCCEEDED;
-  }
-
-  private String asciiOnly(String value) {
-    return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("[^\\x00-\\x7F]", "");
   }
 
   @Override
@@ -145,6 +144,11 @@ public abstract class BaseTicketAction extends Action {
       return false;
     }
     return true;
+  }
+
+  @Override
+  public Optional<Instant> externalTimestamp() {
+    return issueLastModified;
   }
 
   @Override
@@ -247,6 +251,13 @@ public abstract class BaseTicketAction extends Action {
               }
               issueUpdates.labels(connection.get().url(), connection.get().projectKey()).inc();
               issueUrl = issue.getSelf();
+              issueLastModified =
+                  Stream.concat(
+                          issueLastModified.map(Stream::of).orElseGet(Stream::empty),
+                          Stream.of(
+                              Instant.ofEpochMilli(issue.getUpdateDate().toInstant().getMillis())))
+                      .max(Comparator.naturalOrder());
+
               connection
                   .get()
                   .client()
@@ -285,7 +296,7 @@ public abstract class BaseTicketAction extends Action {
     final Comment comment = commentText == null ? null : Comment.valueOf(asciiOnly(commentText));
     return issues
         .sorted(Comparator.comparingInt(issue -> isInTargetState(issue) ? 0 : 1))
-        .<Optional<ActionState>>reduce(
+        .reduce(
             emptyTransitionState,
             (acc, issue) -> processTransition(acc, () -> transitionIssue(services, issue, comment)),
             (a, b) ->

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.xml.stream.XMLStreamException;
 import net.schmizz.sshj.SSHClient;
@@ -136,7 +137,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   synchronized Pair<ActionState, Boolean> makeSymlink(
-      Path link, String target, boolean fileInTheWay) {
+      Path link, String target, boolean fileInTheWay, Consumer<Instant> updateMtime) {
     final Optional<SFTPClient> client = connection.get().map(Pair::second);
     if (!client.isPresent()) {
       return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
@@ -150,6 +151,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       final String linkStr = link.toString();
       try {
         final FileAttributes attributes = sftp.lstat(linkStr);
+        updateMtime.accept(Instant.ofEpochSecond(attributes.getMtime()));
         // File exists and it is a symlink
         if (attributes.getType() == FileMode.Type.SYMLINK
             && sftp.readlink(linkStr).equals(target)) {
@@ -168,6 +170,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
           // File does not exist, create it.
           sftp.symlink(linkStr, target);
+          updateMtime.accept(Instant.now());
           return new Pair<>(ActionState.SUCCEEDED, false);
         } else {
           throw sftpe;

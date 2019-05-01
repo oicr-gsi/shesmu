@@ -9,7 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -23,6 +25,7 @@ public class SymlinkAction extends Action {
   private final Supplier<SftpServer> connection;
   private boolean fileInTheWay;
   private Path link;
+  private Optional<Instant> mtime = Optional.empty();
   private Path target;
 
   public SymlinkAction(Supplier<SftpServer> connection) {
@@ -36,6 +39,11 @@ public class SymlinkAction extends Action {
     if (o == null || getClass() != o.getClass()) return false;
     SymlinkAction that = (SymlinkAction) o;
     return Objects.equals(link, that.link) && Objects.equals(target, that.target);
+  }
+
+  @Override
+  public Optional<Instant> externalTimestamp() {
+    return mtime;
   }
 
   @Override
@@ -53,7 +61,9 @@ public class SymlinkAction extends Action {
     // The logic for creating the symlink happens in the other class so that it can make serialised
     // requests to the remote end
     final Pair<ActionState, Boolean> result =
-        connection.get().makeSymlink(link, target.toString(), fileInTheWay);
+        connection
+            .get()
+            .makeSymlink(link, target.toString(), fileInTheWay, t -> mtime = Optional.of(t));
     if (result.second() != fileInTheWay) {
       filesInTheWay
           .labels(connection.get().name())
