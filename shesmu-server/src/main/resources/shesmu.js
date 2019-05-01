@@ -745,7 +745,7 @@ function makeFilters() {
   for (let span of timeSpans) {
     const start = parseEpoch(`${span}Start`);
     const end = parseEpoch(`${span}End`);
-    if (start !== null && end != null) {
+    if (start !== null || end !== null) {
       filters.push({ type: span, start: start, end: end });
     }
   }
