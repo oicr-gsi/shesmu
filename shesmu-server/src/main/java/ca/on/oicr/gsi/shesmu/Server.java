@@ -946,6 +946,26 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeAttribute("id", name + "End");
                 writer.writeComment("");
                 writer.writeEndElement();
+                writer.writeCharacters(" or ");
+                writer.writeStartElement("input");
+                writer.writeAttribute("type", "text");
+                writer.writeAttribute("id", name + "Ago");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeCharacters(" ");
+                writer.writeStartElement("span");
+                writer.writeAttribute("class", "add");
+                writer.writeStartElement("span");
+                writer.writeAttribute("id", name + "AgoUnit");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeCharacters(" ▼");
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", name + "AgoUnits");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeCharacters(" Ago");
                 writer.writeEndElement();
                 writer.writeEndElement();
               }
