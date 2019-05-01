@@ -59,11 +59,19 @@ public class Query {
     }
   }
 
+  public static class FilterExternal extends RangeFilterJson {
+    @Override
+    public Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.external(start, end);
+    }
+  }
+
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
     @Type(value = FilterAdded.class, name = "added"),
     @Type(value = FilterAnd.class, name = "and"),
     @Type(value = FilterChecked.class, name = "checked"),
+    @Type(value = FilterExternal.class, name = "external"),
     @Type(value = FilterOr.class, name = "or"),
     @Type(value = FilterRegex.class, name = "regex"),
     @Type(value = FilterSourceFile.class, name = "sourcefile"),

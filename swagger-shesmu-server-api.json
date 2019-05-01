@@ -29,6 +29,7 @@
             "added": "#/components/schemas/FilterAdded",
             "and": "#/components/schemas/FilterAnd",
             "checked": "#/components/schemas/FilterChecked",
+            "external": "#/components/schemas/FilterExternal",
             "or": "#/components/schemas/FilterOr",
             "regex": "#/components/schemas/FilterRegex",
             "sourcefile": "#/components/schemas/FilterSourceFile",
@@ -49,6 +50,9 @@
           },
           {
             "$ref": "#/components/schemas/FilterChecked"
+          },
+          {
+            "$ref": "#/components/schemas/FilterExternal"
           },
           {
             "$ref": "#/components/schemas/FilterOr"
@@ -112,6 +116,26 @@
         "type": "object"
       },
       "FilterChecked": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterExternal": {
         "properties": {
           "end": {
             "description": "miliseconds since UNIX epoch",
