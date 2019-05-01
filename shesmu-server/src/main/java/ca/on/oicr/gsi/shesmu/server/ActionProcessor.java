@@ -61,7 +61,11 @@ public final class ActionProcessor implements OliveServices, InputProvider {
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
 
-    T extract(Entry<Action, Information> input);
+    Optional<T> extract(Entry<Action, Information> input);
+
+    default Stream<T> flatExtract(Entry<Action, Information> input) {
+      return extract(input).map(Stream::of).orElseGet(Stream::empty);
+    }
 
     long minWidth();
 
@@ -221,11 +225,15 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
     @Override
     protected final boolean check(Action action, Information info) {
-      return start.map(s -> s.compareTo(get(info)) < 1).orElse(true)
-          && end.map(e -> e.isAfter(get(info))).orElse(true);
+      return get(action, info)
+          .map(
+              time ->
+                  start.map(s -> s.compareTo(time) < 1).orElse(true)
+                      && end.map(e -> e.isAfter(time)).orElse(true))
+          .orElse(false);
     }
 
-    protected abstract Instant get(Information info);
+    protected abstract Optional<Instant> get(Action action, Information info);
   }
 
   /**
@@ -238,8 +246,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return new InstantFilter(start, end) {
 
       @Override
-      protected Instant get(Information info) {
-        return info.lastAdded;
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.lastAdded);
       }
     };
   }
@@ -251,7 +259,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
         .forEach(
             pair -> {
               pair.second()
-                  .apply(actions.stream().map(bin::extract), bin)
+                  .apply(actions.stream().flatMap(bin::flatExtract), bin)
                   .ifPresent(
                       value -> {
                         final ObjectNode row = table.addObject();
@@ -273,8 +281,24 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return new InstantFilter(start, end) {
 
       @Override
-      protected Instant get(Information info) {
-        return info.lastChecked;
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.lastChecked);
+      }
+    };
+  }
+
+  /**
+   * Check that an action's external timestamp is in the time range provided
+   *
+   * @param start the exclusive cut-off timestamp
+   * @param end the exclusive cut-off timestamp
+   */
+  public static Filter external(Optional<Instant> start, Optional<Instant> end) {
+    return new InstantFilter(start, end) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return action.externalTimestamp();
       }
     };
   }
@@ -357,8 +381,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return new InstantFilter(start, end) {
 
       @Override
-      protected Instant get(Information info) {
-        return info.lastStateTransition;
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.lastStateTransition);
       }
     };
   }
@@ -393,8 +417,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       new InstantBin() {
 
         @Override
-        public Instant extract(Entry<Action, Information> input) {
-          return input.getValue().lastAdded;
+        public Optional<Instant> extract(Entry<Action, Information> input) {
+          return Optional.of(input.getValue().lastAdded);
         }
 
         @Override
@@ -406,13 +430,26 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       new InstantBin() {
 
         @Override
-        public Instant extract(Entry<Action, Information> input) {
-          return input.getValue().lastChecked;
+        public Optional<Instant> extract(Entry<Action, Information> input) {
+          return Optional.of(input.getValue().lastChecked);
         }
 
         @Override
         public String name() {
           return "checked";
+        }
+      };
+  private static final Bin<Instant> EXTERNAL =
+      new InstantBin() {
+
+        @Override
+        public Optional<Instant> extract(Entry<Action, Information> input) {
+          return input.getKey().externalTimestamp();
+        }
+
+        @Override
+        public String name() {
+          return "external";
         }
       };
   private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
@@ -500,8 +537,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       new InstantBin() {
 
         @Override
-        public Instant extract(Entry<Action, Information> input) {
-          return input.getValue().lastStateTransition;
+        public Optional<Instant> extract(Entry<Action, Information> input) {
+          return Optional.of(input.getValue().lastStateTransition);
         }
 
         @Override
@@ -712,8 +749,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
 
   private <T> void histogram(
       ArrayNode output, int count, List<Entry<Action, Information>> input, Bin<T> bin) {
-    final Optional<T> min = input.stream().map(bin::extract).min(bin);
-    final Optional<T> max = input.stream().map(bin::extract).max(bin);
+    final Optional<T> min = input.stream().flatMap(bin::flatExtract).min(bin);
+    final Optional<T> max = input.stream().flatMap(bin::flatExtract).max(bin);
     if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
       return;
     }
@@ -730,10 +767,15 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     if (buckets.length < 2) {
       return;
     }
-    for (final Entry<Action, Information> value : input) {
-      final int index = (int) bin.bucket(min.get(), width, bin.extract(value));
-      buckets[index >= buckets.length ? buckets.length - 1 : index]++;
-    }
+    final long binWidth = width;
+    input
+        .stream()
+        .flatMap(bin::flatExtract)
+        .forEach(
+            value -> {
+              final int index = (int) bin.bucket(min.get(), binWidth, value);
+              buckets[index >= buckets.length ? buckets.length - 1 : index]++;
+            });
     final ObjectNode node = output.addObject();
     node.put("type", "histogram");
     node.put("bin", bin.name());
@@ -833,6 +875,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     binSummary(table, ADDED, actions);
     binSummary(table, CHECKED, actions);
     binSummary(table, STATUS_CHANGED, actions);
+    binSummary(table, EXTERNAL, actions);
 
     crosstab(array, actions, ACTION_STATE, TYPE);
     crosstab(array, actions, ACTION_STATE, SOURCE_FILE);
@@ -842,6 +885,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     histogram(array, 10, actions, ADDED);
     histogram(array, 10, actions, CHECKED);
     histogram(array, 10, actions, STATUS_CHANGED);
+    histogram(array, 10, actions, EXTERNAL);
     return array;
   }
 
@@ -869,6 +913,10 @@ public final class ActionProcessor implements OliveServices, InputProvider {
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
               node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
+              entry
+                  .getKey()
+                  .externalTimestamp()
+                  .ifPresent(external -> node.put("external", external.toEpochMilli()));
               node.put("type", entry.getKey().type());
               final ArrayNode locations = node.putArray("locations");
               entry

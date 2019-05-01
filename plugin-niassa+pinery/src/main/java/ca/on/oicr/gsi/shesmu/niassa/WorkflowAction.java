@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
+import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -17,6 +18,7 @@ import io.seqware.pipeline.api.Scheduler;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Supplier;
@@ -68,6 +70,13 @@ public final class WorkflowAction extends Action {
   private final Set<String> services;
   private ActionState lastState = ActionState.UNKNOWN;
   private final long workflowAccession;
+
+  @Override
+  public Optional<Instant> externalTimestamp() {
+    return externalTimestamp;
+  }
+
+  private Optional<Instant> externalTimestamp = Optional.empty();
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
@@ -134,7 +143,7 @@ public final class WorkflowAction extends Action {
     try {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
-        final ActionState state =
+        final Optional<AnalysisProvenance> provenance =
             server
                 .get()
                 .metadata()
@@ -143,11 +152,14 @@ public final class WorkflowAction extends Action {
                         FileProvenanceFilter.workflow_run,
                         Collections.singleton(Integer.toString(runAccession))))
                 .stream()
-                .findFirst()
+                .findFirst();
+        final ActionState state =
+            provenance
                 .map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus()))
                 .orElse(ActionState.UNKNOWN);
         if (state != lastState) {
           lastState = state;
+          externalTimestamp = provenance.map(ap -> ap.getLastModified().toInstant());
           // When we are getting the analysis state, we are bypassing the analysis cache, so we may
           // see a state transition before any of our sibling workflow runs. If we see that happen,
           // zap the cache so they will see it.
@@ -177,6 +189,7 @@ public final class WorkflowAction extends Action {
       if (current.isPresent()) {
         // We found a matching workflow run in analysis provenance
         runAccession = current.get().workflowRunAccession();
+        externalTimestamp = current.map(AnalysisState::lastModified);
         final ActionState state = current.get().state();
         return state;
       }
@@ -311,6 +324,7 @@ public final class WorkflowAction extends Action {
         attribute.setValue(Long.toString(majorOliveVersion));
         server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
         success = runAccession != 0;
+        externalTimestamp = Optional.of(Instant.now());
       } catch (Exception e) {
         // Suppress all the batshit crazy errors this thing can throw
         e.printStackTrace();

@@ -5,21 +5,19 @@ import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 public class AnalysisState implements Comparable<AnalysisState> {
   private final String fileSWIDSToRun;
+  private final Instant lastModified;
   private final List<LimsKey> limsKeys;
   private final SortedSet<String> majorOliveVersion;
   private final ActionState state;
   private final long workflowAccession;
   private final int workflowRunAccession;
-
-  public int workflowRunAccession() {
-    return workflowRunAccession;
-  }
 
   public AnalysisState(Pair<Integer, Integer> accessions, List<AnalysisProvenance> source) {
     fileSWIDSToRun =
@@ -48,6 +46,12 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .get();
     workflowRunAccession = accessions.first();
     workflowAccession = accessions.second();
+    lastModified =
+        source
+            .stream()
+            .map(ap -> ap.getLastModified().toInstant())
+            .max(Comparator.naturalOrder())
+            .orElse(null);
     majorOliveVersion =
         source
             .stream()
@@ -57,16 +61,6 @@ public class AnalysisState implements Comparable<AnalysisState> {
                         .getOrDefault("magic", Collections.emptySortedSet())
                         .stream())
             .collect(Collectors.toCollection(TreeSet::new));
-  }
-
-  /** Sort so that the latest, most successful run is first. */
-  @Override
-  public int compareTo(AnalysisState other) {
-    int comparison = Integer.compare(state.sortPriority(), other.state.sortPriority());
-    if (comparison == 0) {
-      comparison = Integer.compare(other.workflowRunAccession, workflowRunAccession);
-    }
-    return comparison;
   }
 
   public boolean compare(
@@ -93,7 +87,25 @@ public class AnalysisState implements Comparable<AnalysisState> {
     return true;
   }
 
+  /** Sort so that the latest, most successful run is first. */
+  @Override
+  public int compareTo(AnalysisState other) {
+    int comparison = Integer.compare(state.sortPriority(), other.state.sortPriority());
+    if (comparison == 0) {
+      comparison = Integer.compare(other.workflowRunAccession, workflowRunAccession);
+    }
+    return comparison;
+  }
+
+  public Instant lastModified() {
+    return lastModified;
+  }
+
   public ActionState state() {
     return state;
+  }
+
+  public int workflowRunAccession() {
+    return workflowRunAccession;
   }
 }
