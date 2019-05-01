@@ -340,6 +340,7 @@ const actionStates = [
   "UNKNOWN",
   "WAITING"
 ];
+const timeSpans = ["added", "checked", "statuschanged", "external"];
 const types = new Map();
 const locations = new Map();
 const selectedStates = new Map();
@@ -741,7 +742,7 @@ function makeFilters() {
     availableLocations.get(x)
   );
 
-  for (let span of ["added", "checked", "statuschanged"]) {
+  for (let span of timeSpans) {
     const start = parseEpoch(`${span}Start`);
     const end = parseEpoch(`${span}End`);
     if (start !== null && end != null) {
