@@ -27,15 +27,19 @@
         "discriminator": {
           "mapping": {
             "added": "#/components/schemas/FilterAdded",
+            "addedago": "#/components/schemas/FilterAddedAgo",
             "and": "#/components/schemas/FilterAnd",
             "checked": "#/components/schemas/FilterChecked",
+            "checkedago": "#/components/schemas/FilterCheckedAgo",
             "external": "#/components/schemas/FilterExternal",
+            "externalago": "#/components/schemas/FilterExternalAgo",
             "or": "#/components/schemas/FilterOr",
             "regex": "#/components/schemas/FilterRegex",
             "sourcefile": "#/components/schemas/FilterSourceFile",
             "sourcelocation": "#/components/schemas/FilterSourceLocation",
             "status": "#/components/schemas/FilterStatus",
             "statuschanged": "#/components/schemas/FilterStatusChanged",
+            "statuschangedago": "#/components/schemas/FilterStatusChangedAgo",
             "text": "#/components/schemas/FilterText",
             "type": "#/components/schemas/FilterType"
           },
@@ -46,13 +50,22 @@
             "$ref": "#/components/schemas/FilterAdded"
           },
           {
+            "$ref": "#/components/schemas/FilterAddedAgo"
+          },
+          {
             "$ref": "#/components/schemas/FilterAnd"
           },
           {
             "$ref": "#/components/schemas/FilterChecked"
           },
           {
+            "$ref": "#/components/schemas/FilterCheckedAgo"
+          },
+          {
             "$ref": "#/components/schemas/FilterExternal"
+          },
+          {
+            "$ref": "#/components/schemas/FilterExternalAgo"
           },
           {
             "$ref": "#/components/schemas/FilterOr"
@@ -71,6 +84,9 @@
           },
           {
             "$ref": "#/components/schemas/FilterStatusChanged"
+          },
+          {
+            "$ref": "#/components/schemas/FilterStatusChangedAgo"
           },
           {
             "$ref": "#/components/schemas/FilterText"
@@ -92,6 +108,22 @@
           },
           "start": {
             "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterAddedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
             "type": "integer"
           },
           "type": {
@@ -135,6 +167,22 @@
         },
         "type": "object"
       },
+      "FilterCheckedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "FilterExternal": {
         "properties": {
           "end": {
@@ -147,6 +195,22 @@
           },
           "start": {
             "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterExternalAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
             "type": "integer"
           },
           "type": {

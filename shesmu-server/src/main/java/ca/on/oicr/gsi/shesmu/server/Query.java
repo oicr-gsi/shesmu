@@ -18,6 +18,25 @@ import java.util.stream.Stream;
 
 /** Translate JSON-formatted queries into Java objects and perform the query */
 public class Query {
+  public abstract static class AgoFilterJson extends FilterJson {
+    private long offset;
+
+    protected abstract Filter convert(Optional<Instant> start, Optional<Instant> end);
+
+    @Override
+    public final Filter convert() {
+      return maybeNegate(convert(Optional.of(Instant.now().minusMillis(offset)), Optional.empty()));
+    }
+
+    public final long getOffset() {
+      return offset;
+    }
+
+    public final void setOffset(long offset) {
+      this.offset = offset;
+    }
+  }
+
   public abstract static class CollectionFilterJson extends FilterJson {
     private FilterJson[] filters;
 
@@ -45,6 +64,13 @@ public class Query {
     }
   }
 
+  public static class FilterAddedAgo extends AgoFilterJson {
+    @Override
+    protected Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.added(start, end);
+    }
+  }
+
   public static class FilterAnd extends CollectionFilterJson {
     @Override
     public Filter convert(Filter[] filters) {
@@ -59,7 +85,21 @@ public class Query {
     }
   }
 
+  public static class FilterCheckedAgo extends AgoFilterJson {
+    @Override
+    public Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.checked(start, end);
+    }
+  }
+
   public static class FilterExternal extends RangeFilterJson {
+    @Override
+    public Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.external(start, end);
+    }
+  }
+
+  public static class FilterExternalAgo extends AgoFilterJson {
     @Override
     public Filter convert(Optional<Instant> start, Optional<Instant> end) {
       return ActionProcessor.external(start, end);
@@ -69,15 +109,19 @@ public class Query {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
     @Type(value = FilterAdded.class, name = "added"),
+    @Type(value = FilterAddedAgo.class, name = "addedago"),
     @Type(value = FilterAnd.class, name = "and"),
     @Type(value = FilterChecked.class, name = "checked"),
+    @Type(value = FilterCheckedAgo.class, name = "checkedago"),
     @Type(value = FilterExternal.class, name = "external"),
+    @Type(value = FilterExternalAgo.class, name = "externalago"),
     @Type(value = FilterOr.class, name = "or"),
     @Type(value = FilterRegex.class, name = "regex"),
     @Type(value = FilterSourceFile.class, name = "sourcefile"),
     @Type(value = FilterSourceLocation.class, name = "sourcelocation"),
     @Type(value = FilterStatus.class, name = "status"),
     @Type(value = FilterStatusChanged.class, name = "statuschanged"),
+    @Type(value = FilterStatusChangedAgo.class, name = "statuschangedago"),
     @Type(value = FilterText.class, name = "text"),
     @Type(value = FilterType.class, name = "type")
   })
@@ -175,6 +219,13 @@ public class Query {
   }
 
   public static class FilterStatusChanged extends RangeFilterJson {
+    @Override
+    public Filter convert(Optional<Instant> start, Optional<Instant> end) {
+      return ActionProcessor.statusChanged(start, end);
+    }
+  }
+
+  public static class FilterStatusChangedAgo extends AgoFilterJson {
     @Override
     public Filter convert(Optional<Instant> start, Optional<Instant> end) {
       return ActionProcessor.statusChanged(start, end);

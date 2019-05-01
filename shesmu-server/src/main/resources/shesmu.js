@@ -340,7 +340,17 @@ const actionStates = [
   "UNKNOWN",
   "WAITING"
 ];
+
+const timeUnits = {
+  milliseconds: 1,
+  seconds: 1000,
+  minutes: 60000,
+  hours: 3600000,
+  days: 86400000
+};
+
 const timeSpans = ["added", "checked", "statuschanged", "external"];
+const selectedAgoUnit = new Map();
 const types = new Map();
 const locations = new Map();
 const selectedStates = new Map();
@@ -505,6 +515,25 @@ export function initialiseActionDash(definedLocations, serverSearches) {
   }
   clearStates();
   clearTypes();
+
+  for (const span of timeSpans) {
+    const currentUnit = document.getElementById(`${span}AgoUnit`);
+    const unitList = document.getElementById(`${span}AgoUnits`);
+    for (const [name, multiplier] of Object.entries(timeUnits).sort(
+      x => x[1]
+    )) {
+      const unitElement = document.createElement("SPAN");
+      unitElement.innerText = name;
+      unitElement.onclick = () => {
+        selectedAgoUnit.set(span, multiplier);
+        currentUnit.innerText = name;
+      };
+      unitList.appendChild(unitElement);
+      if (name == "hours") {
+        unitElement.onclick();
+      }
+    }
+  }
 
   const customSearchPane = document.getElementById("customSearchPane");
   const savedSearchPane = document.getElementById("savedSearchPane");
@@ -747,6 +776,13 @@ function makeFilters() {
     const end = parseEpoch(`${span}End`);
     if (start !== null || end !== null) {
       filters.push({ type: span, start: start, end: end });
+    }
+    const offsetValue = document.getElementById(`${span}Ago`).value.trim();
+    if (offsetValue) {
+      filters.push({
+        type: `${span}ago`,
+        offset: parseInt(offsetValue) * selectedAgoUnit.get(span)
+      });
     }
   }
 
