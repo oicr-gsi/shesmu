@@ -26,8 +26,10 @@
         "description": "Action filtering.",
         "discriminator": {
           "mapping": {
-            "added": "#/components/schemas/FilterAfter",
+            "added": "#/components/schemas/FilterAdded",
+            "and": "#/components/schemas/FilterAnd",
             "checked": "#/components/schemas/FilterChecked",
+            "or": "#/components/schemas/FilterOr",
             "regex": "#/components/schemas/FilterRegex",
             "sourcefile": "#/components/schemas/FilterSourceFile",
             "sourcelocation": "#/components/schemas/FilterSourceLocation",
@@ -43,7 +45,13 @@
             "$ref": "#/components/schemas/FilterAdded"
           },
           {
+            "$ref": "#/components/schemas/FilterAnd"
+          },
+          {
             "$ref": "#/components/schemas/FilterChecked"
+          },
+          {
+            "$ref": "#/components/schemas/FilterOr"
           },
           {
             "$ref": "#/components/schemas/FilterRegex"
@@ -88,6 +96,21 @@
         },
         "type": "object"
       },
+      "FilterAnd": {
+        "properties": {
+          "filters": {
+            "description": "the filters which must be all be satisified",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "FilterChecked": {
         "properties": {
           "end": {
@@ -101,6 +124,25 @@
           "start": {
             "description": "miliseconds since UNIX epoch",
             "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterOr": {
+        "properties": {
+          "filters": {
+            "description": "the filters from which at least one must be satisified",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
           },
           "type": {
             "type": "string"
