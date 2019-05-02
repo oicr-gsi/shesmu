@@ -22,13 +22,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -73,34 +68,13 @@ public final class RuntimeSupport {
     }
   }
 
-  public static void packJson(Imyhat type, ObjectNode node, String name, Object value) {
-    type.accept(new PackJsonObject(node, name), value);
-  }
-
-  static void packJson(Imyhat type, ArrayNode node, Object value) {
-    type.accept(new PackJsonArray(node), value);
-  }
-
-  private static final Map<String, CallSite> callsites = new HashMap<>();
-
-  @RuntimeInterop public static final String[] EMPTY = new String[0];
-
-  public static final ObjectMapper MAPPER = new ObjectMapper();
-
-  private static final Pattern PATH_SEPARATOR = Pattern.compile(Pattern.quote(File.pathSeparator));
-
-  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
-      new BinaryOperator<Object>() {
-
-        @Override
-        public Object apply(Object t, Object u) {
-          throw new UnsupportedOperationException();
-        }
-      };
-
-  static {
-    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-    MAPPER.registerModule(new JavaTimeModule());
+  /** Create a copy of a set with an additional item. */
+  @RuntimeInterop
+  public static <T> Set<T> addItem(Imyhat type, Set<T> left, T right) {
+    Set<T> result = type.newSet();
+    result.addAll(left);
+    result.add(right);
+    return result;
   }
 
   /**
@@ -140,6 +114,15 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static long difference(Instant left, Instant right) {
     return Duration.between(right, left).getSeconds();
+  }
+
+  /** Determine the difference between two sets. */
+  @RuntimeInterop
+  public static <T> Set<T> difference(Imyhat type, Set<T> left, Set<T> right) {
+    Set<T> result = type.newSet();
+    result.addAll(left);
+    result.removeAll(right);
+    return result;
   }
 
   public static Optional<String> environmentVariable() {
@@ -227,6 +210,14 @@ public final class RuntimeSupport {
   public static <T> Stream<T> monitor(
       Stream<T> input, Gauge gauge, Function<T, String[]> computeValues) {
     return input.peek(item -> gauge.labels(computeValues.apply(item)).inc());
+  }
+
+  public static void packJson(Imyhat type, ObjectNode node, String name, Object value) {
+    type.accept(new PackJsonObject(node, name), value);
+  }
+
+  static void packJson(Imyhat type, ArrayNode node, Object value) {
+    type.accept(new PackJsonArray(node), value);
   }
 
   public static Stream<Path> parsePaths(String pathVariable) {
@@ -320,6 +311,15 @@ public final class RuntimeSupport {
     return fileNamePart.substring(0, fileNamePart.length() - extension.length());
   }
 
+  /** Create a copy of a set less one item. */
+  @RuntimeInterop
+  public static <T> Set<T> removeItem(Imyhat type, Set<T> left, T right) {
+    Set<T> result = type.newSet();
+    result.addAll(left);
+    result.remove(right);
+    return result;
+  }
+
   @RuntimeInterop
   public static Path resolvePath(Path path, String str) {
     return path.resolve(str);
@@ -335,6 +335,33 @@ public final class RuntimeSupport {
   public static String toString(Instant instant, String format) {
     return DateTimeFormatter.ofPattern(format)
         .format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
+  }
+
+  /** Determine the union of two sets. */
+  @RuntimeInterop
+  public static <T> Set<T> union(Imyhat type, Set<T> left, Set<T> right) {
+    Set<T> result = type.newSet();
+    result.addAll(left);
+    result.addAll(right);
+    return result;
+  }
+
+  @RuntimeInterop public static final String[] EMPTY = new String[0];
+  public static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final Pattern PATH_SEPARATOR = Pattern.compile(Pattern.quote(File.pathSeparator));
+  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
+      new BinaryOperator<Object>() {
+
+        @Override
+        public Object apply(Object t, Object u) {
+          throw new UnsupportedOperationException();
+        }
+      };
+  private static final Map<String, CallSite> callsites = new HashMap<>();
+
+  static {
+    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+    MAPPER.registerModule(new JavaTimeModule());
   }
 
   private RuntimeSupport() {}

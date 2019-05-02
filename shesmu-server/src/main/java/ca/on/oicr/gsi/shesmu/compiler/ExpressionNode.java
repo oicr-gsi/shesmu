@@ -33,8 +33,8 @@ public abstract class ExpressionNode {
     ExpressionNode create(int line, int column, ExpressionNode node);
   }
 
-  private static Parser.Rule<BinaryOperator<ExpressionNode>> arithmetic(
-      String symbol, ArithmeticOperation... operations) {
+  private static Parser.Rule<BinaryOperator<ExpressionNode>> binaryOperators(
+      String symbol, BinaryOperation.Definition... operations) {
     return (p, o) -> {
       o.accept(
           (l, r) ->
@@ -178,11 +178,11 @@ public abstract class ExpressionNode {
   }
 
   private static Parser parse4(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse5, ARITHMETIC_DISJUNCTION, input, output);
+    return scanBinary(ExpressionNode::parse5, DISJUNCTION, input, output);
   }
 
   private static Parser parse5(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse6, ARITHMETIC_CONJUNCTION, input, output);
+    return scanBinary(ExpressionNode::parse6, CONJUNCTION, input, output);
   }
 
   private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
@@ -269,14 +269,14 @@ public abstract class ExpressionNode {
     return result;
   }
 
-  private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> ARITHMETIC_CONJUNCTION =
-      new Parser.ParseDispatch<>();
-  private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> ARITHMETIC_DISJUNCTION =
-      new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> COMPARISON =
+      new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> CONJUNCTION =
       new Parser.ParseDispatch<>();
   private static final Pattern DATE =
       Pattern.compile("^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}))?");
+  private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> DISJUNCTION =
+      new Parser.ParseDispatch<>();
   public static final Parser.ParseDispatch<Integer> INT_SUFFIX = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION =
       new Parser.ParseDispatch<>();
@@ -308,10 +308,10 @@ public abstract class ExpressionNode {
     INT_SUFFIX.addKeyword("", just(1));
 
     LOGICAL_DISJUNCTION.addSymbol(
-        "||", arithmetic("||", ArithmeticOperation.shortCircuit(GeneratorAdapter.NE)));
+        "||", binaryOperators("||", BinaryOperation.shortCircuit(GeneratorAdapter.NE)));
 
     LOGICAL_CONJUNCTION.addSymbol(
-        "&&", arithmetic("&&", ArithmeticOperation.shortCircuit(GeneratorAdapter.EQ)));
+        "&&", binaryOperators("&&", BinaryOperation.shortCircuit(GeneratorAdapter.EQ)));
 
     for (final Comparison comparison : Comparison.values()) {
       COMPARISON.addSymbol(
@@ -342,35 +342,37 @@ public abstract class ExpressionNode {
           }
           return result;
         });
-    ARITHMETIC_DISJUNCTION.addSymbol(
+    DISJUNCTION.addSymbol(
         "+",
-        arithmetic(
+        binaryOperators(
             "+",
-            ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.ADD),
-            ArithmeticOperation.virtualMethod(
-                Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds"),
-            ArithmeticOperation.virtualMethod(Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve"),
-            ArithmeticOperation.staticMethod(
-                Imyhat.PATH, Imyhat.STRING, Imyhat.PATH, A_RUNTIME_SUPPORT_TYPE, "resolvePath")));
-    ARITHMETIC_DISJUNCTION.addSymbol(
+            BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.ADD),
+            BinaryOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds"),
+            BinaryOperation.virtualMethod(Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve"),
+            BinaryOperation.staticMethod(
+                Imyhat.PATH, Imyhat.STRING, Imyhat.PATH, A_RUNTIME_SUPPORT_TYPE, "resolvePath"),
+            BinaryOperation.binaryListStaticMethod(A_RUNTIME_SUPPORT_TYPE, "union"),
+            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "addItem")));
+    DISJUNCTION.addSymbol(
         "-",
-        arithmetic(
+        binaryOperators(
             "-",
-            ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.SUB),
-            ArithmeticOperation.virtualMethod(
-                Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds"),
-            ArithmeticOperation.staticMethod(
-                Imyhat.DATE, Imyhat.DATE, Imyhat.INTEGER, A_RUNTIME_SUPPORT_TYPE, "difference")));
+            BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.SUB),
+            BinaryOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds"),
+            BinaryOperation.staticMethod(
+                Imyhat.DATE, Imyhat.DATE, Imyhat.INTEGER, A_RUNTIME_SUPPORT_TYPE, "difference"),
+            BinaryOperation.binaryListStaticMethod(A_RUNTIME_SUPPORT_TYPE, "difference"),
+            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "removeItem")));
 
-    ARITHMETIC_CONJUNCTION.addSymbol(
+    CONJUNCTION.addSymbol(
         "*",
-        arithmetic("*", ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.MUL)));
-    ARITHMETIC_CONJUNCTION.addSymbol(
+        binaryOperators("*", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.MUL)));
+    CONJUNCTION.addSymbol(
         "/",
-        arithmetic("/", ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.DIV)));
-    ARITHMETIC_CONJUNCTION.addSymbol(
+        binaryOperators("/", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.DIV)));
+    CONJUNCTION.addSymbol(
         "%",
-        arithmetic("%", ArithmeticOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.REM)));
+        binaryOperators("%", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.REM)));
 
     SUFFIX_LOOSE.addKeyword(
         "In",
