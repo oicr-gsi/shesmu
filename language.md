@@ -523,24 +523,35 @@ dates, the lesser value occurs temporally earlier.
 Check whether _expr_, which must be a string, must matches the provided regular
 expression.
 
-### Arithmetic Disjunction
+### Disjunction
 #### Addition
 - _expr_ `+` _expr_
 
-Adds two values. If both are integers, then they are summed. If the left is a
-date and the right is an integer, a new date is produced that is later by the
-number of seconds in the integer value.
+Adds two values.
+
+| Left    | Right    | Result  | Description                                                     |
+|---------|----------|---------|-----------------------------------------------------------------|
+| `int`   | `int`    | `int`   | Summation                                                       |
+| `date`  | `int`    | `date`  | Add seconds to date                                             |
+| `path`  | `path`   | `path`  | Resolve paths (concatenate, unless second path starts with `/`) |
+| `path`  | `string` | `path`  | Append component to path                                        |
+| `[`x`]` | `[`x`]`  | `[`x`]` | Union of two lists (removing duplicates)                        |
+| `[`x`]` | x        | `[`x`]` | Add item to list (removing duplicates)                          |
 
 #### Subtraction
 - _expr_ `-` _expr_
 
-Subtracts two values. If both are integer, then the right is subtracted from
-the left. If both are dates, the difference in seconds from the first left date
-to the right date is computed. If the left is a date and the right is an
-integer, a new date is produced that is earlier by the number of seconds on the
-right.
+Subtracts two values.
 
-### Arithmetic Conjunction
+| Left    | Right   | Result  | Description                                                    |
+|---------|---------|---------|----------------------------------------------------------------|
+| `int`   | `int`   | `int`   | Difference                                                     |
+| `date`  | `int`   | `date`  | Subtract seconds to date                                       |
+| `date`  | `date`  | `int`   | Difference in seconds                                          |
+| `[`x`]` | `[`x`]` | `[`x`]` | Difference of two lists (first list without items from second) |
+| `[`x`]` | x       | `[`x`]` | Remove item from list (if present)                             |
+
+### Conjunction
 #### Multiplication
 - _expr_ `*` _expr_
 

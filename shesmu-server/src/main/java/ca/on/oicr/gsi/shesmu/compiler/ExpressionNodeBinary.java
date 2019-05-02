@@ -14,13 +14,13 @@ import java.util.stream.Stream;
 public final class ExpressionNodeBinary extends ExpressionNode {
 
   private final ExpressionNode left;
-  private ArithmeticOperation operation = ArithmeticOperation.BAD;
-  private final Supplier<Stream<ArithmeticOperation>> operations;
+  private BinaryOperation operation = BinaryOperation.BAD;
+  private final Supplier<Stream<BinaryOperation.Definition>> operations;
   private final ExpressionNode right;
   private final String symbol;
 
   public ExpressionNodeBinary(
-      Supplier<Stream<ArithmeticOperation>> operations,
+      Supplier<Stream<BinaryOperation.Definition>> operations,
       String symbol,
       int line,
       int column,
@@ -73,11 +73,12 @@ public final class ExpressionNodeBinary extends ExpressionNode {
   public final boolean typeCheck(Consumer<String> errorHandler) {
     final boolean ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
     if (ok) {
-      final Optional<ArithmeticOperation> operation =
+      final Optional<BinaryOperation> operation =
           operations
               .get()
-              .filter(
-                  op -> op.leftType().isSame(left.type()) && op.rightType().isSame(right.type()))
+              .flatMap(
+                  def ->
+                      def.match(left.type(), right.type()).map(Stream::of).orElseGet(Stream::empty))
               .findFirst();
       if (operation.isPresent()) {
         this.operation = operation.get();
