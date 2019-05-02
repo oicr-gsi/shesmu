@@ -7,15 +7,19 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 public abstract class ArithmeticOperation {
-  public static final ArithmeticOperation BAD =
-      new ArithmeticOperation(Imyhat.BAD, Imyhat.BAD, Imyhat.BAD) {
+  public static ArithmeticOperation primitiveMath(Imyhat type, int opcode) {
+    return new ArithmeticOperation(type, type, type) {
 
-        @Override
-        public void render(
-            Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
-          throw new UnsupportedOperationException();
-        }
-      };
+      @Override
+      public void render(
+          Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+
+        leftValue.accept(renderer);
+        rightValue.accept(renderer);
+        renderer.methodGen().math(opcode, type.apply(TypeUtils.TO_ASM));
+      }
+    };
+  }
 
   public static ArithmeticOperation shortCircuit(int condition) {
     return new ArithmeticOperation(Imyhat.BOOLEAN, Imyhat.BOOLEAN, Imyhat.BOOLEAN) {
@@ -30,20 +34,6 @@ public abstract class ArithmeticOperation {
         renderer.methodGen().pop();
         rightValue.accept(renderer);
         renderer.methodGen().mark(end);
-      }
-    };
-  }
-
-  public static ArithmeticOperation primitiveMath(Imyhat type, int opcode) {
-    return new ArithmeticOperation(type, type, type) {
-
-      @Override
-      public void render(
-          Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
-
-        leftValue.accept(renderer);
-        rightValue.accept(renderer);
-        renderer.methodGen().math(opcode, type.apply(TypeUtils.TO_ASM));
       }
     };
   }
@@ -96,6 +86,15 @@ public abstract class ArithmeticOperation {
     };
   }
 
+  public static final ArithmeticOperation BAD =
+      new ArithmeticOperation(Imyhat.BAD, Imyhat.BAD, Imyhat.BAD) {
+
+        @Override
+        public void render(
+            Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+          throw new UnsupportedOperationException();
+        }
+      };
   private final Imyhat leftType;
 
   private final Imyhat returnType;

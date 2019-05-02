@@ -33,6 +33,242 @@ public abstract class ExpressionNode {
     ExpressionNode create(int line, int column, ExpressionNode node);
   }
 
+  private static Parser.Rule<BinaryOperator<ExpressionNode>> arithmetic(
+      String symbol, ArithmeticOperation... operations) {
+    return (p, o) -> {
+      o.accept(
+          (l, r) ->
+              new ExpressionNodeBinary(
+                  () -> Stream.of(operations), symbol, p.line(), p.column(), l, r));
+      return p;
+    };
+  }
+
+  private static <T> Parser.Rule<T> just(T value) {
+    return (p, o) -> {
+      o.accept(value);
+      return p;
+    };
+  }
+
+  private static Parser.Rule<UnaryOperator<ExpressionNode>> just(UnaryExpression creator) {
+    return (p, o) -> {
+      o.accept(n -> creator.create(p.line(), p.column(), n));
+      return p;
+    };
+  }
+
+  public static Parser parse(Parser input, Consumer<ExpressionNode> output) {
+    final Parser switchParser = input.keyword("Switch");
+    if (switchParser.isGood()) {
+      final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> cases =
+          new AtomicReference<>();
+      final AtomicReference<ExpressionNode> test = new AtomicReference<>();
+      final AtomicReference<ExpressionNode> alternative = new AtomicReference<>();
+      final Parser result =
+          parse1(
+                  parse(switchParser.whitespace(), test::set)
+                      .whitespace()
+                      .list(
+                          cases::set,
+                          (cp, co) -> {
+                            final AtomicReference<ExpressionNode> condition =
+                                new AtomicReference<>();
+                            final AtomicReference<ExpressionNode> value = new AtomicReference<>();
+                            final Parser cresult =
+                                parse(
+                                    parse(
+                                            cp.whitespace().keyword("When").whitespace(),
+                                            condition::set)
+                                        .whitespace()
+                                        .keyword("Then")
+                                        .whitespace(),
+                                    value::set);
+                            if (cresult.isGood()) {
+                              co.accept(new Pair<>(condition.get(), value.get()));
+                            }
+                            return cresult;
+                          })
+                      .whitespace()
+                      .keyword("Else")
+                      .whitespace(),
+                  alternative::set)
+              .whitespace();
+      if (result.isGood()) {
+        output.accept(
+            new ExpressionNodeSwitch(
+                input.line(), input.column(), test.get(), cases.get(), alternative.get()));
+      }
+      return result;
+    }
+
+    final Parser forParser = input.keyword("For");
+    if (forParser.isGood()) {
+      final AtomicReference<String> name = new AtomicReference<>();
+      final AtomicReference<SourceNode> source = new AtomicReference<>();
+      final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
+      final AtomicReference<CollectNode> collector = new AtomicReference<>();
+      final Parser result =
+          forParser
+              .whitespace()
+              .identifier(name::set)
+              .whitespace()
+              .then(SourceNode::parse, source::set)
+              .whitespace()
+              .symbol(":")
+              .whitespace()
+              .list(transforms::set, ListNode::parse)
+              .then(CollectNode::parse, collector::set)
+              .whitespace();
+      if (result.isGood()) {
+        output.accept(
+            new ExpressionNodeFor(
+                input.line(),
+                input.column(),
+                name.get(),
+                source.get(),
+                transforms.get(),
+                collector.get()));
+      }
+      return result;
+    }
+
+    final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+    final Parser parserResult = parse1(input, expression::set);
+    if (!parserResult.isGood()) {
+      return parserResult;
+    }
+    final Parser ternaryParser = parserResult.symbol("?");
+    if (ternaryParser.isGood()) {
+      final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
+      final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
+      final Parser result =
+          ternaryParser
+              .whitespace()
+              .then(ExpressionNode::parse1, trueExpression::set)
+              .symbol(":")
+              .whitespace()
+              .then(ExpressionNode::parse1, falseExpression::set);
+      if (result.isGood()) {
+        output.accept(
+            new ExpressionNodeTernaryIf(
+                input.line(),
+                input.column(),
+                expression.get(),
+                trueExpression.get(),
+                falseExpression.get()));
+      }
+      return result;
+    } else {
+      output.accept(expression.get());
+      return parserResult;
+    }
+  }
+
+  private static Parser parse1(Parser input, Consumer<ExpressionNode> output) {
+    return scanBinary(ExpressionNode::parse2, LOGICAL_DISJUNCTION, input, output);
+  }
+
+  private static Parser parse2(Parser input, Consumer<ExpressionNode> output) {
+    return scanBinary(ExpressionNode::parse3, LOGICAL_CONJUNCTION, input, output);
+  }
+
+  private static Parser parse3(Parser input, Consumer<ExpressionNode> output) {
+    return scanSuffixed(ExpressionNode::parse4, COMPARISON, false, input, output);
+  }
+
+  private static Parser parse4(Parser input, Consumer<ExpressionNode> output) {
+    return scanBinary(ExpressionNode::parse5, ARITHMETIC_DISJUNCTION, input, output);
+  }
+
+  private static Parser parse5(Parser input, Consumer<ExpressionNode> output) {
+    return scanBinary(ExpressionNode::parse6, ARITHMETIC_CONJUNCTION, input, output);
+  }
+
+  private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
+    return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, false, input, output);
+  }
+
+  private static Parser parse7(Parser input, Consumer<ExpressionNode> output) {
+    return scanPrefixed(ExpressionNode::parse8, UNARY, input, output);
+  }
+
+  private static Parser parse8(Parser input, Consumer<ExpressionNode> output) {
+    return scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, true, input, output);
+  }
+
+  private static Parser parse9(Parser input, Consumer<ExpressionNode> output) {
+    return input.dispatch(TERMINAL, output);
+  }
+
+  private static <T> Parser scanBinary(
+      Parser.Rule<T> child,
+      Parser.ParseDispatch<BinaryOperator<T>> condensers,
+      Parser input,
+      Consumer<T> output) {
+    final AtomicReference<T> node = new AtomicReference<>();
+    Parser parser = child.parse(input, node::set);
+    while (parser.isGood()) {
+      final AtomicReference<T> right = new AtomicReference<>();
+      final AtomicReference<BinaryOperator<T>> condenser = new AtomicReference<>();
+      final Parser next =
+          child.parse(parser.dispatch(condensers, condenser::set).whitespace(), right::set);
+      if (next.isGood()) {
+        node.set(condenser.get().apply(node.get(), right.get()));
+        parser = next;
+      } else {
+        output.accept(node.get());
+        return parser;
+      }
+    }
+    return parser;
+  }
+
+  private static <T> Parser scanPrefixed(
+      Parser.Rule<T> child,
+      Parser.ParseDispatch<UnaryOperator<T>> condensers,
+      Parser input,
+      Consumer<T> output) {
+    final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
+    Parser next = input.dispatch(condensers, modifier::set).whitespace();
+    if (!next.isGood()) {
+      next = input;
+      modifier.set(UnaryOperator.identity());
+    }
+    final AtomicReference<T> node = new AtomicReference<>();
+    final Parser result = child.parse(next, node::set).whitespace();
+    if (result.isGood()) {
+      output.accept(modifier.get().apply(node.get()));
+    }
+    return result;
+  }
+
+  private static <T> Parser scanSuffixed(
+      Parser.Rule<T> child,
+      Parser.ParseDispatch<UnaryOperator<T>> condensers,
+      boolean repeated,
+      Parser input,
+      Consumer<T> output) {
+    final AtomicReference<T> node = new AtomicReference<>();
+    Parser result = child.parse(input, node::set).whitespace();
+    boolean again = true;
+    while (result.isGood() && again) {
+      final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
+      final Parser next = result.dispatch(condensers, modifier::set).whitespace();
+      if (next.isGood()) {
+        result = next;
+        node.updateAndGet(modifier.get());
+        again = repeated;
+      } else {
+        again = false;
+      }
+    }
+    if (result.isGood()) {
+      output.accept(node.get());
+    }
+    return result;
+  }
+
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> ARITHMETIC_CONJUNCTION =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> ARITHMETIC_DISJUNCTION =
@@ -359,242 +595,6 @@ public abstract class ExpressionNode {
           }
           return result;
         });
-  }
-
-  private static Parser.Rule<BinaryOperator<ExpressionNode>> arithmetic(
-      String symbol, ArithmeticOperation... operations) {
-    return (p, o) -> {
-      o.accept(
-          (l, r) ->
-              new ExpressionNodeBinary(
-                  () -> Stream.of(operations), symbol, p.line(), p.column(), l, r));
-      return p;
-    };
-  }
-
-  private static <T> Parser.Rule<T> just(T value) {
-    return (p, o) -> {
-      o.accept(value);
-      return p;
-    };
-  }
-
-  private static Parser.Rule<UnaryOperator<ExpressionNode>> just(UnaryExpression creator) {
-    return (p, o) -> {
-      o.accept(n -> creator.create(p.line(), p.column(), n));
-      return p;
-    };
-  }
-
-  public static Parser parse(Parser input, Consumer<ExpressionNode> output) {
-    final Parser switchParser = input.keyword("Switch");
-    if (switchParser.isGood()) {
-      final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> cases =
-          new AtomicReference<>();
-      final AtomicReference<ExpressionNode> test = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> alternative = new AtomicReference<>();
-      final Parser result =
-          parse1(
-                  parse(switchParser.whitespace(), test::set)
-                      .whitespace()
-                      .list(
-                          cases::set,
-                          (cp, co) -> {
-                            final AtomicReference<ExpressionNode> condition =
-                                new AtomicReference<>();
-                            final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-                            final Parser cresult =
-                                parse(
-                                    parse(
-                                            cp.whitespace().keyword("When").whitespace(),
-                                            condition::set)
-                                        .whitespace()
-                                        .keyword("Then")
-                                        .whitespace(),
-                                    value::set);
-                            if (cresult.isGood()) {
-                              co.accept(new Pair<>(condition.get(), value.get()));
-                            }
-                            return cresult;
-                          })
-                      .whitespace()
-                      .keyword("Else")
-                      .whitespace(),
-                  alternative::set)
-              .whitespace();
-      if (result.isGood()) {
-        output.accept(
-            new ExpressionNodeSwitch(
-                input.line(), input.column(), test.get(), cases.get(), alternative.get()));
-      }
-      return result;
-    }
-
-    final Parser forParser = input.keyword("For");
-    if (forParser.isGood()) {
-      final AtomicReference<String> name = new AtomicReference<>();
-      final AtomicReference<SourceNode> source = new AtomicReference<>();
-      final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
-      final AtomicReference<CollectNode> collector = new AtomicReference<>();
-      final Parser result =
-          forParser
-              .whitespace()
-              .identifier(name::set)
-              .whitespace()
-              .then(SourceNode::parse, source::set)
-              .whitespace()
-              .symbol(":")
-              .whitespace()
-              .list(transforms::set, ListNode::parse)
-              .then(CollectNode::parse, collector::set)
-              .whitespace();
-      if (result.isGood()) {
-        output.accept(
-            new ExpressionNodeFor(
-                input.line(),
-                input.column(),
-                name.get(),
-                source.get(),
-                transforms.get(),
-                collector.get()));
-      }
-      return result;
-    }
-
-    final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-    final Parser parserResult = parse1(input, expression::set);
-    if (!parserResult.isGood()) {
-      return parserResult;
-    }
-    final Parser ternaryParser = parserResult.symbol("?");
-    if (ternaryParser.isGood()) {
-      final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
-      final Parser result =
-          ternaryParser
-              .whitespace()
-              .then(ExpressionNode::parse1, trueExpression::set)
-              .symbol(":")
-              .whitespace()
-              .then(ExpressionNode::parse1, falseExpression::set);
-      if (result.isGood()) {
-        output.accept(
-            new ExpressionNodeTernaryIf(
-                input.line(),
-                input.column(),
-                expression.get(),
-                trueExpression.get(),
-                falseExpression.get()));
-      }
-      return result;
-    } else {
-      output.accept(expression.get());
-      return parserResult;
-    }
-  }
-
-  private static Parser parse1(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse2, LOGICAL_DISJUNCTION, input, output);
-  }
-
-  private static Parser parse2(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse3, LOGICAL_CONJUNCTION, input, output);
-  }
-
-  private static Parser parse3(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse4, COMPARISON, false, input, output);
-  }
-
-  private static Parser parse4(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse5, ARITHMETIC_DISJUNCTION, input, output);
-  }
-
-  private static Parser parse5(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse6, ARITHMETIC_CONJUNCTION, input, output);
-  }
-
-  private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, false, input, output);
-  }
-
-  private static Parser parse7(Parser input, Consumer<ExpressionNode> output) {
-    return scanPrefixed(ExpressionNode::parse8, UNARY, input, output);
-  }
-
-  private static Parser parse8(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, true, input, output);
-  }
-
-  private static Parser parse9(Parser input, Consumer<ExpressionNode> output) {
-    return input.dispatch(TERMINAL, output);
-  }
-
-  private static <T> Parser scanBinary(
-      Parser.Rule<T> child,
-      Parser.ParseDispatch<BinaryOperator<T>> condensers,
-      Parser input,
-      Consumer<T> output) {
-    final AtomicReference<T> node = new AtomicReference<>();
-    Parser parser = child.parse(input, node::set);
-    while (parser.isGood()) {
-      final AtomicReference<T> right = new AtomicReference<>();
-      final AtomicReference<BinaryOperator<T>> condenser = new AtomicReference<>();
-      final Parser next =
-          child.parse(parser.dispatch(condensers, condenser::set).whitespace(), right::set);
-      if (next.isGood()) {
-        node.set(condenser.get().apply(node.get(), right.get()));
-        parser = next;
-      } else {
-        output.accept(node.get());
-        return parser;
-      }
-    }
-    return parser;
-  }
-
-  private static <T> Parser scanPrefixed(
-      Parser.Rule<T> child,
-      Parser.ParseDispatch<UnaryOperator<T>> condensers,
-      Parser input,
-      Consumer<T> output) {
-    final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-    Parser next = input.dispatch(condensers, modifier::set).whitespace();
-    if (!next.isGood()) {
-      next = input;
-      modifier.set(UnaryOperator.identity());
-    }
-    final AtomicReference<T> node = new AtomicReference<>();
-    final Parser result = child.parse(next, node::set).whitespace();
-    if (result.isGood()) {
-      output.accept(modifier.get().apply(node.get()));
-    }
-    return result;
-  }
-
-  private static <T> Parser scanSuffixed(
-      Parser.Rule<T> child,
-      Parser.ParseDispatch<UnaryOperator<T>> condensers,
-      boolean repeated,
-      Parser input,
-      Consumer<T> output) {
-    final AtomicReference<T> node = new AtomicReference<>();
-    Parser result = child.parse(input, node::set).whitespace();
-    boolean again = true;
-    while (result.isGood() && again) {
-      final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-      final Parser next = result.dispatch(condensers, modifier::set).whitespace();
-      if (next.isGood()) {
-        result = next;
-        node.updateAndGet(modifier.get());
-        again = repeated;
-      } else {
-        again = false;
-      }
-    }
-    if (result.isGood()) {
-      output.accept(node.get());
-    }
-    return result;
   }
 
   private final int column;
