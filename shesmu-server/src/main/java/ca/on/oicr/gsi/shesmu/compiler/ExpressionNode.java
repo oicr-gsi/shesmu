@@ -352,7 +352,9 @@ public abstract class ExpressionNode {
             BinaryOperation.staticMethod(
                 Imyhat.PATH, Imyhat.STRING, Imyhat.PATH, A_RUNTIME_SUPPORT_TYPE, "resolvePath"),
             BinaryOperation.binaryListStaticMethod(A_RUNTIME_SUPPORT_TYPE, "union"),
-            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "addItem")));
+            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "addItem"),
+            BinaryOperation::tupleConcat,
+            BinaryOperation::objectConcat));
     DISJUNCTION.addSymbol(
         "-",
         binaryOperators(

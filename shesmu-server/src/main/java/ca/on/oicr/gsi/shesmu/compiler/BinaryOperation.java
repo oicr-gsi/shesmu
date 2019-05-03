@@ -2,12 +2,20 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
+import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /**
@@ -20,6 +28,38 @@ public abstract class BinaryOperation {
   /** Find a possible operation given the operand types */
   public interface Definition {
     Optional<BinaryOperation> match(Imyhat left, Imyhat right);
+  }
+
+  private static class ConcatenatedObjectField {
+    private final boolean isLeft;
+    private final String name;
+    private final int originalIndex;
+    private final Imyhat type;
+
+    private ConcatenatedObjectField(String name, Imyhat type, int originalIndex, boolean isLeft) {
+      this.name = name;
+      this.type = type;
+      this.originalIndex = originalIndex;
+      this.isLeft = isLeft;
+    }
+
+    public void copy(
+        GeneratorAdapter methodGen, int targetIndex, int leftVariable, int rightVariable) {
+      methodGen.dup();
+      methodGen.push(targetIndex);
+      methodGen.loadLocal(isLeft ? leftVariable : rightVariable);
+      methodGen.push(originalIndex);
+      methodGen.invokeVirtual(A_TUPLE_TYPE, TUPLE__GET);
+      methodGen.arrayStore(A_OBJECT_TYPE);
+    }
+
+    public String name() {
+      return name;
+    }
+
+    public Pair<String, Imyhat> pair() {
+      return new Pair<>(name, type);
+    }
   }
 
   /**
@@ -109,6 +149,60 @@ public abstract class BinaryOperation {
     };
   }
 
+  public static Optional<BinaryOperation> objectConcat(Imyhat left, Imyhat right) {
+    if (left instanceof Imyhat.ObjectImyhat && right instanceof Imyhat.ObjectImyhat) {
+      final Imyhat.ObjectImyhat leftType = (Imyhat.ObjectImyhat) left;
+      final Imyhat.ObjectImyhat rightType = (Imyhat.ObjectImyhat) right;
+      Map<String, ConcatenatedObjectField> newFields =
+          Stream.of(new Pair<>(true, leftType), new Pair<>(false, rightType))
+              .flatMap(
+                  pair ->
+                      pair.second()
+                          .fields()
+                          .map(
+                              field ->
+                                  new ConcatenatedObjectField(
+                                      field.getKey(),
+                                      field.getValue().first(),
+                                      field.getValue().second(),
+                                      pair.first())))
+              .collect(
+                  Collectors.toMap(
+                      ConcatenatedObjectField::name,
+                      Function.identity(),
+                      (a, b) -> null,
+                      TreeMap::new));
+      if (newFields.size() == leftType.fields().count() + rightType.fields().count()) {
+        return Optional.of(
+            new BinaryOperation(
+                new Imyhat.ObjectImyhat(
+                    newFields.values().stream().map(ConcatenatedObjectField::pair))) {
+              @Override
+              public void render(
+                  Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+                int leftVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
+                int rightVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
+                leftValue.accept(renderer);
+                renderer.methodGen().storeLocal(leftVariable);
+                rightValue.accept(renderer);
+                renderer.methodGen().storeLocal(rightVariable);
+
+                renderer.methodGen().newInstance(A_TUPLE_TYPE);
+                renderer.methodGen().dup();
+                renderer.methodGen().push(newFields.size());
+                renderer.methodGen().newArray(A_OBJECT_TYPE);
+                int targetIndex = 0;
+                for (ConcatenatedObjectField field : newFields.values()) {
+                  field.copy(renderer.methodGen(), targetIndex++, leftVariable, rightVariable);
+                }
+                renderer.methodGen().invokeConstructor(A_TUPLE_TYPE, TUPLE__CTOR);
+              }
+            });
+      }
+    }
+    return Optional.empty();
+  }
+
   /**
    * Perform a primitive math operation on two operands of the provided type; returning the same
    * type
@@ -192,6 +286,27 @@ public abstract class BinaryOperation {
         });
   }
 
+  public static Optional<BinaryOperation> tupleConcat(Imyhat left, Imyhat right) {
+    if (left instanceof Imyhat.TupleImyhat && right instanceof Imyhat.TupleImyhat) {
+      final Imyhat resultType =
+          Imyhat.tuple(
+              Stream.concat(
+                      ((Imyhat.TupleImyhat) left).inner(), ((Imyhat.TupleImyhat) right).inner())
+                  .toArray(Imyhat[]::new));
+      return Optional.of(
+          new BinaryOperation(resultType) {
+            @Override
+            public void render(
+                Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+              leftValue.accept(renderer);
+              rightValue.accept(renderer);
+              renderer.methodGen().invokeVirtual(A_TUPLE_TYPE, TUPLE__CONCAT);
+            }
+          });
+    }
+    return Optional.empty();
+  }
+
   /**
    * Call a virtual method on the left operand
    *
@@ -228,6 +343,7 @@ public abstract class BinaryOperation {
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   public static final BinaryOperation BAD =
       new BinaryOperation(Imyhat.BAD) {
 
@@ -237,7 +353,12 @@ public abstract class BinaryOperation {
           throw new UnsupportedOperationException();
         }
       };
-
+  public static final Method TUPLE__CONCAT =
+      new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
+  public static final Method TUPLE__CTOR =
+      new Method("<init>", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
+  public static final Method TUPLE__GET =
+      new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
   private final Imyhat returnType;
 
   public BinaryOperation(Imyhat returnType) {
