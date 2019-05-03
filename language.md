@@ -537,6 +537,8 @@ Adds two values.
 | `path`  | `string` | `path`  | Append component to path                                        |
 | `[`x`]` | `[`x`]`  | `[`x`]` | Union of two lists (removing duplicates)                        |
 | `[`x`]` | x        | `[`x`]` | Add item to list (removing duplicates)                          |
+| `{`a1`,`...`,` an`}`              | `{`b1`,`...`,` bn`}`             | `{`a1`,`...`,` an`,`b1`,`...`,` bn`}`                         | Concatenate two tuples                       |
+| `{`fa1`=`a1`, `...`,` fan`=`an`}` | `{`fb1`=`b1`,`...`,` fbn`=`bn`}` | `{`fa1`=`a1`,`...`,` fan`=`an`,`fb1`=`b1`,`...`,` fbn`=`bn`}` | Merge two objects (with no duplicate fields) |
 
 #### Subtraction
 - _expr_ `-` _expr_

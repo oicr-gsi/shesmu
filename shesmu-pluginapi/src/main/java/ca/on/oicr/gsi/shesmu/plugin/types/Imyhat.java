@@ -222,6 +222,10 @@ public abstract class Imyhat {
               .collect(Collectors.joining());
     }
 
+    public Stream<Map.Entry<String, Pair<Imyhat, Integer>>> fields() {
+      return fields.entrySet().stream();
+    }
+
     public Imyhat get(String field) {
       return fields.getOrDefault(field, new Pair<>(BAD, 0)).first();
     }
@@ -325,6 +329,10 @@ public abstract class Imyhat {
 
     public Imyhat get(int index) {
       return index >= 0 && index < types.length ? types[index] : BAD;
+    }
+
+    public Stream<Imyhat> inner() {
+      return Stream.of(types);
     }
 
     @Override

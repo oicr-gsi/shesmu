@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = ({a = "hi", x = 4} + {b = False, m = 0}).m == 0;

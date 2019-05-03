@@ -24,6 +24,16 @@ public final class Tuple {
     this.elements = elements;
   }
 
+  /**
+   * Create a new tuple containing the all the elements from this tuple followed by all the elements
+   * of the supplied tuple.
+   */
+  public Tuple concat(Tuple other) {
+    final Object[] concat = Arrays.copyOf(elements, elements.length + other.elements.length);
+    System.arraycopy(other.elements, 0, concat, elements.length, other.elements.length);
+    return new Tuple(concat);
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
