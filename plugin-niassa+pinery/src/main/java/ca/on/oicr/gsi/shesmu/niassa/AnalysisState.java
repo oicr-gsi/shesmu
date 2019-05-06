@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 public class AnalysisState implements Comparable<AnalysisState> {
-  private final String fileSWIDSToRun;
+  private final Map<String, Set<String>> annotations;
+  private final Set<Integer> fileSWIDSToRun;
   private final Instant lastModified;
   private final List<LimsKey> limsKeys;
   private final SortedSet<String> majorOliveVersion;
@@ -24,15 +25,13 @@ public class AnalysisState implements Comparable<AnalysisState> {
         source
             .stream()
             .flatMap(s -> s.getWorkflowRunInputFileIds().stream())
-            .sorted()
-            .distinct()
-            .map(Object::toString)
-            .collect(Collectors.joining(","));
+            .collect(Collectors.toCollection(TreeSet::new));
     limsKeys =
         source
             .stream()
             .flatMap(s -> s.getIusLimsKeys().stream())
             .map(IusLimsKey::getLimsKey)
+            .map(SimpleLimsKey::new)
             .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
             .distinct()
             .collect(Collectors.toList());
@@ -58,33 +57,98 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .flatMap(
                 s ->
                     s.getWorkflowRunAttributes()
-                        .getOrDefault("magic", Collections.emptySortedSet())
+                        .getOrDefault(
+                            WorkflowAction.MAJOR_OLIVE_VERSION, Collections.emptySortedSet())
                         .stream())
             .collect(Collectors.toCollection(TreeSet::new));
+    annotations =
+        source
+            .stream()
+            .flatMap(
+                s ->
+                    s.getWorkflowRunAttributes()
+                        .entrySet()
+                        .stream()
+                        .filter(e -> !e.getKey().equals(WorkflowAction.MAJOR_OLIVE_VERSION))
+                        .flatMap(e -> e.getValue().stream().map(v -> new Pair<>(e.getKey(), v))))
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first, Collectors.mapping(Pair::second, Collectors.toSet())));
   }
 
-  public boolean compare(
+  /** Check how much this analysis record matches the data provided */
+  public WorkflowRunMatch compare(
       LongStream workflowAccessions,
       String majorOliveVersion,
-      String fileAccessions,
-      List<? extends LimsKey> limsKeys) {
+      Set<Integer> inputFiles,
+      List<? extends LimsKey> inputLimsKeys,
+      Map<String, String> annotations) {
+    // If the WF, version or input files doesn't match, bail
     if (workflowAccessions.noneMatch(a -> workflowAccession == a)
         || !this.majorOliveVersion.isEmpty() && !this.majorOliveVersion.contains(majorOliveVersion)
-        || !this.fileSWIDSToRun.equals(fileAccessions)
-        || this.limsKeys.size() != limsKeys.size()) {
-      return false;
+        || !annotations
+            .entrySet()
+            .stream()
+            .allMatch(
+                e ->
+                    this.annotations
+                        .getOrDefault(e.getKey(), Collections.emptySet())
+                        .contains(e.getValue()))
+        || !this.fileSWIDSToRun.containsAll(inputFiles)) {
+      return new WorkflowRunMatch(AnalysisComparison.DIFFERENT, this);
     }
-    for (int i = 0; i < limsKeys.size(); i++) {
-      final LimsKey a = this.limsKeys.get(i);
-      final LimsKey b = limsKeys.get(i);
-      if (!a.getProvider().equals(b.getProvider())
-          || !a.getId().equals(b.getId())
-          || !a.getVersion().equals(b.getVersion())
-          || !a.getLastModified().toInstant().equals(b.getLastModified().toInstant())) {
-        return false;
+
+    // Check all the LIMS keys. We run along two ordered lists of LIMS keys and count the number
+    // that match exactly and match partially
+    int loneProvenanceKeys = limsKeys.size();
+    int loneInputKeys = inputLimsKeys.size();
+    int matches = 0;
+    int stale = 0;
+    int provenanceIndex = 0;
+    int inputIndex = 0;
+    while (inputIndex < inputLimsKeys.size() && provenanceIndex < limsKeys.size()) {
+      final int comparison =
+          WorkflowAction.LIMS_ID_COMPARATOR.compare(
+              inputLimsKeys.get(inputIndex), limsKeys.get(provenanceIndex));
+      if (comparison == 0) {
+        // Match. Yay; advance both indices.
+        if (inputLimsKeys
+            .get(inputIndex)
+            .getVersion()
+            .equals(limsKeys.get(provenanceIndex).getVersion())) {
+          matches++;
+        } else {
+          stale++;
+        }
+        loneProvenanceKeys--;
+        provenanceIndex++;
+        loneInputKeys--;
+        inputIndex++;
+      } else if (comparison < 0) {
+        inputIndex++;
+      } else {
+        provenanceIndex++;
       }
     }
-    return true;
+    final AnalysisComparison comparison;
+    // There are matches and no left overs, we're an exact match
+    if (matches > 0 && stale == 0 && loneInputKeys == 0 && loneProvenanceKeys == 0) {
+      comparison = AnalysisComparison.EXACT;
+      // If there were no input files, this must mean it is a root workflow, so there should always
+      // be the LIMS key for the lane in common; if there are none, then these really don't match
+    } else if (inputFiles.isEmpty() && matches == 0 && stale == 0) {
+      comparison = AnalysisComparison.DIFFERENT;
+      // There's some overlap, so we need a human
+    } else {
+      comparison = AnalysisComparison.PARTIAL;
+    }
+    return new WorkflowRunMatch(
+        comparison,
+        this,
+        loneProvenanceKeys > 0,
+        loneInputKeys > 0,
+        stale > 0,
+        !this.fileSWIDSToRun.equals(inputFiles));
   }
 
   /** Sort so that the latest, most successful run is first. */

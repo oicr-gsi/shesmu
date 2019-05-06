@@ -1,20 +1,21 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
-import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class WorkflowConfiguration {
   private long accession;
-  private LanesType lanes;
+  private Map<String, String> annotations = Collections.emptyMap();
   private int maxInFlight;
   private String name;
   private IniParam<?>[] parameters;
   private long[] previousAccessions;
   private String[] services;
+  private InputLimsKeyType type;
 
   public void define(Definer<NiassaServer> definer) {
     final String description =
@@ -32,26 +33,17 @@ public class WorkflowConfiguration {
         name,
         description,
         WorkflowAction.class,
-        () -> new WorkflowAction(definer, getLanes(), accession, previousAccessions, services),
-        Stream.concat(makeLanesParam(), Stream.of(getParameters()).map(IniParam::parameter)));
-  }
-
-  Stream<CustomActionParameter<WorkflowAction, ?>> makeLanesParam() {
-    return getLanes() == null
-        ? Stream.empty()
-        : Stream.of(
-            new CustomActionParameter<WorkflowAction, Set<?>>(
-                "lanes", true, getLanes().innerType().asList()) {
-
-              @Override
-              public void store(WorkflowAction action, Set<?> lanes) {
-                action.lanes(lanes);
-              }
-            });
+        () -> new WorkflowAction(definer, accession, previousAccessions, services, annotations),
+        Stream.concat(
+            Stream.of(getType().parameter()), Stream.of(getParameters()).map(IniParam::parameter)));
   }
 
   public long getAccession() {
     return accession;
+  }
+
+  public Map<String, String> getAnnotations() {
+    return annotations;
   }
 
   public int getMaxInFlight() {
@@ -62,6 +54,10 @@ public class WorkflowConfiguration {
     return name;
   }
 
+  public IniParam<?>[] getParameters() {
+    return parameters;
+  }
+
   public long[] getPreviousAccessions() {
     return previousAccessions;
   }
@@ -70,8 +66,16 @@ public class WorkflowConfiguration {
     return services;
   }
 
+  public InputLimsKeyType getType() {
+    return type;
+  }
+
   public void setAccession(long accession) {
     this.accession = accession;
+  }
+
+  public void setAnnotations(Map<String, String> annotations) {
+    this.annotations = annotations;
   }
 
   public void setMaxInFlight(int maxInFlight) {
@@ -82,6 +86,10 @@ public class WorkflowConfiguration {
     this.name = name;
   }
 
+  public void setParameters(IniParam<?>[] parameters) {
+    this.parameters = parameters;
+  }
+
   public void setPreviousAccessions(long[] previousAccessions) {
     this.previousAccessions = previousAccessions;
   }
@@ -90,19 +98,7 @@ public class WorkflowConfiguration {
     this.services = services;
   }
 
-  public IniParam<?>[] getParameters() {
-    return parameters;
-  }
-
-  public void setParameters(IniParam<?>[] parameters) {
-    this.parameters = parameters;
-  }
-
-  public LanesType getLanes() {
-    return lanes;
-  }
-
-  public void setLanes(LanesType lanes) {
-    this.lanes = lanes;
+  public void setType(InputLimsKeyType type) {
+    this.type = type;
   }
 }

@@ -42,21 +42,6 @@ public final class IniParam<T> {
           return Imyhat.BOOLEAN;
         }
       };
-  /** Save a file SWID */
-  public static final Stringifier<String> FILE_SWID =
-      new Stringifier<String>() {
-
-        @Override
-        public String stringify(WorkflowAction action, String value) {
-          action.addFileSwid(value);
-          return value;
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.STRING;
-        }
-      };
   /** Save an integer in the way you'd expect */
   public static final Stringifier<Long> INTEGER =
       new Stringifier<Long>() {
@@ -69,21 +54,6 @@ public final class IniParam<T> {
         @Override
         public Imyhat type() {
           return Imyhat.INTEGER;
-        }
-      };
-  /** Save a processing SWID */
-  public static final Stringifier<String> PROCESSING_SWID =
-      new Stringifier<String>() {
-
-        @Override
-        public String stringify(WorkflowAction action, String value) {
-          action.addProcessingSwid(value);
-          return value;
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.STRING;
         }
       };
   /** Save a string exactly as it is passed by the user */
@@ -300,14 +270,10 @@ public final class IniParam<T> {
         switch (str) {
           case "boolean":
             return BOOLEAN;
-          case "fileSWID":
-            return FILE_SWID;
           case "integer":
             return INTEGER;
           case "path":
             return PATH;
-          case "processingSWID":
-            return PROCESSING_SWID;
           case "string":
             return STRING;
           default:

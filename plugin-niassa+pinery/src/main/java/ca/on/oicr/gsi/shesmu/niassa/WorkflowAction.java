@@ -1,15 +1,14 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
-import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import io.seqware.Engines;
@@ -38,10 +37,12 @@ import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
  */
 public final class WorkflowAction extends Action {
 
+  static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
+      Comparator.comparing(LimsKey::getProvider).thenComparing(LimsKey::getId);
+
   static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
-      Comparator.comparing(LimsKey::getProvider)
-          .thenComparing(LimsKey::getId)
-          .thenComparing(LimsKey::getVersion);
+      LIMS_ID_COMPARATOR.thenComparing(LimsKey::getVersion);
+  public static final String MAJOR_OLIVE_VERSION = "major_olive_version";
 
   private static final Gauge runCreated =
       Gauge.build("shesmu_niassa_run_created", "The number of workflow runs launched.")
@@ -54,44 +55,31 @@ public final class WorkflowAction extends Action {
           .labelNames("target", "workflow")
           .create();
   private Optional<Instant> externalTimestamp = Optional.empty();
-  private String fileAccessions;
-  private final Set<Integer> fileSwids = new TreeSet<>();
   private boolean hasLaunched;
   Properties ini = new Properties();
-  private final LanesType lanesType;
   private ActionState lastState = ActionState.UNKNOWN;
-  private List<StringableLimsKey> limsKeys = Collections.emptyList();
+  private InputLimsCollection limsKeysCollection;
   private long majorOliveVersion;
-  private final Set<Integer> parentSwids = new TreeSet<>();
+  private List<WorkflowRunMatch> matches = Collections.emptyList();
   private final long[] previousAccessions;
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final Set<String> services;
+  private final Map<String, String> annotations;
   private final long workflowAccession;
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
-      LanesType laneType,
       long workflowAccession,
       long[] previousAccessions,
-      String[] services) {
+      String[] services,
+      Map<String, String> annotations) {
     super("niassa");
     this.server = server;
-    this.lanesType = laneType;
     this.workflowAccession = workflowAccession;
     this.previousAccessions = previousAccessions;
     this.services = Stream.of(services).collect(Collectors.toSet());
-  }
-
-  @Override
-  public void accepted() {}
-
-  final void addFileSwid(String id) {
-    fileSwids.add(Integer.parseUnsignedInt(id));
-  }
-
-  final void addProcessingSwid(String id) {
-    parentSwids.add(Integer.parseUnsignedInt(id));
+    this.annotations = annotations;
   }
 
   @Override
@@ -101,9 +89,7 @@ public final class WorkflowAction extends Action {
     WorkflowAction that = (WorkflowAction) o;
     return majorOliveVersion == that.majorOliveVersion
         && workflowAccession == that.workflowAccession
-        && Objects.equals(fileSwids, that.fileSwids)
-        && Objects.equals(parentSwids, that.parentSwids)
-        && Objects.equals(limsKeys, that.limsKeys);
+        && Objects.equals(limsKeysCollection, that.limsKeysCollection);
   }
 
   @Override
@@ -113,23 +99,11 @@ public final class WorkflowAction extends Action {
 
   @Override
   public int hashCode() {
-    return Objects.hash(fileSwids, majorOliveVersion, parentSwids, workflowAccession, limsKeys);
+    return Objects.hash(majorOliveVersion, workflowAccession, limsKeysCollection);
   }
 
-  @ActionParameter(type = "as", required = false)
-  public void input_files(Set<String> ids) {
-    for (final String id : ids) {
-      addFileSwid(id);
-    }
-  }
-
-  void lanes(Set<?> input) {
-    limsKeys =
-        input
-            .stream()
-            .map(lanesType::makeLimsKey)
-            .sorted(LIMS_KEY_COMPARATOR)
-            .collect(Collectors.toList());
+  void limsKeyCollection(InputLimsCollection limsKeys) {
+    this.limsKeysCollection = limsKeys;
   }
 
   @ActionParameter(name = "major_olive_version")
@@ -143,6 +117,9 @@ public final class WorkflowAction extends Action {
     if (actionServices.isOverloaded(services)) {
       return ActionState.THROTTLED;
     }
+    if (limsKeysCollection.shouldHalp()) {
+      return ActionState.HALP;
+    }
     try {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
@@ -155,7 +132,9 @@ public final class WorkflowAction extends Action {
                         FileProvenanceFilter.workflow_run,
                         Collections.singleton(Integer.toString(runAccession))))
                 .stream()
-                .findFirst();
+                .max(
+                    Comparator.nullsFirst(
+                        Comparator.comparing(ap -> ap.getLastModified().toInstant())));
         final ActionState state =
             provenance
                 .map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus()))
@@ -165,13 +144,25 @@ public final class WorkflowAction extends Action {
           externalTimestamp = provenance.map(ap -> ap.getLastModified().toInstant());
           // When we are getting the analysis state, we are bypassing the analysis cache, so we may
           // see a state transition before any of our sibling workflow runs. If we see that happen,
-          // zap the cache so they will see it.
-          server.get().analysisCache().invalidate(workflowAccession);
+          // zap the cache so they will see it. We may have selected a previous workflow run, so zap
+          // the right cache.
+          provenance
+              .map(ap -> (long) ap.getWorkflowId())
+              .ifPresent(server.get().analysisCache()::invalidate);
         }
         return state;
       }
       // Read the analysis provenance cache to determine if this workflow has already been run
-      final Optional<AnalysisState> current =
+      final Set<Integer> inputFileSWIDs =
+          limsKeysCollection.fileSwids().collect(Collectors.toSet());
+      final List<? extends LimsKey> limsKeys =
+          limsKeysCollection
+              .limsKeys()
+              .map(SimpleLimsKey::new)
+              .sorted(LIMS_KEY_COMPARATOR)
+              .distinct()
+              .collect(Collectors.toList());
+      matches =
           workflowAccessions()
               .boxed()
               .flatMap(
@@ -180,21 +171,28 @@ public final class WorkflowAction extends Action {
                           .get()
                           .analysisCache()
                           .get(accession)
-                          .filter(
+                          .map(
                               as ->
                                   as.compare(
                                       workflowAccessions(),
                                       Long.toString(majorOliveVersion),
-                                      fileAccessions,
-                                      limsKeys)))
+                                      inputFileSWIDs,
+                                      limsKeys,
+                                      annotations)))
+              .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
               .sorted()
-              .findFirst();
-      if (current.isPresent()) {
-        // We found a matching workflow run in analysis provenance
-        runAccession = current.get().workflowRunAccession();
-        externalTimestamp = current.map(AnalysisState::lastModified);
-        final ActionState state = current.get().state();
-        return state;
+              .collect(Collectors.toList());
+      if (!matches.isEmpty()) {
+        // We found a matching workflow run in analysis provenance; the least stale, most complete,
+        // newest workflow is selected; if that workflow run is stale, we know there are no better
+        // candidates and we should ignore the workflow run's state and complain.
+        final WorkflowRunMatch match = matches.get(0);
+        if (match.comparison() == AnalysisComparison.EXACT) {
+          // Don't associate with this workflow because we don't want to get ourselves to this state
+          runAccession = match.state().workflowRunAccession();
+        }
+        externalTimestamp = Optional.ofNullable(match.state().lastModified());
+        return match.actionState();
       }
 
       // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
@@ -209,79 +207,29 @@ public final class WorkflowAction extends Action {
         return ActionState.WAITING;
       }
 
-      final List<String> iusAccessions;
-      if (lanesType != null) {
-        final List<Pair<Integer, StringableLimsKey>> iusLimsKeys =
-            limsKeys
-                .stream()
-                .map(
-                    key ->
-                        new Pair<>(
-                            server
-                                .get()
-                                .metadata()
-                                .addIUS(
-                                    server
-                                        .get()
-                                        .metadata()
-                                        .addLimsKey(
-                                            key.getProvider(),
-                                            key.getId(),
-                                            key.getVersion(),
-                                            key.getLastModified()),
-                                    false),
-                            key))
-                .collect(Collectors.toList());
-        ini.setProperty(
-            "lanes",
-            iusLimsKeys
-                .stream()
-                .map(p -> p.second().asLaneString(p.first()))
-                .collect(Collectors.joining(lanesType.delimiter())));
-        iusAccessions =
-            iusLimsKeys
-                .stream()
-                .map(Pair::first)
-                .sorted()
-                .map(Object::toString)
-                .collect(Collectors.toList());
-      } else {
-        iusAccessions = Collections.emptyList();
-      }
-
-      final List<String> fileLimsKeyAccessions =
-          fileSwids
-              .stream()
-              .flatMap(
-                  fileSwid -> {
-                    final Map<FileProvenanceFilter, Set<String>> query =
-                        new EnumMap<>(FileProvenanceFilter.class);
-                    query.put(
-                        FileProvenanceFilter.file,
-                        Collections.singleton(Integer.toString(fileSwid)));
-                    return server.get().metadata().getAnalysisProvenance(query).stream();
-                  })
-              .flatMap(ap -> ap.getIusLimsKeys().stream())
-              .map(IusLimsKey::getLimsKey)
-              .sorted(LIMS_KEY_COMPARATOR)
-              .distinct()
-              .map(
-                  key ->
-                      Integer.toString(
-                          server
-                              .get()
-                              .metadata()
-                              .addIUS(
-                                  server
-                                      .get()
-                                      .metadata()
-                                      .addLimsKey(
-                                          key.getProvider(),
-                                          key.getId(),
-                                          key.getVersion(),
-                                          key.getLastModified()),
-                                  false)))
-              .collect(Collectors.toList());
+      // Tell the input LIMS collection to register all the LIMS keys and prepare the INI file as
+      // appropriate. We provide a callback to do the registration, keep track of all registered IUS
+      // accessions to automatically associate them with the workflow run, deduplicate them.
+      final Map<SimpleLimsKey, Integer> iusAccessions = new HashMap<>();
+      limsKeysCollection.prepare(
+          key ->
+              iusAccessions.computeIfAbsent(
+                  new SimpleLimsKey(key),
+                  k ->
+                      server
+                          .get()
+                          .metadata()
+                          .addIUS(
+                              server
+                                  .get()
+                                  .metadata()
+                                  .addLimsKey(
+                                      k.getProvider(),
+                                      k.getId(),
+                                      k.getVersion(),
+                                      k.getLastModified()),
+                              false)),
+          ini);
 
       final File iniFile = File.createTempFile("niassa", ".ini");
       iniFile.deleteOnExit();
@@ -306,8 +254,11 @@ public final class WorkflowAction extends Action {
                     Long.toString(workflowAccession),
                     Collections.singletonList(iniFile.getAbsolutePath()),
                     true,
-                    parentSwids.stream().map(Object::toString).collect(Collectors.toList()),
-                    Stream.concat(iusAccessions.stream(), fileLimsKeyAccessions.stream())
+                    Collections.emptyList(),
+                    iusAccessions
+                        .values()
+                        .stream()
+                        .map(Object::toString)
                         .collect(Collectors.toList()),
                     Collections.emptyList(),
                     server.get().host(),
@@ -317,15 +268,22 @@ public final class WorkflowAction extends Action {
                         .getProperty(
                             SqwKeys.SW_DEFAULT_WORKFLOW_ENGINE.getSettingKey(),
                             Engines.DEFAULT_ENGINE),
-                    fileSwids)
+                    limsKeysCollection.fileSwids().collect(Collectors.toSet()))
                 .getReturnValue();
+        hasLaunched = true;
         // Zap the cache so any other workflows will see this workflow running and won't exceed our
         // budget
         server.get().analysisCache().invalidate(workflowAccession);
-        WorkflowRunAttribute attribute = new WorkflowRunAttribute();
-        attribute.setTag("major_olive_version");
+        final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+        attribute.setTag(MAJOR_OLIVE_VERSION);
         attribute.setValue(Long.toString(majorOliveVersion));
         server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+        for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
+          WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
+          userAttribute.setTag(annotation.getKey());
+          userAttribute.setValue(annotation.getValue());
+          server.get().metadata().annotateWorkflowRun(runAccession, userAttribute, null);
+        }
         success = runAccession != 0;
         externalTimestamp = Optional.of(Instant.now());
       } catch (Exception e) {
@@ -339,7 +297,6 @@ public final class WorkflowAction extends Action {
       (success ? runCreated : runFailed)
           .labels(server.get().url(), Long.toString(workflowAccession))
           .inc();
-      hasLaunched = true;
       lastState = success ? ActionState.QUEUED : ActionState.FAILED;
       return lastState;
     } catch (final Exception e) {
@@ -347,12 +304,6 @@ public final class WorkflowAction extends Action {
       // This might leak in-flight locks, but that's safe
       return ActionState.FAILED;
     }
-  }
-
-  @Override
-  public final void prepare() {
-    fileAccessions =
-        fileSwids.stream().sorted().map(Object::toString).collect(Collectors.joining(","));
   }
 
   @Override
@@ -367,15 +318,24 @@ public final class WorkflowAction extends Action {
 
   @Override
   public boolean search(Pattern query) {
-    return ini.values().stream().anyMatch(v -> query.matcher(v.toString()).matches());
+    return ini.values().stream().anyMatch(v -> query.matcher(v.toString()).matches())
+        || (runAccession != 0 && query.matcher(Integer.toString(runAccession)).matches())
+        || limsKeysCollection.matches(query)
+        || matches
+            .stream()
+            .anyMatch(
+                match ->
+                    query
+                        .matcher(Integer.toString(match.state().workflowRunAccession()))
+                        .matches());
   }
 
   @Override
   public final ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
     node.put("majorOliveVersion", majorOliveVersion);
-    limsKeys
-        .stream()
+    limsKeysCollection
+        .limsKeys()
         .map(
             k -> {
               final ObjectNode key = mapper.createObjectNode();
@@ -393,10 +353,11 @@ public final class WorkflowAction extends Action {
       node.put("workflowRunAccession", runAccession);
     }
 
-    fileSwids.forEach(node.putArray("fileAccessions")::add);
-    parentSwids.forEach(node.putArray("parentAccessions")::add);
     final ObjectNode iniNode = node.putObject("ini");
     ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
+    final ArrayNode matches = node.putArray("matches");
+    this.matches.forEach(match -> matches.add(match.toJson(mapper)));
+    this.annotations.forEach(node.putObject("annotations")::put);
 
     return node;
   }

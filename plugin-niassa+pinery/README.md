@@ -64,7 +64,7 @@ format:
 
     {
       "accession": 1234,
-      "lanes": null,
+      "type": "FILES",
       "maxInFlight": 3,
       "name": "my_workflow",
       "parameters": [],
@@ -74,17 +74,17 @@ format:
       ]
     }
 
-The `accession` is the workflow SWID. `lanes` describes the `lanes` INI
-parameter for top-level Niassa workflows (_e.g._, BCL2FASTQ, CellRanger). For
-most workflows, this should be null. Currently, only `"CELL_RANGER"` is
-supported. When finding existing workflow runs that match, the `accession` is
-used; any alternate accessions that should be considered equivalent can be put
-in the `previousAccessions` array. The `maxInFlight` is a best-effort attempt
-to limit the number of simultaneous workflow runs launch by this olive. The
-`services` list is the name of services presented to throttlers to block
-launching of this workflow. The `parameters` array describes all the INI
-parameters and how they should be available to olives. Each parameter is
-defined as follows:
+The `accession` is the workflow SWID. `type` describes how LIMS keys will be
+associated with the Niassa workflows (_e.g._, non-top-level,  BCL2FASTQ,
+CellRanger). For most workflows, this should be `"FILES"`. Currently,
+`"CELL_RANGER"` is the only other supported value. When finding existing
+workflow runs that match, the `accession` is used; any alternate accessions
+that should be considered equivalent can be put in the `previousAccessions`
+array. The `maxInFlight` is a best-effort attempt to limit the number of
+simultaneous workflow runs launched by this olive. The `services` list is the
+name of services presented to throttlers to block launching of this workflow.
+The `parameters` array describes all the INI parameters and how they should be
+available to olives. Each parameter is defined as follows:
  
         {
           "name": "foo",
@@ -101,10 +101,8 @@ type and how that will be converted to the INI file. The following simple types
 are available:
 
 - `boolean`: treated as a Shesmu boolean and set in the INI file as `true` or `false`
-- `fileSWID`: treated in Shesmu as a string and set in the INI file as the same, but also added to the input file SWID list
 - `integer`: treated in Shesmu and the INI file as an integer
 - `path`: treated in Shesmu as a path and as a string in the INI file
-- `processingSWID`: treated in Shesmu as a string and set in the INI file as the same, but also added to the input processing SWID list
 - `string`: treated as as a string in both Shesmu and the INI file
 - a number: treated as an integer in Shesmu; in the INI, the value provided by the olive is divided by this number. Since Shesmu provides convenient suffixes for units of data and time, this allows everything in Shesmu to be done in bytes and seconds and then corrected to the units provided. So, if the units in the INI file should be minutes, setting `60` will allow setting the units in second in Shesmu and having that rounded up to the nearest minute in the INI file
 
