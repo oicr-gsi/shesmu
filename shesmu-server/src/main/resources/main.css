@@ -121,6 +121,12 @@ a.load {
     background-color: #F9DDDB;
 }
 
+.state_halp, #currentStates > span.halp, #newStates > span.halp {
+    border: 1px solid #E0493B;
+    background-color: #B83C31;
+    color: #FFF;
+}
+
 .state_inflight, #currentStates > span.inflight, #newStates > span.inflight {
     border: 1px solid #04AA9D;
     background-color: #D1EFED;
@@ -169,6 +175,18 @@ a.load {
 }
 
 .action.state_unknown a:hover, .actionstate_failed a.:hover, .action.state_unknown a:active, .actionstate_failed a.:active {
+    color: #E56A5E;
+}
+
+.action.state_halp a:link {
+    color: #F9DDDB;
+}
+
+.action.state_halp a:visited {
+    color: #E0493B;
+}
+
+.action.state_halp a:hover, .actionstate_halp a.active {
     color: #E56A5E;
 }
 
@@ -221,6 +239,11 @@ a.load {
 
 .action.state_failed :first-child::before {
     content: "Failed 💔";
+    color: #E0493B;
+}
+
+.action.state_halp :first-child::before {
+    content: "Halp 🚒";
     color: #E0493B;
 }
 

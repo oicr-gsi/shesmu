@@ -333,6 +333,7 @@ export const parser = {
 
 const actionStates = [
   "FAILED",
+  "HALP",
   "INFLIGHT",
   "QUEUED",
   "SUCCEEDED",

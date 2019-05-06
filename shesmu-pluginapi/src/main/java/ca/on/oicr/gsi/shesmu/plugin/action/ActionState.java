@@ -4,6 +4,13 @@ package ca.on.oicr.gsi.shesmu.plugin.action;
 public enum ActionState {
   /** The action has been attempted and encounter an error (possibly recoverable). */
   FAILED(3),
+  /**
+   * The action is in a state where it needs human attention or intervention to correct itself.
+   *
+   * <p>Usually, this means that the action has tried to recover state and found itself in an
+   * inconsistent state that it can't recover from without doing something dangerous.
+   */
+  HALP(2),
   /** The action is currently being executed. */
   INFLIGHT(2),
   /** The action is waiting for a remote system to start it. */
