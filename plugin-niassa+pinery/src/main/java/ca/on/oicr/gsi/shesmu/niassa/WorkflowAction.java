@@ -53,14 +53,13 @@ public final class WorkflowAction extends Action {
               "shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
           .labelNames("target", "workflow")
           .create();
-
+  private Optional<Instant> externalTimestamp = Optional.empty();
   private String fileAccessions;
-
   private final Set<Integer> fileSwids = new TreeSet<>();
-
   private boolean hasLaunched;
   Properties ini = new Properties();
   private final LanesType lanesType;
+  private ActionState lastState = ActionState.UNKNOWN;
   private List<StringableLimsKey> limsKeys = Collections.emptyList();
   private long majorOliveVersion;
   private final Set<Integer> parentSwids = new TreeSet<>();
@@ -68,15 +67,7 @@ public final class WorkflowAction extends Action {
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final Set<String> services;
-  private ActionState lastState = ActionState.UNKNOWN;
   private final long workflowAccession;
-
-  @Override
-  public Optional<Instant> externalTimestamp() {
-    return externalTimestamp;
-  }
-
-  private Optional<Instant> externalTimestamp = Optional.empty();
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
@@ -116,8 +107,20 @@ public final class WorkflowAction extends Action {
   }
 
   @Override
+  public Optional<Instant> externalTimestamp() {
+    return externalTimestamp;
+  }
+
+  @Override
   public int hashCode() {
     return Objects.hash(fileSwids, majorOliveVersion, parentSwids, workflowAccession, limsKeys);
+  }
+
+  @ActionParameter(type = "as", required = false)
+  public void input_files(Set<String> ids) {
+    for (final String id : ids) {
+      addFileSwid(id);
+    }
   }
 
   void lanes(Set<?> input) {
