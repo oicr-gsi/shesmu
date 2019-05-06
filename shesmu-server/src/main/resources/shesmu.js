@@ -331,16 +331,21 @@ export const parser = {
   }
 };
 
-const actionStates = [
-  "FAILED",
-  "HALP",
-  "INFLIGHT",
-  "QUEUED",
-  "SUCCEEDED",
-  "THROTTLED",
-  "UNKNOWN",
-  "WAITING"
-];
+const actionStates = {
+  FAILED:
+    "The action has been attempted and encounter an error (possibly recoverable).",
+  HALP:
+    "The action is in a state where it needs human attention or intervention to correct itself.\nUsually, this means that the action has tried to recover state and found itself in an inconsistent state that it can't recover from without doing something dangerous.",
+  INFLIGHT: "The action is currently being executed.",
+  QUEUED: "The action is waiting for a remote system to start it.",
+  SUCCEEDED: "The action is complete.",
+  THROTTLED:
+    "The action is being rate limited by a Shesmu throttler or by an over-capacity signal from the remote system.",
+  UNKNOWN:
+    "The actions state is not currently known either due to an error or not having been attempted. It may have thrown an exception during execution.",
+  WAITING:
+    "The action cannot be started due to a resource being unavailable.\nThis is slightly different from THROTTLED, which indicates this action could be run if there were capacity, while this indicates that the action can't be run right now even if capacity is available. This might be due to needing another action to complete or requiring user intervention."
+};
 
 const timeUnits = {
   milliseconds: 1,
@@ -357,7 +362,14 @@ const locations = new Map();
 const selectedStates = new Map();
 let availableLocations;
 
-function clearSelectableMap(currentId, newId, stateMap, source, classForItem) {
+function clearSelectableMap(
+  currentId,
+  newId,
+  stateMap,
+  source,
+  classForItem,
+  titleForItem
+) {
   stateMap.clear();
   for (const item of source) {
     stateMap.set(item, false);
@@ -373,6 +385,7 @@ function clearSelectableMap(currentId, newId, stateMap, source, classForItem) {
       const element = document.createElement("SPAN");
       element.innerText = entry[0] + " ";
       element.className = classForItem(entry[0]);
+      element.title = titleForItem(entry[0]);
       (entry[1] ? currentElement : newElement).appendChild(element);
       const toggle = () => {
         stateMap.set(entry[0], !entry[1]);
@@ -398,6 +411,7 @@ function clearTypes() {
     "newTypes",
     types,
     Array.from(actionRender.keys()).sort(),
+    type => "",
     type => ""
   );
 }
@@ -408,7 +422,14 @@ function clearLocations() {
     "newLocations",
     locations,
     availableLocations.keys(),
-    element => null
+    element => null,
+    element => {
+      const location = availableLocations.get(element);
+      return `Filename: ${location.file}\nLine: ${location.line ||
+        "Any"}\nColumn: ${location.column || "Any"}\nBuild Time: ${
+        location.time ? new Date(location.time).toString() : "Any"
+      }`;
+    }
   );
 }
 
@@ -417,8 +438,9 @@ function clearStates() {
     "currentStates",
     "newStates",
     selectedStates,
-    actionStates,
-    state => `${state.toLowerCase()}`
+    Object.keys(actionStates),
+    state => state.toLowerCase(),
+    state => actionStates[state]
   );
 }
 
