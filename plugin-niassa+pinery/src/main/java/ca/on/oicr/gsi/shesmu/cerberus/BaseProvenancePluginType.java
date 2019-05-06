@@ -17,6 +17,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,7 +44,10 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
         return client
             .map(BaseProvenancePluginType.this::fetch)
             .orElseGet(Stream::empty)
-            .filter(fp -> fp.getSkip() == null || fp.getSkip().equals("false"))
+            .filter(
+                fp ->
+                    (fp.getSkip() == null || fp.getSkip().equals("false"))
+                        && fp.getStatus() != FileProvenance.Status.ERROR)
             .map(
                 fp -> {
                   final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
@@ -110,13 +114,18 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           new Tuple(
                               limsKey.map(LimsKey::getId).orElse(""),
                               limsKey.map(LimsKey::getVersion).orElse(""),
-                              limsKey.map(LimsKey::getProvider).orElse("")),
+                              limsKey.map(LimsKey::getProvider).orElse(""),
+                              limsKey
+                                  .map(LimsKey::getLastModified)
+                                  .map(ZonedDateTime::toInstant)
+                                  .orElse(Instant.EPOCH)),
                           fp.getLastModified().toInstant(),
+                          fp.getStatus() == FileProvenance.Status.STALE,
                           "file_provenance");
 
                   if (!badSetInRecord.isEmpty()) {
                     badSets.incrementAndGet();
-                    badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
+                    badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, Integer::sum));
                     return null;
                   }
                   return badRecord.get() ? null : result;

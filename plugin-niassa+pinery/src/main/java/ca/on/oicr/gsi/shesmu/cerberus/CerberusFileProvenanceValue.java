@@ -31,6 +31,7 @@ public final class CerberusFileProvenanceValue {
   private final Path path;
   private final String project;
   private final String source;
+  private final boolean stale;
   private final String targeted_resequencing;
   private final Instant timestamp;
   private final String tissue_origin;
@@ -69,6 +70,7 @@ public final class CerberusFileProvenanceValue {
       Instant timestamp,
       Tuple lims,
       Instant completed_date,
+      boolean stale,
       String source) {
     super();
     this.accession = accession;
@@ -98,6 +100,7 @@ public final class CerberusFileProvenanceValue {
     this.timestamp = timestamp;
     this.lims = lims;
     this.completed_date = completed_date;
+    this.stale = stale;
     this.source = source;
   }
 
@@ -123,6 +126,7 @@ public final class CerberusFileProvenanceValue {
     CerberusFileProvenanceValue that = (CerberusFileProvenanceValue) o;
     return file_size == that.file_size
         && library_size == that.library_size
+        && stale == that.stale
         && accession.equals(that.accession)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
@@ -188,6 +192,7 @@ public final class CerberusFileProvenanceValue {
         path,
         project,
         source,
+        stale,
         targeted_resequencing,
         timestamp,
         tissue_origin,
@@ -229,7 +234,7 @@ public final class CerberusFileProvenanceValue {
     return library_type;
   }
 
-  @ShesmuVariable(type = "t3sss")
+  @ShesmuVariable(type = "t4sssd")
   public Tuple lims() {
     return lims;
   }
@@ -262,6 +267,11 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable
   public String source() {
     return source;
+  }
+
+  @ShesmuVariable
+  public boolean stale() {
+    return stale;
   }
 
   @ShesmuVariable(signable = true)

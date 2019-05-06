@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Set;
@@ -13,50 +14,20 @@ import java.util.Set;
  * @param <T> the Java type being exported to Shesmu
  */
 public interface TypeGuarantee<T> {
-  TypeGuarantee<Boolean> BOOLEAN =
-      new TypeGuarantee<Boolean>() {
+  TypeGuarantee<Boolean> BOOLEAN = () -> Imyhat.BOOLEAN;
+  TypeGuarantee<Instant> DATE = () -> Imyhat.DATE;
+  TypeGuarantee<Long> LONG = () -> Imyhat.INTEGER;
+  TypeGuarantee<Path> PATH = () -> Imyhat.PATH;
+  TypeGuarantee<String> STRING = () -> Imyhat.STRING;
 
-        @Override
-        public Imyhat type() {
-          return Imyhat.BOOLEAN;
-        }
-      };
-  TypeGuarantee<Instant> DATE =
-      new TypeGuarantee<Instant>() {
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.DATE;
-        }
-      };
-  TypeGuarantee<Long> LONG =
-      new TypeGuarantee<Long>() {
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.INTEGER;
-        }
-      };
-  TypeGuarantee<Path> PATH =
-      new TypeGuarantee<Path>() {
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.PATH;
-        }
-      };
-  TypeGuarantee<String> STRING =
-      new TypeGuarantee<String>() {
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.STRING;
-        }
-      };
-
-  public static <T> TypeGuarantee<Set<T>> list(TypeGuarantee<T> inner) {
+  static <T> TypeGuarantee<Set<T>> list(TypeGuarantee<T> inner) {
     final Imyhat listType = inner.type().asList();
     return () -> listType;
+  }
+
+  static TypeGuarantee<Tuple> tuple(Imyhat... elements) {
+    final Imyhat tupleType = Imyhat.tuple(elements);
+    return () -> tupleType;
   }
 
   Imyhat type();
