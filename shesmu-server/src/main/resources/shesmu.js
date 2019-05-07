@@ -361,6 +361,8 @@ const types = new Map();
 const locations = new Map();
 const selectedStates = new Map();
 let availableLocations;
+let closeActiveMenu = () => {};
+let activeMenu = null;
 
 function clearSelectableMap(
   currentId,
@@ -377,6 +379,36 @@ function clearSelectableMap(
 
   const currentElement = document.getElementById(currentId);
   const newElement = document.getElementById(newId);
+  let open = false;
+  newElement.className = "ready";
+  newElement.parentNode.onclick = e => {
+    if (e.target == newElement.parentNode || e.target == newElement) {
+      if (open) {
+        open = false;
+        closeActiveMenu(false);
+        return;
+      }
+      closeActiveMenu(true);
+      open = true;
+      newElement.className = "forceOpen";
+      activeMenu = newElement;
+      closeActiveMenu = external => {
+        newElement.className = external ? "ready" : "";
+        open = false;
+        activeMenu = null;
+      };
+    }
+  };
+  newElement.parentNode.onmouseover = e => {
+    if (e.target == newElement.parentNode && !open) {
+      closeActiveMenu(true);
+    }
+  };
+  newElement.parentNode.onmouseout = () => {
+    if (!open) {
+      newElement.className = "ready";
+    }
+  };
 
   function redraw() {
     clearChildren(currentElement);
@@ -387,9 +419,10 @@ function clearSelectableMap(
       element.className = classForItem(entry[0]);
       element.title = titleForItem(entry[0]);
       (entry[1] ? currentElement : newElement).appendChild(element);
-      const toggle = () => {
+      const toggle = e => {
         stateMap.set(entry[0], !entry[1]);
         redraw();
+        e.stopPropagation();
       };
       if (entry[1]) {
         const removeElement = document.createElement("SPAN");
@@ -445,29 +478,91 @@ function clearStates() {
 }
 
 let selectedSavedSearch = null;
-
+function makeDropDown(activeElement, listElement, setter, isDefault, items) {
+  let open = false;
+  activeElement.parentNode.onclick = e => {
+    if (e.target == activeElement.parentNode || e.target == activeElement) {
+      if (open) {
+        open = false;
+        closeActiveMenu(false);
+        return;
+      }
+      closeActiveMenu(true);
+      open = true;
+      listElement.className = "forceOpen";
+      activeMenu = activeElement;
+      closeActiveMenu = external => {
+        listElement.className = external ? "ready" : "";
+        open = false;
+        activeMenu = null;
+      };
+    }
+  };
+  activeElement.parentNode.onmouseover = e => {
+    if (e.target == listElement.parentNode && !open) {
+      closeActiveMenu(true);
+    }
+  };
+  activeElement.parentNode.onmouseout = () => {
+    if (!open) {
+      listElement.className = "ready";
+    }
+  };
+  for (const item of items) {
+    const element = document.createElement("SPAN");
+    element.innerText = item[0];
+    element.onclick = e => {
+      setter(item[1]);
+      activeElement.innerText = item[0];
+      if (open) {
+        closeActiveMenu(false);
+      }
+    };
+    if (isDefault(item)) {
+      setter(item[1]);
+      activeElement.innerText = item[0];
+    }
+    listElement.appendChild(element);
+  }
+}
 export function initialiseActionDash(definedLocations, serverSearches) {
+  document.addEventListener("click", e => {
+    if (activeMenu != null) {
+      for (
+        let targetElement = e.target;
+        targetElement;
+        targetElement = targetElement.parentNode
+      ) {
+        if (targetElement == activeMenu.parentNode) {
+          return;
+        }
+      }
+      closeActiveMenu(true);
+    }
+  });
+
   availableLocations = new Map(
     Object.entries(definedLocations).sort(entry => entry[0])
   );
-  const searchTypeElement = document.getElementById("searchType");
-  const searchTypesElement = document.getElementById("searchTypes");
-  for (const searchDescription of [
-    ["text", "Text (Case-sensitive)", true],
-    ["texti", "Text (Case-insensitive)", false],
-    ["regex", "Regular Expression", false]
-  ]) {
-    const element = document.createElement("SPAN");
-    element.innerText = searchDescription[1];
-    element.onclick = e => {
-      searchType = searchDescription[0];
-      searchTypeElement.innerText = searchDescription[1];
-    };
-    if (searchDescription[2]) {
-      element.onclick(null);
-    }
-    searchTypesElement.appendChild(element);
-  }
+  makeDropDown(
+    document.getElementById("searchType"),
+    document.getElementById("searchTypes"),
+    x => (searchType = x),
+    item => item[2],
+    [
+      [
+        "Text (Case-sensitive)",
+        text => ({ type: "text", matchCase: true, text: text }),
+        true
+      ],
+      [
+        "Text (Case-insensitive)",
+        text => ({ type: "text", matchCase: false, text: text }),
+        false
+      ],
+      ["Regular Expression", text => ({ type: "regex", pattern: text }), false]
+    ]
+  );
   document
     .getElementById("clearStatesButton")
     .addEventListener("click", clearStates);
@@ -538,24 +633,14 @@ export function initialiseActionDash(definedLocations, serverSearches) {
   }
   clearStates();
   clearTypes();
-
   for (const span of timeSpans) {
-    const currentUnit = document.getElementById(`${span}AgoUnit`);
-    const unitList = document.getElementById(`${span}AgoUnits`);
-    for (const [name, multiplier] of Object.entries(timeUnits).sort(
-      x => x[1]
-    )) {
-      const unitElement = document.createElement("SPAN");
-      unitElement.innerText = name;
-      unitElement.onclick = () => {
-        selectedAgoUnit.set(span, multiplier);
-        currentUnit.innerText = name;
-      };
-      unitList.appendChild(unitElement);
-      if (name == "hours") {
-        unitElement.onclick();
-      }
-    }
+    makeDropDown(
+      document.getElementById(`${span}AgoUnit`),
+      document.getElementById(`${span}AgoUnits`),
+      multiplier => selectedAgoUnit.set(span, multiplier),
+      item => item[0] == "hours",
+      Object.entries(timeUnits).sort(x => x[1])
+    );
   }
 
   const customSearchPane = document.getElementById("customSearchPane");
@@ -811,17 +896,7 @@ function makeFilters() {
 
   const text = document.getElementById("searchText").value.trim();
   if (text) {
-    switch (searchType) {
-      case "text":
-        filters.push({ type: "text", matchCase: true, text: text });
-        break;
-      case "texti":
-        filters.push({ type: "text", matchCase: false, text: text });
-        break;
-      case "regex":
-        filters.push({ type: "regex", pattern: text });
-        break;
-    }
+    filters.push(searchType(text));
   }
   return filters;
 }

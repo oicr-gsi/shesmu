@@ -18,7 +18,7 @@ a:hover text, a:active text {
     white-space: nowrap;
 }
 
-.load, a.load:link, a.load:visited, .add {
+.load, a.load:link, a.load:visited, .dropdown {
     font-weight: 700;
     color: #fff;
     background-color: #04AA9D;
@@ -46,12 +46,12 @@ a.load {
     box-shadow: 0em 0em 5px 0px rgba(0,0,0,0.1);
 }
 
-.load.accessory, a.load.accessory:link, a.load.accessory:visited, .add {
+.load.accessory, a.load.accessory:link, a.load.accessory:visited,  .dropdown {
     background-color: #06AED5;
     border-color: #06AED5;
 }
 
-.load.accessory:hover, a.load.accessory:hover, .add:hover {
+.load.accessory:hover, a.load.accessory:hover,  .dropdown:hover {
     background-color: #058FAF;
     border-color: #058FAF;
 }
@@ -65,23 +65,26 @@ a.load {
     background-color: #B83C31;
 }
 
-.add > div {
+.dropdown > div {
     position: absolute;
     min-width: 200px;
     background-color: #fff;
     border: 1px solid #058FAF;
     box-shadow: 0.2em 0.2em 5px 0px rgba(0,0,0,0.1);
     z-index: 1000;
-    display: none;
+    visibility: hidden;
+    opacity: 0;
     border-radius: 0.1em;
     font-weight: normal;
+    transition: visibility 0s linear 0s, opacity 0.3s linear;
 }
 
-.add:hover > div {
-    display: block;
+.dropdown:hover > div.ready, .dropdown > div.forceOpen {
+    visibility: visible;
+    opacity: 1;
 }
 
-.add > div > span {
+.dropdown > div > span {
     display: block;
     padding: 0.5em;
     color: #058FAF;
@@ -91,7 +94,7 @@ a.load {
     word-break: break-all;
 }
 
-.add > div > span:hover {
+.dropdown > div > span:hover {
     background-color: #058FAF;
     color: #FFF;
 }
