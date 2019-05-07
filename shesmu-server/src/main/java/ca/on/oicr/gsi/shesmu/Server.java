@@ -717,7 +717,7 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
                 writer.writeStartElement("td");
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "add");
+                writer.writeAttribute("class", "dropdown");
                 writer.writeCharacters("Add ▼");
                 writer.writeStartElement("div");
                 writer.writeAttribute("id", "newStates");
@@ -743,7 +743,7 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
                 writer.writeStartElement("td");
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "add");
+                writer.writeAttribute("class", "dropdown");
                 writer.writeCharacters("Add ▼");
                 writer.writeStartElement("div");
                 writer.writeAttribute("id", "newTypes");
@@ -772,7 +772,7 @@ public final class Server implements ServerConfig, ActionServices {
                   writer.writeCharacters("No actions have been generated yet.");
                 } else {
                   writer.writeStartElement("span");
-                  writer.writeAttribute("class", "add");
+                  writer.writeAttribute("class", "dropdown");
                   writer.writeCharacters("Add ▼");
                   writer.writeStartElement("div");
                   writer.writeAttribute("id", "newLocations");
@@ -805,7 +805,7 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
                 writer.writeCharacters(" ");
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "add");
+                writer.writeAttribute("class", "dropdown");
                 writer.writeStartElement("span");
                 writer.writeAttribute("id", "searchType");
                 writer.writeComment("searchType");
@@ -954,7 +954,7 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
                 writer.writeCharacters(" ");
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "add");
+                writer.writeAttribute("class", "dropdown");
                 writer.writeStartElement("span");
                 writer.writeAttribute("id", name + "AgoUnit");
                 writer.writeComment("");
