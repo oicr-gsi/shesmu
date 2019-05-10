@@ -71,6 +71,8 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -95,16 +97,6 @@ import org.objectweb.asm.ClassWriter;
 
 @SuppressWarnings("restriction")
 public final class Server implements ServerConfig, ActionServices {
-  private static final Gauge stopGauge =
-      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
-          .register();
-  private volatile boolean emergencyStop;
-
-  private void emergencyThrottle(boolean stopped) {
-    this.emergencyStop = stopped;
-    stopGauge.set(stopped ? 1 : 0);
-  }
-
   private class EmergencyThrottlerHandler implements HttpHandler {
     private final boolean state;
 
@@ -120,14 +112,6 @@ public final class Server implements ServerConfig, ActionServices {
       t.sendResponseHeaders(302, -1);
     }
   }
-
-  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-
-  private static final Map<String, Instant> INFLIGHT = new ConcurrentHashMap<>();
-
-  private static final LatencyHistogram responseTime =
-      new LatencyHistogram(
-          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
 
   public static Runnable inflight(String name) {
     INFLIGHT.putIfAbsent(name, Instant.now());
@@ -145,30 +129,49 @@ public final class Server implements ServerConfig, ActionServices {
     s.start();
   }
 
+  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+
+  private static final Map<String, Instant> INFLIGHT = new ConcurrentHashMap<>();
+
+  private static final LatencyHistogram responseTime =
+      new LatencyHistogram(
+          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
+  private static final Gauge stopGauge =
+      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
+          .register();
+  public final String build;
+  public final Instant buildTime;
   private final CompiledGenerator compiler;
   private final Map<String, ConstantLoader> constantLoaders = new HashMap<>();
+  private final DefinitionRepository definitionRepository;
+  private volatile boolean emergencyStop;
   private final ScheduledExecutorService executor =
       new ScheduledThreadPoolExecutor(10 * Runtime.getRuntime().availableProcessors());
-  private final DefinitionRepository definitionRepository;
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
-
   private final Semaphore inputDownloadSemaphore =
       new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
-
   private final MasterRunner master;
-
   private final PluginManager pluginManager = new PluginManager();
-
   private final ActionProcessor processor;
-
   private final AutoUpdatingDirectory<SavedSearch> savedSearches =
       new AutoUpdatingDirectory<>(".search", SavedSearch::new);
-
   private final HttpServer server;
-
   private final StaticActions staticActions;
+  public final String version;
 
-  public Server(int port) throws IOException {
+  public Server(int port) throws IOException, ParseException {
+    try (final InputStream in = Server.class.getResourceAsStream("shesmu-build.properties")) {
+      final Properties prop = new Properties();
+      prop.load(in);
+      version = prop.getProperty("version");
+      build =
+          prop.getProperty("githash")
+              + (Boolean.parseBoolean(prop.getProperty("gitdirty")) ? "-dirty" : "");
+      buildTime =
+          new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+              .parse(prop.getProperty("buildtime"))
+              .toInstant();
+    }
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(executor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
@@ -185,9 +188,15 @@ public final class Server implements ServerConfig, ActionServices {
             compiler,
             new OliveServices() {
               @Override
-              public boolean isOverloaded(String... services) {
-                return processor.isOverloaded(services)
-                    || pluginManager.isOverloaded(new HashSet<>(Arrays.asList(services)));
+              public boolean accept(
+                  Action action, String filename, int line, int column, long time) {
+                return processor.accept(action, filename, line, column, time);
+              }
+
+              @Override
+              public boolean accept(String[] labels, String[] annotation, long ttl)
+                  throws Exception {
+                return processor.accept(labels, annotation, ttl);
               }
 
               @Override
@@ -209,15 +218,9 @@ public final class Server implements ServerConfig, ActionServices {
               }
 
               @Override
-              public boolean accept(
-                  Action action, String filename, int line, int column, long time) {
-                return processor.accept(action, filename, line, column, time);
-              }
-
-              @Override
-              public boolean accept(String[] labels, String[] annotation, long ttl)
-                  throws Exception {
-                return processor.accept(labels, annotation, ttl);
+              public boolean isOverloaded(String... services) {
+                return processor.isOverloaded(services)
+                    || pluginManager.isOverloaded(new HashSet<>(Arrays.asList(services)));
               }
             },
             inputProvider);
@@ -232,6 +235,9 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
+                renderer.line("Version", version);
+                renderer.line("Build Time", buildTime);
+                renderer.line("Build Git Commit", build);
                 renderer.link(
                     "Emergency Stop",
                     emergencyStop ? "/resume" : "/stopstopstop",
@@ -1769,11 +1775,11 @@ public final class Server implements ServerConfig, ActionServices {
           final StringBuilder errors = new StringBuilder();
           boolean success =
               (new Compiler(true) {
+                    private final NameLoader<ActionDefinition> actions =
+                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             definitionRepository.functions(), FunctionDefinition::name);
-                    private final NameLoader<ActionDefinition> actions =
-                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
 
                     @Override
                     protected ClassVisitor createClassVisitor() {
@@ -1826,11 +1832,11 @@ public final class Server implements ServerConfig, ActionServices {
           final AtomicReference<FileTable> description = new AtomicReference<>();
           boolean success =
               (new Compiler(false) {
+                    private final NameLoader<ActionDefinition> actions =
+                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             definitionRepository.functions(), FunctionDefinition::name);
-                    private final NameLoader<ActionDefinition> actions =
-                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
 
                     @Override
                     protected ClassVisitor createClassVisitor() {
@@ -2077,41 +2083,20 @@ public final class Server implements ServerConfig, ActionServices {
         });
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
-    add("/main.css", "text/css; charset=utf-8");
-    add("/shesmu.js", "text/javascript");
-    add("/shesmu.svg", "image/svg+xml");
-    add("/favicon.png", "image/png");
-    add("/thorschariot.gif", "image/gif");
-    add("/swagger.json", "application/json");
-    add("/api-docs/favicon-16x16.png", "image/png");
-    add("/api-docs/favicon-32x32.png", "image/png");
-    add("/api-docs/index.html", "text/html");
-    add("/api-docs/oauth2-redirect.html", "text/html");
-    add("/api-docs/swagger-ui-bundle.js", "text/javascript");
-    add("/api-docs/swagger-ui-standalone-preset.js", "text/javascript");
-    add("/api-docs/swagger-ui.css", "text/css");
-    add("/api-docs/swagger-ui.js", "text/javascript");
-  }
-
-  private void showSourceConfig(XMLStreamWriter writer, Path filename) {
-    if (filename != null) {
-      pluginManager
-          .sourceUrl(filename.toString(), 1, 1, Instant.EPOCH)
-          .findFirst()
-          .ifPresent(
-              l -> {
-                try {
-                  writer.writeStartElement("p");
-                  writer.writeStartElement("a");
-                  writer.writeAttribute("href", l);
-                  writer.writeCharacters("View Configuration File");
-                  writer.writeEndElement();
-                  writer.writeEndElement();
-                } catch (XMLStreamException e) {
-                  throw new RuntimeException(e);
-                }
-              });
-    }
+    add("main.css", "text/css; charset=utf-8");
+    add("shesmu.js", "text/javascript");
+    add("shesmu.svg", "image/svg+xml");
+    add("favicon.png", "image/png");
+    add("thorschariot.gif", "image/gif");
+    add("swagger.json", "application/json");
+    add("api-docs/favicon-16x16.png", "image/png");
+    add("api-docs/favicon-32x32.png", "image/png");
+    add("api-docs/index.html", "text/html");
+    add("api-docs/oauth2-redirect.html", "text/html");
+    add("api-docs/swagger-ui-bundle.js", "text/javascript");
+    add("api-docs/swagger-ui-standalone-preset.js", "text/javascript");
+    add("api-docs/swagger-ui.css", "text/css");
+    add("api-docs/swagger-ui.js", "text/javascript");
   }
 
   /** Add a new service endpoint with Prometheus monitoring */
@@ -2131,7 +2116,7 @@ public final class Server implements ServerConfig, ActionServices {
   /** Add a file backed by a class resource */
   private void add(String url, String type) {
     server.createContext(
-        url,
+        "/" + url,
         t -> {
           t.getResponseHeaders().set("Content-type", type);
           t.sendResponseHeaders(200, 0);
@@ -2162,6 +2147,11 @@ public final class Server implements ServerConfig, ActionServices {
         });
   }
 
+  private void emergencyThrottle(boolean stopped) {
+    this.emergencyStop = stopped;
+    stopGauge.set(stopped ? 1 : 0);
+  }
+
   @Override
   public Stream<Header> headers() {
     return Stream.of(
@@ -2169,6 +2159,11 @@ public final class Server implements ServerConfig, ActionServices {
         Header.faviconPng(16),
         Header.jsModule(
             "import {parser, fetchConstant, parseType, toggleBytecode, runFunction, filterForOlive, listActionsPopup, queryStatsPopup, pauseOlive, clearDeadPause} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleBytecode = toggleBytecode; window.runFunction = runFunction; window.filterForOlive = filterForOlive; window.listActionsPopup = listActionsPopup; window.queryStatsPopup = queryStatsPopup; window.pauseOlive = pauseOlive; window.clearDeadPause = clearDeadPause;"));
+  }
+
+  @Override
+  public boolean isOverloaded(Set<String> services) {
+    return emergencyStop || pluginManager.isOverloaded(services);
   }
 
   private String localname() {
@@ -2235,6 +2230,27 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("dumpadr", "Arbitrary Binding Spy")));
   }
 
+  private void showSourceConfig(XMLStreamWriter writer, Path filename) {
+    if (filename != null) {
+      pluginManager
+          .sourceUrl(filename.toString(), 1, 1, Instant.EPOCH)
+          .findFirst()
+          .ifPresent(
+              l -> {
+                try {
+                  writer.writeStartElement("p");
+                  writer.writeStartElement("a");
+                  writer.writeAttribute("href", l);
+                  writer.writeCharacters("View Configuration File");
+                  writer.writeEndElement();
+                  writer.writeEndElement();
+                } catch (XMLStreamException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    }
+  }
+
   public void start() {
     System.out.println("Starting server...");
     server.start();
@@ -2254,10 +2270,5 @@ public final class Server implements ServerConfig, ActionServices {
     processor.start(executor);
     System.out.println("Starting scheduler...");
     master.start(executor);
-  }
-
-  @Override
-  public boolean isOverloaded(Set<String> services) {
-    return emergencyStop || pluginManager.isOverloaded(services);
   }
 }

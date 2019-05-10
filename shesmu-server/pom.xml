@@ -110,6 +110,15 @@
   </dependencies>
   <build>
     <finalName>shesmu</finalName>
+    <filters>
+      <filter>src/main/resources/ca/on/oicr/gsi/shesmu/shesmu-build.properties</filter>
+    </filters>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
