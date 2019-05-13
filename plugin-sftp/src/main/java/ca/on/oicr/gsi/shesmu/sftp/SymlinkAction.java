@@ -24,6 +24,7 @@ public class SymlinkAction extends Action {
           .register();
   private final Supplier<SftpServer> connection;
   private boolean fileInTheWay;
+  private boolean force;
   private Path link;
   private Optional<Instant> mtime = Optional.empty();
   private Path target;
@@ -46,6 +47,11 @@ public class SymlinkAction extends Action {
     return mtime;
   }
 
+  @ActionParameter(required = false)
+  public void force(boolean force) {
+    this.force = force;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(link, target);
@@ -63,7 +69,7 @@ public class SymlinkAction extends Action {
     final Pair<ActionState, Boolean> result =
         connection
             .get()
-            .makeSymlink(link, target.toString(), fileInTheWay, t -> mtime = Optional.of(t));
+            .makeSymlink(link, target.toString(), force, fileInTheWay, t -> mtime = Optional.of(t));
     if (result.second() != fileInTheWay) {
       filesInTheWay
           .labels(connection.get().name())
