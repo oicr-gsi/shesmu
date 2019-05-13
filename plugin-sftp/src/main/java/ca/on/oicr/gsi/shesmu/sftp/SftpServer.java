@@ -137,7 +137,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   synchronized Pair<ActionState, Boolean> makeSymlink(
-      Path link, String target, boolean fileInTheWay, Consumer<Instant> updateMtime) {
+      Path link,
+      String target,
+      boolean force,
+      boolean fileInTheWay,
+      Consumer<Instant> updateMtime) {
     final Optional<SFTPClient> client = connection.get().map(Pair::second);
     if (!client.isPresent()) {
       return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
@@ -157,6 +161,13 @@ public class SftpServer extends JsonPluginFile<Configuration> {
             && sftp.readlink(linkStr).equals(target)) {
           // It's what we want; done
           return new Pair<>(ActionState.SUCCEEDED, false);
+        }
+        // We've been told to blow it away
+        if (force) {
+          sftp.rm(linkStr);
+          sftp.symlink(linkStr, target);
+          updateMtime.accept(Instant.now());
+          return new Pair<>(ActionState.SUCCEEDED, true);
         }
         // It exists and it's not already a symlink to what we want; bail
         return new Pair<>(ActionState.FAILED, true);
