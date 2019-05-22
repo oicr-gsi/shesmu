@@ -1,1 +1,923 @@
-../../../../swagger-shesmu-server-api.json
+{
+  "components": {
+    "schemas": {
+      "AnyValue": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "items": {},
+            "type": "array"
+          }
+        ],
+        "description": "Can be any value - string, number, boolean, array or object."
+      },
+      "Filter": {
+        "description": "Action filtering.",
+        "discriminator": {
+          "mapping": {
+            "added": "#/components/schemas/FilterAdded",
+            "addedago": "#/components/schemas/FilterAddedAgo",
+            "and": "#/components/schemas/FilterAnd",
+            "checked": "#/components/schemas/FilterChecked",
+            "checkedago": "#/components/schemas/FilterCheckedAgo",
+            "external": "#/components/schemas/FilterExternal",
+            "externalago": "#/components/schemas/FilterExternalAgo",
+            "or": "#/components/schemas/FilterOr",
+            "regex": "#/components/schemas/FilterRegex",
+            "sourcefile": "#/components/schemas/FilterSourceFile",
+            "sourcelocation": "#/components/schemas/FilterSourceLocation",
+            "status": "#/components/schemas/FilterStatus",
+            "statuschanged": "#/components/schemas/FilterStatusChanged",
+            "statuschangedago": "#/components/schemas/FilterStatusChangedAgo",
+            "text": "#/components/schemas/FilterText",
+            "type": "#/components/schemas/FilterType"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FilterAdded"
+          },
+          {
+            "$ref": "#/components/schemas/FilterAddedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/FilterAnd"
+          },
+          {
+            "$ref": "#/components/schemas/FilterChecked"
+          },
+          {
+            "$ref": "#/components/schemas/FilterCheckedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/FilterExternal"
+          },
+          {
+            "$ref": "#/components/schemas/FilterExternalAgo"
+          },
+          {
+            "$ref": "#/components/schemas/FilterOr"
+          },
+          {
+            "$ref": "#/components/schemas/FilterRegex"
+          },
+          {
+            "$ref": "#/components/schemas/FilterSourceFile"
+          },
+          {
+            "$ref": "#/components/schemas/FilterSourceLocation"
+          },
+          {
+            "$ref": "#/components/schemas/FilterStatus"
+          },
+          {
+            "$ref": "#/components/schemas/FilterStatusChanged"
+          },
+          {
+            "$ref": "#/components/schemas/FilterStatusChangedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/FilterText"
+          },
+          {
+            "$ref": "#/components/schemas/FilterType"
+          }
+        ]
+      },
+      "FilterAdded": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterAddedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterAnd": {
+        "properties": {
+          "filters": {
+            "description": "the filters which must be all be satisified",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterChecked": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterCheckedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterExternal": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterExternalAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterOr": {
+        "properties": {
+          "filters": {
+            "description": "the filters from which at least one must be satisified",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterRegex": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "pattern": {
+            "description": "a Java regular expression the action must match",
+            "type": "regex"
+          }
+        },
+        "type": "object"
+      },
+      "FilterSourceFile": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterSourceLocation": {
+        "properties": {
+          "locations": {
+            "items": {
+              "properties": {
+                "column": {
+                  "type": "integer"
+                },
+                "file": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "time": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterStatus": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "states": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterStatusChanged": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterStatusChangedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterText": {
+        "properties": {
+          "matchCase": {
+            "description": "whether the text must match as provided or if the case can be different",
+            "type": "boolean"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "text": {
+            "description": "text which must appear in the action",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterType": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          },
+          "types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "andre.masella@oicr.on.ca"
+    },
+    "description": "This API is implemented by [Shesmu](https://github.com/oicr-gsi/shesmu).",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "title": "Shesmu Server",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/actions": {
+      "get": {
+        "description": "",
+        "operationId": "getActionCatalog",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "parameters": {
+                        "items": {
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "type": {
+                              "format": "typedescriptor",
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Action catalog transmitted"
+          }
+        },
+        "summary": "Get a list of actions that can be performed by this server.",
+        "tags": [
+          "actions"
+        ]
+      }
+    },
+    "/constant": {
+      "post": {
+        "description": "",
+        "operationId": "getConstant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The current value of the constant or an error"
+          }
+        },
+        "summary": "Get the value of a constant",
+        "tags": [
+          "constants"
+        ]
+      }
+    },
+    "/constants": {
+      "get": {
+        "description": "",
+        "operationId": "getConstantsCatalog",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "format": "typedescriptor",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Constants catalog transmitted"
+          }
+        },
+        "summary": "Get a list of constants that can be use in olives on this server.",
+        "tags": [
+          "constants"
+        ]
+      }
+    },
+    "/currentalerts": {
+      "get": {
+        "description": "",
+        "operationId": "getCurrentAlerts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "annotations": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "endsAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "generatorURL": {
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "labels": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "startsAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Current active alerts"
+          }
+        },
+        "summary": "Get a list of current firing alerts.",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/function": {
+      "post": {
+        "description": "",
+        "operationId": "runFunction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "args": {
+                    "items": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    },
+                    "type": "array"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The current value of the constant or an error"
+          }
+        },
+        "summary": "Compute value of function",
+        "tags": [
+          "functions"
+        ]
+      }
+    },
+    "/functions": {
+      "get": {
+        "description": "",
+        "operationId": "getFunctionsCatalog",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "return": {
+                        "format": "typedescriptor",
+                        "type": "string"
+                      },
+                      "types": {
+                        "items": {
+                          "properties": {
+                            "description": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "format": "typedescriptor",
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Functions catalog transmitted"
+          }
+        },
+        "summary": "Get a list of functions that can be use in olives on this server.",
+        "tags": [
+          "functions"
+        ]
+      }
+    },
+    "/input/{format}": {
+      "get": {
+        "description": "",
+        "operationId": "getInputCatalog",
+        "parameters": [
+          {
+            "description": "The name of the input format",
+            "in": "path",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Input data catalog transmitted"
+          }
+        },
+        "summary": "Get a list of olive input data known by this server.",
+        "tags": [
+          "inputdata"
+        ]
+      }
+    },
+    "/purge": {
+      "post": {
+        "description": "",
+        "operationId": "purgeActions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/Filter"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Removes actions from the actions generated by olives. These may reappear if an olive regenerates the same action. This is mostly used to clear failed actions that are no longer in the input data.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "description": "The number of actions purged"
+          }
+        },
+        "summary": "Remove actions generated by olives",
+        "tags": [
+          "actions"
+        ]
+      }
+    },
+    "/query": {
+      "post": {
+        "description": "",
+        "operationId": "queryActions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "filters": {
+                    "items": {
+                      "$ref": "#/components/schemas/Filter"
+                    },
+                    "type": "array"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "skip": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Causes an action to be launched. The status code indicates whether the job has successfully finished running. If completed successfully, an optional URL may be provided where the result may be viewed.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "results": {
+                      "items": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A list of actions that match the supplied filters"
+          }
+        },
+        "summary": "Get actions generated by olives",
+        "tags": [
+          "actions"
+        ]
+      }
+    },
+    "/type": {
+      "post": {
+        "description": "",
+        "operationId": "prettyType",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The human readable type"
+          },
+          "400": {
+            "description": "The type descriptor provided is not valid."
+          }
+        },
+        "summary": "Parse a Shesmu type",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
+    "/variables": {
+      "get": {
+        "description": "",
+        "operationId": "getVariablesCatalog",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "format": "typedescriptor",
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Variables catalog transmitted"
+          }
+        },
+        "summary": "Get the variables that can be use in olives on this server.",
+        "tags": [
+          "inputdata"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Actions",
+      "name": "actions"
+    },
+    {
+      "description": "Alerts",
+      "name": "alerts"
+    },
+    {
+      "description": "Constants/Predefined Values",
+      "name": "constants"
+    },
+    {
+      "description": "Functions",
+      "name": "functions"
+    },
+    {
+      "description": "Olive Input Data",
+      "name": "inputdata"
+    },
+    {
+      "description": "Miscellaneous",
+      "name": "misc"
+    }
+  ]
+}
