@@ -528,3 +528,7 @@ textarea {
     width: 20vh;
     height: 20vh;
 }
+
+div.histogram {
+    padding-top: 1em;
+}
