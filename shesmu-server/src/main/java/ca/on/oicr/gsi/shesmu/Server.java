@@ -954,7 +954,8 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
                 writer.writeCharacters(" or ");
                 writer.writeStartElement("input");
-                writer.writeAttribute("type", "text");
+                writer.writeAttribute("type", "number");
+                writer.writeAttribute("min", "1");
                 writer.writeAttribute("id", name + "Ago");
                 writer.writeComment("");
                 writer.writeEndElement();
