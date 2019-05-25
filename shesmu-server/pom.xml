@@ -117,6 +117,16 @@
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <includes>
+          <include>**/shesmu-build.properties</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>**/shesmu-build.properties</exclude>
+        </excludes>
       </resource>
     </resources>
     <plugins>

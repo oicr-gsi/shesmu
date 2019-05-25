@@ -1208,36 +1208,38 @@ function nameForBin(name) {
   }
 }
 
-function formatBin(name) {
-  switch (name) {
-    case "added":
-    case "checked":
-    case "statuschanged":
-    case "external":
-      return x => {
-        const d = new Date(x);
-        let diff = Math.ceil((new Date() - d) / 1000);
-        let ago = "";
-        for (let span of [
-          [604800, "w"],
-          [86400, "d"],
-          [3600, "h"],
-          [60, "m"]
-        ]) {
-          const chunk = Math.floor(diff / span[0]);
-          if (chunk > 0) {
-            ago = `${ago}${chunk}${span[1]}`;
-            diff = diff % span[0];
-          }
-        }
-        if (diff > 0 || !ago) {
-          ago = `${ago}${diff}s ago`;
-        }
-        return [ago, `${x} ${d.toISOString()}`];
-      };
-    default:
-      return x => [x, ""];
+function formatTimeSpan(x) {
+  let diff = Math.ceil(x / 1000);
+  let result = "";
+  let chunkcount = 0;
+  for (let [span, name] of [
+    [31557600, "y"],
+    [86400, "d"],
+    [3600, "h"],
+    [60, "m"],
+    [1, "s"]
+  ]) {
+    const chunk = Math.floor(diff / span);
+    if (chunk > 0 || chunkcount > 0) {
+      result = `${result}${chunk}${name}`;
+      diff = diff % span;
+      if (++chunkcount > 2) {
+        break;
+      }
+    }
   }
+  return result;
+}
+
+function formatTimeBin(x) {
+  const d = new Date(x);
+  let ago = formatTimeSpan(new Date() - d);
+  if (ago) {
+    ago = ago + " ago";
+  } else {
+    ago = "now";
+  }
+  return [ago, `${d.toISOString()}`];
 }
 
 function setColorIntensity(element, value, maximum) {
@@ -1245,6 +1247,8 @@ function setColorIntensity(element, value, maximum) {
     97 - (value || 0) / maximum * 20
   )}%)`;
 }
+
+const headerAngle = Math.PI / 4;
 
 function purge(filters) {
   const targetElement = document.getElementById("results");
@@ -1330,33 +1334,45 @@ function getStats(filters, targetElement, onActionPage) {
           purgeButton.innerText = "☠️ PURGE";
           toolBar.appendChild(purgeButton);
           listButton.onclick = () => {
-            nextPage(
-              {
-                filters: filters,
-                limit: 25,
-                skip: 0
-              },
-              clickResult,
-              onActionPage
-            );
+            const f = filters();
+            if (f) {
+              nextPage(
+                {
+                  filters: f,
+                  limit: 25,
+                  skip: 0
+                },
+                clickResult,
+                onActionPage
+              );
+            }
           };
           statsButton.onclick = () => {
-            getStats(filters, clickResult, onActionPage);
+            const f = filters();
+            if (f) {
+              getStats(f, clickResult, onActionPage);
+            }
           };
           jsonButton.onclick = () => {
-            showFilterJson(filters, clickResult);
+            const f = filters();
+            if (f) {
+              showFilterJson(f, clickResult);
+            }
           };
           purgeButton.onclick = () => {
-            purgeActions(filters, targetElement, () => {
-              const refreshToolbar = document.createElement("DIV");
-              const refreshButton = document.createElement("SPAN");
-              refreshButton.className = "load accessory";
-              refreshButton.innerText = "🔄 Refresh";
-              refreshToolbar.appendChild(refreshButton);
-              targetElement.appendChild(refreshToolbar);
-              refreshButton.onclick = () =>
-                getStats(filters, targetElement, onActionPage);
-            });
+            const f = filters();
+            if (f) {
+              purgeActions(f, targetElement, () => {
+                const refreshToolbar = document.createElement("DIV");
+                const refreshButton = document.createElement("SPAN");
+                refreshButton.className = "load accessory";
+                refreshButton.innerText = "🔄 Refresh";
+                refreshToolbar.appendChild(refreshButton);
+                targetElement.appendChild(refreshToolbar);
+                refreshButton.onclick = () =>
+                  getStats(f, targetElement, onActionPage);
+              });
+            }
           };
           drillDown.appendChild(toolBar);
           drillDown.appendChild(clickResult);
@@ -1377,9 +1393,6 @@ function getStats(filters, targetElement, onActionPage) {
               stat.table.forEach(row => {
                 let prettyTitle;
                 switch (row.kind) {
-                  case "bin":
-                    prettyTitle = x => `${x} ${nameForBin(row.type)}`;
-                    break;
                   case "property":
                     prettyTitle = x => `${x} ${row.property}`;
                     break;
@@ -1392,17 +1405,10 @@ function getStats(filters, targetElement, onActionPage) {
                 title.innerText = prettyTitle(row.title);
                 tr.appendChild(title);
                 const value = document.createElement("TD");
-                if (row.kind == "bin") {
-                  const values = formatBin(row.type)(row.value);
-                  value.innerText = values[0];
-                  value.title = values[1];
-                } else {
-                  value.innerText = row.value;
-                }
+                value.innerText = row.value;
                 tr.appendChild(value);
                 if (row.kind == "property") {
-                  makeClick(
-                    tr,
+                  makeClick(tr, () =>
                     filters.concat([propertyFilterMaker(row.type)(row.json)])
                   );
                 } else {
@@ -1437,7 +1443,7 @@ function getStats(filters, targetElement, onActionPage) {
                 const currentHeader = document.createElement("TH");
                 currentHeader.innerText = col.name;
                 header.appendChild(currentHeader);
-                makeClick(currentHeader, filters.concat([col.filter]));
+                makeClick(currentHeader, () => filters.concat([col.filter]));
               }
               const maximum = Math.max(
                 1,
@@ -1456,7 +1462,7 @@ function getStats(filters, targetElement, onActionPage) {
                 const currentHeader = document.createElement("TH");
                 currentHeader.innerText = rowKey;
                 currentRow.appendChild(currentHeader);
-                makeClick(currentHeader, filters.concat([rowFilter]));
+                makeClick(currentHeader, () => filters.concat([rowFilter]));
 
                 for (let col of columns) {
                   const currentValue = document.createElement("TD");
@@ -1467,8 +1473,7 @@ function getStats(filters, targetElement, onActionPage) {
                     stat.data[rowKey][col.name],
                     maximum
                   );
-                  makeClick(
-                    currentValue,
+                  makeClick(currentValue, () =>
                     filters.concat([col.filter, rowFilter])
                   );
                 }
@@ -1478,76 +1483,240 @@ function getStats(filters, targetElement, onActionPage) {
 
           case "histogram":
             (() => {
-              const section = document.createElement("H1");
-              section.innerText = nameForBin(stat.bin);
-              element.appendChild(section);
-              const maximum = Math.max(1, Math.max(...stat.counts));
-              const table = document.createElement("TABLE");
-              element.appendChild(table);
-              const header = document.createElement("TR");
-              table.appendChild(header);
-              const startHeader = document.createElement("TH");
-              startHeader.innerText = "≥";
-              header.appendChild(startHeader);
-              const endHeader = document.createElement("TH");
-              endHeader.innerText = "<";
-              header.appendChild(endHeader);
-              const valueHeader = document.createElement("TH");
-              valueHeader.innerText = "Actions";
-              header.appendChild(valueHeader);
-
-              const formattedBoundaries = stat.boundaries.map(
-                formatBin(stat.bin)
+              const boundaryLabels = stat.boundaries.map(x => formatTimeBin(x));
+              const max = Math.log(
+                Math.max(...Object.values(stat.counts).flat()) + 1
               );
+              const labels = Object.keys(stat.counts).map(
+                bin => " " + nameForBin(bin)
+              );
+              const div = document.createElement("div");
+              div.className = "histogram";
+              let selectionStart = null;
+              let selectedFilter = null;
+              div.width = "90%";
+              element.appendChild(div);
+              const canvas = document.createElement("canvas");
+              const ctxt = canvas.getContext("2d");
+              const rowHeight = 40;
+              const fontHeight = 10; // We should be able to compute this from the font metrics, but they don't provide it, so uhh...10pts.
+              const columnLabelHeight =
+                Math.sin(headerAngle) *
+                  Math.max(
+                    ...boundaryLabels.map(l => ctxt.measureText(l[0]).width)
+                  ) +
+                2 * fontHeight;
+              canvas.height = labels.length * rowHeight + columnLabelHeight;
+              div.appendChild(canvas);
+              const filterButton = document.createElement("span");
+              filterButton.className = "load accessory";
+              filterButton.innerText = "🖼️ Filter Range";
+              element.appendChild(filterButton);
+              makeClick(
+                filterButton,
+                () => (selectedFilter ? filters.concat([selectedFilter]) : null)
+              );
+              const currentTime = document.createElement("span");
+              currentTime.innerText = "\u00A0";
+              element.appendChild(currentTime);
+              const redraw = () => {
+                const cs = getComputedStyle(div);
+                const width = parseInt(cs.getPropertyValue("width"), 10);
+                canvas.width = width;
 
-              for (let i = 0; i < stat.counts.length; i++) {
-                const row = document.createElement("TR");
-                table.appendChild(row);
-                const start = document.createElement("TH");
-                start.innerText = formattedBoundaries[i][0];
-                start.title = formattedBoundaries[i][1];
-                row.appendChild(start);
-                makeClick(
-                  start,
-                  filters.concat([
-                    {
-                      type: stat.bin,
-                      start: stat.boundaries[i],
-                      end: null
-                    }
-                  ])
+                const labelWidth = Math.max(
+                  ...labels.map(l => ctxt.measureText(l).width)
+                );
+                const columnWidth =
+                  (width - labelWidth) / (boundaryLabels.length - 1);
+                const columnSkip = Math.ceil(
+                  2 * fontHeight * Math.cos(headerAngle) / columnWidth
                 );
 
-                const end = document.createElement("TH");
-                end.innerText = formattedBoundaries[i + 1][0];
-                end.title = formattedBoundaries[i + 1][1];
-                row.appendChild(end);
-                makeClick(
-                  end,
-                  filters.concat([
-                    {
-                      type: stat.bin,
-                      start: null,
-                      end: stat.boundaries[i + 1]
+                const repaint = selectionEnd => {
+                  ctxt.clearRect(0, 0, width, canvas.height);
+                  ctxt.fillStyle = "#000";
+                  boundaryLabels.forEach((label, index) => {
+                    if (index % columnSkip == 0) {
+                      // We can only apply rotation about the origin, so move the origin to the point where we want to draw the text, rotate it, draw the text at the origin, then reset the coordinate system.
+                      ctxt.translate(index * columnWidth, columnLabelHeight);
+                      ctxt.rotate(-headerAngle);
+                      ctxt.fillText(
+                        label[0],
+                        fontHeight * Math.tan(headerAngle),
+                        0
+                      );
+                      ctxt.setTransform(1, 0, 0, 1, 0, 0);
                     }
-                  ])
-                );
-
-                const value = document.createElement("TD");
-                value.innerText = stat.counts[i];
-                row.appendChild(value);
-                makeClick(
-                  value,
-                  filters.concat([
-                    {
-                      type: stat.bin,
-                      start: stat.boundaries[i],
-                      end: stat.boundaries[i + 1]
+                  });
+                  Object.entries(stat.counts).forEach(
+                    ([bin, counts], binIndex) => {
+                      if (counts.length != boundaryLabels.length - 1) {
+                        throw new Error(
+                          `Data type ${bin} has ${
+                            counts.length
+                          } but expected ${boundaryLabels.length - 1}`
+                        );
+                      }
+                      for (
+                        let countIndex = 0;
+                        countIndex < counts.length;
+                        countIndex++
+                      ) {
+                        if (
+                          selectionStart &&
+                          selectionEnd &&
+                          selectionStart.bin == binIndex &&
+                          selectionEnd.bin == binIndex &&
+                          countIndex >=
+                            Math.min(
+                              selectionStart.boundary,
+                              selectionEnd.boundary
+                            ) &&
+                          countIndex <=
+                            Math.max(
+                              selectionStart.boundary,
+                              selectionEnd.boundary
+                            )
+                        ) {
+                          ctxt.fillStyle = "#E0493B";
+                        } else {
+                          ctxt.fillStyle = "#06AED5";
+                        }
+                        ctxt.globalAlpha =
+                          Math.log(counts[countIndex] + 1) / max;
+                        ctxt.fillRect(
+                          countIndex * columnWidth + 1,
+                          binIndex * rowHeight + 2 + columnLabelHeight,
+                          columnWidth - 2,
+                          rowHeight - 4
+                        );
+                      }
+                      ctxt.fillStyle = "#000";
+                      ctxt.globalAlpha = 1;
+                      ctxt.fillText(
+                        labels[binIndex],
+                        width - labelWidth,
+                        binIndex * rowHeight +
+                          (rowHeight + fontHeight) / 2 +
+                          columnLabelHeight
+                      );
                     }
-                  ])
-                );
-                setColorIntensity(value, stat.counts[i], maximum);
-              }
+                  );
+                };
+                repaint(null);
+                const findSelection = e => {
+                  if (e.button != 0) return null;
+                  const bounds = canvas.getBoundingClientRect();
+                  const x = e.clientX - bounds.left;
+                  const y = e.clientY - bounds.top - columnLabelHeight;
+                  if (y > 0 && x > 0 && x < width - labelWidth) {
+                    return {
+                      bin: Math.max(0, Math.floor(y / rowHeight)),
+                      boundary: Math.max(
+                        0,
+                        Math.floor(
+                          x / (width - labelWidth) * (boundaryLabels.length - 1)
+                        )
+                      )
+                    };
+                  }
+                  return null;
+                };
+                canvas.onmousedown = e => {
+                  selectionStart = findSelection(e);
+                  selectedFilter = null;
+                  if (selectionStart) {
+                    currentTime.innerText =
+                      Object.values(stat.counts)[selectionStart.bin][
+                        selectionStart.boundary
+                      ] +
+                      " actions over " +
+                      formatTimeSpan(
+                        stat.boundaries[selectionStart.boundary + 1] -
+                          stat.boundaries[selectionStart.boundary]
+                      ) +
+                      " (" +
+                      boundaryLabels[selectionStart.boundary][0] +
+                      " to " +
+                      boundaryLabels[selectionStart.boundary + 1][0] +
+                      ")";
+                    currentTime.title =
+                      boundaryLabels[selectionStart.boundary][1];
+                    repaint(selectionStart);
+                  } else {
+                    currentTime.innerText = "\u00A0";
+                    currentTime.title = "";
+                  }
+                };
+                const mouseWhileDown = (e, after) => {
+                  const selectionEnd = findSelection(e);
+                  repaint(selectionEnd);
+                  if (selectionStart.bin == selectionEnd.bin) {
+                    const startBound = Math.min(
+                      selectionStart.boundary,
+                      selectionEnd.boundary
+                    );
+                    const endBound =
+                      Math.max(selectionStart.boundary, selectionEnd.boundary) +
+                      1;
+                    const [typeName, counts] = Object.entries(stat.counts)[
+                      selectionEnd.bin
+                    ];
+                    const sum = counts.reduce(
+                      (acc, value, index) =>
+                        index >= startBound && index < endBound
+                          ? acc + value
+                          : acc,
+                      0
+                    );
+                    currentTime.innerText =
+                      sum +
+                      " actions over " +
+                      formatTimeSpan(
+                        stat.boundaries[endBound] - stat.boundaries[startBound]
+                      ) +
+                      " (" +
+                      boundaryLabels[startBound][0] +
+                      " to " +
+                      boundaryLabels[endBound][0] +
+                      ")";
+                    currentTime.title =
+                      boundaryLabels[startBound][1] +
+                      " to " +
+                      boundaryLabels[endBound][1];
+                    after(
+                      typeName,
+                      stat.boundaries[startBound],
+                      stat.boundaries[endBound]
+                    );
+                  } else {
+                    currentTime.innerText = "\u00A0";
+                    currentTime.title = "";
+                    selectedFilter = null;
+                  }
+                };
+                canvas.onmouseup = e => {
+                  mouseWhileDown(e, (typeName, start, end) => {
+                    selectedFilter = {
+                      type: typeName,
+                      start: start,
+                      end: end
+                    };
+                  });
+                  selectionStart = null;
+                };
+                canvas.onmousemove = e => {
+                  if (selectionStart) {
+                    mouseWhileDown(e, (typeName, start, end) => {});
+                  }
+                };
+              };
+              let timeout = window.setTimeout(redraw, 100);
+              window.addEventListener("resize", () => {
+                clearTimeout(timeout);
+                window.setTimeout(redraw, 100);
+              });
             })();
             break;
 

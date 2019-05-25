@@ -41,7 +41,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -61,19 +60,17 @@ public final class ActionProcessor implements OliveServices, InputProvider {
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
 
-    Optional<T> extract(Entry<Action, Information> input);
-
-    default Stream<T> flatExtract(Entry<Action, Information> input) {
-      return extract(input).map(Stream::of).orElseGet(Stream::empty);
-    }
-
     long minWidth();
-
-    String name();
 
     JsonNode name(T min, long offset);
 
     long span(T min, T max);
+  }
+
+  private interface BinMember<T> {
+    Optional<T> extract(Entry<Action, Information> input);
+
+    String name();
   }
 
   private interface Property<T> {
@@ -186,33 +183,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     boolean thrown;
   }
 
-  private abstract static class InstantBin implements Bin<Instant> {
-    @Override
-    public final long bucket(Instant min, long width, Instant value) {
-      return (value.toEpochMilli() - min.toEpochMilli()) / width;
-    }
-
-    @Override
-    public final int compare(Instant o1, Instant o2) {
-      return o1.compareTo(o2);
-    }
-
-    @Override
-    public long minWidth() {
-      return 60_000;
-    }
-
-    @Override
-    public JsonNode name(Instant min, long offset) {
-      return JSON_FACTORY.numberNode(min.toEpochMilli() + offset);
-    }
-
-    @Override
-    public final long span(Instant min, Instant max) {
-      return max.toEpochMilli() - min.toEpochMilli();
-    }
-  }
-
   private abstract static class InstantFilter extends Filter {
     private final Optional<Instant> end;
     private final Optional<Instant> start;
@@ -261,25 +231,6 @@ public final class ActionProcessor implements OliveServices, InputProvider {
         return Stream.of(filters).allMatch(f -> f.check(action, info));
       }
     };
-  }
-
-  private static <T> void binSummary(
-      ArrayNode table, Bin<T> bin, List<Entry<Action, Information>> actions) {
-    Stream.<Pair<String, BiFunction<Stream<T>, Comparator<T>, Optional<T>>>>of(
-            new Pair<>("Minimum", Stream::min), new Pair<>("Minimum", Stream::max))
-        .forEach(
-            pair -> {
-              pair.second()
-                  .apply(actions.stream().flatMap(bin::flatExtract), bin)
-                  .ifPresent(
-                      value -> {
-                        final ObjectNode row = table.addObject();
-                        row.put("title", pair.first());
-                        row.set("value", bin.name(value, 0));
-                        row.put("kind", "bin");
-                        row.put("type", bin.name());
-                      });
-            });
   }
 
   /**
@@ -422,6 +373,7 @@ public final class ActionProcessor implements OliveServices, InputProvider {
       }
     };
   }
+
   /** Check that an action has one of the types specified */
   public static Filter type(String... types) {
     final Set<String> set = Stream.of(types).collect(Collectors.toSet());
@@ -434,8 +386,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     };
   }
 
-  private static final Bin<Instant> ADDED =
-      new InstantBin() {
+  private static final BinMember<Instant> ADDED =
+      new BinMember<Instant>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -447,8 +399,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
           return "added";
         }
       };
-  private static final Bin<Instant> CHECKED =
-      new InstantBin() {
+  private static final BinMember<Instant> CHECKED =
+      new BinMember<Instant>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -460,8 +412,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
           return "checked";
         }
       };
-  private static final Bin<Instant> EXTERNAL =
-      new InstantBin() {
+  private static final BinMember<Instant> EXTERNAL =
+      new BinMember<Instant>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -474,6 +426,33 @@ public final class ActionProcessor implements OliveServices, InputProvider {
         }
       };
   private static final JsonNodeFactory JSON_FACTORY = JsonNodeFactory.withExactBigDecimals(false);
+  private static final Bin<Instant> INSTANT_BIN =
+      new Bin<Instant>() {
+        @Override
+        public final long bucket(Instant min, long width, Instant value) {
+          return (value.toEpochMilli() - min.toEpochMilli()) / width;
+        }
+
+        @Override
+        public final int compare(Instant o1, Instant o2) {
+          return o1.compareTo(o2);
+        }
+
+        @Override
+        public long minWidth() {
+          return 60_000;
+        }
+
+        @Override
+        public JsonNode name(Instant min, long offset) {
+          return JSON_FACTORY.numberNode(min.toEpochMilli() + offset);
+        }
+
+        @Override
+        public final long span(Instant min, Instant max) {
+          return max.toEpochMilli() - min.toEpochMilli();
+        }
+      };
   private static final Property<ActionState> ACTION_STATE =
       new Property<ActionState>() {
 
@@ -520,42 +499,8 @@ public final class ActionProcessor implements OliveServices, InputProvider {
           return input;
         }
       };
-  private static final Property<SourceLocation> SOURCE_LOCATION =
-      new Property<SourceLocation>() {
-
-        @Override
-        public Stream<SourceLocation> extract(Entry<Action, Information> input) {
-          return input.getValue().locations.stream();
-        }
-
-        @Override
-        public JsonNode json(SourceLocation input) {
-          final ObjectNode node = JSON_FACTORY.objectNode();
-          node.put("file", input.fileName());
-          node.put("line", input.line());
-          node.put("column", input.column());
-          node.put("time", input.time().toEpochMilli());
-
-          return node;
-        }
-
-        @Override
-        public String name() {
-          return "sourcelocation";
-        }
-
-        @Override
-        public String name(SourceLocation input) {
-          return String.format(
-              "%s:%d:%d[%s]",
-              input.fileName(),
-              input.line(),
-              input.column(),
-              DateTimeFormatter.ISO_INSTANT.format(input.time()));
-        }
-      };
-  private static final Bin<Instant> STATUS_CHANGED =
-      new InstantBin() {
+  private static final BinMember<Instant> STATUS_CHANGED =
+      new BinMember<Instant>() {
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
@@ -768,45 +713,56 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return null;
   }
 
-  private <T> void histogram(
-      ArrayNode output, int count, List<Entry<Action, Information>> input, Bin<T> bin) {
-    final Optional<T> min = input.stream().flatMap(bin::flatExtract).min(bin);
-    final Optional<T> max = input.stream().flatMap(bin::flatExtract).max(bin);
+  @SafeVarargs
+  private final <T> void histogram(
+      ArrayNode output,
+      int count,
+      List<Entry<Action, Information>> input,
+      Bin<T> bin,
+      BinMember<T>... members) {
+    final List<T> contents =
+        Stream.of(members)
+            .flatMap(
+                member ->
+                    input
+                        .stream()
+                        .flatMap(v -> member.extract(v).map(Stream::of).orElseGet(Stream::empty)))
+            .collect(Collectors.toList());
+    final Optional<T> min = contents.stream().min(bin);
+    final Optional<T> max = contents.stream().max(bin);
     if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
       return;
     }
     long width = bin.span(min.get(), max.get()) / count;
-    final int[] buckets;
+    final int bucketsLength;
     if (width < bin.minWidth()) {
       // If the buckets are less than a minimum width, use buckets of the minimum width over the
       // range
       width = bin.minWidth();
-      buckets = new int[(int) Math.ceil(bin.span(min.get(), max.get()) / bin.minWidth()) + 1];
+      bucketsLength = (int) (bin.span(min.get(), max.get()) / bin.minWidth()) + 1;
     } else {
-      buckets = new int[count];
+      bucketsLength = count;
     }
-    if (buckets.length < 2) {
+    if (bucketsLength < 2) {
       return;
     }
     final long binWidth = width;
-    input
-        .stream()
-        .flatMap(bin::flatExtract)
-        .forEach(
-            value -> {
-              final int index = (int) bin.bucket(min.get(), binWidth, value);
-              buckets[index >= buckets.length ? buckets.length - 1 : index]++;
-            });
+
     final ObjectNode node = output.addObject();
     node.put("type", "histogram");
-    node.put("bin", bin.name());
     final ArrayNode boundaries = node.putArray("boundaries");
-    final ArrayNode counts = node.putArray("counts");
-    for (int i = 0; i < buckets.length; i++) {
+    for (int i = 0; i < bucketsLength; i++) {
       boundaries.add(bin.name(min.get(), i * width));
-      counts.add(buckets[i]);
     }
     boundaries.add(bin.name(max.get(), 0));
+    final ObjectNode counts = node.putObject("counts");
+    for (final BinMember<T> member : members) {
+      int[] buckets = new int[bucketsLength];
+      for (final T value : contents) {
+        buckets[Math.min((int) bin.bucket(min.get(), binWidth, value), buckets.length - 1)]++;
+      }
+      Arrays.stream(buckets).forEach(counts.putArray(member.name())::add);
+    }
   }
 
   @Override
@@ -891,22 +847,12 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     propertySummary(table, ACTION_STATE, actions);
     propertySummary(table, TYPE, actions);
     propertySummary(table, SOURCE_FILE, actions);
-    propertySummary(table, SOURCE_LOCATION, actions);
-
-    binSummary(table, ADDED, actions);
-    binSummary(table, CHECKED, actions);
-    binSummary(table, STATUS_CHANGED, actions);
-    binSummary(table, EXTERNAL, actions);
 
     crosstab(array, actions, ACTION_STATE, TYPE);
     crosstab(array, actions, ACTION_STATE, SOURCE_FILE);
-    crosstab(array, actions, ACTION_STATE, SOURCE_LOCATION);
     crosstab(array, actions, TYPE, SOURCE_FILE);
-    crosstab(array, actions, TYPE, SOURCE_LOCATION);
-    histogram(array, 10, actions, ADDED);
-    histogram(array, 10, actions, CHECKED);
-    histogram(array, 10, actions, STATUS_CHANGED);
-    histogram(array, 10, actions, EXTERNAL);
+    histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
+    histogram(array, 100, actions, INSTANT_BIN, EXTERNAL);
     return array;
   }
 
