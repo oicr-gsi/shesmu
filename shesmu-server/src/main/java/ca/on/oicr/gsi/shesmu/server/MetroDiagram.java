@@ -13,16 +13,9 @@ import ca.on.oicr.gsi.shesmu.server.SourceLocation.SourceLoctionLinker;
 import java.awt.Canvas;
 import java.awt.Font;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -197,39 +190,40 @@ public class MetroDiagram {
     final AtomicInteger row = new AtomicInteger(1);
     final List<DelayedXml> textLayerBuffer = new ArrayList<>();
 
-    final Map<String, MetroDiagram> initialVariables =
-        liveVariableInfo
-            .stream()
-            .flatMap(VariableInformation::inputs)
-            .distinct()
-            .collect(
-                Collectors.toMap(
-                    Function.identity(),
-                    name -> {
-                      final int colour = idGen.getAndIncrement();
-                      try {
-                        return new MetroDiagram(
-                            textLayerBuffer,
-                            writer,
-                            id,
-                            name,
-                            format
-                                .baseStreamVariables()
-                                .filter(var -> var.name().equals(name))
-                                .map(Target::type)
-                                .findFirst()
-                                .orElse(Imyhat.BAD),
-                            "",
-                            colour,
-                            0,
-                            colour,
-                            metroStart,
-                            topPadding,
-                            true);
-                      } catch (XMLStreamException e) {
-                        throw new RuntimeException(e);
-                      }
-                    }));
+    final Map<String, MetroDiagram> initialVariables = new HashMap<>();
+    liveVariableInfo
+        .stream()
+        .flatMap(VariableInformation::inputs)
+        .distinct()
+        .sorted()
+        .forEach(
+            name -> {
+              final int colour = idGen.getAndIncrement();
+              try {
+                initialVariables.put(
+                    name,
+                    new MetroDiagram(
+                        textLayerBuffer,
+                        writer,
+                        id,
+                        name,
+                        format
+                            .baseStreamVariables()
+                            .filter(var -> var.name().equals(name))
+                            .map(Target::type)
+                            .findFirst()
+                            .orElse(Imyhat.BAD),
+                        "",
+                        colour,
+                        0,
+                        colour,
+                        metroStart,
+                        topPadding,
+                        true));
+              } catch (XMLStreamException e) {
+                throw new RuntimeException(e);
+              }
+            });
 
     final SourceLocation source =
         new SourceLocation(filename, olive.line(), olive.column(), timestamp);
