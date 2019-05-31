@@ -32,6 +32,33 @@ epoch) depending on the type.
 A string set is a file, ending in `.set` that will be available to olives as a
 set of strings where each string is a line in a file.
 
+## String Expansions
+A string expansion is a TSV file, ending in `.strexpand`, that substitutes a
+string to multiple values or returns the input as a list. This was designed to
+cope with 10X barcodes: 10X symbolic barcodes need to be replaced by their set
+of real barcodes, but real barcodes should remain.
+
+    SI-GA-A1     GGTTTACT    CTAAACGG    TCGGCGTC    AACCGTAA
+    SI-GA-A2     TTTCATGA    ACGTCCCT    CGCATGTG    GAAGGAAC
+    SI-GA-A3     CAGTACTG    AGTAGTCT    GCAGTAGA    TTCCCGAC
+    SI-GA-A4     TATGATTC    CCCACAGT    ATGCTGAA    GGATGCCG
+    SI-GA-A5     CTAGGTGA    TCGTTCAG    AGCCAATT    GATACGCC
+    SI-GA-A6     CGCTATGT    GCTGTCCA    TTGAGATC    AAACCGAG
+    SI-GA-A7     ACAGAGGT    TATAGTTG    CGGTCCCA    GTCCTAAC
+    SI-GA-A8     GCATCTCC    TGTAAGGT    CTGCGATG    AACGTCAA
+    SI-GA-A9     TCTTAAAG    CGAGGCTC    GTCCTTCT    AAGACGGA
+    SI-GA-A10    GAAACCCT    TTTCTGTC    CCGTGTGA    AGCGAAAG
+    SI-GA-A11    GTCCGGTC    AAGATCAT    CCTGAAGG    TGATCTCA
+    SI-GA-A12    AGTGGAAC    GTCTCCTT    TCACATCA    CAGATGGG
+
+If this is placed in a file named `expand_chromium.strexpand`, then an olive
+can do `expand_chromium("SI-GA-A1")` to get back `["GGTTTACT", "CTAAACGG",
+"TCGGCGTC", "AACCGTAA"]` while `expand_chromium("ATTGCC")` will result in
+`["ATTGCC"]`.
+
+If a line has only one column (_i.e._, only a key), it will return an empty
+set. Blank lines and lines starting with # are ignored.
+
 ## TSV Dumper
 This allows writing values to a tab-separated file using a `Dump` clause. For
 set up, create a file ending in `.tsvdump` as follows:
