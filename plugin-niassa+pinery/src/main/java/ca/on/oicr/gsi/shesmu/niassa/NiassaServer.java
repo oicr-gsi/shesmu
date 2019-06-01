@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
@@ -27,7 +28,7 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.metadata.MetadataWS;
-import net.sourceforge.seqware.common.model.IUS;
+import net.sourceforge.seqware.common.model.*;
 
 class NiassaServer extends JsonPluginFile<Configuration> {
   private class AnalysisCache extends KeyValueCache<Long, Stream<AnalysisState>> {
@@ -91,6 +92,74 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  private static final AnnotationType<FileAttribute> FILE =
+      new AnnotationType<FileAttribute>() {
+        @Override
+        public FileAttribute create() {
+          return new FileAttribute();
+        }
+
+        @Override
+        public File fetch(Metadata metadata, int accession) {
+          return metadata.getFile(accession);
+        }
+
+        @Override
+        public String name() {
+          return "File";
+        }
+
+        @Override
+        public void save(Metadata metadata, int accession, FileAttribute attribute) {
+          metadata.annotateFile(accession, attribute, null);
+        }
+      };
+  private static final AnnotationType<IUSAttribute> IUS =
+      new AnnotationType<IUSAttribute>() {
+        @Override
+        public IUSAttribute create() {
+          return new IUSAttribute();
+        }
+
+        @Override
+        public IUS fetch(Metadata metadata, int accession) {
+          return metadata.getIUS(accession);
+        }
+
+        @Override
+        public String name() {
+          return "IUS";
+        }
+
+        @Override
+        public void save(Metadata metadata, int accession, IUSAttribute attribute) {
+          metadata.annotateIUS(accession, attribute, null);
+        }
+      };
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final AnnotationType<WorkflowRunAttribute> WORKFLOW_RUN =
+      new AnnotationType<WorkflowRunAttribute>() {
+        @Override
+        public WorkflowRunAttribute create() {
+          return new WorkflowRunAttribute();
+        }
+
+        @Override
+        public WorkflowRun fetch(Metadata metadata, int accession) {
+          return metadata.getWorkflowRun(accession);
+        }
+
+        @Override
+        public String name() {
+          return "Workflow Run";
+        }
+
+        @Override
+        public void save(Metadata metadata, int accession, WorkflowRunAttribute attribute) {
+          metadata.annotateWorkflowRun(accession, attribute, null);
+        }
+      };
+
   static ActionState processingStateToActionState(String state) {
     if (state == null) {
       return ActionState.UNKNOWN;
@@ -114,7 +183,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
   private final AnalysisCache analysisCache;
   private Optional<Configuration> configuration = Optional.empty();
 
@@ -143,6 +211,21 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   public KeyValueCache<Long, Stream<AnalysisState>> analysisCache() {
     return analysisCache;
+  }
+
+  @ShesmuAction(description = "Add an annotation to a file.")
+  public AnnotationAction<FileAttribute> annotate_$_file() {
+    return new AnnotationAction<>(definer, FILE);
+  }
+
+  @ShesmuAction(description = "Add an annotation to an IUS.")
+  public AnnotationAction<IUSAttribute> annotate_$_ius() {
+    return new AnnotationAction<>(definer, IUS);
+  }
+
+  @ShesmuAction(description = "Add an annotation to a workflow run.")
+  public AnnotationAction<WorkflowRunAttribute> annotate_$_workflow_run() {
+    return new AnnotationAction<>(definer, WORKFLOW_RUN);
   }
 
   @Override

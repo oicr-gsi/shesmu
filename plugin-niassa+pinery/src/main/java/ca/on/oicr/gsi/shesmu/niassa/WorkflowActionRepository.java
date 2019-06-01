@@ -35,5 +35,9 @@ public class WorkflowActionRepository extends PluginFileType<NiassaServer> {
     writer.println("  ]))");
     writer.println(
         "  .concat(a.matches.map(m => text(`Potential Match ${m.workflowRunAccession} [${m.state}]: ${m.match} ${m.stale ? '️🍞 Stale' : ''} ${m.extraLimsKeys ? '⬆️ Extra LIMS Keys' : ''} ${m.missingLimsKeys ? '️⬇️ Missing LIMS Keys' : ''} ${m.fileSubset ? '📂️️ Missing Files' : ''}`))));");
+    writer.println("actionRender.set('niassa-annotation', a => [");
+    writer.println("    title(a, `Annotate ${a.name} ${a.accession}`),");
+    writer.println("    text(`Key: ${a.key}`),");
+    writer.println("    text(`Value: ${a.value}`)]);");
   }
 }
