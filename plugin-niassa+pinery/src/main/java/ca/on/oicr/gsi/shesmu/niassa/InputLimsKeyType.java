@@ -12,6 +12,26 @@ import java.util.function.Function;
  * parameters can share on entry here.
  */
 public enum InputLimsKeyType {
+  BAM_MERGE(
+      "inputs",
+      BamMergeInputLimsCollection::new,
+      TypeGuarantee.list(
+          TypeGuarantee.tuple(
+              BamMergeGroup::new,
+              TypeGuarantee.STRING, // Output name
+              TypeGuarantee.list(
+                  TypeGuarantee.tuple(
+                      BamMergeEntry::new,
+                      TypeGuarantee.STRING, // SWID
+                      TypeGuarantee.STRING, // File name
+                      TypeGuarantee.tuple(
+                          SimpleLimsKey::new,
+                          TypeGuarantee.STRING,
+                          TypeGuarantee.STRING,
+                          TypeGuarantee.STRING,
+                          TypeGuarantee.DATE), // LIMS key
+                      TypeGuarantee.BOOLEAN // staleness
+                      ))))),
   BCL2FASTQ(
       "lanes",
       Bcl2FastqInputLimsCollection::new,
@@ -58,6 +78,7 @@ public enum InputLimsKeyType {
                   TypeGuarantee.DATE), // LIMS key
               TypeGuarantee.STRING) // group id
           )),
+
   FILES(
       "inputs",
       FilesInputLimsCollection::new,
