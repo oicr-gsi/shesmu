@@ -12,7 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
  * property in that JSON object.
  */
 public final class JsonParameter<A extends JsonParameterisedAction>
-    extends CustomActionParameter<A, Object> {
+    extends CustomActionParameter<A> {
 
   /**
    * The name of the JSON field

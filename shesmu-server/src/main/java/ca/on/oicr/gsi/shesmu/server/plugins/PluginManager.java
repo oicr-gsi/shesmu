@@ -27,6 +27,7 @@ import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.ShesmuSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -337,7 +338,7 @@ public final class PluginManager
           String description,
           Class<A> clazz,
           Supplier<A> supplier,
-          Stream<CustomActionParameter<A, ?>> parameters) {
+          Stream<CustomActionParameter<A>> parameters) {
         final MethodHandle handle =
             MH_SUPPLIER_GET.bindTo(supplier).asType(MethodType.methodType(clazz));
         actions.put(
@@ -367,7 +368,7 @@ public final class PluginManager
 
       @Override
       public <R> void defineConstant(
-          String name, String description, TypeGuarantee<R> type, R value) {
+          String name, String description, ReturnTypeGuarantee<R> type, R value) {
         constants.put(
             name,
             new ArbitraryConstantDefinition(
@@ -380,7 +381,10 @@ public final class PluginManager
 
       @Override
       public <R> void defineConstant(
-          String name, String description, TypeGuarantee<R> returnType, Supplier<R> constant) {
+          String name,
+          String description,
+          ReturnTypeGuarantee<R> returnType,
+          Supplier<R> constant) {
 
         constants.put(
             name,
@@ -394,7 +398,9 @@ public final class PluginManager
 
       @Override
       public <R> void defineDynamicSigner(
-          String name, TypeGuarantee<R> returnType, Supplier<? extends DynamicSigner<R>> signer) {
+          String name,
+          ReturnTypeGuarantee<R> returnType,
+          Supplier<? extends DynamicSigner<R>> signer) {
         signatures.put(
             name,
             new ArbitraryDynamicSignatureDefintion(
@@ -426,7 +432,7 @@ public final class PluginManager
       public <A, R> void defineFunction(
           String name,
           String description,
-          TypeGuarantee<R> returnType,
+          ReturnTypeGuarantee<R> returnType,
           String parameterDescription,
           TypeGuarantee<A> parameterType,
           Function<A, R> function) {
@@ -451,7 +457,7 @@ public final class PluginManager
       public <A, B, R> void defineFunction(
           String name,
           String description,
-          TypeGuarantee<R> returnType,
+          ReturnTypeGuarantee<R> returnType,
           String parameter1Description,
           TypeGuarantee<A> parameter1Type,
           String parameter2Description,
@@ -525,7 +531,9 @@ public final class PluginManager
 
       @Override
       public <R> void defineStaticSigner(
-          String name, TypeGuarantee<R> returnType, Supplier<? extends StaticSigner<R>> signer) {
+          String name,
+          ReturnTypeGuarantee<R> returnType,
+          Supplier<? extends StaticSigner<R>> signer) {
         signatures.put(
             name,
             new ArbitraryStaticSignatureDefintion(

@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -40,7 +41,7 @@ public interface Definer<T> extends Supplier<T> {
       String description,
       Class<A> clazz,
       Supplier<A> supplier,
-      Stream<CustomActionParameter<A, ?>> parameters);
+      Stream<CustomActionParameter<A>> parameters);
 
   /**
    * Define a constant using a particular value
@@ -60,7 +61,8 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the Shesmu type for the constant
    * @param value the current value of the object
    */
-  <R> void defineConstant(String name, String description, TypeGuarantee<R> returnType, R value);
+  <R> void defineConstant(
+      String name, String description, ReturnTypeGuarantee<R> returnType, R value);
 
   /**
    * Define a constant using a particular value
@@ -71,7 +73,7 @@ public interface Definer<T> extends Supplier<T> {
    * @param constant a callback to compute the current value of the constant
    */
   <R> void defineConstant(
-      String name, String description, TypeGuarantee<R> returnType, Supplier<R> constant);
+      String name, String description, ReturnTypeGuarantee<R> returnType, Supplier<R> constant);
 
   /**
    * Define a new signature format that looks at input objects
@@ -80,8 +82,8 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the return type of the signature
    * @param signer a function to construct new signers
    */
-  <T> void defineDynamicSigner(
-      String name, TypeGuarantee<T> returnType, Supplier<? extends DynamicSigner<T>> signer);
+  <R> void defineDynamicSigner(
+      String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends DynamicSigner<R>> signer);
 
   /**
    * Define a function taking many parameters
@@ -112,7 +114,7 @@ public interface Definer<T> extends Supplier<T> {
   <A, R> void defineFunction(
       String name,
       String description,
-      TypeGuarantee<R> returnType,
+      ReturnTypeGuarantee<R> returnType,
       String parameterName,
       TypeGuarantee<A> parameterType,
       Function<A, R> function);
@@ -132,7 +134,7 @@ public interface Definer<T> extends Supplier<T> {
   <A, B, R> void defineFunction(
       String name,
       String description,
-      TypeGuarantee<R> returnType,
+      ReturnTypeGuarantee<R> returnType,
       String parameter1Name,
       TypeGuarantee<A> parameter1Type,
       String parameter2Name,
@@ -147,6 +149,6 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the return type of the signature
    * @param signer a function to construct new signers
    */
-  <T> void defineStaticSigner(
-      String name, TypeGuarantee<T> returnType, Supplier<? extends StaticSigner<T>> signer);
+  <R> void defineStaticSigner(
+      String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends StaticSigner<R>> signer);
 }

@@ -1,9 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -18,19 +15,18 @@ final class CellRangerIUSEntry implements LimsKey {
   private final String sampleId;
   private final String version;
 
-  public CellRangerIUSEntry(Tuple t) {
-    final Tuple ius = (Tuple) t.get(0);
-    ius_1 = ((Long) ius.get(1)).intValue();
-    ius_2 = (String) ius.get(2);
+  public CellRangerIUSEntry(IusTriple ius, String libraryName, LimsKey limsKey, String groupId) {
+    ius_1 = ius.lane();
+    ius_2 = ius.barcode();
 
-    libraryName = (String) t.get(1);
-    final Tuple lims = (Tuple) t.get(2);
-    sampleId = (String) lims.get(0);
-    version = (String) lims.get(1);
-    provider = (String) lims.get(2);
+    this.libraryName = libraryName;
 
-    lastModified = ZonedDateTime.ofInstant((Instant) t.get(3), ZoneId.of("Z"));
-    groupId = (String) t.get(4);
+    sampleId = limsKey.getId();
+    version = limsKey.getVersion();
+    provider = limsKey.getProvider();
+    lastModified = limsKey.getLastModified();
+
+    this.groupId = groupId;
   }
 
   public String asLaneString(int swid) {
