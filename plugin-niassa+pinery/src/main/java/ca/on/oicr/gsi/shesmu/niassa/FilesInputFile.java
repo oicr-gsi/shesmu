@@ -1,9 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -16,16 +13,15 @@ public final class FilesInputFile implements LimsKey {
   private final int swid;
   private final String version;
 
-  public FilesInputFile(Tuple tuple) {
-    swid = Integer.parseUnsignedInt((String) tuple.get(0));
+  public FilesInputFile(String swid, LimsKey limsKey, boolean stale) {
+    this.swid = Integer.parseUnsignedInt(swid);
 
-    final Tuple lims = (Tuple) tuple.get(1);
-    sampleId = (String) lims.get(0);
-    version = (String) lims.get(1);
-    provider = (String) lims.get(2);
-    lastModified = ((Instant) lims.get(3)).atZone(ZoneId.of("Z"));
+    sampleId = limsKey.getId();
+    version = limsKey.getVersion();
+    provider = limsKey.getProvider();
+    lastModified = limsKey.getLastModified();
 
-    stale = (Boolean) tuple.get(2);
+    this.stale = stale;
   }
 
   @Override

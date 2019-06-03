@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
@@ -9,6 +11,14 @@ public class SimpleLimsKey implements LimsKey {
   private final ZonedDateTime lastModified;
   private final String provider;
   private final String version;
+
+  public SimpleLimsKey(String id, String version, String provider, Instant lastModified) {
+
+    this.id = id;
+    this.version = version;
+    this.provider = provider;
+    this.lastModified = ZonedDateTime.ofInstant(lastModified, ZoneId.of("Z"));
+  }
 
   public SimpleLimsKey(LimsKey original) {
     provider = original.getProvider();

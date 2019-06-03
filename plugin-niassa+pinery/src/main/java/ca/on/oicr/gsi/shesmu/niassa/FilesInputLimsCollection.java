@@ -1,22 +1,18 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class FilesInputLimsCollection implements InputLimsCollection {
   final List<FilesInputFile> filesInputFileInformation;
 
-  public FilesInputLimsCollection(Set<Tuple> value) {
-    filesInputFileInformation =
-        value.stream().map(FilesInputFile::new).collect(Collectors.toList());
+  public FilesInputLimsCollection(List<FilesInputFile> value) {
+    filesInputFileInformation = value;
   }
 
   @Override

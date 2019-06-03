@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -29,11 +28,11 @@ import java.util.stream.Stream;
  */
 public final class IniParam<T> {
   /** Save a Boolean value as "true" or "false" */
-  public static final Stringifier<Boolean> BOOLEAN =
-      new Stringifier<Boolean>() {
+  public static final Stringifier BOOLEAN =
+      new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Boolean value) {
+        public String stringify(WorkflowAction action, Object value) {
           return value.toString();
         }
 
@@ -43,11 +42,11 @@ public final class IniParam<T> {
         }
       };
   /** Save an integer in the way you'd expect */
-  public static final Stringifier<Long> INTEGER =
-      new Stringifier<Long>() {
+  public static final Stringifier INTEGER =
+      new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Long value) {
+        public String stringify(WorkflowAction action, Object value) {
           return value.toString();
         }
 
@@ -57,12 +56,12 @@ public final class IniParam<T> {
         }
       };
   /** Save a string exactly as it is passed by the user */
-  public static final Stringifier<String> STRING =
-      new Stringifier<String>() {
+  public static final Stringifier STRING =
+      new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, String value) {
-          return value;
+        public String stringify(WorkflowAction action, Object value) {
+          return (String) value;
         }
 
         @Override
@@ -71,11 +70,11 @@ public final class IniParam<T> {
         }
       };
   /** Save a path */
-  public static final Stringifier<Path> PATH =
-      new Stringifier<Path>() {
+  public static final Stringifier PATH =
+      new Stringifier() {
 
         @Override
-        public String stringify(WorkflowAction action, Path value) {
+        public String stringify(WorkflowAction action, Object value) {
           return value.toString();
         }
 
@@ -88,7 +87,7 @@ public final class IniParam<T> {
   private String iniName;
   private String name;
   private boolean required;
-  private Stringifier<T> type;
+  private Stringifier type;
 
   public IniParam() {}
 
@@ -97,13 +96,13 @@ public final class IniParam<T> {
    *
    * @param format a format understandable by {@link DateTimeFormatter#ofPattern(String)}
    */
-  public static Stringifier<Instant> date(String format) {
-    return new Stringifier<Instant>() {
+  public static Stringifier date(String format) {
+    return new Stringifier() {
       private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
 
       @Override
-      public String stringify(WorkflowAction action, Instant value) {
-        return formatter.format(LocalDateTime.ofInstant(value, ZoneOffset.UTC));
+      public String stringify(WorkflowAction action, Object value) {
+        return formatter.format(LocalDateTime.ofInstant((Instant) value, ZoneOffset.UTC));
       }
 
       @Override
@@ -121,12 +120,12 @@ public final class IniParam<T> {
    * @param delimiter the delimiter between the items
    * @param inner the type of the items to be concatenated
    */
-  public static <T> Stringifier<Set<T>> list(String delimiter, Stringifier<T> inner) {
-    return new Stringifier<Set<T>>() {
+  public static Stringifier list(String delimiter, Stringifier inner) {
+    return new Stringifier() {
 
       @Override
-      public String stringify(WorkflowAction action, Set<T> values) {
-        return values
+      public String stringify(WorkflowAction action, Object values) {
+        return ((Set<?>) values)
             .stream()
             .map(value -> inner.stringify(action, value))
             .collect(Collectors.joining(delimiter));
@@ -145,28 +144,28 @@ public final class IniParam<T> {
    * @param delimiter the delimiter between the items
    * @param inner the items in the tuple
    */
-  public static Stringifier<Tuple> tuple(String delimiter, Stream<Stringifier<?>> inner) {
-    return new Stringifier<Tuple>() {
-      private final List<Pair<Integer, Stringifier<?>>> contents =
+  public static Stringifier tuple(String delimiter, Stream<Stringifier> inner) {
+    return new Stringifier() {
+      private final List<Pair<Integer, Stringifier>> contents =
           inner
               .map(
-                  new Function<Stringifier<?>, Pair<Integer, Stringifier<?>>>() {
+                  new Function<Stringifier, Pair<Integer, Stringifier>>() {
                     private int index;
 
                     @Override
-                    public Pair<Integer, Stringifier<?>> apply(Stringifier<?> stringifier) {
+                    public Pair<Integer, Stringifier> apply(Stringifier stringifier) {
                       return new Pair<>(index++, stringifier);
                     }
                   })
               .collect(Collectors.toList());
 
-      @SuppressWarnings("unchecked")
-      private <T> String apply(WorkflowAction action, Stringifier<T> stringifier, Object value) {
-        return stringifier.stringify(action, (T) value);
+      private <T> String apply(WorkflowAction action, Stringifier stringifier, Object value) {
+        return stringifier.stringify(action, value);
       }
 
       @Override
-      public String stringify(WorkflowAction action, Tuple value) {
+      public String stringify(WorkflowAction action, Object v) {
+        final Tuple value = (Tuple) v;
         return contents
             .stream()
             .map(p -> apply(action, p.second(), value.get(p.first())))
@@ -190,11 +189,12 @@ public final class IniParam<T> {
    *
    * @param factor the units of the target value (i.e., 1024*1024 for a value in megabytes)
    */
-  public static Stringifier<Long> correctInteger(int factor) {
-    return new Stringifier<Long>() {
+  public static Stringifier correctInteger(int factor) {
+    return new Stringifier() {
 
       @Override
-      public String stringify(WorkflowAction action, Long value) {
+      public String stringify(WorkflowAction action, Object v) {
+        final long value = (Long) v;
         if (value == 0) {
           return "0";
         }
@@ -230,10 +230,10 @@ public final class IniParam<T> {
     this.name = name;
   }
 
-  CustomActionParameter<WorkflowAction, T> parameter() {
-    return new CustomActionParameter<WorkflowAction, T>(name, required, type.type()) {
+  CustomActionParameter<WorkflowAction> parameter() {
+    return new CustomActionParameter<WorkflowAction>(name, required, type.type()) {
       @Override
-      public void store(WorkflowAction action, T value) {
+      public void store(WorkflowAction action, Object value) {
         action.ini.put(iniName, type.stringify(action, value));
       }
     };
@@ -247,24 +247,24 @@ public final class IniParam<T> {
     this.iniName = iniName;
   }
 
-  public Stringifier<T> getType() {
+  public Stringifier getType() {
     return type;
   }
 
-  public void setType(Stringifier<T> type) {
+  public void setType(Stringifier type) {
     this.type = type;
   }
 
   @JsonDeserialize(using = StringifierDeserializer.class)
-  public abstract static class Stringifier<T> {
-    public abstract String stringify(WorkflowAction action, T value);
+  public abstract static class Stringifier {
+    public abstract String stringify(WorkflowAction action, Object value);
 
     public abstract Imyhat type();
   }
 
   public static class StringifierDeserializer extends JsonDeserializer<Stringifier> {
 
-    private Stringifier<?> deserialize(JsonNode node) {
+    private Stringifier deserialize(JsonNode node) {
       if (node.isTextual()) {
         final String str = node.asText();
         switch (str) {

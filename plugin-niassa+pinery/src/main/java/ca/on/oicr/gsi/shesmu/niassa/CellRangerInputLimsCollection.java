@@ -1,18 +1,16 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.util.*;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class CellRangerInputLimsCollection implements InputLimsCollection {
   final List<CellRangerIUSEntry> limsKeys;
 
-  public CellRangerInputLimsCollection(Set<Tuple> value) {
-    limsKeys = value.stream().map(CellRangerIUSEntry::new).collect(Collectors.toList());
+  public CellRangerInputLimsCollection(List<CellRangerIUSEntry> value) {
+    limsKeys = value;
   }
 
   @Override

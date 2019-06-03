@@ -62,7 +62,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
               .findVirtual(
                   CustomActionParameter.class,
                   "store",
-                  MethodType.methodType(Void.TYPE, Action.class, Object.class));
+                  MethodType.methodType(void.class, Action.class, Object.class));
     } catch (NoSuchMethodException | IllegalAccessException e) {
       e.printStackTrace();
     }
@@ -188,7 +188,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
   private final Imyhat type;
 
   public InvokeDynamicActionParameterDescriptor(
-      String actionName, CustomActionParameter<?, ?> parameter) {
+      String actionName, CustomActionParameter<?> parameter) {
     this(
         actionName,
         parameter.name(),

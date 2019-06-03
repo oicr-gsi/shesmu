@@ -1,18 +1,13 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 
 /** A definition for a parameter to an action */
-public abstract class CustomActionParameter<A extends Action, T> {
+public abstract class CustomActionParameter<A extends Action> {
 
   private final String name;
   private final boolean required;
   private final Imyhat type;
-
-  public CustomActionParameter(String name, boolean required, TypeGuarantee<T> type) {
-    this(name, required, type.type());
-  }
 
   public CustomActionParameter(String name, boolean required, Imyhat type) {
     super();
@@ -36,7 +31,7 @@ public abstract class CustomActionParameter<A extends Action, T> {
   }
 
   /** Store the value in an action */
-  public abstract void store(A action, T value);
+  public abstract void store(A action, Object value);
 
   /** The type of the parameter */
   public final Imyhat type() {
