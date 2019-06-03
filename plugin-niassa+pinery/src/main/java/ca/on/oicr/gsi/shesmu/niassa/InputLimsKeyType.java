@@ -12,6 +12,32 @@ import java.util.function.Function;
  * parameters can share on entry here.
  */
 public enum InputLimsKeyType {
+  BCL2FASTQ(
+      "lanes",
+      Bcl2FastqInputLimsCollection::new,
+      TypeGuarantee.list(
+          TypeGuarantee.tuple(
+              Bcl2FastqLaneEntry::new,
+              TypeGuarantee.LONG, // lane number
+              TypeGuarantee.tuple(
+                  SimpleLimsKey::new,
+                  TypeGuarantee.STRING,
+                  TypeGuarantee.STRING,
+                  TypeGuarantee.STRING,
+                  TypeGuarantee.DATE), // lane LIMS key
+              TypeGuarantee.list(
+                  TypeGuarantee.tuple(
+                      Bcl2FastqSampleEntry::new,
+                      TypeGuarantee.STRING, // sample barcode
+                      TypeGuarantee.STRING, // sample library name
+                      TypeGuarantee.tuple(
+                          SimpleLimsKey::new,
+                          TypeGuarantee.STRING,
+                          TypeGuarantee.STRING,
+                          TypeGuarantee.STRING,
+                          TypeGuarantee.DATE), // sample LIMS key
+                      TypeGuarantee.STRING) // sample group id
+                  )))),
   CELL_RANGER(
       "lanes",
       CellRangerInputLimsCollection::new,
