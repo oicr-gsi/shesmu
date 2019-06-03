@@ -195,7 +195,7 @@ public final class PineryIUSValue {
     return library_type;
   }
 
-  @ShesmuVariable(type = "t3sss")
+  @ShesmuVariable(type = "t4sssd")
   public Tuple lims() {
     return lims;
   }

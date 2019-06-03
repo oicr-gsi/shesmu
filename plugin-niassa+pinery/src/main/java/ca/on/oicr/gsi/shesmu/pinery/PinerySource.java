@@ -114,6 +114,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         .orElse("");
                 runDirectoriesAndMasks.put(
                     lp.getSequencerRunName(), new Pair<>(runDirectory, basesMask));
+                final Instant lastModified =
+                    lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
                 final PineryIUSValue result =
                     new PineryIUSValue(
                         Paths.get(runDirectory),
@@ -136,10 +138,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         0L,
                         "",
                         "",
-                        lp.getLastModified() == null
-                            ? Instant.EPOCH
-                            : lp.getLastModified().toInstant(),
-                        new Tuple(lp.getLaneProvenanceId(), lp.getVersion(), provider),
+                        lastModified,
+                        new Tuple(
+                            lp.getLaneProvenanceId(), lp.getVersion(), provider, lastModified),
                         lp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : lp.getCreatedDate().toInstant(),
@@ -149,7 +150,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 if (badSetInRecord.isEmpty()) {
                   return result;
                 } else {
-                  badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
+                  badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, Integer::sum));
                   return null;
                 }
               })
@@ -174,6 +175,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                   return null;
                 }
                 final Set<String> badSetInRecord = new TreeSet<>();
+                final Instant lastModified =
+                    sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant();
                 final PineryIUSValue result =
                     new PineryIUSValue(
                         Paths.get(runDirectoryAndMask.first()),
@@ -202,10 +205,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             .orElse(0L),
                         limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""),
                         limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
-                        sp.getLastModified() == null
-                            ? Instant.EPOCH
-                            : sp.getLastModified().toInstant(),
-                        new Tuple(sp.getSampleProvenanceId(), sp.getVersion(), provider),
+                        lastModified,
+                        new Tuple(
+                            sp.getSampleProvenanceId(), sp.getVersion(), provider, lastModified),
                         sp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : sp.getCreatedDate().toInstant(),
@@ -215,7 +217,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 if (badSetInRecord.isEmpty()) {
                   return result;
                 } else {
-                  badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, (a, b) -> a + b));
+                  badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, Integer::sum));
                   return null;
                 }
               })
