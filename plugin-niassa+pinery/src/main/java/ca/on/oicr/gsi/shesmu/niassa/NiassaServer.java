@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
+import ca.on.oicr.gsi.shesmu.cerberus.CerberusAnalysisProvenanceValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -12,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,6 +61,29 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  private class AnalysisDataCache extends ValueCache<Stream<CerberusAnalysisProvenanceValue>> {
+    public AnalysisDataCache(Path fileName) {
+      super("niassa-data-analysis " + fileName.toString(), 20, ReplacingRecord::new);
+    }
+
+    @Override
+    protected Stream<CerberusAnalysisProvenanceValue> fetch(Instant lastUpdated)
+        throws IOException {
+      if (metadata == null) {
+        return Stream.empty();
+      }
+      return metadata
+          .getAnalysisProvenance()
+          .stream()
+          .filter(ap -> ap.getWorkflowId() != null)
+          .flatMap(
+              ap ->
+                  ap.getIusLimsKeys()
+                      .stream()
+                      .map(ius -> new CerberusAnalysisProvenanceValue(ap, ius, () -> {})));
+    }
+  }
+
   private class SkipLaneCache extends ValueCache<Stream<Pair<Tuple, Tuple>>> {
     public SkipLaneCache(Path fileName) {
       super("niassa-skipped " + fileName.toString(), 20, ReplacingRecord::new);
@@ -89,6 +114,29 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                         originalIUS.getTag());
                 return new Pair<>(ius, limsKey);
               });
+    }
+  }
+
+  static ActionState processingStateToActionState(String state) {
+    if (state == null) {
+      return ActionState.UNKNOWN;
+    }
+    switch (WorkflowRunStatus.valueOf(state)) {
+      case submitted:
+      case submitted_retry:
+        return ActionState.WAITING;
+      case pending:
+        return ActionState.QUEUED;
+      case running:
+        return ActionState.INFLIGHT;
+      case cancelled:
+      case submitted_cancel:
+      case failed:
+        return ActionState.FAILED;
+      case completed:
+        return ActionState.SUCCEEDED;
+      default:
+        return ActionState.UNKNOWN;
     }
   }
 
@@ -159,31 +207,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateWorkflowRun(accession, attribute, null);
         }
       };
-
-  static ActionState processingStateToActionState(String state) {
-    if (state == null) {
-      return ActionState.UNKNOWN;
-    }
-    switch (WorkflowRunStatus.valueOf(state)) {
-      case submitted:
-      case submitted_retry:
-        return ActionState.WAITING;
-      case pending:
-        return ActionState.QUEUED;
-      case running:
-        return ActionState.INFLIGHT;
-      case cancelled:
-      case submitted_cancel:
-      case failed:
-        return ActionState.FAILED;
-      case completed:
-        return ActionState.SUCCEEDED;
-      default:
-        return ActionState.UNKNOWN;
-    }
-  }
-
   private final AnalysisCache analysisCache;
+  private final AnalysisDataCache analysisDataCache;
   private Optional<Configuration> configuration = Optional.empty();
 
   private final Definer<NiassaServer> definer;
@@ -198,6 +223,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     super(fileName, instanceNane, MAPPER, Configuration.class);
     this.definer = definer;
     analysisCache = new AnalysisCache(fileName);
+    analysisDataCache = new AnalysisDataCache(fileName);
     skipCache = new SkipLaneCache(fileName);
   }
 
@@ -255,6 +281,11 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   public Metadata metadata() {
     return metadata;
+  }
+
+  @ShesmuInputSource
+  public Stream<CerberusAnalysisProvenanceValue> provenance() {
+    return analysisDataCache.get();
   }
 
   public Properties settings() {

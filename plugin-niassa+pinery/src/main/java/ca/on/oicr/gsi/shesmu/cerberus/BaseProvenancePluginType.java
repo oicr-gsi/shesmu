@@ -253,7 +253,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     return new Tuple("", 0L, "");
   }
 
-  private static Tuple parseWorkflowVersion(String input, Runnable isBad) {
+  public static Tuple parseWorkflowVersion(String input, Runnable isBad) {
     final Matcher m3 = WORKFLOW_VERSION3.matcher(input);
     if (m3.matches()) {
       return new Tuple(
