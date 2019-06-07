@@ -934,14 +934,10 @@ public final class RegroupVariablesBuilder implements Regrouper {
     ctor.visitCode();
     ctor.loadThis();
     ctor.invokeConstructor(A_OBJECT_TYPE, CTOR_DEFAULT);
-    elements
-        .stream()
-        .reduce(
-            0,
-            (index, element) -> element.buildConstructor(ctor, index),
-            (a, b) -> {
-              throw new UnsupportedOperationException();
-            });
+    int index = 0;
+    for (final Element element : elements) {
+      index = element.buildConstructor(ctor, index);
+    }
     ctor.visitInsn(Opcodes.RETURN);
     ctor.visitMaxs(0, 0);
     ctor.visitEnd();
