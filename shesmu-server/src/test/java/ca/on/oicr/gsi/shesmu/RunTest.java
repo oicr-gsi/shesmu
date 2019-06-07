@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -329,6 +331,7 @@ public class RunTest {
   }
 
   private boolean testFile(Path file) {
+    final AtomicReference<FileTable> dashboard = new AtomicReference<>();
     try {
       final HotloadingCompiler compiler =
           new HotloadingCompiler(
@@ -366,7 +369,8 @@ public class RunTest {
                       return Stream.empty();
                     }
                   }));
-      final ActionGenerator generator = compiler.compile(file, null).orElse(ActionGenerator.NULL);
+      final ActionGenerator generator =
+          compiler.compile(file, dashboard::set).orElse(ActionGenerator.NULL);
       compiler.errors().forEach(System.err::println);
       final ActionChecker checker = new ActionChecker();
       final InputProviderChecker input = new InputProviderChecker();
@@ -381,6 +385,9 @@ public class RunTest {
       }
     } catch (Exception | VerifyError | BootstrapMethodError | IncompatibleClassChangeError e) {
       System.err.printf("EXCP %s\n", file.getFileName());
+      if (dashboard.get() != null) {
+        System.err.println(dashboard.get().bytecode());
+      }
       e.printStackTrace();
       return true;
     }
