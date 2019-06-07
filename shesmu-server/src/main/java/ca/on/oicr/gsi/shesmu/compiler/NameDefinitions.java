@@ -4,8 +4,10 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -78,7 +80,6 @@ public class NameDefinitions {
    * <p>This will eclipse any existing definition
    *
    * @param parameter the parameter to bind
-   * @return
    */
   public NameDefinitions bind(Target parameter) {
     return new NameDefinitions(
@@ -88,6 +89,27 @@ public class NameDefinitions {
                     .values()
                     .stream()
                     .filter(variable -> !variable.name().equals(parameter.name())))
+            .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
+        isGood);
+  }
+
+  /**
+   * Bind a lambda parameter to the known names
+   *
+   * <p>This will eclipse any existing definition
+   *
+   * @param parameters the parameters to bind
+   */
+  public NameDefinitions bind(List<Target> parameters) {
+    final Set<String> shadowedNames =
+        parameters.stream().map(Target::name).collect(Collectors.toSet());
+    return new NameDefinitions(
+        Stream.concat(
+                parameters.stream(),
+                variables
+                    .values()
+                    .stream()
+                    .filter(variable -> !shadowedNames.contains(variable.name())))
             .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
         isGood);
   }
