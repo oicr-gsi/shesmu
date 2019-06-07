@@ -1,3 +1,7 @@
+h2 {
+    font-size: inherit;
+}
+
 a:visited, a:link {
     color: #077888;
 }

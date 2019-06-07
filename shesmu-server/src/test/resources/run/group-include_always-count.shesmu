@@ -1,0 +1,13 @@
+Input test;
+
+Olive
+ Group
+  By workflow
+  Using always_include
+    key = accession,
+    include_when = "1"
+  With x, iswild
+  Into
+    a = Count,
+    b = Where x == accession Count
+ Run ok With ok = a == 2 && b == 1;

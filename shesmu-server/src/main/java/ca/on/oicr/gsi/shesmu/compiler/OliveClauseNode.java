@@ -1,16 +1,12 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -45,21 +41,96 @@ public abstract class OliveClauseNode {
     }
     final Parser groupParser = input.keyword("Group");
     if (groupParser.isGood()) {
-      final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
+      final AtomicReference<List<GroupNode>> collectors =
+          new AtomicReference<>(Collections.emptyList());
       final AtomicReference<List<DiscriminatorNode>> discriminators = new AtomicReference<>();
-      final Parser result =
-          groupParser
-              .whitespace()
-              .listEmpty(groups::set, GroupNode::parse, ',')
-              .whitespace()
-              .keyword("By")
-              .whitespace()
-              .list(discriminators::set, DiscriminatorNode::parse, ',')
-              .whitespace();
+      final AtomicReference<String> name = new AtomicReference<>();
+      final AtomicReference<List<Pair<String, ExpressionNode>>> inputs = new AtomicReference<>();
+      final AtomicReference<List<String>> outputs = new AtomicReference<>();
+
+      Parser result = groupParser.whitespace().keyword("By");
       if (result.isGood()) {
-        output.accept(
-            new OliveClauseNodeGroup(
-                input.line(), input.column(), groups.get(), discriminators.get()));
+        result =
+            result
+                .whitespace()
+                .list(discriminators::set, DiscriminatorNode::parse, ',')
+                .whitespace()
+                .keyword(
+                    "Using",
+                    up ->
+                        up.whitespace()
+                            .identifier(name::set)
+                            .whitespace()
+                            .list(
+                                inputs::set,
+                                (p, o) -> {
+                                  final AtomicReference<String> parameterName =
+                                      new AtomicReference<>();
+                                  final AtomicReference<ExpressionNode> expression =
+                                      new AtomicReference<>();
+                                  final Parser paramResult =
+                                      p.whitespace()
+                                          .identifier(parameterName::set)
+                                          .whitespace()
+                                          .symbol("=")
+                                          .whitespace()
+                                          .then(ExpressionNode::parse, expression::set)
+                                          .whitespace();
+                                  if (paramResult.isGood()) {
+                                    o.accept(new Pair<>(parameterName.get(), expression.get()));
+                                  }
+                                  return paramResult;
+                                },
+                                ',')
+                            .whitespace()
+                            .keyword(
+                                "With",
+                                wp ->
+                                    wp.whitespace()
+                                        .listEmpty(
+                                            outputs::set,
+                                            (p, o) -> p.whitespace().identifier(o).whitespace(),
+                                            ',')
+                                        .whitespace()))
+                .keyword(
+                    "Into",
+                    ip ->
+                        ip.whitespace()
+                            .listEmpty(collectors::set, GroupNode::parse, ',')
+                            .whitespace());
+        if (result.isGood()) {
+          if (name.get() == null) {
+            output.accept(
+                new OliveClauseNodeGroup(
+                    input.line(), input.column(), collectors.get(), discriminators.get()));
+          } else {
+            output.accept(
+                new OliveClauseNodeGroupWithGrouper(
+                    input.line(),
+                    input.column(),
+                    name.get(),
+                    inputs.get(),
+                    outputs.get(),
+                    collectors.get(),
+                    discriminators.get()));
+          }
+        }
+      } else {
+        // This is the old syntax for grouping.
+        result =
+            groupParser
+                .whitespace()
+                .listEmpty(collectors::set, GroupNode::parse, ',')
+                .whitespace()
+                .keyword("By")
+                .whitespace()
+                .list(discriminators::set, DiscriminatorNode::parse, ',')
+                .whitespace();
+        if (result.isGood()) {
+          output.accept(
+              new OliveClauseNodeGroup(
+                  input.line(), input.column(), collectors.get(), discriminators.get()));
+        }
       }
       return result;
     }

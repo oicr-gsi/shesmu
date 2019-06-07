@@ -36,6 +36,7 @@ syn keyword shesmuKeyword Function
 syn keyword shesmuKeyword From
 syn keyword shesmuKeyword Group
 syn keyword shesmuKeyword In
+syn keyword shesmuKeyword Into
 syn keyword shesmuKeyword Input
 syn keyword shesmuKeyword Join
 syn keyword shesmuKeyword Labels
@@ -65,6 +66,7 @@ syn keyword shesmuKeyword Then
 syn keyword shesmuKeyword Timeout
 syn keyword shesmuKeyword To
 syn keyword shesmuKeyword TypeAlias
+syn keyword shesmuKeyword Using
 syn keyword shesmuKeyword When
 syn keyword shesmuKeyword Where
 syn keyword shesmuKeyword While

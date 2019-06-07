@@ -8,11 +8,21 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Parse an input stream */
 public abstract class Parser {
+  /**
+   * Parses a particular section of grammar that emits a known type of result
+   *
+   * @param <T> the type generated
+   */
+  public interface Rule<T> {
+    Parser parse(Parser parser, Consumer<T> output);
+  }
+
   private static class Broken extends Parser {
 
     public Broken(ErrorConsumer consumer, int line, int column, String message) {
@@ -247,21 +257,6 @@ public abstract class Parser {
     }
   }
 
-  /**
-   * Parses a particular section of grammar that emits a known type of result
-   *
-   * @param <T> the type generated
-   */
-  public interface Rule<T> {
-    Parser parse(Parser parser, Consumer<T> output);
-  }
-
-  private static final Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
-
-  public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
-
-  private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
-
   private static CharSequence consume(CharSequence input, int offset) {
     return input.subSequence(offset, input.length());
   }
@@ -271,6 +266,9 @@ public abstract class Parser {
     return new Good(errorConsumer, input, 1, 1);
   }
 
+  private static final Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
+  public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
+  private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
   private final int column;
 
   private final ErrorConsumer errorConsumer;
@@ -321,6 +319,20 @@ public abstract class Parser {
    * by alphabetical characters.
    */
   public abstract Parser keyword(String keyword);
+
+  /**
+   * Check for a keyword and parse more if found; if not, remain unchanged
+   *
+   * @param keyword the keyword to look for
+   * @param ifFound the parse action to perform if found
+   */
+  public final Parser keyword(String keyword, UnaryOperator<Parser> ifFound) {
+    final Parser test = keyword(keyword);
+    if (test.isGood()) {
+      return ifFound.apply(test);
+    }
+    return this;
+  }
 
   /** Get the current line in the input */
   public final int line() {
@@ -411,6 +423,20 @@ public abstract class Parser {
   /** Check if two parsers are at the same position in the input */
   public final boolean same(Parser other) {
     return other.line() == line() && other.column() == column();
+  }
+
+  /**
+   * Check for a symbol and parse more if found; if not, remain unchanged
+   *
+   * @param symbol the symbol to look for
+   * @param ifFound the parse action to perform if found
+   */
+  public final Parser symbol(String symbol, UnaryOperator<Parser> ifFound) {
+    final Parser test = symbol(symbol);
+    if (test.isGood()) {
+      return ifFound.apply(test);
+    }
+    return this;
   }
 
   /**
