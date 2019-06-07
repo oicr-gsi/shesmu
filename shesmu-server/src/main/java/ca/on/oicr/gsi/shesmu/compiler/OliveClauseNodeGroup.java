@@ -110,12 +110,9 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   public final ClauseStreamOrder ensureRoot(
       ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE) {
-      discriminators
-          .stream()
-          .forEach(d -> d.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
-      children
-          .stream()
-          .forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+      discriminators.forEach(
+          d -> d.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+      children.forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
       return ClauseStreamOrder.TRANSFORMED;
     }
     return state;
@@ -132,9 +129,9 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
       BaseOliveBuilder oliveBuilder,
       Map<String, OliveDefineBuilder> definitions) {
     final Set<String> freeVariables = new HashSet<>();
-    children
-        .stream()
-        .forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
+    children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
+    discriminators.forEach(
+        group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
 
     oliveBuilder.line(line);
     final RegroupVariablesBuilder regroup =
@@ -147,7 +144,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                 .toArray(LoadableValue[]::new));
 
     discriminators.forEach(d -> d.render(regroup));
-    children.stream().forEach(group -> group.render(regroup, builder));
+    children.forEach(group -> group.render(regroup, builder));
     regroup.finish();
 
     oliveBuilder.measureFlow(builder.sourcePath(), line, column);
@@ -216,7 +213,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
     ok =
         ok
-            && Stream.<DefinedTarget>concat(discriminators.stream(), children.stream())
+            && Stream.concat(discriminators.stream(), children.stream())
                     .collect(Collectors.groupingBy(DefinedTarget::name))
                     .entrySet()
                     .stream()
