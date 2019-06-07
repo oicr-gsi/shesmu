@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,20 +13,20 @@ import java.util.stream.Collectors;
  *
  * @param <T> the Java type being exported to Shesmu
  */
-public interface TypeGuarantee<T> {
-  interface Pack2<T, U, R> {
+public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
+  public interface Pack2<T, U, R> {
     R pack(T first, U second);
   }
 
-  interface Pack3<T, U, V, R> {
+  public interface Pack3<T, U, V, R> {
     R pack(T first, U second, V third);
   }
 
-  interface Pack4<T, U, V, W, R> {
+  public interface Pack4<T, U, V, W, R> {
     R pack(T first, U second, V third, W fourth);
   }
 
-  static <T> TypeGuarantee<List<T>> list(TypeGuarantee<T> inner) {
+  public static <T> TypeGuarantee<List<T>> list(TypeGuarantee<T> inner) {
     final Imyhat listType = inner.type().asList();
     return new TypeGuarantee<List<T>>() {
       @Override
@@ -40,7 +41,7 @@ public interface TypeGuarantee<T> {
     };
   }
 
-  static <R, T, U> TypeGuarantee<R> tuple(
+  public static <R, T, U> TypeGuarantee<R> tuple(
       Pack2<? super T, ? super U, ? extends R> convert,
       TypeGuarantee<T> first,
       TypeGuarantee<U> second) {
@@ -59,7 +60,7 @@ public interface TypeGuarantee<T> {
     };
   }
 
-  static <R, T, U, V> TypeGuarantee<R> tuple(
+  public static <R, T, U, V> TypeGuarantee<R> tuple(
       Pack3<? super T, ? super U, ? super V, ? extends R> convert,
       TypeGuarantee<T> first,
       TypeGuarantee<U> second,
@@ -80,7 +81,7 @@ public interface TypeGuarantee<T> {
     };
   }
 
-  static <R, T, U, V, W> TypeGuarantee<R> tuple(
+  public static <R, T, U, V, W> TypeGuarantee<R> tuple(
       Pack4<? super T, ? super U, ? super V, ? super W, ? extends R> convert,
       TypeGuarantee<T> first,
       TypeGuarantee<U> second,
@@ -105,7 +106,7 @@ public interface TypeGuarantee<T> {
     };
   }
 
-  static TypeGuarantee<Tuple> tuple(Imyhat... elements) {
+  public static TypeGuarantee<Tuple> tuple(Imyhat... elements) {
     final Imyhat tupleType = Imyhat.tuple(elements);
     return new TypeGuarantee<Tuple>() {
       @Override
@@ -120,7 +121,7 @@ public interface TypeGuarantee<T> {
     };
   }
 
-  TypeGuarantee<Boolean> BOOLEAN =
+  public static final TypeGuarantee<Boolean> BOOLEAN =
       new TypeGuarantee<Boolean>() {
         @Override
         public Imyhat type() {
@@ -132,7 +133,7 @@ public interface TypeGuarantee<T> {
           return (Boolean) object;
         }
       };
-  TypeGuarantee<Instant> DATE =
+  public static final TypeGuarantee<Instant> DATE =
       new TypeGuarantee<Instant>() {
         @Override
         public Imyhat type() {
@@ -144,7 +145,7 @@ public interface TypeGuarantee<T> {
           return (Instant) object;
         }
       };
-  TypeGuarantee<Long> LONG =
+  public static final TypeGuarantee<Long> LONG =
       new TypeGuarantee<Long>() {
         @Override
         public Imyhat type() {
@@ -156,7 +157,7 @@ public interface TypeGuarantee<T> {
           return (Long) object;
         }
       };
-  TypeGuarantee<Path> PATH =
+  public static final TypeGuarantee<Path> PATH =
       new TypeGuarantee<Path>() {
         @Override
         public Imyhat type() {
@@ -168,7 +169,7 @@ public interface TypeGuarantee<T> {
           return (Path) object;
         }
       };
-  TypeGuarantee<String> STRING =
+  public static final TypeGuarantee<String> STRING =
       new TypeGuarantee<String>() {
         @Override
         public Imyhat type() {
@@ -181,7 +182,29 @@ public interface TypeGuarantee<T> {
         }
       };
 
-  Imyhat type();
+  private TypeGuarantee() {}
 
-  T unpack(Object object);
+  @Override
+  public final <R> R apply(GenericTransformer<R> transformer) {
+    return type().apply(transformer);
+  }
+
+  @Override
+  public final boolean check(Map<String, Imyhat> variables, Imyhat reference) {
+    return type().isSame(reference);
+  }
+
+  @Override
+  public final Imyhat render(Map<String, Imyhat> variables) {
+    return type();
+  }
+
+  @Override
+  public final String toString(Map<String, Imyhat> typeVariables) {
+    return type().name();
+  }
+
+  public abstract Imyhat type();
+
+  public abstract T unpack(Object value);
 }

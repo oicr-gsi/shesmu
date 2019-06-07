@@ -390,7 +390,11 @@ public class RunTest {
         System.err.printf("FAIL %s\n", file.getFileName());
         return true;
       }
-    } catch (Exception | VerifyError | BootstrapMethodError | IncompatibleClassChangeError e) {
+    } catch (Exception
+        | VerifyError
+        | BootstrapMethodError
+        | IncompatibleClassChangeError
+        | StackOverflowError e) {
       System.err.printf("EXCP %s\n", file.getFileName());
       if (dashboard.get() != null) {
         System.err.println(dashboard.get().bytecode());

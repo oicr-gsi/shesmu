@@ -52,8 +52,9 @@ _discriminators_ and other variables are grouped into _collectors_.
     Olive
       Where workflow == "BamQC 2.7+"
       Group
-          files = List path
         By project
+        Into
+          files = List path
       Run fingerprint With
         memory = 4Gi,
         input = files;
@@ -86,18 +87,20 @@ The `Group` operation can also be used to “widen” a table in this way:
 
     Olive
       Group
+        By project, library_name
+        Into
           qc = Where workflow == "BamQC 2.7+" First path,
             # Use the output file from BamQC as `qc`
           fingerprint = Where workflow == "Fingerprinting" First path,
             # Use the output file from fingerprinting as `fingerprint`
           timestamp = Max timestamp
-        By project, library_name
             # All scoped over project + library_name pairs
       Group
+        By project
+        Into
           chunks = List {library_name, qc, fingerprint}
             # Create a tuple for each interesting file for each library
             # in this project
-        By project
       # And create on report per project
       Run project_report With
         memory = 4Gi,
@@ -131,18 +134,20 @@ from being rejected:
 
     Olive
       Group
+        By project, library_name
+            # All scoped over project + library_name pairs
+        Into
           qc = Where workflow == "BamQC 2.7+" First path Default "/dev/null",
             # Use the output file from BamQC as `qc`
           fingerprint = Where workflow == "Fingerprinting" First path Default "/dev/null",
             # Use the output file from fingerprinting as `fingerprint`
           timestamp = Max timestamp
-        By project, library_name
-            # All scoped over project + library_name pairs
       Group
+        By project
+        Into
           chunks = List {library_name, qc, fingerprint}
             # Create a tuple for each interesting file for each library
             # in this project
-        By project
       # And create on report per project
       Run project_report With
         memory = 4Gi,
@@ -156,11 +161,50 @@ that in the `By` clause:
     Olive
       Where workflow == "BamQC 2.7+"
       Group
-          files = List path
         By project, sequencer_run = ius[0]
+        Into
+          files = List path
       Run fingerprint With
         memory = 4Gi,
         input = files;
+
+The grouping shown so far requires that the groups being produced are known
+ahead of time. In some situations, it isn't possible to know exactly which items
+belong in which groups until all the data is available. For these situations,
+_groupers_ are available that can do complex subgrouping. The groupers are
+plugins, so the groupers available can be seen on the running Shemsu server.
+
+The `always_include` grouper can put a row into every subgroup. Suppose a
+validation should be run for every workflow with the validation method
+depending on the MIME type of the file. However, some workflows also generate
+directories. The validator should also scan those directories, so the
+directories should be assigned to every other MIME type created by the
+workflow.
+
+    Olive
+     Group
+      By workflow
+      Using always_include # This will be the grouper name
+				# These are grouper-specific parameters that control how the grouping
+				# works
+        key = metatype,
+        include_when = "inode/directory"
+			# The grouper will not only create groups but can provide additional
+			# information about the groups. This additional information will be
+			# available with the names `current_metatype` and `is_directory`.
+      # If the `With` clause is omitted, the grouper will use default names
+      # for these pieces of additional information. For the `always_include`
+      # grouper, they are `group_key` and `is_always`.
+      With current_metatype, is_directory
+      Into
+        files = Where !is_directory List path,
+        validator = First validator_for_metatype(current_metatype),
+        directories = Where is_directory List path
+     Run validate_output With
+        directories = directories,
+        files = files,
+        name = workflow,
+        validator = validator;
 
 Often, the same data is duplicated and there needs to be grouping that uses the
 “best” value. For this, a `Pick Min` or `Pick Max` clause can get the right
@@ -170,8 +214,9 @@ data:
       Where workflow == "BamQC 2.7+"
       Pick Max timestamp By workflow, library_name
       Group
-          paths = List path
         By project
+        Into
+          paths = List path
       # And create on report per project
       Run project_report With
         memory = 4Gi,
@@ -185,11 +230,12 @@ things. The `Let` clause provides this:
       # Get all the sample provenance and workflows that have produced FASTQs
       Where source == "sample_provenance" || metatype == "chemical/seq-na-fastq-gzip"
       Group
+        By ius
+        Into
           workflows = List workflow,
           paths = {source == "sample_provenance", path},
           sources = source,
           timestamps = timestamps
-        By ius
       Let
         # A lane is processed if there was a LIMS record and at least one FASTQ produced
         lane_was_processed = "sample_provenance" In sources && (For x In workflows: Count) > 1,
@@ -199,10 +245,11 @@ things. The `Let` clause provides this:
         timestamp = For x In timestamps: Max x Default epoch
       # Now regroup by sequencer run
       Group
+        By sequencer_run, path
+        Into
           lanes_were_processed = List lane_was_processed,
           lanes = List lane_number,
           timestamps = timestamp
-        By sequencer_run, path
       Run lane_completeness_report With
         run = sequencer_run,
         path = path;
@@ -244,9 +291,10 @@ Any kind of normal manipulation can be done in a `Define` olive:
        donor = donor
       Max timestamp By donor, is_read_two
       Group
-       read_one = Where !is_read_two First path,
-       read_two = Where is_read_two First path
-      By donor;
+        By donor
+        Into
+          read_one = Where !is_read_two First path,
+          read_two = Where is_read_two First path;
 
     Olive
       paired_fastq()

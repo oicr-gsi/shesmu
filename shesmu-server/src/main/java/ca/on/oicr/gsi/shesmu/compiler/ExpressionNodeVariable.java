@@ -76,7 +76,6 @@ public class ExpressionNodeVariable extends ExpressionNode {
     } else {
       errorHandler.accept(String.format("%d:%d: Undefined variable “%s”.", line(), column(), name));
     }
-    result.ifPresent(x -> target = x);
     return result.isPresent();
   }
 

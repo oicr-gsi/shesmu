@@ -21,6 +21,10 @@ import org.objectweb.asm.commons.Method;
 /** Helper class to hold state and context for bytecode generation. */
 public class Renderer {
 
+  public static void loadImyhatInMethod(GeneratorAdapter methodGen, String descriptor) {
+    methodGen.invokeDynamic(descriptor, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+  }
+
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_PATTERN_TYPE = Type.getType(Pattern.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -37,7 +41,6 @@ public class Renderer {
           false);
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
   private static final String METHOD_REGEX = Type.getMethodDescriptor(A_PATTERN_TYPE);
-
   private static final Handle REGEX_BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
@@ -50,11 +53,6 @@ public class Renderer {
               Type.getType(MethodType.class),
               Type.getType(String.class)),
           false);
-
-  public static void loadImyhatInMethod(GeneratorAdapter methodGen, String descriptor) {
-    methodGen.invokeDynamic(descriptor, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
-  }
-
   private final Map<String, LoadableValue> loadables;
 
   private final GeneratorAdapter methodGen;
@@ -90,8 +88,8 @@ public class Renderer {
     return new JavaStreamBuilder(rootBuilder, this, streamType, initialType);
   }
 
-  public LoadableValue getNamed(String name) {
-    return loadables.get(name);
+  public void define(String name, LoadableValue value) {
+    loadables.put(name, value);
   }
 
   /** Find a known variable by name and load it on the stack. */
@@ -101,6 +99,10 @@ public class Renderer {
 
   public void emitSigner(SignatureDefinition name) {
     signerEmitter.accept(name, this);
+  }
+
+  public LoadableValue getNamed(String name) {
+    return loadables.get(name);
   }
 
   public void invokeInterfaceStatic(Type interfaceType, Method method) {

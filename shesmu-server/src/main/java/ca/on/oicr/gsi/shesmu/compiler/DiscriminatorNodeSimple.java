@@ -38,7 +38,7 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
   @Override
   public Flavour flavour() {
-    return target.flavour();
+    return Flavour.STREAM;
   }
 
   @Override

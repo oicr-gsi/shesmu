@@ -2,11 +2,9 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
+import ca.on.oicr.gsi.shesmu.compiler.*;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.compiler.ImyhatNode;
-import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
@@ -21,6 +19,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
@@ -1089,6 +1088,137 @@ public final class Server implements ServerConfig, ActionServices {
                                         throw new RuntimeException(e);
                                       }
                                     });
+                            writer.writeEndElement();
+                          } catch (XMLStreamException e) {
+                            throw new RuntimeException(e);
+                          }
+                        });
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
+        "/grouperdefs",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                OliveClauseNodeGroupWithGrouper.definitions()
+                    .sorted(Comparator.comparing(GrouperDefinition::name))
+                    .forEach(
+                        grouper -> {
+                          try {
+                            writer.writeStartElement("h1");
+                            writer.writeAttribute("id", grouper.name());
+                            writer.writeCharacters(grouper.name());
+                            writer.writeEndElement();
+
+                            writer.writeStartElement("h2");
+                            writer.writeCharacters("Input");
+                            writer.writeEndElement();
+
+                            writer.writeStartElement("table");
+                            writer.writeStartElement("tr");
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Name");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Kind");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Type");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Description");
+                            writer.writeEndElement();
+                            writer.writeEndElement();
+                            for (int i = 0; i < grouper.inputs(); i++) {
+                              writer.writeStartElement("tr");
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(grouper.input(i).name());
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              switch (grouper.input(i).kind()) {
+                                case STATIC:
+                                  writer.writeCharacters("Fixed");
+                                  break;
+                                case ROW_VALUE:
+                                  writer.writeCharacters("Per row");
+                                  break;
+                                default:
+                                  writer.writeCharacters("Unknown️");
+                              }
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(
+                                  grouper.input(i).type().toString(Collections.emptyMap()));
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(grouper.input(i).description());
+                              writer.writeEndElement();
+                              writer.writeEndElement();
+                            }
+                            writer.writeEndElement();
+                            writer.writeStartElement("h2");
+                            writer.writeCharacters("Output");
+                            writer.writeEndElement();
+
+                            writer.writeStartElement("table");
+                            writer.writeStartElement("tr");
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Position");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Default Name");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Kind");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Type");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Description");
+                            writer.writeEndElement();
+                            writer.writeEndElement();
+
+                            for (int i = 0; i < grouper.outputs(); i++) {
+                              writer.writeStartElement("tr");
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(Integer.toString(i + 1));
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(grouper.output(i).defaultName());
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              switch (grouper.output(i).kind()) {
+                                case STATIC:
+                                  writer.writeCharacters("Per subgroup");
+                                  break;
+                                case ROW_VALUE:
+                                  writer.writeCharacters("Per row");
+                                  break;
+                                default:
+                                  writer.writeCharacters("Unknown️");
+                              }
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(
+                                  grouper.output(i).type().toString(Collections.emptyMap()));
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(grouper.output(i).description());
+                              writer.writeEndElement();
+                              writer.writeEndElement();
+                            }
+
+                            writer.writeEndElement();
+                            writer.writeStartElement("p");
+                            writer.writeCharacters(grouper.description());
                             writer.writeEndElement();
                           } catch (XMLStreamException e) {
                             throw new RuntimeException(e);
@@ -2237,6 +2367,7 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("actiondefs", "Actions"),
             NavigationMenu.item("constantdefs", "Constants"),
             NavigationMenu.item("functiondefs", "Functions"),
+            NavigationMenu.item("grouperdefs", "Groupers"),
             NavigationMenu.item("inputdefs", "Input Formats"),
             NavigationMenu.item("signaturedefs", "Signatures")),
         NavigationMenu.submenu(

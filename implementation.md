@@ -162,6 +162,29 @@ the JSON representation and `ttl` indicating the number of minutes to cache the
 input. Additionally, once a Shesmu server is active, it will provide the input
 in the JSON format at `/input/` followed by the input format name.
 
+## Writing a Grouper Plugin
+Creating a new grouper is thorny since a lot of generic types are required. The
+implementation-specific grouping logic is well-isolated from the rest of the
+system. Effectively, the grouper is a service parameterised over two generic
+type variables: _I_, the type of the input rows, and _O_, the type of the
+output rows. These are opaque to the grouper and Shesmu will fill in the gaps
+using the olive. The grouper may request that the olive provide data, of any
+Shesmu-compatible type, and export extra values to the olive.
+
+1. Create a class _G_ that implements `Grouper` parameterised over _I_ and _O_.
+1. Create a class _D_ that extends `GrouperDefinition` and is annotated with
+`@MetaInfServices`.
+1. In _D_, call the appropriate super constructor. They vary by the number of
+input parameters the grouper requires. Use `GrouperParameter` to fill in each
+parameter required.
+1. In _D_, select a `GrouperOutputs` to use. This sets the number of variables
+exported to the olive for each group.
+1. Create a constructor that fits in the pattern of input and outputs in _G_.
+1. Perform the grouping operation and create a `Subgroup` for each subgroup.
+
+Note that a grouper will be reused arbitrarily many times by an olive, so do
+not store any state in fields.
+
 ## Writing a Plugin
 Shesmu has many different systems that can be fed by plugins. Each plugin
 requires two classes, a `PluginFileType` that defines the plugin itself and

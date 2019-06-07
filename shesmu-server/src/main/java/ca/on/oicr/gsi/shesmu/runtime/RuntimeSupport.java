@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
+import ca.on.oicr.gsi.shesmu.plugin.grouper.Subgroup;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -24,12 +26,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
+import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -242,7 +239,30 @@ public final class RuntimeSupport {
         input.collect(
             Collectors.groupingBy(item -> new Holder<>(equals, hashCode.applyAsInt(item), item)));
     input.close();
-    return groups.values().stream().map(list -> list.stream().sorted(comparator).findFirst().get());
+    return groups.values().stream().map(list -> list.stream().min(comparator).get());
+  }
+  /**
+   * Group items in to outer groups, then apply a complex subgrouping operation to produce subgroups
+   * from this input
+   *
+   * @param input the stream of input items
+   * @param grouper a way to create subgroups for each outer group.
+   * @param makeKey a value for a key that is common across the bulk groups
+   */
+  @RuntimeInterop
+  public static <I, O> Stream<O> regroup(
+      Stream<I> input, Grouper<I, O> grouper, Function<I, O> makeKey) {
+    final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
+    input.close();
+    return groups
+        .values()
+        .stream()
+        .flatMap(
+            list ->
+                grouper
+                    .group(list)
+                    .filter(Subgroup::valid)
+                    .map(subgroup -> subgroup.build(makeKey)));
   }
 
   public static String printHexBinary(byte[] values) {

@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -12,7 +13,17 @@ import java.util.Set;
  *
  * @param <T> the Java type being exported to Shesmu
  */
-public abstract class ReturnTypeGuarantee<T> {
+public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<T> {
+  public static <T> ReturnTypeGuarantee<Set<T>> list(ReturnTypeGuarantee<T> inner) {
+    final Imyhat listType = inner.type().asList();
+    return new ReturnTypeGuarantee<Set<T>>() {
+      @Override
+      public Imyhat type() {
+        return listType;
+      }
+    };
+  }
+
   public static final ReturnTypeGuarantee<Boolean> BOOLEAN =
       new ReturnTypeGuarantee<Boolean>() {
 
@@ -54,18 +65,22 @@ public abstract class ReturnTypeGuarantee<T> {
         }
       };
 
-  public static <T> ReturnTypeGuarantee<Set<T>> list(ReturnTypeGuarantee<T> inner) {
-    final Imyhat listType = inner.type().asList();
-    return new ReturnTypeGuarantee<Set<T>>() {
-
-      @Override
-      public Imyhat type() {
-        return listType;
-      }
-    };
+  @Override
+  public final boolean check(Map<String, Imyhat> variables, Imyhat reference) {
+    return type().isSame(reference);
   }
 
-  private ReturnTypeGuarantee() {}
+  @Override
+  public final Imyhat render(Map<String, Imyhat> variables) {
+    return type();
+  }
+
+  @Override
+  public final String toString(Map<String, Imyhat> typeVariables) {
+    return type().name();
+  }
+
+  ReturnTypeGuarantee() {}
 
   public abstract Imyhat type();
 }
