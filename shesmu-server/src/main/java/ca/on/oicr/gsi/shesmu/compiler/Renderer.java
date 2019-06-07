@@ -90,11 +90,11 @@ public class Renderer {
     return new JavaStreamBuilder(rootBuilder, this, streamType, initialType);
   }
 
-  /**
-   * Find a known variable by name and load it on the stack.
-   *
-   * @param name
-   */
+  public LoadableValue getNamed(String name) {
+    return loadables.get(name);
+  }
+
+  /** Find a known variable by name and load it on the stack. */
   public void emitNamed(String name) {
     loadables.get(name).accept(this);
   }
