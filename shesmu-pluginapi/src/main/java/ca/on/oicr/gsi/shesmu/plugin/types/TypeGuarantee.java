@@ -86,7 +86,7 @@ public interface TypeGuarantee<T> {
       TypeGuarantee<U> second,
       TypeGuarantee<V> third,
       TypeGuarantee<W> fourth) {
-    final Imyhat tupleType = Imyhat.tuple(first.type(), second.type(), third.type());
+    final Imyhat tupleType = Imyhat.tuple(first.type(), second.type(), third.type(), fourth.type());
     return new TypeGuarantee<R>() {
       @Override
       public Imyhat type() {
