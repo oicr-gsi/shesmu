@@ -222,6 +222,22 @@ public final class Server implements ServerConfig, ActionServices {
                 return processor.isOverloaded(services)
                     || pluginManager.isOverloaded(new HashSet<>(Arrays.asList(services)));
               }
+
+              @Override
+              public <T> Stream<T> measureFlow(
+                  Stream<T> input,
+                  String filename,
+                  int line,
+                  int column,
+                  int oliveLine,
+                  int oliveColumn) {
+                return processor.measureFlow(input, filename, line, column, oliveLine, oliveColumn);
+              }
+
+              @Override
+              public void oliveRuntime(String filename, int line, int column, long timeInNs) {
+                processor.oliveRuntime(filename, line, column, timeInNs);
+              }
             },
             inputProvider);
 
@@ -567,7 +583,8 @@ public final class Server implements ServerConfig, ActionServices {
                                           fileTable.timestamp(),
                                           olive,
                                           inputCount,
-                                          fileTable.format());
+                                          fileTable.format(),
+                                          processor);
                                       writer.writeEndElement();
                                       writer.writeEndElement();
                                     } catch (XMLStreamException e) {
@@ -1097,7 +1114,7 @@ public final class Server implements ServerConfig, ActionServices {
                     .forEach(
                         variable -> {
                           row.write(
-                              Arrays.asList(new Pair<>("id", variable.name())),
+                              Collections.singletonList(new Pair<>("id", variable.name())),
                               variable.name(),
                               variable.type().name());
                         });
@@ -1895,7 +1912,8 @@ public final class Server implements ServerConfig, ActionServices {
                               description.get().timestamp(),
                               olive,
                               null,
-                              description.get().format());
+                              description.get().format(),
+                              (f, l, c, ol, oc) -> null);
                           writer.writeEndElement();
                         } catch (XMLStreamException e) {
                           throw new RuntimeException(e);

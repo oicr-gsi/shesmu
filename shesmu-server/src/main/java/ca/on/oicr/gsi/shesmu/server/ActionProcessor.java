@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
 import java.time.Duration;
 import java.time.Instant;
@@ -55,7 +56,8 @@ import org.apache.http.client.utils.URIBuilder;
  * <p>This class collects actions and tries to {@link Action#perform(ActionServices)} until
  * successful.
  */
-public final class ActionProcessor implements OliveServices, InputProvider {
+public final class ActionProcessor
+    implements OliveServices, InputProvider, MetroDiagram.OliveFlowReader {
 
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
@@ -476,6 +478,15 @@ public final class ActionProcessor implements OliveServices, InputProvider {
           return input.name();
         }
       };
+  public static final Gauge OLIVE_FLOW =
+      Gauge.build(
+              "shesmu_olive_data_flow", "The number of items passing through each olive clause.")
+          .labelNames("filename", "line", "column", "olive_line", "olive_column")
+          .register();
+  private static final Gauge OLIVE_RUN_TIME =
+      Gauge.build("shesmu_olive_run_time", "The runtime of an olive in seconds.")
+          .labelNames("filename", "line", "column")
+          .register();
   private static final Property<String> SOURCE_FILE =
       new Property<String>() {
 
@@ -774,6 +785,27 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     return pausedOlives.contains(location);
   }
 
+  @Override
+  public <T> Stream<T> measureFlow(
+      Stream<T> input, String fileName, int line, int column, int oliveLine, int oliveColumn) {
+    final Gauge.Child child =
+        OLIVE_FLOW.labels(
+            fileName,
+            Integer.toString(line),
+            Integer.toString(column),
+            Integer.toString(oliveLine),
+            Integer.toString(oliveColumn));
+    final AtomicLong counter = new AtomicLong();
+    return input.peek(x -> counter.incrementAndGet()).onClose(() -> child.set(counter.get()));
+  }
+
+  @Override
+  public void oliveRuntime(String filename, int line, int column, long timeInNs) {
+    OLIVE_RUN_TIME
+        .labels(filename, Integer.toString(line), Integer.toString(column))
+        .set(timeInNs / Collector.NANOSECONDS_PER_SECOND);
+  }
+
   public void pause(SourceLocation location) {
     pausedOlives.add(location);
   }
@@ -791,6 +823,19 @@ public final class ActionProcessor implements OliveServices, InputProvider {
     deadActions.forEach(Action::purgeCleanup);
     actions.keySet().removeAll(deadActions);
     return deadActions.size();
+  }
+
+  @Override
+  public Long read(String filename, int line, int column, int oliveLine, int oliveColumn) {
+    return (long)
+        OLIVE_FLOW
+            .labels(
+                filename,
+                Integer.toString(line),
+                Integer.toString(column),
+                Integer.toString(oliveLine),
+                Integer.toString(oliveColumn))
+            .get();
   }
 
   private Map<String, String> repack(String[] input, String name) {

@@ -22,7 +22,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
     super(owner, owner.inputFormatDefinition());
     this.parameters =
         parameters
-            .map(Pair.number(4 + (int) owner.signatureVariables().count()))
+            .map(Pair.number(5 + (int) owner.signatureVariables().count()))
             .map(Pair.transform(LoadParameter::new))
             .collect(Collectors.toList());
     method =
@@ -32,7 +32,11 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
             Stream.concat(
                     Stream.concat(
                         Stream.of(
-                            A_STREAM_TYPE, A_INPUT_PROVIDER_TYPE, Type.INT_TYPE, Type.INT_TYPE),
+                            A_STREAM_TYPE,
+                            A_OLIVE_SERVICES_TYPE,
+                            A_INPUT_PROVIDER_TYPE,
+                            Type.INT_TYPE,
+                            Type.INT_TYPE),
                         owner.signatureVariables().map(SignatureDefinition::storageType)),
                     this.parameters.stream().map(LoadableValue::type))
                 .toArray(Type[]::new));
@@ -96,7 +100,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
         .forEach(
             pair -> {
               renderer.methodGen().loadThis();
-              renderer.methodGen().loadArg(pair.first() + 4);
+              renderer.methodGen().loadArg(pair.first() + 5);
               renderer
                   .methodGen()
                   .putField(
@@ -113,14 +117,19 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
   }
 
   @Override
-  public Stream<LoadableValue> loadableValues() {
-    return Stream.concat(parameters.stream(), owner.constants(true));
+  protected void loadInputProvider(GeneratorAdapter method) {
+    method.loadArg(2);
+  }
+
+  @Override
+  protected void loadOliveServices(GeneratorAdapter method) {
+    method.loadArg(1);
   }
 
   @Override
   protected void loadOwnerSourceLocation(GeneratorAdapter method) {
-    method.loadArg(2);
     method.loadArg(3);
+    method.loadArg(4);
   }
 
   @Override
@@ -130,18 +139,23 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
     renderer.methodGen().getField(owner.selfType(), name, signer.storageType());
   }
 
+  @Override
+  public Stream<LoadableValue> loadableValues() {
+    return Stream.concat(parameters.stream(), owner.constants(true));
+  }
+
   /** The method definition for this matcher */
   public Method method() {
     return method;
   }
 
-  /** The number of bound parameters */
-  public int parameters() {
-    return parameters.size();
-  }
-
   /** The type of a bound parameter */
   public Type parameterType(int i) {
     return parameters.get(i).type();
+  }
+
+  /** The number of bound parameters */
+  public int parameters() {
+    return parameters.size();
   }
 }

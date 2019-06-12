@@ -14,6 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /** Periodically run an {@link ActionGenerator} on all available variables */
 public class MasterRunner {
@@ -33,10 +34,9 @@ public class MasterRunner {
   private static final LatencyHistogram runTime =
       new LatencyHistogram("shesmu_run_time", "The time the script takes to run on all the input.");
   private final CompiledGenerator generator;
-  private final OliveServices services;
-
-  private ScheduledFuture<?> scheduled;
   private final InputProvider inputProvider;
+  private ScheduledFuture<?> scheduled;
+  private final OliveServices services;
 
   public MasterRunner(
       CompiledGenerator generator, OliveServices services, InputProvider inputProvider) {
@@ -73,13 +73,29 @@ public class MasterRunner {
             }
 
             @Override
+            public Dumper findDumper(String name, Imyhat... types) {
+              return services.findDumper(name, types);
+            }
+
+            @Override
             public boolean isOverloaded(String... throttledServices) {
               return services.isOverloaded(throttledServices);
             }
 
             @Override
-            public Dumper findDumper(String name, Imyhat... types) {
-              return services.findDumper(name, types);
+            public <T> Stream<T> measureFlow(
+                Stream<T> input,
+                String filename,
+                int line,
+                int column,
+                int oliveLine,
+                int oliveColumn) {
+              return services.measureFlow(input, filename, line, column, oliveLine, oliveColumn);
+            }
+
+            @Override
+            public void oliveRuntime(String filename, int line, int column, long timeInNs) {
+              services.oliveRuntime(filename, line, column, timeInNs);
             }
           },
           inputProvider);

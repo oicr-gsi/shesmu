@@ -8,8 +8,8 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
 import java.util.ArrayList;
@@ -31,7 +31,6 @@ import org.objectweb.asm.commons.Method;
 
 /** Helper to build bytecode for “olives” (decision-action stanzas) */
 public abstract class BaseOliveBuilder {
-  protected static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
   private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
   private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
   private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
@@ -39,33 +38,26 @@ public abstract class BaseOliveBuilder {
   protected static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
   protected static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
   private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
+  protected static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
   private static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
   protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  protected static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
-  protected static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
-  protected static final Method METHOD_INPUT_PROVIDER__FETCH =
-      new Method("fetch", A_STREAM_TYPE, new Type[] {A_STRING_TYPE});
-  private static final Method METHOD_ACTION_GENERATOR__MEASURE_FLOW =
-      new Method(
-          "measureFlow",
-          A_STREAM_TYPE,
-          new Type[] {A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, INT_TYPE, INT_TYPE});
   private static final Method METHOD_COMPARATOR__COMPARING =
       new Method("comparing", A_COMPARATOR_TYPE, new Type[] {A_FUNCTION_TYPE});
   private static final Method METHOD_COMPARATOR__REVERSED =
       new Method("reversed", A_COMPARATOR_TYPE, new Type[] {});
   private static final Method METHOD_EQUALS =
       new Method("equals", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
-
   protected static final Method METHOD_FUNCTION__APPLY =
       new Method("apply", A_OBJECT_TYPE, new Type[] {A_OBJECT_TYPE});
-
   private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
-
+  protected static final Method METHOD_INPUT_PROVIDER__FETCH =
+      new Method("fetch", A_STREAM_TYPE, new Type[] {A_STRING_TYPE});
   private static final Method METHOD_LEFT_JOIN =
       new Method(
           "leftJoin",
@@ -82,6 +74,11 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_MONITOR =
       new Method(
           "monitor", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE});
+  private static final Method METHOD_OLIVE_SERVICES__MEASURE_FLOW =
+      new Method(
+          "measureFlow",
+          A_STREAM_TYPE,
+          new Type[] {A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, INT_TYPE, INT_TYPE});
   private static final Method METHOD_PICK =
       new Method(
           "pick",
@@ -92,8 +89,6 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_REGROUP =
       new Method(
           "regroup", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE});
-  private static final Method METHOD_STREAM__FILTER =
-      new Method("filter", A_STREAM_TYPE, new Type[] {A_PREDICATE_TYPE});
   private static final Method METHOD_RUNTIME_SUPPORT__JOIN =
       new Method(
           "join",
@@ -101,6 +96,8 @@ public abstract class BaseOliveBuilder {
           new Type[] {
             A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE
           });
+  private static final Method METHOD_STREAM__FILTER =
+      new Method("filter", A_STREAM_TYPE, new Type[] {A_PREDICATE_TYPE});
   private static final Method METHOD_STREAM__MAP =
       new Method("map", A_STREAM_TYPE, new Type[] {A_FUNCTION_TYPE});
   private static final Method METHOD_STREAM__PEEK =
@@ -140,7 +137,8 @@ public abstract class BaseOliveBuilder {
         renderer -> {
           renderer.methodGen().loadThis();
           renderer.methodGen().swap();
-          renderer.methodGen().loadArg(1);
+          loadOliveServices(renderer.methodGen());
+          loadInputProvider(renderer.methodGen());
           loadOwnerSourceLocation(renderer.methodGen());
           owner.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
           for (int i = 0; i < arglist.size(); i++) {
@@ -216,7 +214,7 @@ public abstract class BaseOliveBuilder {
 
     steps.add(
         renderer -> {
-          renderer.methodGen().loadArg(1);
+          loadInputProvider(renderer.methodGen());
           renderer.methodGen().push(innerType.name());
           renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
@@ -278,7 +276,7 @@ public abstract class BaseOliveBuilder {
 
     steps.add(
         renderer -> {
-          renderer.methodGen().loadArg(1);
+          loadInputProvider(renderer.methodGen());
           renderer.methodGen().push(innerType.name());
           renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
@@ -339,24 +337,30 @@ public abstract class BaseOliveBuilder {
     steps.add(renderer -> renderer.mark(line));
   }
 
-  /** Stream of all the parameters available for capture/use in the clauses. */
-  public abstract Stream<LoadableValue> loadableValues();
+  protected abstract void loadInputProvider(GeneratorAdapter method);
+
+  protected abstract void loadOliveServices(GeneratorAdapter method);
 
   protected abstract void loadOwnerSourceLocation(GeneratorAdapter method);
 
   protected abstract void loadSigner(SignatureDefinition variable, Renderer renderer);
 
+  /** Stream of all the parameters available for capture/use in the clauses. */
+  public abstract Stream<LoadableValue> loadableValues();
+
   /** Measure how much data goes through this olive clause. */
   public final void measureFlow(String filename, int line, int column) {
     steps.add(
         renderer -> {
+          loadOliveServices(renderer.methodGen());
+          renderer.methodGen().swap();
           renderer.methodGen().push(filename);
           renderer.methodGen().push(line);
           renderer.methodGen().push(column);
           loadOwnerSourceLocation(renderer.methodGen());
           renderer
               .methodGen()
-              .invokeStatic(A_ACTION_GENERATOR_TYPE, METHOD_ACTION_GENERATOR__MEASURE_FLOW);
+              .invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__MEASURE_FLOW);
         });
   }
 
@@ -367,7 +371,6 @@ public abstract class BaseOliveBuilder {
    * @param help the help text to export
    * @param names the names of the labels
    * @param capturedVariables the variables needed in the method that computes the label values
-   * @return
    */
   public Renderer monitor(
       int line,
