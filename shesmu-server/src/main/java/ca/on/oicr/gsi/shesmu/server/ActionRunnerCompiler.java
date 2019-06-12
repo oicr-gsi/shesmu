@@ -9,6 +9,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.lang.reflect.InvocationTargetException;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
@@ -130,7 +131,11 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
 
     try {
       return load(ActionRunner.class, "dyn.shesmu.ActionRunner");
-    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+    } catch (InstantiationException
+        | IllegalAccessException
+        | ClassNotFoundException
+        | NoSuchMethodException
+        | InvocationTargetException e) {
       e.printStackTrace();
       return p -> null;
     }

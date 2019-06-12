@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationTargetException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -136,7 +137,11 @@ public final class FunctionRunnerCompiler extends BaseHotloadingCompiler {
 
     try {
       return load(FunctionRunner.class, "dyn.shesmu.Function");
-    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+    } catch (InstantiationException
+        | IllegalAccessException
+        | ClassNotFoundException
+        | NoSuchMethodException
+        | InvocationTargetException e) {
       e.printStackTrace();
       return (a, o) -> o.put("error", e.getMessage());
     }

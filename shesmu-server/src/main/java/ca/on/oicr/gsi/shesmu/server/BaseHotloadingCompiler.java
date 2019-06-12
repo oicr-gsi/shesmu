@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.server;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import org.objectweb.asm.ClassVisitor;
@@ -68,8 +69,9 @@ public abstract class BaseHotloadingCompiler {
    * @param className the internal name of the target class
    */
   protected final <T> T load(Class<T> clazz, String className)
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-    return loadClass(clazz, className).newInstance();
+      throws InstantiationException, IllegalAccessException, ClassNotFoundException,
+          NoSuchMethodException, InvocationTargetException {
+    return loadClass(clazz, className).getConstructor().newInstance();
   }
 
   public <T> Class<? extends T> loadClass(Class<T> clazz, String className)
