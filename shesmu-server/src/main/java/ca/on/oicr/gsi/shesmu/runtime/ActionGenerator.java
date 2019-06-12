@@ -5,7 +5,6 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 /**
@@ -22,6 +21,11 @@ public abstract class ActionGenerator {
       new ActionGenerator() {
 
         @Override
+        public Stream<String> inputs() {
+          return Stream.empty();
+        }
+
+        @Override
         public void run(OliveServices consumer, InputProvider input) {
           // Do nothing.
         }
@@ -30,38 +34,7 @@ public abstract class ActionGenerator {
         public int timeout() {
           return 1;
         }
-
-        @Override
-        public Stream<String> inputs() {
-          return Stream.empty();
-        }
       };
-
-  public static final Gauge OLIVE_FLOW =
-      Gauge.build(
-              "shesmu_olive_data_flow", "The number of items passing through each olive clause.")
-          .labelNames("filename", "line", "column", "olive_line", "olive_column")
-          .register();
-
-  @RuntimeInterop
-  public static final Gauge OLIVE_RUN_TIME =
-      Gauge.build("shesmu_olive_run_time", "The runtime of an olive in seconds.")
-          .labelNames("filename", "line")
-          .register();
-
-  @RuntimeInterop
-  public static <T> Stream<T> measureFlow(
-      Stream<T> input, String fileName, int line, int column, int oliveLine, int oliveColumn) {
-    final Gauge.Child child =
-        OLIVE_FLOW.labels(
-            fileName,
-            Integer.toString(line),
-            Integer.toString(column),
-            Integer.toString(oliveLine),
-            Integer.toString(oliveColumn));
-    final AtomicLong counter = new AtomicLong();
-    return input.peek(x -> counter.incrementAndGet()).onClose(() -> child.set(counter.get()));
-  }
 
   private final List<Collector> collectors = new ArrayList<>();
 
@@ -79,6 +52,9 @@ public abstract class ActionGenerator {
     return g;
   }
 
+  /** All of the input formats that are used by this generator. */
+  public abstract Stream<String> inputs();
+
   /**
    * Add all Prometheus monitoring for this program.
    *
@@ -88,7 +64,11 @@ public abstract class ActionGenerator {
    * the new one using {@link #register()}.
    */
   public final void register() {
-    collectors.forEach(CollectorRegistry.defaultRegistry::register);
+    register(CollectorRegistry.defaultRegistry);
+  }
+
+  public final void register(CollectorRegistry registry) {
+    collectors.forEach(registry::register);
   }
 
   /**
@@ -105,9 +85,6 @@ public abstract class ActionGenerator {
   @RuntimeInterop
   public abstract void run(OliveServices consumer, InputProvider input);
 
-  /** All of the input formats that are used by this generator. */
-  public abstract Stream<String> inputs();
-
   /** The maximum runtime of this script, in seconds. */
   public abstract int timeout();
 
@@ -117,6 +94,10 @@ public abstract class ActionGenerator {
    * @see #register()
    */
   public final void unregister() {
-    collectors.forEach(CollectorRegistry.defaultRegistry::unregister);
+    unregister(CollectorRegistry.defaultRegistry);
+  }
+
+  public final void unregister(CollectorRegistry registry) {
+    collectors.forEach(registry::unregister);
   }
 }

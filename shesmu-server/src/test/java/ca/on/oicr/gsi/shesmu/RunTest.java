@@ -47,26 +47,6 @@ public class RunTest {
     private int good;
 
     @Override
-    public boolean isOverloaded(String... services) {
-      return false;
-    }
-
-    @Override
-    public Dumper findDumper(String name, Imyhat... types) {
-      return new Dumper() {
-        @Override
-        public void stop() {
-          // Do nothing.
-        }
-
-        @Override
-        public void write(Object... values) {
-          // Do nothing.
-        }
-      };
-    }
-
-    @Override
     public boolean accept(Action action, String filename, int line, int column, long time) {
       if (action.perform(null) == ActionState.SUCCEEDED) {
         good++;
@@ -87,8 +67,39 @@ public class RunTest {
       return true;
     }
 
+    @Override
+    public Dumper findDumper(String name, Imyhat... types) {
+      return new Dumper() {
+        @Override
+        public void stop() {
+          // Do nothing.
+        }
+
+        @Override
+        public void write(Object... values) {
+          // Do nothing.
+        }
+      };
+    }
+
+    @Override
+    public boolean isOverloaded(String... services) {
+      return false;
+    }
+
+    @Override
+    public <T> Stream<T> measureFlow(
+        Stream<T> input, String filename, int line, int column, int oliveLine, int oliveColumn) {
+      return input;
+    }
+
     public boolean ok() {
       return bad == 0 && good > 0;
+    }
+
+    @Override
+    public void oliveRuntime(String filename, int line, int column, long timeInNs) {
+      // Don't care
     }
   }
 
@@ -158,23 +169,6 @@ public class RunTest {
   private static InnerTestValue[] INNER_TEST_DATA =
       new InnerTestValue[] {new InnerTestValue(300, "a"), new InnerTestValue(307, "b")};
   public static final NameLoader<InputFormatDefinition> INPUT_FORMATS;
-
-  static {
-    NameLoader<InputFormatDefinition> inputFormats = null;
-    try {
-      inputFormats =
-          new NameLoader<>(
-              Stream.of(
-                  new AnnotatedInputFormatDefinition(new InputFormat("test", TestValue.class)),
-                  new AnnotatedInputFormatDefinition(
-                      new InputFormat("inner_test", InnerTestValue.class))),
-              InputFormatDefinition::name);
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-    }
-    INPUT_FORMATS = inputFormats;
-  }
-
   private static final FunctionDefinition INT2DATE =
       new FunctionDefinition() {
         @Override
@@ -183,13 +177,13 @@ public class RunTest {
         }
 
         @Override
-        public String name() {
-          return "int_to_date";
+        public Path filename() {
+          return null;
         }
 
         @Override
-        public Path filename() {
-          return null;
+        public String name() {
+          return "int_to_date";
         }
 
         @Override
@@ -215,7 +209,6 @@ public class RunTest {
           return Imyhat.DATE;
         }
       };
-
   private static final FunctionDefinition INT2STR =
       new FunctionDefinition() {
 
@@ -225,13 +218,13 @@ public class RunTest {
         }
 
         @Override
-        public String name() {
-          return "int_to_str";
+        public Path filename() {
+          return null;
         }
 
         @Override
-        public Path filename() {
-          return null;
+        public String name() {
+          return "int_to_str";
         }
 
         @Override
@@ -256,7 +249,6 @@ public class RunTest {
           return Imyhat.STRING;
         }
       };
-
   private static final ActionDefinition OK_ACTION_DEFINITION =
       new ActionDefinition(
           "ok",
@@ -297,7 +289,6 @@ public class RunTest {
               A_OK_ACTION_TYPE, new Method("<init>", Type.VOID_TYPE, new Type[] {}));
         }
       };
-
   private static TestValue[] TEST_DATA =
       new TestValue[] {
         new TestValue(
@@ -312,6 +303,22 @@ public class RunTest {
             300L,
             Instant.EPOCH.plusSeconds(500))
       };
+
+  static {
+    NameLoader<InputFormatDefinition> inputFormats = null;
+    try {
+      inputFormats =
+          new NameLoader<>(
+              Stream.of(
+                  new AnnotatedInputFormatDefinition(new InputFormat("test", TestValue.class)),
+                  new AnnotatedInputFormatDefinition(
+                      new InputFormat("inner_test", InnerTestValue.class))),
+              InputFormatDefinition::name);
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    }
+    INPUT_FORMATS = inputFormats;
+  }
 
   @Test
   public void testData() throws IOException {
@@ -355,6 +362,11 @@ public class RunTest {
                     }
 
                     @Override
+                    public Stream<ConfigurationSection> listConfiguration() {
+                      return Stream.empty();
+                    }
+
+                    @Override
                     public Stream<SignatureDefinition> signatures() {
                       return Stream.empty();
                     }
@@ -362,11 +374,6 @@ public class RunTest {
                     @Override
                     public void writeJavaScriptRenderer(PrintStream writer) {
                       // Do nothing.
-                    }
-
-                    @Override
-                    public Stream<ConfigurationSection> listConfiguration() {
-                      return Stream.empty();
                     }
                   }));
       final ActionGenerator generator =

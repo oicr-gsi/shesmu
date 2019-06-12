@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -85,7 +86,11 @@ public abstract class ConstantDefinition implements Target {
 
       try {
         return load(ConstantLoader.class, "dyn.shesmu.Constant");
-      } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+      } catch (InstantiationException
+          | IllegalAccessException
+          | ClassNotFoundException
+          | NoSuchMethodException
+          | InvocationTargetException e) {
         e.printStackTrace();
         return o -> o.put("error", e.getMessage());
       }

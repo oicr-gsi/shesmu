@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.server.SourceLocation.SourceLoctionLinker;
 import java.awt.Canvas;
 import java.awt.Font;
@@ -24,6 +23,20 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 public class MetroDiagram {
+  public interface OliveFlowReader {
+    /**
+     * Read the number of rows that have crossed a particular olive
+     *
+     * @param filename the file name containing the olive
+     * @param line the source line of the clause being measured
+     * @param column the source column of the clause being measured
+     * @param oliveLine the source line of the olive
+     * @param oliveColumn the source column of the olive
+     * @return the number of rows or null if unknown
+     */
+    Long read(String filename, int line, int column, int oliveLine, int oliveColumn);
+  }
+
   private static final class DeathChecker implements Predicate<OliveClauseRow> {
     private boolean done;
 
@@ -87,7 +100,8 @@ public class MetroDiagram {
       Instant timestamp,
       OliveTable olive,
       Long inputCount,
-      InputFormatDefinition format)
+      InputFormatDefinition format,
+      OliveFlowReader reader)
       throws XMLStreamException {
     final String id =
         String.format(
@@ -244,15 +258,12 @@ public class MetroDiagram {
                         currentRow,
                         clause.syntax(),
                         clause.measuredFlow() && inputCount != null
-                            ? (long)
-                                ActionGenerator.OLIVE_FLOW
-                                    .labels(
-                                        filename,
-                                        Integer.toString(clause.line()),
-                                        Integer.toString(clause.column()),
-                                        Integer.toString(olive.line()),
-                                        Integer.toString(olive.column()))
-                                    .get()
+                            ? reader.read(
+                                filename,
+                                clause.line(),
+                                clause.column(),
+                                olive.line(),
+                                olive.column())
                             : null,
                         new SourceLocation(filename, clause.line(), clause.column(), timestamp));
                   } catch (XMLStreamException e) {

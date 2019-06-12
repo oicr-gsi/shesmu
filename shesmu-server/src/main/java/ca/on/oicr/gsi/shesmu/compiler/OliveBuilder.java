@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
-import static org.objectweb.asm.Type.DOUBLE_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
@@ -10,8 +9,6 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
-import io.prometheus.client.Collector;
-import io.prometheus.client.Gauge;
 import java.lang.invoke.LambdaMetafactory;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,41 +25,34 @@ public final class OliveBuilder extends BaseOliveBuilder {
   private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(OliveServices.class);
   private static final Type A_ACTION_TYPE = Type.getType(Action.class);
 
-  private static final Type A_CHILD_TYPE = Type.getType(Gauge.Child.class);
-  private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
-
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 
   private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
-
+  protected static final Handle LAMBDA_METAFACTORY_BSM =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getType(LambdaMetafactory.class).getInternalName(),
+          "metafactory",
+          "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+          false);
   private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ACTION =
       new Method(
           "accept",
           BOOLEAN_TYPE,
           new Type[] {A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE});
-
   private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ALERT =
       new Method(
           "accept", BOOLEAN_TYPE, new Type[] {A_STRING_ARRAY_TYPE, A_STRING_ARRAY_TYPE, LONG_TYPE});
-
-  private static final Method METHOD_CHILD__SET =
-      new Method("set", VOID_TYPE, new Type[] {DOUBLE_TYPE});
-
-  private static final Method METHOD_GAUGE__LABELS =
-      new Method("labels", Type.getType(Object.class), new Type[] {Type.getType(String[].class)});
-
+  private static final Method METHOD_OLIVE_SERVICES__OLIVE_RUNTIME =
+      new Method(
+          "oliveRuntime", VOID_TYPE, new Type[] {A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE});
   private static final Method METHOD_STREAM__CLOSE = new Method("close", VOID_TYPE, new Type[] {});
-
   private static final Method METHOD_STREAM__FOR_EACH =
       new Method("forEach", VOID_TYPE, new Type[] {A_CONSUMER_TYPE});
-
   private static final Method METHOD_SYSTEM__NANO_TIME =
       new Method("nanoTime", LONG_TYPE, new Type[] {});
-
   private final int column;
-
   private final int line;
-
   private final String signerPrefix;
 
   public OliveBuilder(
@@ -174,14 +164,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
     }
   }
 
-  protected static final Handle LAMBDA_METAFACTORY_BSM =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getType(LambdaMetafactory.class).getInternalName(),
-          "metafactory",
-          "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-          false);
-
   /** Generate bytecode for the olive and create a method to consume the result. */
   public final Renderer finish(String actionName, Stream<LoadableValue> captures) {
     final LambdaBuilder consumer =
@@ -193,6 +175,11 @@ public final class OliveBuilder extends BaseOliveBuilder {
                     Stream.of(
                         new LoadableValue() {
                           @Override
+                          public void accept(Renderer renderer) {
+                            renderer.methodGen().loadArg(0);
+                          }
+
+                          @Override
                           public String name() {
                             return "Olive Services";
                           }
@@ -200,11 +187,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
                           @Override
                           public Type type() {
                             return A_ACTION_CONSUMER_TYPE;
-                          }
-
-                          @Override
-                          public void accept(Renderer renderer) {
-                            renderer.methodGen().loadArg(0);
                           }
                         }),
                     captures)
@@ -227,33 +209,28 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
     runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__CLOSE);
 
-    runMethod.methodGen().getStatic(A_ACTION_GENERATOR_TYPE, "OLIVE_RUN_TIME", A_GAUGE_TYPE);
-    runMethod.methodGen().push(2);
-    runMethod.methodGen().newArray(A_STRING_TYPE);
-    runMethod.methodGen().dup();
-    runMethod.methodGen().push(0);
+    runMethod.methodGen().loadArg(0);
     runMethod.methodGen().push(owner.sourcePath());
-    runMethod.methodGen().arrayStore(A_STRING_TYPE);
-    runMethod.methodGen().dup();
-    runMethod.methodGen().push(1);
-    runMethod.methodGen().push(Integer.toString(line));
-    runMethod.methodGen().arrayStore(A_STRING_TYPE);
-    runMethod.methodGen().invokeVirtual(A_GAUGE_TYPE, METHOD_GAUGE__LABELS);
-    runMethod.methodGen().checkCast(A_CHILD_TYPE);
+    runMethod.methodGen().push(line);
+    runMethod.methodGen().push(column);
     runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
     runMethod.methodGen().loadLocal(startTime);
     runMethod.methodGen().math(GeneratorAdapter.SUB, LONG_TYPE);
-    runMethod.methodGen().cast(LONG_TYPE, DOUBLE_TYPE);
-    runMethod.methodGen().push(Collector.NANOSECONDS_PER_SECOND);
-    runMethod.methodGen().math(GeneratorAdapter.DIV, DOUBLE_TYPE);
-    runMethod.methodGen().invokeVirtual(A_CHILD_TYPE, METHOD_CHILD__SET);
+    runMethod
+        .methodGen()
+        .invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__OLIVE_RUNTIME);
 
     return consumer.renderer(currentType(), this::emitSigner);
   }
 
   @Override
-  public Stream<LoadableValue> loadableValues() {
-    return owner.constants(true);
+  protected void loadInputProvider(GeneratorAdapter method) {
+    method.loadArg(1);
+  }
+
+  @Override
+  protected void loadOliveServices(GeneratorAdapter method) {
+    method.loadArg(0);
   }
 
   @Override
@@ -296,5 +273,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
       default:
         throw new UnsupportedOperationException();
     }
+  }
+
+  @Override
+  public Stream<LoadableValue> loadableValues() {
+    return owner.constants(true);
   }
 }
