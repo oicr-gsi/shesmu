@@ -186,7 +186,7 @@ a.load {
 }
 
 .action.state_halp a:visited {
-    color: #E0493B;
+    color: #FCEAE9;
 }
 
 .action.state_halp a:hover, .actionstate_halp a.active {
@@ -247,7 +247,7 @@ a.load {
 
 .action.state_halp :first-child::before {
     content: "Halp 🚒";
-    color: #E0493B;
+    color: #F9DDDB;
 }
 
 .action.state_queued :first-child::before {
