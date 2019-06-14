@@ -103,6 +103,41 @@ a.load {
     color: #FFF;
 }
 
+.collapse {
+    margin: 0.2em;
+    padding: 0.5em;
+    cursor: pointer;
+    margin: 0px;
+}
+
+.collapse:before {
+    float: left;
+    margin-right: 1em;
+}
+
+.collapse.close:before {
+    content: "▶";
+}
+
+.collapse.open:before {
+    content: "▼";
+}
+
+.collapse + * {
+    clear: both;
+    overflow-x: auto;
+    transition: max-height 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+.collapse.close + * {
+    max-height: 0px;
+}
+
+.collapse + * :target {
+    max-height: auto;
+}
+
 .error {
     font-weight: 700;
     color: #E0493B;
@@ -113,7 +148,7 @@ a.load {
     margin-bottom: 0.5em;
 }
 
-.action :first-child {
+.action > :first-child {
     font-weight: bold;
 }
 
@@ -123,43 +158,43 @@ a.load {
     margin: 0.1em;
 }
 
-.state_failed, #currentStates > span.failed , #newStates > span.failed {
+.state_failed , .filterlist .state_failed {
     border: 1px solid #E0493B;
     background-color: #F9DDDB;
 }
 
-.state_halp, #currentStates > span.halp, #newStates > span.halp {
+.state_halp, .filterlist .state_halp {
     border: 1px solid #E0493B;
     background-color: #B83C31;
     color: #FFF;
 }
 
-.state_inflight, #currentStates > span.inflight, #newStates > span.inflight {
+.state_inflight, .filterlist .state_inflight {
     border: 1px solid #04AA9D;
     background-color: #D1EFED;
 }
 
-.state_queued, #currentStates > span.queued, #newStates > span.queued {
+.state_queued, .filterlist .state_queued {
     border: 1px dashed #04AA9D;
     background-color: #D1EFED;
 }
 
-.state_succeeded, #currentStates > span.succeeded, #newStates > span.succeeded {
+.state_succeeded, .filterlist .state_succeeded {
     border: 1px solid #06AED5;
     background-color: #D1F0F7;
 }
 
-.state_throttled, #currentStates > span.throttled, #newStates > span.throttled {
+.state_throttled, .filterlist .state_throttled {
     border: 1px dashed #F0C808;
     background-color: #FCF5D2;
 }
 
-.state_unknown, #currentStates > span.unknown, #newStates > span.unknown {
+.state_unknown, .filterlist .state_unknown {
     border: 1px dashed #E0493B;
     background-color: #F9DDDB;
 }
 
-.state_waiting, #currentStates > span.waiting, #newStates > span.waiting {
+.state_waiting, .filterlist .state_waiting {
     border: 1px solid #F0C808;
     background-color: #FCF5D2;
 }
@@ -195,6 +230,18 @@ a.load {
 
 .action.state_halp a:hover, .actionstate_halp a.active {
     color: #E56A5E;
+}
+
+.action.state_halp td {
+    color: #FFF;
+}
+
+.action.state_halp th {
+    color: #F9DDDB;
+}
+
+.action.state_halp tr:hover {
+    background-color: #E0493B;
 }
 
 .action.state_queued a:link, .action.state_inflight a:link {
@@ -233,62 +280,62 @@ a.load {
     color: #33BCDC;
 }
 
-.action :first-child::before {
+.action>  :first-child::before {
     opacity: 0.5;
     font-size: 200%;
     float: right;
 }
 
-.action.state_unknown :first-child::before {
+.action.state_unknown>  :first-child::before {
     content: "Unknown 🤷";
     color: #E0493B;
 }
 
-.action.state_failed :first-child::before {
+.action.state_failed>  :first-child::before {
     content: "Failed 💔";
     color: #E0493B;
 }
 
-.action.state_halp :first-child::before {
+.action.state_halp>  :first-child::before {
     content: "Halp 🚒";
     color: #F9DDDB;
 }
 
-.action.state_queued :first-child::before {
+.action.state_queued>  :first-child::before {
     content: "Queued ⌛";
     color: #04AA9D;
 }
 
-.action.state_inflight :first-child::before {
+.action.state_inflight>  :first-child::before {
     content: "Inflight ✈";
     color: #04AA9D;
 }
 
-.action.state_throttled :first-child::before {
+.action.state_throttled>  :first-child::before {
     content: "Throttled ✋";
     color: #F0C808;
 }
 
-.action.state_waiting :first-child::before {
+.action.state_waiting > :first-child::before {
     content: "Waiting ⌛";
     color: #F0C808;
 }
 
-.action.state_succeeded :first-child::before {
+.action.state_succeeded > :first-child::before {
     content: "Succeeded ✓";
     color: #06AED5;
 }
 
-#currentTypes > span, #currentLocations > span {
+.filterlist > span {
     color: #fff;
     background-color: #06AED5;
 }
 
-#currentStates > span , #newStates > span {
+.filterlist .state_failed, .filterlist .state_inflight, .filterlist .state_queued, .filterlist .state_succeeded, .filterlist .state_throttled, .filterlist .state_unknown, .filterlist .state_waiting, .load.state_failed, .load.state_inflight, .load.state_queued, .load.state_succeeded, .load.state_throttled, .load.state_unknown, .load.state_waiting {
     color: #000;
 }
 
-#currentTypes > span, #currentLocations > span, #currentStates > span {
+.filterlist > span {
     padding: 0.2em;
     border: 1px solid #058FAF;
     margin: 0.2em;
@@ -298,45 +345,49 @@ a.load {
     display: inline-block;
 }
 
-#currentTypes > span span, #currentLocations > span span, #currentStates> span span, #savedSearches > div {
+.filters > div {
     cursor: pointer;
 }
 
-#savedSearches {
+.filters {
     border: 1px solid #058FAF;
     box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
-    border-radius: 0.1em;
     display: inline-block;
     min-width: 25vw;
 }
 
-#savedSearches > :first-child {
-    border-top-left-radius: 0.1em;
-    border-top-right-radius: 0.1em;
-}
-
-#savedSearches > :last-child {
-    border-bottom-left-radius: 0.1em;
-    border-bottom-right-radius: 0.1em;
-}
-
-#savedSearches > div {
-    color: #06AED5;
-    padding: 0.2em;
-}
-
-#savedSearches > div:hover {
-    background-color: #058FAF;
-    color: #fff;
-}
-
-#savedSearches > div.selected {
-    background-color: #06AED5;
-    color: #fff;
-}
-
-#savedSearches > div > span {
+.filters > div > span.close {
     float: right;
+}
+
+.filters > div > span.close, .filterlist > div > span.close {
+    margin: 0.3em;
+}
+
+.filters {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.filters > div {
+    padding: 0.5em;
+}
+
+.filters > div:nth-child(even) {
+    background-color: #EAF5F7;
+}
+
+.filters > div:hover {
+    background-color: #D2EBEE;
+}
+
+.filters > div.negated {
+    color: #fff;
+    background-color: #B83C31;
+}
+
+.filters > div.negated:hover {
+    background-color: #E0493B;
 }
 
 .tab {
@@ -383,16 +434,6 @@ a.load {
 
 .alert:target {
     font-weight: bold;
-}
-
-pre.json {
-    overflow-x: auto;
-    transition: max-height 0.5s ease-in-out;
-    overflow: hidden;
-}
-
-pre.json.collapsed {
-    max-height: 0px;
 }
 
 div.olive {

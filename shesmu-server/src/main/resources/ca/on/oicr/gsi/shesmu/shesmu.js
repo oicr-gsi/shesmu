@@ -1,5 +1,39 @@
 import { actionRender } from "./actions.js";
 
+export function visibleText(text) {
+  return text.replace(" ", "␣").replace("\n", "⏎");
+}
+
+function makeButton(label, className, callback) {
+  const button = document.createElement("SPAN");
+  button.className = "load" + className;
+  button.innerText = label;
+  button.addEventListener("click", callback);
+  return button;
+}
+
+function button(label, callback) {
+  return makeButton(label, "", callback);
+}
+function accessoryButton(label, callback) {
+  return makeButton(label, " accessory", callback);
+}
+function dangerButton(label, callback) {
+  return makeButton(label, " danger", callback);
+}
+
+function statusButton(state) {
+  const button = document.createElement("SPAN");
+  button.title = actionStates[state];
+  button.innerText = state;
+  button.className = `load state_${state.toLowerCase()}`;
+  return button;
+}
+
+function breakSlashes(text) {
+  return text.replace(/\//g, "/\u200B");
+}
+
 function addThrobber(container) {
   const throbber = document.createElement("DIV");
   throbber.className = "lds-circle";
@@ -201,7 +235,11 @@ export const parser = {
         output: parseFloat(match[1])
       };
     } else {
-      return { good: false, input: input, error: "Expected floating point number." };
+      return {
+        good: false,
+        input: input,
+        error: "Expected floating point number."
+      };
     }
   },
   i: function(input) {
@@ -347,16 +385,15 @@ const actionStates = {
   FAILED:
     "The action has been attempted and encounter an error (possibly recoverable).",
   HALP:
-    "The action is in a state where it needs human attention or intervention to correct itself.\nUsually, this means that the action has tried to recover state and found itself in an inconsistent state that it can't recover from without doing something dangerous.",
+    "The action is in a state where it needs human attention or intervention to correct itself.",
   INFLIGHT: "The action is currently being executed.",
   QUEUED: "The action is waiting for a remote system to start it.",
   SUCCEEDED: "The action is complete.",
   THROTTLED:
-    "The action is being rate limited by a Shesmu throttler or by an over-capacity signal from the remote system.",
+    "The action is being rate limited by a Shesmu throttler or by an over-capacity signal.",
   UNKNOWN:
-    "The actions state is not currently known either due to an error or not having been attempted. It may have thrown an exception during execution.",
-  WAITING:
-    "The action cannot be started due to a resource being unavailable.\nThis is slightly different from THROTTLED, which indicates this action could be run if there were capacity, while this indicates that the action can't be run right now even if capacity is available. This might be due to needing another action to complete or requiring user intervention."
+    "The actions state is not currently known either due to an exception or not having been attempted.",
+  WAITING: "The action cannot be started due to a resource being unavailable."
 };
 
 const timeUnits = {
@@ -376,121 +413,14 @@ let availableLocations;
 let closeActiveMenu = () => {};
 let activeMenu = null;
 
-function clearSelectableMap(
-  currentId,
-  newId,
-  stateMap,
-  source,
-  classForItem,
-  titleForItem
+function makeDropDown(
+  activeElement,
+  listElement,
+  setter,
+  labelMaker,
+  isDefault,
+  items
 ) {
-  stateMap.clear();
-  for (const item of source) {
-    stateMap.set(item, false);
-  }
-
-  const currentElement = document.getElementById(currentId);
-  const newElement = document.getElementById(newId);
-  let open = false;
-  newElement.className = "ready";
-  newElement.parentNode.onclick = e => {
-    if (e.target == newElement.parentNode || e.target == newElement) {
-      if (open) {
-        open = false;
-        closeActiveMenu(false);
-        return;
-      }
-      closeActiveMenu(true);
-      open = true;
-      newElement.className = "forceOpen";
-      activeMenu = newElement;
-      closeActiveMenu = external => {
-        newElement.className = external ? "ready" : "";
-        open = false;
-        activeMenu = null;
-      };
-    }
-  };
-  newElement.parentNode.onmouseover = e => {
-    if (e.target == newElement.parentNode && !open) {
-      closeActiveMenu(true);
-    }
-  };
-  newElement.parentNode.onmouseout = () => {
-    if (!open) {
-      newElement.className = "ready";
-    }
-  };
-
-  function redraw() {
-    clearChildren(currentElement);
-    clearChildren(newElement);
-    for (const entry of stateMap.entries()) {
-      const element = document.createElement("SPAN");
-      element.innerText = entry[0] + " ";
-      element.className = classForItem(entry[0]);
-      element.title = titleForItem(entry[0]);
-      (entry[1] ? currentElement : newElement).appendChild(element);
-      const toggle = e => {
-        stateMap.set(entry[0], !entry[1]);
-        redraw();
-        e.stopPropagation();
-      };
-      if (entry[1]) {
-        const removeElement = document.createElement("SPAN");
-        removeElement.innerText = "✖";
-        removeElement.onclick = toggle;
-        element.appendChild(removeElement);
-        currentElement.appendChild(document.createTextNode(" "));
-      } else {
-        element.onclick = toggle;
-      }
-    }
-  }
-  redraw();
-}
-
-function clearTypes() {
-  clearSelectableMap(
-    "currentTypes",
-    "newTypes",
-    types,
-    Array.from(actionRender.keys()).sort(),
-    type => "",
-    type => ""
-  );
-}
-
-function clearLocations() {
-  clearSelectableMap(
-    "currentLocations",
-    "newLocations",
-    locations,
-    availableLocations.keys(),
-    element => null,
-    element => {
-      const location = availableLocations.get(element);
-      return `Filename: ${location.file}\nLine: ${location.line ||
-        "Any"}\nColumn: ${location.column || "Any"}\nBuild Time: ${
-        location.time ? new Date(location.time).toString() : "Any"
-      }`;
-    }
-  );
-}
-
-function clearStates() {
-  clearSelectableMap(
-    "currentStates",
-    "newStates",
-    selectedStates,
-    Object.keys(actionStates),
-    state => state.toLowerCase(),
-    state => actionStates[state]
-  );
-}
-
-let selectedSavedSearch = null;
-function makeDropDown(activeElement, listElement, setter, isDefault, items) {
   let open = false;
   activeElement.parentNode.onclick = e => {
     if (e.target == activeElement.parentNode || e.target == activeElement) {
@@ -520,24 +450,47 @@ function makeDropDown(activeElement, listElement, setter, isDefault, items) {
       listElement.className = "ready";
     }
   };
+  clearChildren(listElement);
   for (const item of items) {
     const element = document.createElement("SPAN");
-    element.innerText = item[0];
+    const label = labelMaker(item);
+    element.innerText = label;
     element.onclick = e => {
-      setter(item[1]);
-      activeElement.innerText = item[0];
+      setter(item);
+      activeElement.innerText = label;
       if (open) {
         closeActiveMenu(false);
       }
     };
     if (isDefault(item)) {
-      setter(item[1]);
-      activeElement.innerText = item[0];
+      setter(item);
+      activeElement.innerText = label;
     }
     listElement.appendChild(element);
   }
 }
-export function initialiseActionDash(definedLocations, serverSearches) {
+
+function dropDown(setter, labelMaker, isDefault, items) {
+  const container = document.createElement("SPAN");
+  container.className = "dropdown";
+  const activeElement = document.createElement("SPAN");
+  activeElement.innerText = "Select";
+  container.appendChild(activeElement);
+  container.appendChild(document.createTextNode(" ▼"));
+  const listElement = document.createElement("DIV");
+  container.appendChild(listElement);
+  makeDropDown(
+    activeElement,
+    listElement,
+    setter,
+    labelMaker,
+    isDefault,
+    items
+  );
+  return container;
+}
+
+export function initialiseActionDash(serverSearches, tags, savedQueryName) {
   document.addEventListener("click", e => {
     if (activeMenu != null) {
       for (
@@ -552,143 +505,106 @@ export function initialiseActionDash(definedLocations, serverSearches) {
       closeActiveMenu(true);
     }
   });
-
-  availableLocations = new Map(
-    Object.entries(definedLocations).sort(entry => entry[0])
-  );
-  makeDropDown(
-    document.getElementById("searchType"),
-    document.getElementById("searchTypes"),
-    x => (searchType = x),
-    item => item[2],
-    [
-      [
-        "Text (Case-sensitive)",
-        text => ({ type: "text", matchCase: true, text: text }),
-        true
-      ],
-      [
-        "Text (Case-insensitive)",
-        text => ({ type: "text", matchCase: false, text: text }),
-        false
-      ],
-      ["Regular Expression", text => ({ type: "regex", pattern: text }), false]
-    ]
-  );
-  document
-    .getElementById("clearStatesButton")
-    .addEventListener("click", clearStates);
-  document
-    .getElementById("clearTypesButton")
-    .addEventListener("click", clearTypes);
-  document
-    .getElementById("listActionsButton")
-    .addEventListener("click", listActions);
-  document
-    .getElementById("purgeButton")
-    .addEventListener("click", () => purge(makeFilters()));
-  document
-    .getElementById("queryStatsButton")
-    .addEventListener("click", queryStats);
-  document
-    .getElementById("copyButton")
-    .addEventListener("click", () => copyJson(makeFilters()));
-  document
-    .getElementById("showQueryButton")
-    .addEventListener("click", () =>
-      showFilterJson(makeFilters(), document.getElementById("results"))
-    );
-  document
-    .getElementById("listActionsSavedButton")
-    .addEventListener("click", () => {
-      if (selectedSavedSearch !== null) {
-        nextPage(
-          {
-            filters: selectedSavedSearch,
-            limit: 25,
-            skip: 0
-          },
-          document.getElementById("results"),
-          true
-        );
-      }
-    });
-  document
-    .getElementById("queryStatsSavedButton")
-    .addEventListener("click", () => {
-      if (selectedSavedSearch !== null) {
-        getStats(selectedSavedSearch, document.getElementById("results"), true);
-      }
-    });
-  document.getElementById("copySavedButton").addEventListener("click", () => {
-    if (selectedSavedSearch !== null) {
-      copyJson(selectedSavedSearch);
-    }
-  });
-  document
-    .getElementById("showQuerySavedButton")
-    .addEventListener("click", () => {
-      if (selectedSavedSearch !== null) {
-        showFilterJson(selectedSavedSearch, document.getElementById("results"));
-      }
-    });
-  document.getElementById("purgeSavedButton").addEventListener("click", () => {
-    if (selectedSavedSearch !== null) {
-      purge(selectedSavedSearch);
-    }
-  });
-  if (availableLocations.size > 0) {
-    document
-      .getElementById("clearLocationsButton")
-      .addEventListener("click", clearLocations);
-    clearLocations();
+  let localSearches = {};
+  try {
+    localSearches = JSON.parse(localStorage.getItem("shesmu_searches") || "{}");
+  } catch (e) {
+    console.log(e);
   }
-  clearStates();
-  clearTypes();
-  for (const span of timeSpans) {
+
+  let selectedName = null;
+  let selectedQuery = null;
+  const searchList = document.getElementById("searches");
+  const searchName = document.getElementById("searchName");
+  const results = document.getElementById("results");
+  const redrawDropDown = () =>
     makeDropDown(
-      document.getElementById(`${span}AgoUnit`),
-      document.getElementById(`${span}AgoUnits`),
-      multiplier => selectedAgoUnit.set(span, multiplier),
-      item => item[0] == "hours",
-      Object.entries(timeUnits).sort(x => x[1])
+      searchName,
+      searchList,
+      ([name, query]) => {
+        if (window.history.state != name) {
+          window.history.pushState(name, name, `actiondash?saved=${name}`);
+        }
+        savedQueryName = null;
+        selectedName = name;
+        selectedQuery = query;
+        getStats(
+          query,
+          tags,
+          results,
+          true,
+          true,
+          (reset, updateLocalSearches) => {
+            if (reset) {
+              savedQueryName = "All Actions";
+            }
+            if (updateLocalSearches) {
+              updateLocalSearches(localSearches);
+              localStorage.setItem(
+                "shesmu_searches",
+                JSON.stringify(localSearches)
+              );
+            }
+            redrawDropDown();
+          }
+        );
+      },
+      ([name, query]) => name,
+      ([name, query]) => name == savedQueryName,
+      [["All Actions", []]]
+        .concat(Object.entries(serverSearches))
+        .concat(Object.entries(localSearches))
     );
-  }
-
-  const customSearchPane = document.getElementById("customSearchPane");
-  const savedSearchPane = document.getElementById("savedSearchPane");
-  const customSearchButton = document.getElementById("customSearchButton");
-  const savedSearchButton = document.getElementById("savedSearchButton");
-  customSearchButton.onclick = () => {
-    customSearchPane.style.display = "block";
-    customSearchButton.className = "tab selected";
-    savedSearchPane.style.display = "none";
-    savedSearchButton.className = "tab";
-  };
-  savedSearchButton.onclick = () => {
-    savedSearchPane.style.display = "block";
-    customSearchButton.className = "tab";
-    customSearchPane.style.display = "none";
-    savedSearchButton.className = "tab selected";
+  const updateLocalSearches = () => {
+    localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
+    redrawDropDown();
   };
 
-  function showSavedSearches() {
-    selectedSavedSearch = null;
-    try {
-      savedSearches(
-        JSON.parse(localStorage.getItem("shesmu_searches") || "{}"),
-        true,
-        showSavedSearches
-      );
-    } catch (e) {
-      console.log(e);
+  window.addEventListener("popstate", e => {
+    if (e.state) {
+      savedQueryName = e.state;
+      redrawDropDown();
     }
-    savedSearches(serverSearches, false, showSavedSearches);
+  });
+
+  function savedSearches(
+    searches,
+    userDefined,
+    showSavedSearches,
+    shouldLoad,
+    savedQueryName
+  ) {
+    if (userDefined) {
+      clearChildren(searchContainer);
+    }
+    for (const [name, query] of Object.entries(searches)) {
+      const element = document.createElement("DIV");
+      searchContainer.appendChild(element);
+      element.innerText = name;
+      element.onclick = () => {
+        for (let i = 0; i < searchContainer.children.length; i++) {
+          searchContainer.children[i].className = "";
+        }
+        element.className = "selected";
+      };
+      if (userDefined) {
+        const close = document.createElement("SPAN");
+        element.appendChild(close);
+        close.innerText = "✖";
+      } else {
+        const link = document.createElement("SPAN");
+        element.appendChild(link);
+        link.innerText = "🔗";
+        link.onclick = () => {
+          window.history.pushState(null, name, `actiondash?saved=${name}`);
+        };
+      }
+      if (shouldLoad && name == savedQueryName) {
+        nextPage(queryJson, document.getElementById("results"), true);
+      }
+    }
   }
-  showSavedSearches();
-  document
-    .getElementById("saveSearchButton")
-    .addEventListener("click", () => saveSearch(showSavedSearches));
+
   document.getElementById("pasteSearchButton").addEventListener("click", () => {
     const [dialog, close] = makePopup(true);
     dialog.appendChild(document.createTextNode("Save search as: "));
@@ -700,34 +616,23 @@ export function initialiseActionDash(definedLocations, serverSearches) {
     const filterJSON = document.createElement("TEXTAREA");
     dialog.appendChild(filterJSON);
 
-    const button = document.createElement("SPAN");
-    button.className = "load";
-    button.innerText = "Save";
-    dialog.appendChild(button);
-    button.onclick = () => {
-      const name = input.value.trim();
-      let filters = null;
-      try {
-        filters = JSON.parse(filterJSON.value);
-      } catch (e) {
-        makePopup().innerText = e;
-        return;
-      }
-      if (name) {
-        let localSearches = {};
+    dialog.appendChild(
+      button("Save", () => {
+        const name = input.value.trim();
+        let filters = null;
         try {
-          localSearches = JSON.parse(
-            localStorage.getItem("shesmu_searches") || "{}"
-          );
+          filters = JSON.parse(filterJSON.value);
         } catch (e) {
-          console.log(e);
+          makePopup().innerText = e;
+          return;
         }
-        localSearches[name] = filters;
-        localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
-        close();
-        showSavedSearches();
-      }
-    };
+        if (name) {
+          localSearches[name] = filters;
+          close();
+          updateLocalSearches();
+        }
+      })
+    );
   });
 
   document.getElementById("importButton").addEventListener("click", () => {
@@ -735,54 +640,48 @@ export function initialiseActionDash(definedLocations, serverSearches) {
     const importJSON = document.createElement("TEXTAREA");
     dialog.appendChild(importJSON);
 
-    const button = document.createElement("SPAN");
-    button.className = "load";
-    button.innerText = "Import";
-    dialog.appendChild(button);
-    button.onclick = () => {
-      let localSearches = {};
-      try {
-        localSearches = JSON.parse(
-          localStorage.getItem("shesmu_searches") || "{}"
-        );
-      } catch (e) {
-        console.log(e);
-      }
-      try {
+    dialog.appendChild(
+      button("Import", () => {
         for (const entry of Object.entries(JSON.parse(importJSON.value))) {
           localSearches[entry[0]] = entry[1];
         }
-      } catch (e) {
-        makePopup().innerText = e;
-        return;
+        close();
+        updateLocalSearches();
+      })
+    );
+  });
+  document
+    .getElementById("deleteSearchButton")
+    .addEventListener("click", () => {
+      if (localSearches.hasOwnProperty(selectedName)) {
+        delete localSearches[selectedName];
+        savedQueryName = "All Actions";
+        updateLocalSearches();
+      } else {
+        makePopup().innerText =
+          "Search is stored on the Shesmu server and cannot be deleted from this interface.";
       }
+    });
 
-      localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
-      close();
-      showSavedSearches();
-    };
-  });
+  document
+    .getElementById("exportButton")
+    .addEventListener("click", () => copyJson(localSearches));
 
-  document.getElementById("exportButton").addEventListener("click", () => {
-    try {
-      copyJson(JSON.parse(localStorage.getItem("shesmu_searches") || "{}"));
-    } catch (e) {
-      console.log(e);
-    }
-  });
+  redrawDropDown();
 }
 
 function copyJson(data) {
+  const closeBusy = makeBusyDialog();
   const buffer = document.getElementById("copybuffer");
   buffer.value = JSON.stringify(data, null, 2);
   buffer.style = "display: inline;";
   buffer.select();
   document.execCommand("Copy");
   buffer.style = "display: none;";
+  window.setTimeout(closeBusy, 300);
 }
 
-function saveSearch(showSavedSearches) {
-  const filters = makeFilters();
+function saveSearch(filters, updateSearchList) {
   const [dialog, close] = makePopup(true);
   if (filters.length == 0) {
     dialog.innerText = "Umm, saving an empty search seems really pointless.";
@@ -793,67 +692,15 @@ function saveSearch(showSavedSearches) {
   input.type = "text";
   dialog.appendChild(input);
 
-  const button = document.createElement("SPAN");
-  button.className = "load";
-  button.innerText = "Save";
-  dialog.appendChild(button);
-  button.onclick = () => {
-    const name = input.value.trim();
-    if (name) {
-      let localSearches = {};
-      try {
-        localSearches = JSON.parse(
-          localStorage.getItem("shesmu_searches") || "{}"
-        );
-      } catch (e) {
-        console.log(e);
+  dialog.appendChild(
+    button("Save", () => {
+      const name = input.value.trim();
+      if (name) {
+        close();
+        updateSearchList(localSearches => (localSearches[name] = filters));
       }
-      localSearches[name] = filters;
-      localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
-      close();
-      showSavedSearches();
-    }
-  };
-}
-
-function savedSearches(searches, userDefined, showSavedSearches) {
-  const searchContainer = document.getElementById("savedSearches");
-  if (userDefined) {
-    clearChildren(searchContainer);
-  }
-  const results = document.getElementById("results");
-  for (const entry of Object.entries(searches)) {
-    const element = document.createElement("DIV");
-    searchContainer.appendChild(element);
-    element.innerText = entry[0];
-    element.onclick = () => {
-      for (let i = 0; i < searchContainer.children.length; i++) {
-        searchContainer.children[i].className = "";
-      }
-      element.className = "selected";
-      selectedSavedSearch = entry[1];
-    };
-    if (userDefined) {
-      const close = document.createElement("SPAN");
-      element.appendChild(close);
-      close.innerText = "✖";
-      close.onclick = () => {
-        try {
-          const localSearches = JSON.parse(
-            localStorage.getItem("shesmu_searches") || "{}"
-          );
-          delete localSearches[entry[0]];
-          localStorage.setItem(
-            "shesmu_searches",
-            JSON.stringify(localSearches)
-          );
-          showSavedSearches();
-        } catch (e) {
-          console.log(e);
-        }
-      };
-    }
-  }
+    })
+  );
 }
 
 function parseEpoch(elementId) {
@@ -941,29 +788,39 @@ function results(container, slug, body, render) {
     });
 }
 
-function listActions() {
-  const query = {
-    filters: makeFilters(),
-    limit: 25,
-    skip: 0
-  };
-  nextPage(query, document.getElementById("results"), true);
-}
+export function actionsForOlive(filename, line, column, timestamp) {
+  let localSearches = {};
+  try {
+    localSearches = JSON.parse(localStorage.getItem("shesmu_searches") || "{}");
+  } catch (e) {
+    console.log(e);
+  }
 
-export function filterForOlive(filename, line, column, timestamp) {
-  return [
-    {
-      type: "sourcelocation",
-      locations: [
-        {
-          file: filename,
-          line: line,
-          column: column,
-          time: timestamp
-        }
-      ]
+  getStats(
+    [
+      {
+        type: "sourcelocation",
+        locations: [
+          {
+            file: filename,
+            line: line,
+            column: column,
+            time: timestamp
+          }
+        ]
+      }
+    ],
+    [],
+    makePopup(),
+    false,
+    true,
+    (reset, updateLocalSearches) => {
+      if (updateLocalSearches) {
+        updateLocalSearches(localSearches);
+        localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
+      }
     }
-  ];
+  );
 }
 
 function makePopup(returnClose) {
@@ -992,6 +849,37 @@ function makePopup(returnClose) {
   return returnClose ? [inner, closeButton.onclick] : inner;
 }
 
+function makeTabs(container, selectedTab, ...tabs) {
+  const panes = tabs.map(t => document.createElement("DIV"));
+  const buttons = tabs.map((t, index) => {
+    const button = document.createElement("SPAN");
+    button.innerText = t;
+    button.addEventListener("click", e => {
+      panes.forEach((pane, i) => {
+        pane.style.display = i == index ? "block" : "none";
+      });
+      buttons.forEach((button, i) => {
+        button.className = i == index ? "tab selected" : "tab";
+      });
+    });
+    return button;
+  });
+
+  const buttonBar = document.createElement("DIV");
+  container.appendChild(buttonBar);
+  for (const button of buttons) {
+    buttonBar.appendChild(button);
+  }
+  for (const pane of panes) {
+    container.appendChild(pane);
+  }
+  for (let i = 0; i < tabs.length; i++) {
+    buttons[i].className = i == selectedTab ? "tab selected" : "tab";
+    panes[i].style.display = i == selectedTab ? "block" : "none";
+  }
+  return panes;
+}
+
 function makeBusyDialog() {
   const modal = document.createElement("DIV");
   modal.className = "modal";
@@ -1010,10 +898,6 @@ export function listActionsPopup(filters) {
     makePopup(),
     false
   );
-}
-
-export function queryStatsPopup(filters) {
-  getStats(filters, makePopup(), false);
 }
 
 export function text(t) {
@@ -1035,6 +919,35 @@ export function text(t) {
   return element;
 }
 
+export function table(rows, ...headers) {
+  if (rows.length == 0) return [];
+  const table = document.createElement("TABLE");
+  const headerRow = document.createElement("TR");
+  table.appendChild(headerRow);
+  for (const [name, func] of headers) {
+    const column = document.createElement("TH");
+    column.innerText = name;
+    headerRow.appendChild(column);
+  }
+  for (const row of rows) {
+    const dataRow = document.createElement("TR");
+    for (const [name, func] of headers) {
+      const cell = document.createElement("TD");
+      const result = func(row);
+      if (Array.isArray(result)) {
+        result.flat(Number.MAX_VALUE).forEach(x => cell.appendChild(x));
+      } else if (result instanceof HTMLElement) {
+        cell.appendChild(result);
+      } else {
+        cell.innerText = result;
+      }
+      dataRow.appendChild(cell);
+    }
+    table.appendChild(dataRow);
+  }
+  return table;
+}
+
 export function link(url, t) {
   const element = document.createElement("A");
   element.innerText = t + " 🔗";
@@ -1044,20 +957,78 @@ export function link(url, t) {
 }
 
 export function jsonParameters(action) {
-  return Object.entries(action.parameters).map(p =>
-    text(`Parameter ${p[0]} = ${JSON.stringify(p[1], null, 2)}`)
+  return objectTable(action.parameters, "Parameters", x =>
+    JSON.stringify(x, null, 2)
   );
+}
+
+export function objectTable(object, title, valueFormatter) {
+  return collapse(
+    title,
+    table(
+      Object.entries(object).sort((a, b) => a[0].localeCompare(b[0])),
+      ["Name", x => x[0]],
+      ["Value", x => valueFormatter(x[1])]
+    )
+  );
+}
+
+export function timespan(title, time) {
+  if (!time) return [];
+  const [ago, absolute] = formatTimeBin(time);
+  return text(`${title}: ${absolute} (${ago})`);
+}
+
+export function blank() {
+  return [];
 }
 
 export function title(action, t) {
   const element = action.url ? link(action.url, t) : text(t);
   element.title = action.state;
-  return element;
+  let tags;
+  if (action.tags.length > 0) {
+    tags = document.createElement("DIV");
+    tags.className = "filterlist";
+    tags.innerText = "Tags: ";
+    action.tags.forEach(tag => {
+      const button = document.createElement("SPAN");
+      button.innerText = tag;
+      list.appendChild(button);
+    });
+  } else {
+    tags = [];
+  }
+  return [
+    element,
+    table(action.locations, ...sourceColumns),
+    table(
+      [
+        ["Last Checked", "lastChecked"],
+        ["Last Added", "lastAdded"],
+        ["Last Status Change", "lastStatusChange"],
+        ["External Last Modification", "external"]
+      ],
+      ["Event", x => x[0]],
+      [
+        "Time",
+        x => {
+          const time = action[x[1]];
+          if (!time) return "Unknown";
+          const [ago, absolute] = formatTimeBin(time);
+          return `${absolute} (${ago})`;
+        }
+      ]
+    ),
+    tags
+  ];
 }
 
 function defaultRenderer(action) {
-  return [title(action, `Unknown Action: ${action.type}`)];
+  return title(action, `Unknown Action: ${action.type}`);
 }
+
+let sourceColumns = [];
 
 function nextPage(query, targetElement, onActionPage) {
   results(targetElement, "/query", JSON.stringify(query), (container, data) => {
@@ -1066,69 +1037,43 @@ function nextPage(query, targetElement, onActionPage) {
       jumble.innerText = "No actions found.";
     }
 
+    sourceColumns = [
+      ["File", l => l.file],
+      ["Line", l => l.line],
+      ["Column", l => l.column],
+      [
+        "Time",
+        l => {
+          const [ago, absolute] = formatTimeBin(l.time);
+          return `${absolute} (${ago})`;
+        }
+      ],
+      ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
+    ];
+    if (onActionPage) {
+      sourceColumns.push([
+        "Olive",
+        l =>
+          link(
+            `olivedash#${l.file}:${l.line}:${l.column}:${l.time}`,
+            "View Olive"
+          )
+      ]);
+    }
+
     data.results.forEach(action => {
       const tile = document.createElement("DIV");
       tile.className = `action state_${action.state.toLowerCase()}`;
-      (actionRender.get(action.type) || defaultRenderer)(action).forEach(
-        element => tile.appendChild(element)
-      );
-      const checkDate = new Date(action.lastChecked).toString();
-      const addedDate = new Date(action.lastAdded).toString();
-      const statusChangedDate = new Date(action.lastStatusChange).toString();
-      tile.appendChild(
-        text(`Last Checked: ${checkDate} (${action.lastChecked})`)
-      );
-      tile.appendChild(text(`Last Added: ${addedDate} (${action.lastAdded})`));
-      tile.appendChild(
-        text(
-          `Last Status Change: ${statusChangedDate} (${
-            action.lastStatusChange
-          })`
-        )
-      );
-      if (action.externalTimestamp) {
-        const externalDate = new Date(action.external).toString();
-        tile.appendChild(
-          text(
-            `External Last Modification: ${externalDate} (${action.external})`
-          )
-        );
-      }
-      action.locations.forEach(l => {
-        const t = `Made from ${l.file}:${l.line}:${l.column}[${new Date(
-          l.time
-        ).toISOString()}]`;
-        tile.appendChild(text(t));
-        if (l.url) {
-          tile.appendChild(link(l.url, "View Source"));
-        }
-        if (onActionPage) {
-          tile.appendChild(
-            link(
-              `olivedash#${l.file}:${l.line}:${l.column}:${l.time}`,
-              "View in Olive dashboard"
-            )
-          );
-        }
-      });
-      const showHide = document.createElement("P");
-      showHide.style.cursor = "pointer";
+      (actionRender.get(action.type) || defaultRenderer)(action)
+        .flat(Number.MAX_VALUE)
+        .forEach(element => tile.appendChild(element));
       const json = document.createElement("PRE");
-      json.className = "json collapsed";
+      json.className = "json";
       json.innerText = JSON.stringify(action, null, 2);
-      tile.appendChild(showHide);
-      tile.appendChild(json);
-      let visible = true;
-      showHide.onclick = () => {
-        visible = !visible;
-        showHide.innerText = visible ? "⊟ JSON" : "⊞ JSON";
-        json.style.maxHeight = visible ? `${json.scrollHeight}px` : null;
-      };
-      showHide.onclick();
+      collapse("JSON", json).forEach(x => tile.appendChild(x));
       jumble.appendChild(tile);
     });
 
-    container.appendChild(jumble);
     if (data.total == data.results.length) {
       const size = document.createElement("DIV");
       size.innerText = `${data.total} actions.`;
@@ -1175,11 +1120,8 @@ function nextPage(query, targetElement, onActionPage) {
       }
       container.appendChild(pager);
     }
+    container.appendChild(jumble);
   });
-}
-
-function queryStats() {
-  getStats(makeFilters(), document.getElementById("results"), true);
 }
 
 function showFilterJson(filters, targetElement) {
@@ -1190,18 +1132,26 @@ function showFilterJson(filters, targetElement) {
   targetElement.appendChild(pre);
 }
 
+function addToSet(value) {
+  return list =>
+    list
+      ? list
+          .concat([value])
+          .sort()
+          .filter((item, index, array) => item == 0 || item != array[index - 1])
+      : [value];
+}
+
 function propertyFilterMaker(name) {
   switch (name) {
     case "sourcefile":
-      return f => ({ type: "sourcefile", files: [f] });
-    case "sourcelocation":
-      return l => ({ type: "sourcelocation", locations: [l] });
+      return f => ["sourcefile", addToSet(f)];
     case "status":
-      return s => ({ type: "status", states: [s] });
+      return s => ["status", addToSet(s)];
     case "type":
-      return t => ({ type: "type", types: [t] });
+      return t => ["type", addToSet(t)];
     default:
-      return () => "";
+      return () => null;
   }
 }
 
@@ -1221,7 +1171,7 @@ function nameForBin(name) {
 }
 
 function formatTimeSpan(x) {
-  let diff = Math.ceil(x / 1000);
+  let diff = Math.abs(Math.ceil(x / 1000));
   let result = "";
   let chunkcount = 0;
   for (let [span, name] of [
@@ -1233,7 +1183,7 @@ function formatTimeSpan(x) {
   ]) {
     const chunk = Math.floor(diff / span);
     if (chunk > 0 || chunkcount > 0) {
-      result = `${result}${chunk}${name}`;
+      result = `${result}${chunk}${name} `;
       diff = diff % span;
       if (++chunkcount > 2) {
         break;
@@ -1245,9 +1195,10 @@ function formatTimeSpan(x) {
 
 function formatTimeBin(x) {
   const d = new Date(x);
-  let ago = formatTimeSpan(new Date() - d);
+  const span = new Date() - d;
+  let ago = formatTimeSpan(span);
   if (ago) {
-    ago = ago + " ago";
+    ago = ago + (span < 0 ? "from now" : "ago");
   } else {
     ago = "now";
   }
@@ -1275,14 +1226,14 @@ function purge(filters) {
     purgeButton.innerText = "🔥 NUKE IT ALL FROM ORBIT 🔥";
     targetElement.appendChild(purgeButton);
     purgeButton.onclick = () => {
-      purgeActions(filters, targetElement, () => {});
+      purgeActions(filters, targetElement);
     };
   } else {
-    purgeActions(filters, targetElement, () => {});
+    purgeActions(filters, targetElement);
   }
 }
 
-function purgeActions(filters, targetElement, callback) {
+function purgeActions(filters, targetElement) {
   results(
     targetElement,
     "/purge",
@@ -1297,458 +1248,1095 @@ function purgeActions(filters, targetElement, callback) {
         message.appendChild(image);
       }
       container.appendChild(message);
-      callback();
     }
   );
 }
 
-function getStats(filters, targetElement, onActionPage) {
-  results(
-    targetElement,
-    "/stats",
-    JSON.stringify(filters),
-    (container, data) => {
-      if (data.length == 0) {
-        container.innerText = "No statistics are available.";
-        return;
-      }
-      const help = document.createElement("P");
-      help.innerText =
-        "Click any cell or table heading to view matching results.";
-      targetElement.appendChild(help);
+function removeFromList(value) {
+  return list => (list ? list.filter(x => x !== value) : []);
+}
 
-      const drillDown = document.createElement("DIV");
-      let selectedElement = null;
-      const makeClick = (clickable, filters) => {
-        clickable.onclick = () => {
-          if (selectedElement) {
-            selectedElement.classList.remove("userselected");
+function editText(original, callback) {
+  const [dialog, close] = makePopup(true);
+  dialog.appendChild(document.createTextNode("Search for text: "));
+  const input = document.createElement("INPUT");
+  input.type = "text";
+  input.value = original.text;
+  dialog.appendChild(input);
+  dialog.appendChild(document.createElement("BR"));
+  const matchCaseLabel = document.createElement("LABEL");
+  const matchCase = document.createElement("INPUT");
+  matchCase.type = "checkbox";
+  matchCase.checked = original.matchCase;
+  matchCaseLabel.appendChild(matchCase);
+  matchCaseLabel.appendChild(document.createTextNode("Case sensitive"));
+  dialog.appendChild(matchCaseLabel);
+  dialog.appendChild(document.createElement("BR"));
+  dialog.appendChild(
+    button("Save", () => {
+      close();
+      const text = input.value.trim();
+      callback(x =>
+        (x || [])
+          .filter(v => v.text != original.text && v.text != text)
+          .concat(text ? [{ text: text, matchCase: matchCase.checked }] : [])
+      );
+    })
+  );
+  if (original.text) {
+    dialog.appendChild(
+      button("Delete", () => {
+        close();
+        callback(x => (x || []).filter(v => v.text != original.text));
+      })
+    );
+  }
+}
+
+function editRegex(original, callback) {
+  const [dialog, close] = makePopup(true);
+  dialog.appendChild(document.createTextNode("Search for regex: "));
+  const input = document.createElement("INPUT");
+  input.type = "text";
+  input.value = original;
+  dialog.appendChild(input);
+  dialog.appendChild(document.createElement("BR"));
+  dialog.appendChild(
+    button("Save", () => {
+      close();
+      callback(x =>
+        (x || [])
+          .filter(v => v != original && v != input.value)
+          .concat(input.value ? [input.value] : [])
+      );
+    })
+  );
+  if (original) {
+    dialog.appendChild(
+      button("Delete", () => {
+        close();
+        callback(x => (x || []).filter(v => v != original));
+      })
+    );
+  }
+}
+
+function timeDialog(callback) {
+  const [dialog, close] = makePopup(true);
+  for (const span of timeSpans) {
+    dialog.appendChild(
+      button(nameForBin(span), () => {
+        close();
+        callback(span);
+      })
+    );
+    dialog.appendChild(document.createElement("BR"));
+  }
+}
+
+function editTime(original, callback) {
+  const [dialog, close] = makePopup(true);
+  const makeSelector = (initial, title, target) => {
+    const selected = initial ? new Date(initial) : new Date();
+    target.appendChild(document.createTextNode(title));
+    target.appendChild(document.createElement("BR"));
+    const label = document.createElement("LABEL");
+    const enabled = document.createElement("INPUT");
+    enabled.type = "checkbox";
+    enabled.checked = !initial;
+    label.appendChild(enabled);
+    label.appendChild(document.createTextNode("Unbounded"));
+    target.appendChild(label);
+    target.appendChild(document.createElement("BR"));
+    const inputs = [];
+    const makeNumberBox = (min, getter, setter) => {
+      const input = document.createElement("INPUT");
+      input.type = "number";
+      input.min = min;
+      input.value = getter();
+      input.disabled = enabled.checked;
+      target.appendChild(input);
+      input.addEventListener("change", () => setter(input.valueAsNumber));
+      inputs.push(input);
+      return input;
+    };
+
+    makeNumberBox(
+      0,
+      () => selected.getFullYear(),
+      v => selected.setFullYear(v)
+    );
+    target.appendChild(document.createTextNode(" "));
+    let day;
+    target.appendChild(
+      dropDown(
+        ([number, name]) => {
+          selected.setMonth(number);
+          if (day) {
+            day.max = new Date(selected.getFullYear(), number + 1, 0).getDate();
+            if (day.valueAsNumber > day.max) {
+              day.valueAsNumber = day.max;
+            }
           }
-          selectedElement = clickable;
-          selectedElement.classList.add("userselected");
-          clearChildren(drillDown);
-          const clickResult = document.createElement("DIV");
-          const toolBar = document.createElement("P");
-          const listButton = document.createElement("SPAN");
-          listButton.className = "load";
-          listButton.innerText = "🔍 List";
-          toolBar.appendChild(listButton);
-          const statsButton = document.createElement("SPAN");
-          statsButton.className = "load";
-          statsButton.innerText = "📈 Stats";
-          toolBar.appendChild(statsButton);
-          const jsonButton = document.createElement("SPAN");
-          jsonButton.className = "load accessory";
-          jsonButton.innerText = "🛈 Show Request";
-          toolBar.appendChild(jsonButton);
-          const purgeButton = document.createElement("SPAN");
-          purgeButton.className = "load danger";
-          purgeButton.innerText = "☠️ PURGE";
-          toolBar.appendChild(purgeButton);
-          listButton.onclick = () => {
-            const f = filters();
-            if (f) {
-              nextPage(
-                {
-                  filters: f,
-                  limit: 25,
-                  skip: 0
-                },
-                clickResult,
-                onActionPage
-              );
-            }
-          };
-          statsButton.onclick = () => {
-            const f = filters();
-            if (f) {
-              getStats(f, clickResult, onActionPage);
-            }
-          };
-          jsonButton.onclick = () => {
-            const f = filters();
-            if (f) {
-              showFilterJson(f, clickResult);
-            }
-          };
-          purgeButton.onclick = () => {
-            const f = filters();
-            if (f) {
-              purgeActions(f, targetElement, () => {
-                const refreshToolbar = document.createElement("DIV");
-                const refreshButton = document.createElement("SPAN");
-                refreshButton.className = "load accessory";
-                refreshButton.innerText = "🔄 Refresh";
-                refreshToolbar.appendChild(refreshButton);
-                targetElement.appendChild(refreshToolbar);
-                refreshButton.onclick = () =>
-                  getStats(f, targetElement, onActionPage);
-              });
-            }
-          };
-          drillDown.appendChild(toolBar);
-          drillDown.appendChild(clickResult);
-        };
-      };
-      data.forEach(stat => {
-        const element = document.createElement("DIV");
-        switch (stat.type) {
-          case "text":
-            (() => {
-              element.innerText = stat.value;
-            })();
-            break;
-          case "table":
-            (() => {
-              const table = document.createElement("TABLE");
-              element.appendChild(table);
-              stat.table.forEach(row => {
-                let prettyTitle;
-                switch (row.kind) {
-                  case "property":
-                    prettyTitle = x => `${x} ${row.property}`;
-                    break;
-                  default:
-                    prettyTitle = x => x;
-                }
-                const tr = document.createElement("TR");
-                table.appendChild(tr);
-                const title = document.createElement("TD");
-                title.innerText = prettyTitle(row.title);
-                tr.appendChild(title);
-                const value = document.createElement("TD");
-                value.innerText = row.value;
-                tr.appendChild(value);
-                if (row.kind == "property") {
-                  makeClick(tr, () =>
-                    filters.concat([propertyFilterMaker(row.type)(row.json)])
-                  );
-                } else {
-                  tr.onclick = () => {
-                    clearChildren(drillDown);
-                    if (selectedElement) {
-                      selectedElement.classList.remove("userselected");
-                    }
-                    selectedElement = null;
-                  };
-                }
-              });
-            })();
-            break;
-          case "crosstab":
-            (() => {
-              const makeColumnFilter = propertyFilterMaker(stat.column);
-              const makeRowFilter = propertyFilterMaker(stat.row);
+        },
+        ([number, name]) => name,
+        ([number, name]) => number == selected.getMonth(),
+        [
+          [0, "January"],
+          [1, "February"],
+          [2, "March"],
+          [3, "April"],
+          [4, "May"],
+          [5, "June"],
+          [6, "July"],
+          [7, "August"],
+          [8, "September"],
+          [9, "October"],
+          [10, "November"],
+          [11, "December"]
+        ]
+      )
+    );
+    target.appendChild(document.createTextNode(" "));
+    day = makeNumberBox(1, () => selected.getDate(), v => selected.setDate(v));
+    day.max = new Date(
+      selected.getFullYear(),
+      selected.getMonth() + 1,
+      0
+    ).getDate();
+    target.appendChild(document.createElement("BR"));
+    makeNumberBox(
+      0,
+      () => selected.getHours(),
+      v => selected.setHours(v)
+    ).max = 23;
+    target.appendChild(document.createTextNode(" : "));
+    makeNumberBox(
+      0,
+      () => selected.getMinutes(),
+      v => {
+        selected.setMinutes(v);
+        selected.setSeconds(0);
+        selected.setMilliseconds(0);
+      }
+    ).max = 59;
 
-              const table = document.createElement("TABLE");
-              element.appendChild(table);
+    enabled.addEventListener("click", () =>
+      inputs.forEach(input => (input.disabled = enabled.checked))
+    );
+    return () => (enabled.checked ? null : selected.getTime());
+  };
+  const table = document.createElement("TABLE");
+  dialog.appendChild(table);
+  const row = document.createElement("TR");
+  table.appendChild(row);
+  const startCell = document.createElement("TD");
+  row.appendChild(startCell);
+  const endCell = document.createElement("TD");
+  row.appendChild(endCell);
 
-              const header = document.createElement("TR");
-              table.appendChild(header);
+  const start = makeSelector(original.start, "Start date:", startCell);
+  const end = makeSelector(original.end, "End date:", endCell);
 
-              header.appendChild(document.createElement("TH"));
-              const columns = stat.columns.sort().map(col => ({
-                name: col.name,
-                filter: makeColumnFilter(col.value)
-              }));
-              for (let col of columns) {
-                const currentHeader = document.createElement("TH");
-                currentHeader.innerText = col.name;
-                header.appendChild(currentHeader);
-                makeClick(currentHeader, () => filters.concat([col.filter]));
+  dialog.appendChild(
+    button("Save", () => {
+      close();
+      callback(x => ({ start: start(), end: end() }));
+    })
+  );
+  if (original.start || original.end) {
+    dialog.appendChild(
+      button("Delete", () => {
+        close();
+        callback(x => ({ start: null, end: null }));
+      })
+    );
+  }
+}
+
+function editTimeAgo(original, callback) {
+  const [dialog, close] = makePopup(true);
+  let value = 0;
+  let units = timeUnits["hours"];
+  if (original) {
+    for (const [name, multiplier] of Object.entries(timeUnits)) {
+      if (original % multiplier == 0) {
+        value = original / multiplier;
+        units = multiplier;
+      }
+    }
+  }
+  dialog.appendChild(document.createTextNode("Time since present: "));
+  const input = document.createElement("INPUT");
+  input.type = "number";
+  input.min = 0;
+  input.value = value;
+  dialog.appendChild(input);
+  dialog.appendChild(document.createTextNode(" "));
+  dialog.appendChild(
+    dropDown(
+      ([name, multiplier]) => (units = multiplier),
+      ([name, multiplier]) => name,
+      ([name, multiplier]) => multiplier == units,
+      Object.entries(timeUnits)
+    )
+  );
+  dialog.appendChild(document.createElement("BR"));
+  dialog.appendChild(
+    button("Save", () => {
+      close();
+      callback(
+        x =>
+          Number.isNaN(input.valueAsNumber) ? 0 : input.valueAsNumber * units
+      );
+    })
+  );
+  if (original) {
+    dialog.appendChild(
+      button("Delete", () => {
+        close();
+        callback(x => 0);
+      })
+    );
+  }
+}
+
+function renderFilter(tile, filter, mutateCallback) {
+  const deleteButton = (container, typeName, updateFunction) => {
+    if (mutateCallback) {
+      const close = document.createElement("SPAN");
+      container.appendChild(close);
+      close.className = "close";
+      close.innerText = "✖";
+      close.addEventListener("click", e => {
+        e.stopPropagation();
+        mutateCallback(typeName, updateFunction);
+      });
+    }
+  };
+  const editable = (container, typeName, original, editor) => {
+    if (mutateCallback) {
+      container.addEventListener("click", () =>
+        editor(original, update => mutateCallback(typeName, update))
+      );
+    }
+  };
+  if (filter.negate) {
+    tile.className = "negated";
+  }
+  switch (filter.type) {
+    case "added":
+    case "checked":
+    case "statuschanged":
+    case "external":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = nameForBin(filter.type);
+        tile.appendChild(title);
+        deleteButton(title, filter.type, x => ({ start: null, end: null }));
+        if (filter.start) {
+          const start = document.createElement("DIV");
+          const [ago, absolute] = formatTimeBin(filter.start);
+          start.innerText = "⇤ " + ago + " —";
+          start.title = absolute;
+          start.style.cssFloat = "left";
+          tile.appendChild(start);
+        }
+        if (filter.end) {
+          const end = document.createElement("DIV");
+          const [ago, absolute] = formatTimeBin(filter.end);
+          end.innerText = "— " + ago + " ⇥";
+          end.title = absolute;
+          end.style.cssFloat = "right";
+          tile.appendChild(end);
+        }
+        if (filter.start && filter.end) {
+          const duration = document.createElement("DIV");
+          duration.innerText =
+            "🕑 " + formatTimeSpan(filter.end - filter.start);
+          duration.style.clear = "both";
+          duration.style.textAlign = "center";
+          tile.appendChild(duration);
+        }
+        editable(tile, filter.type, filter, editTime);
+      }
+      break;
+    case "addedago":
+    case "checkedago":
+    case "statuschangedago":
+    case "externalago":
+      {
+        const title = document.createElement("DIV");
+        title.innerText =
+          nameForBin(filter.type.slice(0, -3)) + " Since Present";
+        tile.appendChild(title);
+        deleteButton(title, filter.type, x => 0);
+        const duration = document.createElement("DIV");
+        duration.innerText = "🕑 " + formatTimeSpan(filter.offset);
+        tile.appendChild(duration);
+        editable(tile, filter.type, filter.offset, editTimeAgo);
+      }
+      break;
+
+    case "regex": {
+      const title = document.createElement("DIV");
+      title.innerText = "Regular Expression";
+      tile.appendChild(title);
+      deleteButton(title, "regex", x => x.filter(v => v != filter.pattern));
+      const pattern = document.createElement("PRE");
+      pattern.innerText = filter.pattern;
+      tile.appendChild(pattern);
+      editable(tile, "regex", filter.pattern, editRegex);
+      break;
+    }
+    case "text":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = filter.matchCase
+          ? "Case-Sensitive Text Search"
+          : "Case-Insensitive Text Search";
+        tile.appendChild(title);
+        deleteButton(title, "text", x => x.filter(v => v.text != filter.text));
+        const text = document.createElement("PRE");
+        text.innerText = visibleText(filter.text);
+        tile.appendChild(text);
+        editable(tile, "text", filter, editText);
+      }
+      break;
+
+    case "sourcefile":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = "Olive Source File";
+        tile.appendChild(title);
+        const list = document.createElement("DIV");
+        list.className = "filterlist";
+        tile.appendChild(list);
+        filter.files.forEach(file => {
+          const fileButton = document.createElement("SPAN");
+          fileButton.innerText = breakSlashes(file);
+          list.appendChild(fileButton);
+          deleteButton(fileButton, "sourcefile", removeFromList(file));
+        });
+      }
+      break;
+
+    case "sourcelocation":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = "Olive Source";
+        tile.appendChild(title);
+        tile.appendChild(
+          table(
+            filter.locations,
+            ["File", l => l.file],
+            ["Line", l => l.line],
+            ["Column", l => l.column],
+            [
+              "Time",
+              l => {
+                const [ago, absolute] = formatTimeBin(l.time);
+                return `${absolute} (${ago})`;
               }
-              const maximum = Math.max(
-                1,
-                Math.max(
-                  ...Object.values(stat.data).map(row =>
-                    Math.max(...Object.values(row))
-                  )
+            ]
+          )
+        );
+      }
+      break;
+
+    case "status":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = "Action State";
+        tile.appendChild(title);
+        const list = document.createElement("DIV");
+        list.className = "filterlist";
+        tile.appendChild(list);
+        filter.states.forEach(state => {
+          const button = statusButton(state);
+          deleteButton(button, "status", removeFromList(state));
+          list.appendChild(button);
+        });
+      }
+      break;
+
+    case "tag":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = "Tag";
+        tile.appendChild(title);
+        const list = document.createElement("DIV");
+        list.className = "filterlist";
+        tile.appendChild(list);
+        filter.tags.forEach(tag => {
+          const button = document.createElement("SPAN");
+          button.innerText = tag;
+          deleteButton(button, "tag", removeFromList(tag));
+          list.appendChild(button);
+        });
+      }
+      break;
+
+    case "type":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = "Action Type";
+        tile.appendChild(title);
+        const list = document.createElement("DIV");
+        list.className = "filterlist";
+        tile.appendChild(list);
+        filter.types.forEach(type => {
+          const button = document.createElement("SPAN");
+          button.innerText = type;
+          deleteButton(button, "type", removeFromList(type));
+          list.appendChild(button);
+        });
+      }
+      break;
+
+    case "and":
+    case "or":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = filter.type == "and" ? "All of" : "Any of";
+        tile.appendChild(title);
+        const list = document.createElement("DIV");
+        list.className = "filters";
+        list.style.marginLeft = "1em";
+        tile.appendChild(list);
+        filter.filters.forEach(child => renderFilter(list, child));
+      }
+      break;
+
+    default:
+      tile.innerText = JSON.stringify(filter);
+  }
+}
+
+function synthesiseFilters(metaFilter) {
+  const filters = [];
+  if (metaFilter.hasOwnProperty("type") && metaFilter.type.length > 0) {
+    filters.push({ type: "type", types: metaFilter.type });
+  }
+  if (metaFilter.hasOwnProperty("status") && metaFilter.status.length > 0) {
+    filters.push({ type: "status", states: metaFilter.status });
+  }
+  if (metaFilter.hasOwnProperty("tag") && metaFilter.tag.length > 0) {
+    filters.push({ type: "tag", tags: metaFilter.tag });
+  }
+  if (
+    metaFilter.hasOwnProperty("sourcefile") &&
+    metaFilter.sourcefile.length > 0
+  ) {
+    filters.push({ type: "sourcefile", files: metaFilter.sourcefile });
+  }
+
+  for (const timespan of ["added", "checked", "statuschanged", "external"]) {
+    if (metaFilter.hasOwnProperty(timespan)) {
+      const start = metaFilter[timespan].start || null;
+      const end = metaFilter[timespan].end || null;
+      if (start || end) {
+        filters.push({ type: timespan, start: start, end: end });
+      }
+    }
+  }
+
+  for (const span of timeSpans) {
+    const ago = span + "ago";
+    if (metaFilter[ago]) {
+      filters.push({ type: ago, offset: metaFilter[ago] });
+    }
+  }
+
+  if (metaFilter.text) {
+    metaFilter.text.forEach(({ text, matchCase }) =>
+      filters.push({
+        type: "text",
+        matchCase: matchCase,
+        text: text
+      })
+    );
+  }
+  if (metaFilter.regex) {
+    metaFilter.regex.forEach(regex =>
+      filters.push({ type: "regex", pattern: regex })
+    );
+  }
+  return filters;
+}
+
+function getStats(
+  filters,
+  tags,
+  targetElement,
+  onActionPage,
+  showActions,
+  updateSearchList
+) {
+  let additionalFilters = [];
+  clearChildren(targetElement);
+  const toolBar = document.createElement("P");
+  targetElement.appendChild(toolBar);
+  const queryBuilder = document.createElement("DIV");
+  queryBuilder.className = "filters";
+  targetElement.appendChild(queryBuilder);
+  const [statsPane, listPane] = makeTabs(
+    targetElement,
+    showActions ? 1 : 0,
+    "Overview",
+    "Actions"
+  );
+  function mutateFilters(type, update) {
+    additionalFilters.push({
+      ...additionalFilters[additionalFilters.length - 1]
+    });
+    const current = additionalFilters[additionalFilters.length - 1];
+    current[type] = update(current[type]);
+    refresh();
+  }
+  const refresh = () => {
+    clearChildren(queryBuilder);
+    filters.forEach(filter => {
+      const filterTile = document.createElement("DIV");
+      queryBuilder.appendChild(filterTile);
+      renderFilter(filterTile, filter, null);
+    });
+    const customFilters =
+      additionalFilters.length == 0
+        ? []
+        : synthesiseFilters(additionalFilters[additionalFilters.length - 1]);
+    customFilters.forEach((filter, index) => {
+      const filterTile = document.createElement("DIV");
+      queryBuilder.appendChild(filterTile);
+      renderFilter(filterTile, filter, mutateFilters);
+    });
+    if (filters.length + customFilters.length == 0) {
+      queryBuilder.innerText = "All actions.";
+    }
+    const f = filters.concat(customFilters);
+    results(statsPane, "/stats", JSON.stringify(f), renderStats);
+    nextPage(
+      {
+        filters: f,
+        limit: 25,
+        skip: 0
+      },
+      listPane,
+      onActionPage
+    );
+  };
+  const addFilters = (...f) => {
+    additionalFilters.push(
+      additionalFilters.length > 0
+        ? { ...additionalFilters[additionalFilters.length - 1] }
+        : {}
+    );
+    const current = additionalFilters[additionalFilters.length - 1];
+    for (const [type, update] of f) {
+      current[type] = update(current[type]);
+    }
+    refresh();
+  };
+
+  toolBar.appendChild(button("🔄 Refresh", refresh));
+  toolBar.appendChild(
+    accessoryButton("➕ Add Filter", () => {
+      const [dialog, close] = makePopup(true);
+      dialog.appendChild(
+        button("🕑 Fixed Time Range", () => {
+          close();
+          timeDialog(n =>
+            editTime({ start: null, end: null }, update =>
+              mutateFilters(n, update)
+            )
+          );
+        })
+      );
+      dialog.appendChild(
+        button("🕑 Time Since Now", () => {
+          close();
+          timeDialog(n =>
+            editTimeAgo(0, update => mutateFilters(n + "ago", update))
+          );
+        })
+      );
+      dialog.appendChild(
+        button("🔠 Text", () => {
+          close();
+          editText({ text: "", matchCase: false }, update =>
+            mutateFilters("text", update)
+          );
+        })
+      );
+      dialog.appendChild(
+        button("*️⃣  Regular Expression", () => {
+          close();
+          editRegex("", update => mutateFilters("regex", update));
+        })
+      );
+      dialog.appendChild(
+        button("🏁 Status", () => {
+          close();
+          const statusDialog = makePopup();
+          const table = document.createElement("TABLE");
+          statusDialog.appendChild(table);
+          Object.entries(actionStates).forEach(([state, description]) => {
+            const row = document.createElement("TR");
+            table.appendChild(row);
+            const buttonCell = document.createElement("TD");
+            row.appendChild(buttonCell);
+            const button = statusButton(state);
+            buttonCell.appendChild(button);
+            button.addEventListener("click", () =>
+              addFilters(["status", addToSet(state)])
+            );
+            const pCell = document.createElement("TD");
+            row.appendChild(pCell);
+            const p = document.createElement("P");
+            p.innerText = description;
+            pCell.appendChild(p);
+          });
+        })
+      );
+      dialog.appendChild(
+        button("🎬 Action Type", () => {
+          close();
+          const typeDialog = makePopup();
+          Array.from(actionRender.keys())
+            .sort()
+            .forEach(type =>
+              typeDialog.appendChild(
+                button(type, () => addFilters(["type", addToSet(type)]))
+              )
+            );
+        })
+      );
+      if (tags.length) {
+        dialog.appendChild(
+          button("🏷️ Tags", () => {
+            close();
+            const tagDialog = makePopup();
+            tags
+              .sort()
+              .forEach(tag =>
+                tagDialog.appendChild(
+                  button(tag, () => addFilters(["tag", addToSet(tag)]))
                 )
               );
+          })
+        );
+      }
+    })
+  );
+  toolBar.appendChild(
+    accessoryButton("💾 Save Search", () => {
+      const customFilters =
+        additionalFilters.length == 0
+          ? []
+          : synthesiseFilters(additionalFilters[additionalFilters.length - 1]);
+      if (customFilters.length > 0) {
+        saveSearch(filters.concat(customFilters), updateLocalSearches =>
+          updateSearchList(false, updateLocalSearches)
+        );
+      } else {
+        makePopup().innerText = "No changes to save.";
+      }
+    })
+  );
+  toolBar.appendChild(
+    accessoryButton("⎌ Undo", () => {
+      additionalFilters.pop();
+      refresh();
+    })
+  );
+  toolBar.appendChild(
+    accessoryButton("⌫ Revert to Saved", () => {
+      additionalFilters = [];
+      refresh();
+    })
+  );
+  if (onActionPage) {
+    toolBar.appendChild(
+      accessoryButton("✖ Clear Search", () => updateSearchList(true, null))
+    );
+  }
+  toolBar.appendChild(
+    dangerButton("☠️ PURGE", () =>
+      purgeActions(filters.concat(additionalFilters), container)
+    )
+  );
 
-              for (let rowKey of Object.keys(stat.data).sort()) {
-                const rowFilter = makeRowFilter(stat.rows[rowKey]);
-                const currentRow = document.createElement("TR");
-                table.appendChild(currentRow);
+  const renderStats = (container, data) => {
+    if (data.length == 0) {
+      container.innerText = "No statistics are available.";
+      return;
+    }
+    const help = document.createElement("P");
+    help.innerText =
+      "Click any cell or table heading to view matching results.";
+    container.appendChild(help);
 
-                const currentHeader = document.createElement("TH");
-                currentHeader.innerText = rowKey;
-                currentRow.appendChild(currentHeader);
-                makeClick(currentHeader, () => filters.concat([rowFilter]));
+    const makeClick = (element, ...f) => {
+      f = f.filter(x => !!x);
+      if (!f.length) {
+        return;
+      }
+      element.style.cursor = "pointer";
+      element.addEventListener("click", e => {
+        addFilters(...f);
+        e.stopPropagation();
+      });
+    };
 
-                for (let col of columns) {
-                  const currentValue = document.createElement("TD");
-                  currentValue.innerText = stat.data[rowKey][col.name] || "0";
-                  currentRow.appendChild(currentValue);
-                  setColorIntensity(
-                    currentValue,
-                    stat.data[rowKey][col.name],
-                    maximum
-                  );
-                  makeClick(currentValue, () =>
-                    filters.concat([col.filter, rowFilter])
-                  );
-                }
+    let selectedElement = null;
+    data.forEach(stat => {
+      const element = document.createElement("DIV");
+      switch (stat.type) {
+        case "text":
+          element.innerText = stat.value;
+          break;
+        case "table":
+          {
+            const table = document.createElement("TABLE");
+            element.appendChild(table);
+            stat.table.forEach(row => {
+              let prettyTitle;
+              switch (row.kind) {
+                case "property":
+                  prettyTitle = x => `${x} ${row.property}`;
+                  break;
+                default:
+                  prettyTitle = x => x;
               }
-            })();
-            break;
+              const tr = document.createElement("TR");
+              table.appendChild(tr);
+              const title = document.createElement("TD");
+              title.innerText = prettyTitle(row.title);
+              tr.appendChild(title);
+              const value = document.createElement("TD");
+              value.innerText = breakSlashes(row.value.toString());
+              tr.appendChild(value);
+              if (row.kind == "property") {
+                makeClick(tr, propertyFilterMaker(row.type)(row.json));
+              }
+            });
+          }
+          break;
+        case "crosstab":
+          {
+            const makeColumnFilter = propertyFilterMaker(stat.column);
+            const makeRowFilter = propertyFilterMaker(stat.row);
 
-          case "histogram":
-            (() => {
-              const boundaryLabels = stat.boundaries.map(x => formatTimeBin(x));
-              const max = Math.log(
-                Math.max(...Object.values(stat.counts).flat()) + 1
-              );
-              const labels = Object.keys(stat.counts).map(
-                bin => " " + nameForBin(bin)
-              );
-              const div = document.createElement("div");
-              div.className = "histogram";
-              let selectionStart = null;
-              let selectedFilter = null;
-              div.width = "90%";
-              element.appendChild(div);
-              const canvas = document.createElement("canvas");
-              const ctxt = canvas.getContext("2d");
-              const rowHeight = 40;
-              const fontHeight = 10; // We should be able to compute this from the font metrics, but they don't provide it, so uhh...10pts.
-              const columnLabelHeight =
-                Math.sin(headerAngle) *
-                  Math.max(
-                    ...boundaryLabels.map(l => ctxt.measureText(l[0]).width)
-                  ) +
-                2 * fontHeight;
-              canvas.height = labels.length * rowHeight + columnLabelHeight;
-              div.appendChild(canvas);
-              const filterButton = document.createElement("span");
-              filterButton.className = "load accessory";
-              filterButton.innerText = "🖼️ Filter Range";
-              element.appendChild(filterButton);
-              makeClick(
-                filterButton,
-                () => (selectedFilter ? filters.concat([selectedFilter]) : null)
-              );
-              const currentTime = document.createElement("span");
-              currentTime.innerText = "\u00A0";
-              element.appendChild(currentTime);
-              const redraw = () => {
-                const cs = getComputedStyle(div);
-                const width = parseInt(cs.getPropertyValue("width"), 10);
-                canvas.width = width;
+            const table = document.createElement("TABLE");
+            element.appendChild(table);
 
-                const labelWidth = Math.max(
-                  ...labels.map(l => ctxt.measureText(l).width)
+            const header = document.createElement("TR");
+            table.appendChild(header);
+
+            header.appendChild(document.createElement("TH"));
+            const columns = stat.columns.sort().map(col => ({
+              name: col.name,
+              filter: makeColumnFilter(col.value)
+            }));
+            for (let col of columns) {
+              const currentHeader = document.createElement("TH");
+              currentHeader.innerText = breakSlashes(col.name);
+              header.appendChild(currentHeader);
+              makeClick(currentHeader, col.filter);
+            }
+            const maximum = Math.max(
+              1,
+              Math.max(
+                ...Object.values(stat.data).map(row =>
+                  Math.max(...Object.values(row))
+                )
+              )
+            );
+
+            for (let rowKey of Object.keys(stat.data).sort()) {
+              const rowFilter = makeRowFilter(stat.rows[rowKey]);
+              const currentRow = document.createElement("TR");
+              table.appendChild(currentRow);
+
+              const currentHeader = document.createElement("TH");
+              currentHeader.innerText = breakSlashes(rowKey);
+              currentRow.appendChild(currentHeader);
+              makeClick(currentRow, rowFilter);
+
+              for (let col of columns) {
+                const currentValue = document.createElement("TD");
+                if (stat.data[rowKey][col.name]) {
+                  currentValue.innerText = stat.data[rowKey][col.name];
+                }
+                currentRow.appendChild(currentValue);
+                setColorIntensity(
+                  currentValue,
+                  stat.data[rowKey][col.name],
+                  maximum
                 );
-                const columnWidth =
-                  (width - labelWidth) / (boundaryLabels.length - 1);
-                const columnSkip = Math.ceil(
-                  2 * fontHeight * Math.cos(headerAngle) / columnWidth
-                );
+                makeClick(currentValue, col.filter, rowFilter);
+              }
+            }
+          }
+          break;
 
-                const repaint = selectionEnd => {
-                  ctxt.clearRect(0, 0, width, canvas.height);
-                  ctxt.fillStyle = "#000";
-                  boundaryLabels.forEach((label, index) => {
-                    if (index % columnSkip == 0) {
-                      // We can only apply rotation about the origin, so move the origin to the point where we want to draw the text, rotate it, draw the text at the origin, then reset the coordinate system.
-                      ctxt.translate(index * columnWidth, columnLabelHeight);
-                      ctxt.rotate(-headerAngle);
-                      ctxt.fillText(
-                        label[0],
-                        fontHeight * Math.tan(headerAngle),
-                        0
-                      );
-                      ctxt.setTransform(1, 0, 0, 1, 0, 0);
-                    }
-                  });
-                  Object.entries(stat.counts).forEach(
-                    ([bin, counts], binIndex) => {
-                      if (counts.length != boundaryLabels.length - 1) {
-                        throw new Error(
-                          `Data type ${bin} has ${
-                            counts.length
-                          } but expected ${boundaryLabels.length - 1}`
-                        );
-                      }
-                      for (
-                        let countIndex = 0;
-                        countIndex < counts.length;
-                        countIndex++
-                      ) {
-                        if (
-                          selectionStart &&
-                          selectionEnd &&
-                          selectionStart.bin == binIndex &&
-                          selectionEnd.bin == binIndex &&
-                          countIndex >=
-                            Math.min(
-                              selectionStart.boundary,
-                              selectionEnd.boundary
-                            ) &&
-                          countIndex <=
-                            Math.max(
-                              selectionStart.boundary,
-                              selectionEnd.boundary
-                            )
-                        ) {
-                          ctxt.fillStyle = "#E0493B";
-                        } else {
-                          ctxt.fillStyle = "#06AED5";
-                        }
-                        ctxt.globalAlpha =
-                          Math.log(counts[countIndex] + 1) / max;
-                        ctxt.fillRect(
-                          countIndex * columnWidth + 1,
-                          binIndex * rowHeight + 2 + columnLabelHeight,
-                          columnWidth - 2,
-                          rowHeight - 4
-                        );
-                      }
-                      ctxt.fillStyle = "#000";
-                      ctxt.globalAlpha = 1;
-                      ctxt.fillText(
-                        labels[binIndex],
-                        width - labelWidth,
-                        binIndex * rowHeight +
-                          (rowHeight + fontHeight) / 2 +
-                          columnLabelHeight
-                      );
-                    }
-                  );
-                };
-                repaint(null);
-                const findSelection = e => {
-                  if (e.button != 0) return null;
-                  const bounds = canvas.getBoundingClientRect();
-                  const x = e.clientX - bounds.left;
-                  const y = e.clientY - bounds.top - columnLabelHeight;
-                  if (y > 0 && x > 0 && x < width - labelWidth) {
-                    return {
-                      bin: Math.max(0, Math.floor(y / rowHeight)),
-                      boundary: Math.max(
-                        0,
-                        Math.floor(
-                          x / (width - labelWidth) * (boundaryLabels.length - 1)
-                        )
-                      )
-                    };
-                  }
-                  return null;
-                };
-                canvas.onmousedown = e => {
-                  selectionStart = findSelection(e);
-                  selectedFilter = null;
-                  if (selectionStart) {
-                    currentTime.innerText =
-                      Object.values(stat.counts)[selectionStart.bin][
-                        selectionStart.boundary
-                      ] +
-                      " actions over " +
-                      formatTimeSpan(
-                        stat.boundaries[selectionStart.boundary + 1] -
-                          stat.boundaries[selectionStart.boundary]
-                      ) +
-                      " (" +
-                      boundaryLabels[selectionStart.boundary][0] +
-                      " to " +
-                      boundaryLabels[selectionStart.boundary + 1][0] +
-                      ")";
-                    currentTime.title =
-                      boundaryLabels[selectionStart.boundary][1];
-                    repaint(selectionStart);
-                  } else {
-                    currentTime.innerText = "\u00A0";
-                    currentTime.title = "";
-                  }
-                };
-                const mouseWhileDown = (e, after) => {
-                  const selectionEnd = findSelection(e);
-                  repaint(selectionEnd);
-                  if (selectionStart.bin == selectionEnd.bin) {
-                    const startBound = Math.min(
-                      selectionStart.boundary,
-                      selectionEnd.boundary
-                    );
-                    const endBound =
-                      Math.max(selectionStart.boundary, selectionEnd.boundary) +
-                      1;
-                    const [typeName, counts] = Object.entries(stat.counts)[
-                      selectionEnd.bin
-                    ];
-                    const sum = counts.reduce(
-                      (acc, value, index) =>
-                        index >= startBound && index < endBound
-                          ? acc + value
-                          : acc,
+        case "histogram":
+          {
+            const boundaryLabels = stat.boundaries.map(x => formatTimeBin(x));
+            const max = Math.log(
+              Math.max(...Object.values(stat.counts).flat()) + 1
+            );
+            const labels = Object.keys(stat.counts).map(
+              bin => " " + nameForBin(bin)
+            );
+            const div = document.createElement("div");
+            div.className = "histogram";
+            let selectionStart = null;
+            div.width = "90%";
+            element.appendChild(div);
+            const canvas = document.createElement("canvas");
+            const ctxt = canvas.getContext("2d");
+            const rowHeight = 40;
+            const fontHeight = 10; // We should be able to compute this from the font metrics, but they don't provide it, so uhh...10pts.
+            const columnLabelHeight =
+              Math.sin(headerAngle) *
+                Math.max(
+                  ...boundaryLabels.map(l => ctxt.measureText(l[0]).width)
+                ) +
+              2 * fontHeight;
+            canvas.height = labels.length * rowHeight + columnLabelHeight;
+            div.appendChild(canvas);
+            const currentTime = document.createElement("span");
+            currentTime.innerText = "\u00A0";
+            element.appendChild(currentTime);
+            const redraw = () => {
+              const cs = getComputedStyle(div);
+              const width = parseInt(cs.getPropertyValue("width"), 10);
+              canvas.width = width;
+
+              const labelWidth = Math.max(
+                ...labels.map(l => ctxt.measureText(l).width)
+              );
+              const columnWidth =
+                (width - labelWidth) / (boundaryLabels.length - 1);
+              const columnSkip = Math.ceil(
+                2 * fontHeight * Math.cos(headerAngle) / columnWidth
+              );
+
+              const repaint = selectionEnd => {
+                ctxt.clearRect(0, 0, width, canvas.height);
+                ctxt.fillStyle = "#000";
+                boundaryLabels.forEach((label, index) => {
+                  if (index % columnSkip == 0) {
+                    // We can only apply rotation about the origin, so move the origin to the point where we want to draw the text, rotate it, draw the text at the origin, then reset the coordinate system.
+                    ctxt.translate(index * columnWidth, columnLabelHeight);
+                    ctxt.rotate(-headerAngle);
+                    ctxt.fillText(
+                      label[0],
+                      fontHeight * Math.tan(headerAngle),
                       0
                     );
-                    currentTime.innerText =
-                      sum +
-                      " actions over " +
-                      formatTimeSpan(
-                        stat.boundaries[endBound] - stat.boundaries[startBound]
-                      ) +
-                      " (" +
-                      boundaryLabels[startBound][0] +
-                      " to " +
-                      boundaryLabels[endBound][0] +
-                      ")";
-                    currentTime.title =
-                      boundaryLabels[startBound][1] +
-                      " to " +
-                      boundaryLabels[endBound][1];
-                    after(
-                      typeName,
-                      stat.boundaries[startBound],
-                      stat.boundaries[endBound]
+                    ctxt.setTransform(1, 0, 0, 1, 0, 0);
+                  }
+                });
+                Object.entries(stat.counts).forEach(
+                  ([bin, counts], binIndex) => {
+                    if (counts.length != boundaryLabels.length - 1) {
+                      throw new Error(
+                        `Data type ${bin} has ${
+                          counts.length
+                        } but expected ${boundaryLabels.length - 1}`
+                      );
+                    }
+                    for (
+                      let countIndex = 0;
+                      countIndex < counts.length;
+                      countIndex++
+                    ) {
+                      if (
+                        selectionStart &&
+                        selectionEnd &&
+                        selectionStart.bin == binIndex &&
+                        selectionEnd.bin == binIndex &&
+                        countIndex >=
+                          Math.min(
+                            selectionStart.boundary,
+                            selectionEnd.boundary
+                          ) &&
+                        countIndex <=
+                          Math.max(
+                            selectionStart.boundary,
+                            selectionEnd.boundary
+                          )
+                      ) {
+                        ctxt.fillStyle = "#E0493B";
+                      } else {
+                        ctxt.fillStyle = "#06AED5";
+                      }
+                      ctxt.globalAlpha = Math.log(counts[countIndex] + 1) / max;
+                      ctxt.fillRect(
+                        countIndex * columnWidth + 1,
+                        binIndex * rowHeight + 2 + columnLabelHeight,
+                        columnWidth - 2,
+                        rowHeight - 4
+                      );
+                    }
+                    ctxt.fillStyle = "#000";
+                    ctxt.globalAlpha = 1;
+                    ctxt.fillText(
+                      labels[binIndex],
+                      width - labelWidth,
+                      binIndex * rowHeight +
+                        (rowHeight + fontHeight) / 2 +
+                        columnLabelHeight
                     );
-                  } else {
-                    currentTime.innerText = "\u00A0";
-                    currentTime.title = "";
-                    selectedFilter = null;
                   }
-                };
-                canvas.onmouseup = e => {
-                  mouseWhileDown(e, (typeName, start, end) => {
-                    selectedFilter = {
-                      type: typeName,
-                      start: start,
-                      end: end
-                    };
-                  });
-                  selectionStart = null;
-                };
-                canvas.onmousemove = e => {
-                  if (selectionStart) {
-                    mouseWhileDown(e, (typeName, start, end) => {});
-                  }
-                };
+                );
               };
-              let timeout = window.setTimeout(redraw, 100);
-              window.addEventListener("resize", () => {
-                clearTimeout(timeout);
-                window.setTimeout(redraw, 100);
-              });
-            })();
-            break;
+              repaint(null);
+              const findSelection = e => {
+                if (e.button != 0) return null;
+                const bounds = canvas.getBoundingClientRect();
+                const x = e.clientX - bounds.left;
+                const y = e.clientY - bounds.top - columnLabelHeight;
+                if (y > 0 && x > 0 && x < width - labelWidth) {
+                  return {
+                    bin: Math.max(0, Math.floor(y / rowHeight)),
+                    boundary: Math.max(
+                      0,
+                      Math.floor(
+                        x / (width - labelWidth) * (boundaryLabels.length - 1)
+                      )
+                    )
+                  };
+                }
+                return null;
+              };
+              canvas.onmousedown = e => {
+                selectionStart = findSelection(e);
+                if (selectionStart) {
+                  currentTime.innerText =
+                    Object.values(stat.counts)[selectionStart.bin][
+                      selectionStart.boundary
+                    ] +
+                    " actions over " +
+                    formatTimeSpan(
+                      stat.boundaries[selectionStart.boundary + 1] -
+                        stat.boundaries[selectionStart.boundary]
+                    ) +
+                    " (" +
+                    boundaryLabels[selectionStart.boundary][0] +
+                    " to " +
+                    boundaryLabels[selectionStart.boundary + 1][0] +
+                    ")";
+                  currentTime.title =
+                    boundaryLabels[selectionStart.boundary][1];
+                  repaint(selectionStart);
+                } else {
+                  currentTime.innerText = "\u00A0";
+                  currentTime.title = "";
+                }
+              };
+              const mouseWhileDown = (e, after) => {
+                const selectionEnd = findSelection(e);
+                repaint(selectionEnd);
+                if (selectionStart.bin == selectionEnd.bin) {
+                  const startBound = Math.min(
+                    selectionStart.boundary,
+                    selectionEnd.boundary
+                  );
+                  const endBound =
+                    Math.max(selectionStart.boundary, selectionEnd.boundary) +
+                    1;
+                  const [typeName, counts] = Object.entries(stat.counts)[
+                    selectionEnd.bin
+                  ];
+                  const sum = counts.reduce(
+                    (acc, value, index) =>
+                      index >= startBound && index < endBound
+                        ? acc + value
+                        : acc,
+                    0
+                  );
+                  currentTime.innerText =
+                    sum +
+                    " actions over " +
+                    formatTimeSpan(
+                      stat.boundaries[endBound] - stat.boundaries[startBound]
+                    ) +
+                    " (" +
+                    boundaryLabels[startBound][0] +
+                    " to " +
+                    boundaryLabels[endBound][0] +
+                    ")";
+                  currentTime.title =
+                    boundaryLabels[startBound][1] +
+                    " to " +
+                    boundaryLabels[endBound][1];
+                  after(
+                    typeName,
+                    stat.boundaries[startBound],
+                    stat.boundaries[endBound]
+                  );
+                } else {
+                  currentTime.innerText = "\u00A0";
+                  currentTime.title = "";
+                }
+              };
+              canvas.onmouseup = e => {
+                mouseWhileDown(e, (typeName, start, end) => {
+                  addFilters([
+                    typeName,
+                    x => ({
+                      start: Math.max(start, x ? x.start || 0 : 0),
+                      end: Math.min(end, x ? x.end || Infinity : Infinity)
+                    })
+                  ]);
+                });
+                selectionStart = null;
+              };
+              canvas.onmousemove = e => {
+                if (selectionStart) {
+                  mouseWhileDown(e, (typeName, start, end) => {});
+                }
+              };
+            };
+            let timeout = window.setTimeout(redraw, 100);
+            window.addEventListener("resize", () => {
+              clearTimeout(timeout);
+              window.setTimeout(redraw, 100);
+            });
+          }
+          break;
 
-          default:
-            element.innerText = `Unknown stat type: ${stat.type}`;
-        }
-        container.appendChild(element);
-      });
-      container.appendChild(drillDown);
-    }
-  );
+        default:
+          element.innerText = `Unknown stat type: ${stat.type}`;
+      }
+      container.appendChild(element);
+    });
+  };
+  refresh();
 }
 
-export function toggleBytecode(title) {
+export function toggleCollapse(title) {
   const visible = !title.nextSibling.style.maxHeight;
 
-  title.innerText = visible ? "⊟ Bytecode" : "⊞ Bytecode";
+  title.className = visible ? "collapse open" : "collapse close";
   title.nextSibling.style.maxHeight = visible
     ? `${title.nextSibling.scrollHeight}px`
     : null;
+}
+
+export function collapse(title, ...inner) {
+  const items = inner.flat(Number.MAX_VALUE);
+  if (items.length == 0) return [];
+  const showHide = document.createElement("P");
+  showHide.className = "collapse close";
+  showHide.innerText = title;
+  showHide.onclick = e => toggleCollapse(showHide);
+  const contents = document.createElement("DIV");
+  items.forEach(item => contents.appendChild(item));
+  return [showHide, contents];
 }
 
 export function runCheck(button, sourceCode, outputContainer) {
