@@ -91,7 +91,7 @@ public class PackStreaming implements ImyhatConsumer {
       fields.forEach(
           field -> {
             try {
-              generator.writeObjectFieldStart(field.index());
+              generator.writeFieldName(field.index());
             } catch (IOException e) {
               throw new RuntimeException();
             }
