@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
@@ -53,6 +54,7 @@ public final class WorkflowAction extends Action {
               "shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
           .labelNames("target", "workflow")
           .create();
+  private final Map<String, String> annotations;
   private Optional<Instant> externalTimestamp = Optional.empty();
   private boolean hasLaunched;
   Properties ini = new Properties();
@@ -64,7 +66,6 @@ public final class WorkflowAction extends Action {
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final Set<String> services;
-  private final Map<String, String> annotations;
   private final long workflowAccession;
 
   public WorkflowAction(
@@ -334,9 +335,13 @@ public final class WorkflowAction extends Action {
     ini.forEach((key, value) -> iniJson.put(key.toString(), value.toString()));
     node.put("workflowAccession", workflowAccession);
     if (runAccession != 0) {
+      final Pair<String, Map<Object, Object>> directoryAndIni =
+          server.get().directoryAndIni(runAccession);
       node.put("workflowRunAccession", runAccession);
+      node.put("workingDirectory", directoryAndIni.first());
+      final ObjectNode discoveredIniNode = node.putObject("discoveredIni");
+      directoryAndIni.second().forEach((k, v) -> discoveredIniNode.put(k.toString(), v.toString()));
     }
-
     final ObjectNode iniNode = node.putObject("ini");
     ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
     final ArrayNode matches = node.putArray("matches");
