@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
-import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
-import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
@@ -25,6 +23,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import net.sourceforge.seqware.common.model.WorkflowRun;
 import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
 
 /**
@@ -123,32 +122,17 @@ public final class WorkflowAction extends Action {
     try {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
-        final Optional<AnalysisProvenance> provenance =
-            server
-                .get()
-                .metadata()
-                .getAnalysisProvenance(
-                    Collections.singletonMap(
-                        FileProvenanceFilter.workflow_run,
-                        Collections.singleton(Integer.toString(runAccession))))
-                .stream()
-                .max(
-                    Comparator.nullsFirst(
-                        Comparator.comparing(ap -> ap.getLastModified().toInstant())));
-        final ActionState state =
-            provenance
-                .map(ap -> NiassaServer.processingStateToActionState(ap.getWorkflowRunStatus()))
-                .orElse(ActionState.UNKNOWN);
+        final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+
+        final ActionState state = NiassaServer.processingStateToActionState(run.getStatus());
         if (state != lastState) {
           lastState = state;
-          externalTimestamp = provenance.map(ap -> ap.getLastModified().toInstant());
+          externalTimestamp = Optional.of(run.getUpdateTimestamp().toInstant());
           // When we are getting the analysis state, we are bypassing the analysis cache, so we may
           // see a state transition before any of our sibling workflow runs. If we see that happen,
           // zap the cache so they will see it. We may have selected a previous workflow run, so zap
           // the right cache.
-          provenance
-              .map(ap -> (long) ap.getWorkflowId())
-              .ifPresent(server.get().analysisCache()::invalidate);
+          server.get().analysisCache().invalidate(run.getWorkflow().getSwAccession().longValue());
         }
         return state;
       }

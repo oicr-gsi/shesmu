@@ -57,7 +57,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               Collectors.groupingBy(ap -> new Pair<>(ap.getWorkflowRunId(), ap.getWorkflowId())))
           .entrySet()
           .stream()
-          .map(e -> new AnalysisState(e.getKey(), e.getValue()));
+          .map(
+              e ->
+                  new AnalysisState(
+                      e.getKey(), metadata.getWorkflowRun(e.getKey().first()), e.getValue()));
     }
   }
 
@@ -121,7 +124,11 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     if (state == null) {
       return ActionState.UNKNOWN;
     }
-    switch (WorkflowRunStatus.valueOf(state)) {
+    return processingStateToActionState(WorkflowRunStatus.valueOf(state));
+  }
+
+  static ActionState processingStateToActionState(WorkflowRunStatus state) {
+    switch (state) {
       case submitted:
       case submitted_retry:
         return ActionState.WAITING;
