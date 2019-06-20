@@ -7,10 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
-import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
-import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
@@ -21,6 +18,7 @@ import io.seqware.common.model.WorkflowRunStatus;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -60,7 +58,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           .map(
               e ->
                   new AnalysisState(
-                      e.getKey(), metadata.getWorkflowRun(e.getKey().first()), e.getValue()));
+                      e.getKey(), () -> metadata.getWorkflowRun(e.getKey().first()), e.getValue()));
     }
   }
 
@@ -84,6 +82,22 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                   ap.getIusLimsKeys()
                       .stream()
                       .map(ius -> new CerberusAnalysisProvenanceValue(ap, ius, () -> {})));
+    }
+  }
+
+  private class DirectoryAndIniCache
+      extends KeyValueCache<Long, Optional<Pair<String, Map<Object, Object>>>> {
+    public DirectoryAndIniCache(Path fileName) {
+      super("niassa-dir+ini " + fileName.toString(), 60 * 24 * 365, SimpleRecord::new);
+    }
+
+    @Override
+    protected Optional<Pair<String, Map<Object, Object>>> fetch(Long key, Instant lastUpdated)
+        throws Exception {
+      final WorkflowRun run = metadata.getWorkflowRun(key.intValue());
+      final Properties ini = new Properties();
+      ini.load(new StringReader(run.getIniFile()));
+      return Optional.of(new Pair<>(run.getCurrentWorkingDir(), ini));
     }
   }
 
@@ -219,6 +233,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private Optional<Configuration> configuration = Optional.empty();
 
   private final Definer<NiassaServer> definer;
+  private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
   private final Map<Long, Integer> maxInFlight = new ConcurrentHashMap<>();
   public Metadata metadata;
@@ -231,6 +246,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     this.definer = definer;
     analysisCache = new AnalysisCache(fileName);
     analysisDataCache = new AnalysisDataCache(fileName);
+    directoryAndIniCache = new DirectoryAndIniCache(fileName);
     skipCache = new SkipLaneCache(fileName);
   }
 
@@ -269,6 +285,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           renderer.line("Settings", c.getSettings());
           renderer.line("Registered Workflows Count", c.getWorkflows().length);
         });
+  }
+
+  public Pair<String, Map<Object, Object>> directoryAndIni(long workflowRun) {
+    return directoryAndIniCache.get(workflowRun).orElse(new Pair<>(null, Collections.emptyMap()));
   }
 
   public String host() {
