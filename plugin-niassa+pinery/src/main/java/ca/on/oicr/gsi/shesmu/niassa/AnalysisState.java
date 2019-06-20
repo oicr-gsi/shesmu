@@ -2,13 +2,14 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
-import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import net.sourceforge.seqware.common.model.WorkflowRun;
 
 public class AnalysisState implements Comparable<AnalysisState> {
   private final Map<String, Set<String>> annotations;
@@ -20,29 +21,47 @@ public class AnalysisState implements Comparable<AnalysisState> {
   private final long workflowAccession;
   private final int workflowRunAccession;
 
-  public AnalysisState(Pair<Integer, Integer> accessions, List<AnalysisProvenance> source) {
+  public AnalysisState(
+      Pair<Integer, Integer> accessions,
+      Supplier<WorkflowRun> run,
+      List<AnalysisProvenance> source) {
     fileSWIDSToRun =
         source
             .stream()
             .flatMap(s -> s.getWorkflowRunInputFileIds().stream())
             .collect(Collectors.toCollection(TreeSet::new));
-    limsKeys =
-        source
-            .stream()
-            .flatMap(s -> s.getIusLimsKeys().stream())
-            .map(IusLimsKey::getLimsKey)
-            .map(SimpleLimsKey::new)
-            .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
-            .distinct()
-            .collect(Collectors.toList());
     state =
         source
             .stream()
             .map(AnalysisProvenance::getWorkflowRunStatus)
             .map(NiassaServer::processingStateToActionState)
-            .sorted(Comparator.comparing(ActionState::sortPriority))
-            .findFirst()
+            .min(Comparator.comparing(ActionState::sortPriority))
             .get();
+
+    // Get the LIMS keys; if the workflow has succeeded, then we know provisioning is complete and
+    // we can gather all the LIMS keys from the output. If it has failed or is still running, then
+    // LIMS keys may have been partially provisioned, which will be very confusing; in which case,
+    // go thet the workflow that has the full set of LIMS keys at additional cost.
+    limsKeys =
+        (state == ActionState.SUCCEEDED
+                ? source
+                    .stream()
+                    .flatMap(ap -> ap.getIusLimsKeys().stream())
+                    .map(lk -> new SimpleLimsKey(lk.getLimsKey()))
+                : run.get()
+                    .getIus()
+                    .stream()
+                    .map(
+                        i ->
+                            new SimpleLimsKey(
+                                i.getLimsKey().getId(),
+                                i.getLimsKey().getProvider(),
+                                i.getLimsKey().getLastModified().toInstant(),
+                                i.getLimsKey().getVersion())))
+            .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
+            .distinct()
+            .collect(Collectors.toList());
+
     workflowRunAccession = accessions.first();
     workflowAccession = accessions.second();
     lastModified =
