@@ -125,7 +125,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public synchronized void configuration(SectionRenderer renderer) throws XMLStreamException {
     renderer.line("Filename", fileName().toString());
     configuration.ifPresent(
         configuration -> {
@@ -184,6 +184,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           updateMtime.accept(Instant.now());
           return new Pair<>(ActionState.SUCCEEDED, false);
         } else {
+          // The SFTP connection might be in an error state, so reset it to be sure.
+          connection.invalidate();
           throw sftpe;
         }
       }
