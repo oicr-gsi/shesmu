@@ -30,11 +30,23 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
     N
   }
 
+  @ShesmuMethod(
+      description =
+          "Convert mask object produced by parse_bases_mask into the format for pack_bases_mask.",
+      type = "o4group$ilength$iposition$itype$s")
+  public static Tuple convert_mask(
+      @ShesmuParameter(
+              description = "The mask object to convert",
+              type = "o5group$ilength$iordinal$iposition$itype$s")
+          Tuple input) {
+    return new Tuple(input.get(0), input.get(1), input.get(3), input.get(4));
+  }
+
   @ShesmuMethod(description = "Writes a bases mask string from a collection of objects")
   public static String pack_bases_mask(
       @ShesmuParameter(
               description = "Bases mask collection",
-              type = "ao5group$ilength$iordinal$iposition$itype$s")
+              type = "ao4group$ilength$iposition$itype$s")
           Set<Tuple> basesMask) {
     return basesMask
         .stream()
@@ -46,10 +58,10 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
             e ->
                 e.getValue()
                     .stream()
-                    .sorted(Comparator.comparing(t -> (Long) t.get(3)))
+                    .sorted(Comparator.comparing(t -> (Long) t.get(2)))
                     .map(
                         t -> {
-                          final String type = (String) t.get(4);
+                          final String type = (String) t.get(3);
                           final long length = (Long) t.get(1);
                           return (type.isEmpty() ? "N" : type.substring(0, 1).toUpperCase())
                               + (length > 0 ? length : "*");
