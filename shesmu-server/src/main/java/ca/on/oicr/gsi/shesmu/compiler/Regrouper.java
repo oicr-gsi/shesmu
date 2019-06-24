@@ -64,6 +64,17 @@ public interface Regrouper {
   void addPartitionCount(String fieldName, Consumer<Renderer> condition);
 
   /**
+   * Create a collection that should only ever have one item in it
+   *
+   * <p>The row will be rejected if it has zero or 2 or more itms.
+   *
+   * @param valueType the type of the values in the collection
+   * @param fieldName the name of the output variable
+   * @param loader a function to load the variable
+   */
+  void addSingle(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
+
+  /**
    * Conditionally add a variable
    *
    * @param condition the condition that must be satisfied
