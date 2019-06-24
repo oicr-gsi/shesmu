@@ -1,14 +1,13 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static org.objectweb.asm.Type.BOOLEAN_TYPE;
-import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.VOID_TYPE;
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+import static org.objectweb.asm.Type.*;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -42,7 +41,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
           .methodGen()
           .invokeVirtual(self, new Method(fieldName, A_SET_TYPE, new Type[] {}));
       loader.accept(collectRenderer);
-      collectRenderer.methodGen().valueOf(valueType.apply(TypeUtils.TO_ASM));
+      collectRenderer.methodGen().valueOf(valueType.apply(TO_ASM));
       collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
       collectRenderer.methodGen().pop();
     }
@@ -136,6 +135,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
     @Override
     public void addPartitionCount(String fieldName, Consumer<Renderer> condition) {
       elements.add(new PartitionCounter(fieldName, condition));
+    }
+
+    @Override
+    public void addSingle(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      elements.add(new Single(valueType, fieldName, loader));
     }
 
     @Override
@@ -793,23 +797,102 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
+  private class Single extends Element {
+    private final String fieldName;
+    private final Consumer<Renderer> loader;
+    private final Imyhat valueType;
+
+    private Single(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      super();
+      this.valueType = valueType;
+      this.fieldName = fieldName;
+      this.loader = loader;
+      classVisitor
+          .visitField(Opcodes.ACC_PUBLIC, fieldName, A_SET_TYPE.getDescriptor(), null, null)
+          .visitEnd();
+      final GeneratorAdapter getMethod =
+          new GeneratorAdapter(
+              Opcodes.ACC_PUBLIC,
+              new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
+              null,
+              null,
+              classVisitor);
+      getMethod.visitCode();
+      getMethod.loadThis();
+      getMethod.getField(self, fieldName, A_SET_TYPE);
+      getMethod.invokeInterface(A_SET_TYPE, SET__ITERATOR);
+      getMethod.invokeInterface(A_ITERATOR_TYPE, ITERATOR__NEXT);
+      getMethod.unbox(valueType.apply(TO_ASM));
+      getMethod.returnValue();
+      getMethod.visitMaxs(0, 0);
+      getMethod.visitEnd();
+    }
+
+    @Override
+    public void buildCollect() {
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer.methodGen().getField(self, fieldName, A_SET_TYPE);
+      loader.accept(collectRenderer);
+      collectRenderer.methodGen().valueOf(valueType.apply(TO_ASM));
+      collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
+      collectRenderer.methodGen().pop();
+    }
+
+    @Override
+    public int buildConstructor(GeneratorAdapter ctor, int index) {
+      ctor.loadThis();
+      Renderer.loadImyhatInMethod(ctor, valueType.descriptor());
+      ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
+      ctor.putField(self, fieldName, A_SET_TYPE);
+      return index;
+    }
+
+    @Override
+    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+      // Singles are not included in equality.
+    }
+
+    @Override
+    public void buildHashCode(GeneratorAdapter hashMethod) {
+      // Singles are not included in the hash.
+    }
+
+    @Override
+    public Stream<Type> constructorType() {
+      return Stream.empty();
+    }
+
+    @Override
+    public void failIfBad(GeneratorAdapter okMethod) {
+      okMethod.loadThis();
+      okMethod.getField(self, fieldName, A_SET_TYPE);
+      okMethod.invokeInterface(A_SET_TYPE, SET__SIZE);
+      okMethod.push(1);
+      final Label next = okMethod.newLabel();
+      okMethod.ifICmp(GeneratorAdapter.EQ, next);
+      okMethod.push(0);
+      okMethod.returnValue();
+      okMethod.mark(next);
+    }
+
+    @Override
+    public void loadConstructorArgument() {
+      // No argument to constructor.
+    }
+  }
+
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
-
+  private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-
   private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
-
   private static final Type A_SET_TYPE = Type.getType(Set.class);
-
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
-
   private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
+  private static final Method ITERATOR__NEXT = new Method("next", A_OBJECT_TYPE, new Type[] {});
   private static final Method METHOD_DEFAULT_CTOR = new Method("<init>", VOID_TYPE, new Type[] {});
   private static final Method METHOD_EQUALS =
       new Method("equals", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
-
   private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
-
   private static final Method METHOD_IMYHAT__NEW_SET =
       new Method("newSet", A_SET_TYPE, new Type[] {});
   static final Method METHOD_IS_OK = new Method("is ok?", BOOLEAN_TYPE, new Type[] {});
@@ -819,11 +902,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
       new Method("toTuple", A_TUPLE_TYPE, new Type[] {});
   private static final Method METHOD_SET__ADD =
       new Method("add", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
+  private static final Method SET__ITERATOR =
+      new Method("iterator", A_ITERATOR_TYPE, new Type[] {});
+  private static final Method SET__SIZE = new Method("size", INT_TYPE, new Type[] {});
   private final ClassVisitor classVisitor;
-  public final int collectedSelfArgument;
-
   private final Renderer collectRenderer;
-
+  public final int collectedSelfArgument;
   private final List<Element> elements = new ArrayList<>();
 
   private final Renderer newRenderer;
@@ -894,6 +978,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
   @Override
   public void addPartitionCount(String fieldName, Consumer<Renderer> condition) {
     elements.add(new PartitionCounter(fieldName, condition));
+  }
+
+  @Override
+  public void addSingle(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    elements.add(new Single(valueType, fieldName, loader));
   }
 
   @Override

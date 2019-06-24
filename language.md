@@ -118,6 +118,9 @@ In total, the collectors in a `Group` operation are:
 
 - `List` to collect all values into a list
 - `First` to collect one value; if none are collected, the group is rejected
+- `Single` to collect exactly one value; if none are collected, the group is
+  rejected; if more than one are collected, the group is rejected. It is fine
+  if the same value is collected multiple times.
 - `Max` and `Min` to collect the most extreme value; if none are collected, the
   group is rejected
 - `Count` to count the number of matched rows

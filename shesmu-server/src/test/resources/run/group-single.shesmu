@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Group a = Single workflow By workflow
+ Run ok With ok = a == "SlowA";
