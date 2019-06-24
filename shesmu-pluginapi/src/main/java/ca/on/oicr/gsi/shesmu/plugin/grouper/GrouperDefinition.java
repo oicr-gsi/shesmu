@@ -191,7 +191,7 @@ public abstract class GrouperDefinition {
     this.name = name;
     HANDLES.put(
         name,
-        MH_PACK3__PACK.bindTo(
+        MH_PACK4__PACK.bindTo(
             new TypeGuarantee.Pack4<Object, Object, Object, C, Grouper<I, O>>() {
               @Override
               public Grouper<I, O> pack(
