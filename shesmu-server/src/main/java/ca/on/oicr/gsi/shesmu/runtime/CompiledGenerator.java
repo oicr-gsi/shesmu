@@ -142,11 +142,7 @@ public class CompiledGenerator {
     return scripts().flatMap(Script::dashboard);
   }
 
-  /**
-   * Get all the error messages from the last compilation as an HTML blob.
-   *
-   * @return
-   */
+  /** Get all the error messages from the last compilation as an HTML blob. */
   public void errorHtml(SectionRenderer renderer) {
     scripts().forEach(script -> script.errorHtml(renderer));
   }
@@ -156,12 +152,18 @@ public class CompiledGenerator {
     // use it. This avoids making the first olive seem really slow.
     final Set<String> usedFormats =
         scripts().flatMap(s -> s.generator.inputs()).collect(Collectors.toSet());
+    // Allow inhibitions to be set on a per-input format format and skip fetching this data.
+    final Set<String> inhibitedFormats =
+        usedFormats.stream().filter(consumer::isOverloaded).collect(Collectors.toSet());
     final InputProvider cache =
         new InputProvider() {
           final Map<String, List<Object>> data =
               SOURCES
                   .all()
-                  .filter(format -> usedFormats.contains(format.name()))
+                  .filter(
+                      format ->
+                          usedFormats.contains(format.name())
+                              && !inhibitedFormats.contains(format.name()))
                   .collect(
                       Collectors.toMap(
                           InputFormatDefinition::name,
@@ -187,6 +189,15 @@ public class CompiledGenerator {
 
     final List<CompletableFuture<?>> futures =
         scripts()
+            .filter(
+                script ->
+                    script
+                        .generator
+                        .inputs()
+                        .noneMatch(
+                            inhibitedFormats
+                                ::contains)) // Don't run any olives that require data we don't
+            // have.
             .map(
                 script -> {
                   final Runnable inflight = Server.inflight(script.fileName.toString());
