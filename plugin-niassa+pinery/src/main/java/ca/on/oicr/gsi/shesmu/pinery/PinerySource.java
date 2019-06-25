@@ -51,6 +51,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 .filter(
                     run ->
                         run.getState().equals("Completed")
+                            && run.getCreatedDate() != null
                             && run.getRunDirectory() != null
                             && !run.getRunDirectory().equals(""))
                 .map(RunDto::getName)
@@ -95,8 +96,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Predicate<String> goodRun)
         throws HttpResponseException {
       return Utils.stream(client.getLaneProvenance().version(version))
-          .filter(lp -> goodRun.test(lp.getSequencerRunName()))
-          .filter(lp -> lp.getSkip() == null || !lp.getSkip())
+          .filter(
+              lp ->
+                  goodRun.test(lp.getSequencerRunName())
+                      && lp.getCreatedDate() != null
+                      && (lp.getSkip() == null || !lp.getSkip()))
           .map(
               lp -> {
                 final Set<String> badSetInRecord = new TreeSet<>();
@@ -166,7 +170,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         Predicate<String> goodRun)
         throws HttpResponseException {
       return Utils.stream(client.getSampleProvenance().version(version))
-          .filter(sp -> goodRun.test(sp.getSequencerRunName()))
+          .filter(sp -> goodRun.test(sp.getSequencerRunName()) && sp.getCreatedDate() != null)
           .map(
               sp -> {
                 final Pair<String, String> runDirectoryAndMask =
