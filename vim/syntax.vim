@@ -22,6 +22,7 @@ syn keyword shesmuKeyword By
 syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
 syn keyword shesmuKeyword Define
+syn keyword shesmuKeyword Description
 syn keyword shesmuKeyword Distinct
 syn keyword shesmuKeyword Dump
 syn keyword shesmuKeyword Else
@@ -63,6 +64,7 @@ syn keyword shesmuKeyword Splitting
 syn keyword shesmuKeyword Squish
 syn keyword shesmuKeyword Subsample
 syn keyword shesmuKeyword Switch
+syn keyword shesmuKeyword Tag
 syn keyword shesmuKeyword Then
 syn keyword shesmuKeyword Timeout
 syn keyword shesmuKeyword To

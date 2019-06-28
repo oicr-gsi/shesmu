@@ -188,8 +188,8 @@ public final class Server implements ServerConfig, ActionServices {
             new OliveServices() {
               @Override
               public boolean accept(
-                  Action action, String filename, int line, int column, long time) {
-                return processor.accept(action, filename, line, column, time);
+                  Action action, String filename, int line, int column, long time, String[] tags) {
+                return processor.accept(action, filename, line, column, time, tags);
               }
 
               @Override
@@ -337,7 +337,7 @@ public final class Server implements ServerConfig, ActionServices {
                                               olive.column(),
                                               fileTable.timestamp().toEpochMilli()));
                                       writer.writeStartElement("td");
-                                      writer.writeCharacters(olive.syntax());
+                                      writer.writeCharacters(olive.description());
                                       writer.writeEndElement();
                                       writer.writeStartElement("td");
                                       writer.writeCharacters(
@@ -504,6 +504,10 @@ public final class Server implements ServerConfig, ActionServices {
                                       writer.writeStartElement("div");
                                       writer.writeAttribute("id", id);
                                       writer.writeAttribute("class", "olive");
+                                      writer.writeStartElement("p");
+                                      writer.writeCharacters(olive.description());
+                                      writer.writeEndElement();
+                                      // TODO(apmasell): show tags here
 
                                       if (maybeHasDeadPauses) {
                                         writer.writeStartElement("p");

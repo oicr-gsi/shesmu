@@ -122,6 +122,7 @@ public class Query {
     @Type(value = FilterStatus.class, name = "status"),
     @Type(value = FilterStatusChanged.class, name = "statuschanged"),
     @Type(value = FilterStatusChangedAgo.class, name = "statuschangedago"),
+    @Type(value = FilterTag.class, name = "tag"),
     @Type(value = FilterText.class, name = "text"),
     @Type(value = FilterType.class, name = "type")
   })
@@ -229,6 +230,23 @@ public class Query {
     @Override
     public Filter convert(Optional<Instant> start, Optional<Instant> end) {
       return ActionProcessor.statusChanged(start, end);
+    }
+  }
+
+  public static class FilterTag extends FilterJson {
+    private String[] tags;
+
+    @Override
+    public Filter convert() {
+      return maybeNegate(ActionProcessor.tags(Stream.of(tags)));
+    }
+
+    public String[] getTags() {
+      return tags;
+    }
+
+    public void setTags(String[] tags) {
+      this.tags = tags;
     }
   }
 

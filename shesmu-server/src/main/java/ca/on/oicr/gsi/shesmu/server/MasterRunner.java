@@ -54,9 +54,11 @@ public class MasterRunner {
           new OliveServices() {
 
             @Override
-            public boolean accept(Action action, String filename, int line, int column, long time) {
+            public boolean accept(
+                Action action, String filename, int line, int column, long time, String[] tags) {
 
-              final boolean isDuplicated = services.accept(action, filename, line, column, time);
+              final boolean isDuplicated =
+                  services.accept(action, filename, line, column, time, tags);
               if (isDuplicated) {
                 currentActionDuplicates.incrementAndGet();
               }

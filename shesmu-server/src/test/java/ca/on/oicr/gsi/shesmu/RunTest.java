@@ -47,7 +47,8 @@ public class RunTest {
     private int good;
 
     @Override
-    public boolean accept(Action action, String filename, int line, int column, long time) {
+    public boolean accept(
+        Action action, String filename, int line, int column, long time, String[] tags) {
       if (action.perform(null) == ActionState.SUCCEEDED) {
         good++;
       } else {

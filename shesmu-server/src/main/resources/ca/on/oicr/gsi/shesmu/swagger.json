@@ -40,6 +40,7 @@
             "status": "#/components/schemas/FilterStatus",
             "statuschanged": "#/components/schemas/FilterStatusChanged",
             "statuschangedago": "#/components/schemas/FilterStatusChangedAgo",
+            "tag": "#/components/schemas/FilterTag",
             "text": "#/components/schemas/FilterText",
             "type": "#/components/schemas/FilterType"
           },
@@ -87,6 +88,9 @@
           },
           {
             "$ref": "#/components/schemas/FilterStatusChangedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/FilterTag"
           },
           {
             "$ref": "#/components/schemas/FilterText"
@@ -351,6 +355,24 @@
           },
           "type": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterTag": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "tags": {
+            "description": "tags which must appear attached to the action",
+            "type": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
           }
         },
         "type": "object"

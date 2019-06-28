@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -181,7 +180,8 @@ public final class ActionProcessor
     Instant lastChecked = Instant.EPOCH;
     ActionState lastState = ActionState.UNKNOWN;
     Instant lastStateTransition = Instant.now();
-    final Set<SourceLocation> locations = new HashSet<>();
+    final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
+    final Set<String> tags = ConcurrentHashMap.newKeySet();
     boolean thrown;
   }
 
@@ -358,6 +358,21 @@ public final class ActionProcessor
       @Override
       protected Optional<Instant> get(Action action, Information info) {
         return Optional.of(info.lastStateTransition);
+      }
+    };
+  }
+
+  /**
+   * Check that an action has one of the listed tags attached
+   *
+   * @param tags the set of tags
+   */
+  public static Filter tags(Stream<String> tags) {
+    final Set<String> tagSet = tags.collect(Collectors.toSet());
+    return new Filter() {
+      @Override
+      protected boolean check(Action action, Information info) {
+        return tagSet.stream().anyMatch(info.tags::contains);
       }
     };
   }
@@ -589,7 +604,7 @@ public final class ActionProcessor
    */
   @Override
   public synchronized boolean accept(
-      Action action, String filename, int line, int column, long time) {
+      Action action, String filename, int line, int column, long time, String[] tags) {
     Information information;
     boolean isDuplicate;
     if (!actions.containsKey(action)) {
@@ -606,6 +621,7 @@ public final class ActionProcessor
     final SourceLocation location =
         new SourceLocation(filename, line, column, Instant.ofEpochMilli(time));
     information.locations.add(location);
+    information.tags.addAll(Arrays.asList(tags));
     sourceLocations.add(location);
     lastAdd.setToCurrentTime();
     return isDuplicate;
@@ -925,6 +941,7 @@ public final class ActionProcessor
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
               node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
+              entry.getValue().tags.forEach(node.putArray("tags")::add);
               entry
                   .getKey()
                   .externalTimestamp()
