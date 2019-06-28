@@ -30,6 +30,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       new Method("prepare", Type.VOID_TYPE, new Type[] {});
   private final String actionName;
   private final List<OliveArgumentNode> arguments;
+  private final Set<String> tags;
+  private final String description;
   private final int column;
   private ActionDefinition definition;
 
@@ -41,12 +43,16 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       int column,
       String actionName,
       List<OliveArgumentNode> arguments,
-      List<OliveClauseNode> clauses) {
+      List<OliveClauseNode> clauses,
+      Set<String> tags,
+      String description) {
     super(clauses);
     this.line = line;
     this.column = column;
     this.actionName = actionName;
     this.arguments = arguments;
+    this.tags = tags;
+    this.description = description;
   }
 
   @Override
@@ -77,6 +83,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
             line,
             column,
             true,
+            tags,
+            description,
             clauses().stream().flatMap(OliveClauseNode::dashboard),
             arguments
                 .stream()
@@ -113,7 +121,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     action.methodGen().loadLocal(local);
     action.methodGen().invokeVirtual(A_ACTION_TYPE, METHOD_ACTION__PREPARE);
-    oliveBuilder.emitAction(action.methodGen(), local);
+    oliveBuilder.emitAction(action.methodGen(), local, tags);
     action.methodGen().visitInsn(Opcodes.RETURN);
     action.methodGen().visitMaxs(0, 0);
     action.methodGen().visitEnd();

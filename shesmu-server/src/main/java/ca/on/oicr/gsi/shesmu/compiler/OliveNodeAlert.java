@@ -79,6 +79,8 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
   private final List<OliveArgumentNode> labels;
   private final int line;
   private final ExpressionNode ttl;
+  private final Set<String> tags;
+  private final String description;
 
   public OliveNodeAlert(
       int line,
@@ -86,13 +88,17 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
       List<OliveArgumentNode> label,
       List<OliveArgumentNode> annotations,
       ExpressionNode ttl,
-      List<OliveClauseNode> clauses) {
+      List<OliveClauseNode> clauses,
+      Set<String> tags,
+      String description) {
     super(clauses);
     this.line = line;
     this.column = column;
     labels = label;
     this.annotations = annotations;
     this.ttl = ttl;
+    this.tags = tags;
+    this.description = description;
   }
 
   @Override
@@ -130,6 +136,8 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
             line,
             column,
             false,
+            tags,
+            description,
             clauses().stream().flatMap(OliveClauseNode::dashboard),
             Stream.concat(
                 Stream.of(labels, annotations)

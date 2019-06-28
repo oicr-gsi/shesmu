@@ -6,7 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.stream.Stream;
 
 public interface OliveServices {
-  boolean accept(Action action, String filename, int line, int column, long time);
+  boolean accept(Action action, String filename, int line, int column, long time, String[] tags);
 
   boolean accept(String[] labels, String[] annotation, long ttl) throws Exception;
 

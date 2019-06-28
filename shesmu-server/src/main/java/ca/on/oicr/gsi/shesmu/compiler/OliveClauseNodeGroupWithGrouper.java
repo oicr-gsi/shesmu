@@ -372,7 +372,6 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                       }
                       return isDuplicate;
                     });
-    System.err.println("resolve2 " + ok);
     return defs.replaceStream(Stream.concat(discriminators.stream(), children.stream()), ok);
   }
 

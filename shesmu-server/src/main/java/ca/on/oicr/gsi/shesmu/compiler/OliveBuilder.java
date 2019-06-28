@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import java.lang.invoke.LambdaMetafactory;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
@@ -39,7 +40,9 @@ public final class OliveBuilder extends BaseOliveBuilder {
       new Method(
           "accept",
           BOOLEAN_TYPE,
-          new Type[] {A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE});
+          new Type[] {
+            A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE, A_STRING_ARRAY_TYPE
+          });
   private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ALERT =
       new Method(
           "accept", BOOLEAN_TYPE, new Type[] {A_STRING_ARRAY_TYPE, A_STRING_ARRAY_TYPE, LONG_TYPE});
@@ -116,13 +119,22 @@ public final class OliveBuilder extends BaseOliveBuilder {
    * @param methodGen the method generator, which must be the method generator produced by {@link
    *     #finish(String,Stream)}
    */
-  public void emitAction(GeneratorAdapter methodGen, int local) {
+  public void emitAction(GeneratorAdapter methodGen, int local, Set<String> tags) {
     methodGen.loadArg(0);
     methodGen.loadLocal(local);
     methodGen.push(owner.sourcePath());
     methodGen.push(line);
     methodGen.push(column);
     methodGen.push(owner.compileTime);
+    methodGen.push(tags.size());
+    methodGen.newArray(A_STRING_TYPE);
+    int tagIndex = 0;
+    for (final String tag : tags) {
+      methodGen.dup();
+      methodGen.push(tagIndex++);
+      methodGen.push(tag);
+      methodGen.arrayStore(A_STRING_TYPE);
+    }
     methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ACTION);
     methodGen.pop();
   }

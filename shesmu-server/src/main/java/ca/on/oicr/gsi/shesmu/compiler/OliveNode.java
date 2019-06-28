@@ -8,15 +8,13 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /** An olive stanza declaration */
@@ -28,12 +26,15 @@ public abstract class OliveNode {
   }
 
   private interface OliveConstructor {
-    OliveNode create(int line, int column, List<OliveClauseNode> clauses);
+    OliveNode create(
+        int line, int column, List<OliveClauseNode> clauses, Set<String> tags, String description);
   }
 
   private static final Parser.ParseDispatch<OliveNode> ROOTS = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<OliveConstructor> TERMINAL =
       new Parser.ParseDispatch<>();
+
+  private static final Pattern DESCRIPTION = Pattern.compile("[^\"\\n]*");
 
   static {
     TERMINAL.addKeyword(
@@ -51,8 +52,9 @@ public abstract class OliveNode {
                   .list(arguments::set, OliveArgumentNode::parse, ',');
           if (result.isGood()) {
             output.accept(
-                (line, column, clauses) ->
-                    new OliveNodeRun(line, column, name.get(), arguments.get(), clauses));
+                (line, column, clauses, tags, description) ->
+                    new OliveNodeRun(
+                        line, column, name.get(), arguments.get(), clauses, tags, description));
           }
           return result;
         });
@@ -76,9 +78,16 @@ public abstract class OliveNode {
           result = result.keyword("For").whitespace().then(ExpressionNode::parse, ttl::set);
           if (result.isGood()) {
             output.accept(
-                (line, column, clauses) ->
+                (line, column, clauses, tags, description) ->
                     new OliveNodeAlert(
-                        line, column, labels.get(), annotations.get(), ttl.get(), clauses));
+                        line,
+                        column,
+                        labels.get(),
+                        annotations.get(),
+                        ttl.get(),
+                        clauses,
+                        tags,
+                        description));
           }
           return result;
         });
@@ -112,10 +121,29 @@ public abstract class OliveNode {
     ROOTS.addKeyword(
         "Olive",
         (input, output) -> {
+          final AtomicReference<String> description =
+              new AtomicReference<>("No documentation provided.");
+          final AtomicReference<List<String>> tags = new AtomicReference<>(Collections.emptyList());
           final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
           final AtomicReference<OliveConstructor> terminal = new AtomicReference<>();
           final Parser result =
               input
+                  .whitespace()
+                  .keyword(
+                      "Description",
+                      p ->
+                          p.whitespace()
+                              .symbol("\"")
+                              .regex(
+                                  DESCRIPTION,
+                                  m -> description.set(m.group()),
+                                  "Expected string containing description.")
+                              .symbol("\"")
+                              .whitespace())
+                  .list(
+                      tags::set,
+                      (p, o) ->
+                          p.whitespace().keyword("Tag").whitespace().identifier(o).whitespace())
                   .whitespace()
                   .list(clauses::set, OliveClauseNode::parse)
                   .whitespace()
@@ -123,7 +151,15 @@ public abstract class OliveNode {
                   .symbol(";")
                   .whitespace();
           if (result.isGood()) {
-            output.accept(terminal.get().create(input.line(), input.column(), clauses.get()));
+            output.accept(
+                terminal
+                    .get()
+                    .create(
+                        input.line(),
+                        input.column(),
+                        clauses.get(),
+                        new TreeSet<>(tags.get()),
+                        description.get()));
           }
           return result;
         });
@@ -210,10 +246,7 @@ public abstract class OliveNode {
 
   public abstract Stream<OliveTable> dashboard();
 
-  /**
-   * Generate bytecode for this stanza into the {@link ActionGenerator#run(Consumer,
-   * java.util.function.Supplier)} method
-   */
+  /** Generate bytecode for this stanza into the {@link ActionGenerator#run} method */
   public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
   /** Resolve all variable plugins */
@@ -224,12 +257,7 @@ public abstract class OliveNode {
       Consumer<String> errorHandler,
       ConstantRetriever constants);
 
-  /**
-   * Resolve all non-variable plugins
-   *
-   * <p>This does the clauses and {@link #resolveDefinitionsExtra(Map, Function, Function,
-   * Consumer)}
-   */
+  /** Resolve all non-variable plugins */
   public abstract boolean resolveDefinitions(
       Map<String, OliveNodeDefinition> definedOlives,
       Function<String, FunctionDefinition> definedFunctions,

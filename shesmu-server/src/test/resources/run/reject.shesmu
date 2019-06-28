@@ -1,6 +1,9 @@
 Input test;
 
 Olive
+ Description "something, something"
+ Tag foo
+ Tag bar
  Reject path != '/foo1' {
    Dump workflow To somefile
  }
