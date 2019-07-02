@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +39,13 @@ public class ExpressionNodeFor extends ExpressionNode {
     source.collectFreeVariables(names, predicate);
     collector.collectFreeVariables(names, predicate);
     transforms.forEach(t -> t.collectFreeVariables(names, predicate));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    source.collectPlugins(pluginFileNames);
+    transforms.forEach(transform -> transform.collectPlugins(pluginFileNames));
+    collector.collectPlugins(pluginFileNames);
   }
 
   @Override

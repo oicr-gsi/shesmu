@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.FixedWithConditions;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 import java.lang.invoke.LambdaMetafactory;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -79,6 +80,12 @@ public class SampleNodeFixedWithCondition extends SampleNode {
     if (remove) {
       names.remove(name);
     }
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    limitExpression.collectPlugins(pluginFileNames);
+    conditionExpression.collectPlugins(pluginFileNames);
   }
 
   @Override

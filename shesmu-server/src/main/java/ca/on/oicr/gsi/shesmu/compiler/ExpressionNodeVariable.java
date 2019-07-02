@@ -1,10 +1,12 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -46,6 +48,22 @@ public class ExpressionNodeVariable extends ExpressionNode {
     if (predicate.test(target.flavour())) {
       names.add(name);
     }
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    if (target instanceof ConstantDefinition) {
+      final ConstantDefinition constant = (ConstantDefinition) target;
+      if (constant.filename() != null) {
+        pluginFileNames.add(constant.filename());
+      }
+    } else if (target instanceof SignatureDefinition) {
+      final SignatureDefinition signature = (SignatureDefinition) target;
+      if (signature.filename() != null) {
+        pluginFileNames.add(signature.filename());
+      }
+    }
+    // There are many other targets that aren't from plugins, so ignore them
   }
 
   @Override

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -84,6 +85,12 @@ public class CollectNodeConcatenate extends CollectNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     getter.collectFreeVariables(names, predicate);
     delimiter.collectFreeVariables(names, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    getter.collectPlugins(pluginFileNames);
+    delimiter.collectPlugins(pluginFileNames);
   }
 
   @Override

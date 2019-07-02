@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler.definitions;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -43,6 +44,8 @@ public abstract class SignatureDefinition implements Target {
    * @param variables the input variables to capture
    */
   public abstract void build(GeneratorAdapter method, Type streamType, Stream<Target> variables);
+
+  public abstract Path filename();
 
   @Override
   public final Flavour flavour() {

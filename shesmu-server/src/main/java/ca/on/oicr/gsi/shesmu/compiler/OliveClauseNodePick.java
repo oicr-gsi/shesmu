@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,11 @@ public class OliveClauseNodePick extends OliveClauseNode {
     this.max = max;
     this.extractor = extractor;
     this.discriminators = discriminators;
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    extractor.collectPlugins(pluginFileNames);
   }
 
   @Override

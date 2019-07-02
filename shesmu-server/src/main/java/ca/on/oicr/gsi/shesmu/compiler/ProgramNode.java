@@ -10,12 +10,9 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -107,6 +104,10 @@ public class ProgramNode {
 
   public InputFormatDefinition inputFormatDefinition() {
     return inputFormatDefinition;
+  }
+
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    olives.forEach(olive -> olive.collectPlugins(pluginFileNames));
   }
 
   /** Generate bytecode for this definition */

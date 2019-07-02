@@ -35,6 +35,11 @@ public class ExpressionNodePathLiteral extends ExpressionNode {
   }
 
   @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    // Do nothing.
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.methodGen().push(path);
     renderer.methodGen().getStatic(A_RUNTIME_SUPPORT, "EMPTY", A_STRING_ARRAY_TYPE);

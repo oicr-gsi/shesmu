@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -243,6 +244,8 @@ public abstract class OliveNode {
       Predicate<String> isDefined,
       Consumer<FunctionDefinition> defineFunctions,
       Consumer<String> errorHandler);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public abstract Stream<OliveTable> dashboard();
 

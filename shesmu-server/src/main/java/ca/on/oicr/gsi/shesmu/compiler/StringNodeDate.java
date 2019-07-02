@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -40,6 +41,11 @@ public class StringNodeDate extends StringNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     expression.collectFreeVariables(names, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    expression.collectPlugins(pluginFileNames);
   }
 
   @Override

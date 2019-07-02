@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,11 @@ public class ExpressionNodeObject extends ExpressionNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     fields.forEach(field -> field.second().collectFreeVariables(names, predicate));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    fields.forEach(field -> field.second().collectPlugins(pluginFileNames));
   }
 
   @Override

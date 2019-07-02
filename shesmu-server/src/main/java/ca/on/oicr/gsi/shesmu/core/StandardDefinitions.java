@@ -318,6 +318,11 @@ public final class StandardDefinitions implements DefinitionRepository {
         new SignatureVariableForDynamicSigner("json_signature", Imyhat.STRING) {
 
           @Override
+          public Path filename() {
+            return null;
+          }
+
+          @Override
           protected void newInstance(GeneratorAdapter method) {
             method.newInstance(A_JSON_SIGNATURE_TYPE);
             method.dup();
@@ -325,6 +330,11 @@ public final class StandardDefinitions implements DefinitionRepository {
           }
         },
         new SignatureVariableForDynamicSigner("sha1_signature", Imyhat.STRING) {
+
+          @Override
+          public Path filename() {
+            return null;
+          }
 
           @Override
           protected void newInstance(GeneratorAdapter method) {

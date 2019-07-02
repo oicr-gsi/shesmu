@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +78,12 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
     this.column = column;
     this.children = children;
     this.discriminators = discriminators;
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    discriminators.forEach(discriminator -> discriminator.collectPlugins(pluginFileNames));
+    children.forEach(child -> child.collectPlugins(pluginFileNames));
   }
 
   @Override

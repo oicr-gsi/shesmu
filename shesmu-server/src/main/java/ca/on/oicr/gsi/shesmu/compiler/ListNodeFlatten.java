@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,12 @@ public class ListNodeFlatten extends ListNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     source.collectFreeVariables(names, predicate);
     transforms.forEach(t -> t.collectFreeVariables(names, predicate));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    source.collectPlugins(pluginFileNames);
+    transforms.forEach(t -> t.collectPlugins(pluginFileNames));
   }
 
   @Override

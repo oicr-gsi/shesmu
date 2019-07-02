@@ -80,6 +80,11 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   }
 
   @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    body.collectPlugins(pluginFileNames);
+  }
+
+  @Override
   public Stream<OliveTable> dashboard() {
     return Stream.empty();
   }

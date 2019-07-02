@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +16,8 @@ import java.util.stream.Stream;
 
 public interface RejectNode {
   void collectFreeVariables(Set<String> freeVariables);
+
+  void collectPlugins(Set<Path> pluginFileNames);
 
   void render(RootBuilder builder, Renderer renderer);
 

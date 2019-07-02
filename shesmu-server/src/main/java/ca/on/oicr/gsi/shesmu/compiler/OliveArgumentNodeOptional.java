@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -29,6 +30,12 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
   public void collectFreeVariables(Set<String> freeVariables, Predicate<Flavour> predicate) {
     expression.collectFreeVariables(freeVariables, predicate);
     condition.collectFreeVariables(freeVariables, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    expression.collectPlugins(pluginFileNames);
+    condition.collectPlugins(pluginFileNames);
   }
 
   /** Produce an error if the type of the expression is not as required */

@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -26,6 +27,11 @@ public final class GroupNodeCount extends GroupNode {
   @Override
   public void collectFreeVariables(Set<String> freeVariables, Predicate<Flavour> predicate) {
     // No free variables
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    // Do nothing.
   }
 
   @Override

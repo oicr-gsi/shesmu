@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureStorage;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
 import org.objectweb.asm.Type;
@@ -19,5 +20,10 @@ public final class SignatureCount extends SignatureDefinition {
   @Override
   public void build(GeneratorAdapter method, Type initialType, Stream<Target> variables) {
     method.push(variables.count());
+  }
+
+  @Override
+  public Path filename() {
+    return null;
   }
 }

@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -629,6 +630,8 @@ public abstract class ExpressionNode {
 
   /** Add all free variable names to the set provided. */
   public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public int column() {
     return column;

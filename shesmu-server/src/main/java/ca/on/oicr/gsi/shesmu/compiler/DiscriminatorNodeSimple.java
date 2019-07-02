@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -29,6 +30,11 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     // Nothing to do.
 
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    // Do nothing.
   }
 
   @Override

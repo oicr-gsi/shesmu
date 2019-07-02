@@ -46,6 +46,17 @@ public abstract class PluginFile {
     return false;
   }
 
+  /**
+   * Stop olives that use functions and constants from this plugin when a service is throttled.
+   *
+   * <p>This does not affect actions!
+   *
+   * @return the services names needed by this plugin
+   */
+  public Stream<String> services() {
+    return Stream.empty();
+  }
+
   /** Called when a configuration file is first read. */
   public void start() {
     update();

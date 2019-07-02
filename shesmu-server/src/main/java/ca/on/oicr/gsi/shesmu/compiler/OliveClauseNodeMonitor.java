@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import io.prometheus.client.Gauge;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   @Override
   public void collectFreeVariables(Set<String> freeVariables) {
     labels.forEach(arg -> arg.collectFreeVariables(freeVariables, Flavour::needsCapture));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    labels.forEach(label -> label.collectPlugins(pluginFileNames));
   }
 
   @Override

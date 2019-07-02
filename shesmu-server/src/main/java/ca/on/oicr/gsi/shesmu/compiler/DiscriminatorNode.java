@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -46,6 +47,8 @@ public abstract class DiscriminatorNode implements DefinedTarget {
 
   /** Add all free variable names to the set provided. */
   public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   @Override
   public int column() {

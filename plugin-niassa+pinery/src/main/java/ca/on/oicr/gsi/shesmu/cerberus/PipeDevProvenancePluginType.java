@@ -3,14 +3,13 @@ package ca.on.oicr.gsi.shesmu.cerberus;
 import ca.on.oicr.gsi.provenance.DefaultProvenanceClient;
 import ca.on.oicr.gsi.provenance.ProviderLoader;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
+import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-
-import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
-import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import org.kohsuke.MetaInfServices;
 
 @MetaInfServices(PluginFileType.class)
@@ -38,5 +37,10 @@ public class PipeDevProvenancePluginType extends BaseProvenancePluginType<Defaul
   @Override
   protected Stream<? extends FileProvenance> fetch(DefaultProvenanceClient client) {
     return Utils.stream(client.getFileProvenance(PROVENANCE_FILTER));
+  }
+
+  @Override
+  public Stream<String> services() {
+    return Stream.of("pinery", "niassa");
   }
 }

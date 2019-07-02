@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -86,6 +87,8 @@ public abstract class SourceNode {
    * @param names
    */
   public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public int column() {
     return column;

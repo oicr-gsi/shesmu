@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -92,6 +93,8 @@ public abstract class StringNode {
   }
 
   public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public abstract boolean isPassive();
 

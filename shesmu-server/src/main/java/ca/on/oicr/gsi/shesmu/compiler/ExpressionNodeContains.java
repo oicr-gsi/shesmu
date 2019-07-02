@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,6 +33,12 @@ public class ExpressionNodeContains extends ExpressionNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     needle.collectFreeVariables(names, predicate);
     haystack.collectFreeVariables(names, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    haystack.collectPlugins(pluginFileNames);
+    needle.collectPlugins(pluginFileNames);
   }
 
   @Override

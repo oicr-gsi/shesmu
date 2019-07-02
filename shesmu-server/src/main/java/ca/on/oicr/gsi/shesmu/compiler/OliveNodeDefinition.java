@@ -7,9 +7,11 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -65,6 +67,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
     }
     definedOlives.put(name, this);
     return true;
+  }
+
+  @Override
+  public void collectPluginsExtra(Set<Path> pluginFileNames) {
+    // Nothing to do.
   }
 
   @Override

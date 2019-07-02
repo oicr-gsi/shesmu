@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,11 @@ public final class OliveClauseNodeDump extends OliveClauseNode implements Reject
   @Override
   public void collectFreeVariables(Set<String> freeVariables) {
     columns.forEach(column -> column.collectFreeVariables(freeVariables, Flavour::needsCapture));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    columns.forEach(column -> column.collectPlugins(pluginFileNames));
   }
 
   @Override

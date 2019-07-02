@@ -5,6 +5,7 @@ import static org.objectweb.asm.Type.VOID_TYPE;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -35,6 +36,11 @@ public class ExpressionNodeString extends ExpressionNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     parts.forEach(part -> part.collectFreeVariables(names, predicate));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    parts.forEach(part -> part.collectPlugins(pluginFileNames));
   }
 
   @Override
