@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +40,12 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
     this.format = format;
     this.outerKey = outerKey;
     this.innerKey = innerKey;
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    outerKey.collectPlugins(pluginFileNames);
+    innerKey.collectPlugins(pluginFileNames);
   }
 
   @Override

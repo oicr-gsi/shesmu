@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -57,6 +58,12 @@ public abstract class CollectNodeWithDefault extends CollectNode {
     if (remove) {
       names.remove(name);
     }
+  }
+
+  @Override
+  public final void collectPlugins(Set<Path> pluginFileNames) {
+    alternative.collectPlugins(pluginFileNames);
+    selector.collectPlugins(pluginFileNames);
   }
 
   protected abstract void finishMethod(Renderer renderer);

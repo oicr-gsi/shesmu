@@ -35,8 +35,6 @@ import javax.xml.stream.XMLStreamException;
 
 public class JiraConnection extends JsonPluginFile<Configuration> {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
   private class IssueCache extends ValueCache<Stream<Issue>> {
     public IssueCache(Path fileName) {
       super("jira-issues " + fileName.toString(), 15, MergingRecord.by(Issue::getId));
@@ -85,7 +83,6 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   protected static final String EXTENSION = ".jira";
-
   private static final Set<String> FIELDS =
       Stream.of(
               IssueFieldId.SUMMARY_FIELD,
@@ -98,9 +95,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               IssueFieldId.LABELS_FIELD)
           .map(x -> x.id)
           .collect(Collectors.toSet());
-
   private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm");
-
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   private JiraRestClient client;
 
   private List<String> closeActions = Collections.emptyList();
@@ -197,6 +193,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   @ShesmuAction(description = "Closes any JIRA tickets with a matching summary. Defined in {file}.")
   public ResolveTicket resolve_ticket_$() {
     return new ResolveTicket(definer);
+  }
+
+  @Override
+  public Stream<String> services() {
+    return Stream.of("jira", projectKey);
   }
 
   @ShesmuAction(description = "Opens (or re-opens) a JIRA ticket. Defined in {file}.")

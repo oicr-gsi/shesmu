@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.SampleNode.Consumption;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +27,11 @@ public class ListNodeSubsample extends ListNode {
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     samplers.forEach(sampler -> sampler.collectFreeVariables(names, predicate));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    samplers.forEach(sampler -> sampler.collectPlugins(pluginFileNames));
   }
 
   @Override

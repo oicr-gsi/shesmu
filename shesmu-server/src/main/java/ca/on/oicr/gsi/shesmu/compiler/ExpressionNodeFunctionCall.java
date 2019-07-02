@@ -74,6 +74,14 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
   }
 
   @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    if (function.filename() != null) {
+      pluginFileNames.add(function.filename());
+    }
+    arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     function.renderStart(renderer.methodGen());
     arguments.forEach(argument -> argument.render(renderer));

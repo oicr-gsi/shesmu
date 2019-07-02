@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -25,11 +26,12 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
     expression.collectFreeVariables(freeVariables, predicate);
   }
 
-  /**
-   * Produce an error if the type of the expression is not as required
-   *
-   * @param targetType the required type
-   */
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    expression.collectPlugins(pluginFileNames);
+  }
+
+  /** Produce an error if the type of the expression is not as required */
   @Override
   public boolean ensureType(ActionParameterDefinition definition, Consumer<String> errorHandler) {
     this.definition = definition;

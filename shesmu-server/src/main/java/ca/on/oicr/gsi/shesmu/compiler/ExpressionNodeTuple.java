@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -33,6 +34,11 @@ public class ExpressionNodeTuple extends ExpressionNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     items.forEach(item -> item.collectFreeVariables(names, predicate));
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    items.forEach(item -> item.collectPlugins(pluginFileNames));
   }
 
   @Override

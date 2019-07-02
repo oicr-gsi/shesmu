@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +55,14 @@ public abstract class OliveNodeWithClauses extends OliveNode {
       Consumer<String> errorHandler) {
     return true;
   }
+
+  @Override
+  public final void collectPlugins(Set<Path> pluginFileNames) {
+    clauses.forEach(clause -> clause.collectPlugins(pluginFileNames));
+    collectPluginsExtra(pluginFileNames);
+  }
+
+  public abstract void collectPluginsExtra(Set<Path> pluginFileNames);
 
   /**
    * Generate bytecode for this stanza into the {@link ActionGenerator#run(Consumer,

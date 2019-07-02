@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -56,6 +57,8 @@ public abstract class OliveArgumentNode {
 
   public abstract void collectFreeVariables(
       Set<String> freeVariables, Predicate<Flavour> predicate);
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   /** Produce an error if the type of the expression is not as required */
   public abstract boolean ensureType(

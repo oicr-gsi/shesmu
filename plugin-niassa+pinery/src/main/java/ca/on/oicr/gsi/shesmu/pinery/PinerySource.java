@@ -245,13 +245,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         return client.getSampleProject().all().stream();
       }
     }
-  };
+  }
 
   private static Optional<String> limsAttr(
       SampleProvenance sp, String key, Consumer<String> isBad, boolean required) {
     return IUSUtils.singleton(
         sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
-  }
+  };
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge badSetMap =
@@ -295,6 +295,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     final Optional<String> url = config.map(PineryConfiguration::getUrl);
     renderer.link("URL", url.orElse("about:blank"), url.orElse("Unknown"));
     renderer.line("Provider", config.map(PineryConfiguration::getProvider).orElse("Unknown"));
+  }
+
+  @Override
+  public Stream<String> services() {
+    return Stream.of("pinery");
   }
 
   @ShesmuInputSource

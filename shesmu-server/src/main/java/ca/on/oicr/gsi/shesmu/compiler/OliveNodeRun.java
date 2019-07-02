@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     arguments
         .stream()
         .forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+  }
+
+  @Override
+  public void collectPluginsExtra(Set<Path> pluginFileNames) {
+    arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
   }
 
   @Override

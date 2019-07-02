@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -25,6 +26,12 @@ public class GroupNodeWithDefault extends GroupNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     initial.collectFreeVariables(names, predicate);
     inner.collectFreeVariables(names, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    initial.collectPlugins(pluginFileNames);
+    initial.collectPlugins(pluginFileNames);
   }
 
   @Override

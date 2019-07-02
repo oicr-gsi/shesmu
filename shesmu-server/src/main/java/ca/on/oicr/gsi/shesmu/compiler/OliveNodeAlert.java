@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +124,13 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
+  }
+
+  @Override
+  public void collectPluginsExtra(Set<Path> pluginFileNames) {
+    labels.forEach(arg -> arg.collectPlugins(pluginFileNames));
+    annotations.forEach(arg -> arg.collectPlugins(pluginFileNames));
+    ttl.collectPlugins(pluginFileNames);
   }
 
   @Override

@@ -122,6 +122,11 @@ public final class Check extends Compiler {
                           GeneratorAdapter method, Type streamType, Stream<Target> variables) {
                         throw new UnsupportedOperationException();
                       }
+
+                      @Override
+                      public Path filename() {
+                        return null;
+                      }
                     }) //
             .collect(Collectors.toList());
     final NameLoader<InputFormatDefinition> inputFormats =

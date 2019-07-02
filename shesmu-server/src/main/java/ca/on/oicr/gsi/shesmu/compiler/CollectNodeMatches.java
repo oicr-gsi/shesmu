@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -48,6 +49,11 @@ public final class CollectNodeMatches extends CollectNode {
     if (removeName) {
       names.remove(name);
     }
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    selector.collectPlugins(pluginFileNames);
   }
 
   @Override

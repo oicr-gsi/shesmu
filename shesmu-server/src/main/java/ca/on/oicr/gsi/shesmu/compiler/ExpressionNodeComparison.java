@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -27,6 +28,12 @@ public class ExpressionNodeComparison extends ExpressionNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     left.collectFreeVariables(names, predicate);
     right.collectFreeVariables(names, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    left.collectPlugins(pluginFileNames);
+    right.collectPlugins(pluginFileNames);
   }
 
   @Override

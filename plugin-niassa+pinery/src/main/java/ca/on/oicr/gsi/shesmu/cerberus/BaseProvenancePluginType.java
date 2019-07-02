@@ -167,6 +167,11 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     }
 
     @Override
+    public Stream<String> services() {
+      return BaseProvenancePluginType.this.services();
+    }
+
+    @Override
     public void stop() {
       client.ifPresent(BaseProvenancePluginType::close);
     }
@@ -190,43 +195,6 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
       }
       return Optional.empty();
     }
-  }
-
-  private static final Gauge badSetError =
-      Gauge.build(
-              "shesmu_file_provenance_bad_set_size",
-              "The number of records where a set contained not exactly one item.")
-          .labelNames("filename")
-          .register();
-
-  private static final Gauge badSetMap =
-      Gauge.build(
-              "shesmu_file_provenance_bad_set",
-              "The number of provenace records with sets not containing exactly one item.")
-          .labelNames("filename", "property", "reason")
-          .register();
-
-  private static final Gauge badWorkflowVersions =
-      Gauge.build(
-              "shesmu_file_provenance_bad_workflow",
-              "The number of records with a bad workflow version (not x.y.z) was received from Provenance.")
-          .labelNames("filename")
-          .register();
-
-  private static final Pattern COLON = Pattern.compile(":");
-
-  public static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER =
-      new EnumMap<>(FileProvenanceFilter.class);
-
-  private static final Pattern WORKFLOW_VERSION2 = Pattern.compile("^(\\d+)\\.(\\d+)$");
-
-  private static final Pattern WORKFLOW_VERSION3 = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
-
-  static {
-    PROVENANCE_FILTER.put(FileProvenanceFilter.processing_status, Collections.singleton("success"));
-    PROVENANCE_FILTER.put(
-        FileProvenanceFilter.workflow_run_status, Collections.singleton("completed"));
-    PROVENANCE_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("false"));
   }
 
   private static void close(AutoCloseable client) {
@@ -267,16 +235,43 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     return new Tuple(0L, 0L, 0L);
   }
 
+  private static final Pattern COLON = Pattern.compile(":");
+  public static final Map<FileProvenanceFilter, Set<String>> PROVENANCE_FILTER =
+      new EnumMap<>(FileProvenanceFilter.class);
+  private static final Pattern WORKFLOW_VERSION2 = Pattern.compile("^(\\d+)\\.(\\d+)$");
+  private static final Pattern WORKFLOW_VERSION3 = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)$");
+  private static final Gauge badSetError =
+      Gauge.build(
+              "shesmu_file_provenance_bad_set_size",
+              "The number of records where a set contained not exactly one item.")
+          .labelNames("filename")
+          .register();
+  private static final Gauge badSetMap =
+      Gauge.build(
+              "shesmu_file_provenance_bad_set",
+              "The number of provenace records with sets not containing exactly one item.")
+          .labelNames("filename", "property", "reason")
+          .register();
+  private static final Gauge badWorkflowVersions =
+      Gauge.build(
+              "shesmu_file_provenance_bad_workflow",
+              "The number of records with a bad workflow version (not x.y.z) was received from Provenance.")
+          .labelNames("filename")
+          .register();
+
+  static {
+    PROVENANCE_FILTER.put(FileProvenanceFilter.processing_status, Collections.singleton("success"));
+    PROVENANCE_FILTER.put(
+        FileProvenanceFilter.workflow_run_status, Collections.singleton("completed"));
+    PROVENANCE_FILTER.put(FileProvenanceFilter.skip, Collections.singleton("false"));
+  }
+
   private final String name;
 
   public BaseProvenancePluginType(String name, String extension) {
     super(MethodHandles.lookup(), BaseProvenancePluginType.FileConfiguration.class, extension);
     this.name = name;
   }
-
-  protected abstract C createClient(Path fileName) throws Exception;
-
-  protected abstract Stream<? extends FileProvenance> fetch(C client);
 
   @Override
   public final FileConfiguration create(
@@ -285,4 +280,10 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
       Definer<BaseProvenancePluginType.FileConfiguration> definer) {
     return new FileConfiguration(filePath, instanceName);
   }
+
+  protected abstract C createClient(Path fileName) throws Exception;
+
+  protected abstract Stream<? extends FileProvenance> fetch(C client);
+
+  public abstract Stream<String> services();
 }

@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -33,6 +34,13 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
     testExpression.collectFreeVariables(names, predicate);
     trueExpression.collectFreeVariables(names, predicate);
     falseExpression.collectFreeVariables(names, predicate);
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    testExpression.collectPlugins(pluginFileNames);
+    trueExpression.collectPlugins(pluginFileNames);
+    falseExpression.collectPlugins(pluginFileNames);
   }
 
   @Override

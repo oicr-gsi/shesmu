@@ -4,12 +4,11 @@ import ca.on.oicr.gsi.cerberus.client.CerberusClient;
 import ca.on.oicr.gsi.provenance.model.FileProvenance;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.kohsuke.MetaInfServices;
-
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import org.kohsuke.MetaInfServices;
 
 @MetaInfServices(PluginFileType.class)
 public class CerberusProvenancePluginType extends BaseProvenancePluginType<CerberusClient> {
@@ -42,5 +41,10 @@ public class CerberusProvenancePluginType extends BaseProvenancePluginType<Cerbe
   @Override
   protected Stream<? extends FileProvenance> fetch(CerberusClient client) {
     return client.getFileProvenance(PROVENANCE_FILTER).stream();
+  }
+
+  @Override
+  public Stream<String> services() {
+    return Stream.of("cerberus");
   }
 }

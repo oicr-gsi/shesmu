@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureStorage;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 import org.kohsuke.MetaInfServices;
@@ -37,5 +38,10 @@ public final class SignatureNames extends SignatureDefinition {
           method.invokeVirtual(A_TREE_SET_TYPE, METHOD_TREE_SET__ADD);
           method.pop();
         });
+  }
+
+  @Override
+  public Path filename() {
+    return null;
   }
 }

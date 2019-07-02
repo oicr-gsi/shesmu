@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperKind;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutput;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
@@ -64,6 +65,13 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     this.rawInputExpressions = inputExpressions;
     this.children = children;
     this.discriminators = discriminators;
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    children.forEach(child -> child.collectPlugins(pluginFileNames));
+    discriminators.forEach(discrminator -> discrminator.collectPlugins(pluginFileNames));
+    inputExpressions.forEach(expression -> expression.collectPlugins(pluginFileNames));
   }
 
   @Override

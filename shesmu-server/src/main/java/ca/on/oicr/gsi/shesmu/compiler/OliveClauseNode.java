@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -339,6 +340,8 @@ public abstract class OliveClauseNode {
     }
     return input.raise("Expected olive clause.");
   }
+
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public abstract int column();
 

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -44,6 +45,17 @@ public class ExpressionNodeSwitch extends ExpressionNode {
         item -> {
           item.first().collectFreeVariables(names, predicate);
           item.second().collectFreeVariables(names, predicate);
+        });
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    test.collectPlugins(pluginFileNames);
+    alternative.collectPlugins(pluginFileNames);
+    cases.forEach(
+        item -> {
+          item.first().collectPlugins(pluginFileNames);
+          item.second().collectPlugins(pluginFileNames);
         });
   }
 

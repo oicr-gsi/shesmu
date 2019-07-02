@@ -8,11 +8,19 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
+import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -20,6 +28,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -44,6 +56,23 @@ public abstract class Compiler {
       errorHandler(String.format("%d:%d: %s", line, column, message));
     }
   }
+
+  private static final Type A_OLIVE_SERVICES = Type.getType(OliveServices.class);
+  private static final Method METHOD_OLIVE_SERVICES__IS_OVERLOADED_ARRAY =
+      new Method("isOverloaded", Type.BOOLEAN_TYPE, new Type[] {Type.getType(String[].class)});
+
+  private static final Handle SERVICES_FOR_PLUGINS_BSM =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(PluginManager.class),
+          "bootstrapServices",
+          Type.getMethodDescriptor(
+              Type.getType(CallSite.class),
+              Type.getType(MethodHandles.Lookup.class),
+              Type.getType(String.class),
+              Type.getType(MethodType.class),
+              Type.getType(String[].class)),
+          false);
 
   private final boolean skipRender;
 
@@ -141,6 +170,18 @@ public abstract class Compiler {
               return new TraceClassVisitor(outputVisitor, writer, null);
             }
           };
+      final Set<Path> pluginFilenames = new TreeSet<>();
+      program.get().collectPlugins(pluginFilenames);
+      builder.addGuard(
+          methodGen -> {
+            methodGen.loadArg(0);
+            methodGen.invokeDynamic(
+                "services",
+                Type.getMethodDescriptor(Type.getType(String[].class)),
+                SERVICES_FOR_PLUGINS_BSM,
+                pluginFilenames.stream().map(Path::toString).toArray());
+            methodGen.invokeInterface(A_OLIVE_SERVICES, METHOD_OLIVE_SERVICES__IS_OVERLOADED_ARRAY);
+          });
       program.get().render(builder);
       builder.finish();
       if (dashboardOutput != null) {

@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,6 +27,11 @@ public class StringNodeLiteral extends StringNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+    // Do nothing.
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
     // Do nothing.
   }
 

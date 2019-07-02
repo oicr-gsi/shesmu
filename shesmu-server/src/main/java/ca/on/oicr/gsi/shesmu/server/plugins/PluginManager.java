@@ -10,10 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForDynamicSigner;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForStaticSigner;
-import ca.on.oicr.gsi.shesmu.plugin.Definer;
-import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
-import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
-import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
@@ -135,12 +132,21 @@ public final class PluginManager
       @SuppressWarnings("unused")
       private final CallSite callsite;
 
+      private final Path fileName;
+
       private final String fixedName;
 
-      public ArbitraryDynamicSignatureDefintion(String name, MethodHandle handle, Imyhat type) {
+      public ArbitraryDynamicSignatureDefintion(
+          String name, MethodHandle handle, Imyhat type, Path fileName) {
         super(name, type);
         fixedName = name + " static signer";
         callsite = installArbitrary(fixedName, handle);
+        this.fileName = fileName;
+      }
+
+      @Override
+      public Path filename() {
+        return fileName;
       }
 
       @Override
@@ -231,12 +237,21 @@ public final class PluginManager
       @SuppressWarnings("unused")
       private final CallSite callsite;
 
+      private final Path fileName;
+
       private final String fixedName;
 
-      public ArbitraryStaticSignatureDefintion(String name, MethodHandle handle, Imyhat type) {
+      public ArbitraryStaticSignatureDefintion(
+          String name, MethodHandle handle, Imyhat type, Path fileName) {
         super(name, type);
         fixedName = name + " static signer";
         callsite = installArbitrary(fixedName, handle);
+        this.fileName = fileName;
+      }
+
+      @Override
+      public Path filename() {
+        return fileName;
       }
 
       @Override
@@ -404,7 +419,7 @@ public final class PluginManager
         signatures.put(
             name,
             new ArbitraryDynamicSignatureDefintion(
-                name, MH_SUPPLIER_GET.bindTo(signer), returnType.type()));
+                name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
       }
 
       @Override
@@ -537,7 +552,7 @@ public final class PluginManager
         signatures.put(
             name,
             new ArbitraryStaticSignatureDefintion(
-                name, MH_SUPPLIER_GET.bindTo(signer), returnType.type()));
+                name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
       }
 
       public Stream<Object> fetch(String format) {
@@ -1005,6 +1020,11 @@ public final class PluginManager
                   new SignatureVariableForDynamicSigner(name, returnType) {
 
                     @Override
+                    public Path filename() {
+                      return path;
+                    }
+
+                    @Override
                     protected void newInstance(GeneratorAdapter method) {
                       invoker.write(method, path.toString());
                     }
@@ -1013,6 +1033,11 @@ public final class PluginManager
           signatureTemplates.add(
               (instance, path) ->
                   new SignatureVariableForStaticSigner(name, returnType) {
+
+                    @Override
+                    public Path filename() {
+                      return path;
+                    }
 
                     @Override
                     protected void newInstance(GeneratorAdapter method) {
@@ -1024,11 +1049,11 @@ public final class PluginManager
         if (isDynamic) {
           staticSignatures.add(
               new ArbitraryDynamicSignatureDefintion(
-                  name, fileFormat.lookup().unreflect(method), returnType));
+                  name, fileFormat.lookup().unreflect(method), returnType, null));
         } else {
           staticSignatures.add(
               new ArbitraryStaticSignatureDefintion(
-                  name, fileFormat.lookup().unreflect(method), returnType));
+                  name, fileFormat.lookup().unreflect(method), returnType, null));
         }
       }
     }
@@ -1130,6 +1155,34 @@ public final class PluginManager
         MethodHandles.foldArguments(methodHandle, instance.dynamicInvoker()));
   }
 
+  /** Bootstrap method to get a plugin collection as a stream of throttleable services */
+  public static CallSite bootstrapServices(
+      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
+    // Our goal here is to create list of services that plugins use so we can block an olive if
+    // one of those services is throtttled. We're given the file names of those plugins as
+    // parameters to this method and
+    // we're going to want a produce a method that takes no arguments and returns an array of
+    // strings, being the service names.
+    // First, take the servicesForPlugins(PluginFile[]) → String[] and convert it to have a fixed
+    // number of arguments (PluginFile[0], PluginFile[1], ..., PluginFile[N-1]) → String[] where N
+    // is the number of plugins
+    MethodHandle collector = SERVICES_FOR_PLUGINS.asCollector(PluginFile[].class, fileNames.length);
+    // Now, repeatedly fill in the first argument with one of the plugins; we've got a premade
+    // callsite for each plugin, so get it from our table and convert it to return the base type
+    for (String fileName : fileNames) {
+      collector =
+          MethodHandles.foldArguments(
+              collector,
+              CONFIG_FILE_INSTANCES
+                  .get(fileName)
+                  .dynamicInvoker()
+                  .asType(MethodType.methodType(PluginFile.class)));
+    }
+    // Now, we should have a method thats () → String[], which is what we wanted, so shove it in the
+    // olive
+    return new ConstantCallSite(collector.asType(methodType));
+  }
+
   public static Stream<Pair<String, MethodType>> dumpArbitrary() {
     return CONFIG_FILE_ARBITRARY_BINDINGS.stream();
   }
@@ -1140,6 +1193,10 @@ public final class PluginManager
 
   private static String mangleDescription(String description, String instanceName, Path path) {
     return description.replace("{instance}", instanceName).replace("{file}", path.toString());
+  }
+
+  public static String[] servicesForPlugins(PluginFile... plugins) {
+    return Stream.of(plugins).flatMap(PluginFile::services).distinct().toArray(String[]::new);
   }
 
   private static final String BSM_DESCRIPTOR_ARBITRARY =
@@ -1181,6 +1238,22 @@ public final class PluginManager
   private static final MethodHandle MH_FUNCTION_APPLY;
   private static final MethodHandle MH_SUPPLIER_GET;
   private static final MethodHandle MH_VARIADICFUNCTION_APPLY;
+  private static final MethodHandle SERVICES_FOR_PLUGINS;
+
+  static {
+    MethodHandle servicesForPlugins = null;
+    try {
+      servicesForPlugins =
+          MethodHandles.publicLookup()
+              .findStatic(
+                  PluginManager.class,
+                  "servicesForPlugins",
+                  MethodType.methodType(String[].class, PluginFile[].class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+    SERVICES_FOR_PLUGINS = servicesForPlugins;
+  }
 
   static {
     try {

@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -54,6 +55,11 @@ public abstract class ListNodeWithExpression extends ListNode {
     if (remove) {
       names.remove(name);
     }
+  }
+
+  @Override
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    expression.collectPlugins(pluginFileNames);
   }
 
   protected abstract void finishMethod(Renderer renderer);
