@@ -19,6 +19,9 @@ public interface ImyhatTransformer<R> {
   /** Convert a <tt>date</tt> type */
   R date();
 
+  /** Convert a <tt>float</tt> type */
+  R floating();
+
   /** Convert an <tt>integer</tt> type */
   R integer();
 

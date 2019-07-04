@@ -145,6 +145,18 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
           return (Instant) object;
         }
       };
+  public static final TypeGuarantee<Double> DOUBLE =
+      new TypeGuarantee<Double>() {
+        @Override
+        public Imyhat type() {
+          return Imyhat.FLOAT;
+        }
+
+        @Override
+        public Double unpack(Object object) {
+          return (Double) object;
+        }
+      };
   public static final TypeGuarantee<Long> LONG =
       new TypeGuarantee<Long>() {
         @Override

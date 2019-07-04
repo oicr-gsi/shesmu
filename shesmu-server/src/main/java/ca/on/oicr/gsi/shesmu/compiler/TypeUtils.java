@@ -15,6 +15,7 @@ import org.objectweb.asm.Type;
 
 public class TypeUtils {
   private static final Type A_BOOLEAN_TYPE = Type.getType(Boolean.class);
+  private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
@@ -33,6 +34,11 @@ public class TypeUtils {
         @Override
         public Type date() {
           return A_INSTANT_TYPE;
+        }
+
+        @Override
+        public Type floating() {
+          return Type.DOUBLE_TYPE;
         }
 
         @Override
@@ -95,6 +101,11 @@ public class TypeUtils {
         }
 
         @Override
+        public Type floating() {
+          return A_DOUBLE_TYPE;
+        }
+
+        @Override
         public Type integer() {
           return A_LONG_TYPE;
         }
@@ -140,6 +151,11 @@ public class TypeUtils {
         @Override
         public String date() {
           return "parser.d";
+        }
+
+        @Override
+        public String floating() {
+          return "parser.f";
         }
 
         @Override

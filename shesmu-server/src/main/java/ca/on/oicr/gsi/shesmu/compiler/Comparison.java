@@ -45,6 +45,10 @@ public enum Comparison {
     methodGen.ifCmp(Type.INT_TYPE, id, target);
   }
 
+  public void branchFloat(Label target, GeneratorAdapter methodGen) {
+    methodGen.ifCmp(Type.DOUBLE_TYPE, id, target);
+  }
+
   public void branchInt(Label target, GeneratorAdapter methodGen) {
     methodGen.ifCmp(Type.LONG_TYPE, id, target);
   }

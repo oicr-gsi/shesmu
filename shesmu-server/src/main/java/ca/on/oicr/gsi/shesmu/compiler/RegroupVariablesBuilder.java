@@ -593,6 +593,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
       if (fieldType.equals(Type.LONG_TYPE)) {
         comparison.branchInt(end, collectRenderer.methodGen());
+      } else if (fieldType.equals(Type.DOUBLE_TYPE)) {
+        comparison.branchFloat(end, collectRenderer.methodGen());
       } else {
         comparison.branchDate(end, collectRenderer.methodGen());
       }

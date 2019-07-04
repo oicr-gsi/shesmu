@@ -68,6 +68,20 @@ public final class StandardDefinitions implements DefinitionRepository {
   private static final FunctionDefinition[] FUNCTIONS =
       new FunctionDefinition[] {
         FunctionDefinition.staticMethod(
+            "is_infinite",
+            Double.class,
+            "isInfinite",
+            "Check is the number is infininte.",
+            Imyhat.BOOLEAN,
+            new FunctionParameter("input number", Imyhat.FLOAT)),
+        FunctionDefinition.staticMethod(
+            "is_nan",
+            Double.class,
+            "isNaN",
+            "Check is the number is not-a-number.",
+            Imyhat.BOOLEAN,
+            new FunctionParameter("input number", Imyhat.FLOAT)),
+        FunctionDefinition.staticMethod(
             "start_of_day",
             StandardDefinitions.class,
             "start_of_day",
@@ -172,6 +186,80 @@ public final class StandardDefinitions implements DefinitionRepository {
           @Override
           public Imyhat returnType() {
             return Imyhat.INTEGER;
+          }
+        },
+        new FunctionDefinition() {
+
+          @Override
+          public String description() {
+            return "Truncates a floating point number of an integer.";
+          }
+
+          @Override
+          public String name() {
+            return "to_int";
+          }
+
+          @Override
+          public Path filename() {
+            return null;
+          }
+
+          @Override
+          public Stream<FunctionParameter> parameters() {
+            return Stream.of(new FunctionParameter("floating point number", Imyhat.FLOAT));
+          }
+
+          @Override
+          public void render(GeneratorAdapter methodGen) {
+            methodGen.cast(Type.DOUBLE_TYPE, Type.LONG_TYPE);
+          }
+
+          @Override
+          public void renderStart(GeneratorAdapter methodGen) {
+            // None required.
+          }
+
+          @Override
+          public Imyhat returnType() {
+            return Imyhat.INTEGER;
+          }
+        },
+        new FunctionDefinition() {
+
+          @Override
+          public String description() {
+            return "Converts an integer to a floating point number.";
+          }
+
+          @Override
+          public String name() {
+            return "to_float";
+          }
+
+          @Override
+          public Path filename() {
+            return null;
+          }
+
+          @Override
+          public Stream<FunctionParameter> parameters() {
+            return Stream.of(new FunctionParameter("integer", Imyhat.INTEGER));
+          }
+
+          @Override
+          public void render(GeneratorAdapter methodGen) {
+            methodGen.cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
+          }
+
+          @Override
+          public void renderStart(GeneratorAdapter methodGen) {
+            // None required.
+          }
+
+          @Override
+          public Imyhat returnType() {
+            return Imyhat.FLOAT;
           }
         }
       };

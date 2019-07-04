@@ -535,6 +535,58 @@ public abstract class Imyhat {
         }
       };
 
+  public static final BaseImyhat FLOAT =
+      new BaseImyhat() {
+        @Override
+        public void accept(ImyhatConsumer dispatcher, Object value) {
+          dispatcher.accept((Double) value);
+        }
+
+        @Override
+        public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+          return dispatcher.apply((Double) value);
+        }
+
+        @Override
+        public <R> R apply(ImyhatTransformer<R> transformer) {
+          return transformer.floating();
+        }
+
+        @Override
+        public Comparator<?> comparator() {
+          return Comparator.naturalOrder();
+        }
+
+        @Override
+        public Object defaultValue() {
+          return 0.0;
+        }
+
+        @Override
+        public String descriptor() {
+          return "f";
+        }
+
+        @Override
+        public boolean isOrderable() {
+          return true;
+        }
+
+        @Override
+        public Class<?> javaType() {
+          return double.class;
+        }
+
+        @Override
+        public String name() {
+          return "float";
+        }
+
+        @Override
+        public Object parse(String s) {
+          return Double.parseDouble(s);
+        }
+      };
   public static final BaseImyhat INTEGER =
       new BaseImyhat() {
         @Override
@@ -754,14 +806,14 @@ public abstract class Imyhat {
 
   /** Parse a name which must be one of the base types (no lists or tuples) */
   public static BaseImyhat forName(String s) {
-    return Stream.of(BOOLEAN, DATE, INTEGER, PATH, STRING)
+    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, PATH, STRING)
         .filter(t -> t.name().equals(s))
         .findAny()
         .orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
   }
 
   public static Optional<BaseImyhat> of(Class<?> c) {
-    return Stream.of(BOOLEAN, DATE, INTEGER, PATH, STRING)
+    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, PATH, STRING)
         .filter(t -> t.javaType().equals(c))
         .findAny();
   }
@@ -797,6 +849,9 @@ public abstract class Imyhat {
       case 'd':
         output.set(input.subSequence(1, input.length()));
         return DATE;
+      case 'f':
+        output.set(input.subSequence(1, input.length()));
+        return FLOAT;
       case 'i':
         output.set(input.subSequence(1, input.length()));
         return INTEGER;

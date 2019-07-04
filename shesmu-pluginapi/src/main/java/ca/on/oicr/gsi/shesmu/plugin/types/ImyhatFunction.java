@@ -19,6 +19,8 @@ public interface ImyhatFunction<R> {
   /** Convert a Boolean value */
   R apply(boolean value);
 
+  /** Convert a floating point value */
+  R apply(double value);
   /** Convert a date value */
   R apply(Instant value);
 

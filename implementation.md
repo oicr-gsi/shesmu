@@ -108,9 +108,10 @@ olives cannot handle null values.
 
 | Name      | JVM Type                      | Syntax                   | Signature  |
 |---        |---                            |---                       |---         |
-| Integer   | `long`                        | `integer`                | `i`	      |
+| Integer   | `long` / `J`                  | `integer`                | `i`	      |
+| Float     | `double` / `D`                | `float`                  | `f`	      |
 | String    | `java.lang.String`            | `string`                 | `s`	      |
-| Boolean   | `boolean`                     | `boolean`                | `b`	      |
+| Boolean   | `boolean` / `z`               | `boolean`                | `b`	      |
 | Date      | `java.time.Instant`           | `date`                   | `d`        |
 | List      | `java.lang.Set`               | `[`_inner_`]`            | `a`_inner_ |
 | Tuple     | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |

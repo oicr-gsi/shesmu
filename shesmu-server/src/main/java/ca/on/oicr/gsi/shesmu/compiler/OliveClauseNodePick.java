@@ -154,12 +154,12 @@ public class OliveClauseNodePick extends OliveClauseNode {
     if (!extractor.typeCheck(errorHandler)) {
       return false;
     }
-    if (extractor.type().isSame(Imyhat.DATE) || extractor.type().isSame(Imyhat.INTEGER)) {
+    if (extractor.type().isOrderable()) {
       return true;
     }
     errorHandler.accept(
         String.format(
-            "%d:%d: Expected date or integer for sorting but got %s.",
+            "%d:%d: Expected orderable type for sorting but got %s.",
             line, column, extractor.type().name()));
     return false;
   }

@@ -39,6 +39,11 @@ public class UnpackJson implements ImyhatTransformer<Object> {
   }
 
   @Override
+  public Object floating() {
+    return value.asDouble();
+  }
+
+  @Override
   public Object integer() {
     return value.asLong();
   }
