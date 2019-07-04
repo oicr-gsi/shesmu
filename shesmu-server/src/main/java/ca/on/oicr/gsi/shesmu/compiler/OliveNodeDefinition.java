@@ -177,6 +177,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
       Map<String, OliveNodeDefinition> definedOlives,
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
+      Function<String, RefillerDefinition> definedRefillers,
       Consumer<String> errorHandler) {
     this.definedFunctions = definedFunctions;
     return true;

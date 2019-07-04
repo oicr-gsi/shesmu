@@ -424,6 +424,17 @@ The incoming variables act as the `By` part of the `LeftJoin` and the collected
 variables are available in the output. The collectors have access to the joined
 stream.
 
+Another type of olive is one that fills a database or data ingestion process
+with its results:
+
+     Olive
+       Where workflow == "BamQC 2.7+" && fize_size == 0
+       Refill foo With
+         workflow = workflow;
+
+This is effectively meant to erase and rebuild the database every time the
+olive runs, though possibly implemented more efficiently.
+
 There is a final type of olive: one to generate an alert:
 
      Olive

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.util.LoadedConfiguration;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import java.io.PrintStream;
@@ -19,6 +20,11 @@ public interface DefinitionRepository extends LoadedConfiguration {
       @Override
       public Stream<ConstantDefinition> constants() {
         return Stream.of(definitionRepositories).flatMap(DefinitionRepository::constants);
+      }
+
+      @Override
+      public Stream<RefillerDefinition> refillers() {
+        return Stream.of(definitionRepositories).flatMap(DefinitionRepository::refillers);
       }
 
       @Override
@@ -57,6 +63,7 @@ public interface DefinitionRepository extends LoadedConfiguration {
   /** Provide all constants know by this service */
   Stream<ConstantDefinition> constants();
 
+  Stream<RefillerDefinition> refillers();
   /**
    * Query the repository
    *

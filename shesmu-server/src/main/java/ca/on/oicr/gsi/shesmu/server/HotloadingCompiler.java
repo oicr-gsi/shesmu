@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.server;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.ExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
@@ -30,11 +31,9 @@ import org.objectweb.asm.ClassVisitor;
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
-  private final List<String> errors = new ArrayList<>();
-
-  private final Function<String, InputFormatDefinition> inputFormats;
-
   private final DefinitionRepository definitionRepository;
+  private final List<String> errors = new ArrayList<>();
+  private final Function<String, InputFormatDefinition> inputFormats;
 
   public HotloadingCompiler(
       Function<String, InputFormatDefinition> inputFormats,
@@ -70,6 +69,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                 new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
             private final NameLoader<FunctionDefinition> functionCache =
                 new NameLoader<>(definitionRepository.functions(), FunctionDefinition::name);
+            private final NameLoader<RefillerDefinition> refillerCache =
+                new NameLoader<>(definitionRepository.refillers(), RefillerDefinition::name);
 
             @Override
             protected ClassVisitor createClassVisitor() {
@@ -94,6 +95,11 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
             @Override
             protected InputFormatDefinition getInputFormats(String name) {
               return inputFormats.apply(name);
+            }
+
+            @Override
+            protected RefillerDefinition getRefiller(String name) {
+              return refillerCache.get(name);
             }
           };
 

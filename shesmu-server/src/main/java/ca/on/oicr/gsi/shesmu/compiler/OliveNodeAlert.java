@@ -289,6 +289,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
       Map<String, OliveNodeDefinition> definedOlives,
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
+      Function<String, RefillerDefinition> definedRefillers,
       Consumer<String> errorHandler) {
     boolean ok =
         labels.stream().filter(arg -> arg.resolveFunctions(definedFunctions, errorHandler)).count()

@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+  Refill testdb With
+    value = project == "the_foo_study";

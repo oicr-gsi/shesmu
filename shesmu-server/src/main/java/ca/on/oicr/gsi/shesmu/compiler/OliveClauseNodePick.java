@@ -150,6 +150,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Set<String> metricNames,
+      Function<String, RefillerDefinition> refillers,
       Map<String, List<Imyhat>> dumpers,
       Consumer<String> errorHandler) {
     return extractor.resolveFunctions(definedFunctions, errorHandler);

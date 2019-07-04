@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.server.plugins;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
@@ -22,6 +25,8 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
+import ca.on.oicr.gsi.shesmu.plugin.refill.ShesmuRefill;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.ShesmuSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
@@ -48,6 +53,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.TypeVariable;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -234,6 +240,60 @@ public final class PluginManager
       }
     }
 
+    private final class ArbitraryRefillerDefinition implements RefillerDefinition {
+      @SuppressWarnings("unused")
+      private final CallSite callsite;
+
+      private final String description;
+      private final Path fileName;
+      private final String fixedName;
+      private final String name;
+      private final List<RefillerParameterDefinition> parameters;
+
+      public ArbitraryRefillerDefinition(
+          String name,
+          MethodHandle target,
+          Path fileName,
+          String description,
+          List<RefillerParameterDefinition> parameters) {
+        this.name = name;
+        this.fileName = fileName;
+        this.description = description;
+        this.parameters = parameters;
+        final MethodHandle handle = target.asType(MethodType.methodType(Refiller.class));
+        fixedName = name + " refill";
+        callsite = installArbitrary(fixedName, handle);
+      }
+
+      @Override
+      public String description() {
+        return description;
+      }
+
+      @Override
+      public Path filename() {
+        return fileName;
+      }
+
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public Stream<RefillerParameterDefinition> parameters() {
+        return parameters.stream();
+      }
+
+      @Override
+      public void render(Renderer renderer) {
+        renderer
+            .methodGen()
+            .invokeDynamic(
+                fixedName, Type.getMethodDescriptor(A_REFILLER_TYPE), BSM_HANDLE_ARBITRARY);
+      }
+    }
+
     private final class ArbitraryStaticSignatureDefintion extends SignatureVariableForStaticSigner {
       @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
@@ -277,6 +337,8 @@ public final class PluginManager
       private final Map<String, FunctionDefinition> functions = new ConcurrentHashMap<>();
       private final List<FunctionDefinition> functionsFromAnnotations;
       private final T instance;
+      private final Map<String, RefillerDefinition> refillers = new ConcurrentHashMap<>();
+      private final List<RefillerDefinition> refillersFromAnnotations;
       private final Map<String, SignatureDefinition> signatures = new ConcurrentHashMap<>();
       private final List<SignatureDefinition> signaturesFromAnnotations;
 
@@ -311,6 +373,11 @@ public final class PluginManager
                 .collect(Collectors.toList());
         signaturesFromAnnotations =
             signatureTemplates
+                .stream()
+                .map(t -> t.bind(instanceName, path))
+                .collect(Collectors.toList());
+        refillersFromAnnotations =
+            refillTemplates
                 .stream()
                 .map(t -> t.bind(instanceName, path))
                 .collect(Collectors.toList());
@@ -546,6 +613,24 @@ public final class PluginManager
       }
 
       @Override
+      public void defineRefiller(String name, String description, RefillDefiner refillerDefiner) {
+        final RefillInfo<?, ?> info = refillerDefiner.info(Object.class);
+        refillers.put(
+            name,
+            new ArbitraryRefillerDefinition(
+                name,
+                MH_REFILL_INFO_CREATE.bindTo(info),
+                instance.fileName(),
+                description,
+                Stream.concat(
+                        info.parameters()
+                            .map(p -> new InvokeDynamicRefillerParameterDescriptor(name, p)),
+                        InvokeDynamicRefillerParameterDescriptor
+                            .findRefillerDefinitionsByAnnotation(info.type(), fileFormat.lookup()))
+                    .collect(Collectors.toList())));
+      }
+
+      @Override
       public <R> void defineStaticSigner(
           String name,
           ReturnTypeGuarantee<R> returnType,
@@ -611,6 +696,10 @@ public final class PluginManager
         return instance.isOverloaded(services);
       }
 
+      public Stream<RefillerDefinition> refillers() {
+        return Stream.concat(refillers.values().stream(), refillersFromAnnotations.stream());
+      }
+
       public Stream<SignatureDefinition> signatures() {
         return Stream.concat(signatures.values().stream(), signaturesFromAnnotations.stream());
       }
@@ -642,16 +731,16 @@ public final class PluginManager
 
     private final List<Binder<ConstantDefinition>> constantTemplates = new ArrayList<>();
     private Map<String, Queue<DynamicInputDataSource>> dynamicSources = new ConcurrentHashMap<>();
-
     private final F fileFormat;
     private final List<Binder<FunctionDefinition>> functionTemplates = new ArrayList<>();
-
+    private final List<Binder<RefillerDefinition>> refillTemplates = new ArrayList<>();
     private final List<Binder<SignatureDefinition>> signatureTemplates = new ArrayList<>();
 
     private List<ActionDefinition> staticActions = new ArrayList<>();
 
     private List<ConstantDefinition> staticConstants = new ArrayList<>();
     private List<FunctionDefinition> staticFunctions = new ArrayList<>();
+    private List<RefillerDefinition> staticRefillers = new ArrayList<>();
     private List<SignatureDefinition> staticSignatures = new ArrayList<>();
     private Map<String, Queue<InputDataSource>> staticSources = new ConcurrentHashMap<>();
     private Map<Path, WeakReference<FileWrapper>> wrappers = new ConcurrentHashMap<>();
@@ -848,6 +937,11 @@ public final class PluginManager
       return configuration.stream().map(FileWrapper::configuration);
     }
 
+    public Stream<RefillerDefinition> refillers() {
+      return Stream.concat(
+          staticRefillers.stream(), configuration.stream().flatMap(FileWrapper::refillers));
+    }
+
     private void processActionMethod(ShesmuAction annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
       final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
@@ -992,6 +1086,97 @@ public final class PluginManager
               new ArbitraryFunctionDefinition(
                   name, annotation.description(), null, handle, returnType, functionParameters));
         }
+      }
+    }
+
+    private void processRefillMethod(ShesmuRefill annotation, Method method, boolean isInstance)
+        throws IllegalAccessException {
+      final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
+      if (!Refiller.class.isAssignableFrom(method.getReturnType())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Method %s of %s is not a refiller.",
+                method.getName(), method.getDeclaringClass().getName()));
+      }
+      if (method.getGenericParameterTypes().length != 1
+          || !(method.getGenericParameterTypes()[0] instanceof TypeVariable)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Method %s of %s is not a parameterized by one type variable.",
+                method.getName(), method.getDeclaringClass().getName()));
+      }
+      if (Stream.of(((TypeVariable<?>) method.getGenericParameterTypes()[0]).getBounds())
+          .anyMatch(x -> !Object.class.equals(x))) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Parameter %s of %s of %s has invalid bounds.",
+                method.getGenericParameterTypes()[0],
+                method.getName(),
+                method.getDeclaringClass().getName()));
+      }
+      if (!(method.getGenericReturnType() instanceof ParameterizedType)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Return value of method %s of %s is not a parameterized.",
+                method.getName(), method.getDeclaringClass().getName()));
+      }
+      final ParameterizedType parameterizedType = (ParameterizedType) method.getGenericReturnType();
+      if (parameterizedType.getActualTypeArguments().length != 1
+          || !parameterizedType.getActualTypeArguments()[0].equals(
+              method.getGenericParameterTypes()[0])) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Return value of method %s of %s is not a parameterized by %s of method.",
+                method.getName(),
+                method.getDeclaringClass().getName(),
+                method.getGenericParameterTypes()[0].getTypeName()));
+      }
+      final List<RefillerParameterDefinition> parameters =
+          InvokeDynamicRefillerParameterDescriptor.findRefillerDefinitionsByAnnotation(
+                  method.getReturnType().asSubclass(Refiller.class), fileFormat.lookup())
+              .collect(Collectors.toList());
+      if (isInstance) {
+        final DynamicInvoker invoker = installMethod(method, "refiller", null);
+        refillTemplates.add(
+            (instance, path) ->
+                new RefillerDefinition() {
+                  final String description =
+                      mangleDescription(annotation.description(), instance, path);
+                  final String instanceName = name.replace("$", instance);
+
+                  @Override
+                  public String description() {
+                    return description;
+                  }
+
+                  @Override
+                  public Path filename() {
+                    return path;
+                  }
+
+                  @Override
+                  public String name() {
+                    return instanceName;
+                  }
+
+                  @Override
+                  public Stream<RefillerParameterDefinition> parameters() {
+                    return parameters.stream();
+                  }
+
+                  @Override
+                  public void render(Renderer renderer) {
+                    invoker.write(renderer.methodGen(), path.toString());
+                  }
+                });
+      } else {
+        staticRefillers.add(
+            new ArbitraryRefillerDefinition(
+                name,
+                fileFormat.lookup().unreflect(method),
+                null,
+                annotation.description(),
+                parameters));
       }
     }
 
@@ -1215,6 +1400,8 @@ public final class PluginManager
     return Stream.of(users).flatMap(RequiredServices::services).distinct().toArray(String[]::new);
   }
 
+  private static final Type A_REFILLER_TYPE = Type.getType(Refiller.class);
+
   private static final String BSM_DESCRIPTOR_ARBITRARY =
       Type.getMethodDescriptor(
           Type.getType(CallSite.class),
@@ -1252,6 +1439,7 @@ public final class PluginManager
 
   private static final MethodHandle MH_BIFUNCTION_APPLY;
   private static final MethodHandle MH_FUNCTION_APPLY;
+  private static final MethodHandle MH_REFILL_INFO_CREATE;
   private static final MethodHandle MH_SUPPLIER_GET;
   private static final MethodHandle MH_VARIADICFUNCTION_APPLY;
   public static final JarHashRepository<PluginFileType> PLUGIN_HASHES = new JarHashRepository<>();
@@ -1291,6 +1479,10 @@ public final class PluginManager
                   VariadicFunction.class,
                   "apply",
                   MethodType.methodType(Object.class, Object[].class));
+      MH_REFILL_INFO_CREATE =
+          MethodHandles.publicLookup()
+              .findVirtual(
+                  Definer.RefillInfo.class, "create", MethodType.methodType(Refiller.class));
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
@@ -1435,6 +1627,11 @@ public final class PluginManager
   @Override
   public Stream<ConfigurationSection> listConfiguration() {
     return formatTypes.stream().flatMap(FormatTypeWrapper::listConfiguration);
+  }
+
+  @Override
+  public Stream<RefillerDefinition> refillers() {
+    return formatTypes.stream().flatMap(FormatTypeWrapper::refillers);
   }
 
   public void pushAlerts(String alertJson) {

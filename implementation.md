@@ -95,7 +95,7 @@ interlocking type systems:
 Shesmu's type system describe the types of every type that can be used in an
 olive. Because `Type` is used by the ASM library, Shesmu's types are
 represented by `Imyhat` objects (this is an Ancient Egyptian word for _mould of
-conduct_). 
+conduct_).
 
 Java's type system is similar to, but more sophisticated than, the JVM type
 system. In particular, generic types in Java are [erased on the
@@ -422,6 +422,56 @@ To define a parameter, the `CustomActionParameter` class provides a method to
 write the parameter into the action. `JsonParameter` is an implementation that
 writes parameters back as JSON values if the action extends
 `JsonParameterisedAction`.
+
+### Refill
+`Refill` olives write the output to an external store. This is similar to a
+dumper, but the dumper must accept any data format given to it, while the
+refiller gets to decide the schema, much like an action.
+
+To create a refiller:
+
+1. Create a class _F_`<T>` that extends `Refiller<T>`. `T` is the input row
+   type and will be used throughout.
+1. Decide on the schema and set up parameters to collect the readers.
+1. Implement the `consume` method that uses the readers to consume the data in
+   the provided input stream.
+
+To deliver a database to olives using `PluginFileType` or `PluginFile`:
+
+1. Create a static method in `PluginFileType` or a virtual method in `PluginFile`, parameterized by `<T>`, that return _F_`<T>`. The returned type is used to discover parameters, so it must the be the correct subtype.
+1. Annotate this method with `@ShesmuShovel`.
+1. Name this method with a Shesmu-compatible name or set the `name` property in
+	 the annotation. If the name is associated with an instance, it must contain
+   a `$` which will be substituted for the instance name.
+1. Return a new instance of _P_ from this method.
+
+To deliver a database to olives using a `Definer`:
+
+1. Call the `defineRefiller` method. This must take an implementation of `RefillerDefiner` which returns an implementation of `RefillerInfo`. These interfaces are there to ensure type safety.
+1. The `RefillerInfo` interface returns _P_`.class`, which is used to discover parameters, so it must be the correct subtype.
+1. The `RefillerInfo` interface must return stream of non-annotated parameters.
+
+#### Refiller Parameters and Readers
+A refiller will receive an object for each row from the olive. To extract the
+column values for each row, a `Function<T,`_C_`>` or reader is supplied by the
+olive. _C_ is the type determined by the refiller, but `T` is the type of the
+row and determined by the olive. The refiller implementation may make no
+assumptions about `T`.  There are multiple ways to accept readers:
+
+1. Create a public field of type `Function<T,`_C_`>` annotated with
+   `@RefillerParameter`. The name of the field will be used unless `name` is set
+   in the annotation.
+1. Create a public method that takes a single argument of type
+   `Function<T,`_C_`>` annotated with `@RefillerParameter`. The name of the method
+   will be used unless `name` is set in the annotation.
+1. Create a subclass of `CustomRefillerParameter` that defines the name and
+   type of the parameter and provides a mechanism to store it in the database.
+
+When using `@RefillerParameter`, Shesmu will attempt to determine the correct
+type from the annotation; raw types (_i.e._ `Function`) are not allowed. `T`
+must be the first parameter type to `Function`. If the Shesmu type of _C_
+cannot be determined automatically, the `type` property of the annotation must
+be set.
 
 ### Signature Variables
 Signature variables are special variables that compute some kind of record

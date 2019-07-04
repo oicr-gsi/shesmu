@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
@@ -11,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
+import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
@@ -30,6 +33,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,6 +44,17 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class RunTest {
+  public static final ThreadLocal<Boolean> REFILL_OKAY = new ThreadLocal<>();
+
+  public static class DummyRefiller<I> extends Refiller<I> {
+
+    public Function<I, Boolean> value;
+
+    @Override
+    public void consume(Stream<I> items) {
+      REFILL_OKAY.set(items.allMatch(value::apply));
+    }
+  }
 
   private class ActionChecker implements OliveServices {
 
@@ -358,6 +373,67 @@ public class RunTest {
                     }
 
                     @Override
+                    public Stream<RefillerDefinition> refillers() {
+                      return Stream.of(
+                          new RefillerDefinition() {
+                            @Override
+                            public Path filename() {
+                              return null;
+                            }
+
+                            @Override
+                            public String name() {
+                              return "testdb";
+                            }
+
+                            @Override
+                            public String description() {
+                              return "Test";
+                            }
+
+                            @Override
+                            public Stream<RefillerParameterDefinition> parameters() {
+                              return Stream.of(
+                                  new RefillerParameterDefinition() {
+                                    @Override
+                                    public Imyhat type() {
+                                      return Imyhat.BOOLEAN;
+                                    }
+
+                                    @Override
+                                    public String name() {
+                                      return "value";
+                                    }
+
+                                    @Override
+                                    public void render(
+                                        Renderer renderer, int refillerLocal, int functionLocal) {
+                                      renderer.methodGen().loadLocal(refillerLocal);
+                                      renderer.methodGen().loadLocal(functionLocal);
+                                      renderer
+                                          .methodGen()
+                                          .putField(
+                                              Type.getType(DummyRefiller.class),
+                                              "value",
+                                              Type.getType(Function.class));
+                                    }
+                                  });
+                            }
+
+                            @Override
+                            public void render(Renderer renderer) {
+                              renderer.methodGen().newInstance(Type.getType(DummyRefiller.class));
+                              renderer.methodGen().dup();
+                              renderer
+                                  .methodGen()
+                                  .invokeConstructor(
+                                      Type.getType(DummyRefiller.class),
+                                      new Method("<init>", Type.VOID_TYPE, new Type[0]));
+                            }
+                          });
+                    }
+
+                    @Override
                     public Stream<FunctionDefinition> functions() {
                       return Stream.of(INT2STR, INT2DATE);
                     }
@@ -389,8 +465,9 @@ public class RunTest {
       compiler.errors().forEach(System.err::println);
       final ActionChecker checker = new ActionChecker();
       final InputProviderChecker input = new InputProviderChecker();
+      REFILL_OKAY.set(false);
       generator.run(checker, input);
-      if (checker.ok() && input.ok(generator)) {
+      if ((checker.ok() || REFILL_OKAY.get()) && input.ok(generator)) {
         System.err.printf("OK %s\n", file.getFileName());
         return false;
       } else {

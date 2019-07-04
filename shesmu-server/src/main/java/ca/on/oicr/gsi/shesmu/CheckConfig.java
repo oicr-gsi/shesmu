@@ -129,6 +129,12 @@ public class CheckConfig {
               }
 
               @Override
+              public void defineRefiller(String name, String description, RefillDefiner definer) {
+                RefillInfo<Object, ?> info = definer.info(Object.class);
+                System.out.printf("Refiller %s bound to %s.\n", name, info.type().getName());
+              }
+
+              @Override
               public <R> void defineDynamicSigner(
                   String name,
                   ReturnTypeGuarantee<R> returnType,
