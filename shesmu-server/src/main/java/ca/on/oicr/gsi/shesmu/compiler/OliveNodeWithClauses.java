@@ -80,7 +80,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   /**
    * Resolve all non-variable plugins
    *
-   * <p>This does the clauses and {@link #resolveDefinitionsExtra(Map, Function, Function,
+   * <p>This does the clauses and {@link #resolveDefinitionsExtra(Map, Function, Function, Function,
    * Consumer)}
    */
   @Override
@@ -89,6 +89,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Set<String> metricNames,
+      Function<String, RefillerDefinition> definedRefillers,
       Map<String, List<Imyhat>> dumpers,
       Consumer<String> errorHandler) {
     final boolean clausesOk =
@@ -101,12 +102,14 @@ public abstract class OliveNodeWithClauses extends OliveNode {
                             definedFunctions,
                             definedActions,
                             metricNames,
+                            definedRefillers,
                             dumpers,
                             errorHandler))
                 .count()
             == clauses.size();
     return clausesOk
-        & resolveDefinitionsExtra(definedOlives, definedFunctions, definedActions, errorHandler);
+        & resolveDefinitionsExtra(
+            definedOlives, definedFunctions, definedActions, definedRefillers, errorHandler);
   }
 
   /** Do any further non-variable definition resolution specific to this class */
@@ -114,6 +117,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
       Map<String, OliveNodeDefinition> definedOlives,
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
+      Function<String, RefillerDefinition> definedRefillers,
       Consumer<String> errorHandler);
 
   /** Type check this olive and all its constituent parts */

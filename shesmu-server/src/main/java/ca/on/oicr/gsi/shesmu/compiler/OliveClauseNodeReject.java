@@ -169,6 +169,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Set<String> metricNames,
+      Function<String, RefillerDefinition> refillers,
       Map<String, List<Imyhat>> dumpers,
       Consumer<String> errorHandler) {
     return expression.resolveFunctions(definedFunctions, errorHandler)
@@ -181,6 +182,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
                             definedFunctions,
                             definedActions,
                             metricNames,
+                            refillers,
                             dumpers,
                             errorHandler))
                 .count()

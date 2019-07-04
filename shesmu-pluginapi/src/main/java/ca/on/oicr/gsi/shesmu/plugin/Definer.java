@@ -4,6 +4,8 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
+import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
+import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -18,6 +20,38 @@ import java.util.stream.Stream;
  * Interface to define a actions, constants, functions, and signatures that can be used by olives
  */
 public interface Definer<T> extends Supplier<T> {
+  /**
+   * Create a new refiller description
+   *
+   * <p>This indirection enforces correct generic type usage
+   */
+  interface RefillDefiner {
+    /**
+     * Get information about a new refiller
+     *
+     * @param <I> the type of the input rows
+     * @param <F> the type of the refiller
+     */
+    <I, F extends Refiller<I>> RefillInfo<I, F> info(Class<I> rowType);
+  }
+
+  /**
+   * Provide information about a refiller
+   *
+   * @param <I> the type of the input rows
+   * @param <F> the type of the refiller
+   */
+  interface RefillInfo<I, F extends Refiller<I>> {
+    /** Create new instance of a refiller */
+    F create();
+
+    /** Add any non-annotated parameters */
+    Stream<CustomRefillerParameter<F, I>> parameters();
+
+    /** Get the class of this refiller for discovery of annotations */
+    Class<F> type();
+  }
+
   /** Remove all defined actions */
   void clearActions();
 
@@ -140,6 +174,14 @@ public interface Definer<T> extends Supplier<T> {
       String parameter2Name,
       TypeGuarantee<B> parameter2Type,
       BiFunction<A, B, R> function);
+
+  /**
+   * Define a new refiller
+   *
+   * @param name the name of the refiller
+   * @param description the help text for the refiller
+   */
+  void defineRefiller(String name, String description, RefillDefiner definer);
 
   /**
    * Define a new signature format that is the same for all input objects; it depends only on the

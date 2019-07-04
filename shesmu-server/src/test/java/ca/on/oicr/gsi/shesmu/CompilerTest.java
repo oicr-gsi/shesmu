@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
@@ -40,11 +41,76 @@ import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.CheckClassAdapter;
 
 public class CompilerTest {
+  public final class CompilerHarness extends Compiler {
+    private Set<String> allowedErrors;
+    private boolean dirty;
+
+    public CompilerHarness(Path file) throws IOException {
+      super(false);
+      try (Stream<String> lines =
+          Files.lines(
+              file.getParent()
+                  .resolve(file.getFileName().toString().replaceFirst("\\.shesmu$", ".errors")))) {
+        allowedErrors = lines.collect(Collectors.toSet());
+      }
+    }
+
+    @Override
+    protected ClassVisitor createClassVisitor() {
+      final ClassWriter outputWriter =
+          new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+      return new ClassVisitor(Opcodes.ASM5, outputWriter) {
+
+        @Override
+        public void visitEnd() {
+          super.visitEnd();
+          final ClassReader reader = new ClassReader(outputWriter.toByteArray());
+          final CheckClassAdapter check = new CheckClassAdapter(new ClassWriter(0), true);
+          reader.accept(check, 0);
+        }
+      };
+    }
+
+    @Override
+    protected void errorHandler(String message) {
+      if (allowedErrors.remove(message)) {
+        return;
+      }
+      dirty = true;
+      System.err.println(message);
+    }
+
+    @Override
+    protected ActionDefinition getAction(String name) {
+      return actions.get(name);
+    }
+
+    @Override
+    protected FunctionDefinition getFunction(String name) {
+      return functions.get(name);
+    }
+
+    @Override
+    protected InputFormatDefinition getInputFormats(String name) {
+      return RunTest.INPUT_FORMATS.get(name);
+    }
+
+    @Override
+    protected RefillerDefinition getRefiller(String name) {
+      return refillers.get(name);
+    }
+
+    public boolean ok() {
+      allowedErrors.forEach(e -> System.err.printf("Missing error: %s\n", e));
+      return !dirty && allowedErrors.isEmpty();
+    }
+  }
+
   public static class TestAction extends Action {
-    public long memory;
     public Set<String> input;
-    public boolean ok;
     public boolean junk;
+    public long memory;
+    public boolean ok;
 
     public TestAction() {
       super("test");
@@ -131,6 +197,10 @@ public class CompilerTest {
     };
   }
 
+  private static final List<ConstantDefinition> CONSTANTS =
+      Arrays.asList(
+          ConstantDefinition.of("alwaystrue", true, "It's true. I swear."),
+          ConstantDefinition.of("notpi", 3, "Any value which is not pi."));
   private final ActionDefinition ACTIONS[] =
       new ActionDefinition[] {
         new TestActionDefinition(
@@ -146,78 +216,14 @@ public class CompilerTest {
             Stream.of(
                 forField("junk", Imyhat.BOOLEAN, true), forField("ok", Imyhat.BOOLEAN, false))),
       };
-
-  public final class CompilerHarness extends Compiler {
-    private Set<String> allowedErrors;
-    private boolean dirty;
-
-    public CompilerHarness(Path file) throws IOException {
-      super(false);
-      try (Stream<String> lines =
-          Files.lines(
-              file.getParent()
-                  .resolve(file.getFileName().toString().replaceFirst("\\.shesmu$", ".errors")))) {
-        allowedErrors = lines.collect(Collectors.toSet());
-      }
-    }
-
-    @Override
-    protected ClassVisitor createClassVisitor() {
-      final ClassWriter outputWriter =
-          new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-      return new ClassVisitor(Opcodes.ASM5, outputWriter) {
-
-        @Override
-        public void visitEnd() {
-          super.visitEnd();
-          final ClassReader reader = new ClassReader(outputWriter.toByteArray());
-          final CheckClassAdapter check = new CheckClassAdapter(new ClassWriter(0), true);
-          reader.accept(check, 0);
-        }
-      };
-    }
-
-    @Override
-    protected void errorHandler(String message) {
-      if (allowedErrors.remove(message)) {
-        return;
-      }
-      dirty = true;
-      System.err.println(message);
-    }
-
-    @Override
-    protected ActionDefinition getAction(String name) {
-      return actions.get(name);
-    }
-
-    @Override
-    protected FunctionDefinition getFunction(String name) {
-      return functions.get(name);
-    }
-
-    @Override
-    protected InputFormatDefinition getInputFormats(String name) {
-      return RunTest.INPUT_FORMATS.get(name);
-    }
-
-    public boolean ok() {
-      allowedErrors.forEach(e -> System.err.printf("Missing error: %s\n", e));
-      return !dirty && allowedErrors.isEmpty();
-    }
-  }
-
-  private static final List<ConstantDefinition> CONSTANTS =
-      Arrays.asList(
-          ConstantDefinition.of("alwaystrue", true, "It's true. I swear."),
-          ConstantDefinition.of("notpi", 3, "Any value which is not pi."));
-
   private final NameLoader<ActionDefinition> actions =
       new NameLoader<>(
           Stream.concat(Stream.of(ACTIONS), new StandardDefinitions().actions()),
           ActionDefinition::name);
   private final NameLoader<FunctionDefinition> functions =
       new NameLoader<>(new StandardDefinitions().functions(), FunctionDefinition::name);
+  private final NameLoader<RefillerDefinition> refillers =
+      new NameLoader<>(Stream.empty(), RefillerDefinition::name);
 
   @Test
   public void testCompiler() throws IOException {

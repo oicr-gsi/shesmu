@@ -1,23 +1,16 @@
-package ca.on.oicr.gsi.shesmu.plugin.action;
-
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+package ca.on.oicr.gsi.shesmu.plugin.refill;
 
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
 
 /**
- * Export an action to Shesmu olives
+ * Export a refiller to Shesmu olives
  *
  * <p>This must be on static method in a subclass of {@link PluginFileType} or a virtual method on a
  * subclass of {@link PluginFile} and it must take no arguments. It must return a subtype of {@link
- * Action}.
+ * Refiller} and be parameterised over one type, the input row type.
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface ShesmuAction {
+public @interface ShesmuRefill {
   String description() default "";
 
   String name() default "";

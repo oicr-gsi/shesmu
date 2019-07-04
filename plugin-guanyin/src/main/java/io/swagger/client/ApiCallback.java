@@ -12,7 +12,6 @@
 
 package io.swagger.client;
 
-
 import java.util.List;
 import java.util.Map;
 

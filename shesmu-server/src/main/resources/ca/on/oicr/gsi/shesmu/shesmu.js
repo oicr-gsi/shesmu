@@ -2931,6 +2931,39 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
               }
             });
           }
+          if (response.hasOwnProperty("refills")) {
+            for (const [name, entries] of Object.entries(response.refills)) {
+              if (entries.length > 0) {
+                tabs.push({
+                  name: "Refill ― " + name,
+                  render: tab => {
+                    const table = document.createElement("TABLE");
+                    tab.appendChild(table);
+                    const columns = Object.keys(entries[0]).sort((a, b) =>
+                      a.localeCompare(b)
+                    );
+
+                    const header = document.createElement("TR");
+                    table.appendChild(header);
+                    for (const column of columns) {
+                      const td = document.createElement("TD");
+                      td.innerText = column;
+                      header.appendChild(td);
+                    }
+                    for (const row of entries) {
+                      const tr = document.createElement("TR");
+                      table.appendChild(tr);
+                      for (const column of columns) {
+                        const td = document.createElement("TD");
+                        td.innerText = JSON.stringify(row[column], null, 2);
+                        tr.appendChild(td);
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          }
           if (response.hasOwnProperty("dumpers")) {
             for (const [name, entries] of Object.entries(response.dumpers)) {
               tabs.push({

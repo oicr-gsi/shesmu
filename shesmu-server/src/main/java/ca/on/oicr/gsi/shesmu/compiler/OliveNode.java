@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
@@ -98,6 +99,47 @@ public abstract class OliveNode {
         });
     TERMINAL.addKeyword("Alert", (p, o) -> parseAlert(p, v -> o.accept(v::create)));
 
+    TERMINAL.addKeyword(
+        "Refill",
+        (input, output) -> {
+          final AtomicReference<String> name = new AtomicReference<>();
+          final AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>> arguments =
+              new AtomicReference<>();
+          final Parser result =
+              input
+                  .whitespace()
+                  .identifier(name::set)
+                  .whitespace()
+                  .keyword("With")
+                  .whitespace()
+                  .list(
+                      arguments::set,
+                      (ap, ao) -> {
+                        final AtomicReference<DestructuredArgumentNode> argName =
+                            new AtomicReference<>();
+                        final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+                        final Parser argResult =
+                            ap.whitespace()
+                                .then(DestructuredArgumentNode::parse, argName::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .then(ExpressionNode::parse, expression::set)
+                                .whitespace();
+                        if (argResult.isGood()) {
+                          ao.accept(new Pair<>(argName.get(), expression.get()));
+                        }
+                        return argResult;
+                      },
+                      ',');
+          if (result.isGood()) {
+            output.accept(
+                (line, column, clauses, tags, description) ->
+                    new OliveNodeRefill(
+                        line, column, name.get(), arguments.get(), clauses, tags, description));
+          }
+          return result;
+        });
     ROOTS.addKeyword(
         "Define",
         (input, output) -> {
@@ -275,6 +317,7 @@ public abstract class OliveNode {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Set<String> metricNames,
+      Function<String, RefillerDefinition> definedRefillers,
       Map<String, List<Imyhat>> dumpers,
       Consumer<String> errorHandler);
 

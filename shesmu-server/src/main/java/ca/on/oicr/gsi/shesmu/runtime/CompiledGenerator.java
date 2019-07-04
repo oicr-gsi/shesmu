@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.runtime;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
@@ -197,6 +198,11 @@ public class CompiledGenerator implements DefinitionRepository {
                   }
 
                   @Override
+                  public Stream<RefillerDefinition> refillers() {
+                    return definitionRepository.refillers();
+                  }
+
+                  @Override
                   public Stream<FunctionDefinition> functions() {
                     return definitionRepository
                         .functions()
@@ -358,6 +364,11 @@ public class CompiledGenerator implements DefinitionRepository {
 
   @Override
   public Stream<ConstantDefinition> constants() {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<RefillerDefinition> refillers() {
     return Stream.empty();
   }
 

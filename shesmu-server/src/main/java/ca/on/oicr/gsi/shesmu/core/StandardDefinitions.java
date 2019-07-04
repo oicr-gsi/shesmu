@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core;
 
+import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
@@ -353,6 +354,11 @@ public final class StandardDefinitions implements DefinitionRepository {
   @Override
   public Stream<ConstantDefinition> constants() {
     return Stream.of(CONSTANTS);
+  }
+
+  @Override
+  public Stream<RefillerDefinition> refillers() {
+    return Stream.empty();
   }
 
   @Override

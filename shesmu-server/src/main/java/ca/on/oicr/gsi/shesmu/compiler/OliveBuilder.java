@@ -8,10 +8,12 @@ import static org.objectweb.asm.Type.VOID_TYPE;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import java.lang.invoke.LambdaMetafactory;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Handle;
@@ -34,6 +36,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(OliveServices.class);
   private static final Type A_ACTION_TYPE = Type.getType(Action.class);
+  private static final Type A_REFILLER_TYPE = Type.getType(Refiller.class);
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
   private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
   protected static final Handle LAMBDA_METAFACTORY_BSM =
@@ -56,6 +59,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
   private static final Method METHOD_OLIVE_SERVICES__OLIVE_RUNTIME =
       new Method(
           "oliveRuntime", VOID_TYPE, new Type[] {A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE});
+  private static final Method METHOD_REFILLER__CONSUME =
+      new Method("consume", VOID_TYPE, new Type[] {A_STREAM_TYPE});
   private static final Method METHOD_STREAM__CLOSE = new Method("close", VOID_TYPE, new Type[] {});
   private static final Method METHOD_STREAM__FOR_EACH =
       new Method("forEach", VOID_TYPE, new Type[] {A_CONSUMER_TYPE});
@@ -173,6 +178,35 @@ public final class OliveBuilder extends BaseOliveBuilder {
     }
   }
 
+  private void finish(Consumer<Renderer> finishStream) {
+    final Renderer runMethod = owner.rootRenderer(true);
+    final int startTime = runMethod.methodGen().newLocal(LONG_TYPE);
+    runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
+    runMethod.methodGen().storeLocal(startTime);
+
+    runMethod.methodGen().loadArg(1);
+    runMethod.methodGen().push(initialFormat.name());
+    runMethod.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
+
+    steps.forEach(step -> step.accept(owner.rootRenderer(true)));
+
+    runMethod.methodGen().dup();
+    finishStream.accept(runMethod);
+
+    runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__CLOSE);
+
+    runMethod.methodGen().loadArg(0);
+    runMethod.methodGen().push(owner.sourcePath());
+    runMethod.methodGen().push(line);
+    runMethod.methodGen().push(column);
+    runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
+    runMethod.methodGen().loadLocal(startTime);
+    runMethod.methodGen().math(GeneratorAdapter.SUB, LONG_TYPE);
+    runMethod
+        .methodGen()
+        .invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__OLIVE_RUNTIME);
+  }
+
   /** Generate bytecode for the olive and create a method to consume the result. */
   public final Renderer finish(String actionName, Stream<LoadableValue> captures) {
     final LambdaBuilder consumer =
@@ -200,36 +234,41 @@ public final class OliveBuilder extends BaseOliveBuilder {
                         }),
                     captures)
                 .toArray(LoadableValue[]::new));
-    final Renderer runMethod = owner.rootRenderer(true);
-    final int startTime = runMethod.methodGen().newLocal(LONG_TYPE);
-    runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
-    runMethod.methodGen().storeLocal(startTime);
-
-    runMethod.methodGen().loadArg(1);
-    runMethod.methodGen().push(initialFormat.name());
-    runMethod.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
-
-    steps.forEach(step -> step.accept(owner.rootRenderer(true)));
-
-    runMethod.methodGen().dup();
-
-    consumer.push(runMethod);
-    runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
-
-    runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__CLOSE);
-
-    runMethod.methodGen().loadArg(0);
-    runMethod.methodGen().push(owner.sourcePath());
-    runMethod.methodGen().push(line);
-    runMethod.methodGen().push(column);
-    runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
-    runMethod.methodGen().loadLocal(startTime);
-    runMethod.methodGen().math(GeneratorAdapter.SUB, LONG_TYPE);
-    runMethod
-        .methodGen()
-        .invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__OLIVE_RUNTIME);
+    finish(
+        runMethod -> {
+          consumer.push(runMethod);
+          runMethod.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FOR_EACH);
+        });
 
     return consumer.renderer(currentType(), this::emitSigner);
+  }
+
+  public final void finish(
+      String refillerName, Consumer<Renderer> creator, Stream<RefillerParameterBuilder> arguments) {
+    finish(
+        runMethod -> {
+          creator.accept(runMethod);
+          final int refillerLocal = runMethod.methodGen().newLocal(A_REFILLER_TYPE);
+          final int functionLocal = runMethod.methodGen().newLocal(A_FUNCTION_TYPE);
+          runMethod.methodGen().storeLocal(refillerLocal);
+          arguments.forEach(
+              argument -> {
+                final LambdaBuilder function =
+                    new LambdaBuilder(
+                        owner,
+                        String.format(
+                            "%s %s %d:%d", refillerName, argument.parameter().name(), line, column),
+                        LambdaBuilder.function(argument.parameter().type(), currentType()),
+                        argument.captures());
+                function.push(runMethod);
+                runMethod.methodGen().storeLocal(functionLocal);
+                argument.parameter().render(runMethod, refillerLocal, functionLocal);
+                argument.render(function.renderer(currentType(), this::emitSigner));
+              });
+          runMethod.methodGen().loadLocal(refillerLocal);
+          runMethod.methodGen().swap();
+          runMethod.methodGen().invokeVirtual(A_REFILLER_TYPE, METHOD_REFILLER__CONSUME);
+        });
   }
 
   @Override

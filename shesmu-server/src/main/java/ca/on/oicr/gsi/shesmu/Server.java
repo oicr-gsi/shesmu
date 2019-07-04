@@ -615,6 +615,52 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/refillerdefs",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "refillerdefs";
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                definitionRepository
+                    .refillers()
+                    .sorted(Comparator.comparing(RefillerDefinition::name))
+                    .forEach(
+                        refiller -> {
+                          try {
+                            writer.writeStartElement("h1");
+                            writer.writeAttribute("id", refiller.name());
+                            writer.writeCharacters(refiller.name());
+                            writer.writeEndElement();
+                            writer.writeStartElement("p");
+                            writer.writeCharacters(refiller.description());
+                            writer.writeEndElement();
+
+                            writer.writeStartElement("table");
+                            writer.writeAttribute("class", "even");
+                            showSourceConfig(writer, refiller.filename());
+                            TableRowWriter row = new TableRowWriter(writer);
+                            refiller
+                                .parameters()
+                                .sorted(Comparator.comparing(RefillerParameterDefinition::name))
+                                .forEach(p -> row.write(false, p.name(), p.type().name()));
+                            writer.writeEndElement();
+                          } catch (XMLStreamException e) {
+                            throw new RuntimeException(e);
+                          }
+                        });
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
         "/inputdefs",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -1306,6 +1352,30 @@ public final class Server implements ServerConfig, ActionServices {
         });
 
     addJson(
+        "/refillers",
+        (mapper, query) -> {
+          final ArrayNode array = mapper.createArrayNode();
+          definitionRepository
+              .refillers()
+              .forEach(
+                  refiller -> {
+                    final ObjectNode obj = array.addObject();
+                    obj.put("name", refiller.name());
+                    obj.put("description", refiller.description());
+                    final ArrayNode parameters = obj.putArray("parameters");
+                    refiller
+                        .parameters()
+                        .forEach(
+                            param -> {
+                              final ObjectNode paramInfo = parameters.addObject();
+                              paramInfo.put("name", param.name());
+                              paramInfo.put("type", param.type().toString());
+                            });
+                  });
+          return array;
+        });
+
+    addJson(
         "/constants",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
@@ -1673,6 +1743,9 @@ public final class Server implements ServerConfig, ActionServices {
               (new Compiler(true) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+                    private final NameLoader<RefillerDefinition> refillers =
+                        new NameLoader<>(
+                            definitionRepository.refillers(), RefillerDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             Stream.concat(definitionRepository.functions(), compiler.functions()),
@@ -1691,6 +1764,11 @@ public final class Server implements ServerConfig, ActionServices {
                     @Override
                     protected ActionDefinition getAction(String name) {
                       return actions.get(name);
+                    }
+
+                    @Override
+                    protected RefillerDefinition getRefiller(String name) {
+                      return refillers.get(name);
                     }
 
                     @Override
@@ -1740,6 +1818,9 @@ public final class Server implements ServerConfig, ActionServices {
               (new Compiler(false) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+                    private final NameLoader<RefillerDefinition> refillers =
+                        new NameLoader<>(
+                            definitionRepository.refillers(), RefillerDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             Stream.concat(definitionRepository.functions(), compiler.functions()),
@@ -1758,6 +1839,11 @@ public final class Server implements ServerConfig, ActionServices {
                     @Override
                     protected ActionDefinition getAction(String name) {
                       return actions.get(name);
+                    }
+
+                    @Override
+                    protected RefillerDefinition getRefiller(String name) {
+                      return refillers.get(name);
                     }
 
                     @Override
@@ -2300,6 +2386,7 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("functiondefs", "Functions"),
             NavigationMenu.item("grouperdefs", "Groupers"),
             NavigationMenu.item("inputdefs", "Input Formats"),
+            NavigationMenu.item("refillerdefs", "Refillers"),
             NavigationMenu.item("signaturedefs", "Signatures")),
         NavigationMenu.submenu(
             "Tools",

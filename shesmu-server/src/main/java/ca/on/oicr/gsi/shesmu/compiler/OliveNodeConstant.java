@@ -119,6 +119,7 @@ public final class OliveNodeConstant extends OliveNode implements Target {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Set<String> metricNames,
+      Function<String, RefillerDefinition> definedRefillers,
       Map<String, List<Imyhat>> dumpers,
       Consumer<String> errorHandler) {
     return body.resolveFunctions(definedFunctions, errorHandler);

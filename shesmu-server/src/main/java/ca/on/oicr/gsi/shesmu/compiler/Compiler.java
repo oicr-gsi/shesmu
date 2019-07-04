@@ -150,6 +150,7 @@ public abstract class Compiler {
                 this::getInputFormats,
                 this::getFunction,
                 this::getAction,
+                this::getRefiller,
                 this::errorHandler,
                 constants,
                 signatures)) {
@@ -270,4 +271,12 @@ public abstract class Compiler {
    * @return the format definition, or null if no format is available
    */
   protected abstract InputFormatDefinition getInputFormats(String name);
+
+  /**
+   * Get a refiller by name.
+   *
+   * @param name the name of the refiller
+   * @return the refiller definition, or null if no refiller is available
+   */
+  protected abstract RefillerDefinition getRefiller(String name);
 }

@@ -134,12 +134,12 @@ public class ProgramNode {
    * @param definedFunctions the functions available; if a function is not found, null should be
    *     returned
    * @param definedActions the actions available; if an action is not found, null should be returned
-   * @param constants
    */
   public boolean validate(
       Function<String, InputFormatDefinition> inputFormatDefinitions,
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
+      Function<String, RefillerDefinition> definedRefillers,
       Consumer<String> errorHandler,
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures) {
@@ -209,6 +209,7 @@ public class ProgramNode {
                                         : definedFunctions.apply(n),
                                 definedActions,
                                 metricNames,
+                                definedRefillers,
                                 dumpers,
                                 errorHandler))
                     .count()

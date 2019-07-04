@@ -1,8 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
+import ca.on.oicr.gsi.shesmu.compiler.*;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.compiler.Renderer;
-import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
@@ -47,8 +46,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  * to validate a script. This cannot compile the script, so no bytecode generation is attempted.
  */
 public final class Check extends Compiler {
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-
   public static Stream<ObjectNode> fetch(String remote, String slug) {
     return fetch(remote, slug, ObjectNode[].class).map(Stream::of).orElse(Stream.empty());
   }
@@ -140,6 +137,9 @@ public final class Check extends Compiler {
             fetch(remote, "functions").map(Check::makeFunction), FunctionDefinition::name);
     final NameLoader<ActionDefinition> actions =
         new NameLoader<>(fetch(remote, "actions").map(Check::makeAction), ActionDefinition::name);
+    final NameLoader<RefillerDefinition> refillers =
+        new NameLoader<>(
+            fetch(remote, "refillers").map(Check::makeRefiller), RefillerDefinition::name);
 
     final boolean ok =
         Stream.of(files)
@@ -148,7 +148,7 @@ public final class Check extends Compiler {
                       boolean fileOk;
                       try {
                         fileOk =
-                            new Check(file, inputFormats, functions, actions)
+                            new Check(file, inputFormats, functions, actions, refillers)
                                 .compile(
                                     Files.readAllBytes(Paths.get(file)),
                                     "dyn/shesmu/Program",
@@ -203,13 +203,13 @@ public final class Check extends Compiler {
       }
 
       @Override
-      public String name() {
-        return name;
+      public Path filename() {
+        return null;
       }
 
       @Override
-      public Path filename() {
-        return null;
+      public String name() {
+        return name;
       }
 
       @Override
@@ -272,13 +272,13 @@ public final class Check extends Compiler {
                 }
 
                 @Override
-                public Type type() {
-                  throw new UnsupportedOperationException("Checker formats cannot be used.");
+                public String name() {
+                  return name;
                 }
 
                 @Override
-                public String name() {
-                  return name;
+                public Type type() {
+                  throw new UnsupportedOperationException("Checker formats cannot be used.");
                 }
               };
             });
@@ -312,23 +312,82 @@ public final class Check extends Compiler {
     };
   }
 
-  private final NameLoader<ActionDefinition> actions;
+  private static RefillerDefinition makeRefiller(ObjectNode node) {
+    return new RefillerDefinition() {
+      final String description = node.get("description").asText();
+      final String name = node.get("name").asText();
+      final List<RefillerParameterDefinition> parameters =
+          Utils.stream(node.get("parameters").elements())
+              .map(
+                  parameter ->
+                      new RefillerParameterDefinition() {
+                        final String name = parameter.get("name").asText();
+                        final Imyhat type = Imyhat.parse(parameter.get("type").asText());
 
+                        @Override
+                        public String name() {
+                          return name;
+                        }
+
+                        @Override
+                        public void render(
+                            Renderer renderer, int refillerLocal, int functionLocal) {
+                          throw new UnsupportedOperationException();
+                        }
+
+                        @Override
+                        public Imyhat type() {
+                          return type;
+                        }
+                      })
+              .collect(Collectors.toList());
+
+      @Override
+      public String description() {
+        return description;
+      }
+
+      @Override
+      public Path filename() {
+        return null;
+      }
+
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public Stream<RefillerParameterDefinition> parameters() {
+        return parameters.stream();
+      }
+
+      @Override
+      public void render(Renderer renderer) {
+        throw new UnsupportedOperationException();
+      }
+    };
+  }
+
+  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private final NameLoader<ActionDefinition> actions;
   private final String fileName;
   private final NameLoader<FunctionDefinition> functions;
-
   private final NameLoader<InputFormatDefinition> inputFormats;
+  private final NameLoader<RefillerDefinition> refillers;
 
   Check(
       String fileName,
       NameLoader<InputFormatDefinition> inputFormats,
       NameLoader<FunctionDefinition> functions,
-      NameLoader<ActionDefinition> actions) {
+      NameLoader<ActionDefinition> actions,
+      NameLoader<RefillerDefinition> refillers) {
     super(true);
     this.fileName = fileName;
     this.inputFormats = inputFormats;
     this.functions = functions;
     this.actions = actions;
+    this.refillers = refillers;
   }
 
   @Override
@@ -354,5 +413,10 @@ public final class Check extends Compiler {
   @Override
   protected InputFormatDefinition getInputFormats(String name) {
     return inputFormats.get(name);
+  }
+
+  @Override
+  protected RefillerDefinition getRefiller(String name) {
+    return refillers.get(name);
   }
 }
