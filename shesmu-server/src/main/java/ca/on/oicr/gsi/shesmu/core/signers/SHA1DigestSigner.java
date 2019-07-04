@@ -27,6 +27,12 @@ public class SHA1DigestSigner implements DynamicSigner<String>, ImyhatConsumer {
   }
 
   @Override
+  public void accept(double value) {
+    digest.update(
+        ByteBuffer.allocate(Double.BYTES).order(ByteOrder.BIG_ENDIAN).putDouble(value).array());
+  }
+
+  @Override
   public void accept(Instant value) {
     digest.update((byte) 133);
     digest.update(

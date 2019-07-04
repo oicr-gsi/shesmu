@@ -64,4 +64,9 @@ public final class PackJsonObject implements ImyhatConsumer {
   public void accept(boolean value) {
     node.put(name, value);
   }
+
+  @Override
+  public void accept(double value) {
+    node.put(name, value);
+  }
 }

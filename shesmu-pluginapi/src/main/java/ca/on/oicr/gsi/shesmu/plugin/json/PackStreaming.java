@@ -29,6 +29,15 @@ public class PackStreaming implements ImyhatConsumer {
   }
 
   @Override
+  public void accept(double value) {
+    try {
+      generator.writeNumber(value);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public void accept(Instant value) {
     try {
       generator.writeNumber(value.toEpochMilli());

@@ -32,12 +32,12 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
 
   @Override
   protected boolean typeCheckExtra(Consumer<String> errorHandler) {
-    if (selector.type().isSame(Imyhat.INTEGER) || selector.type().isSame(Imyhat.DATE)) {
+    if (selector.type().isOrderable()) {
       return true;
     }
     errorHandler.accept(
         String.format(
-            "%d:%d: Expected date or integer, but got %s.", line(), column(), type().name()));
+            "%d:%d: Expected orderable type, but got %s.", line(), column(), type().name()));
     return false;
   }
 }

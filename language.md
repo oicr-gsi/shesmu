@@ -454,6 +454,7 @@ machine-to-machine communication.
 | Name       | Syntax                                             | Signature  |
 |---         |---                                                 |---         |
 | Integer    | `integer`                                          | `i`	       |
+| Float      | `float`                                            | `f`	       |
 | String     | `string`                                           | `s`	       |
 | Boolean    | `boolean`                                          | `b`	       |
 | Date       | `date`                                             | `d`        |

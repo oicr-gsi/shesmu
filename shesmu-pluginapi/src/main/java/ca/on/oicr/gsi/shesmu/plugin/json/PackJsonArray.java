@@ -33,6 +33,11 @@ public final class PackJsonArray implements ImyhatConsumer {
   }
 
   @Override
+  public void accept(double value) {
+    node.add(value);
+  }
+
+  @Override
   public void accept(String value) {
     node.add(value);
   }

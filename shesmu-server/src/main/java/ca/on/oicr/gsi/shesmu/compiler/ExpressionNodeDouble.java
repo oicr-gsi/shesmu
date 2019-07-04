@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
-
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -9,52 +7,46 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.objectweb.asm.commons.GeneratorAdapter;
 
-public class ExpressionNodeNegate extends ExpressionNode {
-  private final ExpressionNode inner;
+public class ExpressionNodeDouble extends ExpressionNode {
 
-  public ExpressionNodeNegate(int line, int column, ExpressionNode inner) {
+  private final double value;
+
+  public ExpressionNodeDouble(int line, int column, double value) {
     super(line, column);
-    this.inner = inner;
+    this.value = value;
   }
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    inner.collectFreeVariables(names, predicate);
+    // Do nothing.
   }
 
   @Override
   public void render(Renderer renderer) {
-    inner.render(renderer);
-    renderer.methodGen().math(GeneratorAdapter.NEG, inner.type().apply(TO_ASM));
+    renderer.mark(line());
+
+    renderer.methodGen().push(value);
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    return inner.resolve(defs, errorHandler);
+    return true;
   }
 
   @Override
   public boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return inner.resolveFunctions(definedFunctions, errorHandler);
+    return true;
   }
 
   @Override
   public Imyhat type() {
-    return inner.type();
+    return Imyhat.FLOAT;
   }
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = inner.typeCheck(errorHandler);
-    if (ok) {
-      ok = inner.type().isSame(Imyhat.INTEGER) || inner.type().isSame(Imyhat.FLOAT);
-      if (!ok) {
-        typeError("integer or float", inner.type(), errorHandler);
-      }
-    }
-    return ok;
+    return true;
   }
 }

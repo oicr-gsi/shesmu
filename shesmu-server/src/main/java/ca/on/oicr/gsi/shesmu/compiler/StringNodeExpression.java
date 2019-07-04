@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static org.objectweb.asm.Type.DOUBLE_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
@@ -16,13 +17,12 @@ import org.objectweb.asm.commons.Method;
 public class StringNodeExpression extends StringNode {
 
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-
-  private static final Type A_STRING_TYPE = Type.getType(String.class);
-
   private static final Type A_STRINGBUILDER_TYPE = Type.getType(StringBuilder.class);
-
+  private static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Method METHOD_OBJECT__TO_STRING =
       new Method("toString", A_STRING_TYPE, new Type[] {});
+  private static final Method METHOD_STRINGBUILDER__APPEND__DOUBLE =
+      new Method("append", A_STRINGBUILDER_TYPE, new Type[] {DOUBLE_TYPE});
   private static final Method METHOD_STRINGBUILDER__APPEND__LONG =
       new Method("append", A_STRINGBUILDER_TYPE, new Type[] {LONG_TYPE});
   private static final Method METHOD_STRINGBUILDER__APPEND__STR =
@@ -50,6 +50,10 @@ public class StringNodeExpression extends StringNode {
       renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__STR);
     } else if (expression.type().isSame(Imyhat.INTEGER)) {
       renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__LONG);
+    } else if (expression.type().isSame(Imyhat.FLOAT)) {
+      renderer
+          .methodGen()
+          .invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__DOUBLE);
     } else {
       renderer.methodGen().invokeVirtual(A_OBJECT_TYPE, METHOD_OBJECT__TO_STRING);
       renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__STR);
@@ -76,7 +80,7 @@ public class StringNodeExpression extends StringNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (expression.typeCheck(errorHandler)) {
       final Imyhat innerType = expression.type();
-      if (Stream.of(Imyhat.INTEGER, Imyhat.DATE, Imyhat.PATH, Imyhat.STRING)
+      if (Stream.of(Imyhat.FLOAT, Imyhat.INTEGER, Imyhat.DATE, Imyhat.PATH, Imyhat.STRING)
           .noneMatch(innerType::isSame)) {
         errorHandler.accept(
             String.format(

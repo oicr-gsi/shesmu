@@ -228,6 +228,44 @@ public abstract class BinaryOperation {
   }
 
   /**
+   * Perform a primitive math operation on two operands which must be floating point or integral;
+   * returning the same type if integral, floating point otherwise
+   *
+   * @param opcode the integer version of the bytecode
+   */
+  public static Definition primitiveMathUpgrading(int opcode) {
+    return new Definition() {
+      @Override
+      public Optional<BinaryOperation> match(Imyhat left, Imyhat right) {
+        final boolean leftIsInt = left.isSame(Imyhat.INTEGER);
+        final boolean rightIsInt = right.isSame(Imyhat.INTEGER);
+        if ((leftIsInt || left.isSame(Imyhat.FLOAT))
+            && (rightIsInt || right.isSame(Imyhat.FLOAT))) {
+          return Optional.of(
+              new BinaryOperation(leftIsInt && rightIsInt ? Imyhat.INTEGER : Imyhat.FLOAT) {
+                @Override
+                public void render(
+                    Renderer renderer,
+                    Consumer<Renderer> leftValue,
+                    Consumer<Renderer> rightValue) {
+                  leftValue.accept(renderer);
+                  if (leftIsInt && !rightIsInt) {
+                    renderer.methodGen().cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
+                  }
+                  rightValue.accept(renderer);
+                  if (!leftIsInt && rightIsInt) {
+                    renderer.methodGen().cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
+                  }
+                  renderer.methodGen().math(opcode, this.returnType().apply(TO_ASM));
+                }
+              });
+        }
+        return Optional.empty();
+      }
+    };
+  }
+
+  /**
    * Perform a short-circuiting logical operation
    *
    * @param condition the bytecode on which to short circuit

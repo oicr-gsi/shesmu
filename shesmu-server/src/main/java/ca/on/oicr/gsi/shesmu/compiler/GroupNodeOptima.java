@@ -72,8 +72,8 @@ public class GroupNodeOptima extends GroupNodeDefaultable {
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = expression.typeCheck(errorHandler);
     if (ok) {
-      if (!expression.type().isSame(Imyhat.INTEGER) && !expression.type().isSame(Imyhat.DATE)) {
-        expression.typeError("integer or date", expression.type(), errorHandler);
+      if (!expression.type().isOrderable()) {
+        expression.typeError("orderable type", expression.type(), errorHandler);
         ok = false;
       }
     }

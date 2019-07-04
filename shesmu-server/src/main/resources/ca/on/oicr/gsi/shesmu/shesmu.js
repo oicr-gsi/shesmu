@@ -192,6 +192,18 @@ export const parser = {
       return { good: false, input: input, error: "Expected date." };
     }
   },
+  f: function(input) {
+    let match = input.match(/^\s*(\d*(\.\d*([eE][+-]?\d+)?)/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: parseFloat(match[1])
+      };
+    } else {
+      return { good: false, input: input, error: "Expected floating point number." };
+    }
+  },
   i: function(input) {
     let match = input.match(/^\s*(\d*)/);
     if (match) {

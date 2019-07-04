@@ -292,6 +292,8 @@ public abstract class ExpressionNode {
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY =
       new Parser.ParseDispatch<>();
 
+  private static final Pattern DOUBLE_PATTERN = Pattern.compile("\\d+\\.\\d*([eE][+-]?\\d+)?");
+
   static {
     final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 
@@ -346,7 +348,7 @@ public abstract class ExpressionNode {
         "+",
         binaryOperators(
             "+",
-            BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.ADD),
+            BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.ADD),
             BinaryOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds"),
             BinaryOperation.virtualMethod(Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve"),
             BinaryOperation.staticMethod(
@@ -359,7 +361,7 @@ public abstract class ExpressionNode {
         "-",
         binaryOperators(
             "-",
-            BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.SUB),
+            BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.SUB),
             BinaryOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds"),
             BinaryOperation.staticMethod(
                 Imyhat.DATE, Imyhat.DATE, Imyhat.INTEGER, A_RUNTIME_SUPPORT_TYPE, "difference"),
@@ -367,11 +369,9 @@ public abstract class ExpressionNode {
             BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "removeItem")));
 
     CONJUNCTION.addSymbol(
-        "*",
-        binaryOperators("*", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.MUL)));
+        "*", binaryOperators("*", BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.MUL)));
     CONJUNCTION.addSymbol(
-        "/",
-        binaryOperators("/", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.DIV)));
+        "/", binaryOperators("/", BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.DIV)));
     CONJUNCTION.addSymbol(
         "%",
         binaryOperators("%", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.REM)));
@@ -550,11 +550,27 @@ public abstract class ExpressionNode {
           return result;
         });
     TERMINAL.addRaw(
+        "floating-point number",
+        (p, o) -> {
+          final AtomicReference<Double> value = new AtomicReference<>();
+          final Parser result =
+              p.regex(
+                      DOUBLE_PATTERN,
+                      m -> value.set(Double.parseDouble(m.group(0))),
+                      "Expected double.")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new ExpressionNodeDouble(p.line(), p.column(), value.get()));
+          }
+          return result;
+        });
+    TERMINAL.addRaw(
         "integer",
         (p, o) -> {
           final AtomicLong value = new AtomicLong();
           final AtomicInteger multiplier = new AtomicInteger();
-          final Parser result = p.integer(value::set, 10).dispatch(INT_SUFFIX, multiplier::set);
+          final Parser result =
+              p.integer(value::set, 10).dispatch(INT_SUFFIX, multiplier::set).whitespace();
           if (result.isGood()) {
             o.accept(
                 new ExpressionNodeInteger(p.line(), p.column(), value.get() * multiplier.get()));

@@ -40,6 +40,14 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
           return Imyhat.DATE;
         }
       };
+  public static final ReturnTypeGuarantee<Double> DOUBLE =
+      new ReturnTypeGuarantee<Double>() {
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.FLOAT;
+        }
+      };
   public static final ReturnTypeGuarantee<Long> LONG =
       new ReturnTypeGuarantee<Long>() {
 

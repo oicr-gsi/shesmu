@@ -15,17 +15,16 @@ import java.util.stream.Stream;
 public interface ImyhatConsumer {
   void accept(boolean value);
 
+  /** Collect a floating point value */
+  void accept(double value);
+
   /** Collect a Boolean value */
   void accept(Instant value);
 
   /** Collect an integral value */
   void accept(long value);
 
-  /**
-   * Collect a path value
-   *
-   * @param value
-   */
+  /** Collect a path value */
   void accept(Path value);
 
   /**

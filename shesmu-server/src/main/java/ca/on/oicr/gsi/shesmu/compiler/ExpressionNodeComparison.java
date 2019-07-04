@@ -41,6 +41,8 @@ public class ExpressionNodeComparison extends ExpressionNode {
       comparison.branchBool(truePath, renderer.methodGen());
     } else if (left.type().isSame(Imyhat.INTEGER)) {
       comparison.branchInt(truePath, renderer.methodGen());
+    } else if (left.type().isSame(Imyhat.FLOAT)) {
+      comparison.branchFloat(truePath, renderer.methodGen());
     } else if (left.type().isSame(Imyhat.DATE)) {
       comparison.branchDate(truePath, renderer.methodGen());
     } else {

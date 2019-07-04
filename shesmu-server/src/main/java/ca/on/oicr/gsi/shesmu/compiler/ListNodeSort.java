@@ -35,12 +35,12 @@ public class ListNodeSort extends ListNodeWithExpression {
 
   @Override
   protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
-    if (expression.type().isSame(Imyhat.DATE) || expression.type().isSame(Imyhat.INTEGER)) {
+    if (expression.type().isOrderable()) {
       return true;
     }
     errorHandler.accept(
         String.format(
-            "%d:%d: Expected date or integer for sorting but got %s.",
+            "%d:%d: Expected comparable type for sorting but got %s.",
             line(), column(), expression.type().name()));
     return false;
   }
