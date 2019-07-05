@@ -334,7 +334,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
               String.format(
                   "Return type of %s in %s", name, entry.second().getDeclaringClass().getName()),
               entry.first().type(),
-              entry.second().getReturnType());
+              entry.second().getGenericReturnType());
       final Flavour flavour = entry.first().signable() ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
       final MethodType methodType = MethodType.methodType(type.javaType(), Object.class);
       // Register this variable with the compiler

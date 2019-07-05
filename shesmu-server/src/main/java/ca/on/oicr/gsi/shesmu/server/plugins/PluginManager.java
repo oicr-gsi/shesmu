@@ -80,7 +80,7 @@ public final class PluginManager
 
   private class FormatTypeWrapper<F extends PluginFileType<T>, T extends PluginFile> {
     private final class ArbitraryActionDefintition extends ActionDefinition {
-      @SuppressWarnings("unused")
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
 
       private final String fixedName;
@@ -104,7 +104,7 @@ public final class PluginManager
     }
 
     private final class ArbitraryConstantDefinition extends ConstantDefinition {
-      @SuppressWarnings("unused")
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
 
       private final String fixedName;
@@ -129,7 +129,7 @@ public final class PluginManager
 
     private final class ArbitraryDynamicSignatureDefintion
         extends SignatureVariableForDynamicSigner {
-      @SuppressWarnings("unused")
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
 
       private final Path fileName;
@@ -160,7 +160,7 @@ public final class PluginManager
 
     public final class ArbitraryFunctionDefinition implements FunctionDefinition {
 
-      @SuppressWarnings("unused")
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
 
       private final String description;
@@ -234,7 +234,7 @@ public final class PluginManager
     }
 
     private final class ArbitraryStaticSignatureDefintion extends SignatureVariableForStaticSigner {
-      @SuppressWarnings("unused")
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final CallSite callsite;
 
       private final Path fileName;
@@ -268,7 +268,7 @@ public final class PluginManager
 
       private final List<ActionDefinition> actionsFromAnnotations;
       // Hold onto a reference to the callsite so that it isn't garbage collected
-      @SuppressWarnings("unused")
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
       private final MutableCallSite callsite;
 
       private final Map<String, ConstantDefinition> constants = new ConcurrentHashMap<>();
@@ -896,7 +896,7 @@ public final class PluginManager
                   "Return type of %s in %s",
                   method.getName(), method.getDeclaringClass().getName()),
               annotation.type(),
-              method.getReturnType());
+              method.getGenericReturnType());
 
       if (method.getParameterCount() == offset) {
         if (isInstance) {
@@ -936,7 +936,7 @@ public final class PluginManager
                                   method.getName(),
                                   method.getDeclaringClass().getName()),
                               parameterAnnotation == null ? "" : parameterAnnotation.type(),
-                              p.getType());
+                              p.getParameterizedType());
                       return new FunctionParameter(
                           parameterAnnotation == null
                               ? p.getName()
@@ -1005,7 +1005,12 @@ public final class PluginManager
                 method.getName(), method.getDeclaringClass().getName()));
       }
       final boolean isDynamic = DynamicSigner.class.isAssignableFrom(method.getReturnType());
-      final Imyhat returnType = Imyhat.parse(annotation.type());
+      final Imyhat returnType =
+          unwrapAndConvert(
+              String.format(
+                  "Method %s of %s.", method.getName(), method.getDeclaringClass().getName()),
+              annotation.type(),
+              method.getGenericReturnType());
       if (returnType.isBad()) {
         throw new IllegalArgumentException(
             String.format(
@@ -1127,10 +1132,20 @@ public final class PluginManager
     }
   }
 
+  private Imyhat unwrapAndConvert(String context, String descriptor, java.lang.reflect.Type type) {
+    if (!(type instanceof ParameterizedType)) {
+      return Imyhat.BAD;
+    }
+    final ParameterizedType ptype = (ParameterizedType) type;
+    return Imyhat.convert(context, descriptor, ptype.getActualTypeArguments()[0]);
+  }
+
+  @SuppressWarnings("unused")
   public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
     return CONFIG_FILE_ARBITRARY_BINDINGS.get(methodName);
   }
 
+  @SuppressWarnings("unused")
   public static CallSite bootstrap(
       Lookup lookup, String methodName, MethodType methodType, String fileName) {
     // We're going to build our call site in two parts
@@ -1144,6 +1159,7 @@ public final class PluginManager
     // For the method, we know the type of the thing in the call site, so let's go
     // find a method that can handle it in our cache. We cache these forever because
     // they can't be created or destroyed without reloading the whole server.
+    @SuppressWarnings("SuspiciousMethodCalls")
     final MethodHandle methodHandle =
         CONFIG_FILE_METHOD_BINDINGS.get(new Pair<>(instance.type().returnType(), methodName));
     // Now we smash the instance from above with the method. We can create a
@@ -1283,6 +1299,7 @@ public final class PluginManager
 
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
 
+  @SuppressWarnings("Convert2MethodRef")
   public PluginManager() {
     formatTypes = Utils.stream(FILE_FORMATS).map(ff -> create(ff)).collect(Collectors.toList());
   }

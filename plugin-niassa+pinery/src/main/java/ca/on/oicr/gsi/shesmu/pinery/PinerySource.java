@@ -272,7 +272,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuMethod(
       name = "$_active_projects",
-      type = "as",
       description = "Projects marked active from in Pinery defined in {file}.")
   public Set<String> activeProjects() {
     return projects
@@ -282,10 +281,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .collect(Collectors.toSet());
   }
 
-  @ShesmuMethod(
-      name = "$_projects",
-      type = "as",
-      description = "All projects from in Pinery defined in {file}.")
+  @ShesmuMethod(name = "$_projects", description = "All projects from in Pinery defined in {file}.")
   public Set<String> allProjects() {
     return projects.get().map(SampleProjectDto::getName).collect(Collectors.toSet());
   }
