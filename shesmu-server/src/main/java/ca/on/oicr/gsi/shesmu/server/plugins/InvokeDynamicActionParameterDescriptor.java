@@ -107,7 +107,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                               "Field %s in %s",
                               field.getName(), field.getDeclaringClass().getName()),
                           fieldAnnotation.type(),
-                          field.getType());
+                          field.getGenericType());
                   parameters.add(
                       new InvokeDynamicActionParameterDescriptor(
                           actionName,

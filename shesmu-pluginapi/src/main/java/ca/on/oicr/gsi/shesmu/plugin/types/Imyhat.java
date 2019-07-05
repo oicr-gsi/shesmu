@@ -2,27 +2,21 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -52,6 +46,9 @@ public abstract class Imyhat {
     public boolean isSame(Imyhat other) {
       return this == other;
     }
+
+    /** Gets the type of the wrapper (i.e., the reference type) */
+    public abstract Class<?> javaWrapperType();
 
     /**
      * Parse a string literal containing a value of this type
@@ -145,23 +142,20 @@ public abstract class Imyhat {
 
   public static final class ObjectImyhat extends Imyhat {
 
-    private final Map<String, Pair<Imyhat, Integer>> fields;
+    private final Map<String, Pair<Imyhat, Integer>> fields = new TreeMap<>();
 
     public ObjectImyhat(Stream<Pair<String, Imyhat>> fields) {
-      this.fields =
-          fields
-              .sorted(Comparator.comparing(Pair::first))
-              .collect(
-                  Collectors.toMap(
-                      Pair::first,
-                      new Function<Pair<String, Imyhat>, Pair<Imyhat, Integer>>() {
-                        int index;
+      fields
+          .sorted(Comparator.comparing(Pair::first))
+          .forEach(
+              new Consumer<Pair<String, Imyhat>>() {
+                int index;
 
-                        @Override
-                        public Pair<Imyhat, Integer> apply(Pair<String, Imyhat> pair) {
-                          return new Pair<>(pair.second(), index++);
-                        }
-                      }));
+                @Override
+                public void accept(Pair<String, Imyhat> pair) {
+                  ObjectImyhat.this.fields.put(pair.first(), new Pair<>(pair.second(), index++));
+                }
+              });
     }
 
     @Override
@@ -373,6 +367,193 @@ public abstract class Imyhat {
     }
   }
 
+  public static Stream<BaseImyhat> baseTypes() {
+    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, PATH, STRING);
+  }
+
+  /**
+   * A bootstrap method that returns the appropriate {@link Imyhat} from a descriptor.
+   *
+   * @param descriptor the method name, which is the type descriptor; descriptor are guaranteed to
+   *     be valid JVM identifiers
+   * @param type the type of this call site, which must take no arguments and return {@link Imyhat}
+   */
+  @SuppressWarnings("unused")
+  public static CallSite bootstrap(Lookup lookup, String descriptor, MethodType type) {
+    if (!type.returnType().equals(Imyhat.class)) {
+      throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
+    }
+    if (type.parameterCount() != 0) {
+      throw new IllegalArgumentException("Method cannot take parameters.");
+    }
+    if (callsites.containsKey(descriptor)) {
+      return callsites.get(descriptor);
+    }
+    final Imyhat imyhat = parse(descriptor);
+    if (imyhat.isBad()) {
+      throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
+    }
+    final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Imyhat.class, imyhat));
+    callsites.put(descriptor, callsite);
+    return callsite;
+  }
+
+  /**
+   * Convert a possibly annotated Java type into a Shesmu type
+   *
+   * @param context the location to be displayed in error messages
+   * @param descriptor the annotated Shesmu descriptor
+   * @param clazz the class of the type
+   */
+  public static Imyhat convert(String context, String descriptor, Type clazz) {
+    if (descriptor.isEmpty()) {
+      return Imyhat.of(clazz)
+          .orElseThrow(
+              () ->
+                  new IllegalArgumentException(
+                      String.format(
+                          "%s has no type annotation and %s type isn't a valid Shesmu type.",
+                          context, clazz.getTypeName())));
+    } else {
+      final Imyhat type = Imyhat.parse(descriptor);
+      if (type.isBad()) {
+        throw new IllegalArgumentException(
+            String.format("%s has invalid type descriptor %s", context, descriptor));
+      }
+      if (!type.javaType().equals(TypeFactory.rawClass(clazz))) {
+        throw new IllegalArgumentException(
+            String.format(
+                "%s has Java type %s but Shesmu type descriptor implies %s.",
+                context, clazz.getTypeName(), type.javaType()));
+      }
+      return type;
+    }
+  }
+
+  /** Parse a name which must be one of the base types (no lists or tuples) */
+  public static BaseImyhat forName(String s) {
+    return baseTypes()
+        .filter(t -> t.name().equals(s))
+        .findAny()
+        .orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
+  }
+
+  public static Optional<? extends Imyhat> of(Type c) {
+    final Optional<Imyhat> baseType =
+        baseTypes()
+            .filter(t -> t.javaType().equals(c) || t.javaWrapperType().equals(c))
+            .findAny()
+            .map(x -> x);
+    if (baseType.isPresent()) {
+      return baseType;
+    }
+    System.err.println(c.getTypeName());
+    System.err.println(c.getClass().getName());
+    if (!(c instanceof ParameterizedType)) {
+      return Optional.empty();
+    }
+    final ParameterizedType p = (ParameterizedType) c;
+    // We check for equals rather than isAssignableFrom because we don't know which way the
+    // assignment is going
+    if (p.getActualTypeArguments().length != 1
+        || !(p.getRawType() instanceof Class<?>)
+        || !Set.class.equals(p.getRawType())) {
+      System.err.println(Arrays.asList(p.getActualTypeArguments()));
+      System.err.println(p.getRawType());
+      System.err.println(p.getRawType().getClass());
+      return Optional.empty();
+    }
+    return of(p.getActualTypeArguments()[0]).map(Imyhat::asList);
+  }
+
+  /**
+   * Parse a string-representation of a type
+   *
+   * @param input the Shesmu string (as generated by {@link #descriptor()}
+   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
+   */
+  public static Imyhat parse(CharSequence input) {
+    final AtomicReference<CharSequence> output = new AtomicReference<>();
+    final Imyhat result = parse(input, output);
+    return output.get().length() == 0 ? result : BAD;
+  }
+
+  /**
+   * Parse a descriptor and return the corresponding type
+   *
+   * @param input the Shesmu string (as generated by {@link #descriptor()}
+   * @param output the remaining subsequence of the input after parsing
+   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
+   */
+  public static Imyhat parse(CharSequence input, AtomicReference<CharSequence> output) {
+    if (input.length() == 0) {
+      output.set(input);
+      return BAD;
+    }
+    switch (input.charAt(0)) {
+      case 'b':
+        output.set(input.subSequence(1, input.length()));
+        return BOOLEAN;
+      case 'd':
+        output.set(input.subSequence(1, input.length()));
+        return DATE;
+      case 'i':
+        output.set(input.subSequence(1, input.length()));
+        return INTEGER;
+      case 'p':
+        output.set(input.subSequence(1, input.length()));
+        return PATH;
+      case 's':
+        output.set(input.subSequence(1, input.length()));
+        return STRING;
+      case 'a':
+        return parse(input.subSequence(1, input.length()), output).asList();
+      case 't':
+      case 'o':
+        int count = 0;
+        int index;
+        for (index = 1; Character.isDigit(input.charAt(index)); index++) {
+          count = 10 * count + Character.digit(input.charAt(index), 10);
+        }
+        if (count == 0) {
+          return BAD;
+        }
+        output.set(input.subSequence(index, input.length()));
+        if (input.charAt(0) == 't') {
+          final Imyhat[] inner = new Imyhat[count];
+          for (int i = 0; i < count; i++) {
+            inner[i] = parse(output.get(), output);
+          }
+          return tuple(inner);
+        } else {
+          final List<Pair<String, Imyhat>> fields = new ArrayList<>();
+          for (int i = 0; i < count; i++) {
+            final StringBuilder name = new StringBuilder();
+            int dollar = 0;
+            while (output.get().charAt(dollar) != '$') {
+              name.append(output.get().charAt(dollar));
+              dollar++;
+            }
+            output.set(output.get().subSequence(dollar + 1, output.get().length()));
+            fields.add(new Pair<>(name.toString(), parse(output.get(), output)));
+          }
+          return new ObjectImyhat(fields.stream());
+        }
+      default:
+        output.set(input);
+        return BAD;
+    }
+  }
+
+  /**
+   * Create a tuple type from the types of its elements.
+   *
+   * @param types the element types, in order
+   */
+  public static Imyhat tuple(Imyhat... types) {
+    return new TupleImyhat(types);
+  }
+
   public static final Imyhat BAD =
       new Imyhat() {
         @Override
@@ -470,6 +651,11 @@ public abstract class Imyhat {
         }
 
         @Override
+        public Class<?> javaWrapperType() {
+          return Boolean.class;
+        }
+
+        @Override
         public String name() {
           return "boolean";
         }
@@ -479,9 +665,6 @@ public abstract class Imyhat {
           return "true".equals(s);
         }
       };
-
-  private static final Map<String, CallSite> callsites = new HashMap<>();
-
   public static final BaseImyhat DATE =
       new BaseImyhat() {
         @Override
@@ -525,6 +708,11 @@ public abstract class Imyhat {
         }
 
         @Override
+        public Class<?> javaWrapperType() {
+          return Instant.class;
+        }
+
+        @Override
         public String name() {
           return "date";
         }
@@ -534,7 +722,6 @@ public abstract class Imyhat {
           return ZonedDateTime.parse(s).toInstant();
         }
       };
-
   public static final BaseImyhat FLOAT =
       new BaseImyhat() {
         @Override
@@ -578,13 +765,18 @@ public abstract class Imyhat {
         }
 
         @Override
+        public Class<?> javaWrapperType() {
+          return Double.class;
+        }
+
+        @Override
         public String name() {
           return "float";
         }
 
         @Override
         public Object parse(String s) {
-          return Double.parseDouble(s);
+          return ZonedDateTime.parse(s).toInstant();
         }
       };
   public static final BaseImyhat INTEGER =
@@ -630,6 +822,11 @@ public abstract class Imyhat {
         }
 
         @Override
+        public Class<?> javaWrapperType() {
+          return Long.class;
+        }
+
+        @Override
         public String name() {
           return "integer";
         }
@@ -639,7 +836,6 @@ public abstract class Imyhat {
           return Long.parseLong(s);
         }
       };
-
   public static final BaseImyhat PATH =
       new BaseImyhat() {
 
@@ -680,6 +876,11 @@ public abstract class Imyhat {
 
         @Override
         public Class<?> javaType() {
+          return Path.class;
+        }
+
+        @Override
+        public Class<?> javaWrapperType() {
           return Path.class;
         }
 
@@ -736,6 +937,11 @@ public abstract class Imyhat {
         }
 
         @Override
+        public Class<?> javaWrapperType() {
+          return String.class;
+        }
+
+        @Override
         public String name() {
           return "string";
         }
@@ -745,169 +951,7 @@ public abstract class Imyhat {
           return s;
         }
       };
-
-  /**
-   * A bootstrap method that returns the appropriate {@link Imyhat} from a descriptor.
-   *
-   * @param descriptor the method name, which is the type descriptor; descriptor are guaranteed to
-   *     be valid JVM identifiers
-   * @param type the type of this call site, which must take no arguments and return {@link Imyhat}
-   */
-  public static CallSite bootstrap(Lookup lookup, String descriptor, MethodType type) {
-    if (!type.returnType().equals(Imyhat.class)) {
-      throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
-    }
-    if (type.parameterCount() != 0) {
-      throw new IllegalArgumentException("Method cannot take parameters.");
-    }
-    if (callsites.containsKey(descriptor)) {
-      return callsites.get(descriptor);
-    }
-    final Imyhat imyhat = parse(descriptor);
-    if (imyhat.isBad()) {
-      throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
-    }
-    final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Imyhat.class, imyhat));
-    callsites.put(descriptor, callsite);
-    return callsite;
-  }
-
-  /**
-   * Convert a possibly annotated Java type into a Shesmu type
-   *
-   * @param context the location to be displayed in error messages
-   * @param descriptor the annotated Shesmu descriptor
-   * @param clazz the class of the type
-   */
-  public static Imyhat convert(String context, String descriptor, Class<?> clazz) {
-    if (descriptor.isEmpty()) {
-      return Imyhat.of(clazz)
-          .orElseThrow(
-              () ->
-                  new IllegalArgumentException(
-                      String.format(
-                          "%s has no type annotation and %s type isn't a valid Shesmu type.",
-                          context, clazz.getName())));
-    } else {
-      final Imyhat type = Imyhat.parse(descriptor);
-      if (type.isBad()) {
-        throw new IllegalArgumentException(
-            String.format("%s has invalid type descriptor %s", context, descriptor));
-      }
-      if (!type.javaType().equals(clazz)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "%s has Java type %s but Shesmu type descriptor implies %s.",
-                context, clazz.getName(), type.javaType()));
-      }
-      return type;
-    }
-  }
-
-  /** Parse a name which must be one of the base types (no lists or tuples) */
-  public static BaseImyhat forName(String s) {
-    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, PATH, STRING)
-        .filter(t -> t.name().equals(s))
-        .findAny()
-        .orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
-  }
-
-  public static Optional<BaseImyhat> of(Class<?> c) {
-    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, PATH, STRING)
-        .filter(t -> t.javaType().equals(c))
-        .findAny();
-  }
-
-  /**
-   * Parse a string-representation of a type
-   *
-   * @param input the Shesmu string (as generated by {@link #descriptor()}
-   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
-   */
-  public static Imyhat parse(CharSequence input) {
-    final AtomicReference<CharSequence> output = new AtomicReference<>();
-    final Imyhat result = parse(input, output);
-    return output.get().length() == 0 ? result : BAD;
-  }
-
-  /**
-   * Parse a descriptor and return the corresponding type
-   *
-   * @param input the Shesmu string (as generated by {@link #descriptor()}
-   * @param output the remaining subsequence of the input after parsing
-   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
-   */
-  public static Imyhat parse(CharSequence input, AtomicReference<CharSequence> output) {
-    if (input.length() == 0) {
-      output.set(input);
-      return BAD;
-    }
-    switch (input.charAt(0)) {
-      case 'b':
-        output.set(input.subSequence(1, input.length()));
-        return BOOLEAN;
-      case 'd':
-        output.set(input.subSequence(1, input.length()));
-        return DATE;
-      case 'f':
-        output.set(input.subSequence(1, input.length()));
-        return FLOAT;
-      case 'i':
-        output.set(input.subSequence(1, input.length()));
-        return INTEGER;
-      case 'p':
-        output.set(input.subSequence(1, input.length()));
-        return PATH;
-      case 's':
-        output.set(input.subSequence(1, input.length()));
-        return STRING;
-      case 'a':
-        return parse(input.subSequence(1, input.length()), output).asList();
-      case 't':
-      case 'o':
-        int count = 0;
-        int index;
-        for (index = 1; Character.isDigit(input.charAt(index)); index++) {
-          count = 10 * count + Character.digit(input.charAt(index), 10);
-        }
-        if (count == 0) {
-          return BAD;
-        }
-        output.set(input.subSequence(index, input.length()));
-        if (input.charAt(0) == 't') {
-          final Imyhat[] inner = new Imyhat[count];
-          for (int i = 0; i < count; i++) {
-            inner[i] = parse(output.get(), output);
-          }
-          return tuple(inner);
-        } else {
-          final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-          for (int i = 0; i < count; i++) {
-            final StringBuilder name = new StringBuilder();
-            int dollar = 0;
-            while (output.get().charAt(dollar) != '$') {
-              name.append(output.get().charAt(dollar));
-              dollar++;
-            }
-            output.set(output.get().subSequence(dollar + 1, output.get().length()));
-            fields.add(new Pair<>(name.toString(), parse(output.get(), output)));
-          }
-          return new ObjectImyhat(fields.stream());
-        }
-      default:
-        output.set(input);
-        return BAD;
-    }
-  }
-
-  /**
-   * Create a tuple type from the types of its elements.
-   *
-   * @param types the element types, in order
-   */
-  public static Imyhat tuple(Imyhat... types) {
-    return new TupleImyhat(types);
-  }
+  private static final Map<String, CallSite> callsites = new HashMap<>();
 
   /**
    * Unbox a value of this type

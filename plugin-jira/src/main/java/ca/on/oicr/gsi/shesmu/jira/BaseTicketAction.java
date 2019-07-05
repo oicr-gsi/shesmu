@@ -51,7 +51,7 @@ public abstract class BaseTicketAction extends Action {
   private URI issueUrl;
   private final Set<String> issues = new TreeSet<>();
 
-  @ActionParameter(required = false, type = "as")
+  @ActionParameter(required = false)
   public Set<String> labels = Collections.emptySet();
 
   @ActionParameter public String summary;

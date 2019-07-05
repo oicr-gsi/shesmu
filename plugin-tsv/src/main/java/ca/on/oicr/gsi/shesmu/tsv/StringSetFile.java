@@ -39,7 +39,7 @@ public final class StringSetFile extends PluginFile {
     renderer.line("Last read successful", good ? "Yes" : "No");
   }
 
-  @ShesmuMethod(name = "$", type = "as", description = "Set of strings from {file}.")
+  @ShesmuMethod(name = "$", description = "Set of strings from {file}.")
   public Set<String> get() {
     return values;
   }

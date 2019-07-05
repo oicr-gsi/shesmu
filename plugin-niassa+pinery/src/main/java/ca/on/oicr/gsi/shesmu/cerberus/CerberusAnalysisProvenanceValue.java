@@ -92,7 +92,7 @@ public final class CerberusAnalysisProvenanceValue {
     return fileAttributes;
   }
 
-  @ShesmuVariable(type = "ai")
+  @ShesmuVariable
   public Set<Long> input_files() {
     return inputFiles;
   }
