@@ -49,15 +49,19 @@ public class AlertDto {
     return status;
   }
 
-  public boolean matches(String environment, Set<String> serviceSet) {
+  public boolean matches(String environment, List<String> labelNames, Set<String> serviceSet) {
     if (!labels.get("alertname").asText("").equals("AutoInhibit")) {
       return false;
     }
     if (labels.hasNonNull("environment")
-        && !labels.get("environment").asText("production").equals(environment)) {
+        && !labels.get("environment").asText("").equals(environment)) {
       return false;
     }
-    return labels.hasNonNull("job") && serviceSet.contains(labels.get("job").asText(""));
+    return labelNames
+        .stream()
+        .filter(labels::hasNonNull)
+        .map(l -> labels.get(l).asText(""))
+        .anyMatch(serviceSet::contains);
   }
 
   public void setAnnotations(ObjectNode annotations) {

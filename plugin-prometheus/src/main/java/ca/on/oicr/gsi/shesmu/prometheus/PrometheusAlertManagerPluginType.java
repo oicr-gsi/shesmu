@@ -13,6 +13,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -87,6 +88,9 @@ public class PrometheusAlertManagerPluginType
           c -> {
             renderer.link("Address", c.getAlertmanager(), c.getAlertmanager());
             renderer.line("Environment", c.getEnvironment());
+            for (final String label : c.getLabels()) {
+              renderer.line("Inhibition Alert Label", label);
+            }
           });
     }
 
@@ -118,7 +122,16 @@ public class PrometheusAlertManagerPluginType
     @Override
     public boolean isOverloaded(Set<String> services) {
       String environment = configuration.map(Configuration::getEnvironment).orElse("");
-      return cache.get().anyMatch(alert -> alert.matches(environment, services));
+      return cache
+          .get()
+          .anyMatch(
+              alert ->
+                  alert.matches(
+                      environment,
+                      configuration
+                          .map(Configuration::getLabels)
+                          .orElse(Collections.singletonList("job")),
+                      services));
     }
 
     @Override
