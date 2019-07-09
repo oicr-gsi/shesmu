@@ -150,6 +150,12 @@ since they may dynamically provide actions, constants, functions, or signers.
 For many plugins, the filename will determine the name of things available to
 the olives.
 
+Plugin configuration files can be tested using:
+
+    java ca.on.oicr.gsi.shesmu.CheckConfig /path/to/config.conf
+
+Note that the plugin JAR files must be on the class path.
+
 ### Built-In
 Shesmu provides only a small handful of built-in services.
 
