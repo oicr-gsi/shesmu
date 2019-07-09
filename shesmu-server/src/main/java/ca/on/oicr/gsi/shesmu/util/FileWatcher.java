@@ -87,7 +87,11 @@ public abstract class FileWatcher {
       for (final Path directory : directories) {
         try (Stream<Path> stream = Files.walk(directory, 1)) {
           stream
-              .filter(path -> path.getFileName().toString().endsWith(extension))
+              .filter(
+                  path -> {
+                    final String fileName = path.getFileName().toString();
+                    return fileName.endsWith(extension) && !fileName.startsWith(".");
+                  })
               .forEach(
                   path -> {
                     final WatchedFileListener file = ctor.apply(path);
@@ -155,6 +159,9 @@ public abstract class FileWatcher {
             } else {
               for (final WatchEvent<?> event : wk.pollEvents()) {
                 final Path path = ((Path) wk.watchable()).resolve((Path) event.context());
+                if (path.getFileName().toString().startsWith(".")) {
+                  continue;
+                }
                 if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
                   System.out.printf("New file %s detected.\n", path.toString());
                   final String fileName = path.getFileName().toString();
