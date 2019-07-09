@@ -117,12 +117,12 @@ public abstract class FileWatcher {
               StandardWatchEventKinds.ENTRY_CREATE,
               StandardWatchEventKinds.ENTRY_DELETE);
         }
+        List<Pair<Instant, WatchedFileListener>> retry = new ArrayList<>();
         while (running) {
           try {
-            List<Pair<Instant, WatchedFileListener>> retry = new ArrayList<>();
             final Instant now = Instant.now();
             final OptionalLong timeout =
-                retry.stream().mapToLong(p -> Duration.between(p.first(), now).toMillis()).min();
+                retry.stream().mapToLong(p -> Duration.between(now, p.first()).toMillis()).min();
             final WatchKey wk =
                 timeout.isPresent()
                     ? timeout.getAsLong() < 0
@@ -130,7 +130,7 @@ public abstract class FileWatcher {
                         : watchService.poll(timeout.getAsLong(), TimeUnit.MILLISECONDS)
                     : watchService.take();
             if (wk == null) {
-              System.out.println("Data directory is stale. Reloading all files...");
+              System.out.println("Timeout occurred. Reloading stale files.");
               retry =
                   Stream.concat(
                           retry
