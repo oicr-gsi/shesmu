@@ -270,7 +270,7 @@ public abstract class Imyhat {
           .stream()
           .map(e -> e.getKey() + " = " + e.getValue().first().name())
           .sorted()
-          .collect(Collectors.joining(",", "{ ", " }"));
+          .collect(Collectors.joining(", ", "{ ", " }"));
     }
   }
 
