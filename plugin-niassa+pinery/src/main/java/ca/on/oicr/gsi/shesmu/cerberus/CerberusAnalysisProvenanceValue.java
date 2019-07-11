@@ -37,6 +37,7 @@ public final class CerberusAnalysisProvenanceValue {
   private final String md5;
   private final String metatype;
   private final String name;
+  private final long runAccession;
   private final boolean skip;
   private final String status;
   private long workflowAccession;
@@ -69,6 +70,7 @@ public final class CerberusAnalysisProvenanceValue {
     name = provenance.getWorkflowRunName();
     skip = provenance.getSkip() == null ? false : provenance.getSkip();
     status = provenance.getWorkflowRunStatus();
+    runAccession = provenance.getWorkflowRunId();
     workflowAccession = provenance.getWorkflowId();
     workflowAttributes = attributes(provenance.getWorkflowAttributes());
     workflowName = provenance.getWorkflowName();
@@ -125,6 +127,11 @@ public final class CerberusAnalysisProvenanceValue {
   @ShesmuVariable
   public Path path() {
     return filePath;
+  }
+
+  @ShesmuVariable
+  public long run_accession() {
+    return runAccession;
   }
 
   @ShesmuVariable
