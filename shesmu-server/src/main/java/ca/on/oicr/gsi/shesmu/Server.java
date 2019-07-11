@@ -266,7 +266,10 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public Stream<ConfigurationSection> sections() {
                 return Stream.concat(
-                    pluginManager.listConfiguration(), staticActions.listConfiguration());
+                    Stream.concat(
+                        pluginManager.listConfiguration(), staticActions.listConfiguration()),
+                    AnnotatedInputFormatDefinition.formats()
+                        .flatMap(AnnotatedInputFormatDefinition::configuration));
               }
             }.renderPage(os);
           }
@@ -1452,6 +1455,8 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               protected void writeRows(TableRowWriter row) {
                 pluginManager.dumpPluginConfig(row);
+                AnnotatedInputFormatDefinition.formats()
+                    .forEach(format -> format.dumpPluginConfig(row));
               }
             }.renderPage(os);
           }

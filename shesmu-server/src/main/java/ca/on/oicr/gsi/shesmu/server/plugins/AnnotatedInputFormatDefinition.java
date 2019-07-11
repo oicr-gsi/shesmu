@@ -20,6 +20,9 @@ import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
+import ca.on.oicr.gsi.status.ConfigurationSection;
+import ca.on.oicr.gsi.status.SectionRenderer;
+import ca.on.oicr.gsi.status.TableRowWriter;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -45,6 +48,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.objectweb.asm.Handle;
@@ -80,10 +84,13 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private class LocalJsonFile implements WatchedFileListener {
-    private final ValueCache<Optional<List<Object>>> values;
+    private final ConfigurationSection configuration;
     private volatile boolean dirty = true;
+    private String fileName;
+    private final ValueCache<Optional<List<Object>>> values;
 
     public LocalJsonFile(Path fileName) {
+      this.fileName = fileName.toString();
       values =
           new ValueCache<Optional<List<Object>>>(
               format.name() + " " + fileName,
@@ -106,6 +113,22 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
               }
             }
           };
+      configuration =
+          new ConfigurationSection(fileName.toString()) {
+            @Override
+            public void emit(SectionRenderer sectionRenderer) throws XMLStreamException {
+              sectionRenderer.line(
+                  "Count", values.get().map(l -> Integer.toString(l.size())).orElse("Invalid"));
+            }
+          };
+    }
+
+    public ConfigurationSection configuration() {
+      return configuration;
+    }
+
+    public String fileName() {
+      return fileName;
     }
 
     @Override
@@ -164,6 +187,20 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     public RemoteJsonSource(Path fileName) {
       this.fileName = fileName;
       cache = new RemoteReloader(fileName);
+    }
+
+    public ConfigurationSection configuration() {
+      return new ConfigurationSection(fileName.toString()) {
+        @Override
+        public void emit(SectionRenderer sectionRenderer) throws XMLStreamException {
+          sectionRenderer.line("Input Format", format.name());
+          config.ifPresent(
+              c -> {
+                sectionRenderer.line("URL", c.url);
+                sectionRenderer.line("Time-to-live", c.ttl);
+              });
+        }
+      };
     }
 
     @Override
@@ -358,6 +395,19 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   @Override
   public Stream<InputVariable> baseStreamVariables() {
     return variables.stream();
+  }
+
+  public Stream<? extends ConfigurationSection> configuration() {
+    return Stream.concat(
+        local.stream().map(LocalJsonFile::configuration),
+        remotes.stream().map(RemoteJsonSource::configuration));
+  }
+
+  public void dumpPluginConfig(TableRowWriter row) {
+    local.stream().forEach(l -> row.write(false, l.fileName(), "Input Source", format.name()));
+    remotes
+        .stream()
+        .forEach(r -> row.write(false, r.fileName.toString(), "Input Source", format.name()));
   }
 
   @Override
