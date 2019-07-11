@@ -76,12 +76,12 @@ Maintenance schedules allow throttling Shesmu olives and actions during specific
 To create a schedule, make a tab-separated file ending with `.schedule` with
 two columns, the start and end times of each maintenance window:
 
-    2018-04-28T01:00Z	2018-04-30T08:00Z
-    2018-09-14T21:00Z	2018-09-17T13:00Z
-    2019-04-26T21:00Z	2019-04-29T13:00Z
-    2019-07-12T21:00Z	2019-07-15T15:00Z
-    2019-09-13T21:00Z	2019-09-16T13:00Z
-    2019-12-06T22:00Z	2019-12-09T14:00Z
+    2018-04-28T01:00:00Z	2018-04-30T08:00:00Z
+    2018-09-14T21:00:00Z	2018-09-17T13:00:00Z
+    2019-04-26T21:00:00Z	2019-04-29T13:00:00Z
+    2019-07-12T21:00:00Z	2019-07-15T15:00:00Z
+    2019-09-13T21:00:00Z	2019-09-16T13:00:00Z
+    2019-12-06T22:00:00Z	2019-12-09T14:00:00Z
 
 The name of the file will be the service name that will be inhibited. If called
 `maintenance.schedule` all services will be inhibited.
@@ -90,3 +90,17 @@ The times must be formatted in a way that can be parsed by
 [`DateTimeFormatter.ISO_DATE_TIME`](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_DATE_TIME).
 If that sounds unappealing, there's a graphical [maintenance schedule
 editor](../maintenance-editor/README.md).
+
+## Ranges
+Ranges return a particular string value for a time range.
+
+To create a range file, make a tab-separate file ending with `.range` with two
+columns, the start of that range and the value to return:
+
+    2018-04-28T01:00:00Z v1
+    2018-04-30T08:00:00Z v2
+    2018-09-14T21:00:00Z v2.1
+    2018-09-17T13:00:00Z v2.5
+
+This will create a function available to olives that will return the value
+associated with the previous date. So, 2018-09-15 would return `"v2.1"`.
