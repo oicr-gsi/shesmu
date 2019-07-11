@@ -25,8 +25,7 @@ public final class CerberusAnalysisProvenanceValue {
         .collect(Collectors.toCollection(ATTR_TYPE::newSet));
   }
 
-  private static final Imyhat ATTR_TYPE =
-      Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList()).asList();
+  private static final Imyhat ATTR_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList());
   private final long fileAccession;
   private Set<Tuple> fileAttributes;
   private final Path filePath;
