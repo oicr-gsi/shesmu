@@ -234,7 +234,7 @@ public final class CerberusFileProvenanceValue {
     return library_type;
   }
 
-  @ShesmuVariable(type = "t4sssd")
+  @ShesmuVariable(type = "o4id$sprovider$stime$dversion$s")
   public Tuple lims() {
     return lims;
   }

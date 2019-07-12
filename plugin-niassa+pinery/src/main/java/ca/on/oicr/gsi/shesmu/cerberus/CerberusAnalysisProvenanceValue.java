@@ -61,9 +61,9 @@ public final class CerberusAnalysisProvenanceValue {
     lims =
         new Tuple(
             limsKey.getLimsKey().getId(),
-            limsKey.getLimsKey().getVersion(),
-            limsKey.getLimsKey().getVersion(),
-            limsKey.getLimsKey().getLastModified().toInstant());
+            limsKey.getLimsKey().getProvider(),
+            limsKey.getLimsKey().getLastModified().toInstant(),
+            limsKey.getLimsKey().getVersion());
     md5 = provenance.getFileMd5sum();
     metatype = provenance.getFileMetaType();
     name = provenance.getWorkflowRunName();
@@ -102,7 +102,7 @@ public final class CerberusAnalysisProvenanceValue {
     return iusAttributes;
   }
 
-  @ShesmuVariable(type = "t4sssd")
+  @ShesmuVariable(type = "o4id$sprovider$stime$dversion$s")
   public Tuple lims() {
     return lims;
   }

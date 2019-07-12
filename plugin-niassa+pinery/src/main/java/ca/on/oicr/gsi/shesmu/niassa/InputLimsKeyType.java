@@ -24,12 +24,16 @@ public enum InputLimsKeyType {
                       BamMergeEntry::new,
                       TypeGuarantee.STRING, // SWID
                       TypeGuarantee.STRING, // File name
-                      TypeGuarantee.tuple(
+                      TypeGuarantee.object(
                           SimpleLimsKey::new,
+                          "id",
                           TypeGuarantee.STRING,
+                          "provider",
                           TypeGuarantee.STRING,
-                          TypeGuarantee.STRING,
-                          TypeGuarantee.DATE), // LIMS key
+                          "time",
+                          TypeGuarantee.DATE,
+                          "version",
+                          TypeGuarantee.STRING), // LIMS key
                       TypeGuarantee.BOOLEAN // staleness
                       ))))),
   BCL2FASTQ(
@@ -39,23 +43,31 @@ public enum InputLimsKeyType {
           TypeGuarantee.tuple(
               Bcl2FastqLaneEntry::new,
               TypeGuarantee.LONG, // lane number
-              TypeGuarantee.tuple(
+              TypeGuarantee.object(
                   SimpleLimsKey::new,
+                  "id",
                   TypeGuarantee.STRING,
+                  "provider",
                   TypeGuarantee.STRING,
-                  TypeGuarantee.STRING,
-                  TypeGuarantee.DATE), // lane LIMS key
+                  "time",
+                  TypeGuarantee.DATE,
+                  "version",
+                  TypeGuarantee.STRING), // lane LIMS key
               TypeGuarantee.list(
                   TypeGuarantee.tuple(
                       Bcl2FastqSampleEntry::new,
                       TypeGuarantee.STRING, // sample barcode
                       TypeGuarantee.STRING, // sample library name
-                      TypeGuarantee.tuple(
+                      TypeGuarantee.object(
                           SimpleLimsKey::new,
+                          "id",
                           TypeGuarantee.STRING,
+                          "provider",
                           TypeGuarantee.STRING,
-                          TypeGuarantee.STRING,
-                          TypeGuarantee.DATE), // sample LIMS key
+                          "time",
+                          TypeGuarantee.DATE,
+                          "version",
+                          TypeGuarantee.STRING), // sample LIMS key
                       TypeGuarantee.STRING) // sample group id
                   )))),
   CELL_RANGER(
@@ -70,12 +82,16 @@ public enum InputLimsKeyType {
                   TypeGuarantee.LONG,
                   TypeGuarantee.STRING), // IUS
               TypeGuarantee.STRING, // library name
-              TypeGuarantee.tuple(
+              TypeGuarantee.object(
                   SimpleLimsKey::new,
+                  "id",
                   TypeGuarantee.STRING,
+                  "provider",
                   TypeGuarantee.STRING,
-                  TypeGuarantee.STRING,
-                  TypeGuarantee.DATE), // LIMS key
+                  "time",
+                  TypeGuarantee.DATE,
+                  "version",
+                  TypeGuarantee.STRING), // LIMS key
               TypeGuarantee.STRING) // group id
           )),
 
@@ -86,12 +102,16 @@ public enum InputLimsKeyType {
           TypeGuarantee.tuple(
               FilesInputFile::new,
               TypeGuarantee.STRING, // SWID
-              TypeGuarantee.tuple(
+              TypeGuarantee.object(
                   SimpleLimsKey::new,
+                  "id",
                   TypeGuarantee.STRING,
+                  "provider",
                   TypeGuarantee.STRING,
-                  TypeGuarantee.STRING,
-                  TypeGuarantee.DATE), // LIMS key
+                  "time",
+                  TypeGuarantee.DATE,
+                  "version",
+                  TypeGuarantee.STRING), // LIMS key
               TypeGuarantee.BOOLEAN))); // staleness
 
   private final CustomActionParameter<WorkflowAction> parameter;

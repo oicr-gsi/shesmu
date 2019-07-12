@@ -144,7 +144,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         "",
                         lastModified,
                         new Tuple(
-                            lp.getLaneProvenanceId(), lp.getVersion(), provider, lastModified),
+                            lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
                         lp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : lp.getCreatedDate().toInstant(),
@@ -211,7 +211,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
                         lastModified,
                         new Tuple(
-                            sp.getSampleProvenanceId(), sp.getVersion(), provider, lastModified),
+                            sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
                         sp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : sp.getCreatedDate().toInstant(),

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Matches to make Java's type checking produce correct types in Shesmu
@@ -37,6 +39,104 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
       @Override
       public List<T> unpack(Object object) {
         return ((Set<?>) object).stream().map(inner::unpack).collect(Collectors.toList());
+      }
+    };
+  }
+
+  public static <R, T, U> TypeGuarantee<R> object(
+      Pack2<? super T, ? super U, ? extends R> convert,
+      String firstName,
+      TypeGuarantee<T> first,
+      String secondName,
+      TypeGuarantee<U> second) {
+    final Imyhat tupleType =
+        new Imyhat.ObjectImyhat(
+            Stream.of(new Pair<>(firstName, first.type()), new Pair<>(secondName, second.type())));
+    if (firstName.compareTo(secondName) >= 0) {
+      throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
+    }
+    return new TypeGuarantee<R>() {
+      @Override
+      public Imyhat type() {
+        return tupleType;
+      }
+
+      @Override
+      public R unpack(Object object) {
+        final Tuple input = (Tuple) object;
+        return convert.pack(first.unpack(input.get(0)), second.unpack(input.get(1)));
+      }
+    };
+  }
+
+  public static <R, T, U, V> TypeGuarantee<R> object(
+      Pack3<? super T, ? super U, ? super V, ? extends R> convert,
+      String firstName,
+      TypeGuarantee<T> first,
+      String secondName,
+      TypeGuarantee<U> second,
+      String thirdName,
+      TypeGuarantee<V> third) {
+    final Imyhat tupleType =
+        new Imyhat.ObjectImyhat(
+            Stream.of(
+                new Pair<>(firstName, first.type()),
+                new Pair<>(secondName, second.type()),
+                new Pair<>(thirdName, third.type())));
+    if (firstName.compareTo(secondName) >= 0 || secondName.compareTo(thirdName) >= 0) {
+      throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
+    }
+    return new TypeGuarantee<R>() {
+      @Override
+      public Imyhat type() {
+        return tupleType;
+      }
+
+      @Override
+      public R unpack(Object object) {
+        final Tuple input = (Tuple) object;
+        return convert.pack(
+            first.unpack(input.get(0)), second.unpack(input.get(1)), third.unpack(input.get(2)));
+      }
+    };
+  }
+
+  public static <R, T, U, V, W> TypeGuarantee<R> object(
+      Pack4<? super T, ? super U, ? super V, ? super W, ? extends R> convert,
+      String firstName,
+      TypeGuarantee<T> first,
+      String secondName,
+      TypeGuarantee<U> second,
+      String thirdName,
+      TypeGuarantee<V> third,
+      String fourthName,
+      TypeGuarantee<W> fourth) {
+    final Imyhat tupleType =
+        new Imyhat.ObjectImyhat(
+            Stream.of(
+                new Pair<>(firstName, first.type()),
+                new Pair<>(secondName, second.type()),
+                new Pair<>(thirdName, third.type()),
+                new Pair<>(fourthName, fourth.type())));
+    if (firstName.compareTo(secondName) >= 0
+        || secondName.compareTo(thirdName) >= 0
+        || thirdName.compareTo(fourthName) >= 0) {
+      throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
+    }
+    return new TypeGuarantee<R>() {
+      @Override
+      public Imyhat type() {
+        return tupleType;
+      }
+
+      @Override
+      public R unpack(Object object) {
+        final Tuple input = (Tuple) object;
+        return convert.pack(
+            first.unpack(input.get(0)),
+            second.unpack(input.get(1)),
+            third.unpack(input.get(2)),
+            fourth.unpack(input.get(3)));
       }
     };
   }

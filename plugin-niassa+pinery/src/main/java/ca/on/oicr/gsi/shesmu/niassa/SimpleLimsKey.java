@@ -12,7 +12,7 @@ public class SimpleLimsKey implements LimsKey {
   private final String provider;
   private final String version;
 
-  public SimpleLimsKey(String id, String version, String provider, Instant lastModified) {
+  public SimpleLimsKey(String id, String provider, Instant lastModified, String version) {
 
     this.id = id;
     this.version = version;
