@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.tsv;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.status.SectionRenderer;
@@ -37,12 +38,15 @@ public class RangeFile extends PluginFile {
 
   @ShesmuMethod(
       name = "$",
+      type = "t2ds",
       description =
           "Gets the value for a range of time windows specified in {file}. Time before the first window will return the empty string.")
-  public String get(
+  public Tuple get(
       @ShesmuParameter(description = "The time to look for in the window.") Instant time) {
     final Map.Entry<Instant, String> entry = ranges.floorEntry(time);
-    return entry == null ? "" : entry.getValue();
+    return entry == null
+        ? new Tuple(Instant.EPOCH, "")
+        : new Tuple(entry.getKey(), entry.getValue());
   }
 
   @Override
