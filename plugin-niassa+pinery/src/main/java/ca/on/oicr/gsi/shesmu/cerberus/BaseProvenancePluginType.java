@@ -113,12 +113,12 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           fp.getLastModified().toInstant(),
                           new Tuple(
                               limsKey.map(LimsKey::getId).orElse(""),
-                              limsKey.map(LimsKey::getVersion).orElse(""),
                               limsKey.map(LimsKey::getProvider).orElse(""),
                               limsKey
                                   .map(LimsKey::getLastModified)
                                   .map(ZonedDateTime::toInstant)
-                                  .orElse(Instant.EPOCH)),
+                                  .orElse(Instant.EPOCH),
+                              limsKey.map(LimsKey::getVersion).orElse("")),
                           fp.getLastModified().toInstant(),
                           fp.getStatus() == FileProvenance.Status.STALE,
                           "file_provenance");
