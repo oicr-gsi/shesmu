@@ -20,7 +20,8 @@ public abstract class ListNode {
   }
 
   private interface ListNodeNamedConstructor {
-    public ListNode build(int line, int column, String name, ExpressionNode expression);
+    public ListNode build(
+        int line, int column, DestructuredArgumentNode name, ExpressionNode expression);
   }
 
   public enum Ordering {
@@ -36,14 +37,14 @@ public abstract class ListNode {
     DISPATCH.addKeyword(
         "Flatten",
         (p, o) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
+          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
           final AtomicReference<SourceNode> source = new AtomicReference<>();
           final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()
-                  .identifier(name::set)
+                  .then(DestructuredArgumentNode::parse, name::set)
                   .whitespace()
                   .then(SourceNode::parse, source::set)
                   .list(transforms::set, ListNode::parse)
@@ -105,11 +106,11 @@ public abstract class ListNode {
   private static Parser.Rule<ListNode> handler(
       ListNodeNamedConstructor constructor, Function<Parser, Parser> linker) {
     return (p, o) -> {
-      final AtomicReference<String> name = new AtomicReference<>();
+      final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
       final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
       final Parser result =
           linker
-              .apply(p.whitespace().identifier(name::set).whitespace())
+              .apply(p.whitespace().then(DestructuredArgumentNode::parse, name::set).whitespace())
               .whitespace()
               .then(ExpressionNode::parse, expression::set);
       if (result.isGood()) {
@@ -144,28 +145,17 @@ public abstract class ListNode {
     return line;
   }
 
-  public abstract String name();
-
-  public abstract String nextName();
-
-  /**
-   * The type of the returned stream
-   *
-   * <p>This should return {@link Imyhat#BAD} if no type can be determined
-   */
-  public abstract Imyhat nextType();
-
   public abstract Ordering order(Ordering previous, Consumer<String> errorHandler);
 
-  public abstract void render(JavaStreamBuilder builder);
+  public abstract LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name);
 
   /** Resolve all variable plugins in this expression and its children. */
-  public abstract Optional<String> resolve(
-      String name, NameDefinitions defs, Consumer<String> errorHandler);
+  public abstract Optional<List<Target>> resolve(
+      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all functions plugins in this expression */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
 
-  public abstract boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler);
+  public abstract Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler);
 }

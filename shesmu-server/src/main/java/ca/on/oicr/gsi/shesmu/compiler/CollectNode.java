@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -55,14 +56,14 @@ public abstract class CollectNode {
     DISPATCH.addKeyword(
         "Reduce",
         (p, o) -> {
-          final AtomicReference<String> accumulatorName = new AtomicReference<>();
+          final AtomicReference<DestructuredArgumentNode> accumulatorName = new AtomicReference<>();
           final AtomicReference<ExpressionNode> defaultExpression = new AtomicReference<>();
           final AtomicReference<ExpressionNode> initialExpression = new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .symbol("(")
                   .whitespace()
-                  .identifier(accumulatorName::set)
+                  .then(DestructuredArgumentNode::parse, accumulatorName::set)
                   .whitespace()
                   .symbol("=")
                   .whitespace()
@@ -174,10 +175,11 @@ public abstract class CollectNode {
     return true;
   }
 
-  public abstract void render(JavaStreamBuilder builder);
+  public abstract void render(JavaStreamBuilder builder, LoadableConstructor name);
 
   /** Resolve all variable plugins in this expression and its children. */
-  public abstract boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler);
+  public abstract boolean resolve(
+      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all functions plugins in this expression */
   public abstract boolean resolveFunctions(

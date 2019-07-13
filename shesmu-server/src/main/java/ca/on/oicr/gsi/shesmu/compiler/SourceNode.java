@@ -81,11 +81,7 @@ public abstract class SourceNode {
     this.column = column;
   }
 
-  /**
-   * Add all free variable names to the set provided.
-   *
-   * @param names
-   */
+  /** Add all free variable names to the set provided. */
   public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
 
   public abstract void collectPlugins(Set<Path> pluginFileNames);
@@ -117,11 +113,6 @@ public abstract class SourceNode {
    */
   public abstract Imyhat streamType();
 
-  /**
-   * Perform type checking on this source and its children.
-   *
-   * @param errorHandler
-   * @return
-   */
+  /** Perform type checking on this source and its children. */
   public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

@@ -11,11 +11,12 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ExpressionNodeFor extends ExpressionNode {
 
   private final CollectNode collector;
-  private final String name;
+  private final DestructuredArgumentNode name;
 
   private final SourceNode source;
   private final List<ListNode> transforms;
@@ -23,7 +24,7 @@ public class ExpressionNodeFor extends ExpressionNode {
   public ExpressionNodeFor(
       int line,
       int column,
-      String name,
+      DestructuredArgumentNode name,
       SourceNode source,
       List<ListNode> transforms,
       CollectNode collector) {
@@ -51,19 +52,27 @@ public class ExpressionNodeFor extends ExpressionNode {
   @Override
   public void render(Renderer renderer) {
     final JavaStreamBuilder builder = source.render(renderer);
-    transforms.forEach(t -> t.render(builder));
-    collector.render(builder);
+    collector.render(
+        builder,
+        transforms
+            .stream()
+            .reduce(
+                name::render,
+                (n, transform) -> transform.render(builder, n),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                }));
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     boolean ok = source.resolve(defs, errorHandler);
 
-    final Optional<String> nextName =
+    final Optional<List<Target>> nextName =
         transforms
             .stream()
             .reduce(
-                Optional.of(name),
+                Optional.of(name.targets().collect(Collectors.toList())),
                 (n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
@@ -92,19 +101,29 @@ public class ExpressionNodeFor extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    if (!source.typeCheck(errorHandler)) {
+    if (!source.typeCheck(errorHandler) || !name.typeCheck(source.streamType(), errorHandler)) {
       return false;
     }
-    Ordering ordering = source.ordering();
-    Imyhat incoming = source.streamType();
-    for (final ListNode transform : transforms) {
-      if (!transform.typeCheck(incoming, errorHandler)) {
-        return false;
-      }
-      incoming = transform.nextType();
-      ordering = transform.order(ordering, errorHandler);
-    }
-    if (collector.typeCheck(incoming, errorHandler) && ordering != Ordering.BAD) {
+    final Ordering ordering =
+        transforms
+            .stream()
+            .reduce(
+                source.ordering(),
+                (order, transform) -> transform.order(order, errorHandler),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                });
+    final Optional<Imyhat> resultType =
+        transforms
+            .stream()
+            .reduce(
+                Optional.of(source.streamType()),
+                (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                });
+    if (resultType.map(incoming -> collector.typeCheck(incoming, errorHandler)).orElse(false)
+        && ordering != Ordering.BAD) {
       return collector.orderingCheck(ordering, errorHandler);
     }
     return false;

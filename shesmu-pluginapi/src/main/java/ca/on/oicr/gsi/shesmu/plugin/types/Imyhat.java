@@ -314,6 +314,10 @@ public abstract class Imyhat {
       return comparator;
     }
 
+    public int count() {
+      return types.length;
+    }
+
     @Override
     public String descriptor() {
       return Arrays.stream(types)

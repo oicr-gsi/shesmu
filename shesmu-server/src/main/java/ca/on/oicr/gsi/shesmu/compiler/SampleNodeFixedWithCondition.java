@@ -1,31 +1,24 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static org.objectweb.asm.Type.BOOLEAN_TYPE;
-
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.FixedWithConditions;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
-import java.lang.invoke.LambdaMetafactory;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class SampleNodeFixedWithCondition extends SampleNode {
 
   private static final Type A_FIXEDWITHCONDITION_TYPE = Type.getType(FixedWithConditions.class);
-
-  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Method CTOR =
@@ -33,36 +26,10 @@ public class SampleNodeFixedWithCondition extends SampleNode {
           "<init>",
           Type.VOID_TYPE,
           new Type[] {Type.getType(Subsampler.class), Type.LONG_TYPE, A_PREDICATE_TYPE});
-  private static final Handle LAMBDA_METAFACTORY_BSM =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getType(LambdaMetafactory.class).getInternalName(),
-          "metafactory",
-          "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-          false);
   private final ExpressionNode conditionExpression;
   private final ExpressionNode limitExpression;
 
-  private String name;
-
-  private final Target parameter =
-      new Target() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.LAMBDA;
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Imyhat type() {
-          return type;
-        }
-      };
+  private List<String> definedNames;
 
   private Imyhat type;
 
@@ -75,11 +42,10 @@ public class SampleNodeFixedWithCondition extends SampleNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     limitExpression.collectFreeVariables(names, predicate);
-    final boolean remove = !names.contains(name);
+    final List<String> remove =
+        definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     conditionExpression.collectFreeVariables(names, predicate);
-    if (remove) {
-      names.remove(name);
-    }
+    names.removeAll(remove);
   }
 
   @Override
@@ -106,72 +72,47 @@ public class SampleNodeFixedWithCondition extends SampleNode {
   }
 
   @Override
-  public void render(Renderer renderer, int previousLocal, Type streamType) {
+  public void render(
+      Renderer renderer, int previousLocal, Imyhat currentType, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     conditionExpression.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    final LoadableValue[] capturedVariables =
-        renderer
-            .allValues()
-            .filter(v -> freeVariables.contains(v.name()) && !name.equals(v.name()))
-            .toArray(LoadableValue[]::new);
-    final Method method =
-        new Method(
+    final LambdaBuilder builder =
+        new LambdaBuilder(
+            renderer.root(),
             String.format(
                 "For ⋯ Subsample ⋯ %d:%d",
                 conditionExpression.line(), conditionExpression.column()),
-            BOOLEAN_TYPE,
-            JavaStreamBuilder.parameterTypes(
-                renderer.root(), false, capturedVariables, streamType, type));
-    final Renderer conditionRenderer =
-        new Renderer(
-            renderer.root(),
-            new GeneratorAdapter(
-                Opcodes.ACC_PRIVATE, method, null, null, renderer.root().classVisitor),
-            capturedVariables.length,
-            streamType,
-            JavaStreamBuilder.parameters(
-                capturedVariables, streamType, name, type.apply(TypeUtils.TO_ASM)),
-            renderer.signerEmitter());
+            LambdaBuilder.predicate(currentType),
+            renderer.streamType(),
+            renderer
+                .allValues()
+                .filter(v -> freeVariables.contains(v.name()))
+                .toArray(LoadableValue[]::new));
+
+    final Renderer conditionRenderer = builder.renderer(renderer.signerEmitter());
+    final int argCount = conditionRenderer.methodGen().getArgumentTypes().length;
+    name.create(r -> r.methodGen().loadArg(argCount - 1))
+        .forEach(v -> conditionRenderer.define(v.name(), v));
+
     conditionRenderer.methodGen().visitCode();
     conditionExpression.render(conditionRenderer);
     conditionRenderer.methodGen().returnValue();
-    conditionRenderer.methodGen().visitMaxs(0, 0);
-    conditionRenderer.methodGen().visitEnd();
+    conditionRenderer.methodGen().endMethod();
+
     renderer.methodGen().newInstance(A_FIXEDWITHCONDITION_TYPE);
     renderer.methodGen().dup();
     renderer.methodGen().loadLocal(previousLocal);
     limitExpression.render(renderer);
-    renderer.methodGen().loadThis();
-    Arrays.stream(capturedVariables).forEach(var -> var.accept(renderer));
-    renderer.loadStream();
-    final Handle handle =
-        new Handle(
-            Opcodes.H_INVOKEVIRTUAL,
-            renderer.root().selfType().getInternalName(),
-            method.getName(),
-            method.getDescriptor(),
-            false);
-    renderer
-        .methodGen()
-        .invokeDynamic(
-            "test",
-            Type.getMethodDescriptor(
-                A_PREDICATE_TYPE,
-                JavaStreamBuilder.parameterTypes(
-                    renderer.root(), true, capturedVariables, streamType)),
-            LAMBDA_METAFACTORY_BSM,
-            Type.getMethodType(BOOLEAN_TYPE, A_OBJECT_TYPE),
-            handle,
-            Type.getMethodType(BOOLEAN_TYPE, type.apply(TypeUtils.TO_ASM)));
+    builder.push(renderer);
     renderer.methodGen().invokeConstructor(A_FIXEDWITHCONDITION_TYPE, CTOR);
     renderer.methodGen().storeLocal(previousLocal);
   }
 
   @Override
-  public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
+  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
     return limitExpression.resolve(defs, errorHandler)
-        & conditionExpression.resolve(defs.bind(parameter), errorHandler);
+        & conditionExpression.resolve(defs.bind(name), errorHandler);
   }
 
   @Override

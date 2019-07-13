@@ -11,16 +11,13 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ListNodeFlatten extends ListNode {
 
-  private final String childName;
+  private final DestructuredArgumentNode childName;
+  private List<String> definedNames;
 
-  private Imyhat incoming;
-
-  private String incomingName;
-
-  private String nextName;
   private Ordering ordering;
 
   private final SourceNode source;
@@ -30,18 +27,24 @@ public class ListNodeFlatten extends ListNode {
   private Imyhat type;
 
   public ListNodeFlatten(
-      int line, int column, String childName, SourceNode source, List<ListNode> transforms) {
+      int line,
+      int column,
+      DestructuredArgumentNode childName,
+      SourceNode source,
+      List<ListNode> transforms) {
     super(line, column);
     ordering = source.ordering();
     this.childName = childName;
-    nextName = childName;
     this.source = source;
     this.transforms = transforms;
   }
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+    final List<String> remove =
+        definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     source.collectFreeVariables(names, predicate);
+    names.removeAll(remove);
     transforms.forEach(t -> t.collectFreeVariables(names, predicate));
   }
 
@@ -49,21 +52,6 @@ public class ListNodeFlatten extends ListNode {
   public void collectPlugins(Set<Path> pluginFileNames) {
     source.collectPlugins(pluginFileNames);
     transforms.forEach(t -> t.collectPlugins(pluginFileNames));
-  }
-
-  @Override
-  public String name() {
-    return nextName;
-  }
-
-  @Override
-  public final String nextName() {
-    return nextName;
-  }
-
-  @Override
-  public final Imyhat nextType() {
-    return type;
   }
 
   @Override
@@ -78,14 +66,14 @@ public class ListNodeFlatten extends ListNode {
   }
 
   @Override
-  public void render(JavaStreamBuilder builder) {
+  public LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     collectFreeVariables(freeVariables, Flavour::needsCapture);
     final Renderer renderer =
         builder.flatten(
             line(),
             column(),
-            incomingName,
+            name,
             type,
             builder
                 .renderer()
@@ -94,49 +82,41 @@ public class ListNodeFlatten extends ListNode {
                 .toArray(LoadableValue[]::new));
     renderer.methodGen().visitCode();
     final JavaStreamBuilder flattenBuilder = source.render(renderer);
-    transforms.forEach(t -> t.render(flattenBuilder));
+    final LoadableConstructor outputName =
+        transforms
+            .stream()
+            .reduce(
+                childName::render,
+                (n, t) -> t.render(flattenBuilder, n),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                });
     flattenBuilder.finish();
     renderer.methodGen().returnValue();
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
+    return outputName;
   }
 
   @Override
-  public Optional<String> resolve(
-      String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    incomingName = name;
-    final NameDefinitions innerDefs =
-        defs.bind(
-            new Target() {
-
-              @Override
-              public Flavour flavour() {
-                return Flavour.LAMBDA;
-              }
-
-              @Override
-              public String name() {
-                return name;
-              }
-
-              @Override
-              public Imyhat type() {
-                return incoming;
-              }
-            });
-    if (!source.resolve(innerDefs, errorHandler)) {
+  public Optional<List<Target>> resolve(
+      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
+    final NameDefinitions innerDefs = defs.bind(name);
+    if (!source.resolve(innerDefs, errorHandler)
+        || !childName.typeCheck(source.streamType(), errorHandler)) {
       return Optional.empty();
     }
-    final Optional<String> nextName =
+    final Optional<List<Target>> nextName =
         transforms
             .stream()
             .reduce(
-                Optional.of(childName),
+                Optional.of(childName.targets().collect(Collectors.toList())),
                 (n, t) -> n.flatMap(innerName -> t.resolve(innerName, innerDefs, errorHandler)),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    nextName.ifPresent(n -> this.nextName = n);
+    nextName.ifPresent(n -> {});
     return nextName;
   }
 
@@ -152,20 +132,30 @@ public class ListNodeFlatten extends ListNode {
   }
 
   @Override
-  public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    this.incoming = incoming;
-    if (!source.typeCheck(errorHandler)) {
-      return false;
+  public Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
+    if (!source.typeCheck(errorHandler)
+        || !childName.typeCheck(source.streamType(), errorHandler)) {
+      return Optional.empty();
     }
-    Imyhat innerIncoming = source.streamType();
-    for (final ListNode transform : transforms) {
-      ordering = transform.order(ordering, errorHandler);
-      if (!transform.typeCheck(innerIncoming, errorHandler)) {
-        return false;
-      }
-      innerIncoming = transform.nextType();
-    }
-    type = innerIncoming;
-    return true;
+    ordering =
+        transforms
+            .stream()
+            .reduce(
+                ordering,
+                (order, transform) -> transform.order(order, errorHandler),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                });
+    final Optional<Imyhat> resultType =
+        transforms
+            .stream()
+            .reduce(
+                Optional.of(source.streamType()),
+                (t, transform) -> t.flatMap(tt -> transform.typeCheck(tt, errorHandler)),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                });
+    resultType.ifPresent(t -> type = t);
+    return resultType;
   }
 }

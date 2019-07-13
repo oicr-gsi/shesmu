@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -13,8 +14,6 @@ import java.util.function.Predicate;
 public abstract class ListNodeBaseRange extends ListNode {
 
   private final ExpressionNode expression;
-  private Imyhat incoming;
-  private String name;
 
   protected ListNodeBaseRange(int line, int column, ExpressionNode expression) {
     super(line, column);
@@ -32,21 +31,6 @@ public abstract class ListNodeBaseRange extends ListNode {
   }
 
   @Override
-  public final String name() {
-    return name;
-  }
-
-  @Override
-  public final String nextName() {
-    return name;
-  }
-
-  @Override
-  public final Imyhat nextType() {
-    return incoming;
-  }
-
-  @Override
   public final Ordering order(Ordering previous, Consumer<String> errorHandler) {
     if (previous == Ordering.RANDOM) {
       errorHandler.accept(
@@ -58,16 +42,16 @@ public abstract class ListNodeBaseRange extends ListNode {
   }
 
   @Override
-  public final void render(JavaStreamBuilder builder) {
+  public final LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name) {
     render(builder, expression::render);
+    return name;
   }
 
   protected abstract void render(JavaStreamBuilder builder, Consumer<Renderer> expression);
 
   @Override
-  public final Optional<String> resolve(
-      String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
+  public final Optional<List<Target>> resolve(
+      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler) ? Optional.of(name) : Optional.empty();
   }
 
@@ -78,13 +62,12 @@ public abstract class ListNodeBaseRange extends ListNode {
   }
 
   @Override
-  public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    this.incoming = incoming;
+  public final Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     final boolean ok = expression.typeCheck(errorHandler);
     if (ok && !expression.type().isSame(Imyhat.INTEGER)) {
       expression.typeError(Imyhat.INTEGER.name(), expression.type(), errorHandler);
-      return false;
+      return Optional.empty();
     }
-    return true;
+    return Optional.of(incoming);
   }
 }

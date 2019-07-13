@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -11,10 +12,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class ListNodeReverse extends ListNode {
-  private Imyhat incoming;
-
-  private String name;
-
   public ListNodeReverse(int line, int column) {
     super(line, column);
   }
@@ -30,21 +27,6 @@ public class ListNodeReverse extends ListNode {
   }
 
   @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public String nextName() {
-    return name();
-  }
-
-  @Override
-  public Imyhat nextType() {
-    return incoming;
-  }
-
-  @Override
   public Ordering order(Ordering previous, Consumer<String> errorHandler) {
     if (previous == Ordering.RANDOM) {
       errorHandler.accept(
@@ -56,14 +38,14 @@ public class ListNodeReverse extends ListNode {
   }
 
   @Override
-  public void render(JavaStreamBuilder builder) {
+  public LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name) {
     builder.reverse();
+    return name;
   }
 
   @Override
-  public Optional<String> resolve(
-      String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
+  public Optional<List<Target>> resolve(
+      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
     return Optional.of(name);
   }
 
@@ -74,8 +56,7 @@ public class ListNodeReverse extends ListNode {
   }
 
   @Override
-  public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    this.incoming = incoming;
-    return true;
+  public Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
+    return Optional.of(incoming);
   }
 }

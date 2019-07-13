@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Squish;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -55,7 +56,8 @@ public class SampleNodeSquish extends SampleNode {
   }
 
   @Override
-  public void render(Renderer renderer, int previousLocal, Type streamType) {
+  public void render(
+      Renderer renderer, int previousLocal, Imyhat currentType, LoadableConstructor name) {
     renderer.methodGen().newInstance(A_SQUISH_TYPE);
     renderer.methodGen().dup();
     renderer.methodGen().loadLocal(previousLocal);
@@ -65,7 +67,7 @@ public class SampleNodeSquish extends SampleNode {
   }
 
   @Override
-  public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }
 
