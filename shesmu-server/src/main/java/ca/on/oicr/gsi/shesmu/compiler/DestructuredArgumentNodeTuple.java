@@ -1,0 +1,73 @@
+package ca.on.oicr.gsi.shesmu.compiler;
+
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
+
+public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
+  private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
+  private static final Method METHOD_TUPLE__GET =
+      new Method("get", Type.getType(Object.class), new Type[] {Type.INT_TYPE});
+  private final int column;
+  private final List<DestructuredArgumentNode> elements;
+  private final int line;
+
+  public DestructuredArgumentNodeTuple(
+      int line, int column, List<DestructuredArgumentNode> elements) {
+    this.column = column;
+    this.line = line;
+    this.elements = elements;
+  }
+
+  @Override
+  public Stream<Target> targets() {
+    return elements.stream().flatMap(DestructuredArgumentNode::targets);
+  }
+
+  @Override
+  public Stream<LoadableValue> render(Consumer<Renderer> loader) {
+    return IntStream.range(0, elements.size())
+        .boxed()
+        .flatMap(
+            i ->
+                elements
+                    .get(i)
+                    .render(
+                        r -> {
+                          loader.accept(r);
+                          r.methodGen().push(i);
+                          r.methodGen().invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
+                          r.methodGen().unbox(tupleType.get(i).apply(TO_ASM));
+                        }));
+  }
+
+  private Imyhat.TupleImyhat tupleType;
+
+  @Override
+  public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
+    if (type instanceof Imyhat.TupleImyhat) {
+      tupleType = (Imyhat.TupleImyhat) type;
+      if (tupleType.count() != elements.size()) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Tuple has %d elements, but destructuring expects %d.",
+                line, column, tupleType.count(), elements.size()));
+        return false;
+      }
+      return IntStream.range(0, elements.size())
+          .allMatch(i -> elements.get(i).typeCheck(tupleType.get(i), errorHandler));
+    } else {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Tuple expected for destructuring, but got %s.", line, column, type.name()));
+      return false;
+    }
+  }
+}

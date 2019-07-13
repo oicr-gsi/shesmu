@@ -5,62 +5,27 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CollectNodeReduce extends CollectNode {
 
-  private final Target accumulator =
-      new Target() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.LAMBDA;
-        }
-
-        @Override
-        public String name() {
-          return accumulatorName;
-        }
-
-        @Override
-        public Imyhat type() {
-          return initial.type();
-        }
-      };
-  private final String accumulatorName;
+  private final DestructuredArgumentNode accumulatorName;
+  private List<String> definedNames;
   private final ExpressionNode initial;
-  private String name;
-
-  private final Target parameter =
-      new Target() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.LAMBDA;
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Imyhat type() {
-          return type;
-        }
-      };
 
   private final ExpressionNode reducer;
-
   Imyhat type;
 
   public CollectNodeReduce(
       int line,
       int column,
-      String accumulatorName,
+      DestructuredArgumentNode accumulatorName,
       ExpressionNode reducer,
       ExpressionNode initial) {
     super(line, column);
@@ -72,15 +37,12 @@ public class CollectNodeReduce extends CollectNode {
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     initial.collectFreeVariables(names, predicate);
-    final boolean remove = !names.contains(name);
-    final boolean removeAccumulator = !names.contains(accumulatorName);
+    final List<String> remove =
+        Stream.concat(accumulatorName.targets().map(Target::name), definedNames.stream())
+            .filter(name -> !names.contains(name))
+            .collect(Collectors.toList());
     reducer.collectFreeVariables(names, predicate);
-    if (remove) {
-      names.remove(name);
-    }
-    if (removeAccumulator) {
-      names.remove(accumulatorName);
-    }
+    names.removeAll(remove);
   }
 
   @Override
@@ -90,18 +52,18 @@ public class CollectNodeReduce extends CollectNode {
   }
 
   @Override
-  public void render(JavaStreamBuilder builder) {
+  public void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> capturedNames = new HashSet<>();
     reducer.collectFreeVariables(capturedNames, Flavour::needsCapture);
-    capturedNames.remove(name);
-    capturedNames.remove(accumulatorName);
+    accumulatorName.targets().map(Target::name).forEach(capturedNames::remove);
+    capturedNames.removeAll(definedNames);
     final Renderer reducerRenderer =
         builder.reduce(
             line(),
             column(),
             name,
             initial.type(),
-            accumulatorName,
+            accumulatorName::render,
             initial::render,
             builder
                 .renderer()
@@ -116,10 +78,12 @@ public class CollectNodeReduce extends CollectNode {
   }
 
   @Override
-  public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
+  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
     return initial.resolve(defs, errorHandler)
-        & reducer.resolve(defs.bind(parameter).bind(accumulator), errorHandler);
+        & reducer.resolve(
+            defs.bind(name).bind(accumulatorName.targets().collect(Collectors.toList())),
+            errorHandler);
   }
 
   @Override
@@ -137,7 +101,10 @@ public class CollectNodeReduce extends CollectNode {
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     type = incoming;
-    boolean ok = initial.typeCheck(errorHandler) & reducer.typeCheck(errorHandler);
+    boolean ok =
+        initial.typeCheck(errorHandler)
+            && accumulatorName.typeCheck(initial.type(), errorHandler)
+            && reducer.typeCheck(errorHandler);
     if (ok) {
       if (!initial.type().isSame(reducer.type())) {
         errorHandler.accept(

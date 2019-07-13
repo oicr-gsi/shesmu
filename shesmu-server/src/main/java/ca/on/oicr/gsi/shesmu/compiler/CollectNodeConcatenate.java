@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -46,28 +47,7 @@ public class CollectNodeConcatenate extends CollectNode {
   private final ExpressionNode delimiter;
   private final ExpressionNode getter;
 
-  private String name;
   private boolean needsSort;
-  private final Target parameter =
-      new Target() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.LAMBDA;
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Imyhat type() {
-          return type;
-        }
-      };
-
-  private Imyhat type;
 
   public CollectNodeConcatenate(
       int line,
@@ -114,7 +94,7 @@ public class CollectNodeConcatenate extends CollectNode {
   }
 
   @Override
-  public void render(JavaStreamBuilder builder) {
+  public void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     getter.collectFreeVariables(freeVariables, Flavour::needsCapture);
 
@@ -147,10 +127,8 @@ public class CollectNodeConcatenate extends CollectNode {
   }
 
   @Override
-  public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
-    return getter.resolve(defs.bind(parameter), errorHandler)
-        & delimiter.resolve(defs, errorHandler);
+  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+    return getter.resolve(defs.bind(name), errorHandler) & delimiter.resolve(defs, errorHandler);
   }
 
   @Override
@@ -167,7 +145,6 @@ public class CollectNodeConcatenate extends CollectNode {
 
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    type = incoming;
     boolean ok = true;
     if (getter.typeCheck(errorHandler)) {
       if (!getter.type().isSame(Imyhat.STRING)) {

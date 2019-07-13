@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ListNodeSort extends ListNodeWithExpression {
@@ -14,18 +17,14 @@ public class ListNodeSort extends ListNodeWithExpression {
   }
 
   @Override
-  protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-    return builder.sort(line(), column(), name(), expression.type(), loadables);
+  protected Pair<Renderer, LoadableConstructor> makeMethod(
+      JavaStreamBuilder builder, LoadableConstructor name, LoadableValue[] loadables) {
+    return new Pair<>(builder.sort(line(), column(), name, expression.type(), loadables), name);
   }
 
   @Override
-  public String nextName() {
-    return name();
-  }
-
-  @Override
-  public Imyhat nextType() {
-    return parameter.type();
+  public List<Target> nextName(List<Target> inputs) {
+    return inputs;
   }
 
   @Override
@@ -34,14 +33,14 @@ public class ListNodeSort extends ListNodeWithExpression {
   }
 
   @Override
-  protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
+  protected Optional<Imyhat> typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
     if (expression.type().isOrderable()) {
-      return true;
+      return Optional.of(incoming);
     }
     errorHandler.accept(
         String.format(
             "%d:%d: Expected comparable type for sorting but got %s.",
             line(), column(), expression.type().name()));
-    return false;
+    return Optional.empty();
   }
 }

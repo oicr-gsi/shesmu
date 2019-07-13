@@ -1,13 +1,18 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ListNodeMap extends ListNodeWithExpression {
 
-  private final String nextName;
+  private final DestructuredArgumentNode nextName;
 
-  public ListNodeMap(int line, int column, String nextName, ExpressionNode expression) {
+  public ListNodeMap(
+      int line, int column, DestructuredArgumentNode nextName, ExpressionNode expression) {
     super(line, column, expression);
     this.nextName = nextName;
   }
@@ -18,18 +23,15 @@ public class ListNodeMap extends ListNodeWithExpression {
   }
 
   @Override
-  protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-    return builder.map(line(), column(), name(), expression.type(), loadables);
+  protected Pair<Renderer, LoadableConstructor> makeMethod(
+      JavaStreamBuilder builder, LoadableConstructor name, LoadableValue[] loadables) {
+    return new Pair<>(
+        builder.map(line(), column(), name, expression.type(), loadables), nextName::render);
   }
 
   @Override
-  public String nextName() {
-    return nextName;
-  }
-
-  @Override
-  public Imyhat nextType() {
-    return expression.type();
+  public List<Target> nextName(List<Target> inputs) {
+    return nextName.targets().collect(Collectors.toList());
   }
 
   @Override
@@ -38,7 +40,9 @@ public class ListNodeMap extends ListNodeWithExpression {
   }
 
   @Override
-  protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
-    return true;
+  protected Optional<Imyhat> typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
+    return nextName.typeCheck(expression.type(), errorHandler)
+        ? Optional.of(expression.type())
+        : Optional.empty();
   }
 }

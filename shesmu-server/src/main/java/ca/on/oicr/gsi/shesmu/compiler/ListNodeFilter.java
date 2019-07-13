@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ListNodeFilter extends ListNodeWithExpression {
@@ -15,18 +18,14 @@ public class ListNodeFilter extends ListNodeWithExpression {
   }
 
   @Override
-  protected Renderer makeMethod(JavaStreamBuilder builder, LoadableValue[] loadables) {
-    return builder.filter(line(), column(), name(), loadables);
+  protected Pair<Renderer, LoadableConstructor> makeMethod(
+      JavaStreamBuilder builder, LoadableConstructor name, LoadableValue[] loadables) {
+    return new Pair<>(builder.filter(line(), column(), name, loadables), name);
   }
 
   @Override
-  public String nextName() {
-    return name();
-  }
-
-  @Override
-  public Imyhat nextType() {
-    return parameter.type();
+  public List<Target> nextName(List<Target> inputs) {
+    return inputs;
   }
 
   @Override
@@ -35,15 +34,15 @@ public class ListNodeFilter extends ListNodeWithExpression {
   }
 
   @Override
-  protected boolean typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
+  protected Optional<Imyhat> typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
     if (expression.type().isSame(Imyhat.BOOLEAN)) {
-      return true;
+      return Optional.of(incoming);
     } else {
       errorHandler.accept(
           String.format(
               "%d:%d: Filter expression must be boolean, but got %s.",
               line(), column(), expression.type().name()));
-      return false;
+      return Optional.empty();
     }
   }
 }

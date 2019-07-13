@@ -176,6 +176,58 @@ public final class LambdaBuilder {
     };
   }
 
+  public static LambdaType bifunction(
+      Imyhat returnType, Imyhat parameter1Type, Imyhat parameter2Type) {
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_BIFUNCTION_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "apply";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+            return Stream.of(
+                parameter1Type.apply(TypeUtils.TO_BOXED_ASM),
+                parameter2Type.apply(TypeUtils.TO_BOXED_ASM));
+          case REAL:
+            return Stream.of(
+                parameter1Type.apply(TypeUtils.TO_ASM), parameter2Type.apply(TypeUtils.TO_ASM));
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 2;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+            return returnType.apply(TypeUtils.TO_BOXED_ASM);
+          case REAL:
+            return returnType.apply(TypeUtils.TO_ASM);
+          case ERASED:
+            return A_OBJECT_TYPE;
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+    };
+  }
+
   public static LambdaType bipredicate(Type parameter1Type, Type parameter2Type) {
     assertNonPrimitive(parameter1Type);
     assertNonPrimitive(parameter2Type);
@@ -344,6 +396,54 @@ public final class LambdaBuilder {
             return A_OBJECT_TYPE;
           case REAL:
             return returnType.apply(TypeUtils.TO_ASM);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+    };
+  }
+
+  public static LambdaType function(Type returnType, Imyhat parameterType) {
+    assertNonPrimitive(returnType);
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_FUNCTION_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "apply";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+            return Stream.of(parameterType.apply(TypeUtils.TO_BOXED_ASM));
+          case REAL:
+            return Stream.of(parameterType.apply(TypeUtils.TO_ASM));
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 1;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+          case REAL:
+            return returnType;
+          case ERASED:
+            return A_OBJECT_TYPE;
           default:
             throw new UnsupportedOperationException();
         }
@@ -575,6 +675,44 @@ public final class LambdaBuilder {
     };
   }
 
+  public static LambdaType supplier(Imyhat returnType) {
+    return new LambdaType() {
+      @Override
+      public Type interfaceType() {
+        return A_SUPPLIER_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "get";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        return Stream.empty();
+      }
+
+      @Override
+      public int parameters() {
+        return 0;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+            return returnType.apply(TypeUtils.TO_BOXED_ASM);
+          case ERASED:
+            return A_OBJECT_TYPE;
+          case REAL:
+            return returnType.apply(TypeUtils.TO_ASM);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+    };
+  }
+
   public static LambdaType toIntFunction(Type parameterType) {
     assertNonPrimitive(parameterType);
     return new LambdaType() {
@@ -631,6 +769,7 @@ public final class LambdaBuilder {
           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
           false);
   private final Type[] captureTypes;
+  private final Type streamType;
   private final LoadableValue[] capturedVariables;
   private final LambdaType lambda;
 
@@ -649,20 +788,34 @@ public final class LambdaBuilder {
    */
   public LambdaBuilder(
       RootBuilder owner, String methodName, LambdaType lambda, LoadableValue... capturedVariables) {
+    this(owner, methodName, lambda, null, capturedVariables);
+  }
+
+  public LambdaBuilder(
+      RootBuilder owner,
+      String methodName,
+      LambdaType lambda,
+      Type streamType,
+      LoadableValue... capturedVariables) {
     this.owner = owner;
     this.lambda = lambda;
+    this.streamType = streamType;
     this.capturedVariables = capturedVariables;
     method =
         new Method(
             methodName,
             lambda.returnType(AccessMode.REAL),
             Stream.concat(
-                    Arrays.stream(capturedVariables).map(LoadableValue::type),
-                    lambda.parameterTypes(AccessMode.REAL))
+                    streamType == null ? Stream.empty() : Stream.of(streamType),
+                    Stream.concat(
+                        Arrays.stream(capturedVariables).map(LoadableValue::type),
+                        lambda.parameterTypes(AccessMode.REAL)))
                 .toArray(Type[]::new));
     captureTypes =
         Stream.concat(
-                Stream.of(owner.selfType()),
+                Stream.concat(
+                    Stream.of(owner.selfType()),
+                    streamType == null ? Stream.empty() : Stream.of(streamType)),
                 Arrays.stream(capturedVariables).map(LoadableValue::type))
             .toArray(Type[]::new);
   }
@@ -683,6 +836,9 @@ public final class LambdaBuilder {
    */
   public void push(Renderer renderer) {
     renderer.methodGen().loadThis();
+    if (streamType != null) {
+      renderer.loadStream();
+    }
     Stream.of(capturedVariables).forEach(var -> var.accept(renderer));
     renderer
         .methodGen()
@@ -707,6 +863,21 @@ public final class LambdaBuilder {
   /**
    * Create a new renderer (method generator) for the body of the lambda.
    *
+   * @param signerEmitter the signature loader/generator
+   */
+  public Renderer renderer(BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
+    return new Renderer(
+        owner,
+        methodGen(),
+        0,
+        streamType,
+        RootBuilder.proxyCaptured(streamType == null ? 0 : 1, capturedVariables),
+        signerEmitter);
+  }
+
+  /**
+   * Create a new renderer (method generator) for the body of the lambda.
+   *
    * @param streamType the type of the stream value
    * @param signerEmitter the signature loader/generator
    */
@@ -725,6 +896,9 @@ public final class LambdaBuilder {
    */
   public Renderer renderer(
       Type streamType, int streamOffset, BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
+    if (this.streamType != null) {
+      throw new IllegalArgumentException("Attempt to replace a stream value in a lambda.");
+    }
     return new Renderer(
         owner,
         methodGen(),

@@ -105,14 +105,14 @@ public abstract class ExpressionNode {
 
     final Parser forParser = input.keyword("For");
     if (forParser.isGood()) {
-      final AtomicReference<String> name = new AtomicReference<>();
+      final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
       final AtomicReference<SourceNode> source = new AtomicReference<>();
       final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
       final AtomicReference<CollectNode> collector = new AtomicReference<>();
       final Parser result =
           forParser
               .whitespace()
-              .identifier(name::set)
+              .then(DestructuredArgumentNode::parse, name::set)
               .whitespace()
               .then(SourceNode::parse, source::set)
               .whitespace()

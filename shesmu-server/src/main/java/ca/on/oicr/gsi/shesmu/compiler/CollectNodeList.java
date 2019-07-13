@@ -5,34 +5,17 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class CollectNodeList extends CollectNode {
 
+  private List<String> definedNames;
   private final ExpressionNode expression;
-  private Imyhat incomingType;
-  private String name;
-  private final Target parameter =
-      new Target() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.LAMBDA;
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Imyhat type() {
-          return incomingType;
-        }
-      };
 
   public CollectNodeList(int line, int column, ExpressionNode expression) {
     super(line, column);
@@ -41,11 +24,10 @@ public class CollectNodeList extends CollectNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final boolean remove = !names.contains(name);
+    final List<String> remove =
+        definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     expression.collectFreeVariables(names, predicate);
-    if (remove) {
-      names.remove(name);
-    }
+    names.removeAll(remove);
   }
 
   @Override
@@ -54,7 +36,7 @@ public class CollectNodeList extends CollectNode {
   }
 
   @Override
-  public void render(JavaStreamBuilder builder) {
+  public void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
     final Renderer renderer =
@@ -77,9 +59,9 @@ public class CollectNodeList extends CollectNode {
   }
 
   @Override
-  public boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
-    return expression.resolve(defs.bind(parameter), errorHandler);
+  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
+    return expression.resolve(defs.bind(name), errorHandler);
   }
 
   @Override
@@ -95,7 +77,6 @@ public class CollectNodeList extends CollectNode {
 
   @Override
   public boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    incomingType = incoming;
     return expression.typeCheck(errorHandler);
   }
 }

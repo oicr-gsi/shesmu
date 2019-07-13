@@ -5,36 +5,18 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public final class CollectNodeMatches extends CollectNode {
 
   private final Match matchType;
-  private String name;
-  private final Target parameter =
-      new Target() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.LAMBDA;
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Imyhat type() {
-          return type;
-        }
-      };
+  private List<String> definedNames;
   private final ExpressionNode selector;
-
-  private Imyhat type;
 
   public CollectNodeMatches(int line, int column, Match matchType, ExpressionNode selector) {
     super(line, column);
@@ -44,11 +26,10 @@ public final class CollectNodeMatches extends CollectNode {
 
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    final boolean removeName = !names.contains(name);
+    final List<String> remove =
+        definedNames.stream().filter(name -> !names.contains(name)).collect(Collectors.toList());
     selector.collectFreeVariables(names, predicate);
-    if (removeName) {
-      names.remove(name);
-    }
+    names.removeAll(remove);
   }
 
   @Override
@@ -57,7 +38,7 @@ public final class CollectNodeMatches extends CollectNode {
   }
 
   @Override
-  public final void render(JavaStreamBuilder builder) {
+  public final void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     selector.collectFreeVariables(freeVariables, Flavour::needsCapture);
     freeVariables.remove(name);
@@ -80,9 +61,10 @@ public final class CollectNodeMatches extends CollectNode {
   }
 
   @Override
-  public final boolean resolve(String name, NameDefinitions defs, Consumer<String> errorHandler) {
-    this.name = name;
-    return selector.resolve(defs.bind(parameter), errorHandler);
+  public final boolean resolve(
+      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
+    return selector.resolve(defs.bind(name), errorHandler);
   }
 
   @Override
@@ -98,7 +80,6 @@ public final class CollectNodeMatches extends CollectNode {
 
   @Override
   public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
-    type = incoming;
     if (selector.typeCheck(errorHandler)) {
       if (!selector.type().isSame(Imyhat.BOOLEAN)) {
         errorHandler.accept(
