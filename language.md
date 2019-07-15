@@ -348,6 +348,10 @@ For convenience, all variables can be dumped in alphabetical order:
         memory = 4Gi,
         input = path;
 
+Plugins can provide dumpers; see the individual plugin documentation for
+details on configuring them. A JSON dumper can also be registered at runtime
+using the REST API. Consult the Swagger documentation for details.
+
 Since life revolves around inevitably bad data, it's nice to be able to filter
 out data, similar to `Where`, but collect information about the rejection via
 monitoring or dumping. The `Reject` clause does this:
