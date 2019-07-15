@@ -751,6 +751,97 @@
         ]
       }
     },
+    "/jsondumper": {
+      "delete": {
+        "description": "",
+        "operationId": "jsonDumperDelete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "description": "Remove this dumper from the list and discard any data. Returns true if the dumper previously existed."
+          }
+        },
+        "summary": "Delete dumper",
+        "tags": [
+          "misc"
+        ]
+      },
+      "post": {
+        "description": "",
+        "operationId": "jsonDumperDump",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "items": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    },
+                    "type": "array"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Copy the data last pushed into this dumper by an olive; if the dumper does not exist, an empty array is returned."
+          }
+        },
+        "summary": "Download dumped data",
+        "tags": [
+          "misc"
+        ]
+      },
+      "put": {
+        "description": "",
+        "operationId": "jsonDumperCreate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Create a new dumper with the provided name. If one already exists, this operation does nothing."
+          }
+        },
+        "summary": "Create dumper",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
     "/purge": {
       "post": {
         "description": "",

@@ -22,6 +22,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
@@ -157,6 +158,7 @@ public final class Server implements ServerConfig, ActionServices {
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
   private final Semaphore inputDownloadSemaphore =
       new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
+  private final Map<String, String> jsonDumpers = new ConcurrentHashMap<>();
   private final MasterRunner master;
   private final PluginManager pluginManager = new PluginManager();
   private final ActionProcessor processor;
@@ -210,18 +212,42 @@ public final class Server implements ServerConfig, ActionServices {
               public Dumper findDumper(String name, Imyhat... types) {
                 return pluginManager
                     .findDumper(name, types)
-                    .orElse(
-                        new Dumper() {
-                          @Override
-                          public void stop() {
-                            // Do nothing
-                          }
+                    .orElseGet(
+                        () ->
+                            jsonDumpers.containsKey(name)
+                                ? new Dumper() {
+                                  private ArrayNode output =
+                                      RuntimeSupport.MAPPER.createArrayNode();
 
-                          @Override
-                          public void write(Object... values) {
-                            // Do nothing
-                          }
-                        });
+                                  @Override
+                                  public void stop() {
+                                    try {
+                                      jsonDumpers.put(
+                                          name, RuntimeSupport.MAPPER.writeValueAsString(output));
+                                    } catch (JsonProcessingException e) {
+                                      e.printStackTrace();
+                                    }
+                                  }
+
+                                  @Override
+                                  public void write(Object... values) {
+                                    final ArrayNode row = output.addArray();
+                                    for (int i = 0; i < types.length; i++) {
+                                      types[i].accept(new PackJsonArray(row), values[i]);
+                                    }
+                                  }
+                                }
+                                : new Dumper() {
+                                  @Override
+                                  public void stop() {
+                                    // Do nothing
+                                  }
+
+                                  @Override
+                                  public void write(Object... values) {
+                                    // Do nothing
+                                  }
+                                });
               }
 
               @Override
@@ -2069,6 +2095,40 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody()) {
             os.write(
                 Boolean.toString(processor.isPaused(location)).getBytes(StandardCharsets.UTF_8));
+          }
+        });
+    add(
+        "/jsondumper",
+        t -> {
+          final String name = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          switch (t.getRequestMethod()) {
+            case "POST":
+              t.getResponseHeaders().set("Content-type", "application/json");
+              t.sendResponseHeaders(200, 0);
+              try (OutputStream os = t.getResponseBody()) {
+                os.write(jsonDumpers.getOrDefault(name, "[]").getBytes(StandardCharsets.UTF_8));
+              }
+              break;
+            case "PUT":
+              jsonDumpers.computeIfAbsent(name, k -> "[]");
+              t.getResponseHeaders().set("Content-type", "application/json");
+              t.sendResponseHeaders(201, -1);
+              break;
+            case "DELETE":
+              t.getResponseHeaders().set("Content-type", "application/json");
+              t.sendResponseHeaders(200, 0);
+              try (OutputStream os = t.getResponseBody()) {
+                os.write(
+                    Boolean.toString(jsonDumpers.remove(name) != null)
+                        .getBytes(StandardCharsets.UTF_8));
+              }
+              break;
+            default:
+              t.getResponseHeaders().set("Content-type", "application/json");
+              t.sendResponseHeaders(400, 0);
+              try (OutputStream os = t.getResponseBody()) {
+                os.write("{}".getBytes(StandardCharsets.UTF_8));
+              }
           }
         });
     add("/resume", new EmergencyThrottlerHandler(false));
