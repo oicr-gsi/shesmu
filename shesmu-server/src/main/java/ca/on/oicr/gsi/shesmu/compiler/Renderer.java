@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -126,6 +127,26 @@ public class Renderer {
   public void loadStream() {
     if (streamType != null) {
       methodGen.loadArg(streamArg);
+    }
+  }
+
+  public void loadTarget(Target target) {
+    if (target.flavour() == Target.Flavour.STREAM_SIGNATURE) {
+
+      emitSigner((SignatureDefinition) target);
+    } else if (target.flavour().isStream()) {
+
+      loadStream();
+      if (target instanceof InputVariable) {
+        ((InputVariable) target).extract(methodGen());
+      } else {
+        methodGen()
+            .invokeVirtual(
+                streamType(),
+                new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
+      }
+    } else {
+      emitNamed(target.name());
     }
   }
 

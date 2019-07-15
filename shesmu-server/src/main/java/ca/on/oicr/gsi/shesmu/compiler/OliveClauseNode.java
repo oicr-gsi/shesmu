@@ -17,6 +17,10 @@ import java.util.stream.Stream;
 
 /** Base type for an olive clause */
 public abstract class OliveClauseNode {
+  private interface DumpConstructor {
+    OliveClauseNodeBaseDump create(int line, int column, String dumperName);
+  }
+
   private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
   private static final Pattern OPTIMA = Pattern.compile("^(Min|Max)");
 
@@ -275,24 +279,30 @@ public abstract class OliveClauseNode {
     return input.raise("Expected olive clause.");
   }
 
-  private static Parser parseDump(Parser input, Consumer<? super OliveClauseNodeDump> output) {
+  private static Parser parseDump(Parser input, Consumer<? super OliveClauseNodeBaseDump> output) {
     final Parser dumpParser = input.keyword("Dump");
     if (dumpParser.isGood()) {
-      final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
+      final DumpConstructor constructor;
+      final Parser allResult = dumpParser.whitespace().keyword("All").whitespace();
+      final Parser intermediateParser;
+      if (allResult.isGood()) {
+        constructor = OliveClauseNodeDumpAll::new;
+        intermediateParser = allResult;
+      } else {
+        final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
+        intermediateParser =
+            dumpParser
+                .whitespace()
+                .listEmpty(columns::set, ExpressionNode::parse, ',')
+                .whitespace();
+        constructor = (l, c, d) -> new OliveClauseNodeDump(l, c, d, columns.get());
+      }
       final AtomicReference<String> dumper = new AtomicReference<>();
       final Parser result =
-          dumpParser
-              .whitespace()
-              .listEmpty(columns::set, ExpressionNode::parse, ',')
-              .whitespace()
-              .keyword("To")
-              .whitespace()
-              .identifier(dumper::set)
-              .whitespace();
+          intermediateParser.keyword("To").whitespace().identifier(dumper::set).whitespace();
 
       if (result.isGood()) {
-        output.accept(
-            new OliveClauseNodeDump(input.line(), input.column(), dumper.get(), columns.get()));
+        output.accept(constructor.create(input.line(), input.column(), dumper.get()));
       }
       return result;
     }

@@ -339,6 +339,15 @@ dumper. If no dumper exists, the output is sent nowhere. This makes it possible
 to leave `Dump` clauses in production systems without configuring them and
 without a performance penalty.
 
+For convenience, all variables can be dumped in alphabetical order:
+
+    Olive
+      Where workflow == "BamQC 2.7+"
+      Dump All To some_file
+      Run fastqc With
+        memory = 4Gi,
+        input = path;
+
 Since life revolves around inevitably bad data, it's nice to be able to filter
 out data, similar to `Where`, but collect information about the rejection via
 monitoring or dumping. The `Reject` clause does this:

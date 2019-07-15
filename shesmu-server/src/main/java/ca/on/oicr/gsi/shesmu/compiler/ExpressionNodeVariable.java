@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -12,8 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeVariable extends ExpressionNode {
 
@@ -68,22 +65,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    if (target.flavour() == Flavour.STREAM_SIGNATURE) {
-      renderer.emitSigner((SignatureDefinition) target);
-    } else if (target.flavour().isStream()) {
-      renderer.loadStream();
-      if (target instanceof InputVariable) {
-        ((InputVariable) target).extract(renderer.methodGen());
-      } else {
-        renderer
-            .methodGen()
-            .invokeVirtual(
-                renderer.streamType(),
-                new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
-      }
-    } else {
-      renderer.emitNamed(name);
-    }
+    renderer.loadTarget(target);
   }
 
   @Override
