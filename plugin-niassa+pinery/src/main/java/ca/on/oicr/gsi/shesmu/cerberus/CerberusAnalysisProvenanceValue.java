@@ -29,7 +29,7 @@ public final class CerberusAnalysisProvenanceValue {
   private final long fileAccession;
   private Set<Tuple> fileAttributes;
   private final Path filePath;
-  private Set<Long> inputFiles;
+  private long inputFile;
   private Set<Tuple> iusAttributes;
   private final Instant lastModified;
   private final Tuple lims;
@@ -46,16 +46,12 @@ public final class CerberusAnalysisProvenanceValue {
   private final Tuple workflowVersion;
 
   public CerberusAnalysisProvenanceValue(
-      AnalysisProvenance provenance, IusLimsKey limsKey, Runnable isBad) {
+      AnalysisProvenance provenance, long inputFile, IusLimsKey limsKey, Runnable isBad) {
     fileAccession = provenance.getFileId();
     fileAttributes = attributes(provenance.getFileAttributes());
     filePath = Paths.get(provenance.getFilePath());
-    inputFiles =
-        provenance
-            .getWorkflowRunInputFileIds()
-            .stream()
-            .map(Integer::longValue)
-            .collect(Collectors.toCollection(TreeSet::new));
+    this.inputFile = inputFile;
+
     iusAttributes = attributes(provenance.getIusAttributes());
     lastModified = provenance.getLastModified().toInstant();
     lims =
@@ -94,8 +90,8 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public Set<Long> input_files() {
-    return inputFiles;
+  public long input_file() {
+    return inputFile;
   }
 
   @ShesmuVariable(type = "at2sas")
