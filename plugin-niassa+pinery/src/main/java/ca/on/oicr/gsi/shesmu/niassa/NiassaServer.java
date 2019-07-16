@@ -81,7 +81,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               ap ->
                   ap.getIusLimsKeys()
                       .stream()
-                      .map(ius -> new CerberusAnalysisProvenanceValue(ap, ius, () -> {})));
+                      .flatMap(
+                          ius ->
+                              ap.getWorkflowRunInputFileIds()
+                                  .stream()
+                                  .map(
+                                      fileId ->
+                                          new CerberusAnalysisProvenanceValue(
+                                              ap, fileId, ius, () -> {}))));
     }
   }
 
