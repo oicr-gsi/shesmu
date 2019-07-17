@@ -483,6 +483,40 @@ tuple item and `.`_field_ to access the type of a field in a named tuple.
 
 So, `(In [{integer, string}])[0]` is `integer`.
 
+It is also possible go get the type of functions:
+
+- `Return` _function_ will get the return type of the function
+- `Argument` _function_`(`_index_`)` will get the type of the argument at _index_
+
+These are helpful when dealing with other functions with unwieldy types:
+
+    Input pinery_ius;
+    # Function parse_bases_mask provided by a plugin
+    TypeAlias bases_mask_parts_type Return parse_bases_mask;
+
+    Function is_valid_mask(bases_mask_parts_type input)
+      # long and complicated checks on input
+      ;
+
+    Function transform_bases_mask(bases_mask_parts_type input)
+      # long and complicated manipulation of input
+      ;
+
+    Olive
+      Let bases_mask_parts = parse_bases_mask(bases_mask)
+      Where is_valid_mask(bases_mask_parts)
+      Run some_workflow With bases_mask = transform_bases_mask(input);
+
+In this example, `parse_bases_mask` parses an Illumina bases mask string and
+produces a very large object:
+
+     [ { group = integer, length = integer, ordinal = integer, position = integer, type = string }	]
+
+Rather than repeat this type at every function that uses it, it gets assigned
+to a `TypeAlias` and rather than specify the type at all, `Return
+parse_bases_mask` simply copies the output type from the `parse_bases_mask`
+function, preventing the need to write it.
+
 ## Functions
 At the top level of a file, functions may be defined:
 

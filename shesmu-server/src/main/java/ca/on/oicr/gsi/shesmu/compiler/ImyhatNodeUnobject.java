@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -15,8 +16,11 @@ public class ImyhatNodeUnobject extends ImyhatNode {
   }
 
   @Override
-  public Imyhat render(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-    final Imyhat type = outer.render(definedTypes, errorHandler);
+  public Imyhat render(
+      Function<String, Imyhat> definedTypes,
+      Function<String, FunctionDefinition> definedFunctions,
+      Consumer<String> errorHandler) {
+    final Imyhat type = outer.render(definedTypes, definedFunctions, errorHandler);
     if (type instanceof Imyhat.ObjectImyhat) {
       final Imyhat inner = ((Imyhat.ObjectImyhat) type).get(field);
       if (inner.isBad()) {

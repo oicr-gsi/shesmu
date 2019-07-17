@@ -1,0 +1,12 @@
+Input test;
+
+TypeAlias thingie {project = project_type, count = Return str_len};
+
+Function is_project(In [project_type] p, [project_type] projects) p In projects;
+
+Define foo(thingie s, {thingie.count,[thingie.project]}[1] projects)
+ Where project == s.project && ! is_project(project, projects);
+
+Olive
+ foo({count = 3, project = "the_foo_study"}, ["junk"])
+ Run ok With ok = True;

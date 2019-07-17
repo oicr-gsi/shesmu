@@ -26,6 +26,7 @@ import org.objectweb.asm.commons.Method;
 public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   private final ExpressionNode body;
   private final int column;
+  private Function<String, FunctionDefinition> definedFunctions;
   private final int line;
   private Method method;
   private final String name;
@@ -95,13 +96,13 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   }
 
   @Override
-  public String name() {
-    return name;
+  public Path filename() {
+    return null;
   }
 
   @Override
-  public Path filename() {
-    return null;
+  public String name() {
+    return name;
   }
 
   @Override
@@ -165,13 +166,17 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
       Set<String> metricNames,
       Map<String, List<Imyhat>> dumpers,
       Consumer<String> errorHandler) {
+    this.definedFunctions = definedFunctions;
     return body.resolveFunctions(definedFunctions, errorHandler);
   }
 
   @Override
   public boolean resolveTypes(
       Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-    return parameters.stream().filter(p -> p.resolveTypes(definedTypes, errorHandler)).count()
+    return parameters
+            .stream()
+            .filter(p -> p.resolveTypes(definedTypes, definedFunctions, errorHandler))
+            .count()
         == parameters.size();
   }
 

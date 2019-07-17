@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Collections;
@@ -119,6 +120,33 @@ public abstract class ImyhatNode {
       output.accept(new ImyhatNodeUnlist(inner.get()));
       return result;
     }
+    final Parser returnParser = input.keyword("Return");
+    if (returnParser.isGood()) {
+      final AtomicReference<String> function = new AtomicReference<>();
+      final Parser result = returnParser.whitespace().identifier(function::set).whitespace();
+      output.accept(new ImyhatNodeReturn(input.line(), input.column(), function.get()));
+      return result;
+    }
+
+    final Parser argumentParser = input.keyword("Argument");
+    if (argumentParser.isGood()) {
+      final AtomicReference<String> function = new AtomicReference<>();
+      final AtomicLong index = new AtomicLong();
+      final Parser result =
+          argumentParser
+              .whitespace()
+              .identifier(function::set)
+              .whitespace()
+              .symbol("(")
+              .whitespace()
+              .integer(index::set, 10)
+              .whitespace()
+              .symbol(")")
+              .whitespace();
+      output.accept(
+          new ImyhatNodeArgument(input.line(), input.column(), function.get(), (int) index.get()));
+      return result;
+    }
 
     final Parser nestedParser = input.symbol("(");
     if (nestedParser.isGood()) {
@@ -147,5 +175,7 @@ public abstract class ImyhatNode {
   }
 
   public abstract Imyhat render(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler);
+      Function<String, Imyhat> definedTypes,
+      Function<String, FunctionDefinition> definedFunctions,
+      Consumer<String> errorHandler);
 }

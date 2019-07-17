@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
   private final int column;
+  private Function<String, FunctionDefinition> definedFunctions;
   private final int line;
   private final String name;
   private List<Target> outputStreamVariables;
@@ -172,13 +173,17 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Consumer<String> errorHandler) {
+    this.definedFunctions = definedFunctions;
     return true;
   }
 
   @Override
   public boolean resolveTypes(
       Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-    return parameters.stream().filter(p -> p.resolveTypes(definedTypes, errorHandler)).count()
+    return parameters
+            .stream()
+            .filter(p -> p.resolveTypes(definedTypes, definedFunctions, errorHandler))
+            .count()
         == parameters.size();
   }
 
