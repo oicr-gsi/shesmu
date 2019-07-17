@@ -155,6 +155,7 @@ public final class Check extends Compiler {
                                     file,
                                     constants::stream,
                                     signatures::stream,
+                                    null,
                                     null);
                       } catch (final IOException e) {
                         e.printStackTrace();

@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.A_STREAM_TYPE;
+
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
@@ -15,12 +17,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -31,6 +31,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -57,11 +58,17 @@ public abstract class Compiler {
     }
   }
 
+  private static final Type A_ARRAYS_TYPE = Type.getType(Arrays.class);
+
   private static final Type A_OLIVE_SERVICES = Type.getType(OliveServices.class);
+  private static final Method METHOD_ARRAYS__STREAM =
+      new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Object[].class)});
   private static final Method METHOD_OLIVE_SERVICES__IS_OVERLOADED_ARRAY =
       new Method("isOverloaded", Type.BOOLEAN_TYPE, new Type[] {Type.getType(String[].class)});
+  private static final Method METHOD_SERVICES_REQUIRED =
+      new Method("services", Type.getType(Stream.class), new Type[0]);
 
-  private static final Handle SERVICES_FOR_PLUGINS_BSM =
+  private static final Handle SERVICES_REQURED_BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
           Type.getInternalName(PluginManager.class),
@@ -93,6 +100,7 @@ public abstract class Compiler {
    * @param input the bytes in the script
    * @param name the internal name of the class to generate; it will extend {@link ActionGenerator}
    * @param path the source file's path for debugging information
+   * @param exportConsumer a callback to handle the exported functions from this program
    * @return whether compilation was successful
    */
   public final boolean compile(
@@ -101,6 +109,7 @@ public abstract class Compiler {
       String path,
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures,
+      ExportConsumer exportConsumer,
       Consumer<FileTable> dashboardOutput) {
     return compile(
         new String(input, StandardCharsets.UTF_8),
@@ -108,6 +117,7 @@ public abstract class Compiler {
         path,
         constants,
         signatures,
+        exportConsumer,
         dashboardOutput);
   }
   /**
@@ -116,6 +126,7 @@ public abstract class Compiler {
    * @param input the bytes in the script
    * @param name the internal name of the class to generate; it will extend {@link ActionGenerator}
    * @param path the source file's path for debugging information
+   * @param exportConsumer a callback to handle the exported functions from this program
    * @return whether compilation was successful
    */
   public final boolean compile(
@@ -124,6 +135,7 @@ public abstract class Compiler {
       String path,
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures,
+      ExportConsumer exportConsumer,
       Consumer<FileTable> dashboardOutput) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
     final MaxParseError maxParseError = new MaxParseError();
@@ -172,18 +184,36 @@ public abstract class Compiler {
           };
       final Set<Path> pluginFilenames = new TreeSet<>();
       program.get().collectPlugins(pluginFilenames);
+      pluginFilenames.remove(Paths.get(path));
+      System.err.println(pluginFilenames);
       builder.addGuard(
           methodGen -> {
             methodGen.loadArg(0);
             methodGen.invokeDynamic(
                 "services",
                 Type.getMethodDescriptor(Type.getType(String[].class)),
-                SERVICES_FOR_PLUGINS_BSM,
+                SERVICES_REQURED_BSM,
                 pluginFilenames.stream().map(Path::toString).toArray());
             methodGen.invokeInterface(A_OLIVE_SERVICES, METHOD_OLIVE_SERVICES__IS_OVERLOADED_ARRAY);
           });
+      final GeneratorAdapter servicesMethodGen =
+          new GeneratorAdapter(
+              Opcodes.ACC_PUBLIC, METHOD_SERVICES_REQUIRED, null, null, builder.classVisitor);
+      servicesMethodGen.visitCode();
+      servicesMethodGen.invokeDynamic(
+          "services",
+          Type.getMethodDescriptor(Type.getType(String[].class)),
+          SERVICES_REQURED_BSM,
+          pluginFilenames.stream().map(Path::toString).toArray());
+      servicesMethodGen.invokeStatic(A_ARRAYS_TYPE, METHOD_ARRAYS__STREAM);
+      servicesMethodGen.returnValue();
+      servicesMethodGen.visitMaxs(0, 0);
+      servicesMethodGen.visitEnd();
       program.get().render(builder);
       builder.finish();
+      if (exportConsumer != null) {
+        program.get().processExports(exportConsumer);
+      }
       if (dashboardOutput != null) {
         dashboardOutput.accept(
             program

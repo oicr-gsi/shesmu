@@ -29,6 +29,7 @@ syn keyword shesmuKeyword Dump
 syn keyword shesmuKeyword Else
 syn keyword shesmuKeyword EpochMilli
 syn keyword shesmuKeyword EpochSecond
+syn keyword shesmuKeyword Export
 syn keyword shesmuKeyword First
 syn keyword shesmuKeyword Fixed
 syn keyword shesmuKeyword FixedConcat

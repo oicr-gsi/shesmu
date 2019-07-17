@@ -1,13 +1,18 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
+import ca.on.oicr.gsi.shesmu.compiler.ExportConsumer;
+import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
+import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
@@ -35,7 +41,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
     this.definitionRepository = definitionRepository;
   }
 
-  public Optional<ActionGenerator> compile(Path fileName, Consumer<FileTable> dashboardConsumer) {
+  public Optional<ActionGenerator> compile(
+      Path fileName, LiveExportConsumer exportConsumer, Consumer<FileTable> dashboardConsumer) {
     try {
       errors.clear();
       final Compiler compiler =
@@ -71,14 +78,48 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
             }
           };
 
+      final List<Consumer<ActionGenerator>> exports = new ArrayList<>();
+      final MethodHandles.Lookup lookup = MethodHandles.lookup();
       if (compiler.compile(
           Files.readAllBytes(fileName),
           "dyn/shesmu/Program",
           fileName.toString(),
           definitionRepository.constants().collect(Collectors.toList())::stream,
           definitionRepository.signatures().collect(Collectors.toList())::stream,
+          new ExportConsumer() {
+            @Override
+            public void function(
+                String name, Imyhat returnType, Supplier<Stream<FunctionParameter>> parameters) {
+              exports.add(
+                  instance -> {
+                    try {
+                      exportConsumer.function(
+                          lookup
+                              .unreflect(
+                                  instance
+                                      .getClass()
+                                      .getMethod(
+                                          name,
+                                          parameters
+                                              .get()
+                                              .map(p -> p.type().javaType())
+                                              .toArray(Class[]::new)))
+                              .bindTo(instance),
+                          name,
+                          returnType,
+                          parameters);
+                    } catch (NoSuchMethodException | IllegalAccessException e) {
+                      e.printStackTrace();
+                    }
+                  });
+            }
+          },
           dashboardConsumer)) {
-        return Optional.of(load(ActionGenerator.class, "dyn.shesmu.Program"));
+        final ActionGenerator generator = load(ActionGenerator.class, "dyn.shesmu.Program");
+        for (final Consumer<ActionGenerator> export : exports) {
+          export.accept(generator);
+        }
+        return Optional.of(generator);
       }
     } catch (final Exception e) {
       e.printStackTrace();

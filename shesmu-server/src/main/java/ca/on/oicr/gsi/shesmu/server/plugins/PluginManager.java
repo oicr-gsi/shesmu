@@ -26,6 +26,7 @@ import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
+import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.SourceLocation.SourceLoctionLinker;
@@ -1175,24 +1176,31 @@ public final class PluginManager
   public static CallSite bootstrapServices(
       Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
     // Our goal here is to create list of services that plugins use so we can block an olive if
-    // one of those services is throtttled. We're given the file names of those plugins as
+    // one of those services is throttled. We're given the file names of those plugins as
     // parameters to this method and
     // we're going to want a produce a method that takes no arguments and returns an array of
     // strings, being the service names.
-    // First, take the servicesForPlugins(PluginFile[]) → String[] and convert it to have a fixed
-    // number of arguments (PluginFile[0], PluginFile[1], ..., PluginFile[N-1]) → String[] where N
+
+    // Some of the files on that list might be from exported functions, and so have no plugin
+    // associated with them
+    // First, take the servicesForPlugins(RequiredServices[]) → String[] and convert it to have a
+    // fixed
+    // number of arguments (RequiredServices[0], RequiredServices[1], ..., RequiredServices[N-1]) →
+    // String[] where N
     // is the number of plugins
-    MethodHandle collector = SERVICES_FOR_PLUGINS.asCollector(PluginFile[].class, fileNames.length);
+    MethodHandle collector =
+        SERVICES_REQUIRED.asCollector(RequiredServices[].class, fileNames.length);
     // Now, repeatedly fill in the first argument with one of the plugins; we've got a premade
     // callsite for each plugin, so get it from our table and convert it to return the base type
     for (String fileName : fileNames) {
+      final CallSite callsite =
+          fileName.endsWith(".shesmu")
+              ? CompiledGenerator.scriptCallsite(fileName)
+              : CONFIG_FILE_INSTANCES.get(fileName);
       collector =
           MethodHandles.foldArguments(
               collector,
-              CONFIG_FILE_INSTANCES
-                  .get(fileName)
-                  .dynamicInvoker()
-                  .asType(MethodType.methodType(PluginFile.class)));
+              callsite.dynamicInvoker().asType(MethodType.methodType(RequiredServices.class)));
     }
     // Now, we should have a method thats () → String[], which is what we wanted, so shove it in the
     // olive
@@ -1211,8 +1219,8 @@ public final class PluginManager
     return description.replace("{instance}", instanceName).replace("{file}", path.toString());
   }
 
-  public static String[] servicesForPlugins(PluginFile... plugins) {
-    return Stream.of(plugins).flatMap(PluginFile::services).distinct().toArray(String[]::new);
+  public static String[] requiredServices(RequiredServices... users) {
+    return Stream.of(users).flatMap(RequiredServices::services).distinct().toArray(String[]::new);
   }
 
   private static final String BSM_DESCRIPTOR_ARBITRARY =
@@ -1254,21 +1262,19 @@ public final class PluginManager
   private static final MethodHandle MH_FUNCTION_APPLY;
   private static final MethodHandle MH_SUPPLIER_GET;
   private static final MethodHandle MH_VARIADICFUNCTION_APPLY;
-  private static final MethodHandle SERVICES_FOR_PLUGINS;
+  private static final MethodHandle SERVICES_REQUIRED;
 
   static {
-    MethodHandle servicesForPlugins = null;
     try {
-      servicesForPlugins =
+      SERVICES_REQUIRED =
           MethodHandles.publicLookup()
               .findStatic(
                   PluginManager.class,
-                  "servicesForPlugins",
-                  MethodType.methodType(String[].class, PluginFile[].class));
+                  "requiredServices",
+                  MethodType.methodType(String[].class, RequiredServices[].class));
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
-    SERVICES_FOR_PLUGINS = servicesForPlugins;
   }
 
   static {

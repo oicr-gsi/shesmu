@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import ca.on.oicr.gsi.shesmu.plugin.RequiredServices;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
  * script. The compiler will convert a Shesmu script into a subclass and can expect to call it using
  * only what is defined in this class.
  */
-public abstract class ActionGenerator {
+public abstract class ActionGenerator implements RequiredServices {
 
   /** An action generator which ignores the input. */
   public static final ActionGenerator NULL =

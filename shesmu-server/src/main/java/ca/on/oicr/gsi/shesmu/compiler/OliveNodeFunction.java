@@ -32,13 +32,20 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   private final String name;
   private Type ownerType;
   private final List<OliveParameter> parameters;
+  private final boolean exported;
 
   public OliveNodeFunction(
-      int line, int column, String name, List<OliveParameter> parameters, ExpressionNode body) {
+      int line,
+      int column,
+      String name,
+      boolean exported,
+      List<OliveParameter> parameters,
+      ExpressionNode body) {
     super();
     this.line = line;
     this.column = column;
     this.name = name;
+    this.exported = exported;
     this.parameters = parameters;
     this.body = body;
   }
@@ -48,7 +55,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
     ownerType = builder.selfType();
     method =
         new Method(
-            "$" + name,
+            name,
             body.type().apply(TypeUtils.TO_ASM),
             parameters.stream().map(p -> p.type().apply(TypeUtils.TO_ASM)).toArray(Type[]::new));
   }
@@ -88,6 +95,13 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public Stream<OliveTable> dashboard() {
     return Stream.empty();
+  }
+
+  @Override
+  public void processExport(ExportConsumer exportConsumer) {
+    if (exported) {
+      exportConsumer.function(name, returnType(), this::parameters);
+    }
   }
 
   @Override

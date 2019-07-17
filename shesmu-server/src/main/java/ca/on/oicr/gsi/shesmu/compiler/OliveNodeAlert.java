@@ -169,6 +169,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
   }
 
   @Override
+  public void processExport(ExportConsumer exportConsumer) {
+    // Not exportable
+  }
+
+  @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     final Set<String> captures = new HashSet<>();
     ttl.collectFreeVariables(captures, Flavour::needsCapture);
