@@ -27,17 +27,16 @@ import org.objectweb.asm.commons.Method;
 
 public final class OliveNodeRun extends OliveNodeWithClauses {
 
+  private static final Type A_ACTION_TYPE = Type.getType(Action.class);
   private static final Method METHOD_ACTION__PREPARE =
       new Method("prepare", Type.VOID_TYPE, new Type[] {});
   private final String actionName;
   private final List<OliveArgumentNode> arguments;
-  private final Set<String> tags;
-  private final String description;
   private final int column;
   private ActionDefinition definition;
-
+  private final String description;
   private final int line;
-  private static final Type A_ACTION_TYPE = Type.getType(Action.class);
+  private final Set<String> tags;
 
   public OliveNodeRun(
       int line,
@@ -69,16 +68,16 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   }
 
   @Override
-  public void collectPluginsExtra(Set<Path> pluginFileNames) {
-    arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
-  }
-
-  @Override
   public boolean collectDefinitions(
       Map<String, OliveNodeDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
+  }
+
+  @Override
+  public void collectPluginsExtra(Set<Path> pluginFileNames) {
+    arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
   }
 
   @Override
@@ -101,6 +100,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                       return new VariableInformation(
                           arg.name(), arg.type(), inputs.parallelStream(), Behaviour.DEFINITION);
                     })));
+  }
+
+  @Override
+  public void processExport(ExportConsumer exportConsumer) {
+    // Not exportable
   }
 
   @Override

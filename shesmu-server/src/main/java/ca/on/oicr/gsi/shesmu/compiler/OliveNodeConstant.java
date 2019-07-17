@@ -89,6 +89,11 @@ public final class OliveNodeConstant extends OliveNode implements Target {
   }
 
   @Override
+  public void processExport(ExportConsumer exportConsumer) {
+    // Not exportable
+  }
+
+  @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     // Nothing to do.
 

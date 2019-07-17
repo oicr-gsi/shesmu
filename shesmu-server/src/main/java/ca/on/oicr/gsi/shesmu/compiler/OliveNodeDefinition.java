@@ -115,6 +115,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
   }
 
   @Override
+  public void processExport(ExportConsumer exportConsumer) {
+    // Not exportable
+  }
+
+  @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     final OliveDefineBuilder oliveBuilder = definitions.get(name);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));

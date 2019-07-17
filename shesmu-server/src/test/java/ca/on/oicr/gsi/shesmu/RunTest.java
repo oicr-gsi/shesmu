@@ -378,7 +378,14 @@ public class RunTest {
                     }
                   }));
       final ActionGenerator generator =
-          compiler.compile(file, dashboard::set).orElse(ActionGenerator.NULL);
+          compiler
+              .compile(
+                  file,
+                  (method, name, returnType, parameters) -> {
+                    // Do nothing
+                  },
+                  dashboard::set)
+              .orElse(ActionGenerator.NULL);
       compiler.errors().forEach(System.err::println);
       final ActionChecker checker = new ActionChecker();
       final InputProviderChecker input = new InputProviderChecker();

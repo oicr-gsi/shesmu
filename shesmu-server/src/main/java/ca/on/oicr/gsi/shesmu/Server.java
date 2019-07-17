@@ -20,6 +20,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
@@ -83,7 +84,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1079,8 +1082,7 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                definitionRepository
-                    .functions()
+                Stream.concat(definitionRepository.functions(), compiler.functions())
                     .sorted(Comparator.comparing(FunctionDefinition::name))
                     .forEach(
                         function -> {
@@ -1475,8 +1477,7 @@ public final class Server implements ServerConfig, ActionServices {
         "/functions",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          definitionRepository
-              .functions()
+          Stream.concat(definitionRepository.functions(), compiler.functions())
               .forEach(
                   function -> {
                     final ObjectNode obj = array.addObject();
@@ -1626,8 +1627,7 @@ public final class Server implements ServerConfig, ActionServices {
             runner = functionRunners.get(query.getName());
           } else {
             runner =
-                definitionRepository
-                    .functions()
+                Stream.concat(definitionRepository.functions(), compiler.functions())
                     .filter(f -> f.name().equals(query.getName()))
                     .findFirst()
                     .map(FunctionRunnerCompiler::compile)
@@ -1709,7 +1709,8 @@ public final class Server implements ServerConfig, ActionServices {
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
-                            definitionRepository.functions(), FunctionDefinition::name);
+                            Stream.concat(definitionRepository.functions(), compiler.functions()),
+                            FunctionDefinition::name);
 
                     @Override
                     protected ClassVisitor createClassVisitor() {
@@ -1742,6 +1743,7 @@ public final class Server implements ServerConfig, ActionServices {
                       "Uploaded Check Script.shesmu",
                       definitionRepository::constants,
                       definitionRepository::signatures,
+                      null,
                       x -> {});
           t.getResponseHeaders().set("Content-type", "text/plain; charset=utf-8");
           final byte[] errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
@@ -1760,13 +1762,15 @@ public final class Server implements ServerConfig, ActionServices {
           }
           final List<String> errors = new ArrayList<>();
           final AtomicReference<FileTable> description = new AtomicReference<>();
+          final List<Consumer<XMLStreamWriter>> exports = new ArrayList<>();
           boolean success =
               (new Compiler(false) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
-                            definitionRepository.functions(), FunctionDefinition::name);
+                            Stream.concat(definitionRepository.functions(), compiler.functions()),
+                            FunctionDefinition::name);
 
                     @Override
                     protected ClassVisitor createClassVisitor() {
@@ -1799,6 +1803,45 @@ public final class Server implements ServerConfig, ActionServices {
                       "Uploaded Check Script.shesmu",
                       definitionRepository::constants,
                       definitionRepository::signatures,
+                      new ExportConsumer() {
+                        @Override
+                        public void function(
+                            String name,
+                            Imyhat returnType,
+                            Supplier<Stream<FunctionParameter>> parameters) {
+                          exports.add(
+                              writer -> {
+                                try {
+                                  writer.writeStartElement("h1");
+                                  writer.writeCharacters("Export ");
+                                  writer.writeCharacters(name);
+                                  writer.writeEndElement();
+                                  final TableRowWriter row = new TableRowWriter(writer);
+                                  writer.writeStartElement("table");
+                                  row.write(false, "Return", "", returnType.name());
+                                  parameters
+                                      .get()
+                                      .forEach(
+                                          new Consumer<FunctionParameter>() {
+                                            private int index;
+
+                                            @Override
+                                            public void accept(
+                                                FunctionParameter functionParameter) {
+                                              row.write(
+                                                  false,
+                                                  Integer.toString(index++),
+                                                  functionParameter.description(),
+                                                  functionParameter.type().name());
+                                            }
+                                          });
+                                  writer.writeEndElement();
+                                } catch (XMLStreamException e) {
+                                  throw new RuntimeException(e);
+                                }
+                              });
+                        }
+                      },
                       description::set);
           t.getResponseHeaders().set("Content-type", "text/xml");
           t.sendResponseHeaders(200, 0);
@@ -1831,6 +1874,7 @@ public final class Server implements ServerConfig, ActionServices {
                           throw new RuntimeException(e);
                         }
                       });
+              exports.forEach(export -> export.accept(writer));
               writer.writeStartElement("pre");
               writer.writeCharacters(description.get().bytecode());
               writer.writeEndElement();

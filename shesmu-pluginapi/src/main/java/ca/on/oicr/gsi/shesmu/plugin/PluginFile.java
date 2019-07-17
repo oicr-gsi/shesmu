@@ -15,7 +15,7 @@ import javax.xml.stream.XMLStreamException;
  * Every configuration file read by Shesmu has a matching {@link PluginFile} to export services
  * defined by that configuration to the server and olives
  */
-public abstract class PluginFile {
+public abstract class PluginFile implements RequiredServices {
   private final Path fileName;
   private final String instanceName;
 
@@ -44,17 +44,6 @@ public abstract class PluginFile {
    */
   public boolean isOverloaded(Set<String> services) {
     return false;
-  }
-
-  /**
-   * Stop olives that use functions and constants from this plugin when a service is throttled.
-   *
-   * <p>This does not affect actions!
-   *
-   * @return the services names needed by this plugin
-   */
-  public Stream<String> services() {
-    return Stream.empty();
   }
 
   /** Called when a configuration file is first read. */

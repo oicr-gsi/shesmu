@@ -535,6 +535,14 @@ Functions may use constants or previously defined functions (either built-in or
 defined in the file). Functions cannot be defined recursively. The return type
 is determined automatically.
 
+Functions can be shared across Shesmu files using the `Export` keyword:
+
+    Export Function myfunc(string someparameter) someparameter ~ /.*x$/;
+
+Take care not to duplicate exported functions with functions exported by other
+scripts, functions from plugins, or built-in functions. If this happens, one
+will be selected at random.
+
 ## Constants
 Constants may be defined intermixed with olives and functions, after the
 `Input` and any `TypeAlias` definitions:

@@ -110,6 +110,10 @@ public class ProgramNode {
     olives.forEach(olive -> olive.collectPlugins(pluginFileNames));
   }
 
+  public void processExports(ExportConsumer exportConsumer) {
+    olives.forEach(olive -> olive.processExport(exportConsumer));
+  }
+
   /** Generate bytecode for this definition */
   public void render(RootBuilder builder) {
     final Map<String, OliveDefineBuilder> definitions = new HashMap<>();

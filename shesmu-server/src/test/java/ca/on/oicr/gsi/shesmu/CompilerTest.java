@@ -251,6 +251,7 @@ public class CompilerTest {
           file.toString(),
           CONSTANTS::stream,
           Stream::empty,
+          null,
           null);
       return new Pair<>(file, compiler.ok());
     } catch (final Exception e) {

@@ -4,20 +4,29 @@ import ca.on.oicr.gsi.Pair;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public final class CallSiteRegistry<K> {
-  private final Map<K, WeakReference<MutableCallSite>> registry = new ConcurrentHashMap<>();
+  private final Map<K, SoftReference<MutableCallSite>> registry = new ConcurrentHashMap<>();
 
   public CallSiteRegistry() {
     super();
   }
 
   public MutableCallSite get(K name) {
-    return registry.get(name).get();
+    final SoftReference<MutableCallSite> reference = registry.get(name);
+    if (reference == null) {
+      return null;
+    }
+    final MutableCallSite callsite = reference.get();
+    if (callsite == null) {
+      throw new IllegalStateException(
+          String.format("Call site for %s has been garbage collected.", name));
+    }
+    return callsite;
   }
 
   public Stream<Pair<K, MethodType>> stream() {
@@ -26,6 +35,14 @@ public final class CallSiteRegistry<K> {
         .stream()
         .filter(e -> e.getValue().get() != null)
         .map(e -> new Pair<>(e.getKey(), e.getValue().get().type()));
+  }
+
+  public Stream<Pair<K, MutableCallSite>> streamSites() {
+    return registry
+        .entrySet()
+        .stream()
+        .filter(e -> e.getValue().get() != null)
+        .map(e -> new Pair<>(e.getKey(), e.getValue().get()));
   }
 
   public MutableCallSite upsert(K name, MethodHandle handle) {
@@ -40,7 +57,7 @@ public final class CallSiteRegistry<K> {
                 name,
                 (n, reference) ->
                     reference == null || reference.get() == null
-                        ? new WeakReference<>(new MutableCallSite(handle))
+                        ? new SoftReference<>(new MutableCallSite(handle))
                         : reference)
             .get();
     // Update this call site with our current reference. If we just created it, this

@@ -164,32 +164,9 @@ public abstract class OliveNode {
           }
           return result;
         });
+    ROOTS.addKeyword("Function", (i, o) -> parseFunction(false, i, o));
     ROOTS.addKeyword(
-        "Function",
-        (input, output) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> body = new AtomicReference<>();
-          final Parser result =
-              input
-                  .whitespace()
-                  .identifier(name::set)
-                  .whitespace()
-                  .symbol("(")
-                  .listEmpty(params::set, OliveParameter::parse, ',')
-                  .symbol(")")
-                  .whitespace()
-                  .then(ExpressionNode::parse, body::set)
-                  .whitespace()
-                  .symbol(";")
-                  .whitespace();
-          if (result.isGood()) {
-            output.accept(
-                new OliveNodeFunction(
-                    input.line(), input.column(), name.get(), params.get(), body.get()));
-          }
-          return result;
-        });
+        "Export", (i, o) -> parseFunction(true, i.whitespace().keyword("Function"), o));
     ROOTS.addRaw(
         "constant declaration",
         (input, output) -> {
@@ -212,6 +189,31 @@ public abstract class OliveNode {
           }
           return result;
         });
+  }
+
+  private static Parser parseFunction(boolean exported, Parser input, Consumer<OliveNode> output) {
+    final AtomicReference<String> name = new AtomicReference<>();
+    final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
+    final AtomicReference<ExpressionNode> body = new AtomicReference<>();
+    final Parser result =
+        input
+            .whitespace()
+            .identifier(name::set)
+            .whitespace()
+            .symbol("(")
+            .listEmpty(params::set, OliveParameter::parse, ',')
+            .symbol(")")
+            .whitespace()
+            .then(ExpressionNode::parse, body::set)
+            .whitespace()
+            .symbol(";")
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(
+          new OliveNodeFunction(
+              input.line(), input.column(), name.get(), exported, params.get(), body.get()));
+    }
+    return result;
   }
 
   /** Parse a single olive node stanza */
@@ -248,6 +250,8 @@ public abstract class OliveNode {
   public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public abstract Stream<OliveTable> dashboard();
+
+  public abstract void processExport(ExportConsumer exportConsumer);
 
   /** Generate bytecode for this stanza into the {@link ActionGenerator#run} method */
   public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
