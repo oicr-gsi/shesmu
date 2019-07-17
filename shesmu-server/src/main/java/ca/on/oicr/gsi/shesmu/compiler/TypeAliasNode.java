@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +46,10 @@ public class TypeAliasNode {
     return name;
   }
 
-  public Imyhat resolve(Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+  public Imyhat resolve(
+      Function<String, Imyhat> definedTypes,
+      Function<String, FunctionDefinition> definedFunctions,
+      Consumer<String> errorHandler) {
     if (ImyhatNode.isBaseType(name)) {
       errorHandler.accept(
           String.format("%d:%d: Attempt to redefine base type “%s”.", line, column, name));
@@ -58,6 +62,6 @@ public class TypeAliasNode {
               line, column, name, definedTypes.apply(name).name()));
       return Imyhat.BAD;
     }
-    return type.render(definedTypes, errorHandler);
+    return type.render(definedTypes, definedFunctions, errorHandler);
   }
 }

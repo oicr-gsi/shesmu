@@ -18,6 +18,7 @@ syn keyword shesmuKeyword Alert
 syn keyword shesmuKeyword All
 syn keyword shesmuKeyword Annotations
 syn keyword shesmuKeyword Any
+syn keyword shesmuKeyword Argument
 syn keyword shesmuKeyword By
 syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
@@ -55,6 +56,7 @@ syn keyword shesmuKeyword PartitionCount
 syn keyword shesmuKeyword Pick
 syn keyword shesmuKeyword Reduce
 syn keyword shesmuKeyword Reject
+syn keyword shesmuKeyword Return
 syn keyword shesmuKeyword Reverse
 syn keyword shesmuKeyword Run
 syn keyword shesmuKeyword Single

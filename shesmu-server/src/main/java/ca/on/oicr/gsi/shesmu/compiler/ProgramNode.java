@@ -159,7 +159,7 @@ public class ProgramNode {
             .collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
 
     for (final TypeAliasNode alias : typeAliases) {
-      final Imyhat type = alias.resolve(userDefinedTypes::get, errorHandler);
+      final Imyhat type = alias.resolve(userDefinedTypes::get, definedFunctions, errorHandler);
       if (type.isBad()) {
         return false;
       }

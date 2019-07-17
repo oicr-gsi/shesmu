@@ -2186,7 +2186,18 @@ public final class Server implements ServerConfig, ActionServices {
                                   .then(ImyhatNode::parse, node::set)
                                   .whitespace();
                           if (parser.isGood()) {
-                            return Optional.of(node.get().render(types, m -> {}));
+                            return Optional.of(
+                                node.get()
+                                    .render(
+                                        types,
+                                        pluginManager
+                                                .functions()
+                                                .collect(
+                                                    Collectors.toMap(
+                                                        FunctionDefinition::name,
+                                                        Function.identity()))
+                                            ::get,
+                                        m -> {}));
                           }
                           return Optional.empty();
                         })

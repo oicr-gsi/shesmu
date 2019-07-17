@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,8 +42,10 @@ public class OliveParameter implements Target {
   }
 
   public boolean resolveTypes(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
-    realType = type.render(definedTypes, errorHandler);
+      Function<String, Imyhat> definedTypes,
+      Function<String, FunctionDefinition> definedFunctions,
+      Consumer<String> errorHandler) {
+    realType = type.render(definedTypes, definedFunctions, errorHandler);
     return !realType.isBad();
   }
 
