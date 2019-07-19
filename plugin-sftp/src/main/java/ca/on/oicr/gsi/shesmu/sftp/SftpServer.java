@@ -45,7 +45,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     protected Optional<Pair<SSHClient, SFTPClient>> fetch(Instant lastUpdated) throws Exception {
       if (!configuration.isPresent()) return Optional.empty();
       final SSHClient client = new SSHClient();
-      client.loadKnownHosts();
+      client.addHostKeyVerifier((s, i, publicKey) -> true);
 
       client.connect(configuration.get().getHost(), configuration.get().getPort());
       client.authPublickey(configuration.get().getUser());
@@ -79,8 +79,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           .register();
   private Optional<Configuration> configuration = Optional.empty();
   private final ConnectionCache connection;
-  private final Supplier<SftpServer> supplier;
   private final FileAttributeCache fileAttributes;
+  private final Supplier<SftpServer> supplier;
 
   public SftpServer(Path fileName, String instanceName, Supplier<SftpServer> supplier) {
     super(fileName, instanceName, MAPPER, Configuration.class);
@@ -108,6 +108,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         .get(fileName)
         .map(a -> Instant.ofEpochSecond(a.getMtime()))
         .orElse(errorValue);
+  }
+
+  @ShesmuAction(
+      description = "Remove a file (not directory) on an SFTP server described in {file}.")
+  public DeleteAction $_rm() {
+    return new DeleteAction(supplier);
   }
 
   @ShesmuMethod(
@@ -194,6 +200,22 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       e.printStackTrace();
       symlinkErrors.labels(name()).inc();
       return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
+    }
+  }
+
+  synchronized boolean rm(String path) {
+    final Optional<SFTPClient> client = connection.get().map(Pair::second);
+    if (!client.isPresent()) {
+      return false;
+    }
+    try {
+      if (client.get().statExistence(path) != null) {
+        client.get().rm(path);
+      }
+      return true;
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
     }
   }
 
