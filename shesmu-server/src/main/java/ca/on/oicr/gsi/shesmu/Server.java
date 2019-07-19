@@ -246,7 +246,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            new StatusPage(this) {
+            new StatusPage(this, false) {
 
               @Override
               protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
@@ -282,6 +282,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new TablePage(this, "Inflight Process", "Started", "Duration") {
+              @Override
+              public String activeUrl() {
+                return "inflightdash";
+              }
+
               final Instant now = Instant.now();
 
               @Override
@@ -304,6 +309,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "olivedash";
+              }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -611,6 +621,11 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               boolean lacksLocations;
+
+              @Override
+              public String activeUrl() {
+                return "actiondash";
+              }
 
               @Override
               public Stream<Header> headers() {
@@ -1012,6 +1027,11 @@ public final class Server implements ServerConfig, ActionServices {
             new BasePage(this, false) {
 
               @Override
+              public String activeUrl() {
+                return "actiondefs";
+              }
+
+              @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
                 definitionRepository
                     .actions()
@@ -1057,6 +1077,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "inputdefs";
+              }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1111,6 +1136,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "grouperdefs";
+              }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1244,6 +1274,11 @@ public final class Server implements ServerConfig, ActionServices {
             new TablePage(this) {
 
               @Override
+              public String activeUrl() {
+                return "signaturedefs";
+              }
+
+              @Override
               protected void writeRows(TableRowWriter row) {
                 definitionRepository
                     .signatures()
@@ -1266,6 +1301,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "constantdefs";
+              }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1323,6 +1363,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "functiondefs";
+              }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1412,6 +1457,11 @@ public final class Server implements ServerConfig, ActionServices {
             new TablePage(this) {
 
               @Override
+              public String activeUrl() {
+                return "dumpdefs";
+              }
+
+              @Override
               protected void writeRows(TableRowWriter row) {
                 PluginManager.dumpBound()
                     .sorted(Comparator.comparing(Pair::first))
@@ -1431,6 +1481,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new TablePage(this) {
+
+              @Override
+              public String activeUrl() {
+                return "dumpadr";
+              }
 
               @Override
               protected void writeRows(TableRowWriter row) {
@@ -1453,6 +1508,11 @@ public final class Server implements ServerConfig, ActionServices {
             new TablePage(this, "Configuration File", "Kind", "Name") {
 
               @Override
+              public String activeUrl() {
+                return "configmap";
+              }
+
+              @Override
               protected void writeRows(TableRowWriter row) {
                 pluginManager.dumpPluginConfig(row);
                 AnnotatedInputFormatDefinition.formats()
@@ -1468,6 +1528,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "typedefs";
+              }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
@@ -1578,6 +1643,11 @@ public final class Server implements ServerConfig, ActionServices {
                   writer.writeEndElement();
                   writer.writeEmptyElement("br");
                 }
+              }
+
+              @Override
+              public String activeUrl() {
+                return "alerts";
               }
 
               @Override
@@ -2084,6 +2154,11 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
+
+              @Override
+              public String activeUrl() {
+                return "checkdash";
+              }
 
               @Override
               public Stream<Header> headers() {
