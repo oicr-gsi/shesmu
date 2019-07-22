@@ -225,7 +225,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateIUS(accession, attribute, null);
         }
       };
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  static final ObjectMapper MAPPER = new ObjectMapper();
   private static final AnnotationType<WorkflowRunAttribute> WORKFLOW_RUN =
       new AnnotationType<WorkflowRunAttribute>() {
         @Override

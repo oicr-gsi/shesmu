@@ -143,3 +143,14 @@ including complex types, can be used in the inner, `of`, types.
 
 It is often the case that complex objects are made of nested tuple and list
 types, using different delimiters.
+
+For WDL-inside-Niassa workflows, there is a special `wdl` type:
+
+    {
+      "is": "wdl",
+      "parameters": {
+         "foo.bar.baz": "Int"
+       }
+    }
+
+There `parameters` section is in the same format as `womtool inputs`.
