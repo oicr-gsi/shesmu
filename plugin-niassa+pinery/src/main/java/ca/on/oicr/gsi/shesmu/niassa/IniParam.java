@@ -5,12 +5,16 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
+import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -294,11 +298,40 @@ public final class IniParam<T> {
             return tuple(
                 node.get("delimiter").asText(),
                 Utils.stream(node.get("of")).map(this::deserialize));
+          case "wdl":
+            return wdl((ObjectNode) node.get("parameters"));
           default:
             throw new IllegalArgumentException("Unknown INI type: " + type);
         }
       }
       throw new IllegalArgumentException("Cannot parse INI type: " + node.getNodeType());
+    }
+
+    private Stringifier wdl(ObjectNode inputs) {
+      final Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> handler =
+          PackWdlVariables.create(
+              WdlInputType.of(
+                  inputs,
+                  (line, column, errorMessage) ->
+                      System.err.printf("%d:%d: %s\n", line, column, errorMessage)));
+      return new Stringifier() {
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          final ObjectNode result = NiassaServer.MAPPER.createObjectNode();
+          handler.second().accept(handler.first().apply(result), value);
+          try {
+            return NiassaServer.MAPPER.writeValueAsString(result);
+          } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{}";
+          }
+        }
+
+        @Override
+        public Imyhat type() {
+          return handler.second();
+        }
+      };
     }
 
     @Override

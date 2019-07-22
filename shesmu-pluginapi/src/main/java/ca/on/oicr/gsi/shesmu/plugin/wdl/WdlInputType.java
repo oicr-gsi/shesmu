@@ -8,12 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -39,7 +34,7 @@ import java.util.stream.StreamSupport;
  */
 public final class WdlInputType {
   private static final ParseDispatch<Imyhat> DISPATCH = new ParseDispatch<>();
-  private static final Pattern IDENTIFIER = Pattern.compile("([a-z]_]*)\\.([a-z]_]*)\\.([a-z]_]*)");
+  private static final Pattern PERIOD = Pattern.compile("\\.");
 
   private static final Consumer<Matcher> IGNORE = m -> {};
   private static final Pattern OPTIONAL = Pattern.compile("\\??");
@@ -146,10 +141,10 @@ public final class WdlInputType {
    * Take a womtool inputs JSON object and convert it into a list of workflow configurations
    *
    * <p>Each womtool record looks like <tt>"WORKFLOW.TASK.VARIABLE":"TYPE"</tt> and we want to
-   * transform it into something that would be <tt>task = {variable = type}</tt> in Shesmu,
-   * collecting all the input variables for a single task into an object.
+   * transform it into something that would be <tt>workflow = { task = {variable = type}}</tt> in
+   * Shesmu, collecting all the input variables for a single task into an object.
    */
-  public static Stream<Pair<String, Imyhat>> of(ObjectNode inputs, ErrorConsumer errors) {
+  public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errors) {
     return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
         .map(
@@ -159,23 +154,13 @@ public final class WdlInputType {
                   Parser.start(entry.getValue().asText(), errors)
                       .then(WdlInputType::parse, type::set);
               if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
-                final Matcher m = IDENTIFIER.matcher(entry.getKey());
-                return new Pair<>( // Slice the WF.TASK.VAR = TYPE name into [TASK, [VAR, TYPE]]
-                    m.group(1), new Pair<>(m.group(2), type.get()));
+                return new Pair<>(
+                    PERIOD.split(entry.getKey()), type.get()); // Slice the WF.TASK.VAR = TYPE
               } else {
                 return null;
               }
             })
-        .filter(Objects::nonNull)
-        .collect(
-            Collectors.groupingBy( // Group into 1 parameter per task
-                Pair::first,
-                Collectors.collectingAndThen( // Take all the variables for the same task
-                    Collectors.toList(), // and pack them into an object
-                    l -> new Imyhat.ObjectImyhat(l.stream().map(Pair::second)))))
-        .entrySet()
-        .stream()
-        .map(e -> new Pair<>(e.getKey(), e.getValue()));
+        .filter(Objects::nonNull);
   }
 
   private static Parser pair(Parser parser, Consumer<Imyhat> output) {
