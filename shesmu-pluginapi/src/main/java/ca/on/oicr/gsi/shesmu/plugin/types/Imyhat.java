@@ -447,8 +447,6 @@ public abstract class Imyhat {
     if (baseType.isPresent()) {
       return baseType;
     }
-    System.err.println(c.getTypeName());
-    System.err.println(c.getClass().getName());
     if (!(c instanceof ParameterizedType)) {
       return Optional.empty();
     }
@@ -458,9 +456,6 @@ public abstract class Imyhat {
     if (p.getActualTypeArguments().length != 1
         || !(p.getRawType() instanceof Class<?>)
         || !Set.class.equals(p.getRawType())) {
-      System.err.println(Arrays.asList(p.getActualTypeArguments()));
-      System.err.println(p.getRawType());
-      System.err.println(p.getRawType().getClass());
       return Optional.empty();
     }
     return of(p.getActualTypeArguments()[0]).map(Imyhat::asList);
