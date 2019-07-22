@@ -298,6 +298,13 @@ public final class WorkflowAction extends Action {
   }
 
   @Override
+  public void purgeCleanup() {
+    // If this action is being purged, there's a good chance the user is trying to skip & rerun, so
+    // zap the cache so we see that change.
+    server.get().analysisCache().invalidate(workflowAccession);
+  }
+
+  @Override
   public final long retryMinutes() {
     return 10;
   }
