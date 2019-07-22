@@ -1994,12 +1994,12 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/actions.js",
         t -> {
-          t.getResponseHeaders().set("Content-type", "text/javascript");
+          t.getResponseHeaders().set("Content-type", "text/javascript;charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody();
               PrintStream writer = new PrintStream(os, false, "UTF-8")) {
             writer.println(
-                "import { blank, collapse, jsonParameters, link, objectTable, table, text, timespan, title, visibleText } from './shesmu.js';\nexport const actionRender = new Map();\n");
+                "import { blank, collapse, jsonParameters, link, objectTable, table, text, timespan, title, visibleText } from './utils.js';\nexport const actionRender = new Map();\n");
             definitionRepository.writeJavaScriptRenderer(writer);
           }
         });
@@ -2030,7 +2030,8 @@ public final class Server implements ServerConfig, ActionServices {
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
-    add("shesmu.js", "text/javascript");
+    add("shesmu.js", "text/javascript;charset=utf-8");
+    add("utils.js", "text/javascript;charset=utf-8");
     add("shesmu.svg", "image/svg+xml");
     add("favicon.png", "image/png");
     add("thorschariot.gif", "image/gif");
