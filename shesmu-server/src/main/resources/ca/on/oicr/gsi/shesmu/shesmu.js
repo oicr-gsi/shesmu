@@ -828,7 +828,7 @@ export function actionsForOlive(filename, line, column, timestamp) {
   );
 }
 
-function makePopup(returnClose) {
+function makePopup(returnClose, afterClose) {
   const modal = document.createElement("DIV");
   modal.className = "modal close";
 
@@ -847,9 +847,17 @@ function makePopup(returnClose) {
   modal.onclick = e => {
     if (e.target == modal) {
       document.body.removeChild(modal);
+      if (afterClose) {
+        afterClose();
+      }
     }
   };
-  closeButton.onclick = e => document.body.removeChild(modal);
+  closeButton.onclick = e => {
+    document.body.removeChild(modal);
+    if (afterClose) {
+      afterClose();
+    }
+  };
 
   return returnClose ? [inner, closeButton.onclick] : inner;
 }
@@ -1094,21 +1102,21 @@ function setColorIntensity(element, value, maximum) {
 
 const headerAngle = Math.PI / 4;
 
-function purge(filters) {
-  const targetElement = document.getElementById("results");
+function purge(filters, afterClose) {
+  const [targetElement, close] = makePopup(true, afterClose);
   if (filters.length == 0) {
     clearChildren(targetElement);
     const sarcasm = document.createElement("P");
     sarcasm.innerText =
-      "Yeah, no. You can't nuke all the actions. Maybe try a subset.";
+      "Yeah, no. You probably shouldn't nuke all the actions. Maybe try a subset.";
     targetElement.appendChild(sarcasm);
-    const purgeButton = document.createElement("SPAN");
-    purgeButton.className = "load danger";
-    purgeButton.innerText = "🔥 NUKE IT ALL FROM ORBIT 🔥";
-    targetElement.appendChild(purgeButton);
-    purgeButton.onclick = () => {
-      purgeActions(filters, targetElement);
-    };
+    targetElement.appendChild(
+      dangerButton("🔥 NUKE IT ALL FROM ORBIT 🔥", () => {
+        purgeActions(filters, targetElement);
+      })
+    );
+    targetElement.appendChild(document.createElement("BR"));
+    targetElement.appendChild(button("Back away slowly", close));
   } else {
     purgeActions(filters, targetElement);
   }
@@ -1843,7 +1851,14 @@ function getStats(
   }
   toolBar.appendChild(
     dangerButton("☠️ PURGE", () =>
-      purgeActions(filters.concat(additionalFilters), container)
+      purge(
+        filters.concat(
+          additionalFilters.length == 0
+            ? []
+            : synthesiseFilters(additionalFilters[additionalFilters.length - 1])
+        ),
+        refresh
+      )
     )
   );
 
