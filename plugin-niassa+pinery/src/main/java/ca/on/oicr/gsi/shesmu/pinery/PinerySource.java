@@ -41,7 +41,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       }
       final PineryConfiguration cfg = config.get();
       try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
-        final String version = cfg.getVersion() == null ? "v1" : cfg.getVersion();
         final Map<String, Integer> badSetCounts = new TreeMap<>();
         final Map<String, Pair<String, String>> runDirectoriesAndMasks = new HashMap<>();
         final Set<String> completeRuns =
@@ -59,14 +58,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         return Stream.concat(
                 lanes(
                     c,
-                    version,
+                    cfg.getVersion(),
                     cfg.getProvider(),
                     badSetCounts,
                     runDirectoriesAndMasks,
                     completeRuns::contains),
                 samples(
                     c,
-                    version,
+                    cfg.getVersion(),
                     cfg.getProvider(),
                     badSetCounts,
                     runDirectoriesAndMasks,
