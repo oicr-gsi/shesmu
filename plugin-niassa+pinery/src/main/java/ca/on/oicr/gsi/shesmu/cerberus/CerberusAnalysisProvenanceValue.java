@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The information available to Shesmu scripts for processing
@@ -63,7 +64,13 @@ public final class CerberusAnalysisProvenanceValue {
     md5 = provenance.getFileMd5sum();
     metatype = provenance.getFileMetaType();
     name = provenance.getWorkflowRunName();
-    skip = provenance.getSkip() == null ? false : provenance.getSkip();
+    skip =
+        (provenance.getSkip() != null && provenance.getSkip())
+            || Stream.of(
+                    provenance.getFileAttributes(),
+                    provenance.getWorkflowRunAttributes(),
+                    provenance.getIusAttributes())
+                .anyMatch(p -> p.containsKey("skip"));
     status = provenance.getWorkflowRunStatus();
     runAccession = provenance.getWorkflowRunId();
     workflowAccession = provenance.getWorkflowId();
