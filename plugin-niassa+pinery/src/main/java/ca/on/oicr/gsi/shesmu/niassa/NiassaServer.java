@@ -50,7 +50,15 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       return metadata
           .getAnalysisProvenance(filters)
           .stream()
-          .filter(ap -> ap.getWorkflowId() != null && (ap.getSkip() == null || !ap.getSkip()))
+          .filter(
+              ap ->
+                  ap.getWorkflowId() != null
+                      && (ap.getSkip() == null || !ap.getSkip())
+                      && Stream.of(
+                              ap.getFileAttributes(),
+                              ap.getIusAttributes(),
+                              ap.getWorkflowRunAttributes())
+                          .noneMatch(a -> a.containsKey("skip")))
           .collect(
               Collectors.groupingBy(ap -> new Pair<>(ap.getWorkflowRunId(), ap.getWorkflowId())))
           .entrySet()
