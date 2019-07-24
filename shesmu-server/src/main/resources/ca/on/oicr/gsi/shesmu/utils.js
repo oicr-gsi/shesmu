@@ -110,7 +110,20 @@ export function title(action, t) {
   }
   return [
     element,
-    table(action.locations, ...sourceColumns),
+    table(
+      action.locations,
+      ["File", l => l.file],
+      ["Line", l => l.line],
+      ["Column", l => l.column],
+      [
+        "Time",
+        l => {
+          const [ago, absolute] = formatTimeBin(l.time);
+          return `${absolute} (${ago})`;
+        }
+      ],
+      ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
+    ),
     table(
       [
         ["Last Checked", "lastChecked"],
