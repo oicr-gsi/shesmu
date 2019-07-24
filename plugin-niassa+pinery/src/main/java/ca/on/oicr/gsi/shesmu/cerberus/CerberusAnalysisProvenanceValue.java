@@ -48,7 +48,7 @@ public final class CerberusAnalysisProvenanceValue {
 
   public CerberusAnalysisProvenanceValue(
       AnalysisProvenance provenance, long inputFile, IusLimsKey limsKey, Runnable isBad) {
-    fileAccession = provenance.getFileId();
+    fileAccession = provenance.getFileId() == null ? 0 : provenance.getFileId();
     fileAttributes = attributes(provenance.getFileAttributes());
     filePath = Paths.get(provenance.getFilePath());
     this.inputFile = inputFile;
