@@ -144,19 +144,27 @@ public final class WdlInputType {
    * transform it into something that would be <tt>workflow = { task = {variable = type}}</tt> in
    * Shesmu, collecting all the input variables for a single task into an object.
    */
-  public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errors) {
+  public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errorHandler) {
     return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
         .map(
             entry -> {
               final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
+              final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
               final Parser parser =
-                  Parser.start(entry.getValue().asText(), errors)
+                  Parser.start(
+                          entry.getValue().asText(),
+                          (line, column, errorMessage) -> {
+                            if (error.get() == null || error.get().first() < column) {
+                              error.set(new Pair<>(column, errorMessage));
+                            }
+                          })
                       .then(WdlInputType::parse, type::set);
               if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
                 return new Pair<>(
                     PERIOD.split(entry.getKey()), type.get()); // Slice the WF.TASK.VAR = TYPE
               } else {
+                errorHandler.raise(1, error.get().first(), error.get().second());
                 return null;
               }
             })
