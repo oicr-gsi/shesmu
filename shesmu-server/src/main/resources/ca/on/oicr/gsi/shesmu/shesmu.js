@@ -917,37 +917,11 @@ function defaultRenderer(action) {
   return title(action, `Unknown Action: ${action.type}`);
 }
 
-let sourceColumns = [];
-
 function nextPage(query, targetElement, onActionPage) {
   results(targetElement, "/query", JSON.stringify(query), (container, data) => {
     const jumble = document.createElement("DIV");
     if (data.results.length == 0) {
       jumble.innerText = "No actions found.";
-    }
-
-    sourceColumns = [
-      ["File", l => l.file],
-      ["Line", l => l.line],
-      ["Column", l => l.column],
-      [
-        "Time",
-        l => {
-          const [ago, absolute] = formatTimeBin(l.time);
-          return `${absolute} (${ago})`;
-        }
-      ],
-      ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
-    ];
-    if (onActionPage) {
-      sourceColumns.push([
-        "Olive",
-        l =>
-          link(
-            `olivedash#${l.file}:${l.line}:${l.column}:${l.time}`,
-            "View Olive"
-          )
-      ]);
     }
 
     data.results.forEach(action => {
