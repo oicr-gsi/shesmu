@@ -14,6 +14,41 @@ export function collapse(title, ...inner) {
   return [showHide, contents];
 }
 
+export function formatTimeSpan(x) {
+  let diff = Math.abs(Math.ceil(x / 1000));
+  let result = "";
+  let chunkcount = 0;
+  for (let [span, name] of [
+    [31557600, "y"],
+    [86400, "d"],
+    [3600, "h"],
+    [60, "m"],
+    [1, "s"]
+  ]) {
+    const chunk = Math.floor(diff / span);
+    if (chunk > 0 || chunkcount > 0) {
+      result = `${result}${chunk}${name} `;
+      diff = diff % span;
+      if (++chunkcount > 2) {
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+export function formatTimeBin(x) {
+  const d = new Date(x);
+  const span = new Date() - d;
+  let ago = formatTimeSpan(span);
+  if (ago) {
+    ago = ago + (span < 0 ? "from now" : "ago");
+  } else {
+    ago = "now";
+  }
+  return [ago, `${d.toISOString()}`];
+}
+
 export function jsonParameters(action) {
   return objectTable(action.parameters, "Parameters", x =>
     JSON.stringify(x, null, 2)
@@ -103,7 +138,8 @@ export function title(action, t) {
     action.tags.forEach(tag => {
       const button = document.createElement("SPAN");
       button.innerText = tag;
-      list.appendChild(button);
+      tags.appendChild(button);
+      tags.appendChild(document.createTextNode(" "));
     });
   } else {
     tags = [];
