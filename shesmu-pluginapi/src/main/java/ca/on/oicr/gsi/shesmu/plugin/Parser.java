@@ -267,7 +267,7 @@ public abstract class Parser {
   }
 
   private static final Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
-  public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
+  public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-zA-Z0-9_]*");
   private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
   private final int column;
 
