@@ -12,8 +12,9 @@ import java.util.stream.Stream;
  * replaces them all
  */
 public final class ReplacingRecord<V> implements Record<Stream<V>> {
-  private final Updater<Stream<V>> fetcher;
   private Instant fetchTime = Instant.EPOCH;
+  private final Updater<Stream<V>> fetcher;
+  private boolean initialState = true;
   private final Owner owner;
   private List<V> value;
 
@@ -21,6 +22,11 @@ public final class ReplacingRecord<V> implements Record<Stream<V>> {
     this.owner = owner;
     this.fetcher = fetcher;
     this.value = Collections.emptyList();
+  }
+
+  @Override
+  public int collectionSize() {
+    return value.size();
   }
 
   @Override
@@ -42,17 +48,16 @@ public final class ReplacingRecord<V> implements Record<Stream<V>> {
         if (stream != null) {
           value = stream.collect(Collectors.toList());
           fetchTime = Instant.now();
+          initialState = false;
         }
       } catch (final Exception e) {
         e.printStackTrace();
         staleRefreshError.labels(owner.name()).inc();
       }
     }
+    if (initialState) {
+      throw new InitialCachePopulationException();
+    }
     return value.stream();
-  }
-
-  @Override
-  public int collectionSize() {
-    return value.size();
   }
 }

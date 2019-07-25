@@ -11,8 +11,9 @@ import java.util.Optional;
  */
 public final class SimpleRecord<V> implements Record<Optional<V>> {
 
-  private final Updater<Optional<V>> fetcher;
   private Instant fetchTime = Instant.EPOCH;
+  private final Updater<Optional<V>> fetcher;
+  private boolean initialState = true;
   private final Owner owner;
   private Optional<V> value;
 
@@ -20,6 +21,11 @@ public final class SimpleRecord<V> implements Record<Optional<V>> {
     this.owner = owner;
     this.fetcher = fetcher;
     this.value = Optional.empty();
+  }
+
+  @Override
+  public int collectionSize() {
+    return value.isPresent() ? 1 : 0;
   }
 
   @Override
@@ -41,17 +47,16 @@ public final class SimpleRecord<V> implements Record<Optional<V>> {
         if (buffer.isPresent()) {
           value = buffer;
           fetchTime = Instant.now();
+          initialState = false;
         }
       } catch (final Exception e) {
         e.printStackTrace();
         staleRefreshError.labels(owner.name()).inc();
       }
     }
+    if (initialState) {
+      throw new InitialCachePopulationException();
+    }
     return value;
-  }
-
-  @Override
-  public int collectionSize() {
-    return value.isPresent() ? 1 : 0;
   }
 }
