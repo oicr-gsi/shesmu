@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
+import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.CerberusAnalysisProvenanceValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
@@ -44,6 +45,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       if (metadata == null) {
         return Stream.empty();
       }
+      final Map<Integer, LimsKey> limsKeyCache = new HashMap<>();
       final Map<FileProvenanceFilter, Set<String>> filters =
           new EnumMap<>(FileProvenanceFilter.class);
       filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
@@ -59,14 +61,17 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                               ap.getIusAttributes(),
                               ap.getWorkflowRunAttributes())
                           .noneMatch(a -> a.containsKey("skip")))
-          .collect(
-              Collectors.groupingBy(ap -> new Pair<>(ap.getWorkflowRunId(), ap.getWorkflowId())))
+          .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
           .entrySet()
           .stream()
           .map(
               e ->
                   new AnalysisState(
-                      e.getKey(), () -> metadata.getWorkflowRun(e.getKey().first()), e.getValue()));
+                      e.getKey(),
+                      () -> metadata.getWorkflowRunWithIuses(e.getKey()),
+                      iusAccession ->
+                          limsKeyCache.computeIfAbsent(iusAccession, metadata::getLimsKeyFrom),
+                      e.getValue()));
     }
   }
 

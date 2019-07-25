@@ -149,6 +149,7 @@ public final class WorkflowAction extends Action {
               .collect(Collectors.toList());
       matches =
           workflowAccessions()
+              .distinct()
               .boxed()
               .flatMap(
                   accession ->
@@ -321,6 +322,7 @@ public final class WorkflowAction extends Action {
     node.put("majorOliveVersion", majorOliveVersion);
     limsKeysCollection
         .limsKeys()
+        .sorted(LIMS_KEY_COMPARATOR)
         .map(
             k -> {
               final ObjectNode key = mapper.createObjectNode();
