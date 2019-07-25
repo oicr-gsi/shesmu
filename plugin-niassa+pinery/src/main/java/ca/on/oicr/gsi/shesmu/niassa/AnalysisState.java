@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -22,8 +23,9 @@ public class AnalysisState implements Comparable<AnalysisState> {
   private final int workflowRunAccession;
 
   public AnalysisState(
-      Pair<Integer, Integer> accessions,
+      int workflowRunAccession,
       Supplier<WorkflowRun> run,
+      IntFunction<net.sourceforge.seqware.common.model.LimsKey> getLimsKey,
       List<AnalysisProvenance> source) {
     fileSWIDSToRun =
         source
@@ -52,18 +54,24 @@ public class AnalysisState implements Comparable<AnalysisState> {
                     .getIus()
                     .stream()
                     .map(
-                        i ->
-                            new SimpleLimsKey(
-                                i.getLimsKey().getId(),
-                                i.getLimsKey().getProvider(),
-                                i.getLimsKey().getLastModified().toInstant(),
-                                i.getLimsKey().getVersion())))
+                        i -> {
+                          // We forcibly load the LIMS key from Niassa because the WorkflowRun
+                          // loader
+                          // only populates the IUS ids and not the LIMS key within
+                          final net.sourceforge.seqware.common.model.LimsKey limsKey =
+                              getLimsKey.apply(i.getSwAccession());
+                          return new SimpleLimsKey(
+                              limsKey.getId(),
+                              limsKey.getProvider(),
+                              limsKey.getLastModified().toInstant(),
+                              limsKey.getVersion());
+                        }))
             .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
             .distinct()
             .collect(Collectors.toList());
 
-    workflowRunAccession = accessions.first();
-    workflowAccession = accessions.second();
+    this.workflowRunAccession = workflowRunAccession;
+    workflowAccession = source.get(0).getWorkflowId();
     lastModified =
         source
             .stream()
