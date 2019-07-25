@@ -104,20 +104,7 @@ export function table(rows, ...headers) {
 
 export function text(t) {
   const element = document.createElement("P");
-  const tSpecial = t.replace(/\n/g, "⏎");
-  if (t.length > 100 || tSpecial != t) {
-    element.title = "There's a lot to unpack here.";
-    element.innerText = tSpecial.substring(0, 98) + "...";
-    element.style.cursor = "pointer";
-    element.onclick = () => {
-      const popup = makePopup();
-      const pre = document.createElement("PRE");
-      pre.innerText = t;
-      popup.appendChild(pre);
-    };
-  } else {
-    element.innerText = t;
-  }
+  element.innerText = t.replace(/\n/g, "⏎");
   return element;
 }
 
