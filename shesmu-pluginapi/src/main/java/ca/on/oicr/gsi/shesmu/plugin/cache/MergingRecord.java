@@ -26,11 +26,11 @@ public final class MergingRecord<V, I> implements Record<Stream<V>> {
     return (owner, fetcher) -> new MergingRecord<>(owner, fetcher, getId);
   }
 
-  private final Updater<Stream<V>> fetcher;
   private Instant fetchTime = Instant.EPOCH;
+  private final Updater<Stream<V>> fetcher;
   private final Function<V, I> getId;
+  private boolean initialState = true;
   private final Owner owner;
-
   private List<V> value;
 
   public MergingRecord(Owner owner, Updater<Stream<V>> fetcher, Function<V, I> getId) {
@@ -38,6 +38,11 @@ public final class MergingRecord<V, I> implements Record<Stream<V>> {
     this.fetcher = fetcher;
     this.getId = getId;
     this.value = Collections.emptyList();
+  }
+
+  @Override
+  public int collectionSize() {
+    return value.size();
   }
 
   @Override
@@ -67,16 +72,15 @@ public final class MergingRecord<V, I> implements Record<Stream<V>> {
                 .collect(Collectors.toList());
 
         fetchTime = Instant.now();
+        initialState = false;
       } catch (final Exception e) {
         e.printStackTrace();
         staleRefreshError.labels(owner.name()).inc();
       }
     }
+    if (initialState) {
+      throw new InitialCachePopulationException();
+    }
     return value.stream();
-  }
-
-  @Override
-  public int collectionSize() {
-    return value.size();
   }
 }
