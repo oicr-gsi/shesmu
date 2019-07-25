@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.runscanner;
 
 import ca.on.oicr.gsi.runscanner.dto.IlluminaNotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.NotificationDto;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
@@ -66,29 +67,35 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
       description =
           "Get the serial number of the flowcell detected by the Run Scanner defined in {file}.")
   public String $_flowcell(@ShesmuParameter(description = "name of run") String runName) {
-    return runCache
-        .get(runName) //
-        .map(NotificationDto::getContainerSerialNumber) //
-        .orElse("");
+    try {
+      return runCache.get(runName).map(NotificationDto::getContainerSerialNumber).orElse("");
+    } catch (InitialCachePopulationException e) {
+      return "";
+    }
   }
 
   @ShesmuMethod(
       description = "Get the number of lanes detected by the Run Scanner defined in {file}.")
   public long $_lane_count(@ShesmuParameter(description = "name of run") String runName) {
-    return runCache
-        .get(runName) //
-        .map(r -> (long) r.getLaneCount()) //
-        .orElse(-1L);
+    try {
+      return runCache.get(runName).map(r -> (long) r.getLaneCount()).orElse(-1L);
+    } catch (InitialCachePopulationException e) {
+      return -1;
+    }
   }
 
   @ShesmuMethod(
       description = "Get the number of reads detected by the Run Scanner defined in {file}.")
   public long $_read_ends(@ShesmuParameter(description = "name of run") String runName) {
-    return runCache
-        .get(runName) //
-        .filter(IlluminaNotificationDto.class::isInstance)
-        .map(r -> (long) ((IlluminaNotificationDto) r).getNumReads()) //
-        .orElse(-1L);
+    try {
+      return runCache
+          .get(runName)
+          .filter(IlluminaNotificationDto.class::isInstance)
+          .map(r -> (long) ((IlluminaNotificationDto) r).getNumReads())
+          .orElse(-1L);
+    } catch (InitialCachePopulationException e) {
+      return -1;
+    }
   }
 
   @Override
