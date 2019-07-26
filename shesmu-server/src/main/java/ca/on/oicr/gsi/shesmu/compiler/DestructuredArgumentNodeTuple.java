@@ -18,6 +18,7 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   private final int column;
   private final List<DestructuredArgumentNode> elements;
   private final int line;
+  private Imyhat.TupleImyhat tupleType;
 
   public DestructuredArgumentNodeTuple(
       int line, int column, List<DestructuredArgumentNode> elements) {
@@ -27,8 +28,8 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<Target> targets() {
-    return elements.stream().flatMap(DestructuredArgumentNode::targets);
+  public boolean isBlank() {
+    return elements.stream().allMatch(DestructuredArgumentNode::isBlank);
   }
 
   @Override
@@ -48,7 +49,17 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
                         }));
   }
 
-  private Imyhat.TupleImyhat tupleType;
+  @Override
+  public void setFlavour(Target.Flavour flavour) {
+    for (final DestructuredArgumentNode element : elements) {
+      element.setFlavour(flavour);
+    }
+  }
+
+  @Override
+  public Stream<Target> targets() {
+    return elements.stream().flatMap(DestructuredArgumentNode::targets);
+  }
 
   @Override
   public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {

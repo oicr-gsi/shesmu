@@ -8,13 +8,14 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
 public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
+  private Target.Flavour flavour;
   private final String name;
   private Imyhat type = Imyhat.BAD;
   private final Target target =
       new Target() {
         @Override
         public Flavour flavour() {
-          return Flavour.LAMBDA;
+          return flavour;
         }
 
         @Override
@@ -30,6 +31,11 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
 
   public DestructuredArgumentNodeVariable(String name) {
     this.name = name;
+  }
+
+  @Override
+  public boolean isBlank() {
+    return false;
   }
 
   @Override
@@ -51,6 +57,11 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
             return type.apply(TO_ASM);
           }
         });
+  }
+
+  @Override
+  public void setFlavour(Target.Flavour flavour) {
+    this.flavour = flavour;
   }
 
   @Override

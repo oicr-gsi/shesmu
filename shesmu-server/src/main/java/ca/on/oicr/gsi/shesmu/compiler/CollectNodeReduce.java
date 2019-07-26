@@ -32,6 +32,7 @@ public class CollectNodeReduce extends CollectNode {
     this.accumulatorName = accumulatorName;
     this.reducer = reducer;
     this.initial = initial;
+    accumulatorName.setFlavour(Flavour.LAMBDA);
   }
 
   @Override

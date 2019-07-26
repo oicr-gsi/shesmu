@@ -32,6 +32,11 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
+  public boolean isBlank() {
+    return fields.stream().allMatch(f -> f.second().isBlank());
+  }
+
+  @Override
   public Stream<LoadableValue> render(Consumer<Renderer> loader) {
     return IntStream.range(0, fields.size())
         .boxed()
@@ -47,6 +52,13 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
                           r.methodGen().invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
                           r.methodGen().unbox(objectType.get(fields.get(i).first()).apply(TO_ASM));
                         }));
+  }
+
+  @Override
+  public void setFlavour(Target.Flavour flavour) {
+    for (final Pair<String, DestructuredArgumentNode> field : fields) {
+      field.second().setFlavour(flavour);
+    }
   }
 
   @Override

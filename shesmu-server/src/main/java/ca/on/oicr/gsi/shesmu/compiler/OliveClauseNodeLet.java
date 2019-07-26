@@ -55,12 +55,15 @@ public class OliveClauseNodeLet extends OliveClauseNode {
             true,
             arguments
                 .stream()
-                .map(
+                .flatMap(
                     arg -> {
                       final Set<String> inputs = new HashSet<>();
                       arg.collectFreeVariables(inputs, Flavour::isStream);
-                      return new VariableInformation(
-                          arg.name(), arg.type(), inputs.stream(), Behaviour.DEFINITION);
+                      return arg.targets()
+                          .map(
+                              t ->
+                                  new VariableInformation(
+                                      t.name(), t.type(), inputs.stream(), Behaviour.DEFINITION));
                     })));
   }
 
@@ -112,7 +115,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
     final boolean good =
         arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
             == arguments.size();
-    return defs.replaceStream(arguments.stream().map(x -> x), good);
+    return defs.replaceStream(arguments.stream().flatMap(LetArgumentNode::targets), good);
   }
 
   @Override
@@ -129,20 +132,24 @@ public class OliveClauseNodeLet extends OliveClauseNode {
                 .filter(argument -> argument.resolveFunctions(definedFunctions, errorHandler))
                 .count()
             == arguments.size();
-    if (arguments.stream().map(LetArgumentNode::name).distinct().count() != arguments.size()) {
+    final Map<String, Long> nameCounts =
+        arguments
+            .stream()
+            .flatMap(LetArgumentNode::targets)
+            .map(Target::name)
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    for (final Map.Entry<String, Long> nameCount : nameCounts.entrySet()) {
+      if (nameCount.getValue() == 1) {
+        continue;
+      }
       ok = false;
-      final Set<String> allItems = new HashSet<>();
       errorHandler.accept(
           String.format(
-              "%d:%d: Duplicate variables in “Let” clause: %s",
-              line,
-              column,
-              arguments
-                  .stream()
-                  .map(LetArgumentNode::name)
-                  .filter(n -> !allItems.add(n))
-                  .sorted()
-                  .collect(Collectors.joining(", "))));
+              "%d:%d: Duplicate variable %s in “Let” clause", line, column, nameCount.getKey()));
+    }
+
+    for (final LetArgumentNode arg : arguments) {
+      ok &= arg.blankCheck(errorHandler);
     }
 
     return ok;

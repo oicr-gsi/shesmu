@@ -37,6 +37,7 @@ public class ListNodeFlatten extends ListNode {
     this.childName = childName;
     this.source = source;
     this.transforms = transforms;
+    childName.setFlavour(Flavour.LAMBDA);
   }
 
   @Override

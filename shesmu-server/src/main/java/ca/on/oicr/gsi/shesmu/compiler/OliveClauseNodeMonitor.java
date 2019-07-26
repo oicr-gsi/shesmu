@@ -78,15 +78,19 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
             false,
             labels
                 .stream()
-                .map(
+                .flatMap(
                     label -> {
                       final Set<String> inputs = new TreeSet<>();
                       label.collectFreeVariables(inputs, Flavour::isStream);
-                      return new VariableInformation(
-                          metricName + "{" + label.name() + "}",
-                          Imyhat.STRING,
-                          inputs.stream(),
-                          Behaviour.DEFINITION);
+                      return label
+                          .target()
+                          .map(
+                              t ->
+                                  new VariableInformation(
+                                      metricName + "{" + t.name() + "}",
+                                      Imyhat.STRING,
+                                      inputs.stream(),
+                                      Behaviour.DEFINITION));
                     })));
   }
 
@@ -97,7 +101,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   }
 
   private List<String> labelNames() {
-    return labels.stream().map(MonitorArgumentNode::name).collect(Collectors.toList());
+    return labels
+        .stream()
+        .flatMap(MonitorArgumentNode::target)
+        .map(Target::name)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -106,14 +114,24 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   }
 
   private void render(Renderer renderer) {
-    renderer.methodGen().push(labels.size());
+    renderer.methodGen().push((int) labels.stream().flatMap(MonitorArgumentNode::target).count());
     renderer.methodGen().newArray(A_STRING_TYPE);
-    for (int i = 0; i < labels.size(); i++) {
-      renderer.methodGen().dup();
-      renderer.methodGen().push(i);
-      labels.get(i).render(renderer);
-      renderer.methodGen().arrayStore(A_STRING_TYPE);
-    }
+    labels
+        .stream()
+        .flatMap(MonitorArgumentNode::target)
+        .forEach(
+            new Consumer<Target>() {
+              private int index;
+
+              @Override
+              public void accept(Target target) {
+                final int i = index++;
+                renderer.methodGen().dup();
+                renderer.methodGen().push(i);
+                labels.get(i).render(renderer);
+                renderer.methodGen().arrayStore(A_STRING_TYPE);
+              }
+            });
   }
 
   @Override
@@ -186,12 +204,21 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
       return false;
     }
 
-    if (labels.stream().map(MonitorArgumentNode::name).distinct().count() != labels.size()) {
-      errorHandler.accept(String.format("%d:%d: Duplicated labels.", line, column));
-      return false;
+    final Map<String, Long> labelNames =
+        labels
+            .stream()
+            .flatMap(MonitorArgumentNode::target)
+            .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
+    boolean ok = true;
+    for (final Map.Entry<String, Long> labelName : labelNames.entrySet()) {
+      if (labelName.getValue() == 1) {
+        continue;
+      }
+      errorHandler.accept(
+          String.format("%d:%d: Duplicated label: %s", line, column, labelName.getKey()));
+      ok = false;
     }
-
-    return true;
+    return ok;
   }
 
   @Override

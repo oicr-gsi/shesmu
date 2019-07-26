@@ -67,6 +67,13 @@ public class LetBuilder {
     loadValue.accept(createMethodGen);
   }
 
+  public Consumer<Renderer> createLocal(Type localType, Consumer<Renderer> loadValue) {
+    loadValue.accept(createMethodGen);
+    final int local = createMethodGen.methodGen().newLocal(localType);
+    createMethodGen.methodGen().storeLocal(local);
+    return r -> r.methodGen().loadLocal(local);
+  }
+
   public void finish() {
     final Method ctorType =
         new Method("<init>", Type.VOID_TYPE, ctorArgs.stream().toArray(Type[]::new));
