@@ -185,7 +185,6 @@ public abstract class Compiler {
       final Set<Path> pluginFilenames = new TreeSet<>();
       program.get().collectPlugins(pluginFilenames);
       pluginFilenames.remove(Paths.get(path));
-      System.err.println(pluginFilenames);
       builder.addGuard(
           methodGen -> {
             methodGen.loadArg(0);

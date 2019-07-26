@@ -15,6 +15,7 @@ public class ListNodeMap extends ListNodeWithExpression {
       int line, int column, DestructuredArgumentNode nextName, ExpressionNode expression) {
     super(line, column, expression);
     this.nextName = nextName;
+    nextName.setFlavour(Target.Flavour.LAMBDA);
   }
 
   @Override

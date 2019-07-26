@@ -2,22 +2,22 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-public class LetArgumentNode implements Target {
+public class LetArgumentNode {
   public static Parser parse(Parser input, Consumer<LetArgumentNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
-    final AtomicReference<ExpressionNode> expression = new AtomicReference<ExpressionNode>();
+    final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
+    final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
     final Parser result =
         input
             .whitespace()
-            .identifier(name::set)
+            .then(DestructuredArgumentNode::parse, name::set)
             .whitespace()
             .symbol("=")
             .whitespace()
@@ -32,15 +32,26 @@ public class LetArgumentNode implements Target {
 
   private final ExpressionNode expression;
 
-  private final String name;
+  private final DestructuredArgumentNode name;
 
-  public LetArgumentNode(String name, ExpressionNode expression) {
+  public LetArgumentNode(DestructuredArgumentNode name, ExpressionNode expression) {
     super();
     this.name = name;
     this.expression = expression;
+    name.setFlavour(Target.Flavour.STREAM);
   }
 
-  public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+  public boolean blankCheck(Consumer<String> errorHandler) {
+    if (name.isBlank()) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Assignment in Let discards value.", expression.line(), expression.column()));
+      return false;
+    }
+    return true;
+  }
+
+  public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
     expression.collectFreeVariables(names, predicate);
   }
 
@@ -48,18 +59,10 @@ public class LetArgumentNode implements Target {
     expression.collectPlugins(pluginFileNames);
   }
 
-  @Override
-  public Flavour flavour() {
-    return Flavour.STREAM;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
   public void render(LetBuilder let) {
-    let.add(expression.type().apply(TypeUtils.TO_ASM), name, expression::render);
+    final Consumer<Renderer> loadLocal =
+        let.createLocal(expression.type().apply(TypeUtils.TO_ASM), expression::render);
+    name.render(loadLocal).forEach(value -> let.add(value.type(), value.name(), value));
   }
 
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
@@ -71,12 +74,11 @@ public class LetArgumentNode implements Target {
     return expression.resolveFunctions(definedFunctions, errorHandler);
   }
 
-  @Override
-  public Imyhat type() {
-    return expression.type();
+  public Stream<Target> targets() {
+    return name.targets();
   }
 
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return expression.typeCheck(errorHandler);
+    return expression.typeCheck(errorHandler) && name.typeCheck(expression.type(), errorHandler);
   }
 }

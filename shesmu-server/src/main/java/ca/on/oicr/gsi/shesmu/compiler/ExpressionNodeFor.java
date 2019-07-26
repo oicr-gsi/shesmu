@@ -33,6 +33,7 @@ public class ExpressionNodeFor extends ExpressionNode {
     this.source = source;
     this.transforms = transforms;
     this.collector = collector;
+    name.setFlavour(Flavour.LAMBDA);
   }
 
   @Override

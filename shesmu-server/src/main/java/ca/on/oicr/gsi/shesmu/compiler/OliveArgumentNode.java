@@ -1,28 +1,33 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /** The arguments defined in the “With” section of a “Run” olive. */
 public abstract class OliveArgumentNode {
   public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
+    final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
     final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
     final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
 
     final Parser result =
         input
             .whitespace()
-            .identifier(name::set)
+            .then(DestructuredArgumentNode::parse, name::set)
             .whitespace()
             .symbol("=")
             .whitespace()
@@ -45,14 +50,52 @@ public abstract class OliveArgumentNode {
   }
 
   protected final int column;
+  private final Map<String, ActionParameterDefinition> definitions = new HashMap<>();
   protected final int line;
+  protected final DestructuredArgumentNode name;
 
-  protected final String name;
-
-  public OliveArgumentNode(int line, int column, String name) {
+  public OliveArgumentNode(int line, int column, DestructuredArgumentNode name) {
     this.line = line;
     this.column = column;
     this.name = name;
+  }
+
+  public final boolean checkArguments(
+      Function<String, ActionParameterDefinition> parameterDefinitions,
+      Consumer<String> errorHandler) {
+    if (name.isBlank()) {
+      errorHandler.accept(
+          String.format("%d:%d: Assignment in Monitor discards value.", line, column));
+      return false;
+    }
+    return name.targets()
+        .allMatch(
+            target -> {
+              final ActionParameterDefinition definition =
+                  parameterDefinitions.apply(target.name());
+              definitions.put(target.name(), definition);
+              boolean ok = definition.type().isSame(target.type());
+              if (!ok) {
+                errorHandler.accept(
+                    String.format(
+                        "%d:%d: Expected argument “%s” to have type %s, but got %s.",
+                        line,
+                        column,
+                        definition.name(),
+                        definition.type().name(),
+                        target.type().name()));
+              }
+              if (definition.required() && isConditional()) {
+                errorHandler.accept(
+                    String.format("%d:%d: Argument “%s” is required.", line, column, name));
+                ok = false;
+              }
+              return ok;
+            });
+  }
+
+  public boolean checkName(Consumer<String> errorHandler) {
+    return name.typeCheck(type(), errorHandler);
   }
 
   public abstract void collectFreeVariables(
@@ -60,14 +103,7 @@ public abstract class OliveArgumentNode {
 
   public abstract void collectPlugins(Set<Path> pluginFileNames);
 
-  /** Produce an error if the type of the expression is not as required */
-  public abstract boolean ensureType(
-      ActionParameterDefinition definition, Consumer<String> errorHandler);
-
-  /** The argument name */
-  public final String name() {
-    return name;
-  }
+  protected abstract boolean isConditional();
 
   /** Generate bytecode for this argument's value */
   public abstract void render(Renderer renderer, int action);
@@ -78,6 +114,19 @@ public abstract class OliveArgumentNode {
   /** Resolve functions in this argument */
   public abstract boolean resolveFunctions(
       Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
+
+  protected void storeAll(Renderer renderer, int action, Consumer<Renderer> loadValue) {
+    loadValue.accept(renderer);
+    final int local = renderer.methodGen().newLocal(type().apply(TO_ASM));
+    renderer.methodGen().storeLocal(local);
+    name.render(r -> r.methodGen().loadLocal(local))
+        .forEach(value -> definitions.get(value.name()).store(renderer, action, value));
+  }
+
+  /** The argument name */
+  public final Stream<Target> targets() {
+    return name.targets();
+  }
 
   public abstract Imyhat type();
 

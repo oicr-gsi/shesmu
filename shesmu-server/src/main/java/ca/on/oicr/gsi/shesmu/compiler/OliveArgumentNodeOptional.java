@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -16,11 +15,14 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public final class OliveArgumentNodeOptional extends OliveArgumentNode {
 
   private final ExpressionNode condition;
-  private ActionParameterDefinition definition;
   private final ExpressionNode expression;
 
   public OliveArgumentNodeOptional(
-      int line, int column, String name, ExpressionNode condition, ExpressionNode expression) {
+      int line,
+      int column,
+      DestructuredArgumentNode name,
+      ExpressionNode condition,
+      ExpressionNode expression) {
     super(line, column, name);
     this.condition = condition;
     this.expression = expression;
@@ -38,31 +40,9 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
     condition.collectPlugins(pluginFileNames);
   }
 
-  /** Produce an error if the type of the expression is not as required */
   @Override
-  public final boolean ensureType(
-      ActionParameterDefinition definition, Consumer<String> errorHandler) {
-    this.definition = definition;
-    boolean ok = true;
-    if (!definition.type().isSame(expression.type())) {
-      errorHandler.accept(
-          String.format(
-              "%d:%d: Expected argument “%s” to have type %s, but got %s.",
-              line, column, name, definition.type().name(), expression.type().name()));
-      ok = false;
-    }
-    if (!Imyhat.BOOLEAN.isSame(condition.type())) {
-      errorHandler.accept(
-          String.format(
-              "%d:%d: Condition for argument “%s” must be boolean, but got %s.",
-              line, column, name, condition.type().name()));
-      ok = false;
-    }
-    if (definition.required()) {
-      errorHandler.accept(String.format("%d:%d: Argument “%s” is required.", line, column, name));
-      ok = false;
-    }
-    return ok;
+  public boolean isConditional() {
+    return true;
   }
 
   /** Generate bytecode for this argument's value */
@@ -72,7 +52,7 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
     renderer.mark(line);
     final Label end = renderer.methodGen().newLabel();
     renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, end);
-    definition.store(renderer, action, expression::render);
+    storeAll(renderer, action, expression::render);
     renderer.methodGen().mark(end);
   }
 
@@ -98,6 +78,14 @@ public final class OliveArgumentNodeOptional extends OliveArgumentNode {
   /** Perform type check on this argument's expression */
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return expression.typeCheck(errorHandler) & condition.typeCheck(errorHandler);
+    boolean ok = expression.typeCheck(errorHandler) & condition.typeCheck(errorHandler);
+    if (ok && !Imyhat.BOOLEAN.isSame(condition.type())) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Condition for argument “%s” must be boolean, but got %s.",
+              line, column, name, condition.type().name()));
+      ok = false;
+    }
+    return ok;
   }
 }

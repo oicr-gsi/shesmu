@@ -584,6 +584,8 @@ This can make it easy to find related actions even if they come from the
 different olives.
 
 ## Destructuring Assignment
+Shesmu supports destructuring tuples and objects in most assignment contexts.
+
 In `For` expressions, a destructuring assignment can be used.
 
 For example, to gain access to a tuple:
@@ -610,6 +612,23 @@ And it can be used in the `Reduce` accumulator:
 
     For x In [1, 2, 3]: Reduce ({a, b} = {0, False}) {a + x, b || x == 2}
 
+It can be used in `Let` and `Flatten` in `For` expressions.
+
+It can also be used in `Let`, `Monitor`, `Run`, and `Alert` clauses in olives:
+
+    Olive
+      Monitor instrument_record_count "The number of records per instrument" {{instrument, _} = instrument_and_version},
+      Let
+         {run_name, lane, _} = ius,
+         path = path
+      Run instrumentqc With
+        run_name = run_name,
+        lane = lane,
+        {flowcell_type, flowcell_version} = fetch_flowcell_info(run_name),
+        memory = 4Gi,
+        input = path;
+
+It is currently disallowed in assignments in `Group` and `LeftJoin`.
 
 ## Expressions
 Shesmu has the following expressions, for lowest precedence to highest precedence.

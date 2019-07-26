@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -13,10 +12,10 @@ import java.util.function.Predicate;
 /** The arguments defined in the “With” section of a “Run” olive. */
 public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 
-  private ActionParameterDefinition definition;
   private final ExpressionNode expression;
 
-  public OliveArgumentNodeProvided(int line, int column, String name, ExpressionNode expression) {
+  public OliveArgumentNodeProvided(
+      int line, int column, DestructuredArgumentNode name, ExpressionNode expression) {
     super(line, column, name);
     this.expression = expression;
   }
@@ -31,25 +30,16 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
     expression.collectPlugins(pluginFileNames);
   }
 
-  /** Produce an error if the type of the expression is not as required */
   @Override
-  public boolean ensureType(ActionParameterDefinition definition, Consumer<String> errorHandler) {
-    this.definition = definition;
-    final boolean ok = definition.type().isSame(expression.type());
-    if (!ok) {
-      errorHandler.accept(
-          String.format(
-              "%d:%d: Expected argument “%s” to have type %s, but got %s.",
-              line, column, name, definition.type().name(), expression.type().name()));
-    }
-    return ok;
+  protected boolean isConditional() {
+    return false;
   }
 
   /** Generate bytecode for this argument's value */
   @Override
   public void render(Renderer renderer, int action) {
     renderer.mark(line);
-    definition.store(renderer, action, expression::render);
+    storeAll(renderer, action, expression::render);
   }
 
   /** Resolve variables in the expression of this argument */

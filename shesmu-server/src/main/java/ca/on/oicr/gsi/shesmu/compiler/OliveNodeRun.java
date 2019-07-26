@@ -93,12 +93,15 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
             clauses().stream().flatMap(OliveClauseNode::dashboard),
             arguments
                 .stream()
-                .map(
+                .flatMap(
                     arg -> {
                       final Set<String> inputs = new HashSet<>();
                       arg.collectFreeVariables(inputs, Flavour::isStream);
-                      return new VariableInformation(
-                          arg.name(), arg.type(), inputs.parallelStream(), Behaviour.DEFINITION);
+                      return arg.targets()
+                          .map(
+                              t ->
+                                  new VariableInformation(
+                                      t.name(), t.type(), inputs.stream(), Behaviour.DEFINITION));
                     })));
   }
 
@@ -180,7 +183,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
             == arguments.size();
 
     final Set<String> argumentNames =
-        arguments.stream().map(OliveArgumentNode::name).distinct().collect(Collectors.toSet());
+        arguments
+            .stream()
+            .flatMap(OliveArgumentNode::targets)
+            .map(Target::name)
+            .collect(Collectors.toSet());
     if (argumentNames.size() != arguments.size()) {
       errorHandler.accept(String.format("%d:%d: Duplicate arguments to action.", line, column));
       ok = false;
@@ -232,7 +239,12 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   @Override
   protected boolean typeCheckExtra(Consumer<String> errorHandler) {
     boolean ok =
-        arguments.stream().filter(argument -> argument.typeCheck(errorHandler)).count()
+        arguments
+                .stream()
+                .filter(
+                    argument ->
+                        argument.typeCheck(errorHandler) && argument.checkName(errorHandler))
+                .count()
             == arguments.size();
     if (ok) {
       final Map<String, ActionParameterDefinition> parameterInfo =
@@ -242,9 +254,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       ok =
           arguments
                   .stream()
-                  .filter(
-                      argument ->
-                          argument.ensureType(parameterInfo.get(argument.name()), errorHandler))
+                  .filter(argument -> argument.checkArguments(parameterInfo::get, errorHandler))
                   .count()
               == arguments.size();
     }

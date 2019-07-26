@@ -36,39 +36,40 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 
     @Override
     public boolean test(OliveArgumentNode argument) {
-      final int index = i++;
-      return argument.typeCheck(errorHandler)
-          & argument.ensureType(
-              new ActionParameterDefinition() {
+      return (argument.typeCheck(errorHandler) & argument.checkName(errorHandler))
+          && argument.checkArguments(
+              name ->
+                  new ActionParameterDefinition() {
+                    final int index = i++;
 
-                @Override
-                public String name() {
-                  return argument.name();
-                }
+                    @Override
+                    public String name() {
+                      return name;
+                    }
 
-                @Override
-                public boolean required() {
-                  return false;
-                }
+                    @Override
+                    public boolean required() {
+                      return false;
+                    }
 
-                @Override
-                public void store(
-                    Renderer renderer, int arrayLocal, Consumer<Renderer> loadParameter) {
-                  renderer.methodGen().loadLocal(arrayLocal);
-                  renderer.methodGen().push(index * 2);
-                  renderer.methodGen().push(argument.name());
-                  renderer.methodGen().arrayStore(A_STRING_TYPE);
-                  renderer.methodGen().loadLocal(arrayLocal);
-                  renderer.methodGen().push(index * 2 + 1);
-                  loadParameter.accept(renderer);
-                  renderer.methodGen().arrayStore(A_STRING_TYPE);
-                }
+                    @Override
+                    public void store(
+                        Renderer renderer, int arrayLocal, Consumer<Renderer> loadParameter) {
+                      renderer.methodGen().loadLocal(arrayLocal);
+                      renderer.methodGen().push(index * 2);
+                      renderer.methodGen().push(name);
+                      renderer.methodGen().arrayStore(A_STRING_TYPE);
+                      renderer.methodGen().loadLocal(arrayLocal);
+                      renderer.methodGen().push(index * 2 + 1);
+                      loadParameter.accept(renderer);
+                      renderer.methodGen().arrayStore(A_STRING_TYPE);
+                    }
 
-                @Override
-                public Imyhat type() {
-                  return Imyhat.STRING;
-                }
-              },
+                    @Override
+                    public Imyhat type() {
+                      return Imyhat.STRING;
+                    }
+                  },
               errorHandler);
     }
   }
@@ -109,12 +110,9 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
 
   @Override
   protected void collectArgumentSignableVariables() {
-    labels
-        .stream()
-        .forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
-    annotations
-        .stream()
-        .forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+    labels.forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+    annotations.forEach(
+        arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
     ttl.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
   }
 
@@ -150,15 +148,18 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
             Stream.concat(
                 Stream.of(labels, annotations)
                     .flatMap(List::stream)
-                    .map(
+                    .flatMap(
                         arg -> {
                           final Set<String> inputs = new HashSet<>();
                           arg.collectFreeVariables(inputs, Flavour::isStream);
-                          return new VariableInformation(
-                              arg.name(),
-                              Imyhat.STRING,
-                              inputs.parallelStream(),
-                              Behaviour.DEFINITION);
+                          return arg.targets()
+                              .map(
+                                  t ->
+                                      new VariableInformation(
+                                          t.name(),
+                                          Imyhat.STRING,
+                                          inputs.parallelStream(),
+                                          Behaviour.DEFINITION));
                         }),
                 ttlInputs
                     .stream()
@@ -190,14 +191,16 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
 
     final int labelLocal = action.methodGen().newLocal(A_STRING_ARRAY_TYPE);
-    action.methodGen().push(labels.size() * 2);
+    action.methodGen().push((int) labels.stream().flatMap(OliveArgumentNode::targets).count() * 2);
     action.methodGen().newArray(A_STRING_TYPE);
     action.methodGen().storeLocal(labelLocal);
 
     labels.forEach(l -> l.render(action, labelLocal));
 
     final int annotationLocal = action.methodGen().newLocal(A_STRING_ARRAY_TYPE);
-    action.methodGen().push(annotations.size() * 2);
+    action
+        .methodGen()
+        .push((int) annotations.stream().flatMap(OliveArgumentNode::targets).count() * 2);
     action.methodGen().newArray(A_STRING_TYPE);
     action.methodGen().storeLocal(annotationLocal);
 
@@ -261,16 +264,24 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
                 == annotations.size()
             & ttl.resolveFunctions(definedFunctions, errorHandler);
 
-    final Set<String> argumentNames =
+    final Map<String, Long> argumentNames =
         Stream.concat(labels.stream(), annotations.stream())
-            .map(OliveArgumentNode::name)
-            .distinct()
-            .collect(Collectors.toSet());
-    if (argumentNames.size() != labels.size() + annotations.size()) {
-      errorHandler.accept(String.format("%d:%d: Duplicate arguments to alert.", line, column));
+            .flatMap(OliveArgumentNode::targets)
+            .map(Target::name)
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    for (final Map.Entry<String, Long> argumentName : argumentNames.entrySet()) {
+      if (argumentName.getValue() == 1) {
+        continue;
+      }
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Duplicate arguments %s to alert.", line, column, argumentName.getKey()));
       ok = false;
     }
-    if (labels.stream().noneMatch(l -> l.name().equals("alertname"))) {
+    if (labels
+        .stream()
+        .flatMap(OliveArgumentNode::targets)
+        .noneMatch(l -> l.name().equals("alertname"))) {
       errorHandler.accept(
           String.format("%d:%d: Alert should have an “alertname” label.", line, column));
     }
