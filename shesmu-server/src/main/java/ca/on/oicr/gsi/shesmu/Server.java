@@ -29,10 +29,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
-import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
-import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.runtime.*;
 import ca.on.oicr.gsi.shesmu.server.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
@@ -49,7 +46,6 @@ import ca.on.oicr.gsi.status.ServerConfig;
 import ca.on.oicr.gsi.status.StatusPage;
 import ca.on.oicr.gsi.status.TablePage;
 import ca.on.oicr.gsi.status.TableRowWriter;
-import ca.on.oicr.gsi.status.TableWriter;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -83,10 +79,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -356,289 +349,54 @@ public final class Server implements ServerConfig, ActionServices {
               }
 
               @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement("table");
-                writer.writeAttribute("class", "even");
-                compiler
-                    .dashboard()
-                    .forEach(
-                        fileTable -> {
-                          try {
-                            writer.writeStartElement("tr");
-                            writer.writeStartElement("th");
-                            writer.writeAttribute("colspan", "2");
-                            writer.writeCharacters(fileTable.filename());
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                          fileTable
-                              .olives()
-                              .forEach(
-                                  olive -> {
-                                    try {
-
-                                      writer.writeStartElement("tr");
-                                      writer.writeAttribute("style", "cursor: pointer;");
-                                      writer.writeAttribute(
-                                          "onclick",
-                                          String.format(
-                                              "location.hash = '%1$s:%2$d:%3$d:%4$d'",
-                                              fileTable.filename(),
-                                              olive.line(),
-                                              olive.column(),
-                                              fileTable.timestamp().toEpochMilli()));
-                                      writer.writeStartElement("td");
-                                      writer.writeCharacters(olive.description());
-                                      writer.writeEndElement();
-                                      writer.writeStartElement("td");
-                                      writer.writeCharacters(
-                                          String.format("%d:%d", olive.line(), olive.column()));
-                                      writer.writeEndElement();
-                                      writer.writeEndElement();
-                                    } catch (XMLStreamException e) {
-                                      throw new RuntimeException(e);
-                                    }
-                                  });
-                        });
-                writer.writeEndElement();
-                final Map<String, Instant> currentOlives =
-                    compiler
-                        .dashboard()
-                        .collect(Collectors.toMap(FileTable::filename, FileTable::timestamp));
-                final List<SourceLocation> deadPauses =
-                    processor
-                        .pauses()
-                        .filter(
-                            pause ->
-                                !currentOlives
-                                    .getOrDefault(pause.fileName(), Instant.EPOCH)
-                                    .equals(pause.time()))
-                        .collect(Collectors.toList());
-                if (!deadPauses.isEmpty()) {
-                  writer.writeStartElement("div");
-                  writer.writeAttribute("class", "state_throttled inset");
-                  writer.writeStartElement("h1");
-                  writer.writeCharacters("⚠ Pauses for Old Olives");
-                  writer.writeEndElement();
-                  writer.writeStartElement("p");
-                  writer.writeCharacters(
-                      "The following olives were paused but the olives have been replaced or deleted. They may still be throttling actions from running. If a new olive is producing the same actions, then the actions will still be throttled! Use the ");
-                  writer.writeStartElement("i");
-                  writer.writeCharacters("Stats on Actions");
-                  writer.writeEndElement();
-                  writer.writeCharacters(" button above to check for throttled actions.");
-                  writer.writeEndElement();
-                  writer.writeStartElement("table");
-                  writer.writeStartElement("tbody");
-
-                  writer.writeStartElement("tr");
-                  writer.writeStartElement("th");
-                  writer.writeCharacters("Filename");
-                  writer.writeEndElement();
-                  writer.writeStartElement("th");
-                  writer.writeCharacters("Line");
-                  writer.writeEndElement();
-                  writer.writeStartElement("th");
-                  writer.writeCharacters("Column");
-                  writer.writeEndElement();
-                  writer.writeStartElement("th");
-                  writer.writeCharacters("Timestamp");
-                  writer.writeEndElement();
-                  writer.writeStartElement("th");
-                  writer.writeComment("delete");
-                  writer.writeEndElement();
-                  writer.writeEndElement();
-                  for (SourceLocation deadPause : deadPauses) {
-                    writer.writeStartElement("tr");
-                    writer.writeStartElement("td");
-                    writer.writeCharacters(deadPause.fileName());
-                    writer.writeEndElement();
-                    writer.writeStartElement("td");
-                    writer.writeCharacters(Integer.toString(deadPause.line()));
-                    writer.writeEndElement();
-                    writer.writeStartElement("td");
-                    writer.writeCharacters(Integer.toString(deadPause.column()));
-                    writer.writeEndElement();
-                    writer.writeStartElement("td");
-                    writer.writeCharacters(deadPause.time().toString());
-                    writer.writeEndElement();
-                    writer.writeStartElement("td");
-                    writer.writeStartElement("span");
-                    writer.writeAttribute("class", "load danger");
-                    writer.writeAttribute(
-                        "onclick",
-                        String.format(
-                            "clearDeadPause(this.parentNode.parentNode, { 'file': '%1$s', 'line': %2$d, 'column': %3$d, 'time': %4$d }, false)",
-                            deadPause.fileName(),
-                            deadPause.line(),
-                            deadPause.column(),
-                            deadPause.time().toEpochMilli()));
-                    writer.writeCharacters("▶ Resume Actions");
-                    writer.writeEndElement();
-                    writer.writeStartElement("span");
-                    writer.writeAttribute("class", "load danger");
-                    writer.writeAttribute(
-                        "onclick",
-                        String.format(
-                            "clearDeadPause(this.parentNode.parentNode, { 'file': '%1$s', 'line': %2$d, 'column': %3$d, 'time': %4$d }, true)",
-                            deadPause.fileName(),
-                            deadPause.line(),
-                            deadPause.column(),
-                            deadPause.time().toEpochMilli()));
-                    writer.writeCharacters("☠️ PURGE ACTIONS");
-                    writer.writeEndElement();
-                    writer.writeEndElement();
-                    writer.writeEndElement();
-                    writer.writeEndElement();
-                    writer.writeEndElement();
-                  }
-
-                  writer.writeEndElement();
+              public Stream<Header> headers() {
+                String olivesJson = "[]";
+                String deadPausesJson = "[]";
+                try {
+                  final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
+                  oliveJson(olives);
+                  olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
+                  final Map<String, Instant> currentOlives =
+                      compiler
+                          .dashboard()
+                          .map(Pair::second)
+                          .collect(Collectors.toMap(FileTable::filename, FileTable::timestamp));
+                  final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
+                  processor
+                      .pauses()
+                      .filter(
+                          pause ->
+                              !currentOlives
+                                  .getOrDefault(pause.fileName(), Instant.EPOCH)
+                                  .equals(pause.time()))
+                      .forEach(location -> location.toJson(deadPauses, pluginManager));
+                  deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses);
+                } catch (JsonProcessingException e) {
+                  e.printStackTrace();
                 }
+                return Stream.of(
+                    Header.jsModule(
+                        "import {"
+                            + "initialiseOliveDash"
+                            + "} from \"./shesmu.js\";"
+                            + "initialiseOliveDash("
+                            + olivesJson
+                            + ", "
+                            + deadPausesJson
+                            + ");"));
+              }
 
-                compiler
-                    .dashboard()
-                    .forEach(
-                        fileTable -> {
-                          final boolean maybeHasDeadPauses =
-                              deadPauses
-                                  .stream()
-                                  .anyMatch(pause -> pause.fileName().equals(fileTable.filename()));
-                          try {
-                            writer.writeStartElement("h1");
-                            writer.writeCharacters(fileTable.filename());
-                            writer.writeEndElement();
-                            TableWriter.render(
-                                writer,
-                                (row) -> {
-                                  row.write(false, "Input format", fileTable.format().name());
-                                  row.write(
-                                      false, "Last Compiled", fileTable.timestamp().toString());
-                                  if (CompiledGenerator.didFileTimeout(fileTable.filename())) {
-                                    row.write(
-                                        Collections.singleton(
-                                            new Pair<>("style", "color:red; font-weight:bold;")),
-                                        "Run time",
-                                        "TIMED OUT");
-                                  }
-                                });
-                            writer.writeStartElement("p");
-                            writer.writeAttribute("class", "collapse close");
-                            writer.writeAttribute("onclick", "toggleCollapse(this)");
-                            writer.writeCharacters("Bytecode");
-                            writer.writeEndElement();
-                            writer.writeStartElement("pre");
-                            writer.writeAttribute("class", "json");
-                            writer.writeCharacters(fileTable.bytecode());
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                          long inputCount =
-                              (long)
-                                  CompiledGenerator.INPUT_RECORDS
-                                      .labels(fileTable.format().name())
-                                      .get();
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
 
-                          fileTable
-                              .olives()
-                              .forEach(
-                                  olive -> {
-                                    try {
-                                      final String id =
-                                          String.format(
-                                              "%1$s:%2$d:%3$d:%4$d",
-                                              fileTable.filename(),
-                                              olive.line(),
-                                              olive.column(),
-                                              fileTable.timestamp().toEpochMilli());
-                                      writer.writeStartElement("div");
-                                      writer.writeAttribute("id", id);
-                                      writer.writeAttribute("class", "olive");
-                                      writer.writeStartElement("p");
-                                      writer.writeCharacters(olive.description());
-                                      writer.writeEndElement();
-                                      // TODO(apmasell): show tags here
-
-                                      if (maybeHasDeadPauses) {
-                                        writer.writeStartElement("p");
-                                        writer.writeAttribute("class", "state_throttled inset");
-                                        writer.writeCharacters(
-                                            "An old olive was paused and it may affect actions for the olive below. Use ");
-                                        writer.writeStartElement("i");
-                                        writer.writeCharacters("Stats on Actions");
-                                        writer.writeEndElement();
-                                        writer.writeCharacters(" to check for throttled actions.");
-                                        writer.writeEndElement();
-                                      }
-
-                                      writer.writeStartElement("p");
-                                      writer.writeStartElement("a");
-                                      writer.writeAttribute("href", "#" + id);
-                                      writer.writeAttribute("class", "load accessory");
-                                      writer.writeCharacters("🔗 Permalink");
-                                      writer.writeEndElement();
-                                      if (olive.producesActions()) {
-                                        writer.writeStartElement("span");
-                                        writer.writeAttribute("class", "load");
-                                        writer.writeAttribute(
-                                            "onclick",
-                                            String.format(
-                                                "actionsForOlive('%1$s', %2$d, %3$d, %4$d)",
-                                                fileTable.filename(),
-                                                olive.line(),
-                                                olive.column(),
-                                                fileTable.timestamp().toEpochMilli()));
-                                        writer.writeCharacters("🎬 Actions");
-                                        writer.writeEndElement();
-                                        final boolean isPaused =
-                                            processor.isPaused(
-                                                new SourceLocation(
-                                                    fileTable.filename(),
-                                                    olive.line(),
-                                                    olive.column(),
-                                                    fileTable.timestamp()));
-                                        writer.writeStartElement("span");
-                                        writer.writeAttribute("class", "load danger");
-                                        writer.writeAttribute(
-                                            "onclick",
-                                            String.format(
-                                                "pauseOlive(this, { 'file': '%1$s', 'line': %2$d, 'column': %3$d, 'time': %4$d} )",
-                                                fileTable.filename(),
-                                                olive.line(),
-                                                olive.column(),
-                                                fileTable.timestamp().toEpochMilli()));
-                                        writer.writeAttribute(
-                                            "is-paused", Boolean.toString(isPaused));
-                                        writer.writeCharacters(
-                                            isPaused ? "▶ Resume Actions" : "⏸ Pause Actions");
-                                        writer.writeEndElement();
-
-                                      } else {
-                                        writer.writeCharacters(" Olive does not produce actions.");
-                                      }
-                                      writer.writeEndElement();
-
-                                      writer.writeStartElement("div");
-                                      writer.writeAttribute("style", "overflow-x:auto");
-                                      MetroDiagram.draw(
-                                          writer,
-                                          pluginManager,
-                                          fileTable.filename(),
-                                          fileTable.timestamp(),
-                                          olive,
-                                          inputCount,
-                                          fileTable.format(),
-                                          processor);
-                                      writer.writeEndElement();
-                                      writer.writeEndElement();
-                                    } catch (XMLStreamException e) {
-                                      throw new RuntimeException(e);
-                                    }
-                                  });
-                        });
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "olives");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "results");
+                writer.writeComment("");
+                writer.writeEndElement();
               }
             }.renderPage(os);
           }
@@ -681,6 +439,7 @@ public final class Server implements ServerConfig, ActionServices {
                       RuntimeSupport.MAPPER.writeValueAsString(
                           compiler
                               .dashboard()
+                              .map(Pair::second)
                               .flatMap(FileTable::olives)
                               .flatMap(OliveTable::tags)
                               .collect(Collectors.toSet()));
@@ -1559,7 +1318,62 @@ public final class Server implements ServerConfig, ActionServices {
                   });
           return array;
         });
+    addJson(
+        "/olives",
+        (mapper, query) -> {
+          final ArrayNode array = mapper.createArrayNode();
+          oliveJson(array);
+          return array;
+        });
 
+    add(
+        "/metrodiagram",
+        t -> {
+          final Query.LocationJson location =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.LocationJson.class);
+          final Pair<Pair<OliveRunInfo, FileTable>, OliveTable> match =
+              compiler
+                  .dashboard()
+                  .flatMap(
+                      ft ->
+                          ft.second()
+                              .olives()
+                              .filter(
+                                  o ->
+                                      location.test(
+                                          new SourceLocation(
+                                              ft.second().filename(),
+                                              o.line(),
+                                              o.column(),
+                                              ft.second().timestamp())))
+                              .map(o -> new Pair<>(ft, o)))
+                  .findFirst()
+                  .orElse(null);
+          if (match == null) {
+            t.sendResponseHeaders(404, 0);
+          } else {
+            t.sendResponseHeaders(200, 0);
+            t.getResponseHeaders().set("Content-type", "image/svg+xml; charset=utf-8");
+            try (final OutputStream os = t.getResponseBody()) {
+              final XMLStreamWriter writer =
+                  XMLOutputFactory.newFactory().createXMLStreamWriter(os);
+              writer.writeStartDocument("utf-8", "1.0");
+
+              MetroDiagram.draw(
+                  writer,
+                  pluginManager,
+                  match.first().second().filename(),
+                  match.first().second().timestamp(),
+                  match.second(),
+                  match.first().first() == null ? null : match.first().first().inputCount(),
+                  match.first().second().format(),
+                  processor);
+              writer.writeEndDocument();
+            } catch (XMLStreamException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        });
     add(
         "/metrics",
         t -> {
@@ -2294,7 +2108,7 @@ public final class Server implements ServerConfig, ActionServices {
         Header.cssFile("/main.css"),
         Header.faviconPng(16),
         Header.jsModule(
-            "import {parser, fetchConstant, parseType, toggleCollapse, runFunction, actionsForOlive, pauseOlive, clearDeadPause} from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.toggleCollapse = toggleCollapse; window.runFunction = runFunction; window.actionsForOlive = actionsForOlive; window.pauseOlive = pauseOlive; window.clearDeadPause = clearDeadPause;"));
+            "import {parser, fetchConstant, parseType, runFunction } from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
   }
 
   @Override
@@ -2368,6 +2182,64 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("pluginhashes", "Plugin JAR Hashes"),
             NavigationMenu.item("dumpdefs", "Annotation-Driven Definition"),
             NavigationMenu.item("dumpadr", "Manual Definitions")));
+  }
+
+  private void oliveJson(ArrayNode array) {
+    compiler
+        .dashboard()
+        .forEach(
+            fileTable -> {
+              final ObjectNode fileNode = array.addObject();
+              fileNode.put("format", fileTable.second().format().name());
+              fileNode.put("lastCompiled", fileTable.second().timestamp().toEpochMilli());
+              fileNode.put("filename", fileTable.second().filename());
+              fileNode.put("bytecode", fileTable.second().bytecode());
+              fileNode.put(
+                  "status", fileTable.first() == null ? "Not yet run" : fileTable.first().status());
+              fileNode.put(
+                  "inputCount", fileTable.first() == null ? null : fileTable.first().inputCount());
+              fileNode.put(
+                  "runtime",
+                  fileTable.first() == null
+                      ? null
+                      : TimeUnit.NANOSECONDS.toMillis(fileTable.first().runtime().getNano()));
+              fileNode.put(
+                  "lastRun",
+                  fileTable.first() == null ? null : fileTable.first().lastRun().toEpochMilli());
+              final ArrayNode olivesNode = fileNode.putArray("olives");
+
+              fileTable
+                  .second()
+                  .olives()
+                  .forEach(
+                      olive -> {
+                        final SourceLocation location =
+                            new SourceLocation(
+                                fileTable.second().filename(),
+                                olive.line(),
+                                olive.column(),
+                                fileTable.second().timestamp());
+                        final ObjectNode oliveNode = olivesNode.addObject();
+                        location.toJson(oliveNode, pluginManager);
+                        oliveNode.put("description", olive.description());
+                        oliveNode.put("syntax", olive.syntax());
+                        oliveNode.put("producesActions", olive.producesActions());
+                        if (olive.producesActions()) {
+                          oliveNode.put("paused", processor.isPaused(location));
+                        }
+                        olive.tags().sorted().forEach(oliveNode.putArray("tags")::add);
+                        final ArrayNode clauseArray = oliveNode.putArray("clauses");
+                        olive
+                            .clauses()
+                            .forEach(
+                                clause -> {
+                                  final ObjectNode clauseNode = clauseArray.addObject();
+                                  clauseNode.put("line", clause.line());
+                                  clauseNode.put("column", clause.column());
+                                  clauseNode.put("syntax", clause.syntax());
+                                });
+                      });
+            });
   }
 
   private void showSourceConfig(XMLStreamWriter writer, Path filename) {
