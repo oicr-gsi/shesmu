@@ -11,22 +11,23 @@ import {
 } from "./utils.js";
 import { actionRender } from "./actions.js";
 
-function makeButton(label, className, callback) {
+function makeButton(label, title, className, callback) {
   const button = document.createElement("SPAN");
   button.className = "load" + className;
   button.innerText = label;
+  button.title = title;
   button.addEventListener("click", callback);
   return button;
 }
 
-function button(label, callback) {
-  return makeButton(label, "", callback);
+function button(label, title, callback) {
+  return makeButton(label, title, "", callback);
 }
-function accessoryButton(label, callback) {
-  return makeButton(label, " accessory", callback);
+function accessoryButton(label, title, callback) {
+  return makeButton(label, title, " accessory", callback);
 }
-function dangerButton(label, callback) {
-  return makeButton(label, " danger", callback);
+function dangerButton(label, title, callback) {
+  return makeButton(label, title, " danger", callback);
 }
 
 function statusButton(state) {
@@ -498,20 +499,7 @@ function dropDown(setter, labelMaker, isDefault, items) {
 }
 
 export function initialiseActionDash(serverSearches, tags, savedQueryName) {
-  document.addEventListener("click", e => {
-    if (activeMenu != null) {
-      for (
-        let targetElement = e.target;
-        targetElement;
-        targetElement = targetElement.parentNode
-      ) {
-        if (targetElement == activeMenu.parentNode) {
-          return;
-        }
-      }
-      closeActiveMenu(true);
-    }
-  });
+  initialise();
   let localSearches = {};
   try {
     localSearches = JSON.parse(localStorage.getItem("shesmu_searches") || "{}");
@@ -540,7 +528,8 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
           tags,
           results,
           true,
-          true,
+          targetElement => makeTabs(targetElement, 1, "Overview", "Actions"),
+
           (reset, updateLocalSearches) => {
             if (reset) {
               savedQueryName = "All Actions";
@@ -624,7 +613,7 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
     dialog.appendChild(filterJSON);
 
     dialog.appendChild(
-      button("Save", () => {
+      button("Save", "Save to local search collection.", () => {
         const name = input.value.trim();
         let filters = null;
         try {
@@ -648,7 +637,7 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
     dialog.appendChild(importJSON);
 
     dialog.appendChild(
-      button("Import", () => {
+      button("Import", "Add all searches to local search collection.", () => {
         for (const entry of Object.entries(JSON.parse(importJSON.value))) {
           localSearches[entry[0]] = entry[1];
         }
@@ -700,7 +689,7 @@ function saveSearch(filters, updateSearchList) {
   dialog.appendChild(input);
 
   dialog.appendChild(
-    button("Save", () => {
+    button("Save", "Add search to local search collection.", () => {
       const name = input.value.trim();
       if (name) {
         close();
@@ -710,61 +699,497 @@ function saveSearch(filters, updateSearchList) {
   );
 }
 
-function parseEpoch(elementId) {
-  const epochElement = document.getElementById(elementId);
-  const epochInput = epochElement.value.trim();
-  epochElement.className = "";
-  if (epochInput.length == 0) {
-    return null;
-  }
-  const result = parser.d(epochInput);
-  if (result.good) {
-    return result.output;
-  } else {
-    epochElement.className = "error";
-    return null;
-  }
-}
-
-function addFilterFromStateMap(filters, type, attribute, map, mapFunc) {
-  const values = Array.from(map.entries())
-    .filter(entry => entry[1])
-    .map(entry => mapFunc(entry[0]));
-  if (values.length > 0) {
-    filters.push({ type: type, [attribute]: values });
-  }
-}
-
-let searchType = "text";
-
-function makeFilters() {
-  const filters = [];
-  addFilterFromStateMap(filters, "status", "states", selectedStates, x => x);
-  addFilterFromStateMap(filters, "type", "types", types, x => x);
-  addFilterFromStateMap(filters, "sourcelocation", "locations", locations, x =>
-    availableLocations.get(x)
-  );
-
-  for (let span of timeSpans) {
-    const start = parseEpoch(`${span}Start`);
-    const end = parseEpoch(`${span}End`);
-    if (start !== null || end !== null) {
-      filters.push({ type: span, start: start, end: end });
+function initialise() {
+  document.addEventListener("click", e => {
+    if (activeMenu != null) {
+      for (
+        let targetElement = e.target;
+        targetElement;
+        targetElement = targetElement.parentNode
+      ) {
+        if (targetElement == activeMenu.parentNode) {
+          return;
+        }
+      }
+      closeActiveMenu(true);
     }
-    const offsetValue = document.getElementById(`${span}Ago`).value.trim();
-    if (offsetValue) {
-      filters.push({
-        type: `${span}ago`,
-        offset: parseInt(offsetValue) * selectedAgoUnit.get(span)
+  });
+}
+
+export function initialiseOliveDash(oliveFiles, deadPauses) {
+  initialise();
+  const container = document.getElementById("olives");
+  const results = document.getElementById("results");
+
+  const renderOlive = (file, olive, pauseSpan) => {
+    let extraButtons;
+    if (olive.producesActions) {
+      const button = document.createElement("SPAN");
+      button.className = "load danger";
+      button.title =
+        "Throttle/unthrottle actions generated by the olive. This does not stop the olive from running.";
+      const renderPaused = () => {
+        pauseSpan.innerText = olive.paused ? "⏸" : "▶";
+        pauseSpan.title = olive.paused ? "Paused" : "Running";
+        button.innerText = olive.paused
+          ? "▶ Resume Actions"
+          : "⏸ Pause Actions";
+      };
+      button.addEventListener("click", () => {
+        fetchJsonWithBusyDialog(
+          "/pauseolive",
+          {
+            body: JSON.stringify({
+              file: file.filename,
+              line: olive.line,
+              column: olive.column,
+              time: file.lastCompiled,
+              pause: !olive.paused
+            }),
+            method: "POST"
+          },
+          response => {
+            olive.paused = response;
+            renderPaused();
+          }
+        );
       });
+      renderPaused();
+      extraButtons = [button];
+    } else {
+      extraButtons = [];
     }
+
+    getStats(
+      [
+        {
+          type: "sourcelocation",
+          locations: [
+            {
+              file: file.filename,
+              line: olive.line,
+              column: olive.column,
+              time: file.lastCompiled
+            }
+          ]
+        }
+      ],
+      [],
+      results,
+      false,
+      targetElement => {
+        const [infoPane, metroPane, listPane, bytecodePane] = makeTabs(
+          targetElement,
+          0,
+          "Overview",
+          "Dataflow",
+          "Actions",
+          "Bytecode"
+        );
+        const bytecode = document.createElement("PRE");
+        bytecode.style.overflowX = "scroll";
+        bytecode.innerText = file.bytecode;
+        bytecodePane.appendChild(bytecode);
+
+        const infoTable = document.createElement("TABLE");
+        infoPane.appendChild(infoTable);
+
+        const statusRow = document.createElement("TR");
+        infoTable.appendChild(statusRow);
+        const statusHeader = document.createElement("TD");
+        statusHeader.innerText = "Status";
+        statusRow.appendChild(statusHeader);
+        const statusCell = document.createElement("TD");
+        statusCell.innerText = file.status;
+        statusRow.appendChild(statusCell);
+
+        const lastRunRow = document.createElement("TR");
+        infoTable.appendChild(lastRunRow);
+        const lastRunHeader = document.createElement("TD");
+        lastRunHeader.innerText = "Last Run";
+        lastRunRow.appendChild(lastRunHeader);
+        const lastRunCell = document.createElement("TD");
+        if (file.lastRun) {
+          const [ago, exact] = formatTimeBin(file.lastRun);
+          lastRunCell.innerText = ago;
+          lastRunCell.title = exact;
+        } else {
+          lastRunCell.innerText = "Never";
+        }
+        lastRunRow.appendChild(lastRunCell);
+
+        const runtimeRow = document.createElement("TR");
+        infoTable.appendChild(runtimeRow);
+        const runtimeHeader = document.createElement("TD");
+        runtimeHeader.innerText = "Run Time";
+        runtimeRow.appendChild(runtimeHeader);
+        const runtimeCell = document.createElement("TD");
+        if (file.runtime) {
+          runtimeCell.innerText = formatTimeSpan(file.runtime);
+        } else {
+          runtimeCell.innerText = "Unknown";
+        }
+        runtimeRow.appendChild(runtimeCell);
+
+        const inputFormatRow = document.createElement("TR");
+        infoTable.appendChild(inputFormatRow);
+        const inputFormatHeader = document.createElement("TD");
+        inputFormatHeader.innerText = "Input Format";
+        inputFormatRow.appendChild(inputFormatHeader);
+        const inputFormatCell = document.createElement("TD");
+        inputFormatRow.appendChild(inputFormatCell);
+        const inputFormatLink = document.createElement("A");
+        inputFormatLink.innerText = file.format;
+        inputFormatLink.href = `inputdefs#${file.format}`;
+        inputFormatCell.appendChild(inputFormatLink);
+
+        const compileTimeRow = document.createElement("TR");
+        infoTable.appendChild(compileTimeRow);
+        const compileTimeHeader = document.createElement("TD");
+        compileTimeHeader.innerText = "Last Compiled";
+        compileTimeRow.appendChild(compileTimeHeader);
+        const compileTimeCell = document.createElement("TD");
+        const [ago, exact] = formatTimeBin(file.lastCompiled);
+        compileTimeCell.innerText = ago;
+        compileTimeCell.title = exact;
+        compileTimeRow.appendChild(compileTimeCell);
+
+        if (olive.url) {
+          const sourceRow = document.createElement("TR");
+          infoTable.appendChild(sourceRow);
+          const sourceHeader = document.createElement("TD");
+          sourceHeader.innerText = "Source Code";
+          sourceRow.appendChild(sourceHeader);
+          const sourceCell = document.createElement("TD");
+          sourceRow.appendChild(sourceCell);
+          const sourceLink = document.createElement("A");
+          sourceLink.innerText = "View";
+          sourceLink.href = olive.url;
+          sourceCell.appendChild(sourceLink);
+        }
+
+        olive.tags.forEach(tag => {
+          const tagRow = document.createElement("TR");
+          infoTable.appendChild(tagRow);
+          const tagHeader = document.createElement("TD");
+          tagHeader.innerText = "Tag";
+          tagRow.appendChild(tagHeader);
+          const tagCell = document.createElement("TD");
+          tagCell.innerText = tag;
+          tagRow.appendChild(tagCell);
+        });
+
+        const statsHeader = document.createElement("H2");
+        statsHeader.innerText = "Actions";
+        infoPane.appendChild(statsHeader);
+        const stats = document.createElement("DIV");
+        infoPane.appendChild(stats);
+
+        fetch("/metrodiagram", {
+          body: JSON.stringify({
+            file: file.filename,
+            line: olive.line,
+            column: olive.column,
+            time: file.lastCompiled
+          }),
+          method: "POST"
+        })
+          .then(response => {
+            if (response.ok) {
+              return Promise.resolve(response);
+            } else if (response.status == 404) {
+              return Promise.reject(new Error("Olive has been replaced"));
+            } else {
+              return Promise.reject(new Error("Failed to load"));
+            }
+          })
+          .then(response => response.text())
+          .then(data => {
+            const svg = new window.DOMParser().parseFromString(
+              data,
+              "image/svg+xml"
+            );
+            metroPane.appendChild(document.adoptNode(svg.documentElement));
+          })
+          .catch(function(error) {
+            const element = document.createElement("SPAN");
+            element.innerText = error.message;
+            element.className = "error";
+            metroPane.appendChild(element);
+          });
+        return [stats, listPane];
+      },
+      (reset, updateLocalSearches) => {
+        if (updateLocalSearches) {
+          updateLocalSearches(localSearches);
+          localStorage.setItem(
+            "shesmu_searches",
+            JSON.stringify(localSearches)
+          );
+        }
+      },
+      ...extraButtons
+    );
+  };
+  if (deadPauses.length > 0) {
+    const title = document.createElement("h1");
+    title.innerText = "Active Olives";
+    olives.appendChild(title);
   }
 
-  const text = document.getElementById("searchText").value.trim();
-  if (text) {
-    filters.push(searchType(text));
+  if (oliveFiles.length) {
+    const oliveDropdown = document.createElement("SPAN");
+    oliveDropdown.className = "dropdown";
+    container.appendChild(oliveDropdown);
+    const activeOlive = document.createElement("SPAN");
+    activeOlive.innerText = "Select";
+    oliveDropdown.appendChild(activeOlive);
+    oliveDropdown.appendChild(document.createTextNode(" ▼"));
+    const oliveList = document.createElement("DIV");
+    oliveList.className = "forceOpen";
+    oliveList.style.cursor = "default";
+    oliveDropdown.appendChild(oliveList);
+    let open = true;
+    activeMenu = activeOlive;
+    closeActiveMenu = external => {
+      oliveList.className = external ? "ready" : "";
+      open = false;
+      activeMenu = null;
+    };
+    oliveDropdown.addEventListener("click", e => {
+      if (e.target == activeOlive.parentNode || e.target == activeOlive) {
+        if (open) {
+          open = false;
+          closeActiveMenu(false);
+          return;
+        }
+        closeActiveMenu(true);
+        open = true;
+        oliveList.className = "forceOpen";
+        activeMenu = activeOlive;
+        closeActiveMenu = external => {
+          oliveList.className = external ? "ready" : "";
+          open = false;
+          activeMenu = null;
+        };
+      }
+    });
+    activeOlive.parentNode.onmouseover = e => {
+      if (e.target == oliveList.parentNode && !open) {
+        closeActiveMenu(true);
+      }
+    };
+    activeOlive.parentNode.onmouseout = () => {
+      if (!open) {
+        oliveList.className = "ready";
+      }
+    };
+
+    oliveFiles.forEach(file => {
+      const title = document.createElement("h2");
+      title.innerText = breakSlashes(file.filename);
+      oliveList.appendChild(title);
+      if (file.olives.length) {
+        const table = document.createElement("table");
+        oliveList.appendChild(table);
+        const header = document.createElement("tr");
+        table.appendChild(header);
+        for (const name of ["Syntax", "Description", "Line", ""]) {
+          const cell = document.createElement("th");
+          cell.innerText = name;
+          cell.style.whiteSpace = "nowrap";
+          header.appendChild(cell);
+        }
+        file.olives.forEach(olive => {
+          const tr = document.createElement("tr");
+          table.appendChild(tr);
+
+          const syntax = document.createElement("td");
+          syntax.innerText = olive.syntax;
+          tr.appendChild(syntax);
+
+          const description = document.createElement("td");
+          description.innerText = olive.description;
+          tr.appendChild(description);
+
+          const line = document.createElement("td");
+          line.innerText = olive.line;
+          tr.appendChild(line);
+
+          const badges = document.createElement("td");
+          badges.innerText = olive.producesActions ? "🎬 " : "🔔";
+          badges.title = olive.producesActions
+            ? "Produces actions "
+            : "Produces alerts";
+          const pauseSpan = document.createElement("span");
+          badges.appendChild(pauseSpan);
+          if (olive.producesActions) {
+            pauseSpan.innerText = olive.paused ? "⏸" : "▶";
+            pauseSpan.title = olive.paused ? "Paused" : "Running";
+          }
+          tr.appendChild(badges);
+          tr.style.cursor = "pointer";
+          tr.addEventListener("click", e => {
+            clearChildren(activeOlive);
+            const oliveSyntax = document.createElement("I");
+            oliveSyntax.innerText = olive.syntax;
+            activeOlive.appendChild(oliveSyntax);
+            activeOlive.appendChild(
+              document.createTextNode(" ― " + olive.description)
+            );
+            renderOlive(file, olive, pauseSpan);
+            if (open) {
+              closeActiveMenu(false);
+            }
+          });
+        });
+      } else {
+        const empty = document.createElement("P");
+        empty.innerText = "No olives in this file.";
+        oliveList.appendChild(empty);
+      }
+    });
+  } else {
+    const empty = document.createElement("P");
+    empty.innerText = "No olives on this server.";
+    container.appendChild(empty);
   }
-  return filters;
+
+  if (deadPauses.length > 0) {
+    const title = document.createElement("h1");
+    title.innerText = "Paused Dead Olives";
+    title.title =
+      "The following olives were paused but the olives have been replaced or deleted. They may still be throttling actions from running. If a new olive is producing the same actions, then the actions will still be throttled! The actions can be viewed, but the information about the olive is gone.";
+    olives.appendChild(title);
+
+    const deadTable = document.createElement("TABLE");
+    olives.appendChild(deadTable);
+    const deadHeader = document.createElement("tr");
+    deadTable.appendChild(deadHeader);
+    for (const name of ["File", "Line", "Column", "Compile Time"]) {
+      const cell = document.createElement("th");
+      cell.innerText = name;
+      deadHeader.appendChild(cell);
+    }
+    const deadTableBody = document.createElement("TBODY");
+    deadTable.appendChild(deadTableBody);
+
+    let remainingPauses = deadPauses.length;
+
+    deadPauses.forEach(deadPause => {
+      const tr = document.createElement("tr");
+      deadTableBody.appendChild(tr);
+
+      const file = document.createElement("td");
+      file.innerText = breakSlashes(deadPause.file);
+      tr.appendChild(file);
+
+      const line = document.createElement("td");
+      line.innerText = deadPause.line;
+      tr.appendChild(line);
+
+      const column = document.createElement("td");
+      column.innerText = deadPause.column;
+      tr.appendChild(column);
+
+      const compileTime = document.createElement("td");
+      const [ago, exact] = formatTimeBin(deadPause.time);
+      compileTime.innerText = ago;
+      compileTime.title = exact;
+      tr.appendChild(compileTime);
+
+      tr.style.cursor = "pointer";
+      tr.addEventListener("click", e => {
+        getStats(
+          [
+            {
+              type: "sourcelocation",
+              locations: [deadPause]
+            }
+          ],
+          [],
+          results,
+          false,
+          targetElement => {
+            const [infoPane, listPane] = makeTabs(
+              targetElement,
+              0,
+              "Overview",
+              "Actions"
+            );
+
+            const cleanup = () => {
+              deadTableBody.removeChild(tr);
+              if (--remainingPauses == 0) {
+                container.removeChild(deadContainer);
+              }
+            };
+            infoPane.appendChild(
+              dangerButton(
+                "▶ Resume Actions",
+                "Allow an actions currently paused to resume.",
+                e => clearDeadPause(deadPause, false, cleanup)
+              )
+            );
+            infoPane.appendChild(
+              dangerButton(
+                "☠️ PURGE ACTIONS",
+                "Remove any actions currently paused.",
+                e => clearDeadPause(deadPause, true, cleanup)
+              )
+            );
+
+            const statsHeader = document.createElement("H2");
+            statsHeader.innerText = "Actions";
+            infoPane.appendChild(statsHeader);
+            const stats = document.createElement("DIV");
+            infoPane.appendChild(stats);
+
+            return [stats, listPane];
+          },
+          (reset, updateLocalSearches) => {
+            if (updateLocalSearches) {
+              updateLocalSearches(localSearches);
+              localStorage.setItem(
+                "shesmu_searches",
+                JSON.stringify(localSearches)
+              );
+            }
+          }
+        );
+      });
+    });
+  }
+}
+
+function clearDeadPause(sourceLocation, purgeFirst, callback) {
+  const removePause = () => {
+    fetchJsonWithBusyDialog(
+      "/pauseolive",
+      {
+        body: JSON.stringify({ ...sourceLocation, pause: false }),
+        method: "POST"
+      },
+      callback
+    );
+  };
+  if (purgeFirst) {
+    fetchJsonWithBusyDialog(
+      "/purge",
+      {
+        body: JSON.stringify([
+          {
+            type: "sourcelocation",
+            locations: [sourceLocation]
+          }
+        ]),
+        method: "POST"
+      },
+      removePause
+    );
+  } else {
+    removePause();
+  }
 }
 
 function results(container, slug, body, render) {
@@ -793,41 +1218,6 @@ function results(container, slug, body, render) {
       element.className = "error";
       container.appendChild(element);
     });
-}
-
-export function actionsForOlive(filename, line, column, timestamp) {
-  let localSearches = {};
-  try {
-    localSearches = JSON.parse(localStorage.getItem("shesmu_searches") || "{}");
-  } catch (e) {
-    console.log(e);
-  }
-
-  getStats(
-    [
-      {
-        type: "sourcelocation",
-        locations: [
-          {
-            file: filename,
-            line: line,
-            column: column,
-            time: timestamp
-          }
-        ]
-      }
-    ],
-    [],
-    makePopup(),
-    false,
-    true,
-    (reset, updateLocalSearches) => {
-      if (updateLocalSearches) {
-        updateLocalSearches(localSearches);
-        localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
-      }
-    }
-  );
 }
 
 function makePopup(returnClose, afterClose) {
@@ -989,14 +1379,6 @@ function nextPage(query, targetElement, onActionPage) {
   });
 }
 
-function showFilterJson(filters, targetElement) {
-  clearChildren(targetElement);
-  const pre = document.createElement("PRE");
-  pre.className = "json";
-  pre.innerText = JSON.stringify(filters, null, 2);
-  targetElement.appendChild(pre);
-}
-
 function addToSet(value) {
   return list =>
     list
@@ -1052,12 +1434,18 @@ function purge(filters, afterClose) {
       "Yeah, no. You probably shouldn't nuke all the actions. Maybe try a subset.";
     targetElement.appendChild(sarcasm);
     targetElement.appendChild(
-      dangerButton("🔥 NUKE IT ALL FROM ORBIT 🔥", () => {
-        purgeActions(filters, targetElement);
-      })
+      dangerButton(
+        "🔥 NUKE IT ALL FROM ORBIT 🔥",
+        "Purge all actions from Shesmu server.",
+        () => {
+          purgeActions(filters, targetElement);
+        }
+      )
     );
     targetElement.appendChild(document.createElement("BR"));
-    targetElement.appendChild(button("Back away slowly", close));
+    targetElement.appendChild(
+      button("Back away slowly", "Do not purge all actions.", close)
+    );
   } else {
     purgeActions(filters, targetElement);
   }
@@ -1103,7 +1491,7 @@ function editText(original, callback) {
   dialog.appendChild(matchCaseLabel);
   dialog.appendChild(document.createElement("BR"));
   dialog.appendChild(
-    button("Save", () => {
+    button("Save", "Update text search filter in current search.", () => {
       close();
       const text = input.value.trim();
       callback(x =>
@@ -1115,7 +1503,7 @@ function editText(original, callback) {
   );
   if (original.text) {
     dialog.appendChild(
-      button("Delete", () => {
+      button("Delete", "Remove text search filer from current search.", () => {
         close();
         callback(x => (x || []).filter(v => v.text != original.text));
       })
@@ -1132,21 +1520,29 @@ function editRegex(original, callback) {
   dialog.appendChild(input);
   dialog.appendChild(document.createElement("BR"));
   dialog.appendChild(
-    button("Save", () => {
-      close();
-      callback(x =>
-        (x || [])
-          .filter(v => v != original && v != input.value)
-          .concat(input.value ? [input.value] : [])
-      );
-    })
+    button(
+      "Save",
+      "Update regular expression search in current filter.",
+      () => {
+        close();
+        callback(x =>
+          (x || [])
+            .filter(v => v != original && v != input.value)
+            .concat(input.value ? [input.value] : [])
+        );
+      }
+    )
   );
   if (original) {
     dialog.appendChild(
-      button("Delete", () => {
-        close();
-        callback(x => (x || []).filter(v => v != original));
-      })
+      button(
+        "Delete",
+        "Remove regular expression search from current filter.",
+        () => {
+          close();
+          callback(x => (x || []).filter(v => v != original));
+        }
+      )
     );
   }
 }
@@ -1155,7 +1551,7 @@ function timeDialog(callback) {
   const [dialog, close] = makePopup(true);
   for (const span of timeSpans) {
     dialog.appendChild(
-      button(nameForBin(span), () => {
+      button(nameForBin(span), "", () => {
         close();
         callback(span);
       })
@@ -1269,14 +1665,14 @@ function editTime(original, callback) {
   const end = makeSelector(original.end, "End date:", endCell);
 
   dialog.appendChild(
-    button("Save", () => {
+    button("Save", "Update time range filter in current search.", () => {
       close();
       callback(x => ({ start: start(), end: end() }));
     })
   );
   if (original.start || original.end) {
     dialog.appendChild(
-      button("Delete", () => {
+      button("Delete", "Remove time range filter from current search.", () => {
         close();
         callback(x => ({ start: null, end: null }));
       })
@@ -1313,7 +1709,7 @@ function editTimeAgo(original, callback) {
   );
   dialog.appendChild(document.createElement("BR"));
   dialog.appendChild(
-    button("Save", () => {
+    button("Save", "Update time range filter in current search.", () => {
       close();
       callback(
         x =>
@@ -1323,7 +1719,7 @@ function editTimeAgo(original, callback) {
   );
   if (original) {
     dialog.appendChild(
-      button("Delete", () => {
+      button("Delete", "Remove time range filter from current search.", () => {
         close();
         callback(x => 0);
       })
@@ -1600,22 +1996,19 @@ function getStats(
   tags,
   targetElement,
   onActionPage,
-  showActions,
-  updateSearchList
+  prepareTabs,
+  updateSearchList,
+  ...toolbarExtras
 ) {
   let additionalFilters = [];
   clearChildren(targetElement);
   const toolBar = document.createElement("P");
+  toolBar.className = "accessory";
   targetElement.appendChild(toolBar);
   const queryBuilder = document.createElement("DIV");
   queryBuilder.className = "filters";
   targetElement.appendChild(queryBuilder);
-  const [statsPane, listPane] = makeTabs(
-    targetElement,
-    showActions ? 1 : 0,
-    "Overview",
-    "Actions"
-  );
+  const [statsPane, listPane] = prepareTabs(targetElement);
   function mutateFilters(type, update) {
     additionalFilters.push({
       ...additionalFilters[additionalFilters.length - 1]
@@ -1626,11 +2019,14 @@ function getStats(
   }
   const refresh = () => {
     clearChildren(queryBuilder);
-    filters.forEach(filter => {
-      const filterTile = document.createElement("DIV");
-      queryBuilder.appendChild(filterTile);
-      renderFilter(filterTile, filter, null);
-    });
+    // Don't show base filters on the olive page since it's always the olive context.
+    if (onActionPage) {
+      filters.forEach(filter => {
+        const filterTile = document.createElement("DIV");
+        queryBuilder.appendChild(filterTile);
+        renderFilter(filterTile, filter, null);
+      });
+    }
     const customFilters =
       additionalFilters.length == 0
         ? []
@@ -1640,7 +2036,7 @@ function getStats(
       queryBuilder.appendChild(filterTile);
       renderFilter(filterTile, filter, mutateFilters);
     });
-    if (filters.length + customFilters.length == 0) {
+    if ((onActionPage ? filters.length : 0) + customFilters.length == 0) {
       queryBuilder.innerText = "All actions.";
     }
     const f = filters.concat(customFilters);
@@ -1668,140 +2064,232 @@ function getStats(
     refresh();
   };
 
-  toolBar.appendChild(button("🔄 Refresh", refresh));
   toolBar.appendChild(
-    accessoryButton("➕ Add Filter", () => {
-      const [dialog, close] = makePopup(true);
-      dialog.appendChild(
-        button("🕑 Fixed Time Range", () => {
-          close();
-          timeDialog(n =>
-            editTime({ start: null, end: null }, update =>
-              mutateFilters(n, update)
-            )
-          );
-        })
-      );
-      dialog.appendChild(
-        button("🕑 Time Since Now", () => {
-          close();
-          timeDialog(n =>
-            editTimeAgo(0, update => mutateFilters(n + "ago", update))
-          );
-        })
-      );
-      dialog.appendChild(
-        button("🔠 Text", () => {
-          close();
-          editText({ text: "", matchCase: false }, update =>
-            mutateFilters("text", update)
-          );
-        })
-      );
-      dialog.appendChild(
-        button("*️⃣  Regular Expression", () => {
-          close();
-          editRegex("", update => mutateFilters("regex", update));
-        })
-      );
-      dialog.appendChild(
-        button("🏁 Status", () => {
-          close();
-          const statusDialog = makePopup();
-          const table = document.createElement("TABLE");
-          statusDialog.appendChild(table);
-          Object.entries(actionStates).forEach(([state, description]) => {
-            const row = document.createElement("TR");
-            table.appendChild(row);
-            const buttonCell = document.createElement("TD");
-            row.appendChild(buttonCell);
-            const button = statusButton(state);
-            buttonCell.appendChild(button);
-            button.addEventListener("click", () =>
-              addFilters(["status", addToSet(state)])
-            );
-            const pCell = document.createElement("TD");
-            row.appendChild(pCell);
-            const p = document.createElement("P");
-            p.innerText = description;
-            pCell.appendChild(p);
-          });
-        })
-      );
-      dialog.appendChild(
-        button("🎬 Action Type", () => {
-          close();
-          const typeDialog = makePopup();
-          Array.from(actionRender.keys())
-            .sort()
-            .forEach(type =>
-              typeDialog.appendChild(
-                button(type, () => addFilters(["type", addToSet(type)]))
-              )
-            );
-        })
-      );
-      if (tags.length) {
+    button(
+      "🔄 Refresh",
+      "Update current action counts and stats from server.",
+      refresh
+    )
+  );
+  toolBar.appendChild(
+    accessoryButton(
+      "➕ Add Filter",
+      "Add a filter to limit the actions displayed.",
+      () => {
+        const [dialog, close] = makePopup(true);
         dialog.appendChild(
-          button("🏷️ Tags", () => {
-            close();
-            const tagDialog = makePopup();
-            tags
-              .sort()
-              .forEach(tag =>
-                tagDialog.appendChild(
-                  button(tag, () => addFilters(["tag", addToSet(tag)]))
+          button(
+            "🕑 Fixed Time Range",
+            "Add a filter that restricts between two absolute times.",
+            () => {
+              close();
+              timeDialog(n =>
+                editTime({ start: null, end: null }, update =>
+                  mutateFilters(n, update)
                 )
               );
-          })
+            }
+          )
         );
-      }
-    })
-  );
-  toolBar.appendChild(
-    accessoryButton("💾 Save Search", () => {
-      const customFilters =
-        additionalFilters.length == 0
-          ? []
-          : synthesiseFilters(additionalFilters[additionalFilters.length - 1]);
-      if (customFilters.length > 0) {
-        saveSearch(filters.concat(customFilters), updateLocalSearches =>
-          updateSearchList(false, updateLocalSearches)
+        dialog.appendChild(
+          button(
+            "🕑 Time Since Now",
+            "Add a filter that restricts using a sliding window.",
+            () => {
+              close();
+              timeDialog(n =>
+                editTimeAgo(0, update => mutateFilters(n + "ago", update))
+              );
+            }
+          )
         );
-      } else {
-        makePopup().innerText = "No changes to save.";
+        dialog.appendChild(
+          button(
+            "🔠 Text",
+            "Add a filter that looks for actions with specific text.",
+            () => {
+              close();
+              editText({ text: "", matchCase: false }, update =>
+                mutateFilters("text", update)
+              );
+            }
+          )
+        );
+        dialog.appendChild(
+          button(
+            "*️⃣  Regular Expression",
+            "Add a filter that looks for actions that match a regular expression.",
+            () => {
+              close();
+              editRegex("", update => mutateFilters("regex", update));
+            }
+          )
+        );
+        dialog.appendChild(
+          button(
+            "🏁 Status",
+            "Add a filter that searches for actions in a particular state.",
+            () => {
+              close();
+              const [statusDialog, closeStatus] = makePopup(true);
+              const table = document.createElement("TABLE");
+              statusDialog.appendChild(table);
+              Object.entries(actionStates).forEach(([state, description]) => {
+                const row = document.createElement("TR");
+                table.appendChild(row);
+                const buttonCell = document.createElement("TD");
+                row.appendChild(buttonCell);
+                const button = statusButton(state);
+                buttonCell.appendChild(button);
+                button.addEventListener("click", e => {
+                  addFilters(["status", addToSet(state)]);
+                  if (!e.ctrlKey) {
+                    e.stopPropagation();
+                    closeStatus();
+                  }
+                });
+                const pCell = document.createElement("TD");
+                row.appendChild(pCell);
+                const p = document.createElement("P");
+                p.innerText = description;
+                pCell.appendChild(p);
+              });
+
+              const help = document.createElement("P");
+              help.innerText = "Control-click to select multiple.";
+              statusDialog.appendChild(help);
+            }
+          )
+        );
+        if (onActionPage) {
+          dialog.appendChild(
+            button(
+              "🎬 Action Type",
+              "Add a filter that searches for actions of a particular type.",
+              () => {
+                close();
+                const [typeDialog, closeType] = makePopup(true);
+                Array.from(actionRender.keys())
+                  .sort()
+                  .forEach(type =>
+                    typeDialog.appendChild(
+                      button(type, "", e => {
+                        addFilters(["type", addToSet(type)]);
+                        if (!e.ctrlKey) {
+                          e.stopPropagation();
+                          closeType();
+                        }
+                      })
+                    )
+                  );
+
+                const help = document.createElement("P");
+                help.innerText = "Control-click to select multiple.";
+                typeDialog.appendChild(help);
+              }
+            )
+          );
+        }
+        if (tags.length) {
+          dialog.appendChild(
+            button(
+              "🏷️ Tags",
+              "Add a filter that searches for actions marked with a particular tag by an olive.",
+              () => {
+                close();
+                const [tagDialog, closeTag] = makePopup(true);
+                tags.sort().forEach(tag =>
+                  tagDialog.appendChild(
+                    button(tag, "", e => {
+                      addFilters(["tag", addToSet(tag)]);
+                      if (!e.ctrlKey) {
+                        e.stopPropagation();
+                        closeTag();
+                      }
+                    })
+                  )
+                );
+
+                const help = document.createElement("P");
+                help.innerText = "Control-click to select multiple.";
+                tagDialog.appendChild(help);
+              }
+            )
+          );
+        }
       }
-    })
+    )
   );
   toolBar.appendChild(
-    accessoryButton("⎌ Undo", () => {
-      additionalFilters.pop();
-      refresh();
-    })
+    accessoryButton(
+      "💾 Save Search",
+      "Save this search to the local search collection.",
+      () => {
+        const customFilters =
+          additionalFilters.length == 0
+            ? []
+            : synthesiseFilters(
+                additionalFilters[additionalFilters.length - 1]
+              );
+        if (customFilters.length > 0) {
+          saveSearch(filters.concat(customFilters), updateLocalSearches =>
+            updateSearchList(false, updateLocalSearches)
+          );
+        } else {
+          makePopup().innerText = "No changes to save.";
+        }
+      }
+    )
   );
   toolBar.appendChild(
-    accessoryButton("⌫ Revert to Saved", () => {
-      additionalFilters = [];
-      refresh();
-    })
+    accessoryButton(
+      "⎌ Undo",
+      "Undo the last change made to this search.",
+      () => {
+        additionalFilters.pop();
+        refresh();
+      }
+    )
+  );
+  toolBar.appendChild(
+    accessoryButton(
+      "⌫ Revert to Saved",
+      "Remove all additions and revert to the base search.",
+      () => {
+        additionalFilters = [];
+        refresh();
+      }
+    )
   );
   if (onActionPage) {
     toolBar.appendChild(
-      accessoryButton("✖ Clear Search", () => updateSearchList(true, null))
+      accessoryButton(
+        "✖ Clear Search",
+        "Remove all search filters and view everything.",
+        () => updateSearchList(true, null)
+      )
     );
   }
   toolBar.appendChild(
-    dangerButton("☠️ PURGE", () =>
-      purge(
-        filters.concat(
-          additionalFilters.length == 0
-            ? []
-            : synthesiseFilters(additionalFilters[additionalFilters.length - 1])
-        ),
-        refresh
-      )
+    dangerButton(
+      "☠️ PURGE",
+      "Remove matching actions from the Shesmu server.",
+      () =>
+        purge(
+          filters.concat(
+            additionalFilters.length == 0
+              ? []
+              : synthesiseFilters(
+                  additionalFilters[additionalFilters.length - 1]
+                )
+          ),
+          refresh
+        )
     )
   );
+  for (const extra of toolbarExtras) {
+    toolBar.appendChild(extra);
+  }
 
   const renderStats = (container, data) => {
     if (data.length == 0) {
@@ -1809,8 +2297,7 @@ function getStats(
       return;
     }
     const help = document.createElement("P");
-    help.innerText =
-      "Click any cell or table heading to view matching results.";
+    help.innerText = "Click any cell or table heading to filter results.";
     container.appendChild(help);
 
     const makeClick = (element, ...f) => {
@@ -2203,59 +2690,4 @@ export function loadFile(textContainer) {
   };
 
   input.click();
-}
-
-export function pauseOlive(element, target) {
-  target.pause = element.getAttribute("is-paused") !== "true";
-  fetchJsonWithBusyDialog(
-    "/pauseolive",
-    {
-      body: JSON.stringify(target),
-      method: "POST"
-    },
-    response => {
-      element.innerText = response ? "▶ Resume Actions" : "⏸ Pause Actions";
-      element.setAttribute("is-paused", response);
-    }
-  );
-}
-
-export function clearDeadPause(row, target, purgeFirst) {
-  const removePause = () => {
-    target.pause = false;
-    fetchJsonWithBusyDialog(
-      "/pauseolive",
-      {
-        body: JSON.stringify(target),
-        method: "POST"
-      },
-      response => {
-        if (!response) {
-          const tbody = row.parentNode;
-          tbody.removeChild(row);
-          if (tbody.childNodes.length == 1) {
-            const div = tbody.parentNode.parentNode;
-            div.parentNode.removeChild(div);
-          }
-        }
-      }
-    );
-  };
-  if (purgeFirst) {
-    fetchJsonWithBusyDialog(
-      "/purge",
-      {
-        body: JSON.stringify([
-          {
-            type: "sourcelocation",
-            locations: [target]
-          }
-        ]),
-        method: "POST"
-      },
-      removePause
-    );
-  } else {
-    removePause();
-  }
 }

@@ -69,6 +69,11 @@ a.load {
     background-color: #B83C31;
 }
 
+.accessory > .load {
+	font-weight: 400;
+  font-size: 90%;
+}
+
 .dropdown > div {
     position: absolute;
     min-width: 200px;
@@ -88,7 +93,7 @@ a.load {
     opacity: 1;
 }
 
-.dropdown > div > span {
+.dropdown > div > * {
     display: block;
     padding: 0.5em;
     color: #058FAF;
@@ -98,9 +103,13 @@ a.load {
     word-break: break-all;
 }
 
-.dropdown > div > span:hover {
+.dropdown > div > *:hover {
     background-color: #058FAF;
     color: #FFF;
+}
+
+.dropdown > div > table {
+    width: auto;
 }
 
 .collapse {

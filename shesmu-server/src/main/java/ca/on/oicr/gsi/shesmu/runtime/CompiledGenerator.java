@@ -21,6 +21,7 @@ import io.prometheus.client.Gauge.Timer;
 import java.io.PrintStream;
 import java.lang.invoke.*;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
@@ -130,13 +131,14 @@ public class CompiledGenerator implements DefinitionRepository {
     private List<ExportedFunctionDefinition> exportedFunctions = Collections.emptyList();
     private final Path fileName;
     private ActionGenerator generator = ActionGenerator.NULL;
+    private OliveRunInfo runInfo;
 
     private Script(Path fileName) {
       this.fileName = fileName;
     }
 
-    public Stream<FileTable> dashboard() {
-      return dashboard == null ? Stream.empty() : Stream.of(dashboard);
+    public Stream<Pair<OliveRunInfo, FileTable>> dashboard() {
+      return dashboard == null ? Stream.empty() : Stream.of(new Pair<>(runInfo, dashboard));
     }
 
     public void errorHtml(SectionRenderer renderer) {
@@ -155,11 +157,13 @@ public class CompiledGenerator implements DefinitionRepository {
       return exportedFunctions.stream().map(x -> x);
     }
 
-    public synchronized void run(OliveServices consumer, InputProvider input) {
+    public synchronized String run(OliveServices consumer, InputProvider input) {
       try {
         generator.run(consumer, input);
+        return "Completed normally";
       } catch (final Exception e) {
         e.printStackTrace();
+        return e.getMessage();
       }
     }
 
@@ -250,6 +254,7 @@ public class CompiledGenerator implements DefinitionRepository {
                 x.register();
                 generator = x;
               }
+              runInfo = null;
             });
         errors = compiler.errors().collect(Collectors.toList());
         return result.isPresent() ? Optional.empty() : Optional.of(2);
@@ -355,7 +360,7 @@ public class CompiledGenerator implements DefinitionRepository {
     return Stream.empty();
   }
 
-  public Stream<FileTable> dashboard() {
+  public Stream<Pair<OliveRunInfo, FileTable>> dashboard() {
     return scripts().flatMap(Script::dashboard);
   }
 
@@ -434,14 +439,25 @@ public class CompiledGenerator implements DefinitionRepository {
                   final CompletableFuture<Boolean> processFuture =
                       CompletableFuture.supplyAsync(
                           () -> {
+                            final Instant startTime = Instant.now();
+                            script.runInfo = new OliveRunInfo("Running now", null, startTime);
+                            final long inputCount =
+                                script.dashboard == null
+                                    ? 0
+                                    : cache.fetch(script.dashboard.format().name()).count();
                             // We wait to schedule the timeout for when the script is actually
                             // starting
                             executor.schedule(
-                                () -> timeoutFuture.complete(false),
+                                () -> {
+                                  script.runInfo =
+                                      new OliveRunInfo("Deadline exceeded", inputCount, startTime);
+                                  timeoutFuture.complete(false);
+                                },
                                 script.generator.timeout(),
                                 TimeUnit.SECONDS);
-
-                            script.run(consumer, cache);
+                            script.runInfo =
+                                new OliveRunInfo(
+                                    script.run(consumer, cache), inputCount, startTime);
                             return true;
                           },
                           workExecutor);

@@ -106,6 +106,10 @@ public final class SourceLocation implements Comparable<SourceLocation> {
 
   public void toJson(ArrayNode array, SourceLoctionLinker linker) {
     final ObjectNode node = array.addObject();
+    toJson(node, linker);
+  }
+
+  public void toJson(ObjectNode node, SourceLoctionLinker linker) {
     node.put("file", fileName);
     node.put("line", line);
     node.put("column", column);
