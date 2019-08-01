@@ -1,3 +1,14 @@
+const automaticIniParams = new Set([
+  "metadata",
+  "output_dir",
+  "parent-accessions",
+  "parent_accession",
+  "parent_accessions",
+  "workflow-run-accession",
+  "workflow_bundle_dir",
+  "workflow_run_accession"
+]);
+
 actionRender.set("niassa", a => [
   title(a, `Workflow ${a.workflowAccession}`),
   a.workflowRunAccession
@@ -15,29 +26,34 @@ actionRender.set("niassa", a => [
     visibleText
   ),
   a.discoveredIni && Object.entries(a.discoveredIni).length > 0
-    ? table(
-        Object.keys(a.discoveredIni)
-          .concat(Object.keys(a.ini))
-          .sort()
-          .filter(
-            (item, index, array) => item == 0 || item != array[index - 1]
-          ),
-        ["Key", k => k],
-        [
-          "Values",
-          k => {
-            const isDiscovered = a.discoveredIni.hasOwnProperty(k);
-            const isOlive = a.ini.hasOwnProperty(k);
-            if (isDiscovered && !isOlive) {
-              return "Extra";
-            } else if (!isDiscovered && isOlive) {
-              return "Missing";
-            } else if (a.ini[k] !== a.discoveredIni[k]) {
-              return "Different";
+    ? collapse(
+        "Differences in INI",
+        table(
+          Object.keys(a.discoveredIni)
+            .concat(Object.keys(a.ini))
+            .sort()
+            .filter(
+              (item, index, array) =>
+                !automaticIniParams.has(item) &&
+                (item == 0 || item != array[index - 1])
+            ),
+          ["Key", k => k],
+          [
+            "Values",
+            k => {
+              const isDiscovered = a.discoveredIni.hasOwnProperty(k);
+              const isOlive = a.ini.hasOwnProperty(k);
+              if (isDiscovered && !isOlive) {
+                return "Extra";
+              } else if (!isDiscovered && isOlive) {
+                return "Missing";
+              } else if (a.ini[k] !== a.discoveredIni[k]) {
+                return "Different";
+              }
+              return "";
             }
-            return "";
-          }
-        ]
+          ]
+        )
       )
     : blank(),
   collapse(
