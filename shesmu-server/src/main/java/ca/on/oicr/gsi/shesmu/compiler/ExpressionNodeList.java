@@ -4,8 +4,10 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -14,10 +16,13 @@ import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeList extends ExpressionNode {
 
+  private static final Type A_COLLECTIONS_TYPE = Type.getType(Collections.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Method METHOD_COLLECTIONS__EMPTY_SET =
+      new Method("emptySet", A_SET_TYPE, new Type[0]);
 
   private static final Method METHOD_IMYHAT__NEW_SET =
       new Method("newSet", A_SET_TYPE, new Type[] {});
@@ -46,18 +51,22 @@ public class ExpressionNodeList extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    renderer.mark(line());
-    renderer.loadImyhat(items.get(0).type().descriptor());
-    renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
-    items.forEach(
-        item -> {
-          renderer.methodGen().dup();
-          item.render(renderer);
-          renderer.methodGen().valueOf(item.type().apply(TypeUtils.TO_ASM));
-          renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
-          renderer.methodGen().pop();
-        });
-    renderer.mark(line());
+    if (items.isEmpty()) {
+      renderer.methodGen().invokeStatic(A_COLLECTIONS_TYPE, METHOD_COLLECTIONS__EMPTY_SET);
+    } else {
+      renderer.mark(line());
+      renderer.loadImyhat(items.get(0).type().descriptor());
+      renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
+      items.forEach(
+          item -> {
+            renderer.methodGen().dup();
+            item.render(renderer);
+            renderer.methodGen().valueOf(item.type().apply(TypeUtils.TO_ASM));
+            renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
+            renderer.methodGen().pop();
+          });
+      renderer.mark(line());
+    }
   }
 
   @Override
@@ -82,29 +91,31 @@ public class ExpressionNodeList extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    if (items.size() == 0) {
-      errorHandler.accept(String.format("%d:%d: Cannot define empty list.", line(), column()));
-      return false;
+    if (items.isEmpty()) {
+      type = Imyhat.EMPTY;
+      return true;
     }
     boolean ok =
         items.stream().filter(item -> item.typeCheck(errorHandler)).count() == items.size();
     if (ok) {
-      final Imyhat firstType = items.get(0).type();
+      final AtomicReference<Imyhat> resultType = new AtomicReference<>(items.get(0).type());
       ok =
           items
                   .stream()
+                  .skip(1)
                   .filter(
                       item -> {
-                        final boolean isSame = item.type().isSame(firstType);
+                        final boolean isSame = item.type().isSame(resultType.get());
                         if (isSame) {
+                          resultType.updateAndGet(item.type()::unify);
                           return true;
                         }
-                        item.typeError(firstType.name(), item.type(), errorHandler);
+                        item.typeError(resultType.get().name(), item.type(), errorHandler);
                         return false;
                       })
                   .count()
-              == items.size();
-      type = firstType.asList();
+              == items.size() - 1;
+      type = resultType.get().asList();
     }
     return ok;
   }

@@ -472,6 +472,7 @@ machine-to-machine communication.
 | Boolean    | `boolean`                                          | `b`	       |
 | Date       | `date`                                             | `d`        |
 | List       | `[`_inner_`]`                                      | `a`_inner_ |
+| Empty List | `[]`                                               | `A`        |
 | Tuple      | `{`_t1_`,`_t2_`,` ...`}`                           | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 | NamedTuple | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
 | Path       | `path`                                             | `p`        |

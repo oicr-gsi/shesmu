@@ -1,0 +1,6 @@
+Input test;
+
+Olive
+ Group By accession
+   Into x = First [file_size] Default []
+ Run ok With ok = True;

@@ -507,7 +507,7 @@ public abstract class ExpressionNode {
           final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
           final Parser result =
               p.whitespace()
-                  .list(items::set, (cp, co) -> parse(cp.whitespace(), co).whitespace(), ',')
+                  .listEmpty(items::set, (cp, co) -> parse(cp.whitespace(), co).whitespace(), ',')
                   .whitespace()
                   .symbol("]")
                   .whitespace();

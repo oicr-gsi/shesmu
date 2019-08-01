@@ -73,6 +73,13 @@ public class SourceNodeSet extends SourceNode {
       return false;
     }
     final Imyhat type = expression.type();
+    if (type == Imyhat.EMPTY) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Cannot iterate over empty list. No type to check subsequent operations.",
+              line(), column()));
+      return false;
+    }
     if (type instanceof Imyhat.ListImyhat) {
       initialType = ((Imyhat.ListImyhat) type).inner();
       return true;

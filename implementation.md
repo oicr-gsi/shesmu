@@ -106,16 +106,17 @@ for Shesmu's lists, which are Java's `Set` underneath. Shesmu's tuples are
 erased to `Object` values. Although some of these JVM types may be null, Shesmu
 olives cannot handle null values.
 
-| Name      | JVM Type                      | Syntax                   | Signature  |
-|---        |---                            |---                       |---         |
-| Integer   | `long` / `J`                  | `integer`                | `i`	      |
-| Float     | `double` / `D`                | `float`                  | `f`	      |
-| String    | `java.lang.String`            | `string`                 | `s`	      |
-| Boolean   | `boolean` / `z`               | `boolean`                | `b`	      |
-| Date      | `java.time.Instant`           | `date`                   | `d`        |
-| List      | `java.lang.Set`               | `[`_inner_`]`            | `a`_inner_ |
-| Tuple     | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
-| Object    | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_f1_` = `_t1_`,`_f2_` = `_t2_`,` ...`}` | `o` _n_ _f1_`$`_t1_ _f2_`$`_t2_ Where _n_ is the number of elements in the object. Fields must be sorted alphabetically. |
+| Name       | JVM Type                      | Syntax                   | Signature  |
+|---         |---                            |---                       |---         |
+| Integer    | `long` / `J`                  | `integer`                | `i`        |
+| Float      | `double` / `D`                | `float`                  | `f`        |
+| String     | `java.lang.String`            | `string`                 | `s`        |
+| Boolean    | `boolean` / `z`               | `boolean`                | `b`        |
+| Date       | `java.time.Instant`           | `date`                   | `d`        |
+| List       | `java.lang.Set`               | `[`_inner_`]`            | `a`_inner_ |
+| Empty List | `java.lang.Set`               | `[]`                     | `A`        |
+| Tuple      | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Object     | `ca.on.oicr.gsi.shesmu.Tuple` | `{`_f1_` = `_t1_`,`_f2_` = `_t2_`,` ...`}` | `o` _n_ _f1_`$`_t1_ _f2_`$`_t2_ Where _n_ is the number of elements in the object. Fields must be sorted alphabetically. |
 
 The ASM bytecode generation library has a class `Type` that describes JVM
 types. A `Type` object can be constructed either by knowing the JVM name for a
