@@ -24,6 +24,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
   private final List<Pair<ExpressionNode, ExpressionNode>> cases;
 
   private final ExpressionNode test;
+  private Imyhat type = Imyhat.BAD;
 
   public ExpressionNodeSwitch(
       int line,
@@ -126,7 +127,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
 
   @Override
   public Imyhat type() {
-    return alternative.type();
+    return type;
   }
 
   @Override
@@ -141,6 +142,7 @@ public class ExpressionNodeSwitch extends ExpressionNode {
                 == cases.size()
             & alternative.typeCheck(errorHandler);
     if (ok) {
+      type = alternative.type();
       ok =
           cases
                   .stream()
@@ -151,10 +153,10 @@ public class ExpressionNodeSwitch extends ExpressionNode {
                           c.first().typeError(test.type().name(), c.first().type(), errorHandler);
                           isSame = false;
                         }
-                        if (!c.second().type().isSame(alternative.type())) {
-                          c.second()
-                              .typeError(
-                                  alternative.type().name(), c.second().type(), errorHandler);
+                        if (c.second().type().isSame(type)) {
+                          type = type.unify(c.second().type());
+                        } else {
+                          c.second().typeError(type.name(), c.second().type(), errorHandler);
                           isSame = false;
                         }
                         return isSame;

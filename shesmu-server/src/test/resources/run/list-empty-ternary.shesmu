@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For x In (False ? ["a"] : [ ]): Count) == 0;

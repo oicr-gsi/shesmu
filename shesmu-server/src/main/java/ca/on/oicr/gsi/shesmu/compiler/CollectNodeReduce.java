@@ -20,6 +20,7 @@ public class CollectNodeReduce extends CollectNode {
   private final ExpressionNode initial;
 
   private final ExpressionNode reducer;
+  Imyhat resultType = Imyhat.BAD;
   Imyhat type;
 
   public CollectNodeReduce(
@@ -96,7 +97,7 @@ public class CollectNodeReduce extends CollectNode {
 
   @Override
   public Imyhat type() {
-    return initial.type();
+    return resultType;
   }
 
   @Override
@@ -113,6 +114,8 @@ public class CollectNodeReduce extends CollectNode {
                 "%d:%d: Reducer produces type %s, but initial expression is %s.",
                 line(), column(), reducer.type().name(), initial.type().name()));
         ok = false;
+      } else {
+        resultType = reducer.type().unify(initial.type());
       }
     }
     return ok;

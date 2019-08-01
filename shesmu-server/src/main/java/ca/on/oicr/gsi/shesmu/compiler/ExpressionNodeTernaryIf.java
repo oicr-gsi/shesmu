@@ -16,6 +16,7 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
   private final ExpressionNode falseExpression;
   private final ExpressionNode testExpression;
   private final ExpressionNode trueExpression;
+  private Imyhat type = Imyhat.BAD;
 
   public ExpressionNodeTernaryIf(
       int line,
@@ -75,7 +76,7 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
 
   @Override
   public Imyhat type() {
-    return trueExpression.type();
+    return type;
   }
 
   @Override
@@ -93,6 +94,8 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
       resultOk = trueExpression.type().isSame(falseExpression.type());
       if (!resultOk) {
         typeError(trueExpression.type().name(), falseExpression.type(), errorHandler);
+      } else {
+        type = trueExpression.type().unify(falseExpression.type());
       }
     }
     return testOk & resultOk;

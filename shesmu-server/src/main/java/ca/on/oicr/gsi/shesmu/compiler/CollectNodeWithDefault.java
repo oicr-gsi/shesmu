@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public abstract class CollectNodeWithDefault extends CollectNode {
   protected final ExpressionNode alternative;
   private List<String> definedNames;
+  private Imyhat returnType = Imyhat.BAD;
   protected final ExpressionNode selector;
   private final String syntax;
   private Imyhat type;
@@ -102,14 +103,14 @@ public abstract class CollectNodeWithDefault extends CollectNode {
 
   @Override
   public final Imyhat type() {
-    return alternative.type();
+    return returnType;
   }
 
   @Override
   public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     type = incoming;
     if (selector.typeCheck(errorHandler) & alternative.typeCheck(errorHandler)) {
-      final Imyhat returnType = returnType(incoming, selector.type());
+      returnType = returnType(incoming, selector.type());
       if (returnType.isSame(alternative.type())) {
         return typeCheckExtra(errorHandler);
       } else {

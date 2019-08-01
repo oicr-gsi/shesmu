@@ -57,6 +57,11 @@ public abstract class ImyhatNode {
   private static Parser parse0(Parser input, Consumer<ImyhatNode> output) {
     final Parser listParser = input.symbol("[");
     if (listParser.isGood()) {
+      final Parser emptyResult = listParser.whitespace().symbol("]").whitespace();
+      if (emptyResult.isGood()) {
+        output.accept(new ImyhatNodeLiteral(Imyhat.EMPTY));
+        return emptyResult;
+      }
       final AtomicReference<ImyhatNode> inner = new AtomicReference<>();
       final Parser result =
           listParser
@@ -65,7 +70,9 @@ public abstract class ImyhatNode {
               .whitespace()
               .symbol("]")
               .whitespace();
-      output.accept(new ImyhatNodeList(inner.get()));
+      if (result.isGood()) {
+        output.accept(new ImyhatNodeList(inner.get()));
+      }
       return result;
     }
 

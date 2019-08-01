@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For x In (Switch False When True Then ["a"] Else [ ]): Count) == 0;

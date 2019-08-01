@@ -14,6 +14,7 @@ public class GroupNodeWithDefault extends GroupNode {
 
   private final ExpressionNode initial;
   private final GroupNodeDefaultable inner;
+  private Imyhat type = Imyhat.BAD;
 
   public GroupNodeWithDefault(
       int line, int column, ExpressionNode initial, GroupNodeDefaultable inner) {
@@ -62,15 +63,19 @@ public class GroupNodeWithDefault extends GroupNode {
 
   @Override
   public Imyhat type() {
-    return inner.type();
+    return type;
   }
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = inner.typeCheck(errorHandler) & initial.typeCheck(errorHandler);
-    if (ok && !inner.type().isSame(initial.type())) {
-      initial.typeError(inner.type().name(), initial.type(), errorHandler);
-      ok = false;
+    if (ok) {
+      if (inner.type().isSame(initial.type())) {
+        type = inner.type().unify(initial.type());
+      } else {
+        initial.typeError(inner.type().name(), initial.type(), errorHandler);
+        ok = false;
+      }
     }
     return ok;
   }

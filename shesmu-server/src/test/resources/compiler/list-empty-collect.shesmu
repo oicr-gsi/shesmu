@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Let foo = (For x In [ "a" ]: First [x] Default [])
+ Run ok With ok =  True;

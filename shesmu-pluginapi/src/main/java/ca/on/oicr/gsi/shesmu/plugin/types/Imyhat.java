@@ -57,6 +57,11 @@ public abstract class Imyhat {
      * @return the result as an object, or null if an error occurs
      */
     public abstract Object parse(String input);
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      return this;
+    }
   }
 
   public static final class ListImyhat extends Imyhat {
@@ -126,7 +131,7 @@ public abstract class Imyhat {
       if (other instanceof ListImyhat) {
         return inner.isSame(((ListImyhat) other).inner);
       }
-      return false;
+      return other == EMPTY;
     }
 
     @Override
@@ -137,6 +142,14 @@ public abstract class Imyhat {
     @Override
     public String name() {
       return "[" + inner.name() + "]";
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      if (other == EMPTY) {
+        return this;
+      }
+      return new ListImyhat(inner.unify(((ListImyhat) other).inner));
     }
   }
 
@@ -272,6 +285,20 @@ public abstract class Imyhat {
           .sorted()
           .collect(Collectors.joining(", ", "{ ", " }"));
     }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      final ObjectImyhat otherObject = (ObjectImyhat) other;
+      return new ObjectImyhat(
+          otherObject
+              .fields
+              .entrySet()
+              .stream()
+              .map(
+                  e ->
+                      new Pair<>(
+                          e.getKey(), fields.get(e.getKey()).first().unify(e.getValue().first()))));
+    }
   }
 
   public static final class TupleImyhat extends Imyhat {
@@ -368,6 +395,16 @@ public abstract class Imyhat {
     @Override
     public String name() {
       return Arrays.stream(types).map(Imyhat::name).collect(Collectors.joining(", ", "{", "}"));
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      final Imyhat[] unifiedTypes = new Imyhat[types.length];
+      final Imyhat[] otherTypes = ((TupleImyhat) other).types;
+      for (int i = 0; i < unifiedTypes.length; i++) {
+        unifiedTypes[i] = types[i].unify(otherTypes[i]);
+      }
+      return new TupleImyhat(unifiedTypes);
     }
   }
 
@@ -604,8 +641,12 @@ public abstract class Imyhat {
         public String name() {
           return "💩";
         }
-      };
 
+        @Override
+        public Imyhat unify(Imyhat other) {
+          return this;
+        }
+      };
   public static final BaseImyhat BOOLEAN =
       new BaseImyhat() {
 
@@ -719,6 +760,74 @@ public abstract class Imyhat {
         @Override
         public Object parse(String s) {
           return ZonedDateTime.parse(s).toInstant();
+        }
+      };
+  public static final BaseImyhat EMPTY =
+      new BaseImyhat() {
+
+        @Override
+        public void accept(ImyhatConsumer dispatcher, Object value) {
+          dispatcher.accept(Stream.empty(), null);
+        }
+
+        @Override
+        public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+          return dispatcher.apply(Stream.empty(), null);
+        }
+
+        @Override
+        public <R> R apply(ImyhatTransformer<R> transformer) {
+          return transformer.list(null);
+        }
+
+        @Override
+        public Comparator<?> comparator() {
+          return (a, b) -> 0;
+        }
+
+        @Override
+        public Object defaultValue() {
+          return Optional.empty();
+        }
+
+        @Override
+        public String descriptor() {
+          return "A";
+        }
+
+        @Override
+        public boolean isOrderable() {
+          return false;
+        }
+
+        @Override
+        public boolean isSame(Imyhat other) {
+          return this == other || other instanceof ListImyhat;
+        }
+
+        @Override
+        public Class<?> javaType() {
+          return Set.class;
+        }
+
+        @Override
+        public Class<?> javaWrapperType() {
+          return Set.class;
+        }
+
+        @Override
+        public String name() {
+          return "[]";
+        }
+
+        @Override
+        public Object parse(String s) {
+          return Collections.emptySet();
+        }
+
+        @Override
+        public Imyhat unify(Imyhat other) {
+          return other;
         }
       };
   public static final BaseImyhat FLOAT =
@@ -835,6 +944,7 @@ public abstract class Imyhat {
           return Long.parseLong(s);
         }
       };
+
   public static final BaseImyhat PATH =
       new BaseImyhat() {
 
@@ -1032,4 +1142,6 @@ public abstract class Imyhat {
   public final String toString() {
     return descriptor();
   }
+
+  public abstract Imyhat unify(Imyhat other);
 }
