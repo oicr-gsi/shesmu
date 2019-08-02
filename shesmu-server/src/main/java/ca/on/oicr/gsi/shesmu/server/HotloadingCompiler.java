@@ -121,7 +121,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
         }
         return Optional.of(generator);
       }
-    } catch (final Exception e) {
+    } catch (final Exception | VerifyError | BootstrapMethodError e) {
       e.printStackTrace();
     }
     return Optional.empty();
