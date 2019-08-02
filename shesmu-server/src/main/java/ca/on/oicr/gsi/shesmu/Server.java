@@ -138,9 +138,11 @@ public final class Server implements ServerConfig, ActionServices {
   private static final Pattern EQUAL = Pattern.compile("=");
 
   public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-
   private static final Map<String, Instant> INFLIGHT = new ConcurrentHashMap<>();
-
+  private static final String instanceName =
+      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
+          .map("Shesmu - "::concat)
+          .orElse("Shesmu");
   private static final LatencyHistogram responseTime =
       new LatencyHistogram(
           "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
@@ -2255,7 +2257,7 @@ public final class Server implements ServerConfig, ActionServices {
 
   @Override
   public String name() {
-    return "Shesmu";
+    return instanceName;
   }
 
   @Override
