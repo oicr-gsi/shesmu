@@ -18,7 +18,10 @@ import java.util.stream.Stream;
  * <p>This is one “row” in the information being fed into Shesmu
  */
 public final class CerberusAnalysisProvenanceValue {
-  private static Set<Tuple> attributes(SortedMap<String, SortedSet<String>> attributes) {
+  public static Set<Tuple> attributes(SortedMap<String, SortedSet<String>> attributes) {
+    if (attributes == null) {
+      return Collections.emptySet();
+    }
     return attributes
         .entrySet()
         .stream()
@@ -27,33 +30,40 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   private static final Imyhat ATTR_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList());
-  private final long fileAccession;
+  private final Optional<Long> fileAccession;
   private Set<Tuple> fileAttributes;
-  private final Path filePath;
-  private long inputFile;
+  private final Optional<Path> filePath;
+  private Optional<Long> inputFile;
   private Set<Tuple> iusAttributes;
   private final Instant lastModified;
   private final Tuple lims;
-  private final String md5;
-  private final String metatype;
-  private final String name;
-  private final long runAccession;
+  private final Optional<String> md5;
+  private final Optional<String> metatype;
+  private final Optional<String> name;
+  private final Optional<Long> runAccession;
   private final boolean skip;
-  private final String status;
-  private long workflowAccession;
-  private Set<Tuple> workflowAttributes;
-  private final String workflowName;
-  private Set<Tuple> workflowRunAttributes;
-  private final Tuple workflowVersion;
+  private final Optional<String> status;
+  private final Optional<Long> workflowAccession;
+  private final Set<Tuple> workflowAttributes;
+  private final Optional<String> workflowName;
+  private final Set<Tuple> workflowRunAttributes;
+  private final Optional<Tuple> workflowVersion;
 
   public CerberusAnalysisProvenanceValue(
-      AnalysisProvenance provenance, long inputFile, IusLimsKey limsKey, Runnable isBad) {
-    fileAccession = provenance.getFileId() == null ? 0 : provenance.getFileId();
-    fileAttributes = attributes(provenance.getFileAttributes());
-    filePath = Paths.get(provenance.getFilePath());
+      AnalysisProvenance provenance,
+      Optional<Long> inputFile,
+      IusLimsKey limsKey,
+      Set<Tuple> fileAttributes,
+      Set<Tuple> iusAttributes,
+      Set<Tuple> workflowAttributes,
+      Set<Tuple> workflowRunAttributes,
+      Runnable isBad) {
+    fileAccession = Optional.ofNullable(provenance.getFileId()).map(Integer::longValue);
+    this.fileAttributes = fileAttributes;
+    filePath = Optional.ofNullable(provenance.getFilePath()).map(Paths::get);
     this.inputFile = inputFile;
 
-    iusAttributes = attributes(provenance.getIusAttributes());
+    this.iusAttributes = iusAttributes;
     lastModified = provenance.getLastModified().toInstant();
     lims =
         new Tuple(
@@ -61,24 +71,29 @@ public final class CerberusAnalysisProvenanceValue {
             limsKey.getLimsKey().getProvider(),
             limsKey.getLimsKey().getLastModified().toInstant(),
             limsKey.getLimsKey().getVersion());
-    md5 = provenance.getFileMd5sum();
-    metatype = provenance.getFileMetaType();
-    name = provenance.getWorkflowRunName();
+    md5 = Optional.ofNullable(provenance.getFileMd5sum());
+    metatype = Optional.ofNullable(provenance.getFileMetaType());
+    name = Optional.ofNullable(provenance.getWorkflowRunName());
     skip =
         (provenance.getSkip() != null && provenance.getSkip())
             || Stream.of(
                     provenance.getFileAttributes(),
                     provenance.getWorkflowRunAttributes(),
                     provenance.getIusAttributes())
+                .filter(Objects::nonNull)
                 .anyMatch(p -> p.containsKey("skip"));
-    status = provenance.getWorkflowRunStatus();
-    runAccession = provenance.getWorkflowRunId();
-    workflowAccession = provenance.getWorkflowId();
-    workflowAttributes = attributes(provenance.getWorkflowAttributes());
-    workflowName = provenance.getWorkflowName();
-    workflowRunAttributes = attributes(provenance.getWorkflowRunAttributes());
+    status = Optional.ofNullable(provenance.getWorkflowRunStatus());
+    runAccession = Optional.ofNullable(provenance.getWorkflowRunId()).map(Integer::longValue);
+    workflowAccession = Optional.ofNullable(provenance.getWorkflowId()).map(Integer::longValue);
+    this.workflowAttributes = workflowAttributes;
+    workflowName = Optional.ofNullable(provenance.getWorkflowName());
+    this.workflowRunAttributes = workflowRunAttributes;
     workflowVersion =
-        BaseProvenancePluginType.parseWorkflowVersion(provenance.getWorkflowVersion(), isBad);
+        provenance.getWorkflowVersion() == null
+            ? Optional.empty()
+            : Optional.of(
+                BaseProvenancePluginType.parseWorkflowVersion(
+                    provenance.getWorkflowVersion(), isBad));
   }
 
   @ShesmuVariable(type = "at2sas")
@@ -87,7 +102,7 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public long file_accession() {
+  public Optional<Long> file_accession() {
     return fileAccession;
   }
 
@@ -97,7 +112,7 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public long input_file() {
+  public Optional<Long> input_file() {
     return inputFile;
   }
 
@@ -112,27 +127,27 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public String md5() {
+  public Optional<String> md5() {
     return md5;
   }
 
   @ShesmuVariable
-  public String metatype() {
+  public Optional<String> metatype() {
     return metatype;
   }
 
   @ShesmuVariable
-  public String name() {
+  public Optional<String> name() {
     return name;
   }
 
   @ShesmuVariable
-  public Path path() {
+  public Optional<Path> path() {
     return filePath;
   }
 
   @ShesmuVariable
-  public long run_accession() {
+  public Optional<Long> run_accession() {
     return runAccession;
   }
 
@@ -142,7 +157,7 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public String status() {
+  public Optional<String> status() {
     return status;
   }
 
@@ -152,12 +167,12 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public String workflow() {
+  public Optional<String> workflow() {
     return workflowName;
   }
 
   @ShesmuVariable
-  public long workflow_accession() {
+  public Optional<Long> workflow_accession() {
     return workflowAccession;
   }
 
@@ -166,8 +181,8 @@ public final class CerberusAnalysisProvenanceValue {
     return workflowAttributes;
   }
 
-  @ShesmuVariable(type = "t3iii")
-  public Tuple workflow_version() {
+  @ShesmuVariable(type = "qt3iii")
+  public Optional<Tuple> workflow_version() {
     return workflowVersion;
   }
 }
