@@ -236,7 +236,7 @@ public abstract class BaseOliveBuilder {
         });
 
     final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
-    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(oldType, this::emitSigner);
+    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), this::emitSigner);
     return new JoinBuilder(
         owner, newType, oldType, innerType.type(), outerKeyMethodGen, innerKeyMethodGen);
   }
