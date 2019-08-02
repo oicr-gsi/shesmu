@@ -99,19 +99,47 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       return metadata
           .getAnalysisProvenance()
           .stream()
-          .filter(ap -> ap.getWorkflowId() != null)
           .flatMap(
-              ap ->
-                  ap.getIusLimsKeys()
-                      .stream()
-                      .flatMap(
-                          ius ->
-                              ap.getWorkflowRunInputFileIds()
-                                  .stream()
-                                  .map(
-                                      fileId ->
-                                          new CerberusAnalysisProvenanceValue(
-                                              ap, fileId, ius, () -> {}))));
+              ap -> {
+                final Set<Tuple> iusAttributes =
+                    CerberusAnalysisProvenanceValue.attributes(ap.getIusAttributes());
+                final Set<Tuple> fileAttributes =
+                    CerberusAnalysisProvenanceValue.attributes(ap.getFileAttributes());
+                final Set<Tuple> workflowAttributes =
+                    CerberusAnalysisProvenanceValue.attributes(ap.getWorkflowAttributes());
+                final Set<Tuple> workflowRunAttributes =
+                    CerberusAnalysisProvenanceValue.attributes(ap.getWorkflowRunAttributes());
+                return ap.getIusLimsKeys() == null
+                    ? Stream.empty()
+                    : ap.getIusLimsKeys()
+                        .stream()
+                        .flatMap(
+                            ius ->
+                                ap.getWorkflowRunInputFileIds() == null
+                                    ? Stream.of(
+                                        new CerberusAnalysisProvenanceValue(
+                                            ap,
+                                            Optional.empty(),
+                                            ius,
+                                            fileAttributes,
+                                            iusAttributes,
+                                            workflowAttributes,
+                                            workflowRunAttributes,
+                                            () -> {}))
+                                    : ap.getWorkflowRunInputFileIds()
+                                        .stream()
+                                        .map(
+                                            fileId ->
+                                                new CerberusAnalysisProvenanceValue(
+                                                    ap,
+                                                    Optional.of(fileId).map(Integer::longValue),
+                                                    ius,
+                                                    fileAttributes,
+                                                    iusAttributes,
+                                                    workflowAttributes,
+                                                    workflowRunAttributes,
+                                                    () -> {})));
+              });
     }
   }
 

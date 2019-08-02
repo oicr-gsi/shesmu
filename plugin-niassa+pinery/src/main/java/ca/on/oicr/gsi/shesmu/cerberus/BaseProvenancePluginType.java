@@ -38,6 +38,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
 
       @Override
       protected Stream<CerberusFileProvenanceValue> fetch(Instant lastUpdated) throws Exception {
+        final AtomicInteger badFilePaths = new AtomicInteger();
         final AtomicInteger badSets = new AtomicInteger();
         final AtomicInteger badVersions = new AtomicInteger();
         final Map<String, Integer> badSetCounts = new TreeMap<>();
@@ -48,6 +49,14 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                 fp ->
                     (fp.getSkip() == null || fp.getSkip().equals("false"))
                         && fp.getStatus() != FileProvenance.Status.ERROR)
+            .filter(
+                fp -> {
+                  if (fp.getFilePath() == null) {
+                    badFilePaths.incrementAndGet();
+                    return false;
+                  }
+                  return true;
+                })
             .map(
                 fp -> {
                   final AtomicReference<Boolean> badRecord = new AtomicReference<>(false);
@@ -133,6 +142,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
             .filter(Objects::nonNull)
             .onClose(
                 () -> {
+                  badFilePathError.labels(fileName().toString()).set(badFilePaths.get());
                   badSetError.labels(fileName().toString()).set(badSets.get());
                   badWorkflowVersions.labels(fileName().toString()).set(badVersions.get());
                   badSetCounts
@@ -222,14 +232,16 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
   }
 
   public static Tuple parseWorkflowVersion(String input, Runnable isBad) {
-    final Matcher m3 = WORKFLOW_VERSION3.matcher(input);
-    if (m3.matches()) {
-      return new Tuple(
-          Long.parseLong(m3.group(1)), Long.parseLong(m3.group(2)), Long.parseLong(m3.group(3)));
-    }
-    final Matcher m2 = WORKFLOW_VERSION2.matcher(input);
-    if (m2.matches()) {
-      return new Tuple(Long.parseLong(m2.group(1)), Long.parseLong(m2.group(2)), 0L);
+    if (input != null) {
+      final Matcher m3 = WORKFLOW_VERSION3.matcher(input);
+      if (m3.matches()) {
+        return new Tuple(
+            Long.parseLong(m3.group(1)), Long.parseLong(m3.group(2)), Long.parseLong(m3.group(3)));
+      }
+      final Matcher m2 = WORKFLOW_VERSION2.matcher(input);
+      if (m2.matches()) {
+        return new Tuple(Long.parseLong(m2.group(1)), Long.parseLong(m2.group(2)), 0L);
+      }
     }
     isBad.run();
     return new Tuple(0L, 0L, 0L);
@@ -244,6 +256,12 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
       Gauge.build(
               "shesmu_file_provenance_bad_set_size",
               "The number of records where a set contained not exactly one item.")
+          .labelNames("filename")
+          .register();
+  private static final Gauge badFilePathError =
+      Gauge.build(
+              "shesmu_file_provenance_bad_file_path",
+              "The number of records where the file path was missing.")
           .labelNames("filename")
           .register();
   private static final Gauge badSetMap =
