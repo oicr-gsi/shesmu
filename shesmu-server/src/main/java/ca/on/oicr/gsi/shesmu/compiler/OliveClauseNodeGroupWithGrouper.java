@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperKind;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutput;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.server.plugins.JarHashRepository;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.*;
@@ -32,8 +33,12 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
   private static final Map<String, GrouperDefinition> GROUPERS = new HashMap<>();
 
+  public static final JarHashRepository<GrouperDefinition> GROUPER_HASHES =
+      new JarHashRepository<>();
+
   static {
     for (GrouperDefinition definition : ServiceLoader.load(GrouperDefinition.class)) {
+      GROUPER_HASHES.add(definition);
       GROUPERS.put(definition.name(), definition);
     }
   }
@@ -43,10 +48,10 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   private final List<DiscriminatorNode> discriminators;
   private final GrouperDefinition grouper;
   private final String grouperName;
-  private final List<Pair<String, ExpressionNode>> rawInputExpressions;
   private final List<ExpressionNode> inputExpressions = new ArrayList<>();
   protected final int line;
   private List<String> outputNames;
+  private final List<Pair<String, ExpressionNode>> rawInputExpressions;
   private final Map<String, Imyhat> typeVariables = new HashMap<>();
 
   public OliveClauseNodeGroupWithGrouper(

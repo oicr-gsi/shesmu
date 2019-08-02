@@ -38,13 +38,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,6 +52,11 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Define a <tt>Input</tt> format for olives to consume */
 public final class AnnotatedInputFormatDefinition implements InputFormatDefinition, InputProvider {
+
+  public interface JsonFieldWriter {
+    void write(JsonGenerator generator, Object value);
+  }
+
   public static final class Configuration {
     private int ttl;
     private String url;
@@ -77,10 +76,6 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     public void setUrl(String url) {
       this.url = url;
     }
-  }
-
-  public interface JsonFieldWriter {
-    void write(JsonGenerator generator, Object value);
   }
 
   private class LocalJsonFile implements WatchedFileListener {
@@ -232,6 +227,15 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     }
   }
 
+  public static CallSite bootstrap(
+      Lookup lookup, String variableName, MethodType methodType, String inputFormatName) {
+    return INPUT_VARIABLES_REGISTRY.get(new Pair<>(inputFormatName, variableName));
+  }
+
+  public static Stream<AnnotatedInputFormatDefinition> formats() {
+    return FORMATS.stream();
+  }
+
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Handle BSM_INPUT_VARIABLE =
       new Handle(
@@ -246,16 +250,14 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
               Type.getType(String.class)),
           false);
   private static final List<AnnotatedInputFormatDefinition> FORMATS = new ArrayList<>();
+  public static final JarHashRepository<InputFormat> INPUT_FORMAT_HASHES =
+      new JarHashRepository<>();
   private static final Map<Pair<String, String>, CallSite> INPUT_VARIABLES_REGISTRY =
       new ConcurrentHashMap<>();
   private static final Lookup LOOKUP = MethodHandles.publicLookup();
-
   private static final MethodHandle MH_IMYHAT__ACCEPT;
-
   private static final MethodHandle MH_PACK_STREAMING__CTOR;
-
   private static final MethodHandle MH_TUPLE_GET;
-
   private static final MethodHandle MH_TUPLE_IS_INSTANCE;
 
   static {
@@ -290,20 +292,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     MH_IMYHAT__ACCEPT = mh_imyhat__accept;
     for (final InputFormat format : ServiceLoader.load(InputFormat.class)) {
       try {
+        INPUT_FORMAT_HASHES.add(format);
         FORMATS.add(new AnnotatedInputFormatDefinition(format));
       } catch (Exception e) {
         e.printStackTrace();
       }
     }
-  }
-
-  public static CallSite bootstrap(
-      Lookup lookup, String variableName, MethodType methodType, String inputFormatName) {
-    return INPUT_VARIABLES_REGISTRY.get(new Pair<>(inputFormatName, variableName));
-  }
-
-  public static Stream<AnnotatedInputFormatDefinition> formats() {
-    return FORMATS.stream();
   }
 
   private final List<Pair<String, JsonFieldWriter>> fieldWriters = new ArrayList<>();

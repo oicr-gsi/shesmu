@@ -1133,14 +1133,6 @@ public final class PluginManager
     }
   }
 
-  private Imyhat unwrapAndConvert(String context, String descriptor, java.lang.reflect.Type type) {
-    if (!(type instanceof ParameterizedType)) {
-      return Imyhat.BAD;
-    }
-    final ParameterizedType ptype = (ParameterizedType) type;
-    return Imyhat.convert(context, descriptor, ptype.getActualTypeArguments()[0]);
-  }
-
   @SuppressWarnings("unused")
   public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
     return CONFIG_FILE_ARBITRARY_BINDINGS.get(methodName);
@@ -1262,6 +1254,7 @@ public final class PluginManager
   private static final MethodHandle MH_FUNCTION_APPLY;
   private static final MethodHandle MH_SUPPLIER_GET;
   private static final MethodHandle MH_VARIADICFUNCTION_APPLY;
+  public static final JarHashRepository<PluginFileType> PLUGIN_HASHES = new JarHashRepository<>();
   private static final MethodHandle SERVICES_REQUIRED;
 
   static {
@@ -1325,6 +1318,7 @@ public final class PluginManager
   }
 
   private FormatTypeWrapper<?, ?> create(PluginFileType<?> pluginFileType) {
+    PLUGIN_HASHES.add(pluginFileType);
     return new FormatTypeWrapper<>(pluginFileType);
   }
 
@@ -1462,6 +1456,14 @@ public final class PluginManager
   @Override
   public Stream<String> sourceUrl(String localFilePath, int line, int column, Instant time) {
     return formatTypes.stream().flatMap(f -> f.sourceUrl(localFilePath, line, column, time));
+  }
+
+  private Imyhat unwrapAndConvert(String context, String descriptor, java.lang.reflect.Type type) {
+    if (!(type instanceof ParameterizedType)) {
+      return Imyhat.BAD;
+    }
+    final ParameterizedType ptype = (ParameterizedType) type;
+    return Imyhat.convert(context, descriptor, ptype.getActualTypeArguments()[0]);
   }
 
   @Override
