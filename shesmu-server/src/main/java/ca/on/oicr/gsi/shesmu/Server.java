@@ -32,6 +32,7 @@ import ca.on.oicr.gsi.shesmu.server.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.server.plugins.JarHashRepository;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.FileWatcher;
@@ -1257,6 +1258,37 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/pluginhashes",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new TablePage(this, "Plugin", "File", "SHA-256") {
+              @Override
+              public String activeUrl() {
+                return "pluginhashes";
+              }
+
+              @Override
+              protected void writeRows(TableRowWriter row) {
+                Stream.of(
+                        PluginManager.PLUGIN_HASHES,
+                        AnnotatedInputFormatDefinition.INPUT_FORMAT_HASHES,
+                        OliveClauseNodeGroupWithGrouper.GROUPER_HASHES)
+                    .flatMap(JarHashRepository::stream)
+                    .sorted(Comparator.comparing(e -> e.getKey().getName()))
+                    .forEach(
+                        e ->
+                            row.write(
+                                false,
+                                e.getKey().getName(),
+                                e.getValue().first(),
+                                e.getValue().second()));
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
         "/typedefs",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -2282,6 +2314,7 @@ public final class Server implements ServerConfig, ActionServices {
             "Internals",
             NavigationMenu.item("inflightdash", "Active Server Processes"),
             NavigationMenu.item("configmap", "Plugin-Olive Mapping"),
+            NavigationMenu.item("pluginhashes", "Plugin JAR Hashes"),
             NavigationMenu.item("dumpdefs", "Annotation-Driven Definition"),
             NavigationMenu.item("dumpadr", "Manual Definitions")));
   }
