@@ -135,7 +135,7 @@ public class NameDefinitions {
    * @param newStreamVariables the new stream variables to be inserted
    * @param good whether a failure has occurred
    */
-  public NameDefinitions replaceStream(Stream<Target> newStreamVariables, boolean good) {
+  public NameDefinitions replaceStream(Stream<? extends Target> newStreamVariables, boolean good) {
     return new NameDefinitions(
         Stream.concat(
                 newStreamVariables,
