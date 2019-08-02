@@ -162,8 +162,7 @@ public class OliveClauseNodeJoin extends OliveClauseNode {
     boolean ok =
         outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
-                defs.replaceStream(innerInputFormat.baseStreamVariables().map(Target::wrap), true),
-                errorHandler);
+                defs.replaceStream(innerInputFormat.baseStreamVariables(), true), errorHandler);
     return defs.replaceStream(
         Stream.concat(
                 defs.stream().filter(n -> n.flavour().isStream()),
