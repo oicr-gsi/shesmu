@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For x In [ 7, 7, 7 ]: Where x != 7 Univalued x Default 3) == 3;

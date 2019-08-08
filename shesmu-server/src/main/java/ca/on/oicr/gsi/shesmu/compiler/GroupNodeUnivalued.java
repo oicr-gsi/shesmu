@@ -11,12 +11,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** A collection action that should only have a single value in a “Group” clause */
-public final class GroupNodeSingle extends GroupNode {
+public final class GroupNodeUnivalued extends GroupNode {
 
   private final ExpressionNode expression;
   private final String name;
 
-  public GroupNodeSingle(int line, int column, String name, ExpressionNode expression) {
+  public GroupNodeUnivalued(int line, int column, String name, ExpressionNode expression) {
     super(line, column);
     this.name = name;
     this.expression = expression;
@@ -39,7 +39,7 @@ public final class GroupNodeSingle extends GroupNode {
 
   @Override
   public void render(Regrouper regroup, RootBuilder rootBuilder) {
-    regroup.addSingle(expression.type(), name(), expression::render);
+    regroup.addUnivalued(expression.type(), name(), expression::render);
   }
 
   @Override

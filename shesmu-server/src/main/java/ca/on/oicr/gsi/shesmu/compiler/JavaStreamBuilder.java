@@ -5,6 +5,7 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.runtime.UnivaluedCollector;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Start;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 import java.util.Comparator;
@@ -39,6 +40,7 @@ public final class JavaStreamBuilder {
   static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Type A_UNIVALUED_COLLECTOR_TYPE = Type.getType(UnivaluedCollector.class);
   private static final Type A_START_TYPE = Type.getType(Start.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Type A_SUBSAMPLER_TYPE = Type.getType(Subsampler.class);
@@ -53,6 +55,8 @@ public final class JavaStreamBuilder {
 
   private static final Method METHOD_OPTIONAL__OR_ELSE_GET =
       new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  private static final Method METHOD_UNIVALUED_COLLECTOR__CTOR =
+      new Method("<init>", Type.VOID_TYPE, new Type[] {A_SUPPLIER_TYPE});
   private static final Method METHOD_STREAM__COLLECT =
       new Method("collect", A_OBJECT_TYPE, new Type[] {A_COLLECTOR_TYPE});
   private static final Method METHOD_STREAM__COUNT =
@@ -327,6 +331,28 @@ public final class JavaStreamBuilder {
 
   public void reverse() {
     renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_STREAM__REVERSE);
+  }
+
+  public Renderer univalued(
+      int line, int column, LoadableConstructor name, LoadableValue... capturedVariables) {
+    finish();
+    final LambdaBuilder builder =
+        new LambdaBuilder(
+            owner,
+            String.format("For ⋯ Univalued Default %d:%d", line, column),
+            LambdaBuilder.supplier(currentType),
+            renderer.streamType(),
+            capturedVariables);
+
+    renderer.methodGen().newInstance(A_UNIVALUED_COLLECTOR_TYPE);
+    renderer.methodGen().dup();
+    builder.push(renderer);
+    renderer
+        .methodGen()
+        .invokeConstructor(A_UNIVALUED_COLLECTOR_TYPE, METHOD_UNIVALUED_COLLECTOR__CTOR);
+    renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
+    renderer.methodGen().unbox(currentType.apply(TO_ASM));
+    return makeRender(builder, name);
   }
 
   public void skip(Consumer<Renderer> limitProducer) {

@@ -72,7 +72,7 @@ public interface Regrouper {
    * @param fieldName the name of the output variable
    * @param loader a function to load the variable
    */
-  void addSingle(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
+  void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
 
   /**
    * Conditionally add a variable

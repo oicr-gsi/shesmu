@@ -60,7 +60,7 @@ syn keyword shesmuKeyword Reject
 syn keyword shesmuKeyword Return
 syn keyword shesmuKeyword Reverse
 syn keyword shesmuKeyword Run
-syn keyword shesmuKeyword Single
+syn keyword shesmuKeyword Univalued
 syn keyword shesmuKeyword Skip
 syn keyword shesmuKeyword Sort
 syn keyword shesmuKeyword Splitting

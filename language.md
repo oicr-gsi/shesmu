@@ -118,7 +118,7 @@ In total, the collectors in a `Group` operation are:
 
 - `List` to collect all values into a list
 - `First` to collect one value; if none are collected, the group is rejected
-- `Single` to collect exactly one value; if none are collected, the group is
+- `Univalued` to collect exactly one value; if none are collected, the group is
   rejected; if more than one are collected, the group is rejected. It is fine
   if the same value is collected multiple times.
 - `Max` and `Min` to collect the most extreme value; if none are collected, the
@@ -1022,6 +1022,13 @@ Performs a reduction operation on all the items in the list. _a_ is the
 accumulator, which will be returned, which is initially set to _initialexpr_.
 For every item, _expr_ is evaluated with _a_ set to the previously returned
 value.
+
+#### Univalued
+- `Univalued` _expr_ `Default` _defaultexpr_
+
+Evaluates all _expr_ for each item in the list and returns it if all are the same.
+
+If they are different or there are no items, _defaultexpr_ is returned.
 
 ## Identifiers
 All identifier is Shesmu, including olive definitions, function names, action

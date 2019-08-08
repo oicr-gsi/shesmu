@@ -110,8 +110,9 @@ public abstract class CollectNodeWithDefault extends CollectNode {
   public final boolean typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     type = incoming;
     if (selector.typeCheck(errorHandler) & alternative.typeCheck(errorHandler)) {
-      returnType = returnType(incoming, selector.type());
-      if (returnType.isSame(alternative.type())) {
+      final Imyhat outputType = returnType(incoming, selector.type());
+      if (outputType.isSame(alternative.type())) {
+        returnType = outputType.unify(alternative.type());
         return typeCheckExtra(errorHandler);
       } else {
         errorHandler.accept(

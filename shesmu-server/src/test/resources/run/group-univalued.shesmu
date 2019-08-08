@@ -1,5 +1,5 @@
 Input test;
 
 Olive
- Group a = Single workflow By workflow
+ Group a = Univalued workflow By workflow
  Run ok With ok = a == "SlowA";

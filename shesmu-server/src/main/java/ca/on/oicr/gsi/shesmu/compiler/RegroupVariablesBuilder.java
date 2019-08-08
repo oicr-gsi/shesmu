@@ -138,8 +138,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void addSingle(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
-      elements.add(new Single(valueType, fieldName, loader));
+    public void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      elements.add(new Univalued(valueType, fieldName, loader));
     }
 
     @Override
@@ -799,12 +799,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
-  private class Single extends Element {
+  private class Univalued extends Element {
     private final String fieldName;
     private final Consumer<Renderer> loader;
     private final Imyhat valueType;
 
-    private Single(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    private Univalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
       super();
       this.valueType = valueType;
       this.fieldName = fieldName;
@@ -851,12 +851,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
-      // Singles are not included in equality.
+      // Univalued are not included in equality.
     }
 
     @Override
     public void buildHashCode(GeneratorAdapter hashMethod) {
-      // Singles are not included in the hash.
+      // Univalued are not included in the hash.
     }
 
     @Override
@@ -983,8 +983,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
   }
 
   @Override
-  public void addSingle(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
-    elements.add(new Single(valueType, fieldName, loader));
+  public void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    elements.add(new Univalued(valueType, fieldName, loader));
   }
 
   @Override
