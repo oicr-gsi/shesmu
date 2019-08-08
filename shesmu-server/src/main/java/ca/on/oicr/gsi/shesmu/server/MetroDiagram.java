@@ -312,7 +312,19 @@ public class MetroDiagram {
       Supplier<Stream<VariableInformation>> information,
       int row) {
     final Map<String, Integer> outputVariableColumns =
-        Stream.concat(information.get().map(VariableInformation::name), variables.keySet().stream())
+        Stream.concat(
+                information
+                    .get()
+                    .map(
+                        vi ->
+                            vi.name()
+                                + (vi.behaviour() == Behaviour.EPHEMERAL
+                                    ? " "
+                                    : "")), // Ephemeral variables appear with stupid names so they
+                // appear in the flow but don't get passed on to the
+                // next layer and if there is a variable of the same
+                // name, it appears twice
+                variables.keySet().stream())
             .sorted()
             .distinct()
             .map(Pair.number())
@@ -330,7 +342,10 @@ public class MetroDiagram {
                 switch (variable.behaviour()) {
                   case DEFINITION:
                   case DEFINITION_BY:
+                  case EPHEMERAL:
                     // If we have a defined variable, then it always needs to be drawn
+                    final String mangledName =
+                        variable.name() + (variable.behaviour() == Behaviour.EPHEMERAL ? " " : "");
                     final MetroDiagram newVariable =
                         new MetroDiagram(
                             textLayer,
@@ -341,7 +356,7 @@ public class MetroDiagram {
                             from(variable, variables),
                             idGen.getAndIncrement(),
                             row,
-                            outputVariableColumns.get(variable.name()),
+                            outputVariableColumns.get(mangledName),
                             metroStart,
                             topPadding,
                             variable.behaviour() == Behaviour.DEFINITION);
@@ -355,11 +370,20 @@ public class MetroDiagram {
                                 throw new RuntimeException(e);
                               }
                             });
-                    outputVariables.put(variable.name(), newVariable);
+                    outputVariables.put(mangledName, newVariable);
                     break;
                   case OBSERVER:
-                    final MetroDiagram observedVariable = variables.get(variable.name());
-                    observedVariable.drawDot(currentPoint, "used");
+                    variable
+                        .inputs()
+                        .forEach(
+                            name -> {
+                              final MetroDiagram observedVariable = variables.get(name);
+                              try {
+                                observedVariable.drawDot(currentPoint, "used");
+                              } catch (XMLStreamException e) {
+                                throw new RuntimeException(e);
+                              }
+                            });
                     break;
                   case PASSTHROUGH:
                     final MetroDiagram passthroughVariable = variables.get(variable.name());

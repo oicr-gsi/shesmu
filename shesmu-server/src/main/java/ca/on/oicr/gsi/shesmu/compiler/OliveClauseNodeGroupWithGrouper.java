@@ -90,7 +90,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
               grouper.input(i).name(),
               grouper.input(i).type().render(typeVariables),
               inputs.stream(),
-              Behaviour.OBSERVER));
+              Behaviour.EPHEMERAL));
     }
     return Stream.of(
         new OliveClauseRow(
