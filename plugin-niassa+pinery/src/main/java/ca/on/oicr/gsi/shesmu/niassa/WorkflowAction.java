@@ -133,7 +133,7 @@ public final class WorkflowAction extends Action {
           // see a state transition before any of our sibling workflow runs. If we see that happen,
           // zap the cache so they will see it. We may have selected a previous workflow run, so zap
           // the right cache.
-          server.get().analysisCache().invalidate(run.getWorkflow().getSwAccession().longValue());
+          server.get().analysisCache().invalidate(run.getWorkflowAccession().longValue());
         }
         return state;
       }
