@@ -11,6 +11,7 @@ public class VariableInformation {
   public enum Behaviour {
     DEFINITION,
     DEFINITION_BY,
+    EPHEMERAL,
     OBSERVER,
     PASSTHROUGH
   }
