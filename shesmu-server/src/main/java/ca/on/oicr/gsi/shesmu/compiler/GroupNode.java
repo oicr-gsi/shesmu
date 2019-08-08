@@ -42,7 +42,10 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword("First", ofWithDefault(GroupNodeFirst::new));
     GROUPERS.addKeyword("List", of(GroupNodeList::new));
     GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
-    GROUPERS.addKeyword("Single", of(GroupNodeSingle::new));
+    GROUPERS.addKeyword("Univalued", of(GroupNodeUnivalued::new));
+    GROUPERS.addKeyword(
+        "Single",
+        of(GroupNodeUnivalued::new)); // TODO: deprecated; remove once olives are transitioned
     GROUPERS.addKeyword(
         "Max",
         ofWithDefault(

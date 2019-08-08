@@ -51,6 +51,7 @@ public abstract class CollectNode {
           return p;
         });
     DISPATCH.addKeyword("First", withDefault(CollectNodeFirst::new));
+    DISPATCH.addKeyword("Univalued", withDefault(CollectNodeUnivalued::new));
     DISPATCH.addKeyword("Max", optima(true));
     DISPATCH.addKeyword("Min", optima(false));
     DISPATCH.addKeyword(
