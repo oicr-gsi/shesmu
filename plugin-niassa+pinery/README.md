@@ -55,18 +55,23 @@ a Niassa server, create a file ending in `.niassa` as follows:
 
     {
       "settings": "/home/shesmu/.seqware/settings",
-      "workflows": []
+      "services": [],
+      "prefix": ""
     }
 
 The `settings` is a file that contains a standard Niassa settings configuration
-in Java properties format. `workflows` lists the workflows in the following
-format:
+in Java properties format. Workflows are shared between all configured Niassa
+servers on a particular Shesmu server. To disambiguate, `prefix` will be added
+to all workflows. If the accessions are different between servers, this is not
+a recommended configuration.
+
+Each workflow is configured in a separate file named
+`.niassawf` with the following format:
 
     {
       "accession": 1234,
       "type": "FILES",
       "maxInFlight": 3,
-      "name": "my_workflow",
       "parameters": [],
       "previousAccessions": [],
       "services": [
@@ -83,8 +88,9 @@ that should be considered equivalent can be put in the `previousAccessions`
 array. The `maxInFlight` is a best-effort attempt to limit the number of
 simultaneous workflow runs launched by this olive. The `services` list is the
 name of services presented to throttlers to block launching of this workflow.
-The `parameters` array describes all the INI parameters and how they should be
-available to olives. Each parameter is defined as follows:
+A workflow will use the union of the services in the `.niassa` file and the
+`.niassawf` file.  The `parameters` array describes all the INI parameters and
+how they should be available to olives. Each parameter is defined as follows:
  
         {
           "name": "foo",

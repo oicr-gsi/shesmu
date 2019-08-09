@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.util;
+package ca.on.oicr.gsi.shesmu.plugin.files;
 
 import java.util.Optional;
 

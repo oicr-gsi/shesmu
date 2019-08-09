@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.server;
 
+import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
-import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.util.Optional;
