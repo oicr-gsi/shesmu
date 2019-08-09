@@ -64,10 +64,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 
   public abstract void collectPluginsExtra(Set<Path> pluginFileNames);
 
-  /**
-   * Generate bytecode for this stanza into the {@link ActionGenerator#run(Consumer,
-   * java.util.function.Supplier)} method
-   */
+  /** Generate bytecode for this stanza into the {@link ActionGenerator#run} method */
   @Override
   public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
