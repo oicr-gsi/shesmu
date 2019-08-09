@@ -11,14 +11,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
-import java.io.File;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -103,10 +101,6 @@ public final class RuntimeSupport {
     return builder.append(result);
   }
 
-  public static Optional<Stream<Path>> dataPaths() {
-    return environmentVariable().map(RuntimeSupport::parsePaths);
-  }
-
   /** Determine the difference between two instants, in seconds. */
   @RuntimeInterop
   public static long difference(Instant left, Instant right) {
@@ -120,10 +114,6 @@ public final class RuntimeSupport {
     result.addAll(left);
     result.removeAll(right);
     return result;
-  }
-
-  public static Optional<String> environmentVariable() {
-    return Optional.ofNullable(System.getenv("SHESMU_DATA"));
   }
 
   @RuntimeInterop
@@ -215,10 +205,6 @@ public final class RuntimeSupport {
 
   static void packJson(Imyhat type, ArrayNode node, Object value) {
     type.accept(new PackJsonArray(node), value);
-  }
-
-  public static Stream<Path> parsePaths(String pathVariable) {
-    return PATH_SEPARATOR.splitAsStream(pathVariable).map(Paths::get);
   }
 
   /**
@@ -368,7 +354,6 @@ public final class RuntimeSupport {
 
   @RuntimeInterop public static final String[] EMPTY = new String[0];
   public static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final Pattern PATH_SEPARATOR = Pattern.compile(Pattern.quote(File.pathSeparator));
   public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
       new BinaryOperator<Object>() {
 

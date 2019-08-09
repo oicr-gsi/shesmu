@@ -65,20 +65,20 @@ public final class WorkflowAction extends Action {
   private final long[] previousAccessions;
   private int runAccession;
   private final Supplier<NiassaServer> server;
-  private final Set<String> services;
+  private final List<String> services;
   private final long workflowAccession;
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
       long workflowAccession,
       long[] previousAccessions,
-      String[] services,
+      List<String> services,
       Map<String, String> annotations) {
     super("niassa");
     this.server = server;
     this.workflowAccession = workflowAccession;
     this.previousAccessions = previousAccessions;
-    this.services = Stream.of(services).collect(Collectors.toSet());
+    this.services = services;
     this.annotations = annotations;
   }
 
@@ -114,7 +114,8 @@ public final class WorkflowAction extends Action {
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
   public final ActionState perform(ActionServices actionServices) {
-    if (actionServices.isOverloaded(services)) {
+    if (actionServices.isOverloaded(
+        Stream.concat(services.stream(), server.get().services()).collect(Collectors.toSet()))) {
       return ActionState.THROTTLED;
     }
     if (limsKeysCollection.shouldHalp()) {

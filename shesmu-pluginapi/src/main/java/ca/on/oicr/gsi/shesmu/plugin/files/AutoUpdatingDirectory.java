@@ -1,9 +1,10 @@
-package ca.on.oicr.gsi.shesmu.util;
+package ca.on.oicr.gsi.shesmu.plugin.files;
 
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -15,6 +16,8 @@ import java.util.stream.Stream;
 public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 
   private final Map<Path, T> active = new ConcurrentHashMap<>();
+  private final AtomicInteger idGen = new AtomicInteger();
+  private final Map<Integer, Runnable> subscribers = new ConcurrentHashMap<>();
 
   /**
    * Creates a new automatically updating directory
@@ -35,17 +38,21 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
             public void start() {
               inner.start();
               active.put(path, inner);
+              subscribers.values().forEach(Runnable::run);
             }
 
             @Override
             public void stop() {
               active.remove(path, inner);
               inner.stop();
+              subscribers.values().forEach(Runnable::run);
             }
 
             @Override
             public Optional<Integer> update() {
-              return inner.update();
+              final Optional<Integer> delay = inner.update();
+              subscribers.values().forEach(Runnable::run);
+              return delay;
             }
           };
         });
@@ -67,5 +74,11 @@ public final class AutoUpdatingDirectory<T extends WatchedFileListener> {
 
   public Stream<T> stream() {
     return active.values().stream();
+  }
+
+  public Runnable subscribe(Runnable callback) {
+    final int id = idGen.getAndIncrement();
+    subscribers.put(id, callback);
+    return () -> subscribers.remove(id);
   }
 }

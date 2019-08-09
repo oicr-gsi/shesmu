@@ -9,6 +9,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.*;
+import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
@@ -226,6 +227,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         }
       };
   static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final AutoUpdatingDirectory<WorkflowFile> WORKFLOWS =
+      new AutoUpdatingDirectory<>(".niassawf", WorkflowFile::new);
   private static final AnnotationType<WorkflowRunAttribute> WORKFLOW_RUN =
       new AnnotationType<WorkflowRunAttribute>() {
         @Override
@@ -251,7 +254,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final AnalysisCache analysisCache;
   private final AnalysisDataCache analysisDataCache;
   private Optional<Configuration> configuration = Optional.empty();
-
   private final Definer<NiassaServer> definer;
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
@@ -259,6 +261,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   public Metadata metadata;
   private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>> skipCache;
+  private final Runnable unsubscribe = WORKFLOWS.subscribe(this::updateWorkflows);
   private String url;
 
   public NiassaServer(Path fileName, String instanceNane, Definer<NiassaServer> definer) {
@@ -303,7 +306,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     configuration.ifPresent(
         c -> {
           renderer.line("Settings", c.getSettings());
-          renderer.line("Registered Workflows Count", c.getWorkflows().length);
         });
   }
 
@@ -335,8 +337,17 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return analysisDataCache.get();
   }
 
+  public Stream<String> services() {
+    return configuration.map(Configuration::getServices).orElse(Collections.emptyList()).stream();
+  }
+
   public Properties settings() {
     return settings;
+  }
+
+  @Override
+  public void stop() {
+    unsubscribe.run();
   }
 
   @Override
@@ -359,14 +370,26 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     this.settings = settings;
     analysisCache.invalidateAll();
     skipCache.invalidate();
+    configuration = Optional.of(value);
+    updateWorkflows();
+    return Optional.empty();
+  }
+
+  private void updateWorkflows() {
     definer.clearActions();
 
-    for (final WorkflowConfiguration wc : value.getWorkflows()) {
-      maxInFlight.put(wc.getAccession(), wc.getMaxInFlight());
-      wc.define(definer);
-    }
-    configuration = Optional.of(value);
-    return Optional.empty();
+    configuration
+        .map(Configuration::getPrefix)
+        .ifPresent(
+            prefix ->
+                WORKFLOWS
+                    .stream()
+                    .flatMap(WorkflowFile::stream)
+                    .forEach(
+                        wc -> {
+                          maxInFlight.put(wc.second().getAccession(), wc.second().getMaxInFlight());
+                          wc.second().define(prefix + wc.first(), definer);
+                        }));
   }
 
   public String url() {

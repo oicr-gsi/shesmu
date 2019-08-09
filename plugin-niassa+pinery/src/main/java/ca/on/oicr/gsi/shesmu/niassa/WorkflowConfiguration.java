@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -11,13 +12,12 @@ public class WorkflowConfiguration {
   private long accession;
   private Map<String, String> annotations = Collections.emptyMap();
   private int maxInFlight;
-  private String name;
   private IniParam<?>[] parameters;
   private long[] previousAccessions;
-  private String[] services;
+  private List<String> services = Collections.emptyList();
   private InputLimsKeyType type;
 
-  public void define(Definer<NiassaServer> definer) {
+  public void define(String name, Definer<NiassaServer> definer) {
     final String description =
         String.format(
                 "Runs SeqWare/Niassa workflow %d with settings in %s.",
@@ -50,10 +50,6 @@ public class WorkflowConfiguration {
     return maxInFlight;
   }
 
-  public String getName() {
-    return name;
-  }
-
   public IniParam<?>[] getParameters() {
     return parameters;
   }
@@ -62,7 +58,7 @@ public class WorkflowConfiguration {
     return previousAccessions;
   }
 
-  public String[] getServices() {
+  public List<String> getServices() {
     return services;
   }
 
@@ -82,10 +78,6 @@ public class WorkflowConfiguration {
     this.maxInFlight = maxInFlight;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
   public void setParameters(IniParam<?>[] parameters) {
     this.parameters = parameters;
   }
@@ -94,7 +86,7 @@ public class WorkflowConfiguration {
     this.previousAccessions = previousAccessions;
   }
 
-  public void setServices(String[] services) {
+  public void setServices(List<String> services) {
     this.services = services;
   }
 

@@ -2,10 +2,10 @@ package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
-import ca.on.oicr.gsi.shesmu.util.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.util.LoadedConfiguration;
-import ca.on.oicr.gsi.shesmu.util.WatchedFileListener;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;

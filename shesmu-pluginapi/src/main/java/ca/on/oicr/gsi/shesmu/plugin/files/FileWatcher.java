@@ -1,16 +1,10 @@
-package ca.on.oicr.gsi.shesmu.util;
+package ca.on.oicr.gsi.shesmu.plugin.files;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.nio.file.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +18,7 @@ import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,9 +32,10 @@ public abstract class FileWatcher {
     private volatile boolean running = true;
     private final Thread watchThread = new Thread(this::run, "file-watcher");
 
-    private RealFileWatcher(Stream<Path> directory) {
+    private RealFileWatcher(Stream<String> directory) {
       directories =
           directory
+              .map(Paths::get)
               .map(
                   t -> {
                     try {
@@ -218,7 +214,8 @@ public abstract class FileWatcher {
   }
 
   public static final FileWatcher DATA_DIRECTORY =
-      RuntimeSupport.dataPaths()
+      Optional.ofNullable(System.getenv("SHESMU_DATA"))
+          .map(Pattern.compile(Pattern.quote(File.pathSeparator))::splitAsStream)
           .<FileWatcher>map(RealFileWatcher::new)
           .orElseGet(
               () ->
@@ -242,14 +239,6 @@ public abstract class FileWatcher {
               "The UNIX time when a file or directory was last updated.")
           .labelNames("filename")
           .register();
-
-  public static FileWatcher of(Path... paths) {
-    return of(Stream.of(paths));
-  }
-
-  public static FileWatcher of(Stream<Path> paths) {
-    return new RealFileWatcher(paths);
-  }
 
   public abstract Stream<Path> paths();
 
