@@ -46,10 +46,12 @@ public abstract class PluginFile implements RequiredServices {
     return false;
   }
 
-  /** Called when a configuration file is first read. */
-  public void start() {
-    update();
-  }
+  /**
+   * Called when a configuration file is first read.
+   *
+   * <p>{@link #update()} will be called immediately after
+   */
+  public void start() {}
 
   /** Called when a configuration file is deleted from disk. */
   public void stop() {}

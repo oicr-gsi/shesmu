@@ -5,9 +5,12 @@ import java.util.Optional;
 /** An object that will listen for updates to a file on disk */
 public interface WatchedFileListener {
 
-  public void start();
+  /**
+   * Do any startup. Do not call {@link #update()}; it will be called immediately after this method.
+   */
+  void start();
 
-  public void stop();
+  void stop();
 
   /**
    * Processed a changed file.
@@ -16,5 +19,5 @@ public interface WatchedFileListener {
    *     method will be called again in the specified number of minutes. This is useful if
    *     configuration talks to an external service which is failed.
    */
-  public Optional<Integer> update();
+  Optional<Integer> update();
 }

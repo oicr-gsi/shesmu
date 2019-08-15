@@ -35,7 +35,7 @@ public class StaticActions implements LoadedConfiguration {
 
     @Override
     public void start() {
-      update();
+      // Do nothing.
     }
 
     @Override

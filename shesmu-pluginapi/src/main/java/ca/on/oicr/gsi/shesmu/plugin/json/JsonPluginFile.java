@@ -31,16 +31,6 @@ public abstract class JsonPluginFile<T> extends PluginFile {
   }
 
   @Override
-  public void start() {
-    update();
-  }
-
-  @Override
-  public void stop() {
-    // Do nothing.
-  }
-
-  @Override
   public final Optional<Integer> update() {
     try {
       final T value = mapper.readValue(Files.readAllBytes(fileName()), clazz);

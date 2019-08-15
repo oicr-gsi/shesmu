@@ -19,7 +19,7 @@ public class WorkflowFile implements WatchedFileListener {
 
   @Override
   public void start() {
-    update();
+    // Do nothing
   }
 
   @Override
