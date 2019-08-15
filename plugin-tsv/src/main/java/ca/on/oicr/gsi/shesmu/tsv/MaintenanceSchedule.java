@@ -57,14 +57,6 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
     }
 
     @Override
-    public void start() {
-      update();
-    }
-
-    @Override
-    public void stop() {}
-
-    @Override
     public Optional<Integer> update() {
       try {
         windows =

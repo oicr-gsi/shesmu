@@ -165,7 +165,7 @@ public class CompiledGenerator implements DefinitionRepository {
 
     @Override
     public void start() {
-      update();
+      // Do nothing.
     }
 
     @Override

@@ -127,9 +127,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     }
 
     @Override
-    public void start() {
-      update();
-    }
+    public void start() {}
 
     @Override
     public void stop() {}
@@ -200,13 +198,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
     @Override
     public void start() {
-      update();
+      // Do nothing
     }
 
     @Override
     public void stop() {
       // Do nothing
-
     }
 
     @Override

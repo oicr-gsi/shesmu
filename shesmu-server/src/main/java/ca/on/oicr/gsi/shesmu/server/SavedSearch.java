@@ -15,9 +15,7 @@ public class SavedSearch implements WatchedFileListener {
     this.filename = filename;
   }
 
-  public void start() {
-    update();
-  }
+  public void start() {}
 
   public void stop() {}
 

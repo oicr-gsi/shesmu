@@ -8,14 +8,9 @@ import java.nio.file.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalLong;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -29,6 +24,8 @@ public abstract class FileWatcher {
     private final Map<String, List<Function<Path, WatchedFileListener>>> ctors =
         new ConcurrentHashMap<>();
     private final List<Path> directories;
+    private final PriorityBlockingQueue<Pair<Instant, WatchedFileListener>> retry =
+        new PriorityBlockingQueue<>(200, Comparator.comparing(Pair::first));
     private volatile boolean running = true;
     private final Thread watchThread = new Thread(this::run, "file-watcher");
 
@@ -100,7 +97,7 @@ public abstract class FileWatcher {
                     }
                     fileHolder.add(file);
                     updateTime.labels(path.toString()).setToCurrentTime();
-                    file.start();
+                    start(file);
                   });
         } catch (final IOException e) {
           e.printStackTrace();
@@ -117,41 +114,40 @@ public abstract class FileWatcher {
               StandardWatchEventKinds.ENTRY_CREATE,
               StandardWatchEventKinds.ENTRY_DELETE);
         }
-        List<Pair<Instant, WatchedFileListener>> retry = new ArrayList<>();
         while (running) {
           try {
             final Instant now = Instant.now();
-            final OptionalLong timeout =
-                retry.stream().mapToLong(p -> Duration.between(now, p.first()).toMillis()).min();
+            final Optional<Long> timeout =
+                Optional.ofNullable(retry.peek())
+                    .map(p -> Duration.between(now, p.first()).toMillis());
             final WatchKey wk =
                 timeout.isPresent()
-                    ? timeout.getAsLong() < 0
+                    ? timeout.get() < 0
                         ? null
-                        : watchService.poll(timeout.getAsLong(), TimeUnit.MILLISECONDS)
+                        : watchService.poll(timeout.get(), TimeUnit.MILLISECONDS)
                     : watchService.take();
             if (wk == null) {
               System.out.println("Timeout occurred. Reloading stale files.");
-              retry =
-                  Stream.concat(
-                          retry
-                              .stream()
-                              .filter(p -> Duration.between(p.first(), now).toMillis() > 0),
-                          retry
-                              .stream()
-                              .filter(p -> Duration.between(p.first(), now).toMillis() <= 0)
-                              .<Optional<Pair<Instant, WatchedFileListener>>>map(
-                                  listener ->
-                                      listener
-                                          .second()
-                                          .update()
-                                          .map(
-                                              retryTimeout ->
-                                                  new Pair<>(
-                                                      now.plus(retryTimeout, ChronoUnit.MINUTES),
-                                                      listener.second())))
-                              .filter(Optional::isPresent)
-                              .map(Optional::get))
-                      .collect(Collectors.toList());
+              final List<Pair<Instant, WatchedFileListener>> retryOutput = new ArrayList<>();
+              while (true) {
+                final Pair<Instant, WatchedFileListener> current = retry.poll();
+                if (current == null) break;
+                if (Duration.between(now, current.first()).toMillis() <= 0) {
+                  current
+                      .second()
+                      .update()
+                      .ifPresent(
+                          retryTimeout ->
+                              retryOutput.add(
+                                  new Pair<>(
+                                      now.plus(retryTimeout, ChronoUnit.MINUTES),
+                                      current.second())));
+                } else {
+                  retryOutput.add(current);
+                  break;
+                }
+              }
+              retry.addAll(retryOutput);
             } else {
               for (final WatchEvent<?> event : wk.pollEvents()) {
                 final Path path = ((Path) wk.watchable()).resolve((Path) event.context());
@@ -169,7 +165,7 @@ public abstract class FileWatcher {
                           .filter(entry -> fileName.endsWith(entry.getKey()))
                           .flatMap(entry -> entry.getValue().stream())
                           .map(ctor -> ctor.apply(path))
-                          .peek(WatchedFileListener::start)
+                          .peek(this::start)
                           .collect(Collectors.toList()));
                   updateTime.labels(path.toString()).setToCurrentTime();
                 } else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
@@ -211,6 +207,14 @@ public abstract class FileWatcher {
         e.printStackTrace();
       }
     }
+
+    private void start(WatchedFileListener file) {
+      file.start();
+      file.update()
+          .ifPresent(
+              timeout ->
+                  retry.offer(new Pair<>(Instant.now().plus(timeout, ChronoUnit.MINUTES), file)));
+    }
   }
 
   public static final FileWatcher DATA_DIRECTORY =
@@ -232,7 +236,6 @@ public abstract class FileWatcher {
                       // Do nothing
                     }
                   });
-
   private static final Gauge updateTime =
       Gauge.build(
               "shesmu_auto_update_timestamp",
