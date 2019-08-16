@@ -1,10 +1,14 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
 import io.prometheus.client.Gauge;
+import java.lang.ref.SoftReference;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 /**
  * Store data that must be generated/fetched remotely and cache the results for a set period of
@@ -13,8 +17,13 @@ import java.util.function.BiFunction;
  * @param <K> the keys to use to lookup data in the cache
  * @param <V> the cached values
  */
-public abstract class KeyValueCache<K, V> implements Owner {
+public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K, Record<V>>> {
+  public static Stream<? extends KeyValueCache<?, ?>> caches() {
+    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  }
 
+  private static final Map<String, SoftReference<KeyValueCache<?, ?>>> CACHES =
+      new ConcurrentHashMap<>();
   private static final Gauge count =
       Gauge.build("shesmu_cache_kv_item_count", "Number of items in a cache.")
           .labelNames("name")
@@ -48,6 +57,7 @@ public abstract class KeyValueCache<K, V> implements Owner {
     this.ttl = ttl;
     this.recordCtor = recordCtor;
     ttlValue.labels(name).set(ttl);
+    CACHES.put(name, new SoftReference<>(this));
   }
 
   /**
@@ -88,6 +98,10 @@ public abstract class KeyValueCache<K, V> implements Owner {
     maxCount = 0;
     innerCount.labels(name).set(maxCount);
     records.values().forEach(Record::invalidate);
+  }
+
+  public final Iterator<Map.Entry<K, Record<V>>> iterator() {
+    return records.entrySet().iterator();
   }
 
   @Override

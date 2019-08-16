@@ -1,8 +1,13 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
 import io.prometheus.client.Gauge;
+import java.lang.ref.SoftReference;
 import java.time.Instant;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 /**
  * Store data that must be generated/fetched remotely and cache the results for a set period of
@@ -12,6 +17,11 @@ import java.util.function.BiFunction;
  */
 public abstract class ValueCache<V> implements Owner {
 
+  public static Stream<? extends ValueCache<?>> caches() {
+    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  }
+
+  private static final Map<String, SoftReference<ValueCache<?>>> CACHES = new ConcurrentHashMap<>();
   private static final Gauge innerCount =
       Gauge.build("shesmu_cache_v_max_inner_count", "The largest collection stored in a cache.")
           .labelNames("name")
@@ -38,6 +48,11 @@ public abstract class ValueCache<V> implements Owner {
     this.ttl = ttl;
     this.value = recordCtor.apply(this, this::fetch);
     ttlValue.labels(name).set(ttl);
+    CACHES.put(name, new SoftReference<>(this));
+  }
+
+  public int collectionSize() {
+    return value.collectionSize();
   }
 
   /**

@@ -22,6 +22,81 @@
         ],
         "description": "Can be any value - string, number, boolean, array or object."
       },
+      "CacheInfo": {
+        "description": "Cache information",
+        "discriminator": {
+          "mapping": {
+            "k": "#/components/schemas/CacheInfoKeyValue",
+            "kv": "#/components/schemas/CacheInfoValue"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CacheInfoKeyValue"
+          },
+          {
+            "$ref": "#/components/schemas/CacheInfoValue"
+          }
+        ]
+      },
+      "CacheInfoKeyValue": {
+        "properties": {
+          "entries": {
+            "description": "the items stored in this cache",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "collectionSize": {
+                  "description": "the number of items in this cache",
+                  "type": "integer"
+                },
+                "lastUpdate": {
+                  "description": "miliseconds since UNIX epoch",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "name": {
+            "description": "the name of the cache",
+            "type": "string"
+          },
+          "ttl": {
+            "description": "the number of minutes before the cache is refreshed",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CacheInfoValue": {
+        "properties": {
+          "collectionSize": {
+            "description": "the number of items in this cache",
+            "type": "integer"
+          },
+          "lastUpdate": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "name": {
+            "description": "the name of the cache",
+            "type": "string"
+          },
+          "ttl": {
+            "description": "the number of minutes before the cache is refreshed",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "Filter": {
         "description": "Action filtering.",
         "discriminator": {
@@ -479,6 +554,31 @@
         ]
       }
     },
+    "/caches": {
+      "get": {
+        "description": "",
+        "operationId": "getCacheInfo",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CacheInfo"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Get information on all caches in all plugins"
+          }
+        },
+        "summary": "Get a list of caches that are in use on this server.",
+        "tags": [
+          "caches"
+        ]
+      }
+    },
     "/constant": {
       "post": {
         "description": "",
@@ -751,6 +851,35 @@
         ]
       }
     },
+    "/invalidate": {
+      "post": {
+        "description": "Invalidates caches; DO NOT USE IN PRODUCTION",
+        "operationId": "invalidateCaches",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Caches were invalidated"
+          }
+        },
+        "summary": "Invalidate caches; DEBUGGING ONLY",
+        "tags": [
+          "caches"
+        ]
+      }
+    },
+
     "/jsondumper": {
       "delete": {
         "description": "",
@@ -1015,6 +1144,10 @@
     {
       "description": "Alerts",
       "name": "alerts"
+    },
+    {
+      "description": "Caches",
+      "name": "caches"
     },
     {
       "description": "Constants/Predefined Values",
