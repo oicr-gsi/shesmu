@@ -143,7 +143,17 @@ public class MetroDiagram {
                                 Stream.concat(Stream.of(variable.name()), variable.inputs()))
                         .distinct()
                         .count()
-                    + 1);
+                    + 1)
+            + (long)
+                (olive
+                        .clauses()
+                        .flatMap(OliveClauseRow::variables)
+                        .map(VariableInformation::name)
+                        .mapToInt(String::length)
+                        .max()
+                        .orElse(0)
+                    * AVG_SMALL_CHAR_WIDTH
+                    * Math.sin(Math.toRadians(45)));
 
     writer.writeStartElement("svg");
     writer.writeDefaultNamespace(SVG_NS_URI);
