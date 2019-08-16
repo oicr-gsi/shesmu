@@ -19,6 +19,9 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
+import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.Record;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
@@ -1586,7 +1589,55 @@ public final class Server implements ServerConfig, ActionServices {
                 os, query.perform(RuntimeSupport.MAPPER, pluginManager::sourceUrl, processor));
           }
         });
-
+    add(
+        "/invalidate",
+        t -> {
+          final Set<String> names;
+          try {
+            names =
+                new HashSet<>(
+                    Arrays.asList(
+                        RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String[].class)));
+          } catch (final Exception e) {
+            e.printStackTrace();
+            t.sendResponseHeaders(400, 0);
+            try (OutputStream os = t.getResponseBody()) {}
+            return;
+          }
+          KeyValueCache.caches()
+              .filter(cache -> names.contains(cache.name()))
+              .forEach(KeyValueCache::invalidateAll);
+          ValueCache.caches()
+              .filter(cache -> names.contains(cache.name()))
+              .forEach(ValueCache::invalidate);
+          t.sendResponseHeaders(201, -1);
+        });
+    addJson(
+        "/caches",
+        (mapper, query) -> {
+          final ArrayNode array = mapper.createArrayNode();
+          KeyValueCache.caches()
+              .forEach(
+                  cache -> {
+                    final ObjectNode node = array.addObject();
+                    node.put("name", cache.name());
+                    node.put("ttl", cache.ttl());
+                    node.put("type", "kv");
+                    final ObjectNode entries = node.putObject("entries");
+                    storeEntries(entries, cache);
+                  });
+          ValueCache.caches()
+              .forEach(
+                  cache -> {
+                    final ObjectNode node = array.addObject();
+                    node.put("name", cache.name());
+                    node.put("ttl", cache.ttl());
+                    node.put("lastUpdate", cache.lastUpdated().toEpochMilli());
+                    node.put("collectionSize", cache.collectionSize());
+                    node.put("type", "v");
+                  });
+          return array;
+        });
     add(
         "/stats",
         t -> {
@@ -2359,5 +2410,13 @@ public final class Server implements ServerConfig, ActionServices {
     processor.start(executor);
     System.out.println("Starting scheduler...");
     master.start(executor);
+  }
+
+  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<K, V> cache) {
+    for (final Map.Entry<K, Record<V>> record : cache) {
+      final ObjectNode node = entries.putObject(record.getKey().toString());
+      node.put("collectionSize", record.getValue().collectionSize());
+      node.put("lastUpdate", record.getValue().lastUpdate().toEpochMilli());
+    }
   }
 }
