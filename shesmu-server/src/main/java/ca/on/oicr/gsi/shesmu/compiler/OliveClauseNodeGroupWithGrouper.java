@@ -166,7 +166,6 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
           final Type asmType = grouper.input(i).type().render(typeVariables).apply(TO_ASM);
           final int local = rootRenderer.methodGen().newLocal(asmType);
           inputExpressions.get(i).render(rootRenderer);
-          rootRenderer.methodGen().box(inputExpressions.get(i).type().apply(TO_ASM));
           rootRenderer.methodGen().storeLocal(local);
           grouperCaptures[i] =
               new LoadableValue() {
