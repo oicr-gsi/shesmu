@@ -153,7 +153,8 @@ public class MetroDiagram {
                         .max()
                         .orElse(0)
                     * AVG_SMALL_CHAR_WIDTH
-                    * Math.sin(Math.toRadians(45)));
+                    * Math.sin(Math.toRadians(45)))
+            + 4 * SVG_RADIUS;
 
     writer.writeStartElement("svg");
     writer.writeDefaultNamespace(SVG_NS_URI);
