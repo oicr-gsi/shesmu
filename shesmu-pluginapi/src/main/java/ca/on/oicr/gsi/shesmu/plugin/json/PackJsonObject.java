@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /** Add a Shesmu value into a JSON object */
@@ -42,6 +43,15 @@ public final class PackJsonObject implements ImyhatConsumer {
     fields
         .sorted(Comparator.comparing(Field::index))
         .forEach(f -> f.type().accept(new PackJsonArray(array), f.value()));
+  }
+
+  @Override
+  public void accept(Imyhat inner, Optional<?> value) {
+    if (value.isPresent()) {
+      inner.accept(this, value.get());
+    } else {
+      node.putNull(name);
+    }
   }
 
   @Override

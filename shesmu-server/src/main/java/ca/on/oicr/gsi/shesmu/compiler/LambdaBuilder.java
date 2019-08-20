@@ -612,6 +612,30 @@ public final class LambdaBuilder {
                 lambda.parameterTypes(AccessMode.BOXED).toArray(Type[]::new)));
   }
 
+  /** Create a lambda that calls a static method. */
+  public static void pushStatic(Renderer renderer, Type owner, String name, LambdaType lambda) {
+    renderer
+        .methodGen()
+        .invokeDynamic(
+            lambda.methodName(),
+            Type.getMethodDescriptor(lambda.interfaceType()),
+            LAMBDA_METAFACTORY_BSM,
+            Type.getMethodType(
+                lambda.returnType(AccessMode.ERASED),
+                lambda.parameterTypes(AccessMode.ERASED).toArray(Type[]::new)),
+            new Handle(
+                Opcodes.H_INVOKESTATIC,
+                owner.getInternalName(),
+                name,
+                Type.getMethodDescriptor(
+                    lambda.returnType(AccessMode.REAL),
+                    lambda.parameterTypes(AccessMode.REAL).toArray(Type[]::new)),
+                false),
+            Type.getMethodType(
+                lambda.returnType(AccessMode.BOXED),
+                lambda.parameterTypes(AccessMode.BOXED).toArray(Type[]::new)));
+  }
+
   /**
    * Create a lambda that calls a virtual method. The first type of the first parameter must be the
    * class in which the method is defined.
@@ -769,13 +793,11 @@ public final class LambdaBuilder {
           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
           false);
   private final Type[] captureTypes;
-  private final Type streamType;
   private final LoadableValue[] capturedVariables;
   private final LambdaType lambda;
-
   private final Method method;
-
   private final RootBuilder owner;
+  private final Type streamType;
 
   /**
    * Create a new lambda for a function

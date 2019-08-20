@@ -52,7 +52,7 @@ public final class ExpressionNodeBinary extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    operation.render(renderer, left::render, right::render);
+    operation.render(line(), column(), renderer, left, right);
   }
 
   @Override

@@ -25,7 +25,7 @@ public abstract class SourceNode {
           final Parser result =
               p.whitespace().then(ExpressionNode::parse, source::set).whitespace();
           if (result.isGood()) {
-            o.accept(new SourceNodeSet(p.line(), p.column(), source.get()));
+            o.accept(new SourceNodeContainer(p.line(), p.column(), source.get()));
           }
           return result;
         });

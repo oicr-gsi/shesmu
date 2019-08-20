@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.description.Renderable;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -28,7 +29,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** An expression in the Shesmu language */
-public abstract class ExpressionNode {
+public abstract class ExpressionNode implements Renderable {
 
   interface UnaryExpression {
     ExpressionNode create(int line, int column, ExpressionNode node);
@@ -694,12 +695,7 @@ public abstract class ExpressionNode {
    */
   public abstract Imyhat type();
 
-  /**
-   * Perform type checking on this expression and its children.
-   *
-   * @param errorHandler
-   * @return
-   */
+  /** Perform type checking on this expression and its children. */
   public abstract boolean typeCheck(Consumer<String> errorHandler);
 
   /**

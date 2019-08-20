@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -51,4 +52,7 @@ public interface ImyhatConsumer {
    * @param fields the indices, values, and types in the tuple
    */
   void acceptTuple(Stream<Field<Integer>> fields);
+
+  /** Collects an optional */
+  void accept(Imyhat inner, Optional<?> value);
 }

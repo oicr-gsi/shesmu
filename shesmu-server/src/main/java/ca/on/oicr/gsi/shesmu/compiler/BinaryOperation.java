@@ -3,13 +3,10 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.description.Renderable;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Consumer;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -76,13 +73,15 @@ public abstract class BinaryOperation {
                 new BinaryOperation(left) {
                   @Override
                   public void render(
+                      int line,
+                      int column,
                       Renderer renderer,
-                      Consumer<Renderer> leftValue,
-                      Consumer<Renderer> rightValue) {
+                      Renderable leftValue,
+                      Renderable rightValue) {
                     final Imyhat inner = ((Imyhat.ListImyhat) left).inner();
                     renderer.loadImyhat(inner.descriptor());
-                    leftValue.accept(renderer);
-                    rightValue.accept(renderer);
+                    leftValue.render(renderer);
+                    rightValue.render(renderer);
                     renderer
                         .methodGen()
                         .invokeStatic(
@@ -126,12 +125,14 @@ public abstract class BinaryOperation {
               new BinaryOperation(left) {
                 @Override
                 public void render(
+                    int line,
+                    int column,
                     Renderer renderer,
-                    Consumer<Renderer> leftValue,
-                    Consumer<Renderer> rightValue) {
+                    Renderable leftValue,
+                    Renderable rightValue) {
                   renderer.loadImyhat(inner.descriptor());
-                  leftValue.accept(renderer);
-                  rightValue.accept(renderer);
+                  leftValue.render(renderer);
+                  rightValue.render(renderer);
                   renderer.methodGen().valueOf(inner.apply(TO_ASM));
                   renderer
                       .methodGen()
@@ -179,12 +180,16 @@ public abstract class BinaryOperation {
                     newFields.values().stream().map(ConcatenatedObjectField::pair))) {
               @Override
               public void render(
-                  Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+                  int line,
+                  int column,
+                  Renderer renderer,
+                  Renderable leftValue,
+                  Renderable rightValue) {
                 int leftVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
                 int rightVariable = renderer.methodGen().newLocal(A_TUPLE_TYPE);
-                leftValue.accept(renderer);
+                leftValue.render(renderer);
                 renderer.methodGen().storeLocal(leftVariable);
-                rightValue.accept(renderer);
+                rightValue.render(renderer);
                 renderer.methodGen().storeLocal(rightVariable);
 
                 renderer.methodGen().newInstance(A_TUPLE_TYPE);
@@ -218,10 +223,14 @@ public abstract class BinaryOperation {
 
           @Override
           public void render(
-              Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+              int line,
+              int column,
+              Renderer renderer,
+              Renderable leftValue,
+              Renderable rightValue) {
 
-            leftValue.accept(renderer);
-            rightValue.accept(renderer);
+            leftValue.render(renderer);
+            rightValue.render(renderer);
             renderer.methodGen().math(opcode, type.apply(TO_ASM));
           }
         });
@@ -245,14 +254,16 @@ public abstract class BinaryOperation {
               new BinaryOperation(leftIsInt && rightIsInt ? Imyhat.INTEGER : Imyhat.FLOAT) {
                 @Override
                 public void render(
+                    int line,
+                    int column,
                     Renderer renderer,
-                    Consumer<Renderer> leftValue,
-                    Consumer<Renderer> rightValue) {
-                  leftValue.accept(renderer);
+                    Renderable leftValue,
+                    Renderable rightValue) {
+                  leftValue.render(renderer);
                   if (leftIsInt && !rightIsInt) {
                     renderer.methodGen().cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
                   }
-                  rightValue.accept(renderer);
+                  rightValue.render(renderer);
                   if (!leftIsInt && rightIsInt) {
                     renderer.methodGen().cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
                   }
@@ -278,13 +289,17 @@ public abstract class BinaryOperation {
 
           @Override
           public void render(
-              Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
-            leftValue.accept(renderer);
+              int line,
+              int column,
+              Renderer renderer,
+              Renderable leftValue,
+              Renderable rightValue) {
+            leftValue.render(renderer);
             final Label end = renderer.methodGen().newLabel();
             renderer.methodGen().dup();
             renderer.methodGen().ifZCmp(condition, end);
             renderer.methodGen().pop();
-            rightValue.accept(renderer);
+            rightValue.render(renderer);
             renderer.methodGen().mark(end);
           }
         });
@@ -308,10 +323,14 @@ public abstract class BinaryOperation {
 
           @Override
           public void render(
-              Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+              int line,
+              int column,
+              Renderer renderer,
+              Renderable leftValue,
+              Renderable rightValue) {
 
-            leftValue.accept(renderer);
-            rightValue.accept(renderer);
+            leftValue.render(renderer);
+            rightValue.render(renderer);
             renderer
                 .methodGen()
                 .invokeStatic(
@@ -335,9 +354,13 @@ public abstract class BinaryOperation {
           new BinaryOperation(resultType) {
             @Override
             public void render(
-                Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
-              leftValue.accept(renderer);
-              rightValue.accept(renderer);
+                int line,
+                int column,
+                Renderer renderer,
+                Renderable leftValue,
+                Renderable rightValue) {
+              leftValue.render(renderer);
+              rightValue.render(renderer);
               renderer.methodGen().invokeVirtual(A_TUPLE_TYPE, TUPLE__CONCAT);
             }
           });
@@ -365,10 +388,14 @@ public abstract class BinaryOperation {
 
           @Override
           public void render(
-              Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+              int line,
+              int column,
+              Renderer renderer,
+              Renderable leftValue,
+              Renderable rightValue) {
 
-            leftValue.accept(renderer);
-            rightValue.accept(renderer);
+            leftValue.render(renderer);
+            rightValue.render(renderer);
             if (leftType.javaType().isInterface()) {
               renderer.methodGen().invokeInterface(leftType.apply(TO_ASM), method);
             } else {
@@ -387,7 +414,7 @@ public abstract class BinaryOperation {
 
         @Override
         public void render(
-            Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue) {
+            int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue) {
           throw new UnsupportedOperationException();
         }
       };
@@ -405,7 +432,7 @@ public abstract class BinaryOperation {
   }
 
   public abstract void render(
-      Renderer renderer, Consumer<Renderer> leftValue, Consumer<Renderer> rightValue);
+      int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue);
 
   public Imyhat returnType() {
     return returnType;

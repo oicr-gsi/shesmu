@@ -337,6 +337,12 @@ public final class RuntimeSupport {
     return data.stream();
   }
 
+  /** Stream an optional */
+  @RuntimeInterop
+  public static <T> Stream<T> stream(Optional<T> optional) {
+    return optional.map(Stream::of).orElseGet(Stream::empty);
+  }
+
   @RuntimeInterop
   public static String toString(Instant instant, String format) {
     return DateTimeFormatter.ofPattern(format)
@@ -354,6 +360,8 @@ public final class RuntimeSupport {
 
   @RuntimeInterop public static final String[] EMPTY = new String[0];
   public static final ObjectMapper MAPPER = new ObjectMapper();
+
+  @RuntimeInterop
   public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
       new BinaryOperator<Object>() {
 
@@ -362,6 +370,7 @@ public final class RuntimeSupport {
           throw new UnsupportedOperationException();
         }
       };
+
   private static final Map<String, CallSite> callsites = new HashMap<>();
 
   static {

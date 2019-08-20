@@ -39,6 +39,13 @@ public interface ImyhatTransformer<R> {
    */
   R object(Stream<Pair<String, Imyhat>> contents);
 
+  /**
+   * Convert an optional type
+   *
+   * @param inner the type inside the optional; may be null
+   */
+  R optional(Imyhat inner);
+
   /** Convert a <tt>path</tt> type */
   R path();
 

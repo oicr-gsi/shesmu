@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -40,6 +41,9 @@ public interface ImyhatFunction<R> {
 
   /** Convert a path value */
   R apply(Path value);
+
+  /** Convert an empty optional */
+  R apply(Imyhat inner, Optional<?> value);
 
   /**
    * Convert a tuple

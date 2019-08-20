@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -62,6 +63,15 @@ public class UnpackJson implements ImyhatTransformer<Object> {
             .sorted(Comparator.comparing(Pair::first))
             .map(field -> field.second().apply(new UnpackJson(value.get(field.first()))))
             .toArray());
+  }
+
+  @Override
+  public Object optional(Imyhat inner) {
+    if (value == null || value.isNull()) {
+      return Optional.empty();
+    } else {
+      return inner.apply(this);
+    }
   }
 
   @Override
