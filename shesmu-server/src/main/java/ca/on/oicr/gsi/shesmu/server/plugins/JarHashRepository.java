@@ -21,6 +21,10 @@ public class JarHashRepository<T> {
       return;
     }
     final File jarFile = new File(source.getLocation().getPath());
+    if (!jarFile.isFile()) {
+      jarHashes.put(item.getClass(), new Pair<>(jarFile.toString(), "not a file"));
+      return;
+    }
     try (final FileInputStream input = new FileInputStream(jarFile)) {
       final MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] buffer = new byte[1024];

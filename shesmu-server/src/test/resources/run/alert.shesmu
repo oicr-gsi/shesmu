@@ -3,5 +3,5 @@ Input test;
 Olive
   Alert
     alertname = "TestTestTest",
-    value = library_size > 0 ? "true" : "false"
+    value = If library_size > 0 Then "true" Else "false"
   For 20mins;
