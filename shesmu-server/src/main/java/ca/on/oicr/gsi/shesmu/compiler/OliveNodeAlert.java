@@ -24,9 +24,9 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class OliveNodeAlert extends OliveNodeWithClauses {
+public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
-  private final class ArgumentCheckAndDefiner implements Predicate<OliveArgumentNode> {
+  private static final class ArgumentCheckAndDefiner implements Predicate<OliveArgumentNode> {
     private final Consumer<String> errorHandler;
     private int i;
 
@@ -78,11 +78,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
   private final List<OliveArgumentNode> annotations;
   private final int column;
+  private final String description;
   private final List<OliveArgumentNode> labels;
   private final int line;
-  private final ExpressionNode ttl;
   private final Set<String> tags;
-  private final String description;
+  private final ExpressionNode ttl;
 
   public OliveNodeAlert(
       int line,
@@ -122,6 +122,14 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
+  }
+
+  @Override
+  public void collectFreeVariables(Set<String> freeVariables) {
+    labels.forEach(label -> label.collectFreeVariables(freeVariables, Flavour::needsCapture));
+    annotations.forEach(
+        annotation -> annotation.collectFreeVariables(freeVariables, Flavour::needsCapture));
+    ttl.collectFreeVariables(freeVariables, Flavour::needsCapture);
   }
 
   @Override
@@ -174,6 +182,40 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
     // Not exportable
   }
 
+  private void render(Renderer renderer, Consumer<Renderer> loadOliveServices) {
+    renderer.methodGen().visitLineNumber(line, renderer.methodGen().mark());
+
+    final int labelLocal = renderer.methodGen().newLocal(A_STRING_ARRAY_TYPE);
+    renderer
+        .methodGen()
+        .push((int) labels.stream().flatMap(OliveArgumentNode::targets).count() * 2);
+    renderer.methodGen().newArray(A_STRING_TYPE);
+    renderer.methodGen().storeLocal(labelLocal);
+
+    labels.forEach(l -> l.render(renderer, labelLocal));
+
+    final int annotationLocal = renderer.methodGen().newLocal(A_STRING_ARRAY_TYPE);
+    renderer
+        .methodGen()
+        .push((int) annotations.stream().flatMap(OliveArgumentNode::targets).count() * 2);
+    renderer.methodGen().newArray(A_STRING_TYPE);
+    renderer.methodGen().storeLocal(annotationLocal);
+
+    annotations.forEach(a -> a.render(renderer, annotationLocal));
+
+    final int ttlLocal = renderer.methodGen().newLocal(Type.LONG_TYPE);
+    ttl.render(renderer);
+    renderer.methodGen().storeLocal(ttlLocal);
+
+    loadOliveServices.accept(renderer);
+    OliveBuilder.emitAlert(renderer.methodGen(), labelLocal, annotationLocal, ttlLocal);
+  }
+
+  @Override
+  public void render(RootBuilder builder, Renderer renderer) {
+    render(renderer, r -> r.getNamed("Olive Services").accept(r));
+  }
+
   @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     final Set<String> captures = new HashSet<>();
@@ -188,32 +230,30 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
         oliveBuilder.finish(
             "Alert", oliveBuilder.loadableValues().filter(v -> captures.contains(v.name())));
     action.methodGen().visitCode();
-    action.methodGen().visitLineNumber(line, action.methodGen().mark());
-
-    final int labelLocal = action.methodGen().newLocal(A_STRING_ARRAY_TYPE);
-    action.methodGen().push((int) labels.stream().flatMap(OliveArgumentNode::targets).count() * 2);
-    action.methodGen().newArray(A_STRING_TYPE);
-    action.methodGen().storeLocal(labelLocal);
-
-    labels.forEach(l -> l.render(action, labelLocal));
-
-    final int annotationLocal = action.methodGen().newLocal(A_STRING_ARRAY_TYPE);
-    action
-        .methodGen()
-        .push((int) annotations.stream().flatMap(OliveArgumentNode::targets).count() * 2);
-    action.methodGen().newArray(A_STRING_TYPE);
-    action.methodGen().storeLocal(annotationLocal);
-
-    annotations.forEach(a -> a.render(action, annotationLocal));
-
-    final int ttlLocal = action.methodGen().newLocal(Type.LONG_TYPE);
-    ttl.render(action);
-    action.methodGen().storeLocal(ttlLocal);
-
-    oliveBuilder.emitAlert(action.methodGen(), labelLocal, annotationLocal, ttlLocal);
+    render(action, r -> oliveBuilder.loadOliveServices(r.methodGen()));
     action.methodGen().visitInsn(Opcodes.RETURN);
     action.methodGen().visitMaxs(0, 0);
     action.methodGen().visitEnd();
+  }
+
+  @Override
+  public NameDefinitions resolve(
+      InputFormatDefinition inputFormatDefinition,
+      Function<String, InputFormatDefinition> definedFormats,
+      NameDefinitions defs,
+      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
+      ConstantRetriever constants,
+      Consumer<String> errorHandler) {
+    return defs.fail(resolve(defs, errorHandler));
+  }
+
+  public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
+
+    return labels.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
+            == labels.size()
+        & annotations.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
+            == annotations.size()
+        & ttl.resolve(defs, errorHandler);
   }
 
   @Override
@@ -240,12 +280,8 @@ public class OliveNodeAlert extends OliveNodeWithClauses {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    return defs.isGood()
-        & labels.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
-            == labels.size()
-        & annotations.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
-            == annotations.size()
-        & ttl.resolve(defs, errorHandler);
+
+    return defs.isGood() && resolve(defs, errorHandler);
   }
 
   @Override

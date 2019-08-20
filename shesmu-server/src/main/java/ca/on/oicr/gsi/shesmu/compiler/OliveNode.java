@@ -26,9 +26,46 @@ public abstract class OliveNode {
     TRANSFORMED
   }
 
+  interface OliveAlertConstructor {
+    OliveNodeAlert create(
+        int line, int column, List<OliveClauseNode> clauses, Set<String> tags, String description);
+  }
+
   private interface OliveConstructor {
     OliveNode create(
         int line, int column, List<OliveClauseNode> clauses, Set<String> tags, String description);
+  }
+
+  public static Parser parseAlert(Parser input, Consumer<OliveAlertConstructor> output) {
+    final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
+    final AtomicReference<List<OliveArgumentNode>> annotations =
+        new AtomicReference<>(Collections.emptyList());
+    final AtomicReference<ExpressionNode> ttl = new AtomicReference<>();
+    Parser result =
+        input.whitespace().list(labels::set, OliveArgumentNode::parse, ',').whitespace();
+    final Parser annotationsParser = result.keyword("Annotations");
+    if (annotationsParser.isGood()) {
+      result =
+          annotationsParser
+              .whitespace()
+              .listEmpty(annotations::set, OliveArgumentNode::parse, ',')
+              .whitespace();
+    }
+    result = result.keyword("For").whitespace().then(ExpressionNode::parse, ttl::set);
+    if (result.isGood()) {
+      output.accept(
+          (line, column, clauses, tags, description) ->
+              new OliveNodeAlert(
+                  line,
+                  column,
+                  labels.get(),
+                  annotations.get(),
+                  ttl.get(),
+                  clauses,
+                  tags,
+                  description));
+    }
+    return result;
   }
 
   private static final Parser.ParseDispatch<OliveNode> ROOTS = new Parser.ParseDispatch<>();
@@ -59,39 +96,7 @@ public abstract class OliveNode {
           }
           return result;
         });
-    TERMINAL.addKeyword(
-        "Alert",
-        (input, output) -> {
-          final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
-          final AtomicReference<List<OliveArgumentNode>> annotations =
-              new AtomicReference<>(Collections.emptyList());
-          final AtomicReference<ExpressionNode> ttl = new AtomicReference<>();
-          Parser result =
-              input.whitespace().list(labels::set, OliveArgumentNode::parse, ',').whitespace();
-          final Parser annotationsParser = result.keyword("Annotations");
-          if (annotationsParser.isGood()) {
-            result =
-                annotationsParser
-                    .whitespace()
-                    .listEmpty(annotations::set, OliveArgumentNode::parse, ',')
-                    .whitespace();
-          }
-          result = result.keyword("For").whitespace().then(ExpressionNode::parse, ttl::set);
-          if (result.isGood()) {
-            output.accept(
-                (line, column, clauses, tags, description) ->
-                    new OliveNodeAlert(
-                        line,
-                        column,
-                        labels.get(),
-                        annotations.get(),
-                        ttl.get(),
-                        clauses,
-                        tags,
-                        description));
-          }
-          return result;
-        });
+    TERMINAL.addKeyword("Alert", (p, o) -> parseAlert(p, v -> o.accept(v::create)));
 
     ROOTS.addKeyword(
         "Define",
