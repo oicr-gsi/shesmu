@@ -38,6 +38,7 @@ syn keyword shesmuKeyword For
 syn keyword shesmuKeyword Function
 syn keyword shesmuKeyword From
 syn keyword shesmuKeyword Group
+syn keyword shesmuKeyword If
 syn keyword shesmuKeyword In
 syn keyword shesmuKeyword Into
 syn keyword shesmuKeyword Input

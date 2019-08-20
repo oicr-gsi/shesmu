@@ -644,7 +644,7 @@ _valueexpr_ must have the same type. The _refexpr_ and every _testexpr_ must
 have the same type, but not necessarily the same type as the _altexpr_ and
 _valueexpr_.
 
-- _testexpr_ `?` _trueexpr_ `:` _falseexpr_
+- `If` _testexpr_ `Then` _trueexpr_ `Else` _falseexpr_
 
 Evaluates _testexpr_ and if true, returns _trueexpr_; if false, returns _falseexpr_.
 _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the same type.
@@ -1076,7 +1076,7 @@ these referenced ("used") variables.
 A variable is considered used if it is possible to be referenced, but it does
 not need to be referenced in order to be considered used. For instance:
 
-    False ? a : b
+    If False Then a Else b
 
 references both `a` and `b` even though the value of `a` is never actually the
 result of this expression.
