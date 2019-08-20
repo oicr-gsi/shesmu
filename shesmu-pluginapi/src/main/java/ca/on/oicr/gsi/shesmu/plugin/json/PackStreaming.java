@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /** Convert a value to JSON using the streaming interface */
@@ -81,6 +82,19 @@ public class PackStreaming implements ImyhatConsumer {
       generator.writeString(value);
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void accept(Imyhat inner, Optional<?> value) {
+    if (value.isPresent()) {
+      inner.accept(this, value.get());
+    } else {
+      try {
+        generator.writeNull();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

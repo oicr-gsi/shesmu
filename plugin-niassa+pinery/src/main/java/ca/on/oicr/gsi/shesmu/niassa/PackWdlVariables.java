@@ -8,10 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -95,6 +92,11 @@ public class PackWdlVariables implements ImyhatConsumer {
   @Override
   public void accept(String value) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void accept(Imyhat inner, Optional<?> value) {
+    value.ifPresent(o -> inner.accept(this, o));
   }
 
   @Override

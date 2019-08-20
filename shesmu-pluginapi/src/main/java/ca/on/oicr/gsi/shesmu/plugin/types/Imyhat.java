@@ -301,6 +301,93 @@ public abstract class Imyhat {
     }
   }
 
+  public class OptionalImyhat extends Imyhat {
+    private final Imyhat inner;
+
+    public OptionalImyhat(Imyhat inner) {
+      this.inner = inner;
+    }
+
+    public Imyhat inner() {
+      return inner;
+    }
+
+    @Override
+    public Imyhat asOptional() {
+      return this;
+    }
+
+    @Override
+    public void accept(ImyhatConsumer dispatcher, Object value) {
+      dispatcher.accept(inner, (Optional<?>) value);
+    }
+
+    @Override
+    public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+      return dispatcher.apply(inner, (Optional<?>) value);
+    }
+
+    @Override
+    public <R> R apply(ImyhatTransformer<R> transformer) {
+      return transformer.optional(inner);
+    }
+
+    @Override
+    public Comparator<?> comparator() {
+      @SuppressWarnings("unchecked")
+      final Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
+      return (Optional<Object> a, Optional<Object> b) ->
+          a.isPresent() && b.isPresent()
+              ? innerComparator.compare(a.get(), b.get())
+              : Boolean.compare(a.isPresent(), b.isPresent());
+    }
+
+    @Override
+    public String descriptor() {
+      return "q" + inner.toString();
+    }
+
+    @Override
+    public boolean isBad() {
+      return inner.isBad();
+    }
+
+    @Override
+    public boolean isOrderable() {
+      return false;
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      if (other == NOTHING) {
+        return this;
+      }
+      return new OptionalImyhat(inner.unify(((OptionalImyhat) other).inner));
+    }
+
+    @Override
+    public boolean isSame(Imyhat other) {
+      if (other == NOTHING) {
+        return true;
+      }
+
+      if (other instanceof OptionalImyhat) {
+        return inner.isSame(((OptionalImyhat) other).inner);
+      }
+      return false;
+    }
+
+    @Override
+    public Class<?> javaType() {
+      return Optional.class;
+    }
+
+    @Override
+    public String name() {
+      return inner.name() + "?";
+    }
+  }
+
   public static final class TupleImyhat extends Imyhat {
     private final Imyhat[] types;
 
@@ -480,6 +567,10 @@ public abstract class Imyhat {
   }
 
   public static Optional<? extends Imyhat> of(Type c) {
+    return of(c, true);
+  }
+
+  private static Optional<? extends Imyhat> of(Type c, boolean allowOptional) {
     final Optional<Imyhat> baseType =
         baseTypes()
             .filter(t -> t.javaType().equals(c) || t.javaWrapperType().equals(c))
@@ -492,14 +583,18 @@ public abstract class Imyhat {
       return Optional.empty();
     }
     final ParameterizedType p = (ParameterizedType) c;
-    // We check for equals rather than isAssignableFrom because we don't know which way the
-    // assignment is going
-    if (p.getActualTypeArguments().length != 1
-        || !(p.getRawType() instanceof Class<?>)
-        || !Set.class.equals(p.getRawType())) {
+    if (p.getActualTypeArguments().length != 1 || !(p.getRawType() instanceof Class<?>)) {
       return Optional.empty();
     }
-    return of(p.getActualTypeArguments()[0]).map(Imyhat::asList);
+    // We check for equals rather than isAssignableFrom because we don't know which way the
+    // assignment is going
+    if (Set.class.equals(p.getRawType())) {
+      return of(p.getActualTypeArguments()[0], true).map(Imyhat::asList);
+    }
+    if (allowOptional && Optional.class.equals(p.getRawType())) {
+      return of(p.getActualTypeArguments()[0], false).map(Imyhat::asOptional);
+    }
+    return Optional.empty();
   }
 
   /**
@@ -536,6 +631,9 @@ public abstract class Imyhat {
       case 'i':
         output.set(input.subSequence(1, input.length()));
         return INTEGER;
+      case '!':
+        output.set(input.subSequence(1, input.length()));
+        return NOTHING;
       case 'p':
         output.set(input.subSequence(1, input.length()));
         return PATH;
@@ -544,6 +642,8 @@ public abstract class Imyhat {
         return STRING;
       case 'a':
         return parse(input.subSequence(1, input.length()), output).asList();
+      case 'q':
+        return parse(input.subSequence(1, input.length()), output).asOptional();
       case 't':
       case 'o':
         int count = 0;
@@ -944,7 +1044,82 @@ public abstract class Imyhat {
           return Long.parseLong(s);
         }
       };
+  public static final BaseImyhat NOTHING =
+      new BaseImyhat() {
 
+        @Override
+        public Imyhat asOptional() {
+          return this;
+        }
+
+        @Override
+        public void accept(ImyhatConsumer dispatcher, Object value) {
+          dispatcher.accept(null, Optional.empty());
+        }
+
+        @Override
+        public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+          return dispatcher.apply(null, Optional.empty());
+        }
+
+        @Override
+        public <R> R apply(ImyhatTransformer<R> transformer) {
+          return transformer.optional(null);
+        }
+
+        @Override
+        public Comparator<?> comparator() {
+          return (a, b) -> 0;
+        }
+
+        @Override
+        public Object defaultValue() {
+          return Optional.empty();
+        }
+
+        @Override
+        public String descriptor() {
+          return "Q";
+        }
+
+        @Override
+        public boolean isOrderable() {
+          return false;
+        }
+
+        @Override
+        public boolean isSame(Imyhat other) {
+          return this == other || other instanceof OptionalImyhat;
+        }
+
+        @Override
+        public Class<?> javaWrapperType() {
+          return Optional.class;
+        }
+
+        @Override
+        public Class<?> javaType() {
+          return Optional.class;
+        }
+
+        @Override
+        public String name() {
+          return "nothing";
+        }
+
+        @Override
+        public Object parse(String s) {
+          return Optional.empty();
+        }
+
+        @Override
+        public Imyhat unify(Imyhat other) {
+          if (other == this) {
+            return this;
+          }
+          return other.unify(this);
+        }
+      };
   public static final BaseImyhat PATH =
       new BaseImyhat() {
 
@@ -1141,6 +1316,10 @@ public abstract class Imyhat {
   @Override
   public final String toString() {
     return descriptor();
+  }
+
+  public Imyhat asOptional() {
+    return new OptionalImyhat(this);
   }
 
   public abstract Imyhat unify(Imyhat other);

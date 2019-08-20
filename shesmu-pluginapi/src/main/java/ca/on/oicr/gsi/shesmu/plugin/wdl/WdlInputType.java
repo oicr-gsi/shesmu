@@ -75,6 +75,11 @@ public final class WdlInputType {
         }
 
         @Override
+        public String optional(Imyhat inner) {
+          return inner == null ? "Object?" : (inner.apply(this) + "?");
+        }
+
+        @Override
         public String path() {
           return "File";
         }
@@ -172,25 +177,47 @@ public final class WdlInputType {
   }
 
   private static Parser pair(Parser parser, Consumer<Imyhat> output) {
-    return parser
-        .keyword("Pair")
-        .whitespace()
-        .symbol("[")
-        .whitespace()
-        .then(WdlInputType::parse, output)
-        .symbol(",")
-        .then(WdlInputType::pair, output)
-        .symbol("]")
-        .regex(OPTIONAL, IGNORE, "Optional or nothing.")
-        .whitespace();
+    final List<Imyhat> contents = new ArrayList<>();
+    final AtomicReference<Boolean> isOptional = new AtomicReference<>(false);
+    final Parser result =
+        parser
+            .keyword("Pair")
+            .whitespace()
+            .symbol("[")
+            .whitespace()
+            .then(WdlInputType::parse, contents::add)
+            .symbol(",")
+            .then(WdlInputType::pair, contents::add)
+            .symbol("]")
+            .regex(OPTIONAL, q -> isOptional.set(q.group(0).equals("?")), "Optional or nothing.")
+            .whitespace();
+    if (result.isGood()) {
+      if (isOptional.get()) {
+        output.accept(Imyhat.tuple(contents.stream().toArray(Imyhat[]::new)).asOptional());
+      } else {
+        contents.forEach(output);
+      }
+    }
+    return result;
   }
 
   public static Parser parse(Parser parser, Consumer<Imyhat> output) {
-    return parser
-        .whitespace()
-        .dispatch(DISPATCH, output)
-        .regex(OPTIONAL, IGNORE, "Optional or nothing.")
-        .whitespace();
+    final AtomicReference<Imyhat> value = new AtomicReference<>();
+    final Parser result =
+        parser
+            .whitespace()
+            .dispatch(DISPATCH, value::set)
+            .regex(
+                OPTIONAL,
+                q -> {
+                  if (q.group(0).equals("?")) value.updateAndGet(Imyhat::asOptional);
+                },
+                "Optional or nothing.")
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(value.get());
+    }
+    return result;
   }
 
   private WdlInputType() {}

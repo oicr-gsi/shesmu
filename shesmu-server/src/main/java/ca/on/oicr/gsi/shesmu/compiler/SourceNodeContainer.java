@@ -4,7 +4,9 @@ import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -13,17 +15,21 @@ import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-public class SourceNodeSet extends SourceNode {
+public class SourceNodeContainer extends SourceNode {
 
+  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
+  private static final Method METHOD_RUNTIME_SUPPORT__STREAM =
+      new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Optional.class)});
 
   private static final Method METHOD_SET__STREAM =
       new Method("stream", A_STREAM_TYPE, new Type[] {});
   private final ExpressionNode expression;
   private Imyhat initialType;
+  private boolean isOptional;
 
-  public SourceNodeSet(int line, int column, ExpressionNode expression) {
+  public SourceNodeContainer(int line, int column, ExpressionNode expression) {
     super(line, column);
     this.expression = expression;
   }
@@ -46,7 +52,11 @@ public class SourceNodeSet extends SourceNode {
   @Override
   public JavaStreamBuilder render(Renderer renderer) {
     expression.render(renderer);
-    renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
+    if (isOptional) {
+      renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM);
+    } else {
+      renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
+    }
     final JavaStreamBuilder builder = renderer.buildStream(initialType);
     return builder;
   }
@@ -82,9 +92,14 @@ public class SourceNodeSet extends SourceNode {
     }
     if (type instanceof Imyhat.ListImyhat) {
       initialType = ((Imyhat.ListImyhat) type).inner();
+      isOptional = false;
+      return true;
+    } else if (type instanceof Imyhat.OptionalImyhat) {
+      initialType = ((Imyhat.OptionalImyhat) type).inner();
+      isOptional = true;
       return true;
     } else {
-      expression.typeError("list", type, errorHandler);
+      expression.typeError("list or optional", type, errorHandler);
       return false;
     }
   }

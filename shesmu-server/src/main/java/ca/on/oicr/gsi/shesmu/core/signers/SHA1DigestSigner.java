@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class SHA1DigestSigner implements DynamicSigner<String>, ImyhatConsumer {
@@ -82,6 +83,16 @@ public class SHA1DigestSigner implements DynamicSigner<String>, ImyhatConsumer {
           digest.update(field.index().byteValue());
           field.type().accept(this, field.value());
         });
+  }
+
+  @Override
+  public void accept(Imyhat inner, Optional<?> value) {
+    if (value.isPresent()) {
+      digest.update((byte) 'q');
+      inner.accept(this, value.get());
+    } else {
+      digest.update((byte) 'Q');
+    }
   }
 
   @Override

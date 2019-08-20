@@ -5,10 +5,10 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class ImyhatNodeUnlist extends ImyhatNode {
+public class ImyhatNodeUncontainer extends ImyhatNode {
   private final ImyhatNode outer;
 
-  public ImyhatNodeUnlist(ImyhatNode outer) {
+  public ImyhatNodeUncontainer(ImyhatNode outer) {
     super();
     this.outer = outer;
   }
@@ -22,8 +22,11 @@ public class ImyhatNodeUnlist extends ImyhatNode {
     if (type instanceof Imyhat.ListImyhat) {
       return ((Imyhat.ListImyhat) type).inner();
     }
+    if (type instanceof Imyhat.OptionalImyhat) {
+      return ((Imyhat.OptionalImyhat) type).inner();
+    }
     errorHandler.accept(
-        String.format("Type %s is not a list and it must be to unlist.", type.name()));
+        String.format("Type %s must be list or optional to have something inside.", type.name()));
     return Imyhat.BAD;
   }
 }

@@ -24,7 +24,21 @@ public abstract class ImyhatNode {
 
   public static Parser parse(Parser input, Consumer<ImyhatNode> output) {
     final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    Parser result = parse0(input, type::set);
+    final Parser result = parse0(input, type::set);
+    if (result.isGood()) {
+      final Parser optionalResult = result.symbol("?").whitespace();
+      if (optionalResult.isGood()) {
+        output.accept(new ImyhatNodeOptional(type.get()));
+        return optionalResult;
+      }
+      output.accept(type.get());
+    }
+    return result;
+  }
+
+  public static Parser parse0(Parser input, Consumer<ImyhatNode> output) {
+    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
+    Parser result = parse1(input, type::set);
     while (result.isGood()) {
       final AtomicLong index = new AtomicLong();
       final Parser nextTuple =
@@ -54,7 +68,7 @@ public abstract class ImyhatNode {
     return result;
   }
 
-  private static Parser parse0(Parser input, Consumer<ImyhatNode> output) {
+  private static Parser parse1(Parser input, Consumer<ImyhatNode> output) {
     final Parser listParser = input.symbol("[");
     if (listParser.isGood()) {
       final Parser emptyResult = listParser.whitespace().symbol("]").whitespace();
@@ -124,7 +138,7 @@ public abstract class ImyhatNode {
       final AtomicReference<ImyhatNode> inner = new AtomicReference<>();
       final Parser result =
           unlistParser.whitespace().then(ImyhatNode::parse, inner::set).whitespace();
-      output.accept(new ImyhatNodeUnlist(inner.get()));
+      output.accept(new ImyhatNodeUncontainer(inner.get()));
       return result;
     }
     final Parser returnParser = input.keyword("Return");
@@ -165,7 +179,7 @@ public abstract class ImyhatNode {
           .whitespace();
     }
 
-    final AtomicReference<String> name = new AtomicReference<String>();
+    final AtomicReference<String> name = new AtomicReference<>();
     final Parser result = input.identifier(name::set).whitespace();
     if (!result.isGood()) {
       return result;

@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,6 +20,7 @@ public class TypeUtils {
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PATH_TYPE = Type.getType(Path.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -72,6 +74,11 @@ public class TypeUtils {
         }
 
         @Override
+        public Type optional(Imyhat inner) {
+          return A_OPTIONAL_TYPE;
+        }
+
+        @Override
         public Type path() {
           return A_PATH_TYPE;
         }
@@ -118,6 +125,11 @@ public class TypeUtils {
         @Override
         public Type object(Stream<Pair<String, Imyhat>> contents) {
           return A_TUPLE_TYPE;
+        }
+
+        @Override
+        public Type optional(Imyhat inner) {
+          return A_OPTIONAL_TYPE;
         }
 
         @Override
@@ -173,6 +185,11 @@ public class TypeUtils {
           return fields
               .map(e -> e.first() + ":" + e.second().apply(this))
               .collect(Collectors.joining(", ", "parser.o({", "})"));
+        }
+
+        @Override
+        public String optional(Imyhat inner) {
+          return "parser.q(" + inner.apply(this) + ")";
         }
 
         @Override

@@ -476,6 +476,7 @@ machine-to-machine communication.
 | Empty List | `[]`                                               | `A`        |
 | Tuple      | `{`_t1_`,`_t2_`,` ...`}`                           | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 | NamedTuple | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
+| Optional   | _inner_`?`  or `nothing`                           | `q`_inner_ or `Q` |
 | Path       | `path`                                             | `p`        |
 
 Every input variable's type is available as _name_`_type`. For instance, the
@@ -493,8 +494,9 @@ declaration.
 
 Additionally, types can be destructured. For instance, `locations_type` is a
 list of tuples. The tuple can be specified from the list of tuples by doing `In
-location_type`. Similarly, the `[`_i_`]` can be used to access the type of a
-tuple item and `.`_field_ to access the type of a field in a named tuple.
+location_type`. This also works for the optional type. Similarly, the `[`_i_`]`
+can be used to access the type of a tuple item and `.`_field_ to access the
+type of a field in a named tuple.
 
 So, `(In [{integer, string}])[0]` is `integer`.
 
