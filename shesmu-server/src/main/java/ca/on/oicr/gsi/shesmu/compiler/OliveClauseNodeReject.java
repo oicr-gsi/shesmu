@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.A_OLIVE_SERVICES_TYPE;
+
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
@@ -21,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 public class OliveClauseNodeReject extends OliveClauseNode {
@@ -95,9 +98,26 @@ public class OliveClauseNodeReject extends OliveClauseNode {
         oliveBuilder.filter(
             line,
             column,
-            oliveBuilder
-                .loadableValues()
-                .filter(v -> freeVariables.contains(v.name()))
+            Stream.concat(
+                    Stream.of(
+                        new LoadableValue() {
+
+                          @Override
+                          public void accept(Renderer renderer) {
+                            oliveBuilder.loadOliveServices(renderer.methodGen());
+                          }
+
+                          @Override
+                          public String name() {
+                            return "Olive Services";
+                          }
+
+                          @Override
+                          public Type type() {
+                            return A_OLIVE_SERVICES_TYPE;
+                          }
+                        }),
+                    oliveBuilder.loadableValues().filter(v -> freeVariables.contains(v.name())))
                 .toArray(LoadableValue[]::new));
 
     renderer.methodGen().visitCode();

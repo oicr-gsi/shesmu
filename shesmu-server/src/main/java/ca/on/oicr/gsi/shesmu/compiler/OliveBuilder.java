@@ -23,11 +23,18 @@ import org.objectweb.asm.commons.Method;
 /** An olive that will result in an action being performed */
 public final class OliveBuilder extends BaseOliveBuilder {
 
+  public static void emitAlert(
+      GeneratorAdapter methodGen, int labelLocal, int annotationLocal, int ttlLocal) {
+    methodGen.loadLocal(labelLocal);
+    methodGen.loadLocal(annotationLocal);
+    methodGen.loadLocal(ttlLocal);
+    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ALERT);
+    methodGen.pop();
+  }
+
   private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(OliveServices.class);
   private static final Type A_ACTION_TYPE = Type.getType(Action.class);
-
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
-
   private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
   protected static final Handle LAMBDA_METAFACTORY_BSM =
       new Handle(
@@ -136,16 +143,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
       methodGen.arrayStore(A_STRING_TYPE);
     }
     methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ACTION);
-    methodGen.pop();
-  }
-
-  public void emitAlert(
-      GeneratorAdapter methodGen, int labelLocal, int annotationLocal, int ttlLocal) {
-    methodGen.loadArg(0);
-    methodGen.loadLocal(labelLocal);
-    methodGen.loadLocal(annotationLocal);
-    methodGen.loadLocal(ttlLocal);
-    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ALERT);
     methodGen.pop();
   }
 

@@ -360,7 +360,8 @@ monitoring or dumping. The `Reject` clause does this:
       Where workflow == "BamQC 2.7+"
       Reject file_size == 0 {
          Monitor bad_bam_qc_results "The number of bad BamQC results in production" {},
-         Dump ius, path To junk_bamqc_results
+         Dump ius, path To junk_bamqc_results,
+         Alert alertname = "BadFile", path = "{path}" For 30mins
       }
       Run fastqc With
         memory = 4Gi,

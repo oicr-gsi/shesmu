@@ -1,0 +1,10 @@
+Input test;
+
+Olive
+ Description "something, something"
+ Tag foo
+ Tag bar
+ Reject path != '/foo1' {
+   Alert alertname = "Badness", value = "true" For 5mins
+ }
+ Run ok With ok = path == '/foo1';
