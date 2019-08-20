@@ -634,7 +634,7 @@ It is currently disallowed in assignments in `Group` and `LeftJoin`.
 ## Expressions
 Shesmu has the following expressions, for lowest precedence to highest precedence.
 
-### Switch Selections
+### Flow Control
 - `Switch` _refexpr_ (`When` _testexpr_ `Then` _valueexpr_)\* `Else` _altexpr_
 
 Compares _refexpr_ to every _testexpr_ for equality and returns the matching

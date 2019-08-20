@@ -311,7 +311,7 @@ public abstract class ExpressionNode {
           return result;
         });
     OUTER.addRaw(
-        "tenary if",
+        "ternary if",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
           final Parser parserResult = parse1(p, expression::set);
