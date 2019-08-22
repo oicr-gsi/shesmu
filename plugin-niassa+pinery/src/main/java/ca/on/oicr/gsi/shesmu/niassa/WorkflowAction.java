@@ -54,6 +54,7 @@ public final class WorkflowAction extends Action {
               "shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
           .labelNames("target", "workflow")
           .create();
+
   private final Map<String, String> annotations;
   private Optional<Instant> externalTimestamp = Optional.empty();
   private boolean hasLaunched;
