@@ -254,7 +254,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               "shesmu_niassa_found_running",
               "The number of workflow runs that Shesmu believes it has found. This is used for the max in flight checks.")
           .labelNames("target", "workflow")
-          .create();
+          .register();
   private final AnalysisCache analysisCache;
   private final AnalysisDataCache analysisDataCache;
   private Optional<Configuration> configuration = Optional.empty();

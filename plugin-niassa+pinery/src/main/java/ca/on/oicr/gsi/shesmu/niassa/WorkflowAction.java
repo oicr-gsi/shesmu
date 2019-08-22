@@ -47,13 +47,13 @@ public final class WorkflowAction extends Action {
   private static final Gauge runCreated =
       Gauge.build("shesmu_niassa_run_created", "The number of workflow runs launched.")
           .labelNames("target", "workflow")
-          .create();
+          .register();
 
   private static final Gauge runFailed =
       Gauge.build(
               "shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
           .labelNames("target", "workflow")
-          .create();
+          .register();
 
   private final Map<String, String> annotations;
   private Optional<Instant> externalTimestamp = Optional.empty();
