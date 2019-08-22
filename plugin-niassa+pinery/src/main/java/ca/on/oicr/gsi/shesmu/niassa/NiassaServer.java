@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.prometheus.client.Gauge;
 import io.seqware.common.model.WorkflowRunStatus;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -248,6 +249,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateWorkflowRun(accession, attribute, null);
         }
       };
+  private static final Gauge foundRunning =
+      Gauge.build(
+              "shesmu_niassa_found_running",
+              "The number of workflow runs that Shesmu believes it has found. This is used for the max in flight checks.")
+          .labelNames("target", "workflow")
+          .create();
   private final AnalysisCache analysisCache;
   private final AnalysisDataCache analysisDataCache;
   private Optional<Configuration> configuration = Optional.empty();
@@ -315,14 +322,16 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public synchronized boolean maxInFlight(long workflowAccession) {
-    return analysisCache()
+    final long running =
+        analysisCache()
             .get(workflowAccession)
             .filter(
                 analysisState ->
                     analysisState.state() != ActionState.FAILED
                         && analysisState.state() != ActionState.SUCCEEDED)
-            .count()
-        >= maxInFlight.getOrDefault(workflowAccession, 0);
+            .count();
+    foundRunning.labels(url(), Long.toString(workflowAccession)).set(running);
+    return running >= maxInFlight.getOrDefault(workflowAccession, 0);
   }
 
   public Metadata metadata() {
