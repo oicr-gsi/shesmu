@@ -49,6 +49,7 @@ public final class ReplacingRecord<V> implements Record<Stream<V>> {
           value = stream.collect(Collectors.toList());
           fetchTime = Instant.now();
           initialState = false;
+          stream.close();
         }
       } catch (final Exception e) {
         e.printStackTrace();

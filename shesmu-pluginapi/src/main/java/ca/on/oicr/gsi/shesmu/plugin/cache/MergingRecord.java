@@ -60,10 +60,10 @@ public final class MergingRecord<V, I> implements Record<Stream<V>> {
     final Instant now = Instant.now();
     if (Duration.between(fetchTime, now).toMinutes() > owner.ttl()) {
       try (AutoCloseable timer = refreshLatency.start(owner.name())) {
-        final List<V> buffer =
-            Optional.ofNullable(fetcher.update(fetchTime))
-                .orElse(Stream.empty())
-                .collect(Collectors.toList());
+        final Stream<V> stream =
+            Optional.ofNullable(fetcher.update(fetchTime)).orElse(Stream.empty());
+        final List<V> buffer = stream.collect(Collectors.toList());
+        stream.close();
         final Set<I> newIds = buffer.stream().map(getId).collect(Collectors.toSet());
         value =
             Stream.concat(

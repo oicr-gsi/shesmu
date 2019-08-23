@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -48,9 +49,19 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       final Map<FileProvenanceFilter, Set<String>> filters =
           new EnumMap<>(FileProvenanceFilter.class);
       filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
+      final AtomicLong badStatusCount = new AtomicLong();
       return metadata
           .getAnalysisProvenance(filters)
           .stream()
+          .filter(
+              ap -> {
+                if (ap.getWorkflowRunStatus() == null) {
+                  badStatusCount.incrementAndGet();
+                  return false;
+                }
+                return true;
+              })
+          .onClose(() -> badStatus.labels(url, Long.toString(key)).set(badStatusCount.get()))
           .filter(
               ap ->
                   ap.getWorkflowId() != null
@@ -249,6 +260,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateWorkflowRun(accession, attribute, null);
         }
       };
+  private static final Gauge badStatus =
+      Gauge.build("shesmu_niassa_bad_status", "The number of workflow runs that have null status.")
+          .labelNames("target", "workflow")
+          .register();
   private static final Gauge foundRunning =
       Gauge.build(
               "shesmu_niassa_found_running",
