@@ -133,15 +133,19 @@ public abstract class FileWatcher {
                 final Pair<Instant, WatchedFileListener> current = retry.poll();
                 if (current == null) break;
                 if (Duration.between(now, current.first()).toMillis() <= 0) {
-                  current
-                      .second()
-                      .update()
-                      .ifPresent(
-                          retryTimeout ->
-                              retryOutput.add(
-                                  new Pair<>(
-                                      now.plus(retryTimeout, ChronoUnit.MINUTES),
-                                      current.second())));
+                  try {
+                    current
+                        .second()
+                        .update()
+                        .ifPresent(
+                            retryTimeout ->
+                                retryOutput.add(
+                                    new Pair<>(
+                                        now.plus(retryTimeout, ChronoUnit.MINUTES),
+                                        current.second())));
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                  }
                 } else {
                   retryOutput.add(current);
                   break;
@@ -172,6 +176,7 @@ public abstract class FileWatcher {
                   System.out.printf("File %s deleted.\n", path.toString());
                   final List<WatchedFileListener> listeners = active.remove(path);
                   if (listeners != null) {
+                    retry.removeIf(e -> listeners.contains(e.second()));
                     listeners.forEach(WatchedFileListener::stop);
                     updateTime.labels(path.toString()).setToCurrentTime();
                   }
@@ -179,17 +184,24 @@ public abstract class FileWatcher {
                   System.out.printf("File %s updated.\n", path.toString());
                   final List<WatchedFileListener> listeners = active.get(path);
                   if (listeners != null) {
+                    retry.removeIf(e -> listeners.contains(e.second()));
                     listeners
                         .stream()
-                        .map(
-                            listener ->
-                                listener
+                        .<Optional<Pair<Instant, WatchedFileListener>>>map(
+                            listener -> {
+                              try {
+                                return listener
                                     .update()
                                     .map(
                                         retryTimeout ->
                                             new Pair<>(
                                                 now.plus(retryTimeout, ChronoUnit.MINUTES),
-                                                listener)))
+                                                listener));
+                              } catch (Exception e) {
+                                e.printStackTrace();
+                                return Optional.empty();
+                              }
+                            })
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .forEach(retry::add);
