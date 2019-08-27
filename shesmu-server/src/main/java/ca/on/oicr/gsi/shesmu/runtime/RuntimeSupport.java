@@ -227,29 +227,6 @@ public final class RuntimeSupport {
     input.close();
     return groups.values().stream().map(list -> list.stream().min(comparator).get());
   }
-  /**
-   * Group items in to outer groups, then apply a complex subgrouping operation to produce subgroups
-   * from this input
-   *
-   * @param input the stream of input items
-   * @param grouper a way to create subgroups for each outer group.
-   * @param makeKey a value for a key that is common across the bulk groups
-   */
-  @RuntimeInterop
-  public static <I, O> Stream<O> regroup(
-      Stream<I> input, Grouper<I, O> grouper, Function<I, O> makeKey) {
-    final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
-    input.close();
-    return groups
-        .values()
-        .stream()
-        .flatMap(
-            list ->
-                grouper
-                    .group(list)
-                    .filter(Subgroup::valid)
-                    .map(subgroup -> subgroup.build(makeKey)));
-  }
 
   public static String printHexBinary(byte[] values) {
     final StringBuilder builder = new StringBuilder(values.length * 2);
@@ -280,6 +257,30 @@ public final class RuntimeSupport {
     final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Pattern.class, pattern));
     callsites.put(regex, callsite);
     return callsite;
+  }
+
+  /**
+   * Group items in to outer groups, then apply a complex subgrouping operation to produce subgroups
+   * from this input
+   *
+   * @param input the stream of input items
+   * @param grouper a way to create subgroups for each outer group.
+   * @param makeKey a value for a key that is common across the bulk groups
+   */
+  @RuntimeInterop
+  public static <I, O> Stream<O> regroup(
+      Stream<I> input, Grouper<I, O> grouper, Function<I, O> makeKey) {
+    final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
+    input.close();
+    return groups
+        .values()
+        .stream()
+        .flatMap(
+            list ->
+                grouper
+                    .group(list)
+                    .filter(Subgroup::valid)
+                    .map(subgroup -> subgroup.build(makeKey)));
   }
 
   /**
@@ -356,6 +357,11 @@ public final class RuntimeSupport {
     result.addAll(left);
     result.addAll(right);
     return result;
+  }
+
+  @RuntimeInterop
+  public static <T> Optional<T> unnest(Optional<Optional<T>> input) {
+    return input.orElse(Optional.empty());
   }
 
   @RuntimeInterop public static final String[] EMPTY = new String[0];

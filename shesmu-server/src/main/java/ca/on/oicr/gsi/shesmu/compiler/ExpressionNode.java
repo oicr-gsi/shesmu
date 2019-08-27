@@ -61,6 +61,10 @@ public abstract class ExpressionNode implements Renderable {
   }
 
   public static Parser parse(Parser input, Consumer<ExpressionNode> output) {
+    return scanBinary(ExpressionNode::parse0, COALESCING, input, output);
+  }
+
+  public static Parser parse0(Parser input, Consumer<ExpressionNode> output) {
     return input.dispatch(OUTER, output);
   }
 
@@ -170,6 +174,8 @@ public abstract class ExpressionNode implements Renderable {
 
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> COMPARISON =
       new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> COALESCING =
+      new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> CONJUNCTION =
       new Parser.ParseDispatch<>();
   private static final Pattern DATE =
@@ -208,6 +214,7 @@ public abstract class ExpressionNode implements Renderable {
     INT_SUFFIX.addKeyword("hours", just(3600));
     INT_SUFFIX.addKeyword("mins", just(60));
     INT_SUFFIX.addKeyword("", just(1));
+    COALESCING.addKeyword("Default", binaryOperators("Default", BinaryOperation::optionalCoalesce));
     OUTER.addKeyword(
         "If",
         (p, o) -> {
@@ -224,7 +231,7 @@ public abstract class ExpressionNode implements Renderable {
                   .whitespace()
                   .keyword("Else")
                   .whitespace()
-                  .then(ExpressionNode::parse, falseExpression::set)
+                  .then(ExpressionNode::parse0, falseExpression::set)
                   .whitespace();
           if (result.isGood()) {
             o.accept(
@@ -492,7 +499,6 @@ public abstract class ExpressionNode implements Renderable {
                     },
                     10)
                 .whitespace());
-
     TERMINAL.addSymbol(
         "{",
         (p, o) -> {

@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -8,7 +9,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public class UnivaluedCollector<T> implements Collector<T, UnivaluedCollector.Info<T>, T> {
+public class UnivaluedCollector<T>
+    implements Collector<T, UnivaluedCollector.Info<T>, Optional<T>> {
   enum State {
     EMPTY,
     BAD,
@@ -16,13 +18,8 @@ public class UnivaluedCollector<T> implements Collector<T, UnivaluedCollector.In
   }
 
   public static class Info<T> {
-    private final Supplier<T> defaultValue;
     State state = State.EMPTY;
     T value;
-
-    public Info(Supplier<T> defaultValue) {
-      this.defaultValue = defaultValue;
-    }
 
     void accumulate(T value) {
       if (state == State.EMPTY) {
@@ -43,15 +40,9 @@ public class UnivaluedCollector<T> implements Collector<T, UnivaluedCollector.In
       return this;
     }
 
-    public T finish() {
-      return state == State.GOOD ? value : defaultValue.get();
+    public Optional<T> finish() {
+      return state == State.GOOD ? Optional.of(value) : Optional.empty();
     }
-  }
-
-  private final Supplier<T> defaultValue;
-
-  public UnivaluedCollector(Supplier<T> defaultValue) {
-    this.defaultValue = defaultValue;
   }
 
   @Override
@@ -70,12 +61,12 @@ public class UnivaluedCollector<T> implements Collector<T, UnivaluedCollector.In
   }
 
   @Override
-  public Function<Info<T>, T> finisher() {
+  public Function<Info<T>, Optional<T>> finisher() {
     return Info::finish;
   }
 
   @Override
   public Supplier<Info<T>> supplier() {
-    return () -> new Info<>(defaultValue);
+    return Info::new;
   }
 }

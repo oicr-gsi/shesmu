@@ -653,8 +653,9 @@ _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the sam
 
 - `For` _var_ `In` _expr_`:` _modifications..._ _collector_
 
-Takes the elements in a list and process them using the supplied modifications
-and then computes a result using the collector. The modifications and
+Takes the elements in a list or optional and process them using the supplied
+modifications and then computes a result using the collector. The modifications
+and
 collectors are described below.
 
 - `For` _var_ `From` _startexpr_` To `_endexpr_`:` _modifications..._ _collector_
@@ -669,6 +670,12 @@ below.
 Takes the string _expr_ and splits it into chunks delimited by _regex_ and then
 processes them using the supplied modifications and then computes a result
 using the collector. The modifications and collectors are described below.
+
+### Optional Coalescence
+- _expr_ `Default` _default_
+
+Computes an optional value using _expr_; if this value is empty, returns
+_default_. _expr_ must be the optional version of _expr_.
 
 ### Logical Disjunction
 - _expr_ `||` _expr_
@@ -975,9 +982,11 @@ Randomly select _integer_ items from a sorted list.
 Returns the number of items in the list.
 
 #### First Item
-- `First` _expr_ `Default` _defaultexpr_
+- `First` _expr_
 
-Returns the first _expr_ in the list or _defaultexpr_ if no items are present.
+Returns the first _expr_ in the list or an empty optional if no items are present.
+
+Since this returns optional, it maybe useful to chain with `Default`.
 
 #### Concatenate Strings
 - `LexicalConcat` _expr_ `With` _delimexpr_
@@ -996,12 +1005,14 @@ list separated by the value of _delimexpr_, which must also be a string.
 Evaluates _expr_ for every item and collects all the unique into a list.
 
 #### Optima
-- `Max` _sortexpr_ `Default` _defaultexpr_
-- `Min` _sortexpr_ `Default` _defaultexpr_
+- `Max` _sortexpr_
+- `Min` _sortexpr_
 
 Finds the minimum or maximum item in a list, based on the _sortexpr_,
-which must be an integer or date. If the list is empty, _defaultexpr_ is
+which must be an integer or date. If the list is empty, an empty optional is
 returned.
+
+Since this returns optional, it maybe useful to chain with `Default`.
 
 #### Item Matches
 - `None` _expr_
@@ -1027,11 +1038,13 @@ For every item, _expr_ is evaluated with _a_ set to the previously returned
 value.
 
 #### Univalued
-- `Univalued` _expr_ `Default` _defaultexpr_
+- `Univalued` _expr_
 
 Evaluates all _expr_ for each item in the list and returns it if all are the same.
 
-If they are different or there are no items, _defaultexpr_ is returned.
+If they are different or there are no items, an empty optional is returned.
+
+Since this returns optional, it maybe useful to chain with `Default`.
 
 ## Identifiers
 All identifier is Shesmu, including olive definitions, function names, action

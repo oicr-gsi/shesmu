@@ -88,7 +88,7 @@ public abstract class GroupNode implements DefinedTarget {
     return (p, o) -> {
       final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
       final Parser result =
-          p.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
+          p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
       if (result.isGood()) {
         o.accept((line, column, name) -> maker.make(line, column, name, expression.get()));
       }
@@ -100,13 +100,13 @@ public abstract class GroupNode implements DefinedTarget {
     return (p, o) -> {
       final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
       final Parser result =
-          p.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
+          p.whitespace().then(ExpressionNode::parse0, expression::set).whitespace();
       if (result.isGood()) {
         final Parser defaultResult = result.keyword("Default");
         if (defaultResult.isGood()) {
           final AtomicReference<ExpressionNode> initial = new AtomicReference<>();
           final Parser defaultComplete =
-              defaultResult.whitespace().then(ExpressionNode::parse, initial::set).whitespace();
+              defaultResult.whitespace().then(ExpressionNode::parse0, initial::set).whitespace();
           if (defaultComplete.isGood()) {
             o.accept(
                 (line, column, name) ->
