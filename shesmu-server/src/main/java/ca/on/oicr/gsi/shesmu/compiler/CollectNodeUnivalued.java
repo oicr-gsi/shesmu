@@ -1,25 +1,26 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
-public class CollectNodeUnivalued extends CollectNodeWithDefault {
+public class CollectNodeUnivalued extends CollectNodeOptional {
 
-  protected CollectNodeUnivalued(
-      int line, int column, ExpressionNode selector, ExpressionNode alternative) {
-    super("Univalued", line, column, selector, alternative);
+  protected CollectNodeUnivalued(int line, int column, ExpressionNode selector) {
+    super(line, column, selector);
   }
 
   @Override
   protected void finishMethod(Renderer renderer) {}
 
   @Override
-  protected Pair<Renderer, Renderer> makeMethod(
-      JavaStreamBuilder builder, LoadableConstructor name, LoadableValue[] loadables) {
-    final Renderer map = builder.map(line(), column(), name, type(), loadables);
-    final Renderer alternative = builder.univalued(line(), column(), name, loadables);
-    return new Pair<>(map, alternative);
+  protected Renderer makeMethod(
+      JavaStreamBuilder builder,
+      LoadableConstructor name,
+      Imyhat returnType,
+      LoadableValue[] loadables) {
+    final Renderer map = builder.map(line(), column(), name, returnType, loadables);
+    builder.univalued();
+    return map;
   }
 
   @Override

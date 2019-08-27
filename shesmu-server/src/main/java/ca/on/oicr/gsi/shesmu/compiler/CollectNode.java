@@ -17,8 +17,12 @@ import java.util.function.Predicate;
 
 /** The terminal operations in <tt>For</tt> expressions */
 public abstract class CollectNode {
-  private interface DefaultContructor {
+  private interface DefaultConstructor {
     CollectNode create(int line, int column, ExpressionNode selector, ExpressionNode alternative);
+  }
+
+  private interface OptionalConstructor {
+    CollectNode create(int line, int column, ExpressionNode selector);
   }
 
   private static final Parser.ParseDispatch<CollectNode> DISPATCH = new Parser.ParseDispatch<>();
@@ -28,7 +32,7 @@ public abstract class CollectNode {
         "List",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ExpressionNode::parse, expression::set);
+          final Parser result = p.whitespace().then(ExpressionNode::parse0, expression::set);
           if (result.isGood()) {
             o.accept(new CollectNodeList(p.line(), p.column(), expression.get()));
           }
@@ -38,7 +42,7 @@ public abstract class CollectNode {
         "PartitionCount",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser result = p.whitespace().then(ExpressionNode::parse, expression::set);
+          final Parser result = p.whitespace().then(ExpressionNode::parse0, expression::set);
           if (result.isGood()) {
             o.accept(new CollectNodePartitionCount(p.line(), p.column(), expression.get()));
           }
@@ -50,8 +54,8 @@ public abstract class CollectNode {
           o.accept(new CollectNodeCount(p.line(), p.column()));
           return p;
         });
-    DISPATCH.addKeyword("First", withDefault(CollectNodeFirst::new));
-    DISPATCH.addKeyword("Univalued", withDefault(CollectNodeUnivalued::new));
+    DISPATCH.addKeyword("First", optional(CollectNodeFirst::new));
+    DISPATCH.addKeyword("Univalued", optional(CollectNodeUnivalued::new));
     DISPATCH.addKeyword("Max", optima(true));
     DISPATCH.addKeyword("Min", optima(false));
     DISPATCH.addKeyword(
@@ -71,7 +75,7 @@ public abstract class CollectNode {
                   .then(ExpressionNode::parse, initialExpression::set)
                   .symbol(")")
                   .whitespace()
-                  .then(ExpressionNode::parse, defaultExpression::set);
+                  .then(ExpressionNode::parse0, defaultExpression::set);
           if (result.isGood()) {
             o.accept(
                 new CollectNodeReduce(
@@ -89,7 +93,7 @@ public abstract class CollectNode {
           (p, o) -> {
             final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
             final Parser result =
-                p.whitespace().then(ExpressionNode::parse, selectExpression::set).whitespace();
+                p.whitespace().then(ExpressionNode::parse0, selectExpression::set).whitespace();
             if (result.isGood()) {
               o.accept(
                   new CollectNodeMatches(p.line(), p.column(), matchType, selectExpression.get()));
@@ -108,7 +112,7 @@ public abstract class CollectNode {
                     .then(ExpressionNode::parse, getterExpression::set)
                     .keyword("With")
                     .whitespace()
-                    .then(ExpressionNode::parse, delimiterExpression::set);
+                    .then(ExpressionNode::parse0, delimiterExpression::set);
             if (result.isGood()) {
               o.accept(
                   new CollectNodeConcatenate(
@@ -124,27 +128,19 @@ public abstract class CollectNode {
   }
 
   private static Rule<CollectNode> optima(boolean max) {
-    return withDefault((l, c, s, a) -> new CollectNodeOptima(l, c, max, s, a));
+    return optional((l, c, s) -> new CollectNodeOptima(l, c, max, s));
   }
 
   public static Parser parse(Parser parser, Consumer<CollectNode> output) {
     return parser.dispatch(DISPATCH, output);
   }
 
-  private static Rule<CollectNode> withDefault(DefaultContructor constructor) {
+  private static Rule<CollectNode> optional(OptionalConstructor optionalConstructor) {
     return (p, o) -> {
       final AtomicReference<ExpressionNode> selectExpression = new AtomicReference<>();
-      final AtomicReference<ExpressionNode> defaultExpression = new AtomicReference<>();
-      final Parser result =
-          p.whitespace()
-              .then(ExpressionNode::parse, selectExpression::set)
-              .keyword("Default")
-              .whitespace()
-              .then(ExpressionNode::parse, defaultExpression::set);
+      Parser result = p.whitespace().then(ExpressionNode::parse0, selectExpression::set);
       if (result.isGood()) {
-        o.accept(
-            constructor.create(
-                p.line(), p.column(), selectExpression.get(), defaultExpression.get()));
+        o.accept(optionalConstructor.create(p.line(), p.column(), selectExpression.get()));
       }
       return result;
     };

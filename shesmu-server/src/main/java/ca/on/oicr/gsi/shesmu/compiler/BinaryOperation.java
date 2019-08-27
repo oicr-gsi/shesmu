@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Label;
@@ -206,6 +207,51 @@ public abstract class BinaryOperation {
       }
     }
     return Optional.empty();
+  }
+
+  public static Optional<BinaryOperation> optionalCoalesce(Imyhat left, Imyhat right) {
+    final Imyhat resultType;
+    if (left instanceof Imyhat.OptionalImyhat
+        && right.isSame(((Imyhat.OptionalImyhat) left).inner())) {
+      resultType = right.unify(((Imyhat.OptionalImyhat) left).inner());
+    } else if (left == Imyhat.EMPTY) {
+      resultType = right;
+    } else {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        new BinaryOperation(resultType) {
+          @Override
+          public void render(
+              int line,
+              int column,
+              Renderer renderer,
+              Renderable leftValue,
+              Renderable rightValue) {
+            final Set<String> captures = new HashSet<>();
+            rightValue.collectFreeVariables(captures, Target.Flavour::needsCapture);
+            final LambdaBuilder supplier =
+                new LambdaBuilder(
+                    renderer.root(),
+                    String.format("Coalesce %d:%d", line, column),
+                    LambdaBuilder.supplier(resultType),
+                    renderer
+                        .allValues()
+                        .filter(v -> captures.contains(v.name()))
+                        .toArray(LoadableValue[]::new));
+            final Renderer orElseMethod =
+                supplier.renderer(renderer.streamType(), renderer.signerEmitter());
+            orElseMethod.methodGen().visitCode();
+            rightValue.render(orElseMethod);
+            orElseMethod.methodGen().returnValue();
+            orElseMethod.methodGen().endMethod();
+            leftValue.render(renderer);
+            supplier.push(renderer);
+            renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, OPTIONAL__OR_ELSE_GET);
+            renderer.methodGen().unbox(resultType.apply(TO_ASM));
+          }
+        });
   }
 
   /**
@@ -407,6 +453,7 @@ public abstract class BinaryOperation {
 
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   public static final BinaryOperation BAD =
@@ -418,6 +465,8 @@ public abstract class BinaryOperation {
           throw new UnsupportedOperationException();
         }
       };
+  private static final Method OPTIONAL__OR_ELSE_GET =
+      new Method("orElseGet", A_OBJECT_TYPE, new Type[] {Type.getType(Supplier.class)});
   public static final Method TUPLE__CONCAT =
       new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
   public static final Method TUPLE__CTOR =

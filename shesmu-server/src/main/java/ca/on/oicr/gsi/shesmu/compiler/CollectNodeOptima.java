@@ -1,16 +1,14 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
-public final class CollectNodeOptima extends CollectNodeWithDefault {
+public final class CollectNodeOptima extends CollectNodeOptional {
 
   private final boolean max;
 
-  public CollectNodeOptima(
-      int line, int column, boolean max, ExpressionNode selector, ExpressionNode alternate) {
-    super(max ? "Max" : "Min", line, column, selector, alternate);
+  public CollectNodeOptima(int line, int column, boolean max, ExpressionNode selector) {
+    super(line, column, selector);
     this.max = max;
   }
 
@@ -20,8 +18,11 @@ public final class CollectNodeOptima extends CollectNodeWithDefault {
   }
 
   @Override
-  protected Pair<Renderer, Renderer> makeMethod(
-      JavaStreamBuilder builder, LoadableConstructor name, LoadableValue[] loadables) {
+  protected Renderer makeMethod(
+      JavaStreamBuilder builder,
+      LoadableConstructor name,
+      Imyhat returnType,
+      LoadableValue[] loadables) {
     return builder.optima(line(), column(), max, name, selector.type(), loadables);
   }
 
