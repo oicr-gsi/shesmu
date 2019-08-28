@@ -53,6 +53,7 @@ syn keyword shesmuKeyword Max
 syn keyword shesmuKeyword Min
 syn keyword shesmuKeyword Monitor
 syn keyword shesmuKeyword None
+syn keyword shesmuKeyword Nothing
 syn keyword shesmuKeyword Olive
 syn keyword shesmuKeyword PartitionCount
 syn keyword shesmuKeyword Pick
@@ -83,7 +84,7 @@ syn keyword shesmuConstant json_signature
 syn keyword shesmuConstant sha1_signature
 syn keyword shesmuConstant signature_names
 syn match shesmuOperators '\(\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|\)' display
-syn keyword shesmuType boolean date float integer path string
+syn keyword shesmuType boolean date float integer nothing path string
 syn match shesmuConstant "\<\d\+\>" display
 syn match shesmuConstant "\<\d\+[kMG]i\=\>" display
 syn match shesmuConstant "\<\d\+\(weeks\|days\|hours\|mins\)\>" display

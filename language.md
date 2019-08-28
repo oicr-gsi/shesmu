@@ -865,6 +865,11 @@ An integer literal. Integer may be suffixed by one of the following multipliers:
 
 The boolean true and false values, respectively.
 
+#### Empty Optional
+- `Nothing`
+
+Creates an optional that contains no value.
+
 #### Function Call
 - _function_`(`_expr_`,` _expr_`,` ...`)`
 

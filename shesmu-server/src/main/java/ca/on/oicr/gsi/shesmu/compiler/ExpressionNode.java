@@ -616,6 +616,12 @@ public abstract class ExpressionNode implements Renderable {
           return result;
         });
     TERMINAL.addKeyword(
+        "Nothing",
+        (p, o) -> {
+          o.accept(new ExpressionNodeNothing(p.line(), p.column()));
+          return p;
+        });
+    TERMINAL.addKeyword(
         "True",
         (p, o) -> {
           o.accept(new ExpressionNodeBoolean(p.line(), p.column(), true));
