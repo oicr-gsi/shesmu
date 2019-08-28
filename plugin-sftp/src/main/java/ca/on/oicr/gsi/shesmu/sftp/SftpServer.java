@@ -92,22 +92,17 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Returns true if the file or directory exists on the SFTP server described in {file}.")
-  public synchronized boolean $_exists(
-      @ShesmuParameter(description = "path to file") Path fileName,
-      @ShesmuParameter(description = "value to return on error") boolean errorValue) {
-    return fileAttributes.get(fileName).map(a -> a.getSize() != -1).orElse(errorValue);
+  public synchronized Optional<Boolean> $_exists(
+      @ShesmuParameter(description = "path to file") Path fileName) {
+    return fileAttributes.get(fileName).map(a -> a.getSize() != -1);
   }
 
   @ShesmuMethod(
       description =
           "Gets the last modification timestamp of a file or directory living on the SFTP server described in {file}.")
-  public synchronized Instant $_mtime(
-      @ShesmuParameter(description = "path to file") Path fileName,
-      @ShesmuParameter(description = "time to return on error") Instant errorValue) {
-    return fileAttributes
-        .get(fileName)
-        .map(a -> Instant.ofEpochSecond(a.getMtime()))
-        .orElse(errorValue);
+  public synchronized Optional<Instant> $_mtime(
+      @ShesmuParameter(description = "path to file") Path fileName) {
+    return fileAttributes.get(fileName).map(a -> Instant.ofEpochSecond(a.getMtime()));
   }
 
   @ShesmuAction(
@@ -119,10 +114,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Get the size of a file, in bytes, living on the SFTP server described in {file}.")
-  public synchronized long $_size(
-      @ShesmuParameter(description = "path to file") Path fileName,
-      @ShesmuParameter(description = "size to return on error") long errorValue) {
-    return fileAttributes.get(fileName).map(FileAttributes::getSize).orElse(errorValue);
+  public synchronized Optional<Long> $_size(
+      @ShesmuParameter(description = "path to file") Path fileName) {
+    return fileAttributes.get(fileName).map(FileAttributes::getSize);
   }
 
   @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
