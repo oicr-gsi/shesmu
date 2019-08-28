@@ -17,6 +17,7 @@ import io.prometheus.client.Gauge;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,8 +37,9 @@ public abstract class BaseOliveBuilder {
   protected static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
   protected static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
   private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
-  protected static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
   private static final Type A_GROUPER_TYPE = Type.getType(Grouper.class);
+  protected static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
+  private static final Type A_OBJECTS_TYPE = Type.getType(Objects.class);
   private static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
   protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   protected static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
@@ -77,9 +79,6 @@ public abstract class BaseOliveBuilder {
             A_FUNCTION_TYPE,
             A_BICONSUMER_TYPE
           });
-  private static final Method METHOD_REGROUP_WITH_GROUPER =
-      new Method(
-          "regroup", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_GROUPER_TYPE, A_FUNCTION_TYPE});
   private static final Method METHOD_MONITOR =
       new Method(
           "monitor", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_GAUGE_TYPE, A_FUNCTION_TYPE});
@@ -98,6 +97,9 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_REGROUP =
       new Method(
           "regroup", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_FUNCTION_TYPE, A_BICONSUMER_TYPE});
+  private static final Method METHOD_REGROUP_WITH_GROUPER =
+      new Method(
+          "regroup", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_GROUPER_TYPE, A_FUNCTION_TYPE});
   private static final Method METHOD_RUNTIME_SUPPORT__JOIN =
       new Method(
           "join",
@@ -192,6 +194,15 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
         });
     return lambda.renderer(type, this::emitSigner);
+  }
+
+  public void filterNonNull() {
+    steps.add(
+        renderer -> {
+          LambdaBuilder.pushStatic(
+              renderer, A_OBJECTS_TYPE, "nonNull", LambdaBuilder.predicate(A_OBJECT_TYPE));
+          renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
+        });
   }
 
   public final JoinBuilder join(
@@ -371,167 +382,6 @@ public abstract class BaseOliveBuilder {
               .methodGen()
               .invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__MEASURE_FLOW);
         });
-  }
-
-  /**
-   * Create a regrouping operation that uses a grouper to create subgroups. This mostly looks like a
-   * regular grouping operation, but after the grouping, the grouper will be invoked (possibly many
-   * times) with the function that can capture additional info as required by the grouping
-   * operation.
-   *
-   * @param line source line
-   * @param column source column
-   * @param collectorBuilderType the type of the intermediate lambda. This is the final argument to
-   *     the grouper constructor, which must be some kind of lambda for any of this to make sense
-   * @param grouperCaptures the captures (fixed parameters) belonging to the grouper; the type
-   *     provided is null if this is a real value (and its type can be inferred from the lambda
-   *     type). If provided the lambda should return a function and this is the return type of that
-   *     function.
-   * @param capturedVariables the variables that will be captured; this does not include the
-   *     additional captures provided by the grouper.
-   */
-  public final RegroupVariablesBuilder regroupWithGrouper(
-      int line,
-      int column,
-      String grouperName,
-      LambdaBuilder.LambdaType collectorBuilderType,
-      LoadableValue[] grouperCaptures,
-      List<Pair<String, Type>> grouperVariables,
-      LoadableValue... capturedVariables) {
-    final String className = String.format("shesmu/dyn/GroupWithGrouper_%d_%d", line, column);
-    final Type oldType = currentType;
-    final Type newType = Type.getObjectType(className);
-    currentType = newType;
-
-    final LambdaBuilder newLambda =
-        new LambdaBuilder(
-            owner,
-            String.format("Group with Grouper %d:%d ✨", line, column),
-            LambdaBuilder.function(newType, oldType),
-            capturedVariables);
-
-    // Since every grouper can apply extra arguments, we need to prepare a lambda that takes
-    // those extra arguments and captures them into a final BiConsumer that the wrapper can use to
-    // collect the values. This is that capturing method. It first captures all the external values
-    // into a type specified by the grouper. Inside it creates a new lambda capturing the external
-    // values plus the new ones provided by the grouper.
-    final LambdaBuilder collectBuilderLambda =
-        new LambdaBuilder(
-            owner,
-            String.format("Group with Grouper %d:%d 🔨", line, column),
-            collectorBuilderType,
-            capturedVariables);
-
-    final Renderer collectBuilder = collectBuilderLambda.renderer(null, this::emitSigner);
-
-    final LambdaBuilder collectLambda =
-        new LambdaBuilder(
-            owner,
-            String.format("Group with Grouper %d:%d 🧲", line, column),
-            LambdaBuilder.biconsumer(newType, oldType),
-            Stream.concat(
-                    Stream.of(capturedVariables)
-                        .map(original -> collectBuilder.getNamed(original.name())),
-                    collectorBuilderType
-                        .parameterTypes(LambdaBuilder.AccessMode.REAL)
-                        .map(
-                            new Function<Type, LoadableValue>() {
-                              int counter;
-
-                              @Override
-                              public LoadableValue apply(Type type) {
-                                final int index = counter++;
-                                return new LoadableValue() {
-                                  @Override
-                                  public void accept(Renderer renderer) {
-                                    renderer.methodGen().loadArg(capturedVariables.length + index);
-                                  }
-
-                                  @Override
-                                  public String name() {
-                                    return grouperVariables.get(index).first();
-                                  }
-
-                                  @Override
-                                  public Type type() {
-                                    return type;
-                                  }
-                                };
-                              }
-                            }))
-                .toArray(LoadableValue[]::new));
-
-    collectBuilder.methodGen().visitCode();
-    collectLambda.push(collectBuilder);
-    collectBuilder.methodGen().returnValue();
-    collectBuilder.methodGen().visitCode();
-    collectBuilder.methodGen().endMethod();
-
-    steps.add(
-        renderer -> {
-          for (final LoadableValue value : grouperCaptures) {
-            value.accept(renderer);
-          }
-          collectBuilderLambda.push(renderer);
-          renderer
-              .methodGen()
-              .invokeDynamic(
-                  grouperName,
-                  Type.getMethodDescriptor(
-                      A_GROUPER_TYPE,
-                      Stream.concat(
-                              Stream.of(grouperCaptures).map(LoadableValue::type),
-                              Stream.of(collectorBuilderType.interfaceType()))
-                          .toArray(Type[]::new)),
-                  GROUPER_BSM);
-          newLambda.push(renderer);
-          renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP_WITH_GROUPER);
-
-          LambdaBuilder.pushVirtual(
-              renderer,
-              RegroupVariablesBuilder.METHOD_IS_OK.getName(),
-              LambdaBuilder.predicate(newType));
-          renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
-        });
-
-    final Renderer newRenderer = newLambda.renderer(oldType, this::emitSigner);
-    final Renderer collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
-    // For any grouper variable that is really a function, redefine it to be the correct function
-    // call followed by an unboxing
-    for (final Pair<String, Type> grouperVariable : grouperVariables) {
-      final Type type = grouperVariable.second();
-      if (type != null) {
-        final LoadableValue function = collectedRenderer.getNamed(grouperVariable.first());
-        collectedRenderer.define(
-            grouperVariable.first(),
-            new LoadableValue() {
-              @Override
-              public String name() {
-                return function.name();
-              }
-
-              @Override
-              public Type type() {
-                return type;
-              }
-
-              @Override
-              public void accept(Renderer renderer) {
-                function.accept(renderer);
-                renderer.loadStream();
-                renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
-                renderer.methodGen().unbox(type);
-              }
-            });
-      }
-    }
-
-    return new RegroupVariablesBuilder(
-        owner,
-        className,
-        newRenderer,
-        collectedRenderer,
-        capturedVariables.length + collectorBuilderType.parameters());
   }
 
   /**
@@ -748,5 +598,166 @@ public abstract class BaseOliveBuilder {
 
     return new RegroupVariablesBuilder(
         owner, className, newRenderer, collectedRenderer, capturedVariables.length);
+  }
+
+  /**
+   * Create a regrouping operation that uses a grouper to create subgroups. This mostly looks like a
+   * regular grouping operation, but after the grouping, the grouper will be invoked (possibly many
+   * times) with the function that can capture additional info as required by the grouping
+   * operation.
+   *
+   * @param line source line
+   * @param column source column
+   * @param collectorBuilderType the type of the intermediate lambda. This is the final argument to
+   *     the grouper constructor, which must be some kind of lambda for any of this to make sense
+   * @param grouperCaptures the captures (fixed parameters) belonging to the grouper; the type
+   *     provided is null if this is a real value (and its type can be inferred from the lambda
+   *     type). If provided the lambda should return a function and this is the return type of that
+   *     function.
+   * @param capturedVariables the variables that will be captured; this does not include the
+   *     additional captures provided by the grouper.
+   */
+  public final RegroupVariablesBuilder regroupWithGrouper(
+      int line,
+      int column,
+      String grouperName,
+      LambdaBuilder.LambdaType collectorBuilderType,
+      LoadableValue[] grouperCaptures,
+      List<Pair<String, Type>> grouperVariables,
+      LoadableValue... capturedVariables) {
+    final String className = String.format("shesmu/dyn/GroupWithGrouper_%d_%d", line, column);
+    final Type oldType = currentType;
+    final Type newType = Type.getObjectType(className);
+    currentType = newType;
+
+    final LambdaBuilder newLambda =
+        new LambdaBuilder(
+            owner,
+            String.format("Group with Grouper %d:%d ✨", line, column),
+            LambdaBuilder.function(newType, oldType),
+            capturedVariables);
+
+    // Since every grouper can apply extra arguments, we need to prepare a lambda that takes
+    // those extra arguments and captures them into a final BiConsumer that the wrapper can use to
+    // collect the values. This is that capturing method. It first captures all the external values
+    // into a type specified by the grouper. Inside it creates a new lambda capturing the external
+    // values plus the new ones provided by the grouper.
+    final LambdaBuilder collectBuilderLambda =
+        new LambdaBuilder(
+            owner,
+            String.format("Group with Grouper %d:%d 🔨", line, column),
+            collectorBuilderType,
+            capturedVariables);
+
+    final Renderer collectBuilder = collectBuilderLambda.renderer(null, this::emitSigner);
+
+    final LambdaBuilder collectLambda =
+        new LambdaBuilder(
+            owner,
+            String.format("Group with Grouper %d:%d 🧲", line, column),
+            LambdaBuilder.biconsumer(newType, oldType),
+            Stream.concat(
+                    Stream.of(capturedVariables)
+                        .map(original -> collectBuilder.getNamed(original.name())),
+                    collectorBuilderType
+                        .parameterTypes(LambdaBuilder.AccessMode.REAL)
+                        .map(
+                            new Function<Type, LoadableValue>() {
+                              int counter;
+
+                              @Override
+                              public LoadableValue apply(Type type) {
+                                final int index = counter++;
+                                return new LoadableValue() {
+                                  @Override
+                                  public void accept(Renderer renderer) {
+                                    renderer.methodGen().loadArg(capturedVariables.length + index);
+                                  }
+
+                                  @Override
+                                  public String name() {
+                                    return grouperVariables.get(index).first();
+                                  }
+
+                                  @Override
+                                  public Type type() {
+                                    return type;
+                                  }
+                                };
+                              }
+                            }))
+                .toArray(LoadableValue[]::new));
+
+    collectBuilder.methodGen().visitCode();
+    collectLambda.push(collectBuilder);
+    collectBuilder.methodGen().returnValue();
+    collectBuilder.methodGen().visitCode();
+    collectBuilder.methodGen().endMethod();
+
+    steps.add(
+        renderer -> {
+          for (final LoadableValue value : grouperCaptures) {
+            value.accept(renderer);
+          }
+          collectBuilderLambda.push(renderer);
+          renderer
+              .methodGen()
+              .invokeDynamic(
+                  grouperName,
+                  Type.getMethodDescriptor(
+                      A_GROUPER_TYPE,
+                      Stream.concat(
+                              Stream.of(grouperCaptures).map(LoadableValue::type),
+                              Stream.of(collectorBuilderType.interfaceType()))
+                          .toArray(Type[]::new)),
+                  GROUPER_BSM);
+          newLambda.push(renderer);
+          renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_REGROUP_WITH_GROUPER);
+
+          LambdaBuilder.pushVirtual(
+              renderer,
+              RegroupVariablesBuilder.METHOD_IS_OK.getName(),
+              LambdaBuilder.predicate(newType));
+          renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
+        });
+
+    final Renderer newRenderer = newLambda.renderer(oldType, this::emitSigner);
+    final Renderer collectedRenderer = collectLambda.renderer(oldType, 1, this::emitSigner);
+    // For any grouper variable that is really a function, redefine it to be the correct function
+    // call followed by an unboxing
+    for (final Pair<String, Type> grouperVariable : grouperVariables) {
+      final Type type = grouperVariable.second();
+      if (type != null) {
+        final LoadableValue function = collectedRenderer.getNamed(grouperVariable.first());
+        collectedRenderer.define(
+            grouperVariable.first(),
+            new LoadableValue() {
+              @Override
+              public void accept(Renderer renderer) {
+                function.accept(renderer);
+                renderer.loadStream();
+                renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
+                renderer.methodGen().unbox(type);
+              }
+
+              @Override
+              public String name() {
+                return function.name();
+              }
+
+              @Override
+              public Type type() {
+                return type;
+              }
+            });
+      }
+    }
+
+    return new RegroupVariablesBuilder(
+        owner,
+        className,
+        newRenderer,
+        collectedRenderer,
+        capturedVariables.length + collectorBuilderType.parameters());
   }
 }
