@@ -112,11 +112,11 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Get the serial number of the flowcell detected by the Run Scanner defined in {file}.")
-  public String $_flowcell(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<String> $_flowcell(@ShesmuParameter(description = "name of run") String runName) {
     try {
-      return runCache.get(runName).map(NotificationDto::getContainerSerialNumber).orElse("");
+      return runCache.get(runName).map(NotificationDto::getContainerSerialNumber);
     } catch (InitialCachePopulationException e) {
-      return "";
+      return Optional.empty();
     }
   }
 
@@ -137,25 +137,24 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
 
   @ShesmuMethod(
       description = "Get the number of lanes detected by the Run Scanner defined in {file}.")
-  public long $_lane_count(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<Long> $_lane_count(@ShesmuParameter(description = "name of run") String runName) {
     try {
-      return runCache.get(runName).map(r -> (long) r.getLaneCount()).orElse(-1L);
+      return runCache.get(runName).map(r -> (long) r.getLaneCount());
     } catch (InitialCachePopulationException e) {
-      return -1;
+      return Optional.empty();
     }
   }
 
   @ShesmuMethod(
       description = "Get the number of reads detected by the Run Scanner defined in {file}.")
-  public long $_read_ends(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<Long> $_read_ends(@ShesmuParameter(description = "name of run") String runName) {
     try {
       return runCache
           .get(runName)
           .filter(IlluminaNotificationDto.class::isInstance)
-          .map(r -> (long) ((IlluminaNotificationDto) r).getNumReads())
-          .orElse(-1L);
+          .map(r -> (long) ((IlluminaNotificationDto) r).getNumReads());
     } catch (InitialCachePopulationException e) {
-      return -1;
+      return Optional.empty();
     }
   }
 
