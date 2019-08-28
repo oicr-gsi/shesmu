@@ -257,6 +257,21 @@ things. The `Let` clause provides this:
         run = sequencer_run,
         path = path;
 
+The `Let` clause can also be used to unpack optional types and single-entry lists and destructure complex types:
+
+     Olive
+       Let
+          {run_name, lane, _} = ius, # Take the IUS tuple and extract the first element as run_name
+                                     # and the second as lane
+          path = OnlyIf path,   # path is an optional type; if present, it will be available as path;
+                                # if absent, the row is dropped
+          tag = Univalued tags  # tag is a set; if exactly one item is present, it will be available
+                                # as tag; if absent, the row is dropped
+       Run pickup_data
+         run = run_name,
+         lane = lane,
+         path = path;
+
 To make reusable logic, the _Define_ olive can be used:
 
     Define standard_fastq()

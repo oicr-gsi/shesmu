@@ -51,7 +51,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
             "Let",
             line,
             column,
-            false,
+            arguments.stream().anyMatch(LetArgumentNode::filters),
             true,
             arguments
                 .stream()
@@ -71,9 +71,9 @@ public class OliveClauseNodeLet extends OliveClauseNode {
   public ClauseStreamOrder ensureRoot(
       ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE) {
-      arguments
-          .stream()
-          .forEach(a -> a.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+      for (LetArgumentNode a : arguments) {
+        a.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
+      }
       return ClauseStreamOrder.TRANSFORMED;
     }
     return state;
@@ -102,6 +102,10 @@ public class OliveClauseNodeLet extends OliveClauseNode {
                 .toArray(LoadableValue[]::new));
     arguments.forEach(argument -> argument.render(let));
     let.finish();
+    if (arguments.stream().anyMatch(LetArgumentNode::filters)) {
+      oliveBuilder.filterNonNull();
+      oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    }
   }
 
   @Override

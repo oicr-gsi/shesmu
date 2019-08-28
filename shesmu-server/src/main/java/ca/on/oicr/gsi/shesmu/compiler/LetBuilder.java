@@ -2,8 +2,10 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -65,6 +67,14 @@ public class LetBuilder {
     getter.visitMaxs(0, 0);
     getter.visitEnd();
     loadValue.accept(createMethodGen);
+  }
+
+  public void checkAndSkip(BiConsumer<Renderer, Label> doCheck) {
+    final Label end = createMethodGen.methodGen().newLabel();
+    doCheck.accept(createMethodGen, end);
+    createMethodGen.methodGen().visitInsn(Opcodes.ACONST_NULL);
+    createMethodGen.methodGen().returnValue();
+    createMethodGen.methodGen().mark(end);
   }
 
   public Consumer<Renderer> createLocal(Type localType, Consumer<Renderer> loadValue) {
