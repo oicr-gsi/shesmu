@@ -2,6 +2,7 @@ Input test;
 
 Olive
  Group
-    z = None library_size > 400
   By project
+  Into
+    z = None library_size > 400
  Run ok With ok = z;

@@ -1,5 +1,5 @@
 Input test;
 
 Olive
- Group a = PartitionCount library_size == 307 By workflow
+ Group By workflow Into a = PartitionCount library_size == 307
  Run ok With ok = a.matched_count == 1 && a.not_matched_count == 1;

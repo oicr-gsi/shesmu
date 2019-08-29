@@ -19,7 +19,7 @@ Define standard_bamqc()
 
 Olive
   standard_fastq("a")
-  Group files = List "{path}" By accession, project
+  Group By accession, project Into files = List "{path}"
   Run fastqc With
     memory = 4Gi,
     input = files;

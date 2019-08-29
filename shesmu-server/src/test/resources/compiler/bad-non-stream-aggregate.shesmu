@@ -1,4 +1,4 @@
 Input test;
 
 Define foo(string s)
-	Group a = List accession By s;
+	Group By s Into a = List accession;

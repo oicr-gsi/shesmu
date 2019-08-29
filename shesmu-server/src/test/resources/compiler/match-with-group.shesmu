@@ -5,7 +5,7 @@ Define standard_fastq(string s)
   Where workflow == { "BamQC 2.7+" ,3} [ 0 ] 
   Where project == "foo"
   Where str_len ( "{path}" )==file_size
-  Group files = List "{path}" By accession, project;
+  Group By accession, project Into files = List "{path}";
 
 #Comment 
 Olive

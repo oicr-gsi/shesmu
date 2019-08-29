@@ -111,7 +111,7 @@ public abstract class OliveClauseNode {
         });
     CLAUSES.addKeyword(
         "Group",
-        (groupParser, output) -> {
+        (parser, output) -> {
           final AtomicReference<List<GroupNode>> collectors =
               new AtomicReference<>(Collections.emptyList());
           final AtomicReference<List<DiscriminatorNode>> discriminators = new AtomicReference<>();
@@ -120,92 +120,69 @@ public abstract class OliveClauseNode {
               new AtomicReference<>();
           final AtomicReference<List<String>> outputs = new AtomicReference<>();
 
-          Parser result = groupParser.whitespace().keyword("By");
+          Parser result =
+              parser
+                  .whitespace()
+                  .keyword("By")
+                  .whitespace()
+                  .list(discriminators::set, DiscriminatorNode::parse, ',')
+                  .whitespace()
+                  .keyword(
+                      "Using",
+                      up ->
+                          up.whitespace()
+                              .identifier(name::set)
+                              .whitespace()
+                              .list(
+                                  inputs::set,
+                                  (p, o) -> {
+                                    final AtomicReference<String> parameterName =
+                                        new AtomicReference<>();
+                                    final AtomicReference<ExpressionNode> expression =
+                                        new AtomicReference<>();
+                                    final Parser paramResult =
+                                        p.whitespace()
+                                            .identifier(parameterName::set)
+                                            .whitespace()
+                                            .symbol("=")
+                                            .whitespace()
+                                            .then(ExpressionNode::parse, expression::set)
+                                            .whitespace();
+                                    if (paramResult.isGood()) {
+                                      o.accept(new Pair<>(parameterName.get(), expression.get()));
+                                    }
+                                    return paramResult;
+                                  },
+                                  ',')
+                              .whitespace()
+                              .keyword(
+                                  "With",
+                                  wp ->
+                                      wp.whitespace()
+                                          .listEmpty(
+                                              outputs::set,
+                                              (p, o) -> p.whitespace().identifier(o).whitespace(),
+                                              ',')
+                                          .whitespace()))
+                  .keyword(
+                      "Into",
+                      ip ->
+                          ip.whitespace()
+                              .listEmpty(collectors::set, GroupNode::parse, ',')
+                              .whitespace());
           if (result.isGood()) {
-            result =
-                result
-                    .whitespace()
-                    .list(discriminators::set, DiscriminatorNode::parse, ',')
-                    .whitespace()
-                    .keyword(
-                        "Using",
-                        up ->
-                            up.whitespace()
-                                .identifier(name::set)
-                                .whitespace()
-                                .list(
-                                    inputs::set,
-                                    (p, o) -> {
-                                      final AtomicReference<String> parameterName =
-                                          new AtomicReference<>();
-                                      final AtomicReference<ExpressionNode> expression =
-                                          new AtomicReference<>();
-                                      final Parser paramResult =
-                                          p.whitespace()
-                                              .identifier(parameterName::set)
-                                              .whitespace()
-                                              .symbol("=")
-                                              .whitespace()
-                                              .then(ExpressionNode::parse, expression::set)
-                                              .whitespace();
-                                      if (paramResult.isGood()) {
-                                        o.accept(new Pair<>(parameterName.get(), expression.get()));
-                                      }
-                                      return paramResult;
-                                    },
-                                    ',')
-                                .whitespace()
-                                .keyword(
-                                    "With",
-                                    wp ->
-                                        wp.whitespace()
-                                            .listEmpty(
-                                                outputs::set,
-                                                (p, o) -> p.whitespace().identifier(o).whitespace(),
-                                                ',')
-                                            .whitespace()))
-                    .keyword(
-                        "Into",
-                        ip ->
-                            ip.whitespace()
-                                .listEmpty(collectors::set, GroupNode::parse, ',')
-                                .whitespace());
-            if (result.isGood()) {
-              if (name.get() == null) {
-                output.accept(
-                    new OliveClauseNodeGroup(
-                        groupParser.line(),
-                        groupParser.column(),
-                        collectors.get(),
-                        discriminators.get()));
-              } else {
-                output.accept(
-                    new OliveClauseNodeGroupWithGrouper(
-                        groupParser.line(),
-                        groupParser.column(),
-                        name.get(),
-                        inputs.get(),
-                        outputs.get(),
-                        collectors.get(),
-                        discriminators.get()));
-              }
-            }
-          } else {
-            // This is the old syntax for grouping.
-            result =
-                groupParser
-                    .whitespace()
-                    .listEmpty(collectors::set, GroupNode::parse, ',')
-                    .whitespace()
-                    .keyword("By")
-                    .whitespace()
-                    .list(discriminators::set, DiscriminatorNode::parse, ',')
-                    .whitespace();
-            if (result.isGood()) {
+            if (name.get() == null) {
               output.accept(
                   new OliveClauseNodeGroup(
-                      groupParser.line(),
-                      groupParser.column(),
+                      parser.line(), parser.column(), collectors.get(), discriminators.get()));
+            } else {
+              output.accept(
+                  new OliveClauseNodeGroupWithGrouper(
+                      parser.line(),
+                      parser.column(),
+                      name.get(),
+                      inputs.get(),
+                      outputs.get(),
                       collectors.get(),
                       discriminators.get()));
             }
@@ -403,7 +380,7 @@ public abstract class OliveClauseNode {
    * @param inputFormatDefinition the input format for this olive
    * @param definedFormats the function to find input formats by name
    * @param defs the variable plugins available to this clause
-   * @param signatureDefinitions
+   * @param signatureDefinitions the signatures available to this clause
    * @return the variable plugins available to the next clause
    */
   public abstract NameDefinitions resolve(

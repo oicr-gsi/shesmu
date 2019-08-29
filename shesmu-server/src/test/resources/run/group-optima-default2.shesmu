@@ -2,6 +2,7 @@ Input test;
 
 Olive
  Group
-    z = Max library_size Default 999
   By project
+  Into
+    z = Max library_size Default 999
  Run ok With ok = z == 999;

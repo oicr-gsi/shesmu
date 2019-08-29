@@ -1,5 +1,5 @@
 Input test;
 
 Olive
- Group a = Count By workflow
+ Group By workflow Into a = Count
  Run ok With ok = a == 2;
