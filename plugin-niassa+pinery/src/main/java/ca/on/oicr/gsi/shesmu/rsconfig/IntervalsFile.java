@@ -14,12 +14,12 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 
-public class RsConfigFile extends PluginFile {
+public class IntervalsFile extends PluginFile {
   private static final Pattern COMMA = Pattern.compile(",");
   private Optional<Rsconfig> config = Optional.empty();
   private boolean configGood = false;
 
-  public RsConfigFile(Path filePath, String instanceName, Definer<RsConfigFile> definer) {
+  public IntervalsFile(Path filePath, String instanceName, Definer<IntervalsFile> definer) {
     super(filePath, instanceName);
   }
 
