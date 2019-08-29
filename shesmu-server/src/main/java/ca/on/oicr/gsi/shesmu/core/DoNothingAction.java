@@ -8,12 +8,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.regex.Pattern;
 
-public class NothingAction extends Action {
+public class DoNothingAction extends Action {
 
   @RuntimeInterop public String value = "";
 
-  public NothingAction() {
-    super("nothing");
+  public DoNothingAction() {
+    super("do-nothing");
   }
 
   @Override
@@ -27,7 +27,7 @@ public class NothingAction extends Action {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final NothingAction other = (NothingAction) obj;
+    final DoNothingAction other = (DoNothingAction) obj;
     if (value == null) {
       if (other.value != null) {
         return false;

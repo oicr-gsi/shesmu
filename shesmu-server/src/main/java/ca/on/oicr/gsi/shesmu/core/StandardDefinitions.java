@@ -46,7 +46,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
 
-  private static final Type A_NOTHING_ACTION_TYPE = Type.getType(NothingAction.class);
+  private static final Type A_NOTHING_ACTION_TYPE = Type.getType(DoNothingAction.class);
 
   private static final ConstantDefinition[] CONSTANTS =
       new ConstantDefinition[] {
@@ -270,7 +270,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
   private static final ActionDefinition NOTHING_ACTION =
       new ActionDefinition(
-          "nothing",
+          "do_nothing",
           "Does absolutely nothing and ignores the value provided. Useful for debugging.",
           null,
           Stream.of(
@@ -368,7 +368,7 @@ public final class StandardDefinitions implements DefinitionRepository {
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
     writer.print(
-        "actionRender.set('nothing', a => [title(a, 'Nothing'), text(`Value: ${a.value}`)]);");
+        "actionRender.set('do-nothing', a => [title(a, 'Nothing'), text(`Value: ${a.value}`)]);");
   }
 
   @Override
