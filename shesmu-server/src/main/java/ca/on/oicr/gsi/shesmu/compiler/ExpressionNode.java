@@ -311,41 +311,7 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
-    OUTER.addRaw(
-        "ternary if",
-        (p, o) -> {
-          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final Parser parserResult = parse1(p, expression::set);
-          if (!parserResult.isGood()) {
-            return parserResult;
-          }
-          // TODO: delete ternary syntax
-          final Parser ternaryParser = parserResult.symbol("?");
-          if (ternaryParser.isGood()) {
-            final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
-            final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
-            final Parser result =
-                ternaryParser
-                    .whitespace()
-                    .then(ExpressionNode::parse1, trueExpression::set)
-                    .symbol(":")
-                    .whitespace()
-                    .then(ExpressionNode::parse1, falseExpression::set);
-            if (result.isGood()) {
-              o.accept(
-                  new ExpressionNodeTernaryIf(
-                      p.line(),
-                      p.column(),
-                      expression.get(),
-                      trueExpression.get(),
-                      falseExpression.get()));
-            }
-            return result;
-          } else {
-            o.accept(expression.get());
-            return parserResult;
-          }
-        });
+    OUTER.addRaw("expression", ExpressionNode::parse1);
     LOGICAL_DISJUNCTION.addSymbol(
         "||", binaryOperators("||", BinaryOperation.shortCircuit(GeneratorAdapter.NE)));
 

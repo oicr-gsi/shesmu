@@ -2,5 +2,5 @@ Input test;
 
 Olive
  Pick Max library_size By project, file_size
- Group samples = Count By project, library_size
+ Group By project, library_size Into samples = Count
  Run ok With ok = library_size == 307 && samples == 1;

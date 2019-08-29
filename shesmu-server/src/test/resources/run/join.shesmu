@@ -2,5 +2,5 @@ Input test;
 
 Olive
  Join True To inner_test True
- Group ls = List l By accession
+ Group By accession Into ls = List l
  Run ok With ok = (For l In ls: Count) == 2;

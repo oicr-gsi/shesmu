@@ -9,6 +9,6 @@ Define standard_fastq(string s)
 
 Olive
   standard_fastq("a")
-  Group files = List path By accession
+  Group By accession Into files = List path
   Run fastqc With
     input = files;

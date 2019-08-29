@@ -1,7 +1,7 @@
 Input test;
 
 Olive
-  Group files = List path By accession
+  Group By accession Into files = List path
   Run no_such_action With
     memory = 4Gi,
     input = files;

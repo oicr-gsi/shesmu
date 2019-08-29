@@ -2,6 +2,7 @@ Input test;
 
 Olive
  Group
-    z = Max library_size
   By p = notpi
+  Into
+    z = Max library_size
  Run ok With ok = z == 307 && p == 3;

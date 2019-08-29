@@ -1,5 +1,5 @@
 Input test;
 
 Olive
- Group a = List accession By workflow
+ Group By workflow Into a = List accession
  Run ok With ok = (For x In a: Count) == 2;

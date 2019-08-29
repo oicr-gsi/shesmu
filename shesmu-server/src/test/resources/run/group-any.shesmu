@@ -2,8 +2,9 @@ Input test;
 
 Olive
  Group
+  By project
+  Into
     x = Where library_size == 307 First path,
     y = Where library_size == 300 First path,
     z = Any library_size > 305
-  By project
  Run ok With ok = z;
