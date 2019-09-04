@@ -44,9 +44,6 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
     GROUPERS.addKeyword("Univalued", of(GroupNodeUnivalued::new));
     GROUPERS.addKeyword(
-        "Single",
-        of(GroupNodeUnivalued::new)); // TODO: deprecated; remove once olives are transitioned
-    GROUPERS.addKeyword(
         "Max",
         ofWithDefault(
             (line, column, name, expression) ->
