@@ -24,7 +24,7 @@ public class ImyhatNodeReturn extends ImyhatNode {
     final FunctionDefinition definition = definedFunctions.apply(function);
     if (definition == null) {
       errorHandler.accept(
-          String.format("%d:%d: Unknown function %d for return type.", line, column, function));
+          String.format("%d:%d: Unknown function %s for return type.", line, column, function));
       return Imyhat.BAD;
     } else {
       return definition.returnType();
