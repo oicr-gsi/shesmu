@@ -583,6 +583,26 @@ public abstract class ExpressionNode implements Renderable {
           return result;
         });
     TERMINAL.addSymbol(
+        "`",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> value = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .then(ExpressionNode::parse, value::set)
+                  .whitespace()
+                  .symbol("`")
+                  .whitespace();
+          if (p.isGood()) {
+            o.accept(new ExpressionNodeOptionalOf(p.line(), p.column(), value.get()));
+          }
+          final Parser emptyResult = p.whitespace().symbol("`").whitespace();
+          if (emptyResult.isGood()) {
+            o.accept(new ExpressionNodeOptionalEmpty(p.line(), p.column()));
+            return emptyResult;
+          }
+          return result;
+        });
+    TERMINAL.addSymbol(
         "(",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();

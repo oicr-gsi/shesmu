@@ -796,6 +796,15 @@ Compute the logical complement of the expression, which must be a boolean.
 
 Computes the arithmetic additive inverse of the expression, which must be an integer.
 
+#### Optional Creation
+- `` ` `` _expr_ `` ` ``
+
+Puts the value of _expr_ in an optional.
+
+- `` ` ` ``
+
+Creates an optional that contains no value.
+
 ### Access Operators
 #### Tuple Access
 - _expr_ `[` _n_ `]`

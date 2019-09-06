@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = For x In (project == "the_foo_study" ? `True` : ``): First x Default False ;

@@ -1,0 +1,3 @@
+Input test;
+
+Function foo(integer? x) x;
