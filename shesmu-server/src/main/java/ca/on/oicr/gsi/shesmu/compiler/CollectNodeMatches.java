@@ -41,7 +41,7 @@ public final class CollectNodeMatches extends CollectNode {
   public final void render(JavaStreamBuilder builder, LoadableConstructor name) {
     final Set<String> freeVariables = new HashSet<>();
     selector.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    freeVariables.remove(name);
+    freeVariables.removeAll(definedNames);
     final Renderer renderer =
         builder.match(
             line(),

@@ -305,7 +305,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
   private final Map<Long, Integer> maxInFlight = new ConcurrentHashMap<>();
-  public Metadata metadata;
+  private Metadata metadata;
   private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>> skipCache;
   private final Runnable unsubscribe = WORKFLOWS.subscribe(this::updateWorkflows);

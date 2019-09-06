@@ -28,7 +28,7 @@ public class ImyhatNodeArgument extends ImyhatNode {
     final FunctionDefinition definition = definedFunctions.apply(function);
     if (definition == null) {
       errorHandler.accept(
-          String.format("%d:%d: Unknown function %d for parameter type.", line, column, function));
+          String.format("%d:%d: Unknown function %s for parameter type.", line, column, function));
       return Imyhat.BAD;
     }
     final Optional<Imyhat> argType =
@@ -37,7 +37,7 @@ public class ImyhatNodeArgument extends ImyhatNode {
       return argType.get();
     } else {
       errorHandler.accept(
-          String.format("%d:%d: Function %d has no parameter %d.", line, column, function, index));
+          String.format("%d:%d: Function %s has no parameter %d.", line, column, function, index));
       return Imyhat.BAD;
     }
   }
