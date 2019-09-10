@@ -716,12 +716,26 @@ function initialise() {
   });
 }
 
-export function initialiseOliveDash(oliveFiles, deadPauses) {
+export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
   initialise();
   const container = document.getElementById("olives");
   const results = document.getElementById("results");
 
   const renderOlive = (file, olive, pauseSpan) => {
+    const sourceLocation = JSON.stringify({
+      file: file.filename,
+      line: olive.line,
+      column: olive.column,
+      time: file.lastCompiled
+    });
+    if (window.history.state != sourceLocation) {
+      window.history.pushState(
+        sourceLocation,
+        olive.syntax + " ― " + olive.description,
+        "olivedash?saved=" + encodeURIComponent(sourceLocation)
+      );
+    }
+
     let extraButtons;
     if (olive.producesActions) {
       const button = document.createElement("SPAN");
@@ -946,16 +960,9 @@ export function initialiseOliveDash(oliveFiles, deadPauses) {
     oliveDropdown.appendChild(activeOlive);
     oliveDropdown.appendChild(document.createTextNode(" ▼"));
     const oliveList = document.createElement("DIV");
-    oliveList.className = "forceOpen";
     oliveList.style.cursor = "default";
     oliveDropdown.appendChild(oliveList);
     let open = true;
-    activeMenu = activeOlive;
-    closeActiveMenu = external => {
-      oliveList.className = external ? "ready" : "";
-      open = false;
-      activeMenu = null;
-    };
     oliveDropdown.addEventListener("click", e => {
       if (e.target == activeOlive.parentNode || e.target == activeOlive) {
         if (open) {
@@ -1042,6 +1049,24 @@ export function initialiseOliveDash(oliveFiles, deadPauses) {
               closeActiveMenu(false);
             }
           });
+          if (
+            saved &&
+            saved.file == file.filename &&
+            saved.line == olive.line &&
+            saved.column == olive.column &&
+            saved.time == file.lastCompiled
+          ) {
+            clearChildren(activeOlive);
+            const oliveSyntax = document.createElement("I");
+            oliveSyntax.innerText = olive.syntax;
+            activeOlive.appendChild(oliveSyntax);
+            activeOlive.appendChild(
+              document.createTextNode(" ― " + olive.description)
+            );
+            open = false;
+            saved = null;
+            renderOlive(file, olive, pauseSpan);
+          }
         });
       } else {
         const empty = document.createElement("P");
@@ -1049,6 +1074,15 @@ export function initialiseOliveDash(oliveFiles, deadPauses) {
         oliveList.appendChild(empty);
       }
     });
+    if (open) {
+      oliveList.className = "forceOpen";
+      activeMenu = activeOlive;
+      closeActiveMenu = external => {
+        oliveList.className = external ? "ready" : "";
+        open = false;
+        activeMenu = null;
+      };
+    }
   } else {
     const empty = document.createElement("P");
     empty.innerText = "No olives on this server.";

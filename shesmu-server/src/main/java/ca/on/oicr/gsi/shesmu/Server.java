@@ -67,10 +67,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.ParseException;
@@ -352,6 +349,7 @@ public final class Server implements ServerConfig, ActionServices {
               public Stream<Header> headers() {
                 String olivesJson = "[]";
                 String deadPausesJson = "[]";
+                String savedJson = "null";
                 try {
                   final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
                   oliveJson(olives);
@@ -371,7 +369,26 @@ public final class Server implements ServerConfig, ActionServices {
                                   .equals(pause.time()))
                       .forEach(location -> location.toJson(deadPauses, pluginManager));
                   deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses);
-                } catch (JsonProcessingException e) {
+
+                  final Optional<String> savedString =
+                      Optional.ofNullable(t.getRequestURI().getQuery())
+                          .flatMap(
+                              r ->
+                                  AMPERSAND
+                                      .splitAsStream(r)
+                                      .filter(i -> i.length() > 0)
+                                      .map(q -> EQUAL.split(q, 2))
+                                      .filter(q -> q[0].equals("saved"))
+                                      .map(q -> q[1])
+                                      .findFirst());
+                  if (savedString.isPresent()) {
+                    final Query.LocationJson savedLocation =
+                        RuntimeSupport.MAPPER.readValue(
+                            URLDecoder.decode(savedString.get(), "UTF-8"),
+                            Query.LocationJson.class);
+                    savedJson = RuntimeSupport.MAPPER.writeValueAsString(savedLocation);
+                  }
+                } catch (IOException e) {
                   e.printStackTrace();
                 }
                 return Stream.of(
@@ -383,6 +400,8 @@ public final class Server implements ServerConfig, ActionServices {
                             + olivesJson
                             + ", "
                             + deadPausesJson
+                            + ", "
+                            + savedJson
                             + ");"));
               }
 
