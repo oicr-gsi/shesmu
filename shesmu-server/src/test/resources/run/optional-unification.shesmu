@@ -1,4 +1,4 @@
 Input test;
 
 Olive
- Run ok With ok = For x In (project == "the_foo_study" ? `True` : ``): First x Default False ;
+ Run ok With ok = For x In (If project == "the_foo_study" Then `True` Else ``): First x Default False ;
