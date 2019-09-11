@@ -2282,7 +2282,10 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   public void start() {
+    // Initialise status page start time immediately
+    StatusPage.class.toString();
     System.out.println("Starting server...");
     server.start();
     System.out.println("Waiting for files to be scanned...");
