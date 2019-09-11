@@ -14,6 +14,16 @@ export function collapse(title, ...inner) {
   return [showHide, contents];
 }
 
+export function toggleCollapse(title) {
+  const visible = !title.nextSibling.style.maxHeight;
+
+  title.className = visible ? "collapse open" : "collapse close";
+  title.nextSibling.style.maxHeight = visible
+    ? `${title.nextSibling.scrollHeight}px`
+    : null;
+}
+
+
 export function formatTimeSpan(x) {
   let diff = Math.abs(Math.ceil(x / 1000));
   let result = "";
