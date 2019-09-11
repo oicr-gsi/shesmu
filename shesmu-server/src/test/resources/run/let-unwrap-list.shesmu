@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Let x = Univalued [workflow]
+ Run ok With ok = x == "SlowA";

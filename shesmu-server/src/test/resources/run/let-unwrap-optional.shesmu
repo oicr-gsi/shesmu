@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Let x = OnlyIf `workflow`
+ Run ok With ok = x == "SlowA";

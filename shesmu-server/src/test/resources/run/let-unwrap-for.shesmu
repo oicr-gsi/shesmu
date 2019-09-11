@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Let x = OnlyIf For i In [1,2]: Max i
+ Run ok With ok = x == 2;
