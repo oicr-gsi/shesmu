@@ -7,6 +7,7 @@ import {
   table,
   text,
   title,
+  toggleCollapse,
   visibleText
 } from "./utils.js";
 import { actionRender } from "./actions.js";
@@ -2674,15 +2675,6 @@ function getStats(
     });
   };
   refresh();
-}
-
-export function toggleCollapse(title) {
-  const visible = !title.nextSibling.style.maxHeight;
-
-  title.className = visible ? "collapse open" : "collapse close";
-  title.nextSibling.style.maxHeight = visible
-    ? `${title.nextSibling.scrollHeight}px`
-    : null;
 }
 
 export function runCheck(button, sourceCode, outputContainer) {
