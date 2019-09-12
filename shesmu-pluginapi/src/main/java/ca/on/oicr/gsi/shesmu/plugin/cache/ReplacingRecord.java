@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -11,54 +10,33 @@ import java.util.stream.Stream;
  * Takes a stream of items and stores them. When updated, it discards the existing items and
  * replaces them all
  */
-public final class ReplacingRecord<V> implements Record<Stream<V>> {
-  private Instant fetchTime = Instant.EPOCH;
+public final class ReplacingRecord<V> extends BaseRecord<Stream<V>, List<V>> {
   private final Updater<Stream<V>> fetcher;
-  private boolean initialState = true;
-  private final Owner owner;
-  private List<V> value;
 
   public ReplacingRecord(Owner owner, Updater<Stream<V>> fetcher) {
-    this.owner = owner;
+    super(owner, Collections.emptyList());
     this.fetcher = fetcher;
-    this.value = Collections.emptyList();
   }
 
   @Override
-  public int collectionSize() {
-    return value.size();
+  protected int collectionSize(List<V> state) {
+    return state.size();
   }
 
   @Override
-  public void invalidate() {
-    fetchTime = Instant.EPOCH;
+  protected Stream<V> unpack(List<V> state) {
+    return state.stream();
   }
 
   @Override
-  public Instant lastUpdate() {
-    return fetchTime;
-  }
-
-  @Override
-  public synchronized Stream<V> refresh() {
-    final Instant now = Instant.now();
-    if (Duration.between(fetchTime, now).toMinutes() > owner.ttl()) {
-      try (AutoCloseable timer = refreshLatency.start(owner.name())) {
-        Stream<V> stream = fetcher.update(fetchTime);
-        if (stream != null) {
-          value = stream.collect(Collectors.toList());
-          fetchTime = Instant.now();
-          initialState = false;
-          stream.close();
-        }
-      } catch (final Exception e) {
-        e.printStackTrace();
-        staleRefreshError.labels(owner.name()).inc();
-      }
+  protected List<V> update(List<V> oldstate, Instant fetchTime) throws Exception {
+    final Stream<V> stream = fetcher.update(fetchTime);
+    if (stream != null) {
+      final List<V> result = stream.collect(Collectors.toList());
+      stream.close();
+      return result;
+    } else {
+      return null;
     }
-    if (initialState) {
-      throw new InitialCachePopulationException();
-    }
-    return value.stream();
   }
 }
