@@ -156,6 +156,7 @@ public final class Server implements ServerConfig, ActionServices {
       new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
   private final Map<String, String> jsonDumpers = new ConcurrentHashMap<>();
   private final MasterRunner master;
+  private final ThreadLocal<Boolean> overloadState = ThreadLocal.withInitial(() -> false);
   private final PluginManager pluginManager = new PluginManager();
   private final ActionProcessor processor;
   private final AutoUpdatingDirectory<SavedSearch> savedSearches =
@@ -163,13 +164,22 @@ public final class Server implements ServerConfig, ActionServices {
   private final HttpServer server;
   private final StaticActions staticActions;
   public final String version;
-  private final ScheduledExecutorService wwwExecutor =
-      new ScheduledThreadPoolExecutor(
-          10 * Runtime.getRuntime().availableProcessors(),
+  private final Executor wwwExecutor =
+      new ThreadPoolExecutor(
+          Runtime.getRuntime().availableProcessors(),
+          2 * Runtime.getRuntime().availableProcessors(),
+          1,
+          TimeUnit.HOURS,
+          new ArrayBlockingQueue<>(3 * Runtime.getRuntime().availableProcessors()),
           runnable -> {
             final Thread thread = new Thread(runnable);
             thread.setPriority(Thread.MAX_PRIORITY);
             return thread;
+          },
+          (runnable, threadPoolExecutor) -> {
+            overloadState.set(true);
+            runnable.run();
+            overloadState.set(false);
           });
 
   public Server(int port) throws IOException, ParseException {
@@ -2083,6 +2093,10 @@ public final class Server implements ServerConfig, ActionServices {
     server.createContext(
         url,
         t -> {
+          if (overloadState.get()) {
+            t.sendResponseHeaders(503, -1);
+            return;
+          }
           try (AutoCloseable timer = responseTime.start(url)) {
             handler.handle(t);
           } catch (final Throwable e) {
