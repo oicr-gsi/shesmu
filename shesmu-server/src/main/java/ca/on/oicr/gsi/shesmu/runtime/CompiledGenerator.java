@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -432,7 +433,8 @@ public class CompiledGenerator implements DefinitionRepository {
             // have.
             .map(
                 script -> {
-                  final Runnable inflight = Server.inflight(script.fileName.toString());
+                  final AtomicReference<Runnable> inflight =
+                      new AtomicReference("Queued " + Server.inflight(script.fileName.toString()));
                   // For each script, create two futures: one that runs the olive script and
                   // return true and one that will wait for the timeout and return false
                   final CompletableFuture<Boolean> timeoutFuture = new CompletableFuture<>();
@@ -440,6 +442,8 @@ public class CompiledGenerator implements DefinitionRepository {
                       CompletableFuture.supplyAsync(
                           () -> {
                             final Instant startTime = Instant.now();
+                            inflight.get().run();
+                            inflight.set(Server.inflight("Runnning " + script.fileName.toString()));
                             script.runInfo = new OliveRunInfo("Running now", null, startTime);
                             final long inputCount =
                                 script.dashboard == null
@@ -470,7 +474,7 @@ public class CompiledGenerator implements DefinitionRepository {
                             final boolean ok = (Boolean) obj;
                             OLIVE_WATCHDOG.labels(script.fileName.toString()).set(ok ? 0 : 1);
                             (ok ? timeoutFuture : processFuture).cancel(true);
-                            inflight.run();
+                            inflight.get().run();
                           });
                 })
             .collect(Collectors.toList());
