@@ -2097,7 +2097,11 @@ public final class Server implements ServerConfig, ActionServices {
             t.sendResponseHeaders(503, -1);
             return;
           }
-          try (AutoCloseable timer = responseTime.start(url)) {
+          try (AutoCloseable timer = responseTime.start(url);
+              AutoCloseable inflight =
+                  inflightCloseable(
+                      String.format(
+                          "HTTP request %s for %s", url, t.getRemoteAddress().toString()))) {
             handler.handle(t);
           } catch (final Throwable e) {
             e.printStackTrace();
