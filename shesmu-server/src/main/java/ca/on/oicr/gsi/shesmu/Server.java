@@ -150,7 +150,7 @@ public final class Server implements ServerConfig, ActionServices {
   private final DefinitionRepository definitionRepository;
   private volatile boolean emergencyStop;
   private final ScheduledExecutorService executor =
-      new ScheduledThreadPoolExecutor(10 * Runtime.getRuntime().availableProcessors());
+      new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
   private final Semaphore inputDownloadSemaphore =
       new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
@@ -163,6 +163,14 @@ public final class Server implements ServerConfig, ActionServices {
   private final HttpServer server;
   private final StaticActions staticActions;
   public final String version;
+  private final ScheduledExecutorService wwwExecutor =
+      new ScheduledThreadPoolExecutor(
+          10 * Runtime.getRuntime().availableProcessors(),
+          runnable -> {
+            final Thread thread = new Thread(runnable);
+            thread.setPriority(Thread.MAX_PRIORITY);
+            return thread;
+          });
 
   public Server(int port) throws IOException, ParseException {
     try (final InputStream in = Server.class.getResourceAsStream("shesmu-build.properties")) {
@@ -178,7 +186,7 @@ public final class Server implements ServerConfig, ActionServices {
               .toInstant();
     }
     server = HttpServer.create(new InetSocketAddress(port), 0);
-    server.setExecutor(executor);
+    server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
     compiler = new CompiledGenerator(executor, definitionRepository);
     processor = new ActionProcessor(localname(), pluginManager, this);
