@@ -454,7 +454,7 @@ public class MetroDiagram {
       writer.writeStartElement("a");
       writer.writeAttribute("xlink", XLINK_NS_URI, "href", url.get());
       writer.writeAttribute("xlink", XLINK_NS_URI, "title", "View Source");
-      writer.writeAttribute("xlink", XLINK_NS_URI, "xlink:show", "new");
+      writer.writeAttribute("xlink", XLINK_NS_URI, "show", "new");
     }
     writer.writeStartElement("text");
     writer.writeAttribute("x", Long.toString(SVG_TITLE_START));
