@@ -153,7 +153,7 @@ public final class Server implements ServerConfig, ActionServices {
       new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
   private final Semaphore inputDownloadSemaphore =
-      new Semaphore(Runtime.getRuntime().availableProcessors() / 2 + 1);
+      new Semaphore(Math.min(Runtime.getRuntime().availableProcessors() / 2, 1));
   private final Map<String, String> jsonDumpers = new ConcurrentHashMap<>();
   private final MasterRunner master;
   private final PluginManager pluginManager = new PluginManager();
