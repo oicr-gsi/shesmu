@@ -434,7 +434,8 @@ public class CompiledGenerator implements DefinitionRepository {
             .map(
                 script -> {
                   final AtomicReference<Runnable> inflight =
-                      new AtomicReference("Queued " + Server.inflight(script.fileName.toString()));
+                      new AtomicReference<>(
+                          Server.inflight("Queued " + script.fileName.toString()));
                   // For each script, create two futures: one that runs the olive script and
                   // return true and one that will wait for the timeout and return false
                   final CompletableFuture<Boolean> timeoutFuture = new CompletableFuture<>();
