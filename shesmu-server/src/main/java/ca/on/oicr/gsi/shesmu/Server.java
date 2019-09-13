@@ -1627,7 +1627,9 @@ public final class Server implements ServerConfig, ActionServices {
               add(
                   String.format("/input/%s", format.name()),
                   t -> {
-                    if (!inputDownloadSemaphore.tryAcquire()) {
+                    if (processor.isOverloaded(format.name())
+                        || pluginManager.isOverloaded(Collections.singleton(format.name()))
+                        || !inputDownloadSemaphore.tryAcquire()) {
                       t.sendResponseHeaders(503, 0);
                       try (OutputStream os = t.getResponseBody()) {}
                       return;
