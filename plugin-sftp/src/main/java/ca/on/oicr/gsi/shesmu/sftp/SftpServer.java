@@ -3,10 +3,7 @@ package ca.on.oicr.gsi.shesmu.sftp;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
-import ca.on.oicr.gsi.shesmu.plugin.cache.InvalidatableRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
-import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
@@ -133,7 +130,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           renderer.line("Port", configuration.getPort());
           renderer.line("User", configuration.getUser());
         });
-    renderer.line("Active", connection.get().isPresent() ? "Yes" : "No");
+    try {
+      renderer.line("Active", connection.get().isPresent() ? "Yes" : "No");
+    } catch (InitialCachePopulationException e) {
+      renderer.line("Active", "Error on startup");
+    }
   }
 
   synchronized Pair<ActionState, Boolean> makeSymlink(
