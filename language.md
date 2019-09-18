@@ -322,8 +322,8 @@ Any kind of normal manipulation can be done in a `Define` olive:
         read_two = read_two;
 
 Because some operations change variables, calls must appear before `Group`,
-`Join`, `LeftJoin`, and `Let` clauses and call clauses that contain any of
-these.
+`Join`, `LeftJoin`, `Flatten`, and `Let` clauses and call clauses that contain
+any of these.
 
 <a name="monitor"></a>Once a Shesmu program is running, debugging is rather difficult, so Prometheus
 monitoring is built into the language using the `Monitor` clause:
@@ -409,6 +409,16 @@ There is a `LeftJoin` clause that works like a `Join` and a `Group` clause at on
       Run fastqc With
         memory = 4Gi,
         input = path;
+
+The `Flatten` clause can be used to create rows for each item in a collection:
+
+    Olive
+      Where workflow == "BamQC 2.7+"
+      Flatten input_path In input_paths
+      Where !file_exists(input_path)
+      Run missing_file_report With
+        input = input_path;
+
 
 The incoming variables act as the `By` part of the `LeftJoin` and the collected
 variables are available in the output. The collectors have access to the joined

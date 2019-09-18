@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 
@@ -14,10 +15,7 @@ import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import io.prometheus.client.Gauge;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +43,7 @@ public abstract class BaseOliveBuilder {
   protected static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
+  private static final Type A_SET_TYPE = Type.getType(Set.class);
   protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
@@ -100,6 +99,9 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_REGROUP_WITH_GROUPER =
       new Method(
           "regroup", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_GROUPER_TYPE, A_FUNCTION_TYPE});
+  private static final Method METHOD_RUNTIME_SUPPORT__FLATTEN =
+      new Method(
+          "flatten", A_STREAM_TYPE, new Type[] {A_STREAM_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE});
   private static final Method METHOD_RUNTIME_SUPPORT__JOIN =
       new Method(
           "join",
@@ -203,6 +205,44 @@ public abstract class BaseOliveBuilder {
               renderer, A_OBJECTS_TYPE, "nonNull", LambdaBuilder.predicate(A_OBJECT_TYPE));
           renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FILTER);
         });
+  }
+
+  public FlattenBuilder flatten(
+      int line, int column, Imyhat unrollType, LoadableValue... capturedVariables) {
+    final String className = String.format("shesmu/dyn/Flatten %d:%d", line, column);
+
+    final Type oldType = currentType;
+    final Type newType = Type.getObjectType(className);
+    currentType = newType;
+
+    final LambdaBuilder explodeLambda =
+        new LambdaBuilder(
+            owner,
+            String.format("Flatten %d:%d 🧨", line, column),
+            LambdaBuilder.function(A_SET_TYPE, oldType),
+            capturedVariables);
+    final LambdaBuilder constructorLambda =
+        new LambdaBuilder(
+            owner,
+            String.format("Join %d:%d ✨", line, column),
+            LambdaBuilder.function(newType, unrollType),
+            capturedVariables);
+
+    steps.add(
+        renderer -> {
+          explodeLambda.push(renderer);
+          LambdaBuilder.pushNew(renderer, LambdaBuilder.bifunction(newType, oldType, unrollType));
+          renderer
+              .methodGen()
+              .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__FLATTEN);
+        });
+
+    return new FlattenBuilder(
+        owner,
+        newType,
+        oldType,
+        unrollType.apply(TO_ASM),
+        explodeLambda.renderer(oldType, this::emitSigner));
   }
 
   public final JoinBuilder join(
@@ -492,10 +532,7 @@ public abstract class BaseOliveBuilder {
     discriminators.forEach(
         discriminator -> {
           final Method getter =
-              new Method(
-                  discriminator.name(),
-                  discriminator.type().apply(TypeUtils.TO_ASM),
-                  new Type[] {});
+              new Method(discriminator.name(), discriminator.type().apply(TO_ASM), new Type[] {});
           equalsGenerator.loadArg(0);
           if (discriminator instanceof InputVariable) {
             ((InputVariable) discriminator).extract(equalsGenerator);
@@ -508,15 +545,14 @@ public abstract class BaseOliveBuilder {
           } else {
             equalsGenerator.invokeVirtual(streamType, getter);
           }
-          switch (discriminator.type().apply(TypeUtils.TO_ASM).getSort()) {
+          switch (discriminator.type().apply(TO_ASM).getSort()) {
             case Type.ARRAY:
             case Type.OBJECT:
               equalsGenerator.invokeVirtual(A_OBJECT_TYPE, METHOD_EQUALS);
               equalsGenerator.ifZCmp(GeneratorAdapter.EQ, end);
               break;
             default:
-              equalsGenerator.ifCmp(
-                  discriminator.type().apply(TypeUtils.TO_ASM), GeneratorAdapter.NE, end);
+              equalsGenerator.ifCmp(discriminator.type().apply(TO_ASM), GeneratorAdapter.NE, end);
           }
 
           hashCodeGenerator.push(31);
@@ -527,7 +563,7 @@ public abstract class BaseOliveBuilder {
           } else {
             hashCodeGenerator.invokeVirtual(streamType, getter);
           }
-          switch (discriminator.type().apply(TypeUtils.TO_ASM).getSort()) {
+          switch (discriminator.type().apply(TO_ASM).getSort()) {
             case Type.ARRAY:
             case Type.OBJECT:
               hashCodeGenerator.invokeVirtual(A_OBJECT_TYPE, METHOD_HASH_CODE);
@@ -536,9 +572,7 @@ public abstract class BaseOliveBuilder {
               hashCodeGenerator.invokeStatic(
                   discriminator.type().apply(TypeUtils.TO_BOXED_ASM),
                   new Method(
-                      "hashCode",
-                      INT_TYPE,
-                      new Type[] {discriminator.type().apply(TypeUtils.TO_ASM)}));
+                      "hashCode", INT_TYPE, new Type[] {discriminator.type().apply(TO_ASM)}));
               break;
           }
           hashCodeGenerator.math(GeneratorAdapter.ADD, INT_TYPE);

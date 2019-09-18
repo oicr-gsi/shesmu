@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,33 +17,6 @@ import java.util.stream.Stream;
  * <p>Also tracks if the program has resolved all variables so far.
  */
 public class NameDefinitions {
-  public static class DefaultStreamTarget implements Target {
-    private final String name;
-    private final boolean signable;
-    private final Imyhat type;
-
-    public DefaultStreamTarget(String name, Imyhat type, boolean signable) {
-      this.name = name;
-      this.type = type;
-      this.signable = signable;
-    }
-
-    @Override
-    public Flavour flavour() {
-      return signable ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
-    }
-
-    @Override
-    public String name() {
-      return name;
-    }
-
-    @Override
-    public Imyhat type() {
-      return type;
-    }
-  }
-
   /**
    * Create a new collection of variables from the parameters provided.
    *

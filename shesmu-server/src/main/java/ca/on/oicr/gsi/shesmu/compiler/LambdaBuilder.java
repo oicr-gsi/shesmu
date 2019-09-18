@@ -228,6 +228,55 @@ public final class LambdaBuilder {
     };
   }
 
+  public static LambdaType bifunction(Type returnType, Type parameter1Type, Imyhat parameter2Type) {
+    assertNonPrimitive(returnType);
+    assertNonPrimitive(parameter1Type);
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_BIFUNCTION_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "apply";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+            return Stream.of(parameter1Type, parameter2Type.apply(TypeUtils.TO_BOXED_ASM));
+          case REAL:
+            return Stream.of(parameter1Type, parameter2Type.apply(TypeUtils.TO_ASM));
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 2;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+          case REAL:
+            return returnType;
+          case ERASED:
+            return A_OBJECT_TYPE;
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+    };
+  }
+
   public static LambdaType bipredicate(Type parameter1Type, Type parameter2Type) {
     assertNonPrimitive(parameter1Type);
     assertNonPrimitive(parameter2Type);
