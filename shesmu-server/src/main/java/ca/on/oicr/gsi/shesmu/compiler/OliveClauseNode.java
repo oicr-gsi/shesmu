@@ -238,6 +238,28 @@ public abstract class OliveClauseNode {
           return result;
         });
     CLAUSES.addKeyword(
+        "Flatten",
+        (parser, output) -> {
+          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+          final Parser result =
+              parser
+                  .whitespace()
+                  .then(DestructuredArgumentNode::parse, name::set)
+                  .whitespace()
+                  .keyword("In")
+                  .whitespace()
+                  .then(ExpressionNode::parse, expression::set)
+                  .whitespace();
+
+          if (result.isGood()) {
+            output.accept(
+                new OliveClauseNodeFlatten(
+                    parser.line(), parser.column(), name.get(), expression.get()));
+          }
+          return result;
+        });
+    CLAUSES.addKeyword(
         "Reject",
         (rejectParser, output) -> {
           final AtomicReference<List<RejectNode>> handlers = new AtomicReference<>();
