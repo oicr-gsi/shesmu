@@ -1,13 +1,14 @@
 package ca.on.oicr.gsi.shesmu.cerberus;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
-import ca.on.oicr.gsi.provenance.model.IusLimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,47 +31,60 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   private static final Imyhat ATTR_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList());
+  private static final Imyhat LIMS_TYPE =
+      new Imyhat.ObjectImyhat(
+          Stream.of(
+              new Pair<>("id", Imyhat.STRING),
+              new Pair<>("provider", Imyhat.STRING),
+              new Pair<>("time", Imyhat.DATE),
+              new Pair<>("version", Imyhat.STRING)));
   private final Optional<Long> fileAccession;
   private Set<Tuple> fileAttributes;
   private final Optional<Path> filePath;
-  private Optional<Long> inputFile;
+  private Set<Long> inputFiles;
   private Set<Tuple> iusAttributes;
-  private final Instant lastModified;
-  private final Tuple lims;
+  private final Set<Tuple> lims;
   private final Optional<String> md5;
   private final Optional<String> metatype;
   private final Optional<String> name;
   private final Optional<Long> runAccession;
   private final boolean skip;
   private final Optional<String> status;
+  private final Optional<Instant> timestamp;
   private final Optional<Long> workflowAccession;
   private final Set<Tuple> workflowAttributes;
   private final Optional<String> workflowName;
   private final Set<Tuple> workflowRunAttributes;
   private final Optional<Tuple> workflowVersion;
 
-  public CerberusAnalysisProvenanceValue(
-      AnalysisProvenance provenance,
-      Optional<Long> inputFile,
-      IusLimsKey limsKey,
-      Set<Tuple> fileAttributes,
-      Set<Tuple> iusAttributes,
-      Set<Tuple> workflowAttributes,
-      Set<Tuple> workflowRunAttributes,
-      Runnable isBad) {
+  public CerberusAnalysisProvenanceValue(AnalysisProvenance provenance) {
     fileAccession = Optional.ofNullable(provenance.getFileId()).map(Integer::longValue);
-    this.fileAttributes = fileAttributes;
+    this.fileAttributes = attributes(provenance.getFileAttributes());
     filePath = Optional.ofNullable(provenance.getFilePath()).map(Paths::get);
-    this.inputFile = inputFile;
-
-    this.iusAttributes = iusAttributes;
-    lastModified = provenance.getLastModified().toInstant();
+    this.inputFiles =
+        provenance.getWorkflowRunInputFileIds() == null
+            ? Collections.emptySet()
+            : provenance
+                .getWorkflowRunInputFileIds()
+                .stream()
+                .map(Integer::longValue)
+                .collect(Collectors.toCollection(TreeSet::new));
+    this.iusAttributes = attributes(provenance.getIusAttributes());
+    timestamp = Optional.ofNullable(provenance.getLastModified()).map(ZonedDateTime::toInstant);
     lims =
-        new Tuple(
-            limsKey.getLimsKey().getId(),
-            limsKey.getLimsKey().getProvider(),
-            limsKey.getLimsKey().getLastModified().toInstant(),
-            limsKey.getLimsKey().getVersion());
+        provenance.getIusLimsKeys() == null
+            ? Collections.emptySet()
+            : provenance
+                .getIusLimsKeys()
+                .stream()
+                .map(
+                    limsKey ->
+                        new Tuple(
+                            limsKey.getLimsKey().getId(),
+                            limsKey.getLimsKey().getProvider(),
+                            limsKey.getLimsKey().getLastModified().toInstant(),
+                            limsKey.getLimsKey().getVersion()))
+                .collect(Collectors.toCollection(LIMS_TYPE::newSet));
     md5 = Optional.ofNullable(provenance.getFileMd5sum());
     metatype = Optional.ofNullable(provenance.getFileMetaType());
     name = Optional.ofNullable(provenance.getWorkflowRunName());
@@ -85,15 +99,15 @@ public final class CerberusAnalysisProvenanceValue {
     status = Optional.ofNullable(provenance.getWorkflowRunStatus());
     runAccession = Optional.ofNullable(provenance.getWorkflowRunId()).map(Integer::longValue);
     workflowAccession = Optional.ofNullable(provenance.getWorkflowId()).map(Integer::longValue);
-    this.workflowAttributes = workflowAttributes;
+    this.workflowAttributes = attributes(provenance.getWorkflowAttributes());
     workflowName = Optional.ofNullable(provenance.getWorkflowName());
-    this.workflowRunAttributes = workflowRunAttributes;
+    this.workflowRunAttributes = attributes(provenance.getWorkflowRunAttributes());
     workflowVersion =
         provenance.getWorkflowVersion() == null
             ? Optional.empty()
             : Optional.of(
                 BaseProvenancePluginType.parseWorkflowVersion(
-                    provenance.getWorkflowVersion(), isBad));
+                    provenance.getWorkflowVersion(), () -> {}));
   }
 
   @ShesmuVariable(type = "at2sas")
@@ -112,8 +126,8 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public Optional<Long> input_file() {
-    return inputFile;
+  public Set<Long> input_files() {
+    return inputFiles;
   }
 
   @ShesmuVariable(type = "at2sas")
@@ -121,8 +135,8 @@ public final class CerberusAnalysisProvenanceValue {
     return iusAttributes;
   }
 
-  @ShesmuVariable(type = "o4id$sprovider$stime$dversion$s")
-  public Tuple lims() {
+  @ShesmuVariable(type = "ao4id$sprovider$stime$dversion$s")
+  public Set<Tuple> lims() {
     return lims;
   }
 
@@ -162,8 +176,8 @@ public final class CerberusAnalysisProvenanceValue {
   }
 
   @ShesmuVariable
-  public Instant timestamp() {
-    return lastModified;
+  public Optional<Instant> timestamp() {
+    return timestamp;
   }
 
   @ShesmuVariable
