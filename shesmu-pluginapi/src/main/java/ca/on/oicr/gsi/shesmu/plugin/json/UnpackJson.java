@@ -70,7 +70,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
     if (value == null || value.isNull()) {
       return Optional.empty();
     } else {
-      return inner.apply(this);
+      return Optional.of(inner.apply(this));
     }
   }
 
