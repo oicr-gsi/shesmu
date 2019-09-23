@@ -737,20 +737,146 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
       );
     }
 
-    let extraButtons;
+    const prepareInfo = (infoPane, metroPane, bytecodePane) => {
+      const bytecode = document.createElement("PRE");
+      bytecode.style.overflowX = "scroll";
+      bytecode.innerText = file.bytecode;
+      bytecodePane.appendChild(bytecode);
+
+      const infoTable = document.createElement("TABLE");
+      infoPane.appendChild(infoTable);
+
+      const statusRow = document.createElement("TR");
+      infoTable.appendChild(statusRow);
+      const statusHeader = document.createElement("TD");
+      statusHeader.innerText = "Status";
+      statusRow.appendChild(statusHeader);
+      const statusCell = document.createElement("TD");
+      statusCell.innerText = file.status;
+      statusRow.appendChild(statusCell);
+
+      const lastRunRow = document.createElement("TR");
+      infoTable.appendChild(lastRunRow);
+      const lastRunHeader = document.createElement("TD");
+      lastRunHeader.innerText = "Last Run";
+      lastRunRow.appendChild(lastRunHeader);
+      const lastRunCell = document.createElement("TD");
+      if (file.lastRun) {
+        const [ago, exact] = formatTimeBin(file.lastRun);
+        lastRunCell.innerText = ago;
+        lastRunCell.title = exact;
+      } else {
+        lastRunCell.innerText = "Never";
+      }
+      lastRunRow.appendChild(lastRunCell);
+
+      const runtimeRow = document.createElement("TR");
+      infoTable.appendChild(runtimeRow);
+      const runtimeHeader = document.createElement("TD");
+      runtimeHeader.innerText = "Run Time";
+      runtimeRow.appendChild(runtimeHeader);
+      const runtimeCell = document.createElement("TD");
+      if (file.runtime) {
+        runtimeCell.innerText = formatTimeSpan(file.runtime);
+      } else {
+        runtimeCell.innerText = "Unknown";
+      }
+      runtimeRow.appendChild(runtimeCell);
+
+      const inputFormatRow = document.createElement("TR");
+      infoTable.appendChild(inputFormatRow);
+      const inputFormatHeader = document.createElement("TD");
+      inputFormatHeader.innerText = "Input Format";
+      inputFormatRow.appendChild(inputFormatHeader);
+      const inputFormatCell = document.createElement("TD");
+      inputFormatRow.appendChild(inputFormatCell);
+      const inputFormatLink = document.createElement("A");
+      inputFormatLink.innerText = file.format;
+      inputFormatLink.href = `inputdefs#${file.format}`;
+      inputFormatCell.appendChild(inputFormatLink);
+
+      const compileTimeRow = document.createElement("TR");
+      infoTable.appendChild(compileTimeRow);
+      const compileTimeHeader = document.createElement("TD");
+      compileTimeHeader.innerText = "Last Compiled";
+      compileTimeRow.appendChild(compileTimeHeader);
+      const compileTimeCell = document.createElement("TD");
+      const [ago, exact] = formatTimeBin(file.lastCompiled);
+      compileTimeCell.innerText = ago;
+      compileTimeCell.title = exact;
+      compileTimeRow.appendChild(compileTimeCell);
+
+      if (olive.url) {
+        const sourceRow = document.createElement("TR");
+        infoTable.appendChild(sourceRow);
+        const sourceHeader = document.createElement("TD");
+        sourceHeader.innerText = "Source Code";
+        sourceRow.appendChild(sourceHeader);
+        const sourceCell = document.createElement("TD");
+        sourceRow.appendChild(sourceCell);
+        const sourceLink = document.createElement("A");
+        sourceLink.innerText = "View";
+        sourceLink.href = olive.url;
+        sourceCell.appendChild(sourceLink);
+      }
+
+      olive.tags.forEach(tag => {
+        const tagRow = document.createElement("TR");
+        infoTable.appendChild(tagRow);
+        const tagHeader = document.createElement("TD");
+        tagHeader.innerText = "Tag";
+        tagRow.appendChild(tagHeader);
+        const tagCell = document.createElement("TD");
+        tagCell.innerText = tag;
+        tagRow.appendChild(tagCell);
+      });
+
+      fetch("/metrodiagram", {
+        body: JSON.stringify({
+          file: file.filename,
+          line: olive.line,
+          column: olive.column,
+          time: file.lastCompiled
+        }),
+        method: "POST"
+      })
+        .then(response => {
+          if (response.ok) {
+            return Promise.resolve(response);
+          } else if (response.status == 404) {
+            return Promise.reject(new Error("Olive has been replaced"));
+          } else {
+            return Promise.reject(new Error("Failed to load"));
+          }
+        })
+        .then(response => response.text())
+        .then(data => {
+          const svg = new window.DOMParser().parseFromString(
+            data,
+            "image/svg+xml"
+          );
+          metroPane.appendChild(document.adoptNode(svg.documentElement));
+        })
+        .catch(function(error) {
+          const element = document.createElement("SPAN");
+          element.innerText = error.message;
+          element.className = "error";
+          metroPane.appendChild(element);
+        });
+    };
     if (olive.producesActions) {
-      const button = document.createElement("SPAN");
-      button.className = "load danger";
-      button.title =
+      const throttleButton = document.createElement("SPAN");
+      throttleButton.className = "load danger";
+      throttleButton.title =
         "Throttle/unthrottle actions generated by the olive. This does not stop the olive from running.";
       const renderPaused = () => {
         pauseSpan.innerText = olive.paused ? "⏸" : "▶";
         pauseSpan.title = olive.paused ? "Paused" : "Running";
-        button.innerText = olive.paused
+        throttleButton.innerText = olive.paused
           ? "▶ Resume Actions"
           : "⏸ Pause Actions";
       };
-      button.addEventListener("click", () => {
+      throttleButton.addEventListener("click", () => {
         fetchJsonWithBusyDialog(
           "/pauseolive",
           {
@@ -770,181 +896,65 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
         );
       });
       renderPaused();
-      extraButtons = [button];
-    } else {
-      extraButtons = [];
-    }
-
-    getStats(
-      [
-        {
-          type: "sourcelocation",
-          locations: [
-            {
-              file: file.filename,
-              line: olive.line,
-              column: olive.column,
-              time: file.lastCompiled
-            }
-          ]
-        }
-      ],
-      [],
-      results,
-      false,
-      targetElement => {
-        const [infoPane, metroPane, listPane, bytecodePane] = makeTabs(
-          targetElement,
-          0,
-          "Overview",
-          "Dataflow",
-          "Actions",
-          "Bytecode"
-        );
-        const bytecode = document.createElement("PRE");
-        bytecode.style.overflowX = "scroll";
-        bytecode.innerText = file.bytecode;
-        bytecodePane.appendChild(bytecode);
-
-        const infoTable = document.createElement("TABLE");
-        infoPane.appendChild(infoTable);
-
-        const statusRow = document.createElement("TR");
-        infoTable.appendChild(statusRow);
-        const statusHeader = document.createElement("TD");
-        statusHeader.innerText = "Status";
-        statusRow.appendChild(statusHeader);
-        const statusCell = document.createElement("TD");
-        statusCell.innerText = file.status;
-        statusRow.appendChild(statusCell);
-
-        const lastRunRow = document.createElement("TR");
-        infoTable.appendChild(lastRunRow);
-        const lastRunHeader = document.createElement("TD");
-        lastRunHeader.innerText = "Last Run";
-        lastRunRow.appendChild(lastRunHeader);
-        const lastRunCell = document.createElement("TD");
-        if (file.lastRun) {
-          const [ago, exact] = formatTimeBin(file.lastRun);
-          lastRunCell.innerText = ago;
-          lastRunCell.title = exact;
-        } else {
-          lastRunCell.innerText = "Never";
-        }
-        lastRunRow.appendChild(lastRunCell);
-
-        const runtimeRow = document.createElement("TR");
-        infoTable.appendChild(runtimeRow);
-        const runtimeHeader = document.createElement("TD");
-        runtimeHeader.innerText = "Run Time";
-        runtimeRow.appendChild(runtimeHeader);
-        const runtimeCell = document.createElement("TD");
-        if (file.runtime) {
-          runtimeCell.innerText = formatTimeSpan(file.runtime);
-        } else {
-          runtimeCell.innerText = "Unknown";
-        }
-        runtimeRow.appendChild(runtimeCell);
-
-        const inputFormatRow = document.createElement("TR");
-        infoTable.appendChild(inputFormatRow);
-        const inputFormatHeader = document.createElement("TD");
-        inputFormatHeader.innerText = "Input Format";
-        inputFormatRow.appendChild(inputFormatHeader);
-        const inputFormatCell = document.createElement("TD");
-        inputFormatRow.appendChild(inputFormatCell);
-        const inputFormatLink = document.createElement("A");
-        inputFormatLink.innerText = file.format;
-        inputFormatLink.href = `inputdefs#${file.format}`;
-        inputFormatCell.appendChild(inputFormatLink);
-
-        const compileTimeRow = document.createElement("TR");
-        infoTable.appendChild(compileTimeRow);
-        const compileTimeHeader = document.createElement("TD");
-        compileTimeHeader.innerText = "Last Compiled";
-        compileTimeRow.appendChild(compileTimeHeader);
-        const compileTimeCell = document.createElement("TD");
-        const [ago, exact] = formatTimeBin(file.lastCompiled);
-        compileTimeCell.innerText = ago;
-        compileTimeCell.title = exact;
-        compileTimeRow.appendChild(compileTimeCell);
-
-        if (olive.url) {
-          const sourceRow = document.createElement("TR");
-          infoTable.appendChild(sourceRow);
-          const sourceHeader = document.createElement("TD");
-          sourceHeader.innerText = "Source Code";
-          sourceRow.appendChild(sourceHeader);
-          const sourceCell = document.createElement("TD");
-          sourceRow.appendChild(sourceCell);
-          const sourceLink = document.createElement("A");
-          sourceLink.innerText = "View";
-          sourceLink.href = olive.url;
-          sourceCell.appendChild(sourceLink);
-        }
-
-        olive.tags.forEach(tag => {
-          const tagRow = document.createElement("TR");
-          infoTable.appendChild(tagRow);
-          const tagHeader = document.createElement("TD");
-          tagHeader.innerText = "Tag";
-          tagRow.appendChild(tagHeader);
-          const tagCell = document.createElement("TD");
-          tagCell.innerText = tag;
-          tagRow.appendChild(tagCell);
-        });
-
-        const statsHeader = document.createElement("H2");
-        statsHeader.innerText = "Actions";
-        infoPane.appendChild(statsHeader);
-        const stats = document.createElement("DIV");
-        infoPane.appendChild(stats);
-
-        fetch("/metrodiagram", {
-          body: JSON.stringify({
-            file: file.filename,
-            line: olive.line,
-            column: olive.column,
-            time: file.lastCompiled
-          }),
-          method: "POST"
-        })
-          .then(response => {
-            if (response.ok) {
-              return Promise.resolve(response);
-            } else if (response.status == 404) {
-              return Promise.reject(new Error("Olive has been replaced"));
-            } else {
-              return Promise.reject(new Error("Failed to load"));
-            }
-          })
-          .then(response => response.text())
-          .then(data => {
-            const svg = new window.DOMParser().parseFromString(
-              data,
-              "image/svg+xml"
-            );
-            metroPane.appendChild(document.adoptNode(svg.documentElement));
-          })
-          .catch(function(error) {
-            const element = document.createElement("SPAN");
-            element.innerText = error.message;
-            element.className = "error";
-            metroPane.appendChild(element);
-          });
-        return [stats, listPane];
-      },
-      (reset, updateLocalSearches) => {
-        if (updateLocalSearches) {
-          updateLocalSearches(localSearches);
-          localStorage.setItem(
-            "shesmu_searches",
-            JSON.stringify(localSearches)
+      getStats(
+        [
+          {
+            type: "sourcelocation",
+            locations: [
+              {
+                file: file.filename,
+                line: olive.line,
+                column: olive.column,
+                time: file.lastCompiled
+              }
+            ]
+          }
+        ],
+        [],
+        results,
+        false,
+        targetElement => {
+          const [infoPane, metroPane, listPane, bytecodePane] = makeTabs(
+            targetElement,
+            0,
+            "Overview",
+            "Dataflow",
+            "Actions",
+            "Bytecode"
           );
-        }
-      },
-      ...extraButtons
-    );
+          prepareInfo(infoPane, metroPane, bytecodePane);
+
+          const statsHeader = document.createElement("H2");
+          statsHeader.innerText = "Actions";
+          infoPane.appendChild(statsHeader);
+          const stats = document.createElement("DIV");
+          infoPane.appendChild(stats);
+
+          return [stats, listPane];
+        },
+        (reset, updateLocalSearches) => {
+          if (updateLocalSearches) {
+            updateLocalSearches(localSearches);
+            localStorage.setItem(
+              "shesmu_searches",
+              JSON.stringify(localSearches)
+            );
+          }
+        },
+        throttleButton
+      );
+    } else {
+      clearChildren(results);
+      // TODO: build a better UI for alerts and integrate it here
+      const [infoPane, metroPane, bytecodePane] = makeTabs(
+        results,
+        0,
+        "Overview",
+        "Dataflow",
+        "Bytecode"
+      );
+      prepareInfo(infoPane, metroPane, bytecodePane);
+    }
   };
   if (deadPauses.length > 0) {
     const title = document.createElement("h1");
