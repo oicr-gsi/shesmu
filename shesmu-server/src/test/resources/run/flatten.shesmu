@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Flatten x In stuff
+ Run ok With ok = x == workflow || x == accession || x == project;
