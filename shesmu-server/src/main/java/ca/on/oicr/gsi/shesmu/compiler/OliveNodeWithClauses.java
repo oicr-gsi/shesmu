@@ -119,9 +119,12 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   /** Type check this olive and all its constituent parts */
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    final boolean ok =
-        clauses.stream().filter(clause -> clause.typeCheck(errorHandler)).count() == clauses.size();
-    return ok & typeCheckExtra(errorHandler);
+    for (final OliveClauseNode clause : clauses) {
+      if (!clause.typeCheck(errorHandler)) {
+        return false;
+      }
+    }
+    return typeCheckExtra(errorHandler);
   }
 
   protected abstract boolean typeCheckExtra(Consumer<String> errorHandler);
