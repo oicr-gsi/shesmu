@@ -119,8 +119,7 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <I, T, O> Stream<O> flatten(
       Stream<I> input, Function<I, Set<T>> explode, BiFunction<I, T, O> make) {
-    return input.flatMap(
-        i -> explode.apply(i).stream().peek(System.err::println).map(v -> make.apply(i, v)));
+    return input.flatMap(i -> explode.apply(i).stream().map(v -> make.apply(i, v)));
   }
 
   @RuntimeInterop
