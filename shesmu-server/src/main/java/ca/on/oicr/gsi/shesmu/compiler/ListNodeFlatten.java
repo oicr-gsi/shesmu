@@ -104,8 +104,7 @@ public class ListNodeFlatten extends ListNode {
       List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
     definedNames = name.stream().map(Target::name).collect(Collectors.toList());
     final NameDefinitions innerDefs = defs.bind(name);
-    if (!source.resolve(innerDefs, errorHandler)
-        || !childName.typeCheck(source.streamType(), errorHandler)) {
+    if (!source.resolve(innerDefs, errorHandler)) {
       return Optional.empty();
     }
     final Optional<List<Target>> nextName =
