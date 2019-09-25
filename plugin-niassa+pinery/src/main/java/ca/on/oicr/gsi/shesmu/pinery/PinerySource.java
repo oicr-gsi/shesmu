@@ -148,6 +148,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             ? Instant.EPOCH
                             : lp.getCreatedDate().toInstant(),
                         basesMask,
+                        lp.getSequencerRunPlatformModel(),
                         false);
 
                 if (badSetInRecord.isEmpty()) {
@@ -215,6 +216,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             ? Instant.EPOCH
                             : sp.getCreatedDate().toInstant(),
                         runDirectoryAndMask.second(),
+                        sp.getSequencerRunPlatformModel(),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
