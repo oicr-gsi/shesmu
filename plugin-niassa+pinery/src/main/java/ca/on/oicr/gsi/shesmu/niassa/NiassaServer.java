@@ -322,6 +322,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public synchronized boolean maxInFlight(long workflowAccession) {
+    // Ban all jobs with invalid accessions from running
+    if (workflowAccession < 1) {
+      return true;
+    }
     final long running =
         analysisCache()
             .get(workflowAccession)
