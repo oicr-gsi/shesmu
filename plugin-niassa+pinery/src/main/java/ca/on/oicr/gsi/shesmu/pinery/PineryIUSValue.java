@@ -13,6 +13,7 @@ public final class PineryIUSValue {
   private final String donor;
   private final String group_desc;
   private final String group_id;
+  private final String instrumentModel;
   private final boolean is_sample;
   private final Tuple ius;
   private final String kit;
@@ -53,11 +54,13 @@ public final class PineryIUSValue {
       Tuple lims,
       Instant completed_date,
       String bases_mask,
+      String instrumentModel,
       boolean is_sample) {
     super();
     this.path = path;
     this.organism = organism;
     this.bases_mask = bases_mask;
+    this.instrumentModel = instrumentModel;
     this.is_sample = is_sample;
     this.project = project;
     this.library_name = library_name;
@@ -106,6 +109,7 @@ public final class PineryIUSValue {
         && donor.equals(that.donor)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
+        && instrumentModel.equals(that.instrumentModel)
         && ius.equals(that.ius)
         && kit.equals(that.kit)
         && library_design.equals(that.library_design)
@@ -141,6 +145,7 @@ public final class PineryIUSValue {
         donor,
         group_desc,
         group_id,
+        instrumentModel,
         is_sample,
         ius,
         kit,
@@ -158,6 +163,11 @@ public final class PineryIUSValue {
         tissue_prep,
         tissue_region,
         tissue_type);
+  }
+
+  @ShesmuVariable(signable = true)
+  public String instrument_model() {
+    return instrumentModel;
   }
 
   @ShesmuVariable
