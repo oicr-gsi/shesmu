@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For {k,a,b} Zipping [ {1, "x"}, {2, "y"} ] With [ {1, `"x"`}, {2, `"y"`}, {3, ``}]: All a == b);
