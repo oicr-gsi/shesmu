@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Subgroup;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
@@ -382,6 +383,29 @@ public final class RuntimeSupport {
           throw new UnsupportedOperationException();
         }
       };
+
+  @RuntimeInterop
+  public static Stream<Tuple> zip(Set<Tuple> left, Set<Tuple> right, CopySemantics... semantics) {
+    final Map<Object, Tuple> leftMap =
+        left.stream().collect(Collectors.toMap(t -> t.get(0), Function.identity(), (a, b) -> a));
+    final Map<Object, Tuple> rightMap =
+        right.stream().collect(Collectors.toMap(t -> t.get(0), Function.identity(), (a, b) -> a));
+    final Set<Object> keys = new HashSet<>();
+    keys.addAll(leftMap.keySet());
+    keys.addAll(rightMap.keySet());
+    return keys.stream()
+        .map(
+            k -> {
+              final Object[] output = new Object[semantics.length + 1];
+              output[0] = k;
+              final Tuple leftTuple = leftMap.getOrDefault(k, null);
+              final Tuple rightTuple = rightMap.getOrDefault(k, null);
+              for (int i = 0; i < semantics.length; i++) {
+                output[i + 1] = semantics[i].apply(leftTuple, rightTuple);
+              }
+              return new Tuple(output);
+            });
+  }
 
   private static final Map<String, CallSite> callsites = new HashMap<>();
 

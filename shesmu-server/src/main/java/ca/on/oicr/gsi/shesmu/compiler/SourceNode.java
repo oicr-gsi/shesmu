@@ -48,6 +48,24 @@ public abstract class SourceNode {
           return result;
         });
     DISPATCH.addKeyword(
+        "Zipping",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> left = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> right = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .then(ExpressionNode::parse, left::set)
+                  .whitespace()
+                  .keyword("With")
+                  .whitespace()
+                  .then(ExpressionNode::parse, right::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new SourceNodeZipper(p.line(), p.column(), left.get(), right.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
         "From",
         (p, o) -> {
           final AtomicReference<ExpressionNode> start = new AtomicReference<>();

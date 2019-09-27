@@ -79,6 +79,7 @@ syn keyword shesmuKeyword When
 syn keyword shesmuKeyword Where
 syn keyword shesmuKeyword While
 syn keyword shesmuKeyword With
+syn keyword shesmuKeyword Zipping
 syn keyword shesmuBool False True
 syn keyword shesmuConstant json_signature
 syn keyword shesmuConstant sha1_signature

@@ -696,6 +696,23 @@ Takes the string _expr_ and splits it into chunks delimited by _regex_ and then
 processes them using the supplied modifications and then computes a result
 using the collector. The modifications and collectors are described below.
 
+- `For` _var_ `Zipping` _expr_` With` _expr_`:` _modifications..._ _collector_
+
+This takes two expressions, which must be lists containing tuples. The first
+elements of each tuple, which must be the same type, are matched up and then
+the tuples are joined and iterated over. The modifications and collectors are described below.
+
+Since entries might not match, the non-index elements in the tuple are
+converted to optionals.
+
+So, `For {index, left, right} Zipping [ {"a", 1}, {"b", 2} ] With [ {"a", True} ]:`
+will produce:
+
+|`index` | `left`    | `right`      |
+|---     |---        |---           |
+| `"a"`  | `` `1` `` | `` `True` `` |
+| `"b"`  | `` `2` `` | `` ` ` ``    |
+
 ### Optional Coalescence
 - _expr_ `Default` _default_
 
