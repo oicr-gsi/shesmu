@@ -192,6 +192,11 @@ public final class RuntimeSupport {
             });
   }
 
+  @RuntimeInterop
+  public static <T> Optional<T> merge(Optional<T> left, Supplier<Optional<T>> right) {
+    return left.isPresent() ? left : right.get();
+  }
+
   /**
    * Add Prometheus monitoring to a stream.
    *

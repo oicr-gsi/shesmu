@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.description.Renderable;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -254,6 +255,47 @@ public abstract class BinaryOperation {
         });
   }
 
+  public static Optional<BinaryOperation> optionalMerge(Imyhat left, Imyhat right) {
+    if (left instanceof Imyhat.OptionalImyhat && right instanceof Imyhat.OptionalImyhat) {
+      final Imyhat leftInner = ((Imyhat.OptionalImyhat) left).inner();
+      final Imyhat rightInner = ((Imyhat.OptionalImyhat) right).inner();
+      if (leftInner.isSame(rightInner)) {
+        return Optional.of(
+            new BinaryOperation(left.unify(right)) {
+              @Override
+              public void render(
+                  int line,
+                  int column,
+                  Renderer renderer,
+                  Renderable leftValue,
+                  Renderable rightValue) {
+                final Set<String> captures = new HashSet<>();
+                rightValue.collectFreeVariables(captures, Target.Flavour::needsCapture);
+                final LambdaBuilder supplier =
+                    new LambdaBuilder(
+                        renderer.root(),
+                        String.format("Merge %d:%d", line, column),
+                        LambdaBuilder.supplier(A_OPTIONAL_TYPE),
+                        renderer
+                            .allValues()
+                            .filter(v -> captures.contains(v.name()))
+                            .toArray(LoadableValue[]::new));
+                final Renderer orElseMethod =
+                    supplier.renderer(renderer.streamType(), renderer.signerEmitter());
+                orElseMethod.methodGen().visitCode();
+                rightValue.render(orElseMethod);
+                orElseMethod.methodGen().returnValue();
+                orElseMethod.methodGen().endMethod();
+                leftValue.render(renderer);
+                supplier.push(renderer);
+                renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, RUNTIME_SUPPORT__MERGE);
+              }
+            });
+      }
+    }
+    return Optional.empty();
+  }
+
   /**
    * Perform a primitive math operation on two operands of the provided type; returning the same
    * type
@@ -454,7 +496,9 @@ public abstract class BinaryOperation {
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
+  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   public static final BinaryOperation BAD =
       new BinaryOperation(Imyhat.BAD) {
@@ -466,7 +510,9 @@ public abstract class BinaryOperation {
         }
       };
   private static final Method OPTIONAL__OR_ELSE_GET =
-      new Method("orElseGet", A_OBJECT_TYPE, new Type[] {Type.getType(Supplier.class)});
+      new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  private static final Method RUNTIME_SUPPORT__MERGE =
+      new Method("merge", A_OPTIONAL_TYPE, new Type[] {A_OPTIONAL_TYPE, A_SUPPLIER_TYPE});
   public static final Method TUPLE__CONCAT =
       new Method("concat", A_TUPLE_TYPE, new Type[] {A_TUPLE_TYPE});
   public static final Method TUPLE__CTOR =

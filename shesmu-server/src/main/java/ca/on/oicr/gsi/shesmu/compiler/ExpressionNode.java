@@ -320,7 +320,11 @@ public abstract class ExpressionNode implements Renderable {
         });
     OUTER.addRaw("expression", ExpressionNode::parse1);
     LOGICAL_DISJUNCTION.addSymbol(
-        "||", binaryOperators("||", BinaryOperation.shortCircuit(GeneratorAdapter.NE)));
+        "||",
+        binaryOperators(
+            "||",
+            BinaryOperation.shortCircuit(GeneratorAdapter.NE),
+            BinaryOperation::optionalMerge));
 
     LOGICAL_CONJUNCTION.addSymbol(
         "&&", binaryOperators("&&", BinaryOperation.shortCircuit(GeneratorAdapter.EQ)));
