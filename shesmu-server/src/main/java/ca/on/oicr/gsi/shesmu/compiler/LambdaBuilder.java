@@ -743,7 +743,7 @@ public final class LambdaBuilder {
 
       @Override
       public Type returnType(AccessMode accessMode) {
-        return returnType;
+        return accessMode == AccessMode.ERASED ? A_OBJECT_TYPE : returnType;
       }
     };
   }

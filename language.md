@@ -702,10 +702,14 @@ using the collector. The modifications and collectors are described below.
 Computes an optional value using _expr_; if this value is empty, returns
 _default_. _expr_ must be the optional version of _expr_.
 
-### Logical Disjunction
+### Logical Disjunction and Optional Merging
 - _expr_ `||` _expr_
 
-Logical short-circuiting `or`. Both operands must be boolean and the result is boolean.
+Logical short-circuiting `or`. If operands are boolean, the result is boolean.
+
+If both are optionals of the matching type, if the first optional has a value,
+returns that optional; otherwise the second.
+
 
 ### Logical Conjunction
 - _expr_ `&&` _expr_
