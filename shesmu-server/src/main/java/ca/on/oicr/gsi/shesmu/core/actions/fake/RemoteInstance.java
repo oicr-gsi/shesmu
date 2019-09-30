@@ -49,7 +49,7 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
         String name = obj.get("name").asText();
         if (name.equals("nothing") || !allow.matcher(name).matches()) continue;
         definer.defineAction(
-            name,
+            configuration.getPrefix() + name,
             "Fake version of: " + obj.get("description").asText(),
             FakeAction.class,
             () -> new FakeAction(name),
