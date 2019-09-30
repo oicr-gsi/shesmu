@@ -10,17 +10,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /** The types, as written in the script */
 public abstract class ImyhatNode {
-
-  private static final Imyhat[] BASE_TYPES =
-      new Imyhat[] {Imyhat.BOOLEAN, Imyhat.DATE, Imyhat.INTEGER, Imyhat.PATH, Imyhat.STRING};
-
-  public static boolean isBaseType(String name) {
-    return Stream.of(BASE_TYPES).anyMatch(t -> t.name().equals(name));
-  }
 
   public static Parser parse(Parser input, Consumer<ImyhatNode> output) {
     final AtomicReference<ImyhatNode> type = new AtomicReference<>();
@@ -71,11 +63,6 @@ public abstract class ImyhatNode {
   private static Parser parse1(Parser input, Consumer<ImyhatNode> output) {
     final Parser listParser = input.symbol("[");
     if (listParser.isGood()) {
-      final Parser emptyResult = listParser.whitespace().symbol("]").whitespace();
-      if (emptyResult.isGood()) {
-        output.accept(new ImyhatNodeLiteral(Imyhat.EMPTY));
-        return emptyResult;
-      }
       final AtomicReference<ImyhatNode> inner = new AtomicReference<>();
       final Parser result =
           listParser
@@ -185,13 +172,12 @@ public abstract class ImyhatNode {
       return result;
     }
 
-    for (final Imyhat base : BASE_TYPES) {
-      if (base.name().equals(name.get())) {
-        output.accept(new ImyhatNodeLiteral(base));
-        return result;
-      }
-    }
-    output.accept(new ImyhatNodeVariable(name.get()));
+    output.accept(
+        Imyhat.baseTypes()
+            .filter(base -> base.name().equals(name.get()))
+            .findFirst()
+            .<ImyhatNode>map(ImyhatNodeLiteral::new)
+            .orElseGet(() -> new ImyhatNodeVariable(name.get())));
     return result;
   }
 
