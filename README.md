@@ -193,11 +193,13 @@ To configure this, create a file ending in `.fakeactions` as follows:
 
     {
       "url": "http://shesmu-prod:8081,
-      "allow": ".*"
+      "allow": ".*",
+      "prefix": ""
     }
 
 where `url` is the Shesmu server to copy and `allow` is a regular expression of
-which actions to copy.
+which actions to copy. An optional `prefix` can be applied to the names of all
+the actions.
 
 ### Input Definitions
 A _input format_ is the type of data that Shesmu olives process--that is, the
