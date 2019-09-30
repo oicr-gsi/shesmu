@@ -27,12 +27,12 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   private final ExpressionNode body;
   private final int column;
   private Function<String, FunctionDefinition> definedFunctions;
+  private final boolean exported;
   private final int line;
   private Method method;
   private final String name;
   private Type ownerType;
   private final List<OliveParameter> parameters;
-  private final boolean exported;
 
   public OliveNodeFunction(
       int line,
@@ -98,13 +98,6 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   }
 
   @Override
-  public void processExport(ExportConsumer exportConsumer) {
-    if (exported) {
-      exportConsumer.function(name, returnType(), this::parameters);
-    }
-  }
-
-  @Override
   public String description() {
     return "User-defined function";
   }
@@ -122,6 +115,13 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   @Override
   public Stream<FunctionParameter> parameters() {
     return parameters.stream().map(p -> new FunctionParameter(p.name(), p.type()));
+  }
+
+  @Override
+  public void processExport(ExportConsumer exportConsumer) {
+    if (exported) {
+      exportConsumer.function(name, returnType(), this::parameters);
+    }
   }
 
   @Override
@@ -201,6 +201,16 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return body.typeCheck(errorHandler);
+    boolean ok = true;
+    for (final OliveParameter parameter : parameters) {
+      if (parameter.type() == Imyhat.EMPTY || parameter.type() == Imyhat.NOTHING) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: The type %s is disallowed for parameter %s.",
+                line, column, parameter.type().name(), parameter.name()));
+        ok = false;
+      }
+    }
+    return ok && body.typeCheck(errorHandler);
   }
 }

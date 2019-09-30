@@ -50,7 +50,7 @@ public class TypeAliasNode {
       Function<String, Imyhat> definedTypes,
       Function<String, FunctionDefinition> definedFunctions,
       Consumer<String> errorHandler) {
-    if (ImyhatNode.isBaseType(name)) {
+    if (Imyhat.baseTypes().anyMatch(t -> t.name().equals(name))) {
       errorHandler.accept(
           String.format("%d:%d: Attempt to redefine base type “%s”.", line, column, name));
       return Imyhat.BAD;
