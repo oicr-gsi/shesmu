@@ -12,7 +12,9 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -43,6 +45,23 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
   public Optional<ActionGenerator> compile(
       Path fileName, LiveExportConsumer exportConsumer, Consumer<FileTable> dashboardConsumer) {
+    try {
+      return compile(
+          fileName.toString(),
+          new String(Files.readAllBytes(fileName), StandardCharsets.UTF_8),
+          exportConsumer,
+          dashboardConsumer);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return Optional.empty();
+  }
+
+  public Optional<ActionGenerator> compile(
+      String fileName,
+      String contents,
+      LiveExportConsumer exportConsumer,
+      Consumer<FileTable> dashboardConsumer) {
     try {
       errors.clear();
       final Compiler compiler =
@@ -81,9 +100,9 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       final List<Consumer<ActionGenerator>> exports = new ArrayList<>();
       final MethodHandles.Lookup lookup = MethodHandles.lookup();
       if (compiler.compile(
-          Files.readAllBytes(fileName),
+          contents,
           "dyn/shesmu/Program",
-          fileName.toString(),
+          fileName,
           definitionRepository.constants().collect(Collectors.toList())::stream,
           definitionRepository.signatures().collect(Collectors.toList())::stream,
           new ExportConsumer() {

@@ -1210,7 +1210,9 @@ public final class Server implements ServerConfig, ActionServices {
                   writer.writeCharacters(" = ");
                   writer.writeCharacters(entry.getValue());
                   writer.writeEndElement();
-                  writer.writeEmptyElement("br");
+                  writer.writeStartElement("br");
+                  writer.writeComment("");
+                  writer.writeEndElement();
                 }
               }
 
@@ -1716,6 +1718,13 @@ public final class Server implements ServerConfig, ActionServices {
             os.write(errorBytes);
           }
         });
+    add(
+        "/simulate",
+        t -> {
+          final SimulateRequest request =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
+          request.run(definitionRepository, compiler::functions, this, inputProvider, t);
+        });
 
     add(
         "/checkhtml",
@@ -1882,7 +1891,7 @@ public final class Server implements ServerConfig, ActionServices {
                             + "const text = document.getElementById(\"inputText\");"
                             + "const output = document.getElementById(\"outputContainer\");"
                             + "checkButton.addEventListener(\"click\", e => runCheck(checkButton, text.value, output));"
-                            + "document.getElementById(\"loadButton\").addEventListener(\"click\", e => loadFile(text));"));
+                            + "document.getElementById(\"loadButton\").addEventListener(\"click\", e => loadFile((name, data) => text.value = data));"));
               }
 
               @Override
@@ -1903,6 +1912,75 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeAttribute("id", "loadButton");
                 writer.writeCharacters("⬆️ Upload File");
                 writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "outputContainer");
+                writer.writeEndElement();
+              }
+
+              private void writeDateRange(XMLStreamWriter writer, String name, String description)
+                  throws XMLStreamException {
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters(description);
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("input");
+                writer.writeAttribute("type", "text");
+                writer.writeAttribute("id", name + "Start");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeCharacters(" to ");
+                writer.writeStartElement("input");
+                writer.writeAttribute("type", "text");
+                writer.writeAttribute("id", name + "End");
+                writer.writeComment("");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
+        "/simulatedash",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+              @Override
+              public String activeUrl() {
+                return "simulatedash";
+              }
+
+              @Override
+              public Stream<Header> headers() {
+                return Stream.of(
+                    Header.jsFile("ace.js"),
+                    Header.jsFile("ext-searchbox.js"),
+                    Header.jsFile("theme-ambiance.js"),
+                    Header.jsFile("theme-chrome.js"),
+                    Header.jsFile("mode-shesmu.js"),
+                    Header.jsModule(
+                        "import {"
+                            + "initialiseSimulationDashboard"
+                            + "} from \"./shesmu.js\";"
+                            + "const output = document.getElementById(\"outputContainer\");"
+                            + "const sound = document.getElementById(\"sound\");"
+                            + "initialiseSimulationDashboard(ace, output, sound);"));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("audio");
+                writer.writeAttribute("id", "sound");
+                writer.writeAttribute("controls", "none");
+                writer.writeAttribute("preload", "auto");
+                writer.writeAttribute("style", "display: none");
+                writer.writeAttribute("src", "complete.ogg");
+                writer.writeComment("");
                 writer.writeEndElement();
 
                 writer.writeStartElement("div");
@@ -2074,10 +2152,15 @@ public final class Server implements ServerConfig, ActionServices {
     add("main.css", "text/css; charset=utf-8");
     add("shesmu.js", "text/javascript;charset=utf-8");
     add("utils.js", "text/javascript;charset=utf-8");
+    add("ace.js", "text/javascript;charset=utf-8");
+    add("theme-ambiance.js", "text/javascript;charset=utf-8");
+    add("theme-chrome.js", "text/javascript;charset=utf-8");
+    add("mode-shesmu.js", "text/javascript;charset=utf-8");
     add("shesmu.svg", "image/svg+xml");
     add("favicon.png", "image/png");
     add("thorschariot.gif", "image/gif");
     add("swagger.json", "application/json");
+    add("complete.ogg", "audio/ogg");
     add("api-docs/favicon-16x16.png", "image/png");
     add("api-docs/favicon-32x32.png", "image/png");
     add("api-docs/index.html", "text/html");
@@ -2221,6 +2304,7 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.submenu(
             "Tools",
             NavigationMenu.item("checkdash", "Olive Checker"),
+            NavigationMenu.item("simulatedash", "Olive Simulator"),
             NavigationMenu.item("typedefs", "Type Converter")),
         NavigationMenu.submenu(
             "Internals",

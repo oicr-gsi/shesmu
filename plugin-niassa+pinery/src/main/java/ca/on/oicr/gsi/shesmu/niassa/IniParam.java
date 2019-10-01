@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
+import ca.on.oicr.gsi.shesmu.plugin.wdl.PackWdlVariables;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;

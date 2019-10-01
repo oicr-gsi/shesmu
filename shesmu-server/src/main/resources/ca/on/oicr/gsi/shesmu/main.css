@@ -188,7 +188,7 @@ a.load {
     background-color: #D1EFED;
 }
 
-.state_succeeded, .filterlist .state_succeeded {
+.state_succeeded, .filterlist .state_succeeded, .state_simulated {
     border: 1px solid #06AED5;
     background-color: #D1F0F7;
 }
@@ -277,15 +277,15 @@ a.load {
     color: #F2D234;
 }
 
-.action.state_succeeded a:link {
+.action.state_succeeded a:link, .action.state_simulated a:link {
     color: #06AED5;
 }
 
-.action.state_succeeded a:visited {
+.action.state_succeeded a:visited, .action.state_simulated a:visited {
     color: #058FAF;
 }
 
-.action.state_succeeded a:hover, .action.state_succeeded a:active {
+.action.state_succeeded a:hover, .action.state_succeeded a:active, .action.state_simulated a:hover, .action.state_simulated a:active {
     color: #33BCDC;
 }
 
@@ -332,6 +332,11 @@ a.load {
 
 .action.state_succeeded > :first-child::before {
     content: "Succeeded ✓";
+    color: #06AED5;
+}
+
+.action.state_simulated > :first-child::before {
+    content: "Simulated 🤖";
     color: #06AED5;
 }
 
@@ -586,3 +591,7 @@ textarea {
 div.histogram {
     padding-top: 1em;
 }
+
+div.editor {
+width: 100%;
+height: 70vh;
