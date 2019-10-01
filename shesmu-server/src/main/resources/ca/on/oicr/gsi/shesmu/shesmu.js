@@ -31,6 +31,22 @@ function dangerButton(label, title, callback) {
   return makeButton(label, title, " danger", callback);
 }
 
+function preformatted(text) {
+  const pre = document.createElement("PRE");
+  pre.style.overflowX = "scroll";
+  pre.innerText = text;
+  return pre;
+}
+
+function alertEntries(entries) {
+  return Object.entries(entries).map(([name, value]) => {
+    const span = document.createElement("SPAN");
+    span.className = "label";
+    span.innerText = `${name} = ${value}`;
+    return [span, document.createElement("BR")];
+  });
+}
+
 function statusButton(state) {
   const button = document.createElement("SPAN");
   button.title = actionStates[state];
@@ -68,13 +84,12 @@ function fetchJsonWithBusyDialog(url, parameters, callback) {
     })
     .then(response => response.json())
     .then(response => {
-      closeBusy();
       callback(response);
     })
     .catch(error => {
-      closeBusy();
-      output.innerText = error.message;
-    });
+      makePopup().innerText = error.message;
+    })
+    .finally(closeBusy);
 }
 
 export function fetchConstant(name) {
@@ -738,10 +753,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
     }
 
     const prepareInfo = (infoPane, metroPane, bytecodePane) => {
-      const bytecode = document.createElement("PRE");
-      bytecode.style.overflowX = "scroll";
-      bytecode.innerText = file.bytecode;
-      bytecodePane.appendChild(bytecode);
+      bytecodePane.appendChild(preformatted(file.bytecode));
 
       const infoTable = document.createElement("TABLE");
       infoPane.appendChild(infoTable);
@@ -2715,15 +2727,493 @@ export function runCheck(button, sourceCode, outputContainer) {
     });
 }
 
-export function loadFile(textContainer) {
+export function loadFile(callback) {
   const input = document.createElement("INPUT");
   input.type = "file";
 
   input.onchange = e => {
     const reader = new FileReader();
-    reader.onload = rev => (textContainer.value = rev.target.result);
+    const name = e.target.files[0].name;
+    reader.onload = rev => callback(name, rev.target.result);
     reader.readAsText(e.target.files[0], "UTF-8");
   };
 
   input.click();
+}
+
+function processIniType(name, type, toplevel) {
+  if (type === "boolean") {
+    return "b";
+  } else if (type === "integer") {
+    return "i";
+  } else if (type === "float") {
+    return "f";
+  } else if (type === "path") {
+    return "p";
+  } else if (type === "string") {
+    return "s";
+  } else if (typeof type === "object" && type && type.hasOwnProperty("is")) {
+    switch (type.is) {
+      case "date":
+        return "d";
+      case "list":
+        return "a" + processIniType(name, type.of, false);
+      case "tuple":
+        const elements = type.of.map(element =>
+          processIniType(name, element, false)
+        );
+        return "a" + elements.length + elements.join("");
+      case "wdl":
+        if (toplevel) {
+          return type.parameters;
+        } else {
+          makePopup().innerText = `In ${name}, WDL type is nested. WDL type block may only appear as a top-level type.`;
+          return "!";
+        }
+    }
+  }
+  makePopup().innerText = `Utterly incomprehensible type ${JSON.stringify(
+    type
+  )} for parameter ${name}.`;
+  return "!";
+}
+
+export function initialiseSimulationDashboard(ace, container, completeSound) {
+  initialise();
+  let fakeActions = {};
+  let fileName = "unknown.shesmu";
+  try {
+    fakeActions = JSON.parse(
+      localStorage.getItem("shesmu_fake_actions") || "{}"
+    );
+  } catch (e) {
+    console.log(e);
+  }
+  const script = document.createElement("DIV");
+  script.className = "editor";
+  const editor = ace.edit(script);
+  editor.session.setMode("ace/mode/shesmu");
+  editor.session.setOption("useWorker", false);
+  editor.session.setTabSize(2);
+  editor.session.setUseSoftTabs(true);
+  editor.setFontSize("14pt");
+  const extra = document.createElement("DIV");
+  const toolBar = document.createElement("P");
+  container.appendChild(toolBar);
+  const outputContainer = document.createElement("DIV");
+  container.appendChild(outputContainer);
+  toolBar.appendChild(
+    button("🤖 Simulate", "Run olive simulation and fetch results", () => {
+      editor.getSession().clearAnnotations();
+      fetchJsonWithBusyDialog(
+        "/simulate",
+        {
+          body: JSON.stringify({
+            fakeActions: fakeActions,
+            script: editor.getValue()
+          }),
+          method: "POST"
+        },
+        response => {
+          const tabs = [];
+          if (response.hasOwnProperty("alerts") && response.alerts.length) {
+            tabs.push({
+              name: "Alerts",
+              render: tab =>
+                tab.appendChild(
+                  table(
+                    response.alerts,
+                    ["Labels", a => alertEntries(a.labels)],
+                    ["Annotations", a => alertEntries(a.annotations)]
+                  )
+                )
+            });
+          }
+          if (response.hasOwnProperty("actions") && response.actions.length) {
+            tabs.push({
+              name: "Actions",
+              render: tab =>
+                response.actions.forEach(a => {
+                  const div = document.createElement("DIV");
+                  tab.appendChild(div);
+                  div.className = "action state_simulated";
+                  div.appendChild(text(a.name));
+                  div.appendChild(
+                    table(
+                      Object.entries(a.parameters).sort((a, b) =>
+                        a[0].localeCompare(b[0])
+                      ),
+                      ["Name", x => x[0]],
+                      ["Value", x => JSON.stringify(x[1], null, 2)]
+                    )
+                  );
+                })
+            });
+          }
+          if (response.hasOwnProperty("olives") && response.olives.length) {
+            for (const olive of response.olives) {
+              tabs.push({
+                name:
+                  (olive.producesActions ? "🎬 " : "🔔") +
+                  " " +
+                  olive.syntax +
+                  " ― " +
+                  olive.description,
+                render: tab => {
+                  tab.appendChild(
+                    text(`Runtime: ${formatTimeSpan(olive.duration / 1000)}`)
+                  );
+                  tab.appendChild(
+                    document.adoptNode(
+                      new DOMParser().parseFromString(
+                        olive.diagram,
+                        "image/svg+xml"
+                      ).documentElement
+                    )
+                  );
+                }
+              });
+            }
+          }
+          if (response.hasOwnProperty("errors") && response.errors.length) {
+            const annotations = [];
+            const orphanedErrors = [];
+            for (const err of response.errors) {
+              const match = err.match(/^(\d+):(\d+): *(.*$)/);
+              if (match) {
+                annotations.push({
+                  row: parseInt(match[1]) - 1,
+                  column: parseInt(match[2]) - 1,
+                  text: match[3],
+                  type: "error"
+                });
+              } else {
+                orphanedErrors.push(err);
+              }
+            }
+            editor.getSession().setAnnotations(annotations);
+            if (orphanedErrors.length) {
+              tabs.push({
+                name: "Errors",
+                render: tab =>
+                  orphanedErrors.forEach(err => tab.appendChild(text(err)))
+              });
+            }
+          }
+          if (
+            response.hasOwnProperty("exports") &&
+            Object.keys(response.exports).length
+          ) {
+            tabs.push({
+              name: "Exports",
+              render: tab => {
+                for (const [name, { returns, parameters }] of Object.entries(
+                  response.exports
+                )) {
+                  const header = document.createElement("H2");
+                  header.innerText = name;
+                  tab.appendChild(header);
+                  const table = document.createElement("TABLE");
+                  tab.appendChild(
+                    table(
+                      [["Return", returns]].concat(
+                        parameters.map((type, index) => [
+                          `Parameter ${i + 1}`,
+                          type
+                        ])
+                      ),
+
+                      ["Position", x => x[0]],
+                      ["Type", x => x[0]]
+                    )
+                  );
+                }
+              }
+            });
+          }
+          if (response.hasOwnProperty("dumpers")) {
+            for (const [name, entries] of Object.entries(response.dumpers)) {
+              tabs.push({
+                name: "Dump ― " + name,
+                render: tab => {
+                  const table = document.createElement("TABLE");
+                  tab.appendChild(table);
+                  for (const row of entries) {
+                    const tr = document.createElement("TR");
+                    table.appendChild(tr);
+                    for (const value of row) {
+                      const td = document.createElement("TD");
+                      td.innerText = value;
+                      tr.appendChild(td);
+                    }
+                  }
+                }
+              });
+            }
+          }
+          if (
+            response.hasOwnProperty("overloadedInputs") &&
+            response.overloadedInputs.length
+          ) {
+            tabs.push({
+              name: "Overloaded Inputs",
+              render: tab => {
+                tab.appendChild(
+                  text("The following input formats are unavailable:")
+                );
+                for (const format of response.overloadedInputs) {
+                  tab.appendChild(text(format));
+                }
+              }
+            });
+          }
+          if (response.hasOwnProperty("metrics") && response.metrics) {
+            tabs.push({
+              name: "Prometheus Metrics",
+              render: tab => tab.appendChild(preformatted(response.metrics))
+            });
+          }
+          if (response.hasOwnProperty("bytecode")) {
+            tabs.push({
+              name: "Bytecode",
+              render: tab => tab.appendChild(preformatted(response.bytecode))
+            });
+          }
+          clearChildren(outputContainer);
+          const [scriptPane, extraPane, ...tabPanes] = makeTabs(
+            outputContainer,
+            tabs.length > 0 ? 2 : 0,
+            ...["Script", "Extra Definitions"].concat(
+              tabs.map(({ name, render }) => name)
+            )
+          );
+          scriptPane.appendChild(script);
+          extraPane.appendChild(extra);
+          for (let i = 0; i < tabPanes.length; i++) {
+            tabs[i].render(tabPanes[i]);
+          }
+          if (document.visibilityState == "hidden") {
+            completeSound.play();
+          }
+        }
+      );
+    })
+  );
+  toolBar.appendChild(
+    accessoryButton(
+      "🠝 Upload File",
+      "Upload a file from your computer to simulate",
+      () =>
+        loadFile((name, data) => {
+          fileName = name;
+          editor.setValue(data, 0);
+        })
+    )
+  );
+  toolBar.appendChild(
+    accessoryButton(
+      "🡇 Download File",
+      "Save this editor to your computer",
+      () => {
+        const blob = new Blob([editor.getValue()], { type: "text/plain" });
+
+        const a = document.createElement("a");
+        a.download = fileName;
+        a.href = URL.createObjectURL(blob);
+        a.dataset.downloadurl = ["text/plain", a.download, a.href].join(":");
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+      }
+    )
+  );
+  const savedTheme = localStorage.getItem("shesmu_theme") || "ace/theme/chrome";
+  toolBar.appendChild(document.createTextNode(" Theme: "));
+  toolBar.appendChild(
+    dropDown(
+      ([name, theme]) => {
+        editor.setTheme(theme);
+        localStorage.setItem("shesmu_theme", theme);
+      },
+      ([name, theme]) => name,
+      ([name, theme]) => savedTheme == theme,
+      [["Ambiance", "ace/theme/ambiance"], ["Chrome", "ace/theme/chrome"]]
+    )
+  );
+
+  const [scriptPane, extraPane] = makeTabs(
+    outputContainer,
+    0,
+    "Script",
+    "Extra Definitions"
+  );
+  scriptPane.appendChild(script);
+  extraPane.appendChild(extra);
+  const fakeActionList = document.createElement("TABLE");
+  const storeFakeActions = () =>
+    localStorage.setItem("shesmu_fake_actions", JSON.stringify(fakeActions));
+
+  const updateFakeActions = () => {
+    clearChildren(fakeActionList);
+    for (const [name, declaration] of Object.entries(fakeActions).sort(
+      ([aName], [bName]) => aName.localeCompare(bName)
+    )) {
+      const row = document.createElement("TR");
+      fakeActionList.appendChild(row);
+      const nameCell = document.createElement("TD");
+      nameCell.innerText = name;
+      row.appendChild(nameCell);
+      const editCell = document.createElement("TD");
+      row.appendChild(editCell);
+      const copy = document.createElement("SPAN");
+      editCell.appendChild(copy);
+      copy.innerText = "⎘";
+      copy.title = "Copy action to clipboard.";
+      copy.style.cursor = "pointer";
+      copy.addEventListener("click", e => {
+        e.stopPropagation();
+        copyJson(declaration);
+      });
+      editCell.appendChild(document.createTextNode(" "));
+      const edit = document.createElement("SPAN");
+      editCell.appendChild(edit);
+      edit.innerText = "✎";
+      edit.title = "Rename action.";
+      edit.style.cursor = "pointer";
+      edit.addEventListener("click", e => {
+        e.stopPropagation();
+
+        const [dialog, close] = makePopup(true);
+        dialog.appendChild(document.createTextNode("Rename action to: "));
+        const input = document.createElement("INPUT");
+        input.type = "text";
+        input.value = name;
+        dialog.appendChild(input);
+        dialog.appendChild(document.createElement("BR"));
+
+        dialog.appendChild(
+          button("Rename", "Rename action.", () => {
+            const newName = input.value.trim();
+            if (newName != name) {
+              delete fakeActions[name];
+              fakeActions[newName] = declaration;
+              storeFakeActions();
+              updateFakeActions();
+            }
+            close();
+          })
+        );
+      });
+      editCell.appendChild(document.createTextNode(" "));
+      const close = document.createElement("SPAN");
+      editCell.appendChild(close);
+      close.innerText = "✖";
+      close.title = "Delete action.";
+      close.style.cursor = "pointer";
+      close.addEventListener("click", e => {
+        e.stopPropagation();
+        delete fakeActions[name];
+        storeFakeActions();
+        updateFakeActions();
+      });
+    }
+  };
+  const importAction = (name, data) => {
+    if (name) {
+      try {
+        let output;
+        const processArray = a => {
+          output = { major_olive_version: { required: true, type: "i" } };
+          for (const parameter of a) {
+            output[parameter.name] = {
+              required: parameter.required || false,
+              type: parameter.hasOwnProperty("iniName")
+                ? processIniType(parameter.name, parameter.type, true)
+                : parameter.type
+            };
+          }
+          switch (json.type) {
+            case "FILES":
+              output.inputs = {
+                type: "at3so4id$sprovider$stime$dversion$sb",
+                required: true
+              };
+              break;
+            case "CELL_RANGER":
+              output.lanes = {
+                required: true,
+                type: "at4t3sisso4id$sprovider$stime$dversion$ss"
+              };
+              break;
+            case "BAM_MERGE":
+              output.inputs = {
+                type: "at2sat4sso4id$sprovider$stime$dversion$sb",
+                required: true
+              };
+              break;
+            case "BCL2FASTQ":
+              output.lanes = {
+                required: true,
+                type:
+                  "at3io4id$sprovider$stime$dversion$sat4sso4id$sprovider$stime$dversion$ss"
+              };
+
+            default:
+              makePopup().innerText = `Unknown workflow type ${json.type}.`;
+              return;
+          }
+        };
+        const json = JSON.parse(data);
+        if (Array.isArray(json)) {
+          processArray(json);
+        } else if (typeof json == "object" && json) {
+          if (json.hasOwnProperty("accession")) {
+            processArray(json.parameters);
+          } else {
+            output = json;
+          }
+        } else {
+          makePopup().innerText = "I have no idea what this is.";
+          return;
+        }
+        fakeActions[name] = output;
+        storeFakeActions();
+        updateFakeActions();
+      } catch (e) {
+        makePopup().innerText = e;
+      }
+    }
+  };
+  const extraToolBar = document.createElement("P");
+  extraToolBar.className = "accessory";
+  extra.appendChild(extraToolBar);
+  extraToolBar.appendChild(
+    button("➕ Import Action", "Uploads a file containing an action.", () =>
+      loadFile((name, data) => importAction(name.split(".")[0], data))
+    )
+  );
+  extraToolBar.appendChild(
+    button("➕ Add Action", "Adds an action from a JSON definition.", () => {
+      const [dialog, close] = makePopup(true);
+      dialog.appendChild(document.createTextNode("Save action as: "));
+      const input = document.createElement("INPUT");
+      input.type = "text";
+      dialog.appendChild(input);
+      dialog.appendChild(document.createElement("BR"));
+      dialog.appendChild(document.createTextNode("Action JSON:"));
+      const actionJSON = document.createElement("TEXTAREA");
+      dialog.appendChild(actionJSON);
+
+      dialog.appendChild(
+        button("Add", "Save to fake action collection.", () => {
+          importAction(input.value.trim(), actionJSON.value);
+          close();
+        })
+      );
+    })
+  );
+  updateFakeActions();
+  extra.appendChild(fakeActionList);
 }

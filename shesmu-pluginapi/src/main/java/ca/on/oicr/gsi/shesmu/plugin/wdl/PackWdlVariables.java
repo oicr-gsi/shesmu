@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.niassa;
+package ca.on.oicr.gsi.shesmu.plugin.wdl;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
