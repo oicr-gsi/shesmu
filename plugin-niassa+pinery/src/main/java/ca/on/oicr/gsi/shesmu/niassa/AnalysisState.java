@@ -10,6 +10,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import net.sourceforge.seqware.common.model.WorkflowRun;
 
 public class AnalysisState implements Comparable<AnalysisState> {
@@ -53,18 +54,21 @@ public class AnalysisState implements Comparable<AnalysisState> {
                 : run.get()
                     .getIus()
                     .stream()
-                    .map(
+                    .flatMap(
                         i -> {
                           // We forcibly load the LIMS key from Niassa because the WorkflowRun
                           // loader
                           // only populates the IUS ids and not the LIMS key within
                           final net.sourceforge.seqware.common.model.LimsKey limsKey =
                               getLimsKey.apply(i.getSwAccession());
-                          return new SimpleLimsKey(
-                              limsKey.getId(),
-                              limsKey.getProvider(),
-                              limsKey.getLastModified().toInstant(),
-                              limsKey.getVersion());
+                          return limsKey == null
+                              ? Stream.empty()
+                              : Stream.of(
+                                  new SimpleLimsKey(
+                                      limsKey.getId(),
+                                      limsKey.getProvider(),
+                                      limsKey.getLastModified().toInstant(),
+                                      limsKey.getVersion()));
                         }))
             .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
             .distinct()
