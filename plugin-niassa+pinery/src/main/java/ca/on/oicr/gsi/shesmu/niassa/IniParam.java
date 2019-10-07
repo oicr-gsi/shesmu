@@ -45,6 +45,20 @@ public final class IniParam<T> {
           return Imyhat.BOOLEAN;
         }
       };
+
+  public static final Stringifier FLOAT =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.FLOAT;
+        }
+      };
   /** Save an integer in the way you'd expect */
   public static final Stringifier INTEGER =
       new Stringifier() {
@@ -274,6 +288,8 @@ public final class IniParam<T> {
         switch (str) {
           case "boolean":
             return BOOLEAN;
+          case "float":
+            return FLOAT;
           case "integer":
             return INTEGER;
           case "path":
