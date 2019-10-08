@@ -119,7 +119,7 @@ public class RunTest {
     }
   }
 
-  private class InputProviderChecker implements InputProvider {
+  private static class InputProviderChecker implements InputProvider {
     private final Set<String> usedFormats = new HashSet<>();
 
     public Stream<Object> fetch(String format) {

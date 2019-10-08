@@ -40,6 +40,7 @@ public abstract class GroupNode implements DefinedTarget {
           return p;
         });
     GROUPERS.addKeyword("First", ofWithDefault(GroupNodeFirst::new));
+    GROUPERS.addKeyword("Flatten", of(GroupNodeFlatten::new));
     GROUPERS.addKeyword("List", of(GroupNodeList::new));
     GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
     GROUPERS.addKeyword("Univalued", of(GroupNodeUnivalued::new));
