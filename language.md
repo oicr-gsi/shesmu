@@ -117,6 +117,7 @@ and `Min` selectors can pick the highest or lowest integer or date value.
 In total, the collectors in a `Group` operation are:
 
 - `List` to collect all values into a list
+- `Flatten` to collect all values into a list for existing lists
 - `First` to collect one value; if none are collected, the group is rejected
 - `Univalued` to collect exactly one value; if none are collected, the group is
   rejected; if more than one are collected, the group is rejected. It is fine

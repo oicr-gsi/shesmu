@@ -6,10 +6,7 @@ import static org.objectweb.asm.Type.*;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
@@ -21,12 +18,12 @@ import org.objectweb.asm.commons.Method;
 
 /** Helps to build a “Group” clause and the corresponding variable class */
 public final class RegroupVariablesBuilder implements Regrouper {
-  private class Collected extends Element {
+  private abstract class BaseList extends Element {
     private final String fieldName;
     private final Consumer<Renderer> loader;
-    private final Imyhat valueType;
+    protected final Imyhat valueType;
 
-    private Collected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    private BaseList(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
       super();
       this.valueType = valueType;
       this.fieldName = fieldName;
@@ -35,19 +32,18 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void buildCollect() {
+    public final void buildCollect() {
       collectRenderer.methodGen().loadArg(collectedSelfArgument);
       collectRenderer
           .methodGen()
           .invokeVirtual(self, new Method(fieldName, A_SET_TYPE, new Type[] {}));
       loader.accept(collectRenderer);
-      collectRenderer.methodGen().valueOf(valueType.apply(TO_ASM));
-      collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
+      collect();
       collectRenderer.methodGen().pop();
     }
 
     @Override
-    public int buildConstructor(GeneratorAdapter ctor, int index) {
+    public final int buildConstructor(GeneratorAdapter ctor, int index) {
       ctor.loadThis();
       Renderer.loadImyhatInMethod(ctor, valueType.descriptor());
       ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
@@ -56,28 +52,43 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
-    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+    public final void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
       // Collections are not included in equality.
     }
 
     @Override
-    public void buildHashCode(GeneratorAdapter hashMethod) {
+    public final void buildHashCode(GeneratorAdapter hashMethod) {
       // Collections are not included in the hash.
     }
 
+    protected abstract void collect();
+
     @Override
-    public Stream<Type> constructorType() {
+    public final Stream<Type> constructorType() {
       return Stream.empty();
     }
 
     @Override
-    public void failIfBad(GeneratorAdapter okMethod) {
+    public final void failIfBad(GeneratorAdapter okMethod) {
       // Do nothing
     }
 
     @Override
-    public void loadConstructorArgument() {
+    public final void loadConstructorArgument() {
       // No argument to constructor.
+    }
+  }
+
+  private class Collected extends BaseList {
+
+    private Collected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      super(valueType, fieldName, loader);
+    }
+
+    @Override
+    protected void collect() {
+      collectRenderer.methodGen().valueOf(valueType.apply(TO_ASM));
+      collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
     }
   }
 
@@ -109,6 +120,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
     public void addFirst(
         Type fieldType, String fieldName, Consumer<Renderer> loader, Consumer<Renderer> initial) {
       elements.add(new FirstWithDefault(fieldType, fieldName, loader, initial));
+    }
+
+    @Override
+    public void addFlatten(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      elements.add(new Flattened(valueType, fieldName, loader));
     }
 
     @Override
@@ -477,6 +493,18 @@ public final class RegroupVariablesBuilder implements Regrouper {
     @Override
     public void loadConstructorArgument() {
       initial.accept(newRenderer);
+    }
+  }
+
+  private class Flattened extends BaseList {
+
+    private Flattened(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      super(valueType, fieldName, loader);
+    }
+
+    @Override
+    protected void collect() {
+      collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD_ALL);
     }
   }
 
@@ -904,6 +932,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
       new Method("toTuple", A_TUPLE_TYPE, new Type[] {});
   private static final Method METHOD_SET__ADD =
       new Method("add", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
+  private static final Method METHOD_SET__ADD_ALL =
+      new Method("addAll", BOOLEAN_TYPE, new Type[] {Type.getType(Collection.class)});
   private static final Method SET__ITERATOR =
       new Method("iterator", A_ITERATOR_TYPE, new Type[] {});
   private static final Method SET__SIZE = new Method("size", INT_TYPE, new Type[] {});
@@ -951,6 +981,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
   public void addFirst(
       Type fieldType, String fieldName, Consumer<Renderer> loader, Consumer<Renderer> initial) {
     elements.add(new FirstWithDefault(fieldType, fieldName, loader, initial));
+  }
+
+  @Override
+  public void addFlatten(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    elements.add(new Flattened(valueType, fieldName, loader));
   }
 
   public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {

@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Group By workflow Into a = Flatten stuff
+ Run ok With ok = (For x In a: Count) == 4;

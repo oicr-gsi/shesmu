@@ -34,6 +34,14 @@ public interface Regrouper {
       Type fieldType, String fieldName, Consumer<Renderer> loader, Consumer<Renderer> first);
 
   /**
+   * Add a new collection of collections of values slurped during iteration
+   *
+   * @param valueType the type of the values in the collection
+   * @param fieldName the name of the variable for consumption by downstream uses
+   */
+  void addFlatten(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
+
+  /**
    * Add a value that is the Boolean result of checking expressions
    *
    * @param condition the condition that must be satisfied
