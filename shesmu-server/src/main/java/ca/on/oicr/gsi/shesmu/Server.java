@@ -2239,6 +2239,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("shesmu.js", "text/javascript;charset=utf-8");
     add("utils.js", "text/javascript;charset=utf-8");
     add("ace.js", "text/javascript;charset=utf-8");
+    add("ext-searchbox.js", "text/javascript;charset=utf-8");
     add("theme-ambiance.js", "text/javascript;charset=utf-8");
     add("theme-chrome.js", "text/javascript;charset=utf-8");
     add("mode-shesmu.js", "text/javascript;charset=utf-8");
