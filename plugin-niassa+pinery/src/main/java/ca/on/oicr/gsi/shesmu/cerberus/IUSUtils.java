@@ -1,14 +1,25 @@
 package ca.on.oicr.gsi.shesmu.cerberus;
 
-import java.util.Collection;
-import java.util.Optional;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class IUSUtils {
-  private static final Pattern LANE_NUMBER = Pattern.compile("^.*_(\\d+)$");
+  public static Set<Tuple> attributes(SortedMap<String, SortedSet<String>> attributes) {
+    if (attributes == null) {
+      return Collections.emptySet();
+    }
+    return attributes
+        .entrySet()
+        .stream()
+        .map(e -> new Tuple(e.getKey(), e.getValue()))
+        .collect(Collectors.toCollection(ATTR_TYPE::newSet));
+  }
 
   public static long parseLaneNumber(String laneName) {
     try {
@@ -56,6 +67,9 @@ public final class IUSUtils {
   public static <T> Stream<T> stream(Collection<T> collection) {
     return collection == null ? Stream.empty() : collection.stream();
   }
+
+  private static final Imyhat ATTR_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList());
+  private static final Pattern LANE_NUMBER = Pattern.compile("^.*_(\\d+)$");
 
   private IUSUtils() {}
 }

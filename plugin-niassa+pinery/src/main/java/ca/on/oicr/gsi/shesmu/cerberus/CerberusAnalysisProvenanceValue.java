@@ -19,18 +19,7 @@ import java.util.stream.Stream;
  * <p>This is one “row” in the information being fed into Shesmu
  */
 public final class CerberusAnalysisProvenanceValue {
-  public static Set<Tuple> attributes(SortedMap<String, SortedSet<String>> attributes) {
-    if (attributes == null) {
-      return Collections.emptySet();
-    }
-    return attributes
-        .entrySet()
-        .stream()
-        .map(e -> new Tuple(e.getKey(), e.getValue()))
-        .collect(Collectors.toCollection(ATTR_TYPE::newSet));
-  }
 
-  private static final Imyhat ATTR_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList());
   private static final Imyhat LIMS_TYPE =
       new Imyhat.ObjectImyhat(
           Stream.of(
@@ -59,7 +48,7 @@ public final class CerberusAnalysisProvenanceValue {
 
   public CerberusAnalysisProvenanceValue(AnalysisProvenance provenance) {
     fileAccession = Optional.ofNullable(provenance.getFileId()).map(Integer::longValue);
-    this.fileAttributes = attributes(provenance.getFileAttributes());
+    this.fileAttributes = IUSUtils.attributes(provenance.getFileAttributes());
     filePath = Optional.ofNullable(provenance.getFilePath()).map(Paths::get);
     this.inputFiles =
         provenance.getWorkflowRunInputFileIds() == null
@@ -69,7 +58,7 @@ public final class CerberusAnalysisProvenanceValue {
                 .stream()
                 .map(Integer::longValue)
                 .collect(Collectors.toCollection(TreeSet::new));
-    this.iusAttributes = attributes(provenance.getIusAttributes());
+    this.iusAttributes = IUSUtils.attributes(provenance.getIusAttributes());
     timestamp = Optional.ofNullable(provenance.getLastModified()).map(ZonedDateTime::toInstant);
     lims =
         provenance.getIusLimsKeys() == null
@@ -99,9 +88,9 @@ public final class CerberusAnalysisProvenanceValue {
     status = Optional.ofNullable(provenance.getWorkflowRunStatus());
     runAccession = Optional.ofNullable(provenance.getWorkflowRunId()).map(Integer::longValue);
     workflowAccession = Optional.ofNullable(provenance.getWorkflowId()).map(Integer::longValue);
-    this.workflowAttributes = attributes(provenance.getWorkflowAttributes());
+    this.workflowAttributes = IUSUtils.attributes(provenance.getWorkflowAttributes());
     workflowName = Optional.ofNullable(provenance.getWorkflowName());
-    this.workflowRunAttributes = attributes(provenance.getWorkflowRunAttributes());
+    this.workflowRunAttributes = IUSUtils.attributes(provenance.getWorkflowRunAttributes());
     workflowVersion =
         provenance.getWorkflowVersion() == null
             ? Optional.empty()
@@ -110,6 +99,7 @@ public final class CerberusAnalysisProvenanceValue {
                     provenance.getWorkflowVersion(), () -> {}));
   }
 
+  // TODO: Delete this; it is badly named
   @ShesmuVariable(type = "at2sas")
   public Set<Tuple> attributes() {
     return workflowRunAttributes;
@@ -193,6 +183,11 @@ public final class CerberusAnalysisProvenanceValue {
   @ShesmuVariable(type = "at2sas")
   public Set<Tuple> workflow_attributes() {
     return workflowAttributes;
+  }
+
+  @ShesmuVariable(type = "at2sas")
+  public Set<Tuple> workflow_run_attributes() {
+    return workflowRunAttributes;
   }
 
   @ShesmuVariable(type = "qt3iii")
