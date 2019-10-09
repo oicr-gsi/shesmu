@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.server;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
@@ -197,6 +199,7 @@ public class SimulateRequest {
       renderer.methodGen().push(name);
       renderer.methodGen().invokeConstructor(A_PACK_JSON_OBJECT_TYPE, PACK_JSON_OBJECT__CTOR);
       loadParameter.accept(renderer);
+      renderer.methodGen().box(type.apply(TO_ASM));
       renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, IMYHAT__ACCEPT);
     }
 
