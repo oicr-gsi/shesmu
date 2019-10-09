@@ -628,6 +628,9 @@ public abstract class Imyhat {
       case 'd':
         output.set(input.subSequence(1, input.length()));
         return DATE;
+      case 'f':
+        output.set(input.subSequence(1, input.length()));
+        return FLOAT;
       case 'i':
         output.set(input.subSequence(1, input.length()));
         return INTEGER;
