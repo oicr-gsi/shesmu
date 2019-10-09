@@ -130,6 +130,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                               limsKey.map(LimsKey::getVersion).orElse("")),
                           fp.getLastModified().toInstant(),
                           fp.getStatus() == FileProvenance.Status.STALE,
+                          fp.getFileAttributes(),
+                          fp.getWorkflowRunAttributes(),
                           "file_provenance");
 
                   if (!badSetInRecord.isEmpty()) {

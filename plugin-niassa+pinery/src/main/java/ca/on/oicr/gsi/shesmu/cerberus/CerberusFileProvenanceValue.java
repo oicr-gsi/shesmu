@@ -4,7 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * The information available to Shesmu scripts for processing
@@ -15,6 +15,7 @@ public final class CerberusFileProvenanceValue {
   private final String accession;
   private final Instant completed_date;
   private final String donor;
+  private Set<Tuple> file_attributes;
   private final long file_size;
   private final String group_desc;
   private final String group_id;
@@ -39,7 +40,8 @@ public final class CerberusFileProvenanceValue {
   private final String tissue_region;
   private final String tissue_type;
   private final String workflow;
-  private final String workflow_accession;
+  private final Set<Tuple> workflow_run_attributes;
+  private final String workflow_run_accession;
   private final Tuple workflow_version;
 
   public CerberusFileProvenanceValue(
@@ -49,7 +51,7 @@ public final class CerberusFileProvenanceValue {
       String md5,
       long file_size,
       String workflow,
-      String workflow_accession,
+      String workflow_run_accession,
       Tuple workflow_version,
       String project,
       String organism,
@@ -71,6 +73,8 @@ public final class CerberusFileProvenanceValue {
       Tuple lims,
       Instant completed_date,
       boolean stale,
+      SortedMap<String, SortedSet<String>> file_attributes,
+      SortedMap<String, SortedSet<String>> workflow_run_attributes,
       String source) {
     super();
     this.accession = accession;
@@ -79,7 +83,7 @@ public final class CerberusFileProvenanceValue {
     this.md5 = md5;
     this.file_size = file_size;
     this.workflow = workflow;
-    this.workflow_accession = workflow_accession;
+    this.workflow_run_accession = workflow_run_accession;
     this.workflow_version = workflow_version;
     this.project = project;
     this.organism = organism;
@@ -101,6 +105,8 @@ public final class CerberusFileProvenanceValue {
     this.lims = lims;
     this.completed_date = completed_date;
     this.stale = stale;
+    this.file_attributes = IUSUtils.attributes(file_attributes);
+    this.workflow_run_attributes = IUSUtils.attributes(workflow_run_attributes);
     this.source = source;
   }
 
@@ -130,6 +136,7 @@ public final class CerberusFileProvenanceValue {
         && accession.equals(that.accession)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
+        && file_attributes.equals(that.file_attributes)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
         && ius.equals(that.ius)
@@ -151,8 +158,14 @@ public final class CerberusFileProvenanceValue {
         && tissue_region.equals(that.tissue_region)
         && tissue_type.equals(that.tissue_type)
         && workflow.equals(that.workflow)
-        && workflow_accession.equals(that.workflow_accession)
+        && workflow_run_attributes.equals(that.workflow_run_attributes)
+        && workflow_run_accession.equals(that.workflow_run_accession)
         && workflow_version.equals(that.workflow_version);
+  }
+
+  @ShesmuVariable(type = "at2sas")
+  public Set<Tuple> file_attributes() {
+    return file_attributes;
   }
 
   @ShesmuVariable
@@ -176,6 +189,7 @@ public final class CerberusFileProvenanceValue {
         accession,
         completed_date,
         donor,
+        file_attributes,
         file_size,
         group_desc,
         group_id,
@@ -200,7 +214,8 @@ public final class CerberusFileProvenanceValue {
         tissue_region,
         tissue_type,
         workflow,
-        workflow_accession,
+        workflow_run_attributes,
+        workflow_run_accession,
         workflow_version);
   }
 
@@ -309,9 +324,20 @@ public final class CerberusFileProvenanceValue {
     return workflow;
   }
 
+  // TODO: Delete this; it was mislablled and confusing
   @ShesmuVariable
   public String workflow_accession() {
-    return workflow_accession;
+    return workflow_run_accession;
+  }
+
+  @ShesmuVariable
+  public String workflow_run_accession() {
+    return workflow_run_accession;
+  }
+
+  @ShesmuVariable(type = "at2sas")
+  public Set<Tuple> workflow_run_attributes() {
+    return workflow_run_attributes;
   }
 
   @ShesmuVariable(type = "t3iii")
