@@ -4,7 +4,8 @@ set -eu
 
 case "${JAVA_HOME}" in
 	*8*)
-		SONAR=true
+		# Disable Sonar entirely because it is broken
+		SONAR=false
 		;;
 	*)
 		SONAR=false
