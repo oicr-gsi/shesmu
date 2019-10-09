@@ -45,6 +45,14 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
     return configuration.get().getDrmaa();
   }
 
+  public int memory() {
+    return configuration.get().getMemory();
+  }
+
+  public String modules() {
+    return configuration.get().getModules();
+  }
+
   public String script() {
     return configuration.get().getScript();
   }

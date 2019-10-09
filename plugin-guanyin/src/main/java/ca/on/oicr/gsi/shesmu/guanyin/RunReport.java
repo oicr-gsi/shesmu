@@ -45,11 +45,17 @@ public class RunReport extends JsonParameterisedAction {
           + "  input {\n"
           + "    String script\n"
           + "    String guanyin\n"
+          + "    String modules\n"
+          + "    Int memory\n"
           + "    Int record\n"
           + "  }\n"
           + "  command <<<\n"
           + " ~{script} ~{guanyin}/reportdb/record/~{record} \n"
           + "  >>>\n"
+          + " runtime {\n"
+          + " memory: \"~{memory} GB\"\n"
+          + " modules: \"~{modules}\"\n"
+          + " }\n"
           + "}\n";
   private static final Counter drmaaRequestErrors =
       Counter.build(
@@ -238,6 +244,8 @@ public class RunReport extends JsonParameterisedAction {
           inputs.put("guanyin.report.script", owner.get().script());
           inputs.put("guanyin.report.guanyin", owner.get().观音Url());
           inputs.put("guanyin.report.record", reportRecordId.getAsLong());
+          inputs.put("guanyin.report.modules", owner.get().modules());
+          inputs.put("guanyin.report.memory", owner.get().memory());
           cromwellId =
               wfApi.submit(
                   "v1",

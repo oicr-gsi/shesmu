@@ -6,6 +6,8 @@ public class Configuration {
   private String drmaa;
   private String drmaaPsk;
   private String guanyin;
+  private int memory = 1;
+  private String modules = "";
   private String script;
 
   public String getCromwell() {
@@ -22,6 +24,14 @@ public class Configuration {
 
   public String getGuanyin() {
     return guanyin;
+  }
+
+  public int getMemory() {
+    return memory;
+  }
+
+  public String getModules() {
+    return modules;
   }
 
   public String getScript() {
@@ -42,6 +52,14 @@ public class Configuration {
 
   public void setGuanyin(String guanyin) {
     this.guanyin = guanyin;
+  }
+
+  public void setMemory(int memory) {
+    this.memory = memory;
+  }
+
+  public void setModules(String modules) {
+    this.modules = modules;
   }
 
   public void setScript(String script) {
