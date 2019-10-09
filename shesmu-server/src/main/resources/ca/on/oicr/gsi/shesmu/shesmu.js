@@ -2861,7 +2861,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
                   olive.description,
                 render: tab => {
                   tab.appendChild(
-                    text(`Runtime: ${formatTimeSpan(olive.duration / 1000)}`)
+                    text(`Runtime: ${formatTimeSpan(olive.duration / 1E6)}`)
                   );
                   tab.appendChild(
                     document.adoptNode(
