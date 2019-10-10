@@ -1954,82 +1954,6 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
-        "/checkdash",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this, false) {
-              @Override
-              public String activeUrl() {
-                return "checkdash";
-              }
-
-              @Override
-              public Stream<Header> headers() {
-                return Stream.of(
-                    Header.jsModule(
-                        "import {"
-                            + "loadFile,"
-                            + "runCheck"
-                            + "} from \"./shesmu.js\";"
-                            + "const checkButton = document.getElementById(\"checkButton\");"
-                            + "const text = document.getElementById(\"inputText\");"
-                            + "const output = document.getElementById(\"outputContainer\");"
-                            + "checkButton.addEventListener(\"click\", e => runCheck(checkButton, text.value, output));"
-                            + "document.getElementById(\"loadButton\").addEventListener(\"click\", e => loadFile((name, data) => text.value = data));"));
-              }
-
-              @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement("textarea");
-                writer.writeAttribute("id", "inputText");
-                writer.writeCharacters("Input shesmu;");
-                writer.writeEndElement();
-
-                writer.writeStartElement("p");
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "checkButton");
-                writer.writeCharacters("✔️ Check");
-                writer.writeEndElement();
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
-                writer.writeAttribute("id", "loadButton");
-                writer.writeCharacters("⬆️ Upload File");
-                writer.writeEndElement();
-                writer.writeEndElement();
-
-                writer.writeStartElement("div");
-                writer.writeAttribute("id", "outputContainer");
-                writer.writeEndElement();
-              }
-
-              private void writeDateRange(XMLStreamWriter writer, String name, String description)
-                  throws XMLStreamException {
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeCharacters(description);
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                writer.writeStartElement("input");
-                writer.writeAttribute("type", "text");
-                writer.writeAttribute("id", name + "Start");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeCharacters(" to ");
-                writer.writeStartElement("input");
-                writer.writeAttribute("type", "text");
-                writer.writeAttribute("id", name + "End");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-              }
-            }.renderPage(os);
-          }
-        });
-    add(
         "/simulatedash",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -2390,7 +2314,6 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("signaturedefs", "Signatures")),
         NavigationMenu.submenu(
             "Tools",
-            NavigationMenu.item("checkdash", "Olive Checker"),
             NavigationMenu.item("simulatedash", "Olive Simulator"),
             NavigationMenu.item("typedefs", "Type Converter")),
         NavigationMenu.submenu(
