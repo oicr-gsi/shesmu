@@ -98,6 +98,11 @@ public class CheckConfig {
               }
 
               @Override
+              public void clearRefillers() {
+                // Dummy.
+              }
+
+              @Override
               public <A extends Action> void defineAction(
                   String name,
                   String description,
