@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -149,7 +150,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
             "Alert",
             line,
             column,
-            false,
+            Produces.ALERTS,
             tags,
             description,
             clauses().stream().flatMap(OliveClauseNode::dashboard),

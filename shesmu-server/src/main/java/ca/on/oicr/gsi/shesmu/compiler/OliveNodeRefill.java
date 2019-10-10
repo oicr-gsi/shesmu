@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -126,7 +127,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
             "Refill " + refillerName,
             line,
             column,
-            false,
+            Produces.REFILL,
             tags,
             description,
             clauses().stream().flatMap(OliveClauseNode::dashboard),

@@ -534,7 +534,7 @@ public class SimulateRequest {
                         diagram.put("line", olive.line());
                         diagram.put("syntax", olive.syntax());
                         diagram.put("description", olive.description());
-                        diagram.put("producesActions", olive.producesActions());
+                        diagram.put("produces", olive.produces().name());
                         diagram.put("column", olive.column());
                         diagram.put(
                             "duration", durations.get(new Pair<>(olive.line(), olive.column())));

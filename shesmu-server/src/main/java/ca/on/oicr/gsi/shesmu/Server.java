@@ -15,6 +15,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -2364,8 +2365,8 @@ public final class Server implements ServerConfig, ActionServices {
                         location.toJson(oliveNode, pluginManager);
                         oliveNode.put("description", olive.description());
                         oliveNode.put("syntax", olive.syntax());
-                        oliveNode.put("producesActions", olive.producesActions());
-                        if (olive.producesActions()) {
+                        oliveNode.put("produces", olive.produces().name());
+                        if (olive.produces() == Produces.ACTIONS) {
                           oliveNode.put("paused", processor.isPaused(location));
                         }
                         olive.tags().sorted().forEach(oliveNode.putArray("tags")::add);

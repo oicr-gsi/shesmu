@@ -9,7 +9,7 @@ public final class OliveTable {
   private final int column;
   private final String description;
   private final int line;
-  private final boolean producesActions;
+  private final Produces produces;
   private final List<OliveClauseRow> rows;
   private final String syntax;
   private final Set<String> tags;
@@ -19,7 +19,7 @@ public final class OliveTable {
       String syntax,
       int line,
       int column,
-      boolean producesActions,
+      Produces produces,
       Set<String> tags,
       String description,
       Stream<OliveClauseRow> rows,
@@ -28,7 +28,7 @@ public final class OliveTable {
     this.syntax = syntax;
     this.line = line;
     this.column = column;
-    this.producesActions = producesActions;
+    this.produces = produces;
     this.tags = tags;
     this.description = description;
     this.rows = rows.collect(Collectors.toList());
@@ -51,8 +51,8 @@ public final class OliveTable {
     return line;
   }
 
-  public boolean producesActions() {
-    return producesActions;
+  public Produces produces() {
+    return produces;
   }
 
   public String syntax() {
