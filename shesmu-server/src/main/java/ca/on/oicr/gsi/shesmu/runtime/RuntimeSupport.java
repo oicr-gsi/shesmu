@@ -240,14 +240,6 @@ public final class RuntimeSupport {
     return groups.values().stream().map(list -> list.stream().min(comparator).get());
   }
 
-  public static String printHexBinary(byte[] values) {
-    final StringBuilder builder = new StringBuilder(values.length * 2);
-    for (final byte b : values) {
-      builder.append(String.format("%02X", b));
-    }
-    return builder.toString();
-  }
-
   /**
    * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular expression (which is
    * the method name). s

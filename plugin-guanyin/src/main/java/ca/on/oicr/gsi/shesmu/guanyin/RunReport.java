@@ -288,7 +288,7 @@ public class RunReport extends JsonParameterisedAction {
       digest.update(owner.get().drmaaPsk().getBytes(StandardCharsets.UTF_8));
       digest.update(drmaaBody);
       drmaaRequest.setHeader("Accept", "application/json");
-      drmaaRequest.addHeader("Authorization", "signed " + printHexBinary(digest.digest()));
+      drmaaRequest.addHeader("Authorization", "signed " + Utils.bytesToHex(digest.digest()));
       drmaaRequest.setEntity(new ByteArrayEntity(drmaaBody, ContentType.APPLICATION_JSON));
     } catch (final Exception e) {
       e.printStackTrace();
@@ -309,14 +309,6 @@ public class RunReport extends JsonParameterisedAction {
       drmaaRequestErrors.labels(owner.get().drmaaUrl()).inc();
       return ActionState.FAILED;
     }
-  }
-
-  public static String printHexBinary(byte[] data) {
-    final StringBuilder buffer = new StringBuilder();
-    for (byte b : data) {
-      buffer.append(String.format("%02x", b));
-    }
-    return buffer.toString();
   }
 
   @Override
