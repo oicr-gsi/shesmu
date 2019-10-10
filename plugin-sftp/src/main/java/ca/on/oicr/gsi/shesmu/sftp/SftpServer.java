@@ -1,23 +1,38 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
+import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
+import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.Message;
+import net.schmizz.sshj.common.SSHPacket;
+import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.sftp.*;
 
 public class SftpServer extends JsonPluginFile<Configuration> {
@@ -66,8 +81,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  static final ObjectMapper MAPPER = new ObjectMapper();
   private static final FileAttributes NXFILE = new FileAttributes.Builder().withSize(-1).build();
+  private static final Gauge refillExitStatus =
+      Gauge.build(
+              "shesmu_sftp_refill_exit_status",
+              "The last exit status of the remotely executed SSH process.")
+          .labelNames("filename", "name")
+          .register();
   private static final Counter symlinkErrors =
       Counter.build(
               "shesmu_sftp_symlink_errors",
@@ -76,14 +97,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           .register();
   private Optional<Configuration> configuration = Optional.empty();
   private final ConnectionCache connection;
+  private final Definer<SftpServer> definer;
   private final FileAttributeCache fileAttributes;
-  private final Supplier<SftpServer> supplier;
 
-  public SftpServer(Path fileName, String instanceName, Supplier<SftpServer> supplier) {
+  public SftpServer(Path fileName, String instanceName, Definer<SftpServer> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     fileAttributes = new FileAttributeCache(fileName);
     connection = new ConnectionCache(fileName);
-    this.supplier = supplier;
+    this.definer = definer;
   }
 
   @ShesmuMethod(
@@ -105,7 +126,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   @ShesmuAction(
       description = "Remove a file (not directory) on an SFTP server described in {file}.")
   public DeleteAction $_rm() {
-    return new DeleteAction(supplier);
+    return new DeleteAction(definer);
   }
 
   @ShesmuMethod(
@@ -118,7 +139,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
   @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
   public SymlinkAction $_symlink() {
-    return new SymlinkAction(supplier);
+    return new SymlinkAction(definer);
   }
 
   @Override
@@ -198,6 +219,42 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  public synchronized boolean refill(String name, String command, ArrayNode data) {
+    return connection
+        .get()
+        .map(Pair::first)
+        .map(
+            client -> {
+              int exitStatus;
+              try (final Session session = client.startSession()) {
+
+                try (final Session.Command process = session.exec(command);
+                    final BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                  if ("UPDATE".equals(reader.readLine())) {
+                    try (final OutputStream output = process.getOutputStream()) {
+                      MAPPER.writeValue(output, data);
+                      // Send EOF to the remote end since closing the stream doesn't do that:
+                      // https://github.com/hierynomus/sshj/issues/143
+                      client
+                          .getTransport()
+                          .write(
+                              new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
+                    }
+                  }
+                  process.join();
+                  exitStatus = process.getExitStatus() == null ? 255 : process.getExitStatus();
+                }
+              } catch (Exception e) {
+                e.printStackTrace();
+                exitStatus = 255;
+              }
+              refillExitStatus.labels(fileName().toString(), name).set(exitStatus);
+              return exitStatus == 0;
+            })
+        .orElse(false);
+  }
+
   synchronized boolean rm(String path) {
     final Optional<SFTPClient> client = connection.get().map(Pair::second);
     if (!client.isPresent()) {
@@ -219,6 +276,54 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     this.configuration = Optional.of(configuration);
     fileAttributes.invalidateAll();
     connection.invalidate();
+    definer.clearRefillers();
+    for (final Map.Entry<String, RefillerConfig> entry : configuration.getRefillers().entrySet()) {
+      definer.defineRefiller(
+          entry.getKey(),
+          String.format(
+              "Remote SSH command %s on %s.",
+              entry.getValue().getCommand(), configuration.getHost()),
+          new Definer.RefillDefiner() {
+            @Override
+            public <I> Definer.RefillInfo<I, SshRefiller<I>> info(Class<I> rowType) {
+              return new Definer.RefillInfo<I, SshRefiller<I>>() {
+                @Override
+                public SshRefiller<I> create() {
+                  return new SshRefiller<>(definer, entry.getKey(), entry.getValue().getCommand());
+                }
+
+                @Override
+                public Stream<CustomRefillerParameter<SshRefiller<I>, I>> parameters() {
+                  return entry
+                      .getValue()
+                      .getParameters()
+                      .entrySet()
+                      .stream()
+                      .map(
+                          parameter ->
+                              new CustomRefillerParameter<SshRefiller<I>, I>(
+                                  parameter.getKey(), Imyhat.parse(parameter.getValue())) {
+                                @Override
+                                public void store(
+                                    SshRefiller<I> refiller, Function<I, Object> function) {
+                                  refiller.writers.add(
+                                      (row, output) ->
+                                          type()
+                                              .accept(
+                                                  new PackJsonObject(output, name()),
+                                                  function.apply(row)));
+                                }
+                              });
+                }
+
+                @Override
+                public Class<? extends Refiller> type() {
+                  return SshRefiller.class;
+                }
+              };
+            }
+          });
+    }
     return connection.get().isPresent() ? Optional.empty() : Optional.of(1);
   }
 }
