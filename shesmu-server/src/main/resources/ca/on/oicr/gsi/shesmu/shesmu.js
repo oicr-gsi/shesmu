@@ -2802,6 +2802,27 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   container.appendChild(toolBar);
   const outputContainer = document.createElement("DIV");
   container.appendChild(outputContainer);
+  const updateAnnotations = response => {
+    if (response.hasOwnProperty("errors") && response.errors.length) {
+      const annotations = [];
+      const orphanedErrors = [];
+      for (const err of response.errors) {
+        const match = err.match(/^(\d+):(\d+): *(.*$)/);
+        if (match) {
+          annotations.push({
+            row: parseInt(match[1]) - 1,
+            column: parseInt(match[2]) - 1,
+            text: match[3],
+            type: "error"
+          });
+        } else {
+          orphanedErrors.push(err);
+        }
+      }
+      editor.getSession().setAnnotations(annotations);
+return orphanedErrors;
+    }
+  };
   toolBar.appendChild(
     button("🤖 Simulate", "Run olive simulation and fetch results", () => {
       editor.getSession().clearAnnotations();
@@ -2810,6 +2831,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
         {
           body: JSON.stringify({
             fakeActions: fakeActions,
+            dryRun: true,
             script: editor.getValue()
           }),
           method: "POST"
@@ -2875,31 +2897,15 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
               });
             }
           }
-          if (response.hasOwnProperty("errors") && response.errors.length) {
-            const annotations = [];
-            const orphanedErrors = [];
-            for (const err of response.errors) {
-              const match = err.match(/^(\d+):(\d+): *(.*$)/);
-              if (match) {
-                annotations.push({
-                  row: parseInt(match[1]) - 1,
-                  column: parseInt(match[2]) - 1,
-                  text: match[3],
-                  type: "error"
-                });
-              } else {
-                orphanedErrors.push(err);
-              }
-            }
-            editor.getSession().setAnnotations(annotations);
-            if (orphanedErrors.length) {
-              tabs.push({
-                name: "Errors",
-                render: tab =>
-                  orphanedErrors.forEach(err => tab.appendChild(text(err)))
-              });
-            }
-          }
+          const orphanedErrors = updateAnnotations(response);
+      if (orphanedErrors.length) {
+        tabs.push({
+          name: "Errors",
+          render: tab =>
+            orphanedErrors.forEach(err => tab.appendChild(text(err)))
+        });
+      }
+
           if (
             response.hasOwnProperty("exports") &&
             Object.keys(response.exports).length
@@ -3249,4 +3255,29 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   );
   updateFakeActions();
   extra.appendChild(fakeActionList);
+  let checking = false;
+  let checkTimeout;
+
+  const updateSyntax = () => {
+    if (!checking) {
+      checking = true;
+      fetch("/simulate", {
+        body: JSON.stringify({
+          fakeActions: fakeActions,
+          dryRun: true,
+          script: editor.getValue()
+        }),
+        method: "POST"
+      })
+    .then(response => response.json())
+        .then(updateAnnotations)
+        .finally(() => (checking = false));
+    }
+  };
+  editor.getSession().on("change", () => {
+    if (!checking) {
+      clearTimeout(checkTimeout);
+      checkTimeout = window.setTimeout(updateSyntax, 1000);
+    }
+  });
 }

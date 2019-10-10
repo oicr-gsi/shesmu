@@ -284,6 +284,7 @@ public class SimulateRequest {
   private static final Method PACK_JSON_OBJECT__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
   private static final ThreadLocal<ObjectNode> RESULTS = new ThreadLocal<>();
+  private boolean dryRun;
   private Map<String, Map<String, FakeActionParameter>> fakeActions = Collections.emptyMap();
   private String script;
 
@@ -293,6 +294,10 @@ public class SimulateRequest {
 
   public String getScript() {
     return script;
+  }
+
+  public boolean isDryRun() {
+    return dryRun;
   }
 
   public void run(
@@ -400,161 +405,168 @@ public class SimulateRequest {
     if (fileTable.get() != null) {
       response.put("bytecode", fileTable.get().bytecode());
     }
-    result.ifPresent(
-        action -> {
-          if (action
-                  .inputs()
-                  .filter(actionServices::isOverloaded)
-                  .peek(response.putArray("overloadedInputs")::add)
-                  .count()
-              > 0) {
-            return;
-          }
-          final CollectorRegistry registry = new CollectorRegistry();
-          action.register(registry);
-          final Set<Action> actions = new HashSet<>();
-          final Set<Pair<List<String>, List<String>>> alerts = new HashSet<>();
-          final ObjectNode dumpers = response.putObject("dumpers");
-          final ArrayNode olives = response.putArray("olives");
-          final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
-          final Map<String, List<Object>> inputs =
-              action
-                  .inputs()
-                  .collect(
-                      Collectors.toMap(
-                          Function.identity(),
-                          name -> inputProvider.fetch(name).collect(Collectors.toList())));
-          final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
-          RESULTS.set(response.putObject("refillers"));
+    if (!dryRun) {
+      result.ifPresent(
+          action -> {
+            if (action
+                    .inputs()
+                    .filter(actionServices::isOverloaded)
+                    .peek(response.putArray("overloadedInputs")::add)
+                    .count()
+                > 0) {
+              return;
+            }
+            final CollectorRegistry registry = new CollectorRegistry();
+            action.register(registry);
+            final Set<Action> actions = new HashSet<>();
+            final Set<Pair<List<String>, List<String>>> alerts = new HashSet<>();
+            final ObjectNode dumpers = response.putObject("dumpers");
+            final ArrayNode olives = response.putArray("olives");
+            final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
+            final Map<String, List<Object>> inputs =
+                action
+                    .inputs()
+                    .collect(
+                        Collectors.toMap(
+                            Function.identity(),
+                            name -> inputProvider.fetch(name).collect(Collectors.toList())));
+            final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
+            RESULTS.set(response.putObject("refillers"));
 
-          action.run(
-              new OliveServices() {
-                @Override
-                public boolean accept(
-                    Action action,
-                    String filename,
-                    int line,
-                    int column,
-                    long time,
-                    String[] tags) {
-                  return actions.add(action);
-                }
+            action.run(
+                new OliveServices() {
+                  @Override
+                  public boolean accept(
+                      Action action,
+                      String filename,
+                      int line,
+                      int column,
+                      long time,
+                      String[] tags) {
+                    return actions.add(action);
+                  }
 
-                @Override
-                public boolean accept(String[] labels, String[] annotation, long ttl)
-                    throws Exception {
-                  return alerts.add(new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
-                }
+                  @Override
+                  public boolean accept(String[] labels, String[] annotation, long ttl)
+                      throws Exception {
+                    return alerts.add(new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
+                  }
 
-                @Override
-                public Dumper findDumper(String name, Imyhat... types) {
-                  return new Dumper() {
-                    private final ArrayNode dump = dumpers.putArray(name);
+                  @Override
+                  public Dumper findDumper(String name, Imyhat... types) {
+                    return new Dumper() {
+                      private final ArrayNode dump = dumpers.putArray(name);
 
-                    @Override
-                    public void stop() {
-                      // Do nothing
-                    }
-
-                    @Override
-                    public void write(Object... values) {
-                      final ArrayNode row = dump.addArray();
-                      for (int i = 0; i < types.length; i++) {
-                        types[i].accept(new PackJsonArray(row), values[i]);
+                      @Override
+                      public void stop() {
+                        // Do nothing
                       }
-                    }
-                  };
-                }
 
-                @Override
-                public boolean isOverloaded(String... services) {
-                  return actionServices.isOverloaded(services);
-                }
+                      @Override
+                      public void write(Object... values) {
+                        final ArrayNode row = dump.addArray();
+                        for (int i = 0; i < types.length; i++) {
+                          types[i].accept(new PackJsonArray(row), values[i]);
+                        }
+                      }
+                    };
+                  }
 
-                @Override
-                public <T> Stream<T> measureFlow(
-                    Stream<T> input,
-                    String filename,
-                    int line,
-                    int column,
-                    int oliveLine,
-                    int oliveColumn) {
-                  final AtomicLong counter = new AtomicLong();
-                  flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
-                  return input.peek(i -> counter.incrementAndGet());
-                }
+                  @Override
+                  public boolean isOverloaded(String... services) {
+                    return actionServices.isOverloaded(services);
+                  }
 
-                @Override
-                public void oliveRuntime(String filename, int line, int column, long timeInNs) {
-                  durations.put(new Pair<>(line, column), timeInNs);
-                }
-              },
-              format -> inputs.get(format).stream());
+                  @Override
+                  public <T> Stream<T> measureFlow(
+                      Stream<T> input,
+                      String filename,
+                      int line,
+                      int column,
+                      int oliveLine,
+                      int oliveColumn) {
+                    final AtomicLong counter = new AtomicLong();
+                    flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
+                    return input.peek(i -> counter.incrementAndGet());
+                  }
 
-          final StringWriter writer = new StringWriter();
-          try {
-            TextFormat.write004(writer, registry.metricFamilySamples());
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
-          response.put("metrics", writer.toString());
-          action.unregister(registry);
+                  @Override
+                  public void oliveRuntime(String filename, int line, int column, long timeInNs) {
+                    durations.put(new Pair<>(line, column), timeInNs);
+                  }
+                },
+                format -> inputs.get(format).stream());
 
-          fileTable
-              .get()
-              .olives()
-              .forEach(
-                  olive -> {
-                    try {
-                      final StringWriter metroWriter = new StringWriter();
-                      final XMLStreamWriter xmlWriter =
-                          XMLOutputFactory.newFactory().createXMLStreamWriter(metroWriter);
-                      xmlWriter.writeStartDocument("utf-8", "1.0");
-                      MetroDiagram.draw(
-                          xmlWriter,
-                          (localFilePath, line, column, time) -> Stream.empty(),
-                          fileTable.get().filename(),
-                          fileTable.get().timestamp(),
-                          olive,
-                          (long) inputs.get(fileTable.get().format().name()).size(),
-                          fileTable.get().format(),
-                          (filename, line, column, oliveLine, oliveColumn) ->
-                              flow.get(Arrays.asList(line, column, oliveLine, oliveColumn)).get());
-                      xmlWriter.writeEndDocument();
+            final StringWriter writer = new StringWriter();
+            try {
+              TextFormat.write004(writer, registry.metricFamilySamples());
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+            response.put("metrics", writer.toString());
+            action.unregister(registry);
 
-                      final ObjectNode diagram = olives.addObject();
-                      diagram.put("diagram", metroWriter.toString());
-                      diagram.put("line", olive.line());
-                      diagram.put("syntax", olive.syntax());
-                      diagram.put("description", olive.description());
-                      diagram.put("producesActions", olive.producesActions());
-                      diagram.put("column", olive.column());
-                      diagram.put(
-                          "duration", durations.get(new Pair<>(olive.line(), olive.column())));
+            fileTable
+                .get()
+                .olives()
+                .forEach(
+                    olive -> {
+                      try {
+                        final StringWriter metroWriter = new StringWriter();
+                        final XMLStreamWriter xmlWriter =
+                            XMLOutputFactory.newFactory().createXMLStreamWriter(metroWriter);
+                        xmlWriter.writeStartDocument("utf-8", "1.0");
+                        MetroDiagram.draw(
+                            xmlWriter,
+                            (localFilePath, line, column, time) -> Stream.empty(),
+                            fileTable.get().filename(),
+                            fileTable.get().timestamp(),
+                            olive,
+                            (long) inputs.get(fileTable.get().format().name()).size(),
+                            fileTable.get().format(),
+                            (filename, line, column, oliveLine, oliveColumn) ->
+                                flow.get(Arrays.asList(line, column, oliveLine, oliveColumn))
+                                    .get());
+                        xmlWriter.writeEndDocument();
 
-                    } catch (XMLStreamException e) {
-                      e.printStackTrace();
-                    }
-                  });
+                        final ObjectNode diagram = olives.addObject();
+                        diagram.put("diagram", metroWriter.toString());
+                        diagram.put("line", olive.line());
+                        diagram.put("syntax", olive.syntax());
+                        diagram.put("description", olive.description());
+                        diagram.put("producesActions", olive.producesActions());
+                        diagram.put("column", olive.column());
+                        diagram.put(
+                            "duration", durations.get(new Pair<>(olive.line(), olive.column())));
 
-          final ArrayNode actionsJson = response.putArray("actions");
-          for (final Action a : actions) {
-            final ObjectNode aj = a.toJson(RuntimeSupport.MAPPER);
-            aj.put("type", a.type());
-            actionsJson.add(aj);
-          }
-          final ArrayNode alertsJson = response.putArray("alerts");
-          for (final Pair<List<String>, List<String>> a : alerts) {
-            final ObjectNode alertJson = alertsJson.addObject();
-            writeLabels(alertJson.putObject("labels"), a.first());
-            writeLabels(alertJson.putObject("annotations"), a.second());
-          }
-        });
+                      } catch (XMLStreamException e) {
+                        e.printStackTrace();
+                      }
+                    });
+
+            final ArrayNode actionsJson = response.putArray("actions");
+            for (final Action a : actions) {
+              final ObjectNode aj = a.toJson(RuntimeSupport.MAPPER);
+              aj.put("type", a.type());
+              actionsJson.add(aj);
+            }
+            final ArrayNode alertsJson = response.putArray("alerts");
+            for (final Pair<List<String>, List<String>> a : alerts) {
+              final ObjectNode alertJson = alertsJson.addObject();
+              writeLabels(alertJson.putObject("labels"), a.first());
+              writeLabels(alertJson.putObject("annotations"), a.second());
+            }
+          });
+    }
     http.getResponseHeaders().set("Content-type", "application/json");
     http.sendResponseHeaders(200, 0);
     try (OutputStream os = http.getResponseBody()) {
       RuntimeSupport.MAPPER.writeValue(os, response);
     }
+  }
+
+  public void setDryRun(boolean dryRun) {
+    this.dryRun = dryRun;
   }
 
   public void setFakeActions(Map<String, Map<String, FakeActionParameter>> fakeActions) {
