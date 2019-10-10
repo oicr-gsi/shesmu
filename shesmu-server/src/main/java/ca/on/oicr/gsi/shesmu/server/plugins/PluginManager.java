@@ -402,6 +402,11 @@ public final class PluginManager
         functions.clear();
       }
 
+      @Override
+      public void clearRefillers() {
+        refillers.clear();
+      }
+
       public ConfigurationSection configuration() {
         return new ConfigurationSection(instance.fileName().toString()) {
           @Override
@@ -937,11 +942,6 @@ public final class PluginManager
       return configuration.stream().map(FileWrapper::configuration);
     }
 
-    public Stream<RefillerDefinition> refillers() {
-      return Stream.concat(
-          staticRefillers.stream(), configuration.stream().flatMap(FileWrapper::refillers));
-    }
-
     private void processActionMethod(ShesmuAction annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
       final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
@@ -1302,6 +1302,11 @@ public final class PluginManager
       configuration.stream().forEach(f -> f.instance.pushAlerts(alertJson));
     }
 
+    public Stream<RefillerDefinition> refillers() {
+      return Stream.concat(
+          staticRefillers.stream(), configuration.stream().flatMap(FileWrapper::refillers));
+    }
+
     public Stream<SignatureDefinition> signatures() {
       return Stream.concat(
           staticSignatures.stream(), configuration.stream().flatMap(FileWrapper::signatures));
@@ -1629,15 +1634,15 @@ public final class PluginManager
     return formatTypes.stream().flatMap(FormatTypeWrapper::listConfiguration);
   }
 
-  @Override
-  public Stream<RefillerDefinition> refillers() {
-    return formatTypes.stream().flatMap(FormatTypeWrapper::refillers);
-  }
-
   public void pushAlerts(String alertJson) {
     for (FormatTypeWrapper<?, ?> type : formatTypes) {
       type.pushAlerts(alertJson);
     }
+  }
+
+  @Override
+  public Stream<RefillerDefinition> refillers() {
+    return formatTypes.stream().flatMap(FormatTypeWrapper::refillers);
   }
 
   @Override

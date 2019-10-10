@@ -30,9 +30,8 @@ public interface Definer<T> extends Supplier<T> {
      * Get information about a new refiller
      *
      * @param <I> the type of the input rows
-     * @param <F> the type of the refiller
      */
-    <I, F extends Refiller<I>> RefillInfo<I, F> info(Class<I> rowType);
+    <I> RefillInfo<I, ? extends Refiller<I>> info(Class<I> rowType);
   }
 
   /**
@@ -49,7 +48,7 @@ public interface Definer<T> extends Supplier<T> {
     Stream<CustomRefillerParameter<F, I>> parameters();
 
     /** Get the class of this refiller for discovery of annotations */
-    Class<F> type();
+    Class<? extends Refiller> type();
   }
 
   /** Remove all defined actions */
@@ -60,6 +59,9 @@ public interface Definer<T> extends Supplier<T> {
 
   /** Remove all defined functions */
   void clearFunctions();
+
+  /** Remove all defined refillers */
+  void clearRefillers();
 
   /**
    * Define a new action
