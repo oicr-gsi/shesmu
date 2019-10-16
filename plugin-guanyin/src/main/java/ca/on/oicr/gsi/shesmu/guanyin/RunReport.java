@@ -246,6 +246,11 @@ public class RunReport extends JsonParameterisedAction {
           inputs.put("guanyin.report.record", reportRecordId.getAsLong());
           inputs.put("guanyin.report.modules", owner.get().modules());
           inputs.put("guanyin.report.memory", owner.get().memory());
+          ObjectNode labels = MAPPER.createObjectNode();
+          labels.put(
+              "external_id",
+              String.format(
+                  "%s/reportdb/record/%d", owner.get().观音Url(), reportRecordId.getAsLong()));
           cromwellId =
               wfApi.submit(
                   "v1",
@@ -261,7 +266,7 @@ public class RunReport extends JsonParameterisedAction {
                   "WDL",
                   null,
                   "1.0",
-                  null,
+                  MAPPER.writeValueAsString(labels),
                   null);
         } else if (cromwellId != null) {
           cromwellId = wfApi.status("v1", cromwellId.getId());
