@@ -2831,9 +2831,9 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   const outputContainer = document.createElement("DIV");
   container.appendChild(outputContainer);
   const updateAnnotations = response => {
+    const annotations = [];
+    const orphanedErrors = [];
     if (response.hasOwnProperty("errors") && response.errors.length) {
-      const annotations = [];
-      const orphanedErrors = [];
       for (const err of response.errors) {
         const match = err.match(/^(\d+):(\d+): *(.*$)/);
         if (match) {
@@ -2847,9 +2847,9 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
           orphanedErrors.push(err);
         }
       }
-      editor.getSession().setAnnotations(annotations);
-      return orphanedErrors;
     }
+    editor.getSession().setAnnotations(annotations);
+    return orphanedErrors;
   };
   toolBar.appendChild(
     button("🤖 Simulate", "Run olive simulation and fetch results", () => {
