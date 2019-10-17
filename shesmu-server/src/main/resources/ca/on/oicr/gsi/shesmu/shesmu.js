@@ -2848,7 +2848,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
         }
       }
       editor.getSession().setAnnotations(annotations);
-return orphanedErrors;
+      return orphanedErrors;
     }
   };
   toolBar.appendChild(
@@ -2911,7 +2911,7 @@ return orphanedErrors;
                   olive.description,
                 render: tab => {
                   tab.appendChild(
-                    text(`Runtime: ${formatTimeSpan(olive.duration / 1E6)}`)
+                    text(`Runtime: ${formatTimeSpan(olive.duration / 1e6)}`)
                   );
                   tab.appendChild(
                     document.adoptNode(
@@ -2926,13 +2926,13 @@ return orphanedErrors;
             }
           }
           const orphanedErrors = updateAnnotations(response);
-      if (orphanedErrors.length) {
-        tabs.push({
-          name: "Errors",
-          render: tab =>
-            orphanedErrors.forEach(err => tab.appendChild(text(err)))
-        });
-      }
+          if (orphanedErrors.length) {
+            tabs.push({
+              name: "Errors",
+              render: tab =>
+                orphanedErrors.forEach(err => tab.appendChild(text(err)))
+            });
+          }
 
           if (
             response.hasOwnProperty("exports") &&
@@ -3297,7 +3297,7 @@ return orphanedErrors;
         }),
         method: "POST"
       })
-    .then(response => response.json())
+        .then(response => response.json())
         .then(updateAnnotations)
         .finally(() => (checking = false));
     }
