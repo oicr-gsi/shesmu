@@ -2859,7 +2859,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
         {
           body: JSON.stringify({
             fakeActions: fakeActions,
-            dryRun: true,
+            dryRun: false,
             script: editor.getValue()
           }),
           method: "POST"
