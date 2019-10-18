@@ -8,20 +8,46 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class DiscriminatorNodeRename extends DiscriminatorNode {
 
   private final ExpressionNode expression;
-  private final String name;
+  private final DefinedTarget target;
 
   public DiscriminatorNodeRename(int line, int column, String name, ExpressionNode expression) {
-    super(line, column);
-    this.name = name;
     this.expression = expression;
+    target =
+        new DefinedTarget() {
+          @Override
+          public int column() {
+            return column;
+          }
+
+          @Override
+          public int line() {
+            return line;
+          }
+
+          @Override
+          public String name() {
+            return name;
+          }
+
+          @Override
+          public Flavour flavour() {
+            return Flavour.STREAM;
+          }
+
+          @Override
+          public Imyhat type() {
+            return expression.type();
+          }
+        };
   }
 
   @Override
-  public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+  public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
     expression.collectFreeVariables(names, predicate);
   }
 
@@ -31,26 +57,20 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
   }
 
   @Override
-  public VariableInformation dashboard() {
+  public Stream<VariableInformation> dashboard() {
     final Set<String> freeStreamVariables = new HashSet<>();
-    expression.collectFreeVariables(freeStreamVariables, Flavour::isStream);
-    return new VariableInformation(
-        name, expression.type(), freeStreamVariables.stream(), Behaviour.DEFINITION_BY);
-  }
-
-  @Override
-  public Flavour flavour() {
-    return Flavour.STREAM;
-  }
-
-  @Override
-  public String name() {
-    return name;
+    expression.collectFreeVariables(freeStreamVariables, Target.Flavour::isStream);
+    return Stream.of(
+        new VariableInformation(
+            target.name(),
+            expression.type(),
+            freeStreamVariables.stream(),
+            Behaviour.DEFINITION_BY));
   }
 
   @Override
   public void render(RegroupVariablesBuilder builder) {
-    builder.addKey(expression.type().apply(TypeUtils.TO_ASM), name, expression::render);
+    builder.addKey(expression.type().apply(TypeUtils.TO_ASM), target.name(), expression::render);
   }
 
   @Override
@@ -58,12 +78,12 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
     boolean ok = expression.resolve(defs, errorHandler);
     if (ok) {
       final Set<String> freeStreamVariables = new HashSet<>();
-      expression.collectFreeVariables(freeStreamVariables, Flavour::isStream);
+      expression.collectFreeVariables(freeStreamVariables, Target.Flavour::isStream);
       if (freeStreamVariables.isEmpty()) {
         errorHandler.accept(
             String.format(
                 "%d:%d: New variable “%s” in By does not use any stream variables.",
-                line(), column(), name));
+                target.line(), target.column(), target.name()));
         ok = false;
       }
     }
@@ -77,8 +97,8 @@ public class DiscriminatorNodeRename extends DiscriminatorNode {
   }
 
   @Override
-  public Imyhat type() {
-    return expression.type();
+  public Stream<DefinedTarget> targets() {
+    return Stream.of(target);
   }
 
   @Override

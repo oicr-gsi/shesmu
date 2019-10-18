@@ -78,7 +78,7 @@ public abstract class GroupNode implements DefinedTarget {
         });
   }
 
-  private static final Rule<ParseGroup> of(ParseGroupWithExpression maker) {
+  private static Rule<ParseGroup> of(ParseGroupWithExpression maker) {
     return (p, o) -> {
       final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
       final Parser result =
@@ -90,7 +90,7 @@ public abstract class GroupNode implements DefinedTarget {
     };
   }
 
-  private static final Rule<ParseGroup> ofWithDefault(ParseGroupWithExpressionDefaultable maker) {
+  private static Rule<ParseGroup> ofWithDefault(ParseGroupWithExpressionDefaultable maker) {
     return (p, o) -> {
       final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
       final Parser result =

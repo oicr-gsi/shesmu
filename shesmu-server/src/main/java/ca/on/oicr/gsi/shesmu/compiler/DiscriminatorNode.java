@@ -7,9 +7,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /** One of the <tt>By</tt> clauses in <tt>Group</tt> clause */
-public abstract class DiscriminatorNode implements DefinedTarget {
+public abstract class DiscriminatorNode {
 
   public static Parser parse(Parser input, Consumer<DiscriminatorNode> output) {
     final AtomicReference<String> name = new AtomicReference<>();
@@ -33,32 +34,16 @@ public abstract class DiscriminatorNode implements DefinedTarget {
     return baseParser;
   }
 
-  private final int column;
-
-  private final int line;
-
-  public DiscriminatorNode(int line, int column) {
+  public DiscriminatorNode() {
     super();
-    this.line = line;
-    this.column = column;
   }
 
   /** Add all free variable names to the set provided. */
-  public abstract void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate);
+  public abstract void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate);
 
   public abstract void collectPlugins(Set<Path> pluginFileNames);
 
-  @Override
-  public int column() {
-    return column;
-  }
-
-  public abstract VariableInformation dashboard();
-
-  @Override
-  public int line() {
-    return line;
-  }
+  public abstract Stream<VariableInformation> dashboard();
 
   /** Produce bytecode for this discriminator */
   public abstract void render(RegroupVariablesBuilder builder);
@@ -69,6 +54,8 @@ public abstract class DiscriminatorNode implements DefinedTarget {
   /** Resolve all function plugins in this discriminator */
   public abstract boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
+
+  public abstract Stream<DefinedTarget> targets();
 
   /** Perform type checking on this discriminator and its children. */
   public abstract boolean typeCheck(Consumer<String> errorHandler);

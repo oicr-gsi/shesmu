@@ -103,7 +103,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                           return new VariableInformation(
                               child.name(), child.type(), inputs.stream(), Behaviour.DEFINITION);
                         }),
-                discriminators.stream().map(DiscriminatorNode::dashboard))));
+                discriminators.stream().flatMap(DiscriminatorNode::dashboard))));
   }
 
   @Override
@@ -182,7 +182,10 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                       }
                       return isDuplicate;
                     });
-    return defs.replaceStream(Stream.concat(discriminators.stream(), children.stream()), ok);
+    return defs.replaceStream(
+        Stream.concat(
+            discriminators.stream().flatMap(DiscriminatorNode::targets), children.stream()),
+        ok);
   }
 
   @Override
@@ -202,7 +205,9 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
     ok =
         ok
-            && Stream.concat(discriminators.stream(), children.stream())
+            && Stream.concat(
+                        discriminators.stream().flatMap(DiscriminatorNode::targets),
+                        children.stream())
                     .collect(Collectors.groupingBy(DefinedTarget::name))
                     .entrySet()
                     .stream()
