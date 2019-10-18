@@ -14,6 +14,14 @@ public abstract class DiscriminatorNode {
 
   public static Parser parse(Parser input, Consumer<DiscriminatorNode> output) {
     final AtomicReference<String> name = new AtomicReference<>();
+    final Parser groupParser = input.whitespace().symbol("@");
+    if (groupParser.isGood()) {
+      final Parser groupResult = groupParser.whitespace().identifier(name::set).whitespace();
+      if (groupResult.isGood()) {
+        output.accept(new DiscriminatorNodeGang(input.line(), input.column(), name.get()));
+      }
+      return groupResult;
+    }
     final Parser baseParser = input.whitespace().identifier(name::set).whitespace();
     if (baseParser.isGood()) {
 

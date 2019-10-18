@@ -671,6 +671,33 @@ It can also be used in `Let`, `Monitor`, `Run`, and `Alert` clauses in olives:
 
 It is currently disallowed in assignments in `Group` and `LeftJoin`.
 
+## Variables Gangs
+When grouping, it can be useful for have predefined sets of variables to use in
+a `By` clause for any given input format. A input format can define a _gang_ that
+defines a short-hand name of a set of variables to used in grouping together.
+The gang can then be used in the `By` of either a `Group` or `Pick` operation:
+
+    Olive
+      Where workflow == "BamQC 2.7+"
+      Pick Max timestamp By workflow, @patient_tissue_prep
+      Group
+        By @patient_tissue_prep
+        Into
+          paths = List path
+      Run prep_report With
+        memory = 4Gi,
+        file_name = "{@patient_tissue_prep}"
+        paths = paths;
+
+The gang, in this case, `patient_tissue_prep` defines a number of fields that
+can be grouped together in `By` clause, prefixed with an `@`. The gang can
+also be converted to an underscore delimited string:
+`"{@patient_tissue_prep}"`; the order of fields is defined by the input format.
+Additionally, the gang can be converted to a tuple `{@patient_tissue_prep}`.
+
+Note that gangs can be reused after the data has been reshaped. This is means
+it is possible to redefine the gangs in a nonsensical way.
+
 ## Expressions
 Shesmu has the following expressions, for lowest precedence to highest precedence.
 
@@ -887,6 +914,11 @@ determined based on the elements.
 Creates a new named tuple with the fields as specified. The type of the named
 tuple is determined based on the elements.
 
+#### Synthetic Tuple
+- `{@`_name_`}`
+
+Creates a new tuple with the elements as specified in the gang _name_.
+
 #### List Literal
 - `[`_expr_`,` _expr_`,` ...`]`
 
@@ -908,6 +940,7 @@ Specified a new string literal. A string may contain the following special items
 - `{`_expr_`}` for a string interpolation; the expression must be a string, integer, or date
 - `{`_expr_`:`_n_`}` for a zero-padded integer string interpolation; the expression must be an integer and _n_ is the number of digits to pad to
 - `{`_expr_`:`_f_`}` for a formatted date string interpolation; the expression must be a date and _f_ is the [format code](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html)
+- `{@`_name_`}` interpolate a name from a gang; the variables in the gang must be strings and integers
 
 #### Sub-expression
 - `(`_expr_`)`

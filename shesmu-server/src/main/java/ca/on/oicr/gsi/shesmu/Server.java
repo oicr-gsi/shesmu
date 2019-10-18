@@ -705,6 +705,48 @@ public final class Server implements ServerConfig, ActionServices {
                                       }
                                     });
                             writer.writeEndElement();
+                            format
+                                .gangs()
+                                .forEach(
+                                    gang -> {
+                                      try {
+                                        writer.writeStartElement("h2");
+                                        writer.writeAttribute(
+                                            "id", format.name() + "@" + gang.name());
+                                        writer.writeCharacters("Gang: @");
+                                        writer.writeCharacters(gang.name());
+                                        writer.writeEndElement();
+
+                                        writer.writeStartElement("table");
+                                        gang.elements()
+                                            .forEach(
+                                                element -> {
+                                                  try {
+                                                    writer.writeStartElement("tr");
+                                                    writer.writeStartElement("td");
+                                                    writer.writeCharacters(element.name());
+                                                    writer.writeEndElement();
+                                                    writer.writeStartElement("td");
+                                                    writer.writeCharacters(element.type().name());
+                                                    writer.writeEndElement();
+                                                    writer.writeStartElement("td");
+                                                    if (element.dropIfDefault()) {
+                                                      writer.writeAttribute(
+                                                          "title",
+                                                          "Dropped from names if blank/default");
+                                                      writer.writeCharacters("🚫");
+                                                    }
+                                                    writer.writeEndElement();
+                                                    writer.writeEndElement();
+                                                  } catch (XMLStreamException e) {
+                                                    throw new RuntimeException(e);
+                                                  }
+                                                });
+                                        writer.writeEndElement();
+                                      } catch (XMLStreamException e) {
+                                        throw new RuntimeException(e);
+                                      }
+                                    });
                           } catch (XMLStreamException e) {
                             throw new RuntimeException(e);
                           }
@@ -1688,11 +1730,28 @@ public final class Server implements ServerConfig, ActionServices {
                   source -> {
                     final ObjectNode sourceNode = node.putObject(source.name());
 
+                    final ObjectNode variablesNode = sourceNode.putObject("variables");
                     source
                         .baseStreamVariables()
                         .forEach(
                             variable -> {
-                              sourceNode.put(variable.name(), variable.type().descriptor());
+                              variablesNode.put(variable.name(), variable.type().descriptor());
+                            });
+
+                    final ObjectNode gangsNode = sourceNode.putObject("gangs");
+                    source
+                        .gangs()
+                        .forEach(
+                            gang -> {
+                              final ArrayNode gangArray = gangsNode.putArray(gang.name());
+                              gang.elements()
+                                  .forEach(
+                                      element -> {
+                                        final ObjectNode elementNode = gangArray.addObject();
+                                        elementNode.put("name", element.name());
+                                        elementNode.put("type", element.type().descriptor());
+                                        elementNode.put("dropIfDefault", element.dropIfDefault());
+                                      });
                             });
                   });
           return node;
@@ -2035,13 +2094,9 @@ public final class Server implements ServerConfig, ActionServices {
                         .filter(format -> format.name().equals(request.getFormat()))
                         .findAny()
                         .map(
-                            format ->
-                                Stream.<Target>concat(
-                                            format.baseStreamVariables(),
-                                            definitionRepository.signatures())
-                                        .collect(
-                                            Collectors.toMap(
-                                                udt -> udt.name() + "_type", Target::type))
+                            f ->
+                                InputFormatDefinition.predefinedTypes(
+                                        definitionRepository.signatures(), f)
                                     ::get);
             type =
                 existingTypes

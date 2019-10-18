@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu.server.plugins;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.GangElement;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
@@ -11,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
+import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
@@ -300,10 +303,9 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   private final List<Pair<String, JsonFieldWriter>> fieldWriters = new ArrayList<>();
 
   private final InputFormat format;;
+  private final List<GangDefinition> gangs;
   private final AutoUpdatingDirectory<LocalJsonFile> local;
-
   private final AutoUpdatingDirectory<RemoteJsonSource> remotes;
-
   private final List<InputVariable> variables = new ArrayList<>();
 
   public AnnotatedInputFormatDefinition(InputFormat format) throws IllegalAccessException {
@@ -317,6 +319,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       }
       sortedMethods.put(method.getName(), new Pair<>(info, method));
     }
+    final Map<String, List<Pair<Integer, GangElement>>> gangs = new HashMap<>();
     for (final Pair<ShesmuVariable, Method> entry : sortedMethods.values()) {
       // Create a target for each method for the compiler to use
       final String name = entry.second().getName();
@@ -329,7 +332,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       final Flavour flavour = entry.first().signable() ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
       final MethodType methodType = MethodType.methodType(type.javaType(), Object.class);
       // Register this variable with the compiler
-      variables.add(
+      final InputVariable variable =
           new InputVariable() {
 
             @Override
@@ -352,7 +355,8 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
             public Imyhat type() {
               return type;
             }
-          });
+          };
+      variables.add(variable);
       // Now we need to make a call site for this variable. It will happen in two
       // cases: either we have an instance of the real type and we should call the
       // method on it, or we have a Tuple that was generated generically by one of our
@@ -377,9 +381,48 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
                           MH_IMYHAT__ACCEPT.bindTo(type), 0, MH_PACK_STREAMING__CTOR),
                       1,
                       handle.asType(MethodType.methodType(Object.class, Object.class))))));
+
+      // Now, prepare any gangs
+      for (final Gang gang : entry.first().gangs()) {
+        gangs
+            .computeIfAbsent(gang.name(), k -> new ArrayList<>())
+            .add(
+                new Pair<>(
+                    gang.order(),
+                    new GangElement(variable.name(), variable.type(), gang.dropIfDefault())));
+      }
     }
     local = new AutoUpdatingDirectory<>("." + format.name() + "-input", LocalJsonFile::new);
     remotes = new AutoUpdatingDirectory<>("." + format.name() + "-remote", RemoteJsonSource::new);
+    this.gangs =
+        gangs
+            .entrySet()
+            .stream()
+            .map(
+                e ->
+                    new GangDefinition() {
+                      final List<GangElement> elements =
+                          e.getValue()
+                              .stream()
+                              .sorted(
+                                  Comparator.<Pair<Integer, GangElement>, Integer>comparing(
+                                          Pair::first)
+                                      .thenComparing(x -> x.second().name()))
+                              .map(Pair::second)
+                              .collect(Collectors.toList());
+                      final String name = e.getKey();
+
+                      @Override
+                      public Stream<GangElement> elements() {
+                        return elements.stream();
+                      }
+
+                      @Override
+                      public String name() {
+                        return name;
+                      }
+                    })
+            .collect(Collectors.toList());
   }
 
   /** Get all the variables available for this format */
@@ -408,6 +451,11 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     } else {
       return Stream.empty();
     }
+  }
+
+  @Override
+  public Stream<? extends GangDefinition> gangs() {
+    return gangs.stream();
   }
 
   public boolean isAssignableFrom(Class<?> dataType) {

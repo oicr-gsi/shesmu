@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericTransformer;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericTypeGuarantee;
@@ -8,13 +9,65 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
 public class TypeUtils {
+  public static <T> Optional<List<T>> matchGang(
+      int line,
+      int column,
+      NameDefinitions defs,
+      GangDefinition definition,
+      BiFunction<Target, Boolean, ? extends T> constructor,
+      Consumer<String> errorHandler) {
+    final AtomicBoolean ok = new AtomicBoolean(true);
+    final List<T> result =
+        definition
+            .elements()
+            .flatMap(
+                p -> {
+                  final Optional<Target> source = defs.get(p.name());
+                  if (!source.isPresent()) {
+                    ok.set(false);
+                    errorHandler.accept(
+                        String.format(
+                            "%d:%d: Cannot find variable ”%s” from gang “%s” as the stream has been manipulated.",
+                            line, column, p.name(), definition.name()));
+                    return Stream.empty();
+                  }
+                  if (!source.get().flavour().isStream()) {
+                    ok.set(false);
+                    errorHandler.accept(
+                        String.format(
+                            "%d:%d: Variable ”%s” from gang “%s” has been shadowed by a non-stream local.",
+                            line, column, p.name(), definition.name()));
+                    return Stream.empty();
+                  }
+                  if (!source.get().type().isSame(p.type())) {
+                    errorHandler.accept(
+                        String.format(
+                            "%d:%d: Variable ”%s” from gang “%s” should have type %s, but got %s. The stream has been manipulated.",
+                            line,
+                            column,
+                            p.name(),
+                            definition.name(),
+                            p.type().name(),
+                            source.get().type().name()));
+                    return Stream.empty();
+                  }
+                  return Stream.of(constructor.apply(source.get(), p.dropIfDefault()));
+                })
+            .collect(Collectors.toList());
+    return ok.get() ? Optional.of(result) : Optional.empty();
+  }
+
   private static final Type A_BOOLEAN_TYPE = Type.getType(Boolean.class);
   private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);

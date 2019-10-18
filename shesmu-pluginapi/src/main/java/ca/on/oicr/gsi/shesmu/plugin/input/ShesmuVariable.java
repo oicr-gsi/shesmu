@@ -17,8 +17,11 @@ import java.lang.annotation.Target;
 @Target(METHOD)
 public @interface ShesmuVariable {
   /** Whether the value should be included in the automatic signature generation */
-  public boolean signable() default false;
+  boolean signable() default false;
 
   /** A string containing the {@link Imyhat} type descriptor of the return type of the method */
-  public String type() default "";
+  String type() default "";
+
+  /** A set of gangs this variable should belong to */
+  Gang[] gangs() default {};
 }

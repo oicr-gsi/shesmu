@@ -1,0 +1,6 @@
+Input test;
+
+Olive
+ Pick Max library_size By @workflow_run
+ Group By project, library_size Into samples = Count
+ Run ok With ok = library_size == 307 && samples == 1;

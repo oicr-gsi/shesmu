@@ -39,6 +39,16 @@ public abstract class StringNode {
     PARTS.addSymbol(
         "{",
         (p, o) -> {
+          final Parser gangParser = p.whitespace().symbol("@");
+          if (gangParser.isGood()) {
+            final AtomicReference<String> name = new AtomicReference<>();
+            final Parser gangResult =
+                gangParser.whitespace().identifier(name::set).whitespace().symbol("}");
+            if (gangResult.isGood()) {
+              o.accept(new StringNodeGangName(gangParser.line(), gangParser.column(), name.get()));
+            }
+            return gangResult;
+          }
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
           Parser result = ExpressionNode.parse(p.whitespace(), expression::set).whitespace();
           if (!result.isGood()) {

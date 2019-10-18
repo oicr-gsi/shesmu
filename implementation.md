@@ -167,6 +167,29 @@ the JSON representation and `ttl` indicating the number of minutes to cache the
 input. Additionally, once a Shesmu server is active, it will provide the input
 in the JSON format at `/input/` followed by the input format name.
 
+### Variable Gangs
+Variables in an input format can be attached to _gang_ to provide
+convenient grouping criteria. Please see the [language reference](language.md)
+for the purpose and uses of gangs. In the `@ShesmuVariable`, set:
+
+    gangs = { @Gang(name = "useful_stuff", order = 0) })
+
+Since a variable can be part of multiple groups, `@Gang` can be
+specified multiple times. All variables using the same _name_ will be bound to
+the same group. When converting the group to a string or tuple, the _order_
+determines the order for this variable. For example:
+
+    @ShesmuVariable(gangs = { @Gang(name = "group_a", order = 0) }))
+    public String foo();
+    @ShesmuVariable(gangs = { @Gang(name = "group_a", order = 1), @Gang(name = "group_b", order = 0) }))
+    public String bar();
+    @ShesmuVariable(gangs = { @Gang(name = "group_b", order = 1) }))
+    public String baz();
+
+In this example `{@group_a}` would be equivalent to `{foo, bar}` and
+`{group_b}` would be equivalent to `{bar, baz}`. In `By` clauses, the order is
+irrelevant.
+
 ## Writing a Grouper Plugin
 Creating a new grouper is thorny since a lot of generic types are required. The
 implementation-specific grouping logic is well-isolated from the rest of the

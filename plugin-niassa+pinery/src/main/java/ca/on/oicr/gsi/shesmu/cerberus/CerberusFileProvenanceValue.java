@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.cerberus;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -123,7 +124,9 @@ public final class CerberusFileProvenanceValue {
     return completed_date;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library", order = 0)})
   public String donor() {
     return donor;
   }
@@ -181,7 +184,9 @@ public final class CerberusFileProvenanceValue {
     return group_desc;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library", order = 4, dropIfDefault = true)})
   public String group_id() {
     return group_id;
   }
@@ -232,7 +237,9 @@ public final class CerberusFileProvenanceValue {
     return kit;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library", order = 3)})
   public String library_design() {
     return library_design;
   }
@@ -302,7 +309,9 @@ public final class CerberusFileProvenanceValue {
     return timestamp;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library", order = 1)})
   public String tissue_origin() {
     return tissue_origin;
   }
@@ -317,7 +326,9 @@ public final class CerberusFileProvenanceValue {
     return tissue_region;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library", order = 2)})
   public String tissue_type() {
     return tissue_type;
   }
