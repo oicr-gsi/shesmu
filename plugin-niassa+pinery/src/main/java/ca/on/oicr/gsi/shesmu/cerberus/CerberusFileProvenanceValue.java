@@ -40,6 +40,7 @@ public final class CerberusFileProvenanceValue {
   private final String tissue_region;
   private final String tissue_type;
   private final String workflow;
+  private final String workflow_accession;
   private final Set<Tuple> workflow_run_attributes;
   private final String workflow_run_accession;
   private final Tuple workflow_version;
@@ -51,6 +52,7 @@ public final class CerberusFileProvenanceValue {
       String md5,
       long file_size,
       String workflow,
+      String workflow_accession,
       String workflow_run_accession,
       Tuple workflow_version,
       String project,
@@ -83,6 +85,7 @@ public final class CerberusFileProvenanceValue {
     this.md5 = md5;
     this.file_size = file_size;
     this.workflow = workflow;
+    this.workflow_accession = workflow_accession;
     this.workflow_run_accession = workflow_run_accession;
     this.workflow_version = workflow_version;
     this.project = project;
@@ -324,10 +327,9 @@ public final class CerberusFileProvenanceValue {
     return workflow;
   }
 
-  // TODO: Delete this; it was mislablled and confusing
   @ShesmuVariable
   public String workflow_accession() {
-    return workflow_run_accession;
+    return workflow_accession;
   }
 
   @ShesmuVariable

@@ -99,12 +99,6 @@ public final class CerberusAnalysisProvenanceValue {
                     provenance.getWorkflowVersion(), () -> {}));
   }
 
-  // TODO: Delete this; it is badly named
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> attributes() {
-    return workflowRunAttributes;
-  }
-
   @ShesmuVariable
   public Optional<Long> file_accession() {
     return fileAccession;
