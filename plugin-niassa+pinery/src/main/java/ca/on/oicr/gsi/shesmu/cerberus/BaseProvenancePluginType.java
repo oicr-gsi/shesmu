@@ -75,6 +75,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           fp.getFileMd5sum(),
                           IUSUtils.parseLong(fp.getFileSize()),
                           fp.getWorkflowName(),
+                          fp.getWorkflowSWID().toString(),
                           Optional.ofNullable(fp.getWorkflowRunSWID())
                               .map(Object::toString)
                               .orElse(""),
