@@ -1,15 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -171,10 +167,7 @@ public abstract class GroupNode implements DefinedTarget {
       NameDefinitions defs, NameDefinitions outerDefs, Consumer<String> errorHandler);
 
   public abstract boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Consumer<String> errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

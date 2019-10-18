@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -9,7 +8,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -89,8 +87,8 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return true;
   }
 

@@ -1,16 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,11 +53,8 @@ public final class OliveClauseNodeDumpAll extends OliveClauseNodeBaseDump implem
 
   @Override
   public NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     columns =
         defs.stream()
@@ -74,7 +66,7 @@ public final class OliveClauseNodeDumpAll extends OliveClauseNodeBaseDump implem
 
   @Override
   protected boolean resolveDefinitionsExtra(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return true;
   }
 

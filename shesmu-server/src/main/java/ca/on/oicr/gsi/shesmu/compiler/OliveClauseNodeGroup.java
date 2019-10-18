@@ -2,14 +2,9 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -20,8 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -159,11 +152,8 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
   @Override
   public final NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     boolean ok =
         children.stream().filter(child -> child.resolve(defs, defs, errorHandler)).count()
@@ -197,25 +187,16 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
   @Override
   public final boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     boolean ok =
         children
                     .stream()
-                    .filter(
-                        group ->
-                            group.resolveDefinitions(
-                                definedOlives, definedFunctions, definedActions, errorHandler))
+                    .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                     .count()
                 == children.size()
             & discriminators
                     .stream()
-                    .filter(group -> group.resolveFunctions(definedFunctions, errorHandler))
+                    .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                     .count()
                 == discriminators.size();
 

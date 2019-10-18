@@ -1,19 +1,14 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -101,33 +96,25 @@ public final class OliveNodeConstant extends OliveNode implements Target {
 
   @Override
   public boolean resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      Function<String, InputFormatDefinition> definedFormats,
-      Consumer<String> errorHandler,
-      ConstantRetriever constants) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return body.resolve(
         new NameDefinitions(
-            constants.get(false).collect(Collectors.toMap(Target::name, Function.identity())),
+            oliveCompilerServices
+                .constants(false)
+                .collect(Collectors.toMap(Target::name, Function.identity())),
             true),
         errorHandler);
   }
 
   @Override
   public boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> definedRefillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
-    return body.resolveFunctions(definedFunctions, errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    return body.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   @Override
   public boolean resolveTypes(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return body.typeCheck(errorHandler);
   }
 

@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.Map;
@@ -19,9 +18,7 @@ public class ImyhatNodeObject extends ImyhatNode {
 
   @Override
   public Imyhat render(
-      Function<String, Imyhat> definedTypes,
-      Function<String, FunctionDefinition> definedFunctions,
-      Consumer<String> errorHandler) {
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     final Map<String, Long> fieldCounts =
         types
             .stream()
@@ -47,6 +44,6 @@ public class ImyhatNodeObject extends ImyhatNode {
                 field ->
                     new Pair<>(
                         field.first(),
-                        field.second().render(definedTypes, definedFunctions, errorHandler))));
+                        field.second().render(expressionCompilerServices, errorHandler))));
   }
 }

@@ -2,13 +2,11 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.objectweb.asm.Label;
@@ -111,18 +109,19 @@ public class ExpressionNodeSwitch extends ExpressionNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return test.resolveFunctions(definedFunctions, errorHandler)
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return test.resolveDefinitions(expressionCompilerServices, errorHandler)
         & cases
                 .stream()
                 .filter(
                     c ->
-                        c.first().resolveFunctions(definedFunctions, errorHandler)
-                            & c.second().resolveFunctions(definedFunctions, errorHandler))
+                        c.first().resolveDefinitions(expressionCompilerServices, errorHandler)
+                            & c.second()
+                                .resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == cases.size()
-        & alternative.resolveFunctions(definedFunctions, errorHandler);
+        & alternative.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

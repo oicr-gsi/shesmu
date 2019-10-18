@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -78,11 +77,13 @@ public class ExpressionNodeObject extends ExpressionNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return fields
             .stream()
-            .filter(field -> field.second().resolveFunctions(definedFunctions, errorHandler))
+            .filter(
+                field ->
+                    field.second().resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == fields.size();
   }

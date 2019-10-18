@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
@@ -15,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -167,25 +165,16 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
 
   @Override
   public boolean resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      Function<String, InputFormatDefinition> definedFormats,
-      Consumer<String> errorHandler,
-      ConstantRetriever constants) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     final NameDefinitions defs =
         clauses()
             .stream()
             .reduce(
                 NameDefinitions.root(
-                    inputFormatDefinition, constants.get(true), signatureDefinitions.get()),
-                (d, clause) ->
-                    clause.resolve(
-                        inputFormatDefinition,
-                        definedFormats,
-                        d,
-                        signatureDefinitions,
-                        constants,
-                        errorHandler),
+                    oliveCompilerServices.inputFormat(),
+                    oliveCompilerServices.constants(true),
+                    oliveCompilerServices.signatures()),
+                (d, clause) -> clause.resolve(oliveCompilerServices, d, errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
@@ -199,15 +188,11 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
 
   @Override
   protected boolean resolveDefinitionsExtra(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Function<String, RefillerDefinition> definedRefillers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     boolean ok =
         arguments
                 .stream()
-                .filter(arg -> arg.second().resolveFunctions(definedFunctions, errorHandler))
+                .filter(arg -> arg.second().resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == arguments.size();
 
@@ -226,7 +211,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
       }
     }
 
-    definition = definedRefillers.apply(refillerName);
+    definition = oliveCompilerServices.refiller(refillerName);
     if (definition != null) {
 
       final Set<String> definedArgumentNames =
@@ -267,7 +252,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
 
   @Override
   public boolean resolveTypes(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return true;
   }
 

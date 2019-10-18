@@ -3,13 +3,11 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
@@ -64,11 +62,11 @@ public class ExpressionNodeString extends ExpressionNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return parts
             .stream()
-            .filter(part -> part.resolveFunctions(definedFunctions, errorHandler))
+            .filter(part -> part.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == parts.size();
   }

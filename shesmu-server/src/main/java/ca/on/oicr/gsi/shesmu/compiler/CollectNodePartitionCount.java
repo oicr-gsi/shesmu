@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
@@ -10,7 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -76,9 +74,9 @@ public class CollectNodePartitionCount extends CollectNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return expression.resolveFunctions(definedFunctions, errorHandler);
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

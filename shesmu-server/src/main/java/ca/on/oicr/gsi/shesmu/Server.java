@@ -5,14 +5,8 @@ import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.compiler.*;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.ConstantLoader;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
@@ -2063,14 +2057,27 @@ public final class Server implements ServerConfig, ActionServices {
                             return Optional.of(
                                 node.get()
                                     .render(
-                                        types,
-                                        pluginManager
-                                                .functions()
-                                                .collect(
-                                                    Collectors.toMap(
-                                                        FunctionDefinition::name,
-                                                        Function.identity()))
-                                            ::get,
+                                        new ExpressionCompilerServices() {
+                                          private final NameLoader<FunctionDefinition> functions =
+                                              new NameLoader<>(
+                                                  definitionRepository.functions(),
+                                                  FunctionDefinition::name);
+
+                                          @Override
+                                          public FunctionDefinition function(String name) {
+                                            return functions.get(name);
+                                          }
+
+                                          @Override
+                                          public Imyhat imyhat(String name) {
+                                            return types.apply(name);
+                                          }
+
+                                          @Override
+                                          public InputFormatDefinition inputFormat() {
+                                            return InputFormatDefinition.DUMMY;
+                                          }
+                                        },
                                         m -> {}));
                           }
                           return Optional.empty();

@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -10,7 +9,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -99,8 +97,8 @@ public abstract class LetArgumentNode {
   }
 
   public final boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return expression.resolveFunctions(definedFunctions, errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   public final Stream<Target> targets() {

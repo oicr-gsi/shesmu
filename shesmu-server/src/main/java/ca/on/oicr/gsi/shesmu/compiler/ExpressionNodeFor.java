@@ -2,14 +2,12 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -84,13 +82,13 @@ public class ExpressionNodeFor extends ExpressionNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return source.resolveFunctions(definedFunctions, errorHandler)
-        & collector.resolveFunctions(definedFunctions, errorHandler)
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return source.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & collector.resolveDefinitions(expressionCompilerServices, errorHandler)
         & transforms
                 .stream()
-                .filter(t -> t.resolveFunctions(definedFunctions, errorHandler))
+                .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size();
   }

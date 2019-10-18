@@ -1,13 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** A collection action that should only have a single value in a “Group” clause */
@@ -50,11 +46,8 @@ public final class GroupNodeUnivalued extends GroupNode {
 
   @Override
   public boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Consumer<String> errorHandler) {
-    return expression.resolveFunctions(definedFunctions, errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

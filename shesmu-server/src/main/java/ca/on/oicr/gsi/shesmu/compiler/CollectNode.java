@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatentationType;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -12,7 +11,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** The terminal operations in <tt>For</tt> expressions */
@@ -179,8 +177,8 @@ public abstract class CollectNode {
       List<Target> name, NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all functions plugins in this expression */
-  public abstract boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
+  public abstract boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   public abstract Imyhat type();
 

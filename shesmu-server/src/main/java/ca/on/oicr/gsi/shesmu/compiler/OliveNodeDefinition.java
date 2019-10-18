@@ -1,9 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -14,7 +11,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -93,14 +89,8 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
   }
 
   public Optional<Stream<Target>> outputStreamVariables(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
-      Consumer<String> errorHandler,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants) {
-    if (outputStreamVariables != null
-        || resolve(
-            inputFormatDefinition, signatureDefinitions, definedFormats, errorHandler, constants)) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    if (outputStreamVariables != null || resolve(oliveCompilerServices, errorHandler)) {
       return Optional.of(outputStreamVariables.stream());
     }
     return Optional.empty();
@@ -128,11 +118,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
   @Override
   public boolean resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      Function<String, InputFormatDefinition> definedFormats,
-      Consumer<String> errorHandler,
-      ConstantRetriever constants) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     if (resolveLock) {
       errorHandler.accept(
           String.format("%d:%d: Olive definition %s includes itself.", line, column, name));
@@ -147,17 +133,10 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
             .stream()
             .reduce(
                 NameDefinitions.root(
-                    inputFormatDefinition,
-                    Stream.concat(parameters.stream(), constants.get(true)),
-                    signatureDefinitions.get()),
-                (defs, clause) ->
-                    clause.resolve(
-                        inputFormatDefinition,
-                        definedFormats,
-                        defs,
-                        signatureDefinitions,
-                        constants,
-                        errorHandler),
+                    oliveCompilerServices.inputFormat(),
+                    Stream.concat(parameters.stream(), oliveCompilerServices.constants(true)),
+                    oliveCompilerServices.signatures()),
+                (defs, clause) -> clause.resolve(oliveCompilerServices, defs, errorHandler),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
@@ -174,21 +153,17 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
   @Override
   protected boolean resolveDefinitionsExtra(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Function<String, RefillerDefinition> definedRefillers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     this.definedFunctions = definedFunctions;
     return true;
   }
 
   @Override
   public boolean resolveTypes(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return parameters
             .stream()
-            .filter(p -> p.resolveTypes(definedTypes, definedFunctions, errorHandler))
+            .filter(p -> p.resolveTypes(oliveCompilerServices, errorHandler))
             .count()
         == parameters.size();
   }

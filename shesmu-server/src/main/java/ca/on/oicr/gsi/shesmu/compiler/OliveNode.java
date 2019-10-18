@@ -1,21 +1,15 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -305,24 +299,14 @@ public abstract class OliveNode {
 
   /** Resolve all variable plugins */
   public abstract boolean resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      Function<String, InputFormatDefinition> definedFormats,
-      Consumer<String> errorHandler,
-      ConstantRetriever constants);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   /** Resolve all non-variable plugins */
   public abstract boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> definedRefillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   public abstract boolean resolveTypes(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   /** Type check this olive and all its constituent parts */
   public abstract boolean typeCheck(Consumer<String> errorHandler);

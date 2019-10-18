@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ImyhatNodeArgument extends ImyhatNode {
   private final int line;
@@ -22,10 +21,8 @@ public class ImyhatNodeArgument extends ImyhatNode {
 
   @Override
   public Imyhat render(
-      Function<String, Imyhat> definedTypes,
-      Function<String, FunctionDefinition> definedFunctions,
-      Consumer<String> errorHandler) {
-    final FunctionDefinition definition = definedFunctions.apply(function);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    final FunctionDefinition definition = expressionCompilerServices.function(function);
     if (definition == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown function %s for parameter type.", line, column, function));

@@ -151,19 +151,82 @@ public class ProgramNode {
               "%d:%d: No input format of data named “%s” is available.", line, column, input));
       return false;
     }
-    // Find and resolve olive “Define” and “Matches”
-    final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
-    final Set<String> metricNames = new HashSet<>();
-    final Map<String, List<Imyhat>> dumpers = new HashMap<>();
-    final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
-    final Map<String, Target> userDefinedConstants = new HashMap<>();
     final Map<String, Imyhat> userDefinedTypes =
         Stream.<Target>concat(
                 inputFormatDefinition.baseStreamVariables(), signatures.get().<Target>map(x -> x))
             .collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
+    final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
+    final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
+    final Map<String, Target> userDefinedConstants = new HashMap<>();
+    // Find and resolve olive “Define” and “Matches”
+    final OliveCompilerServices compilerServices =
+        new OliveCompilerServices() {
+          final Set<String> metricNames = new HashSet<>();
+          final Map<String, List<Imyhat>> dumpers = new HashMap<>();
+
+          @Override
+          public ActionDefinition action(String name) {
+            return definedActions.apply(name);
+          }
+
+          @Override
+          public boolean addMetric(String metricName) {
+            if (metricNames.contains(metricName)) return true;
+            metricNames.add(metricName);
+            return false;
+          }
+
+          @Override
+          public InputFormatDefinition inputFormat() {
+            return inputFormatDefinition;
+          }
+
+          @Override
+          public InputFormatDefinition inputFormat(String format) {
+            return inputFormatDefinitions.apply(format);
+          }
+
+          @Override
+          public OliveNodeDefinition olive(String name) {
+            return definedOlives.get(name);
+          }
+
+          @Override
+          public RefillerDefinition refiller(String name) {
+            return definedRefillers.apply(name);
+          }
+
+          @Override
+          public Stream<SignatureDefinition> signatures() {
+            return signatures.get();
+          }
+
+          @Override
+          public List<Imyhat> upsertDumper(String dumper) {
+            return dumpers.computeIfAbsent(dumper, k -> new ArrayList<>());
+          }
+
+          @Override
+          public Stream<? extends Target> constants(boolean allowUserDefined) {
+            return allowUserDefined
+                ? Stream.concat(constants.get(), userDefinedConstants.values().stream())
+                : constants.get();
+          }
+
+          @Override
+          public FunctionDefinition function(String name) {
+            final FunctionDefinition external = definedFunctions.apply(name);
+            return external == null ? userDefinedFunctions.get(name) : external;
+          }
+
+          @Override
+          public Imyhat imyhat(String name) {
+            return userDefinedTypes.get(name);
+          }
+        };
 
     for (final TypeAliasNode alias : typeAliases) {
-      final Imyhat type = alias.resolve(userDefinedTypes::get, definedFunctions, errorHandler);
+      final Imyhat type = alias.resolve(compilerServices, errorHandler);
       if (type.isBad()) {
         return false;
       }
@@ -179,10 +242,7 @@ public class ProgramNode {
                 .count()
             == olives.size();
     ok =
-        ok
-            && olives
-                .stream()
-                .allMatch(olive -> olive.resolveTypes(userDefinedTypes::get, errorHandler));
+        ok && olives.stream().allMatch(olive -> olive.resolveTypes(compilerServices, errorHandler));
     ok =
         ok
             && olives
@@ -199,19 +259,7 @@ public class ProgramNode {
         ok
             && olives
                     .stream()
-                    .filter(
-                        olive ->
-                            olive.resolveDefinitions(
-                                definedOlives,
-                                n ->
-                                    userDefinedFunctions.containsKey(n)
-                                        ? userDefinedFunctions.get(n)
-                                        : definedFunctions.apply(n),
-                                definedActions,
-                                metricNames,
-                                definedRefillers,
-                                dumpers,
-                                errorHandler))
+                    .filter(olive -> olive.resolveDefinitions(compilerServices, errorHandler))
                     .count()
                 == olives.size();
 
@@ -220,21 +268,7 @@ public class ProgramNode {
         ok
             && olives
                     .stream()
-                    .filter(
-                        olive ->
-                            olive.resolve(
-                                inputFormatDefinition,
-                                signatures,
-                                inputFormatDefinitions,
-                                errorHandler,
-                                allowUserDefined -> {
-                                  final Stream<ConstantDefinition> externalConstants =
-                                      constants.get();
-                                  return allowUserDefined
-                                      ? Stream.concat(
-                                          userDefinedConstants.values().stream(), externalConstants)
-                                      : externalConstants;
-                                }))
+                    .filter(olive -> olive.resolve(compilerServices, errorHandler))
                     .count()
                 == olives.size();
     ok =

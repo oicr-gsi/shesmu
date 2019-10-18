@@ -2,10 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -18,8 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class OliveClauseNodePick extends OliveClauseNode {
@@ -131,11 +125,8 @@ public class OliveClauseNodePick extends OliveClauseNode {
 
   @Override
   public NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     final Optional<List<Target>> maybeDiscriminatorVariables =
         OliveClauseNodeGroup.checkDiscriminators(line, column, defs, discriminators, errorHandler);
@@ -146,14 +137,8 @@ public class OliveClauseNodePick extends OliveClauseNode {
 
   @Override
   public boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
-    return extractor.resolveFunctions(definedFunctions, errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    return extractor.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   @Override

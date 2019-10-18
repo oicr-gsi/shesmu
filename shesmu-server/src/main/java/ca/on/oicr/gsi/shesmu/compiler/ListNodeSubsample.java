@@ -2,14 +2,12 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.SampleNode.Consumption;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class ListNodeSubsample extends ListNode {
@@ -58,11 +56,11 @@ public class ListNodeSubsample extends ListNode {
   }
 
   @Override
-  public final boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
+  public final boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return samplers
             .stream()
-            .filter(sampler -> sampler.resolveFunctions(definedFunctions, errorHandler))
+            .filter(sampler -> sampler.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == samplers.size();
   }

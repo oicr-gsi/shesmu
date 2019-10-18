@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -16,8 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -179,13 +176,10 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 
   @Override
   public final NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
-    inputFormat = definedFormats.apply(format);
+    inputFormat = oliveCompilerServices.inputFormat(format);
     if (inputFormat == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown input format “%s” in LeftJoin.", line, column, format));
@@ -254,20 +248,11 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 
   @Override
   public final boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     boolean ok =
         children
                 .stream()
-                .filter(
-                    group ->
-                        group.resolveDefinitions(
-                            definedOlives, definedFunctions, definedActions, errorHandler))
+                .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == children.size();
     if (children.stream().map(GroupNode::name).distinct().count() != children.size()) {
@@ -285,8 +270,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
                   .collect(Collectors.joining(", "))));
     }
     return ok
-        & outerKey.resolveFunctions(definedFunctions, errorHandler)
-        & innerKey.resolveFunctions(definedFunctions, errorHandler);
+        & outerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
+        & innerKey.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   @Override

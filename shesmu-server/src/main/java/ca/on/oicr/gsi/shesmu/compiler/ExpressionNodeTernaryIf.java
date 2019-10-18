@@ -1,12 +1,10 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -67,11 +65,11 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return testExpression.resolveFunctions(definedFunctions, errorHandler)
-        & trueExpression.resolveFunctions(definedFunctions, errorHandler)
-        & falseExpression.resolveFunctions(definedFunctions, errorHandler);
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return testExpression.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & trueExpression.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & falseExpression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

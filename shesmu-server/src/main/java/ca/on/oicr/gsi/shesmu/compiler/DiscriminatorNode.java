@@ -1,13 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** One of the <tt>By</tt> clauses in <tt>Group</tt> clause */
@@ -69,14 +67,9 @@ public abstract class DiscriminatorNode implements DefinedTarget {
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all function plugins in this discriminator */
-  public abstract boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
+  public abstract boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
-  /**
-   * Perform type checking on this discriminator and its children.
-   *
-   * @param errorHandler
-   * @return
-   */
+  /** Perform type checking on this discriminator and its children. */
   public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

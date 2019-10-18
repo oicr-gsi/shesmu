@@ -4,12 +4,10 @@ import static org.objectweb.asm.Type.DOUBLE_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -72,9 +70,9 @@ public class StringNodeExpression extends StringNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return expression.resolveFunctions(definedFunctions, errorHandler);
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

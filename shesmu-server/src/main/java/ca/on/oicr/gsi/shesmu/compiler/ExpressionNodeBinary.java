@@ -1,13 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -61,10 +59,10 @@ public final class ExpressionNodeBinary extends ExpressionNode {
   }
 
   @Override
-  public final boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return left.resolveFunctions(definedFunctions, errorHandler)
-        & right.resolveFunctions(definedFunctions, errorHandler);
+  public final boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return left.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & right.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   public ExpressionNode right() {

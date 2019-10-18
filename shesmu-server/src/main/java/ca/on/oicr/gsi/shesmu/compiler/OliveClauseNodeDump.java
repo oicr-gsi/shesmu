@@ -1,9 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -11,9 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implements RejectNode {
@@ -66,11 +61,8 @@ public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implement
 
   @Override
   public NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     return defs.fail(
         columns.stream().filter(e -> e.resolve(defs, errorHandler)).count() == columns.size());
@@ -78,8 +70,11 @@ public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implement
 
   @Override
   public boolean resolveDefinitionsExtra(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return columns.stream().filter(e -> e.resolveFunctions(definedFunctions, errorHandler)).count()
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    return columns
+            .stream()
+            .filter(e -> e.resolveDefinitions(oliveCompilerServices, errorHandler))
+            .count()
         == columns.size();
   }
 
