@@ -1536,19 +1536,19 @@ function purgeActions(filters, targetElement) {
       if (data == 0) {
         image.src = "shrek.gif";
       } else if (data < 5) {
-        img.src = "holtburn.gif";
+        image.src = "holtburn.gif";
       } else if (data < 20) {
-        img.src = "vacuum.gif";
+        image.src = "vacuum.gif";
       } else if (data < 100) {
-        img.src = "car.gif";
+        image.src = "car.gif";
       } else if (data < 500) {
-        img.src = "flamethrower.gif";
+        image.src = "flamethrower.gif";
       } else if (data < 1000) {
-        img.src = "thorshchariot.gif";
+        image.src = "thorshchariot.gif";
       } else if (data < 5000) {
-        img.src = "volcano.gif";
+        image.src = "volcano.gif";
       } else {
-        img.src = "starwars.gif";
+        image.src = "starwars.gif";
       }
       container.appendChild(message);
     }
