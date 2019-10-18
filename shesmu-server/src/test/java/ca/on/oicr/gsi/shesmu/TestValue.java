@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,7 +58,10 @@ public class TestValue {
     return file_size;
   }
 
-  @ShesmuVariable(type = "i", signable = true)
+  @ShesmuVariable(
+      type = "i",
+      signable = true,
+      gangs = {@Gang(name = "useful_stuff", order = 1)})
   public long library_size() {
     return library_size;
   }
@@ -67,7 +71,10 @@ public class TestValue {
     return path;
   }
 
-  @ShesmuVariable(type = "s", signable = true)
+  @ShesmuVariable(
+      type = "s",
+      signable = true,
+      gangs = {@Gang(name = "useful_stuff", order = 0), @Gang(name = "workflow_run", order = 0)})
   public String project() {
     return project;
   }
@@ -77,7 +84,9 @@ public class TestValue {
     return timestamp;
   }
 
-  @ShesmuVariable(type = "s")
+  @ShesmuVariable(
+      type = "s",
+      gangs = {@Gang(name = "workflow_run", order = 1)})
   public String workflow() {
     return workflow;
   }

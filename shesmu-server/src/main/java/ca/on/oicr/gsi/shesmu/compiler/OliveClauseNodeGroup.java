@@ -182,26 +182,6 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                       }
                       return isDuplicate;
                     });
-    return defs.replaceStream(
-        Stream.concat(
-            discriminators.stream().flatMap(DiscriminatorNode::targets), children.stream()),
-        ok);
-  }
-
-  @Override
-  public final boolean resolveDefinitions(
-      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok =
-        children
-                    .stream()
-                    .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
-                    .count()
-                == children.size()
-            & discriminators
-                    .stream()
-                    .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
-                    .count()
-                == discriminators.size();
 
     ok =
         ok
@@ -229,7 +209,26 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                                         .collect(Collectors.joining(", ")))))
                     .count()
                 == 0;
-    return ok;
+    return defs.replaceStream(
+        Stream.concat(
+            discriminators.stream().flatMap(DiscriminatorNode::targets), children.stream()),
+        ok);
+  }
+
+  @Override
+  public final boolean resolveDefinitions(
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+
+    return children
+                .stream()
+                .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
+                .count()
+            == children.size()
+        & discriminators
+                .stream()
+                .filter(group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
+                .count()
+            == discriminators.size();
   }
 
   @Override

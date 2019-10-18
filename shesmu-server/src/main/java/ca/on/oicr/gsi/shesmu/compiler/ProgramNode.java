@@ -1,11 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -18,7 +14,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Representation of a complete Shesmu script */
@@ -152,9 +147,7 @@ public class ProgramNode {
       return false;
     }
     final Map<String, Imyhat> userDefinedTypes =
-        Stream.<Target>concat(
-                inputFormatDefinition.baseStreamVariables(), signatures.get().<Target>map(x -> x))
-            .collect(Collectors.toMap(t -> t.name() + "_type", Target::type));
+        InputFormatDefinition.predefinedTypes(signatures.get(), inputFormatDefinition);
     final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
     final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
     final Map<String, Target> userDefinedConstants = new HashMap<>();

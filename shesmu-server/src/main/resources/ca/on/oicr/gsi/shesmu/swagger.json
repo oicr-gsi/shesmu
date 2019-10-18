@@ -1278,9 +1278,35 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": {
-                    "additionalProperties": {
-                      "format": "typedescriptor",
-                      "type": "string"
+                    "properties": {
+                      "gangs": {
+                        "additionalProperties": {
+                          "items": {
+                            "properties": {
+                              "dropIfDefault": {
+                                "type": "boolean"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "format": "typedescriptor",
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "type": "object"
+                      },
+                      "variables": {
+                        "additionalProperties": {
+                          "format": "typedescriptor",
+                          "type": "string"
+                        },
+                        "type": "object"
+                      }
                     },
                     "type": "object"
                   },

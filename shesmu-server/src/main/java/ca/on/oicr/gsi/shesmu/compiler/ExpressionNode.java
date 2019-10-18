@@ -470,6 +470,16 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "{",
         (p, o) -> {
+          final Parser gangParser = p.whitespace().symbol("@");
+          if (gangParser.isGood()) {
+            final AtomicReference<String> name = new AtomicReference<>();
+            final Parser gangResult =
+                gangParser.whitespace().identifier(name::set).whitespace().symbol("}").whitespace();
+            if (gangResult.isGood()) {
+              o.accept(new ExpressionNodeGangTuple(p.line(), p.column(), name.get()));
+            }
+            return gangResult;
+          }
           final AtomicReference<List<Pair<String, ExpressionNode>>> fields =
               new AtomicReference<>();
           final Parser objectResult =

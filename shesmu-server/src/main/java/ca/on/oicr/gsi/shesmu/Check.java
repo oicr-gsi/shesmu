@@ -2,12 +2,7 @@ package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.shesmu.compiler.*;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -239,7 +234,7 @@ public final class Check extends Compiler {
         .map(
             pair -> {
               final List<Target> variables =
-                  Utils.stream(pair.getValue().fields())
+                  Utils.stream(pair.getValue().get("variables").fields())
                       .map(
                           field -> {
                             final String name = field.getKey();
@@ -263,6 +258,33 @@ public final class Check extends Compiler {
                             };
                           })
                       .collect(Collectors.toList());
+              final List<? extends GangDefinition> gangs =
+                  Utils.stream(pair.getValue().get("gangs").fields())
+                      .map(
+                          gang ->
+                              new GangDefinition() {
+                                private final String name = gang.getKey();
+                                private final List<GangElement> elements =
+                                    Utils.stream(gang.getValue().elements())
+                                        .map(
+                                            e ->
+                                                new GangElement(
+                                                    e.get("name").asText(),
+                                                    Imyhat.parse(e.get("type").asText()),
+                                                    e.get("dropIfDefault").asBoolean()))
+                                        .collect(Collectors.toList());;
+
+                                @Override
+                                public Stream<GangElement> elements() {
+                                  return elements.stream();
+                                }
+
+                                @Override
+                                public String name() {
+                                  return name;
+                                }
+                              })
+                      .collect(Collectors.toList());
               final String name = pair.getKey();
               return new InputFormatDefinition() {
 
@@ -274,6 +296,11 @@ public final class Check extends Compiler {
                 @Override
                 public String name() {
                   return name;
+                }
+
+                @Override
+                public Stream<? extends GangDefinition> gangs() {
+                  return gangs.stream();
                 }
 
                 @Override

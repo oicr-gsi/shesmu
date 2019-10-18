@@ -384,6 +384,33 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                       }
                       return isDuplicate;
                     });
+
+    ok =
+        ok
+            && Stream.concat(
+                        discriminators.stream().flatMap(DiscriminatorNode::targets),
+                        children.stream())
+                    .collect(Collectors.groupingBy(DefinedTarget::name))
+                    .entrySet()
+                    .stream()
+                    .filter(e -> e.getValue().size() > 1)
+                    .peek(
+                        e ->
+                            errorHandler.accept(
+                                String.format(
+                                    "%d:%d: “Group” has duplicate name %s: %s",
+                                    line,
+                                    column,
+                                    e.getKey(),
+                                    e.getValue()
+                                        .stream()
+                                        .sorted(
+                                            Comparator.comparingInt(DefinedTarget::line)
+                                                .thenComparingInt(DefinedTarget::column))
+                                        .map(l -> String.format("%d:%d", l.line(), l.column()))
+                                        .collect(Collectors.joining(", ")))))
+                    .count()
+                == 0;
     return defs.replaceStream(
         Stream.concat(
             discriminators.stream().flatMap(DiscriminatorNode::targets), children.stream()),
@@ -465,32 +492,6 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                         .count()
                     == discriminators.size();
 
-    ok =
-        ok
-            && Stream.concat(
-                        discriminators.stream().flatMap(DiscriminatorNode::targets),
-                        children.stream())
-                    .collect(Collectors.groupingBy(DefinedTarget::name))
-                    .entrySet()
-                    .stream()
-                    .filter(e -> e.getValue().size() > 1)
-                    .peek(
-                        e ->
-                            errorHandler.accept(
-                                String.format(
-                                    "%d:%d: “Group” has duplicate name %s: %s",
-                                    line,
-                                    column,
-                                    e.getKey(),
-                                    e.getValue()
-                                        .stream()
-                                        .sorted(
-                                            Comparator.comparingInt(DefinedTarget::line)
-                                                .thenComparingInt(DefinedTarget::column))
-                                        .map(l -> String.format("%d:%d", l.line(), l.column()))
-                                        .collect(Collectors.joining(", ")))))
-                    .count()
-                == 0;
     return ok;
   }
 

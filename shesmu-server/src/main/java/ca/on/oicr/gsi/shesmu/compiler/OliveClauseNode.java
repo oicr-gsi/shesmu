@@ -314,7 +314,7 @@ public abstract class OliveClauseNode {
         (pickParser, output) -> {
           final AtomicReference<Boolean> direction = new AtomicReference<>();
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-          final AtomicReference<List<String>> discriminators = new AtomicReference<>();
+          final AtomicReference<List<PickNode>> discriminators = new AtomicReference<>();
           final Parser result =
               pickParser
                   .whitespace()
@@ -324,8 +324,7 @@ public abstract class OliveClauseNode {
                   .whitespace()
                   .keyword("By")
                   .whitespace()
-                  .list(
-                      discriminators::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')
+                  .list(discriminators::set, PickNode::parse, ',')
                   .whitespace();
           if (result.isGood()) {
             output.accept(

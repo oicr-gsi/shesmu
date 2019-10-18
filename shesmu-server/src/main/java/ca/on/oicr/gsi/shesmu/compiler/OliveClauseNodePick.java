@@ -14,12 +14,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class OliveClauseNodePick extends OliveClauseNode {
 
   private final int column;
-  private final List<String> discriminators;
+  private final List<PickNode> discriminators;
   private List<Target> discriminatorVariables;
   private final ExpressionNode extractor;
   private final int line;
@@ -27,7 +28,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
   private final boolean max;
 
   public OliveClauseNodePick(
-      int line, int column, boolean max, ExpressionNode extractor, List<String> discriminators) {
+      int line, int column, boolean max, ExpressionNode extractor, List<PickNode> discriminators) {
     this.line = line;
     this.column = column;
     this.max = max;
@@ -129,7 +130,12 @@ public class OliveClauseNodePick extends OliveClauseNode {
       NameDefinitions defs,
       Consumer<String> errorHandler) {
     final Optional<List<Target>> maybeDiscriminatorVariables =
-        OliveClauseNodeGroup.checkDiscriminators(line, column, defs, discriminators, errorHandler);
+        OliveClauseNodeGroup.checkDiscriminators(
+            line,
+            column,
+            defs,
+            discriminators.stream().flatMap(PickNode::names).collect(Collectors.toList()),
+            errorHandler);
     maybeDiscriminatorVariables.ifPresent(x -> discriminatorVariables = x);
     return defs.fail(
         maybeDiscriminatorVariables.isPresent() & extractor.resolve(defs, errorHandler));
@@ -138,7 +144,11 @@ public class OliveClauseNodePick extends OliveClauseNode {
   @Override
   public boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return extractor.resolveDefinitions(oliveCompilerServices, errorHandler);
+    boolean ok = true;
+    for (final PickNode discriminator : discriminators) {
+      ok &= discriminator.isGood(oliveCompilerServices.inputFormat(), errorHandler);
+    }
+    return ok & extractor.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   @Override
