@@ -117,7 +117,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                                   inputs.stream(),
                                   Behaviour.DEFINITION);
                             }),
-                    discriminators.stream().map(DiscriminatorNode::dashboard)),
+                    discriminators.stream().flatMap(DiscriminatorNode::dashboard)),
                 inputVariables.stream())));
   }
 
@@ -278,17 +278,21 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     // suffering. So, we make a hidden 1:1 let clause to stop the chaos.
     final Type rowType = oliveBuilder.currentType();
     final LetBuilder let = oliveBuilder.let(line, column);
-    for (DiscriminatorNode discriminator : discriminators) {
-      final Type type = discriminator.type().apply(TO_ASM);
-      final Method method = new Method(discriminator.name(), type, new Type[] {});
-      let.add(
-          type,
-          discriminator.name(),
-          r -> {
-            r.loadStream();
-            r.methodGen().invokeVirtual(rowType, method);
-          });
-    }
+    discriminators
+        .stream()
+        .flatMap(DiscriminatorNode::targets)
+        .forEach(
+            discriminator -> {
+              final Type type = discriminator.type().apply(TO_ASM);
+              final Method method = new Method(discriminator.name(), type, new Type[] {});
+              let.add(
+                  type,
+                  discriminator.name(),
+                  r -> {
+                    r.loadStream();
+                    r.methodGen().invokeVirtual(rowType, method);
+                  });
+            });
     for (GroupNode child : children) {
       final Type type = child.type().apply(TO_ASM);
       final Method method = new Method(child.name(), type, new Type[] {});
@@ -380,7 +384,10 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                       }
                       return isDuplicate;
                     });
-    return defs.replaceStream(Stream.concat(discriminators.stream(), children.stream()), ok);
+    return defs.replaceStream(
+        Stream.concat(
+            discriminators.stream().flatMap(DiscriminatorNode::targets), children.stream()),
+        ok);
   }
 
   @Override
@@ -460,7 +467,9 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
     ok =
         ok
-            && Stream.concat(discriminators.stream(), children.stream())
+            && Stream.concat(
+                        discriminators.stream().flatMap(DiscriminatorNode::targets),
+                        children.stream())
                     .collect(Collectors.groupingBy(DefinedTarget::name))
                     .entrySet()
                     .stream()

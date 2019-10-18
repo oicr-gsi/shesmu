@@ -15,17 +15,42 @@ import org.objectweb.asm.commons.Method;
 
 public class DiscriminatorNodeSimple extends DiscriminatorNode {
 
-  private final String name;
+  private Target inputTarget = Target.BAD;
 
-  private Target target = Target.BAD;
+  private final DefinedTarget outputTarget;
 
   public DiscriminatorNodeSimple(int line, int column, String name) {
-    super(line, column);
-    this.name = name;
+    outputTarget =
+        new DefinedTarget() {
+          @Override
+          public int column() {
+            return column;
+          }
+
+          @Override
+          public Flavour flavour() {
+            return Flavour.STREAM;
+          }
+
+          @Override
+          public int line() {
+            return line;
+          }
+
+          @Override
+          public String name() {
+            return name;
+          }
+
+          @Override
+          public Imyhat type() {
+            return inputTarget.type();
+          }
+        };
   }
 
   @Override
-  public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+  public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
     // Nothing to do.
 
   }
@@ -36,53 +61,55 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
   }
 
   @Override
-  public VariableInformation dashboard() {
-    return new VariableInformation(name, target.type(), Stream.of(name), Behaviour.DEFINITION_BY);
-  }
-
-  @Override
-  public Flavour flavour() {
-    return Flavour.STREAM;
-  }
-
-  @Override
-  public String name() {
-    return name;
+  public Stream<VariableInformation> dashboard() {
+    return Stream.of(
+        new VariableInformation(
+            outputTarget.name(),
+            inputTarget.type(),
+            Stream.of(outputTarget.name()),
+            Behaviour.DEFINITION_BY));
   }
 
   @Override
   public void render(RegroupVariablesBuilder builder) {
     builder.addKey(
-        target.type().apply(TypeUtils.TO_ASM),
-        name,
+        inputTarget.type().apply(TypeUtils.TO_ASM),
+        outputTarget.name(),
         context -> {
           context.loadStream();
-          if (target instanceof InputVariable) {
-            ((InputVariable) target).extract(context.methodGen());
+          if (inputTarget instanceof InputVariable) {
+            ((InputVariable) inputTarget).extract(context.methodGen());
           } else {
             context
                 .methodGen()
                 .invokeVirtual(
                     context.streamType(),
-                    new Method(name, target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
+                    new Method(
+                        outputTarget.name(),
+                        inputTarget.type().apply(TypeUtils.TO_ASM),
+                        new Type[] {}));
           }
         });
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<Target> target = defs.get(name);
+    final Optional<Target> target = defs.get(outputTarget.name());
     if (!target.isPresent()) {
       errorHandler.accept(
-          String.format("%d:%d: Undefined variable “%s” in “By”.", line(), column(), name));
+          String.format(
+              "%d:%d: Undefined variable “%s” in “By”.",
+              outputTarget.line(), outputTarget.column(), outputTarget.name()));
       return false;
     }
-    if (!target.map(Target::flavour).map(Flavour::isStream).orElse(false)) {
+    if (!target.map(Target::flavour).map(Target.Flavour::isStream).orElse(false)) {
       errorHandler.accept(
-          String.format("%d:%d: Non-stream variable “%s” in “By”.", line(), column(), name));
+          String.format(
+              "%d:%d: Non-stream variable “%s” in “By”.",
+              outputTarget.line(), outputTarget.column(), outputTarget.name()));
       return false;
     }
-    this.target = target.get();
+    this.inputTarget = target.get();
     return true;
   }
 
@@ -93,8 +120,8 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
   }
 
   @Override
-  public Imyhat type() {
-    return target.type();
+  public Stream<DefinedTarget> targets() {
+    return Stream.of(outputTarget);
   }
 
   @Override
