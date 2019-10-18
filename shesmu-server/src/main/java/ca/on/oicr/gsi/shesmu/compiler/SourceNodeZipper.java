@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.CopySemantics;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -13,7 +12,6 @@ import java.lang.invoke.MethodType;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -94,10 +92,10 @@ public class SourceNodeZipper extends SourceNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return left.resolveFunctions(definedFunctions, errorHandler)
-        & right.resolveFunctions(definedFunctions, errorHandler);
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return left.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & right.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override

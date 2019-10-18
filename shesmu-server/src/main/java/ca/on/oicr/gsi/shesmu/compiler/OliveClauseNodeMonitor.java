@@ -2,10 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -18,8 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -172,11 +166,8 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
   @Override
   public NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     return defs.fail(
         labels.stream().filter(arg -> arg.resolve(defs, errorHandler)).count() == labels.size());
@@ -184,19 +175,12 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
   @Override
   public boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
-    if (metricNames.contains(metricName)) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    if (oliveCompilerServices.addMetric(metricName)) {
       errorHandler.accept(
           String.format("%d:%d: Duplicated monitoring metric “%s”.", line, column, metricName));
       return false;
     }
-    metricNames.add(metricName);
     if (help.trim().isEmpty()) {
       errorHandler.accept(
           String.format(
@@ -219,7 +203,12 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
           String.format("%d:%d: Duplicated label: %s", line, column, labelName.getKey()));
       ok = false;
     }
-    return ok;
+    return ok
+        && labels
+                .stream()
+                .filter(n -> n.resolveDefinitions(oliveCompilerServices, errorHandler))
+                .count()
+            == labels.size();
   }
 
   @Override

@@ -4,7 +4,6 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -113,7 +112,7 @@ public abstract class OliveArgumentNode {
 
   /** Resolve functions in this argument */
   public abstract boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   protected void storeAll(Renderer renderer, int action, Consumer<Renderer> loadValue) {
     loadValue.accept(renderer);

@@ -2,16 +2,12 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -399,29 +395,18 @@ public abstract class OliveClauseNode {
   /**
    * Resolve all variable plugins in this clause
    *
-   * @param inputFormatDefinition the input format for this olive
-   * @param definedFormats the function to find input formats by name
+   * @param oliveCompilerServices the input format for this olive
    * @param defs the variable plugins available to this clause
-   * @param signatureDefinitions the signatures available to this clause
    * @return the variable plugins available to the next clause
    */
   public abstract NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler);
 
   /** Resolve all non-variable plugins */
   public abstract boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   /** Type any expression in the clause */
   public abstract boolean typeCheck(Consumer<String> errorHandler);

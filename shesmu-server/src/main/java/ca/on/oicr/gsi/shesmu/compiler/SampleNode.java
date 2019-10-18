@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** Perform a subsampling operation in a <tt>Subsample</tt> clause in a <tt>For</tt> expression */
@@ -79,8 +77,8 @@ public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler {
   public abstract boolean resolve(
       List<Target> name, NameDefinitions defs, Consumer<String> errorHandler);
 
-  public abstract boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
+  public abstract boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   public abstract boolean typeCheck(Imyhat type, Consumer<String> errorHandler);
 }

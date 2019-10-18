@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Collections;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /** The types, as written in the script */
 public abstract class ImyhatNode {
@@ -182,7 +180,5 @@ public abstract class ImyhatNode {
   }
 
   public abstract Imyhat render(
-      Function<String, Imyhat> definedTypes,
-      Function<String, FunctionDefinition> definedFunctions,
-      Consumer<String> errorHandler);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 }

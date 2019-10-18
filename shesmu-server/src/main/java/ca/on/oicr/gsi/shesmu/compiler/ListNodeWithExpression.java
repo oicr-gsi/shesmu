@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -10,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -79,7 +77,7 @@ public abstract class ListNodeWithExpression extends ListNode {
   @Override
   public final Optional<List<Target>> resolve(
       List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
-    if (expression.resolve(defs.bind(name), errorHandler) && resolveExtra(defs, errorHandler)) {
+    if (expression.resolve(defs.bind(name), errorHandler)) {
       final List<Target> nextNames = nextName(name);
       definedNames = nextNames.stream().map(Target::name).collect(Collectors.toSet());
       return Optional.of(nextNames);
@@ -89,21 +87,11 @@ public abstract class ListNodeWithExpression extends ListNode {
     }
   }
 
-  protected boolean resolveExtra(NameDefinitions defs, Consumer<String> errorHandler) {
-    return true;
-  }
-
   /** Resolve all functions plugins in this expression */
   @Override
-  public final boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return expression.resolveFunctions(definedFunctions, errorHandler)
-        & resolveFunctionsExtra(definedFunctions, errorHandler);
-  }
-
-  protected boolean resolveFunctionsExtra(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
-    return true;
+  public final boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
   }
 
   @Override
@@ -113,11 +101,7 @@ public abstract class ListNodeWithExpression extends ListNode {
         : Optional.empty();
   }
 
-  /**
-   * Perform type checking on this expression.
-   *
-   * @return
-   */
+  /** Perform type checking on this expression. */
   protected abstract Optional<Imyhat> typeCheckExtra(
       Imyhat incoming, Consumer<String> errorHandler);
 }

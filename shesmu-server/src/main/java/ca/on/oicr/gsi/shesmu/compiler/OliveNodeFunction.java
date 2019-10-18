@@ -1,10 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -15,7 +12,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
@@ -26,7 +22,6 @@ import org.objectweb.asm.commons.Method;
 public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   private final ExpressionNode body;
   private final int column;
-  private Function<String, FunctionDefinition> definedFunctions;
   private final boolean exported;
   private final int line;
   private Method method;
@@ -159,14 +154,10 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 
   @Override
   public boolean resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      Function<String, InputFormatDefinition> definedFormats,
-      Consumer<String> errorHandler,
-      ConstantRetriever constants) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     final NameDefinitions defs =
         new NameDefinitions(
-            Stream.concat(parameters.stream(), constants.get(false))
+            Stream.concat(parameters.stream(), oliveCompilerServices.constants(false))
                 .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
             true);
     return body.resolve(defs, errorHandler);
@@ -174,23 +165,16 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 
   @Override
   public boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> definedRefillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
-    this.definedFunctions = definedFunctions;
-    return body.resolveFunctions(definedFunctions, errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    return body.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   @Override
   public boolean resolveTypes(
-      Function<String, Imyhat> definedTypes, Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return parameters
             .stream()
-            .filter(p -> p.resolveTypes(definedTypes, definedFunctions, errorHandler))
+            .filter(p -> p.resolveTypes(oliveCompilerServices, errorHandler))
             .count()
         == parameters.size();
   }

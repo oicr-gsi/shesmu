@@ -1,20 +1,13 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -86,40 +79,31 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 
   @Override
   public NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     final NameDefinitions limitedDefs = defs.replaceStream(Stream.empty(), true);
     boolean good =
         arguments.stream().filter(argument -> argument.resolve(limitedDefs, errorHandler)).count()
             == arguments.size();
     final Optional<Stream<Target>> replacements =
-        target.outputStreamVariables(
-            inputFormatDefinition, definedFormats, errorHandler, signatureDefinitions, constants);
+        target.outputStreamVariables(oliveCompilerServices, errorHandler);
     good = good && replacements.isPresent();
     return defs.replaceStream(replacements.orElseGet(Stream::empty), good);
   }
 
   @Override
   public boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     final boolean ok =
         arguments
                 .stream()
-                .filter(argument -> argument.resolveFunctions(definedFunctions, errorHandler))
+                .filter(
+                    argument -> argument.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == arguments.size();
-    if (definedOlives.containsKey(name)) {
-      target = definedOlives.get(name);
+    target = oliveCompilerServices.olive(name);
+    if (target != null) {
       if (target.parameterCount() != arguments.size()) {
         errorHandler.accept(
             String.format(

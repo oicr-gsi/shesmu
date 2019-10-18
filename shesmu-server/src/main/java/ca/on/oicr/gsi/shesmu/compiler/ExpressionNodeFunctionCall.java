@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -95,10 +94,10 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
   }
 
   @Override
-  public boolean resolveFunctions(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler) {
+  public boolean resolveDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     boolean ok = true;
-    function = definedFunctions.apply(name);
+    function = expressionCompilerServices.function(name);
     if (function == null) {
       function = BROKEN_FUCNTION;
       errorHandler.accept(String.format("%d:%d: Undefined function “%s”.", line(), column(), name));
@@ -107,7 +106,9 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
     return ok
         & arguments
                 .stream()
-                .filter(argument -> argument.resolveFunctions(definedFunctions, errorHandler))
+                .filter(
+                    argument ->
+                        argument.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == arguments.size();
   }

@@ -1,8 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -122,25 +120,14 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
 
   @Override
   public final boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
 
-    if (dumpers.containsKey(dumper)) {
-      dumperTypes = dumpers.get(dumper);
-    } else {
-      dumperTypes = new ArrayList<>();
-    }
-
-    return resolveDefinitionsExtra(definedFunctions, errorHandler);
+    dumperTypes = oliveCompilerServices.upsertDumper(dumper);
+    return resolveDefinitionsExtra(oliveCompilerServices, errorHandler);
   }
 
   protected abstract boolean resolveDefinitionsExtra(
-      Function<String, FunctionDefinition> definedFunctions, Consumer<String> errorHandler);
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {

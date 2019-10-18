@@ -5,7 +5,6 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -306,11 +305,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
   @Override
   public final NameDefinitions resolve(
-      InputFormatDefinition inputFormatDefinition,
-      Function<String, InputFormatDefinition> definedFormats,
+      OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
-      Supplier<Stream<SignatureDefinition>> signatureDefinitions,
-      ConstantRetriever constants,
       Consumer<String> errorHandler) {
     final NameDefinitions defsPlusOutput =
         defs.bind(
@@ -389,13 +385,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
   @Override
   public final boolean resolveDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
-      Function<String, FunctionDefinition> definedFunctions,
-      Function<String, ActionDefinition> definedActions,
-      Set<String> metricNames,
-      Function<String, RefillerDefinition> refillers,
-      Map<String, List<Imyhat>> dumpers,
-      Consumer<String> errorHandler) {
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     if (grouper == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown grouping method %s.", line, column, grouperName));
@@ -451,21 +441,20 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             && children
                         .stream()
                         .filter(
-                            group ->
-                                group.resolveDefinitions(
-                                    definedOlives, definedFunctions, definedActions, errorHandler))
+                            group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
                     == children.size()
                 & inputExpressions
                         .stream()
                         .filter(
                             expression ->
-                                expression.resolveFunctions(definedFunctions, errorHandler))
+                                expression.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
                     == inputExpressions.size()
                 & discriminators
                         .stream()
-                        .filter(group -> group.resolveFunctions(definedFunctions, errorHandler))
+                        .filter(
+                            group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
                     == discriminators.size();
 

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ImyhatNodeReturn extends ImyhatNode {
   private final int line;
@@ -18,10 +17,8 @@ public class ImyhatNodeReturn extends ImyhatNode {
 
   @Override
   public Imyhat render(
-      Function<String, Imyhat> definedTypes,
-      Function<String, FunctionDefinition> definedFunctions,
-      Consumer<String> errorHandler) {
-    final FunctionDefinition definition = definedFunctions.apply(function);
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    final FunctionDefinition definition = expressionCompilerServices.function(function);
     if (definition == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown function %s for return type.", line, column, function));

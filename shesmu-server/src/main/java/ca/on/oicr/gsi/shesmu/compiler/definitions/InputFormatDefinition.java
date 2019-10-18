@@ -6,6 +6,24 @@ import org.objectweb.asm.Type;
 
 /** Define a <tt>Input</tt> format for olives to consume */
 public interface InputFormatDefinition {
+  InputFormatDefinition DUMMY =
+      new InputFormatDefinition() {
+        @Override
+        public Stream<? extends Target> baseStreamVariables() {
+          return Stream.empty();
+        }
+
+        @Override
+        public Type type() {
+          return Type.getType(Void.class);
+        }
+
+        @Override
+        public String name() {
+          return "";
+        }
+      };
+
   /** Get all the variables available for this format */
   Stream<? extends Target> baseStreamVariables();
 
