@@ -106,6 +106,7 @@ public final class WdlInputType {
     DISPATCH.addKeyword("String", just(Imyhat.STRING));
     DISPATCH.addKeyword("Int", just(Imyhat.INTEGER));
     DISPATCH.addKeyword("File", just(Imyhat.PATH));
+    DISPATCH.addKeyword("Float", just(Imyhat.FLOAT));
     DISPATCH.addKeyword(
         "Array",
         (p, o) -> {
@@ -123,11 +124,18 @@ public final class WdlInputType {
           }
           return result;
         });
-    DISPATCH.addRaw(
+    DISPATCH.addKeyword(
         "Pair",
         (p, o) -> {
           final List<Imyhat> inner = new ArrayList<>();
-          final Parser result = pair(p, inner::add);
+          final Parser result =
+              p.whitespace()
+                  .symbol("[")
+                  .whitespace()
+                  .then(WdlInputType::parse, inner::add)
+                  .symbol(",")
+                  .then(WdlInputType::parse, inner::add)
+                  .symbol("]");
           if (result.isGood()) {
             o.accept(Imyhat.tuple(inner.stream().toArray(Imyhat[]::new)));
           }
@@ -174,31 +182,6 @@ public final class WdlInputType {
               }
             })
         .filter(Objects::nonNull);
-  }
-
-  private static Parser pair(Parser parser, Consumer<Imyhat> output) {
-    final List<Imyhat> contents = new ArrayList<>();
-    final AtomicReference<Boolean> isOptional = new AtomicReference<>(false);
-    final Parser result =
-        parser
-            .keyword("Pair")
-            .whitespace()
-            .symbol("[")
-            .whitespace()
-            .then(WdlInputType::parse, contents::add)
-            .symbol(",")
-            .then(WdlInputType::pair, contents::add)
-            .symbol("]")
-            .regex(OPTIONAL, q -> isOptional.set(q.group(0).equals("?")), "Optional or nothing.")
-            .whitespace();
-    if (result.isGood()) {
-      if (isOptional.get()) {
-        output.accept(Imyhat.tuple(contents.stream().toArray(Imyhat[]::new)).asOptional());
-      } else {
-        contents.forEach(output);
-      }
-    }
-    return result;
   }
 
   public static Parser parse(Parser parser, Consumer<Imyhat> output) {
