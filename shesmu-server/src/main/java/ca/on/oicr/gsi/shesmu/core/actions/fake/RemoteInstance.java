@@ -64,6 +64,6 @@ public class RemoteInstance extends JsonPluginFile<Configuration> {
     } catch (final Exception e) {
       e.printStackTrace();
     }
-    return Optional.of(60);
+    return Optional.of(10);
   }
 }
