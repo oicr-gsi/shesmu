@@ -235,7 +235,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     public ProjectCache(Path fileName) {
       super(
           "pinery_projects " + fileName.toString(),
-          3600,
+          60,
           MergingRecord.by(SampleProjectDto::getName));
     }
 
