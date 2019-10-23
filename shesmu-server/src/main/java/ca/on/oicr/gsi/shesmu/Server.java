@@ -506,6 +506,7 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeCharacters("➕ Add Search");
                 writer.writeEndElement();
 
+                writer.writeCharacters(" My Searches: ");
                 writer.writeStartElement("span");
                 writer.writeAttribute("class", "dropdown");
                 writer.writeStartElement("span");

@@ -786,16 +786,51 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
 
   document.getElementById("importButton").addEventListener("click", () => {
     const [dialog, close] = makePopup(true);
-    const importJSON = document.createElement("TEXTAREA");
-    dialog.appendChild(importJSON);
-
+    let provisionalName = "New Search";
+    const input = document.createElement("TEXTAREA");
+    dialog.appendChild(input);
+    dialog.appendChild(document.createElement("BR"));
     dialog.appendChild(
-      button("Import", "Add all searches to local search collection.", () => {
-        for (const entry of Object.entries(JSON.parse(importJSON.value))) {
-          localSearches[entry[0]] = entry[1];
+      button("📁 From File", "Upload searches as a file.", () =>
+        loadFile((name, data) => {
+          input.value = data;
+          provisionalName = name.replace(/\.search$/, "");
+        })
+      )
+    );
+    dialog.appendChild(
+      button("Import", "Import search from JSON data.", () => {
+        try {
+          const imported = JSON.parse(input.value);
+          if (Array.isArray(imported)) {
+            const [nameDialog, nameClose] = makePopup(true);
+            const nameInput = document.createElement("INPUT");
+            nameInput.type = "text";
+            nameInput.value = provisionalName;
+            nameDialog.appendChild(
+              document.createTextNode("Name for search: ")
+            );
+            nameDialog.appendChild(nameInput);
+            nameDialog.appendChild(document.createElement("BR"));
+            nameDialog.appendChild(
+              button("Import", "Adds the search to your collection", () => {
+                if (nameInput.value) {
+                  nameClose();
+                  localSearches[nameInput.value.trim()] = imported;
+                  updateLocalSearches();
+                }
+              })
+            );
+          } else {
+            for (const entry of Object.entries(imported)) {
+              localSearches[entry[0]] = entry[1];
+            }
+            updateLocalSearches();
+          }
+          close();
+        } catch (e) {
+          makePopup().innerText = e.message;
         }
-        close();
-        updateLocalSearches();
       })
     );
   });
@@ -812,9 +847,29 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
       }
     });
 
-  document
-    .getElementById("exportButton")
-    .addEventListener("click", () => copyJson(localSearches));
+  document.getElementById("exportButton").addEventListener("click", () => {
+    if (Object.keys(localSearches).length) {
+      const [dialog, close] = makePopup(true);
+      dialog.appendChild(
+        button("⎘ To Clipboard", "Export searches to the clipboard.", () => {
+          copyJson(localSearches);
+          close();
+        })
+      );
+      dialog.appendChild(
+        button("📁 To File", "Download searches as a file.", () => {
+          downloadData(
+            JSON.stringify(localSearches),
+            "application/json",
+            "My Searches.json"
+          );
+          close();
+        })
+      );
+    } else {
+      makePopup().innerText = "No saved searches to export.";
+    }
+  });
 
   redrawDropDown();
 }
@@ -828,6 +883,20 @@ function copyJson(data) {
   document.execCommand("Copy");
   buffer.style = "display: none;";
   window.setTimeout(closeBusy, 300);
+}
+
+function downloadData(data, mimetype, fileName) {
+  const blob = new Blob([data], { type: mimetype });
+
+  const a = document.createElement("a");
+  a.download = fileName;
+  a.href = URL.createObjectURL(blob);
+  a.dataset.downloadurl = ["text/plain", a.download, a.href].join(":");
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
 }
 
 function saveSearch(filters, updateSearchList) {
@@ -2449,7 +2518,7 @@ function getStats(
   );
   toolBar.appendChild(
     accessoryButton(
-      "💾 Save Search",
+      "💾 Add to My Searches",
       "Save this search to the local search collection.",
       () => {
         const customFilters =
@@ -2468,6 +2537,44 @@ function getStats(
       }
     )
   );
+  toolBar.appendChild(
+    accessoryButton(
+      "🡇 Export Search",
+      "Export this search to a file or the clipboard.",
+      () => {
+        const customFilters =
+          additionalFilters.length == 0
+            ? filters
+            : filters.concat(
+                synthesiseFilters(
+                  additionalFilters[additionalFilters.length - 1]
+                )
+              );
+        if (customFilters.length > 0) {
+          const [dialog, close] = makePopup(true);
+          dialog.appendChild(
+            button("⎘ To Clipboard", "Export search to the clipboard.", () => {
+              copyJson(customFilters);
+              close();
+            })
+          );
+          dialog.appendChild(
+            button("📁 To File", "Download search as a file.", () => {
+              downloadData(
+                JSON.stringify(customFilters),
+                "application/json",
+                "My Search.search"
+              );
+              close();
+            })
+          );
+        } else {
+          makePopup().innerText = "No search to save.";
+        }
+      }
+    )
+  );
+
   toolBar.appendChild(
     accessoryButton(
       "⎌ Undo",
@@ -3223,19 +3330,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
     accessoryButton(
       "🡇 Download File",
       "Save this editor to your computer",
-      () => {
-        const blob = new Blob([editor.getValue()], { type: "text/plain" });
-
-        const a = document.createElement("a");
-        a.download = fileName;
-        a.href = URL.createObjectURL(blob);
-        a.dataset.downloadurl = ["text/plain", a.download, a.href].join(":");
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-      }
+      () => downloadData(editor.getValue(), "text/plain", fileName)
     )
   );
   const savedTheme = localStorage.getItem("shesmu_theme") || "ace/theme/chrome";
