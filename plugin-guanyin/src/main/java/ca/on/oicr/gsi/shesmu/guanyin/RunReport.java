@@ -355,9 +355,10 @@ public class RunReport extends JsonParameterisedAction {
     node.set("parameters", parameters);
     if (cromwellId != null) {
       node.put(
-          "crowellUrl",
+          "cromwellUrl",
           String.format(
               "%s/api/workflows/v1/%s/status", owner.get().cromwellUrl(), cromwellId.getId()));
+      node.put("cromwellId", cromwellId.getId());
     }
     reportRecordId.ifPresent(
         id -> node.put("url", String.format("%s/reportdb/record/%d", owner.get().观音Url(), id)));
