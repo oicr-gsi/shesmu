@@ -12,9 +12,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /** Add a Shesmu value into a JSON object */
-public final class PackJsonObject implements ImyhatConsumer {
-  private final ObjectNode node;
-  private final String name;
+public class PackJsonObject implements ImyhatConsumer {
+  protected final String name;
+  protected final ObjectNode node;
 
   public PackJsonObject(ObjectNode node, String name) {
     this.node = node;
@@ -29,20 +29,12 @@ public final class PackJsonObject implements ImyhatConsumer {
   @Override
   public void accept(Stream<Object> values, Imyhat inner) {
     final ArrayNode array = node.putArray(name);
-    values.forEach(v -> inner.accept(new PackJsonArray(array), v));
+    values.forEach(v -> inner.accept(createArray(array), v));
   }
 
   @Override
   public void accept(long value) {
     node.put(name, value);
-  }
-
-  @Override
-  public void acceptTuple(Stream<Field<Integer>> fields) {
-    final ArrayNode array = node.putArray(name);
-    fields
-        .sorted(Comparator.comparing(Field::index))
-        .forEach(f -> f.type().accept(new PackJsonArray(array), f.value()));
   }
 
   @Override
@@ -52,12 +44,6 @@ public final class PackJsonObject implements ImyhatConsumer {
     } else {
       node.putNull(name);
     }
-  }
-
-  @Override
-  public void acceptObject(Stream<Field<String>> fields) {
-    final ObjectNode object = node.putObject(name);
-    fields.forEach(f -> f.type().accept(new PackJsonObject(object, f.index()), f.value()));
   }
 
   @Override
@@ -78,5 +64,27 @@ public final class PackJsonObject implements ImyhatConsumer {
   @Override
   public void accept(double value) {
     node.put(name, value);
+  }
+
+  @Override
+  public void acceptObject(Stream<Field<String>> fields) {
+    final ObjectNode object = node.putObject(name);
+    fields.forEach(f -> f.type().accept(createObject(object, f.index()), f.value()));
+  }
+
+  @Override
+  public void acceptTuple(Stream<Field<Integer>> fields) {
+    final ArrayNode array = node.putArray(name);
+    fields
+        .sorted(Comparator.comparing(Field::index))
+        .forEach(f -> f.type().accept(createArray(array), f.value()));
+  }
+
+  protected ImyhatConsumer createArray(ArrayNode array) {
+    return new PackJsonArray(array);
+  }
+
+  protected ImyhatConsumer createObject(ObjectNode object, String property) {
+    return new PackJsonObject(object, property);
   }
 }

@@ -12,19 +12,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /** Append a Shesmu value onto a JSON array */
-public final class PackJsonArray implements ImyhatConsumer {
-  private final ArrayNode node;
+public class PackJsonArray implements ImyhatConsumer {
+  protected final ArrayNode node;
 
   public PackJsonArray(ArrayNode node) {
     this.node = node;
-  }
-
-  @Override
-  public void acceptTuple(Stream<Field<Integer>> fields) {
-    final ArrayNode array = node.addArray();
-    fields
-        .sorted(Comparator.comparing(Field::index))
-        .forEach(f -> f.type().accept(new PackJsonArray(array), f.value()));
   }
 
   @Override
@@ -34,12 +26,6 @@ public final class PackJsonArray implements ImyhatConsumer {
     } else {
       node.addNull();
     }
-  }
-
-  @Override
-  public void acceptObject(Stream<Field<String>> fields) {
-    final ObjectNode object = node.addObject();
-    fields.forEach(f -> f.type().accept(new PackJsonObject(object, f.index()), f.value()));
   }
 
   @Override
@@ -55,7 +41,7 @@ public final class PackJsonArray implements ImyhatConsumer {
   @Override
   public void accept(Stream<Object> values, Imyhat inner) {
     final ArrayNode array = node.addArray();
-    values.forEach(v -> inner.accept(new PackJsonArray(array), v));
+    values.forEach(v -> inner.accept(createArray(array), v));
   }
 
   @Override
@@ -76,5 +62,27 @@ public final class PackJsonArray implements ImyhatConsumer {
   @Override
   public void accept(boolean value) {
     node.add(value);
+  }
+
+  @Override
+  public void acceptObject(Stream<Field<String>> fields) {
+    final ObjectNode object = node.addObject();
+    fields.forEach(f -> f.type().accept(createObject(object, f.index()), f.value()));
+  }
+
+  @Override
+  public void acceptTuple(Stream<Field<Integer>> fields) {
+    final ArrayNode array = node.addArray();
+    fields
+        .sorted(Comparator.comparing(Field::index))
+        .forEach(f -> f.type().accept(createArray(array), f.value()));
+  }
+
+  protected ImyhatConsumer createArray(ArrayNode array) {
+    return new PackJsonArray(array);
+  }
+
+  protected ImyhatConsumer createObject(ObjectNode object, String property) {
+    return new PackJsonObject(object, property);
   }
 }
