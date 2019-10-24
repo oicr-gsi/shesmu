@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.wdl;
 
 import ca.on.oicr.gsi.Pair;
-import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
@@ -35,7 +34,7 @@ public class PackWdlVariables implements ImyhatConsumer {
         for (final Pair<String[], Imyhat> field : group.getValue()) {
           final String fieldName = field.first()[index];
           final String propertyName = String.join(".", field.first());
-          handlers.put(fieldName, result -> new PackJsonObject(result, propertyName));
+          handlers.put(fieldName, result -> new PackWdlJsonObject(result, propertyName));
           fields.add(new Pair<>(fieldName, field.second()));
         }
       } else {
