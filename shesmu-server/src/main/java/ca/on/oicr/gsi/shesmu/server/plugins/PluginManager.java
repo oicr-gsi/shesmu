@@ -353,7 +353,8 @@ public final class PluginManager
         callsite = CONFIG_FILE_INSTANCES.upsert(path.toString(), target);
 
         final String instanceName =
-            RuntimeSupport.removeExtension(instance.fileName(), fileFormat.extension());
+            RuntimeSupport.removeExtension(instance.fileName(), fileFormat.extension())
+                .replaceAll("[^a-zA-Z0-9_]", "_");
 
         // Now expose all our plugins to the olive compiler
         constantsFromAnnotations =
