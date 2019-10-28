@@ -4,6 +4,7 @@ import {
   formatTimeBin,
   formatTimeSpan,
   link,
+  preformatted,
   table,
   text,
   title,
@@ -29,13 +30,6 @@ function accessoryButton(label, title, callback) {
 }
 function dangerButton(label, title, callback) {
   return makeButton(label, title, " danger", callback);
-}
-
-function preformatted(text) {
-  const pre = document.createElement("PRE");
-  pre.style.overflowX = "scroll";
-  pre.innerText = text;
-  return pre;
 }
 
 function alertEntries(entries) {

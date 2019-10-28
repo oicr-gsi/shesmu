@@ -83,6 +83,15 @@ export function objectTable(object, title, valueFormatter) {
     )
   );
 }
+
+export function preformatted(text) {
+  const pre = document.createElement("PRE");
+  pre.style.overflowX = "scroll";
+  pre.innerText = text;
+  return pre;
+}
+
+
 export function table(rows, ...headers) {
   if (rows.length == 0) return [];
   const table = document.createElement("TABLE");
