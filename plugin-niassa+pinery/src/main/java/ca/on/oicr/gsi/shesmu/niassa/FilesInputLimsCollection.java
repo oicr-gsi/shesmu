@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -51,8 +52,11 @@ class FilesInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp() {
-    return filesInputFileInformation.isEmpty()
-        || filesInputFileInformation.stream().anyMatch(FilesInputFile::isStale);
+  public boolean shouldHalp(Consumer<String> errorHandler) {
+    if (filesInputFileInformation.isEmpty()) {
+      errorHandler.accept("No files attached");
+      return true;
+    }
+    return filesInputFileInformation.stream().filter(f -> f.isStale(errorHandler)).count() > 0;
   }
 }

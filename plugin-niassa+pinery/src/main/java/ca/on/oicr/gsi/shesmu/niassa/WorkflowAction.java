@@ -68,6 +68,7 @@ public final class WorkflowAction extends Action {
   private final Supplier<NiassaServer> server;
   private final List<String> services;
   private final long workflowAccession;
+  private List<String> errors = Collections.emptyList();
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
@@ -119,7 +120,9 @@ public final class WorkflowAction extends Action {
         Stream.concat(services.stream(), server.get().services()).collect(Collectors.toSet()))) {
       return ActionState.THROTTLED;
     }
-    if (limsKeysCollection.shouldHalp()) {
+    final List<String> errors = new ArrayList<>();
+    if (limsKeysCollection.shouldHalp(errors::add)) {
+      this.errors = errors;
       return ActionState.HALP;
     }
     try {
@@ -186,12 +189,17 @@ public final class WorkflowAction extends Action {
       // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
       // human needs to rescue us.
       if (hasLaunched) {
+        this.errors =
+            Collections.singletonList("Workflow has already been attempted. Purge to try again.");
         return ActionState.FAILED;
       }
 
       // Check if there are already too many copies of this workflow running; if so, wait until
       // later.
       if (server.get().maxInFlight(workflowAccession)) {
+        this.errors =
+            Collections.singletonList(
+                "Too many workflows running. Sit tight or increase max-in-flight setting.");
         return ActionState.WAITING;
       }
 
@@ -290,6 +298,7 @@ public final class WorkflowAction extends Action {
     } catch (final Exception e) {
       e.printStackTrace();
       // This might leak in-flight locks, but that's safe
+      this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
   }
@@ -358,6 +367,7 @@ public final class WorkflowAction extends Action {
     final ArrayNode matches = node.putArray("matches");
     this.matches.forEach(match -> matches.add(match.toJson(mapper)));
     this.annotations.forEach(node.putObject("annotations")::put);
+    this.errors.forEach(node.putArray("errors")::add);
 
     return node;
   }

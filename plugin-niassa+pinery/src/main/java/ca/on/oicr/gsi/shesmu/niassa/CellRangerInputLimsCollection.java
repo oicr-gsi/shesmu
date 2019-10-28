@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -51,7 +52,11 @@ class CellRangerInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp() {
-    return limsKeys.isEmpty();
+  public boolean shouldHalp(Consumer<String> errorHandler) {
+    if (limsKeys.isEmpty()) {
+      errorHandler.accept("No lanes.");
+      return true;
+    }
+    return false;
   }
 }

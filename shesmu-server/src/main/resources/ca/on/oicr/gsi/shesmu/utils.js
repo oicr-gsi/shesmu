@@ -23,7 +23,6 @@ export function toggleCollapse(title) {
     : null;
 }
 
-
 export function formatTimeSpan(x) {
   let diff = Math.abs(Math.ceil(x / 1000));
   let result = "";
@@ -184,7 +183,8 @@ export function title(action, t) {
         }
       ]
     ),
-    tags
+    tags,
+    collapse("Errors", table(action.errors || [], ["Message", x => x]))
   ];
 }
 

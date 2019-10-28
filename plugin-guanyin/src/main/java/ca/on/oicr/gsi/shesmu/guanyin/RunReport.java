@@ -3,18 +3,14 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 import ca.on.oicr.gsi.prometheus.*;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.WorkflowIdAndStatus;
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.OptionalLong;
-import java.util.Scanner;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -159,6 +155,7 @@ public class RunReport extends JsonParameterisedAction {
           new StringEntity(MAPPER.writeValueAsString(rootParameters), ContentType.APPLICATION_JSON);
     } catch (final Exception e) {
       e.printStackTrace();
+      this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
 
@@ -180,10 +177,7 @@ public class RunReport extends JsonParameterisedAction {
           MAPPER.readValue(response.getEntity().getContent(), RecordDto[].class);
       if (results.length > 0) {
         final RecordDto record =
-            Stream.of(results)
-                .sorted(Comparator.comparing(RecordDto::getGenerated).reversed())
-                .findFirst()
-                .get();
+            Stream.of(results).max(Comparator.comparing(RecordDto::getGenerated)).get();
         reportRecordId = OptionalLong.of(record.getId());
         if (record.isFinished()) {
           return ActionState.SUCCEEDED;
@@ -193,6 +187,7 @@ public class RunReport extends JsonParameterisedAction {
       }
     } catch (final Exception e) {
       e.printStackTrace();
+      this.errors = Collections.singletonList(e.getMessage());
       观音RequestErrors.labels(owner.get().观音Url()).inc();
       return ActionState.FAILED;
     }
@@ -216,6 +211,7 @@ public class RunReport extends JsonParameterisedAction {
                 MAPPER.readValue(response.getEntity().getContent(), CreateDto.class).getId());
       } catch (final Exception e) {
         e.printStackTrace();
+        this.errors = Collections.singletonList(e.getMessage());
         观音RequestErrors.labels(owner.get().观音Url()).inc();
         return ActionState.FAILED;
       }
@@ -254,12 +250,18 @@ public class RunReport extends JsonParameterisedAction {
                 "1.0",
                 MAPPER.writeValueAsString(labels),
                 null);
+        this.errors = Collections.emptyList();
       } else if (cromwellId != null) {
         cromwellId = wfApi.status("v1", cromwellId.getId());
+        this.errors = Collections.emptyList();
+      } else {
+        this.errors =
+            Collections.singletonList("Report has already been launched but ID is unknown.");
       }
       return actionStatusFromCromwell(cromwellId);
-    } catch (ApiException | JsonProcessingException e) {
+    } catch (final Exception e) {
       e.printStackTrace();
+      this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
   }
@@ -274,15 +276,21 @@ public class RunReport extends JsonParameterisedAction {
     return 10;
   }
 
+  private List<String> errors = Collections.emptyList();
+
   private void showError(CloseableHttpResponse response, String prefix)
       throws UnsupportedOperationException, IOException {
+    final List<String> errors = new ArrayList<>();
     try (Scanner s = new Scanner(response.getEntity().getContent())) {
       s.useDelimiter("\\A");
       if (s.hasNext()) {
+        final String message = s.next();
         System.err.print(prefix);
-        System.err.println(s.next());
+        System.err.println(message);
+        errors.add(message);
       }
     }
+    this.errors = errors;
   }
 
   @Override
@@ -293,6 +301,7 @@ public class RunReport extends JsonParameterisedAction {
     node.put("reportId", reportId);
     node.put("script", owner.get().script());
     node.set("parameters", parameters);
+    this.errors.forEach(node.putArray("errors")::add);
     if (cromwellId != null) {
       node.put(
           "cromwellUrl",

@@ -181,7 +181,7 @@ public final class ActionProcessor
     Instant lastStateTransition = Instant.now();
     final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
     final Set<String> tags = ConcurrentHashMap.newKeySet();
-    boolean thrown;
+    String thrown;
   }
 
   private abstract static class InstantFilter extends Filter {
@@ -947,6 +947,14 @@ public final class ActionProcessor
                   .getKey()
                   .externalTimestamp()
                   .ifPresent(external -> node.put("external", external.toEpochMilli()));
+              final String thrown = entry.getValue().thrown;
+              if (thrown != null) {
+                if (node.has("errors")) {
+                  ((ArrayNode) node.get("errors")).add(thrown);
+                } else {
+                  node.putArray("errors").add(thrown);
+                }
+              }
               node.put("type", entry.getKey().type());
               final ArrayNode locations = node.putArray("locations");
               entry
@@ -986,7 +994,7 @@ public final class ActionProcessor
             entry -> {
               entry.getValue().lastChecked = Instant.now();
               final ActionState oldState = entry.getValue().lastState;
-              final boolean oldThrown = entry.getValue().thrown;
+              final boolean oldThrown = entry.getValue().thrown != null;
               try (AutoCloseable inflight =
                   Server.inflightCloseable(
                       String.format(
@@ -996,9 +1004,10 @@ public final class ActionProcessor
                     entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
                         ? ActionState.THROTTLED
                         : entry.getKey().perform(actionServices);
+                entry.getValue().thrown = null;
               } catch (final Throwable e) {
                 entry.getValue().lastState = ActionState.UNKNOWN;
-                entry.getValue().thrown = true;
+                entry.getValue().thrown = e.getMessage();
                 e.printStackTrace();
                 if (e instanceof Error) {
                   throw (Error) e;
@@ -1009,7 +1018,7 @@ public final class ActionProcessor
                 stateCount.labels(oldState.name(), entry.getKey().type()).dec();
                 stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
               }
-              actionThrows.inc((entry.getValue().thrown ? 0 : 1) - (oldThrown ? 0 : 1));
+              actionThrows.inc((entry.getValue().thrown != null ? 0 : 1) - (oldThrown ? 0 : 1));
             });
     lastRun.setToCurrentTime();
     final Map<Pair<ActionState, String>, Optional<Instant>> lastTransitions =

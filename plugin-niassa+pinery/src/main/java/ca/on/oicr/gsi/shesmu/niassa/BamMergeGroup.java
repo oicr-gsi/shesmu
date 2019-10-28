@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,8 +50,12 @@ public class BamMergeGroup {
             .collect(Collectors.toList()));
   }
 
-  public boolean shouldHalp() {
-    return entries.isEmpty() || entries.stream().anyMatch(BamMergeEntry::isStale);
+  public boolean shouldHalp(Consumer<String> errorHandler) {
+    if (entries.isEmpty()) {
+      errorHandler.accept(String.format("Group %s has no entries.", groupName));
+      return true;
+    }
+    return entries.stream().filter(e -> e.isStale(errorHandler)).count() > 0;
   }
 
   public Stream<Integer> swids() {
