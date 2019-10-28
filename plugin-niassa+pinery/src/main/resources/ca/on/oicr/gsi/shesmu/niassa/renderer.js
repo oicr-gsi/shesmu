@@ -9,6 +9,14 @@ const automaticIniParams = new Set([
   "workflow_run_accession"
 ]);
 
+const maybeJsonVisibleText = input => {
+  try {
+    return preformatted(JSON.stringify(JSON.parse(input), null, 2));
+  } catch (e) {
+    return visibleText(input);
+  }
+};
+
 actionRender.set("niassa", a => [
   title(a, `Workflow ${a.workflowAccession}`),
   a.workflowRunAccession
@@ -19,11 +27,11 @@ actionRender.set("niassa", a => [
     : blank(),
   text(`Major Olive Version: ${a.majorOliveVersion}`),
   objectTable(a.annotations, "Annotations", x => x),
-  objectTable(a.ini, "INI from Olive", visibleText),
+  objectTable(a.ini, "INI from Olive", maybeJsonVisibleText),
   objectTable(
     a.discoveredIni || {},
     `INI from ${a.workflowRunAccession}`,
-    visibleText
+    maybeJsonVisibleText
   ),
   a.discoveredIni && Object.entries(a.discoveredIni).length > 0
     ? collapse(
