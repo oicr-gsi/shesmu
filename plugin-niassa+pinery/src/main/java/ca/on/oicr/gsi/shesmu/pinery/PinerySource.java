@@ -7,13 +7,16 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
+import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.pinery.client.HttpResponseException;
 import ca.on.oicr.pinery.client.PineryClient;
+import ca.on.oicr.ws.dto.InstrumentModelDto;
 import ca.on.oicr.ws.dto.RunDto;
 import ca.on.oicr.ws.dto.SampleProjectDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -230,6 +233,30 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
+  private final class PlatformCache extends ValueCache<Optional<Map<String, String>>> {
+    private PlatformCache(Path fileName) {
+      super("pinery-platform " + fileName.toString(), 30, SimpleRecord::new);
+    }
+
+    @Override
+    protected Optional<Map<String, String>> fetch(Instant lastUpdated) throws Exception {
+      if (!config.isPresent()) {
+        return Optional.empty();
+      }
+      final PineryConfiguration cfg = config.get();
+      try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
+        return Optional.of(
+            c.getInstrumentModel()
+                .all()
+                .stream()
+                .filter(i -> !i.getName().equals("unspecified"))
+                .collect(
+                    Collectors.toMap(
+                        InstrumentModelDto::getName, InstrumentModelDto::getPlatform)));
+      }
+    }
+  }
+
   private class ProjectCache extends ValueCache<Stream<SampleProjectDto>> {
 
     public ProjectCache(Path fileName) {
@@ -252,7 +279,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       SampleProvenance sp, String key, Consumer<String> isBad, boolean required) {
     return IUSUtils.singleton(
         sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
-  };
+  }
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Gauge badSetMap =
@@ -263,12 +290,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
           .register();
   private final ItemCache cache;
   private Optional<PineryConfiguration> config = Optional.empty();
+  private final PlatformCache platforms;
   private final ProjectCache projects;
 
   public PinerySource(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, PineryConfiguration.class);
     projects = new ProjectCache(fileName);
     cache = new ItemCache(fileName);
+    platforms = new PlatformCache(fileName);
   }
 
   @ShesmuMethod(
@@ -292,6 +321,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     final Optional<String> url = config.map(PineryConfiguration::getUrl);
     renderer.link("URL", url.orElse("about:blank"), url.orElse("Unknown"));
     renderer.line("Provider", config.map(PineryConfiguration::getProvider).orElse("Unknown"));
+  }
+
+  @ShesmuMethod(
+      name = "platform_for_$_instrument_model",
+      description = "The the platform of the instrument model for the Pinery defined in {file}.")
+  public String platformForInstrumentModel(
+      @ShesmuParameter(description = "The instrument model name as found in Pinery")
+          String instrumentModel) {
+    return platforms.get().orElse(Collections.emptyMap()).getOrDefault(instrumentModel, "UNKNOWN");
   }
 
   @Override
