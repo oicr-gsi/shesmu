@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -32,6 +33,8 @@ public interface InputLimsCollection {
   /**
    * Check whether the input is broken or stale in such a way that the action should go into {@link
    * ca.on.oicr.gsi.shesmu.plugin.action.ActionState#HALP} and not run.
+   *
+   * @param errorHandler
    */
-  boolean shouldHalp();
+  boolean shouldHalp(Consumer<String> errorHandler);
 }

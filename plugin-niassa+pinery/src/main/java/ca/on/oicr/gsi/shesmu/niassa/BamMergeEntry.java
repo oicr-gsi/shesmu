@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public final class BamMergeEntry implements LimsKey {
@@ -69,7 +70,13 @@ public final class BamMergeEntry implements LimsKey {
     return Objects.hash(fileName, lastModified, provider, sampleId, stale, swid, version);
   }
 
-  public boolean isStale() {
+  public boolean isStale(Consumer<String> errorHandler) {
+    if (stale) {
+      errorHandler.accept(
+          String.format(
+              "Input file %d for %s is marked as stale. Fix provenance and purge this action.",
+              swid, sampleId));
+    }
     return stale;
   }
 

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -70,7 +71,11 @@ public class BamMergeInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp() {
-    return groups.isEmpty() || groups.stream().anyMatch(BamMergeGroup::shouldHalp);
+  public boolean shouldHalp(Consumer<String> errorHandler) {
+    if (groups.isEmpty()) {
+      errorHandler.accept("No input groups.");
+      return true;
+    }
+    return groups.stream().filter(g -> g.shouldHalp(errorHandler)).count() > 0;
   }
 }

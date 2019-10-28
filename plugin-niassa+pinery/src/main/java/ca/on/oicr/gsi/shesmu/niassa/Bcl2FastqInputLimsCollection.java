@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,7 +54,11 @@ public class Bcl2FastqInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp() {
-    return lanes.isEmpty();
+  public boolean shouldHalp(Consumer<String> errorHandler) {
+    if (lanes.isEmpty()) {
+      errorHandler.accept("No lanes.");
+      return true;
+    }
+    return false;
   }
 }
