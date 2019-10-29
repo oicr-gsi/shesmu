@@ -11,6 +11,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
   private Instant fetchTime = Instant.EPOCH;
   private boolean initialState = true;
   private final Owner owner;
+  private boolean regenerating;
   private S value;
 
   public BaseRecord(Owner owner, S initialState) {
@@ -41,8 +42,11 @@ public abstract class BaseRecord<R, S> implements Record<R> {
     boolean shouldThrow;
     synchronized (this) {
       final Instant now = Instant.now();
-      doRefresh = Duration.between(fetchTime, now).toMinutes() > owner.ttl();
+      doRefresh = Duration.between(fetchTime, now).toMinutes() > owner.ttl() && !regenerating;
       shouldThrow = initialState;
+      if (doRefresh) {
+        regenerating = true;
+      }
     }
     if (doRefresh) {
       try (AutoCloseable timer = refreshLatency.start(owner.name())) {
@@ -58,6 +62,10 @@ public abstract class BaseRecord<R, S> implements Record<R> {
       } catch (final Exception e) {
         e.printStackTrace();
         staleRefreshError.labels(owner.name()).inc();
+      } finally {
+        synchronized (this) {
+          regenerating = false;
+        }
       }
     }
     if (shouldThrow) {
