@@ -1,10 +1,11 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /** Bean for on-disk Guanyin service configuration files */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Configuration {
   private String cromwell;
-  private String drmaa;
-  private String drmaaPsk;
   private String guanyin;
   private int memory = 1;
   private String modules = "";
@@ -12,14 +13,6 @@ public class Configuration {
 
   public String getCromwell() {
     return cromwell;
-  }
-
-  public String getDrmaa() {
-    return drmaa;
-  }
-
-  public String getDrmaaPsk() {
-    return drmaaPsk;
   }
 
   public String getGuanyin() {
@@ -40,14 +33,6 @@ public class Configuration {
 
   public void setCromwell(String cromwell) {
     this.cromwell = cromwell;
-  }
-
-  public void setDrmaa(String drmaa) {
-    this.drmaa = drmaa;
-  }
-
-  public void setDrmaaPsk(String drmaaPsk) {
-    this.drmaaPsk = drmaaPsk;
   }
 
   public void setGuanyin(String guanyin) {

@@ -2,10 +2,9 @@
 [Guanyin](https://github.com/oicr-gsi/guanyin) is a report-tracking application.
 It records which reports have been run, and with what parameters.
 The Guanyin plugin for Shesmu can allow Shesmu to launch reports to be run
-through a [DRMAA](http://www.drmaa.org/) web service or
-[Cromwell](https://github.com/broadinstitute/cromwell). Before launching a
-report action, Shesmu first checks with Guanyin to see if the report has
-already been run.
+through [Cromwell](https://github.com/broadinstitute/cromwell). Before
+launching a report action, Shesmu first checks with Guanyin to see if the
+report has already been run.
 
 ## Launch Custom Reports with Guanyin
 Shesmu frequently scans the input data and generates the set of actions to be
