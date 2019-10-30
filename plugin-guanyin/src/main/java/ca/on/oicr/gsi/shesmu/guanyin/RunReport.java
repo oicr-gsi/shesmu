@@ -12,8 +12,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.WorkflowIdAndStatus;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Comparator;
 import java.util.OptionalLong;
 import java.util.Scanner;
@@ -21,17 +19,16 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 /**
- * Action to query/launch a report using Guanyin and DRMAAWS
+ * Action to query/launch a report using Guanyin and Cromwell
  *
  * <p>The action will first query Guanyin to see if the report has been run previously. If not,
- * attempt to run it using DRMAAWS.
+ * attempt to run it using Cromwell.
  */
 public class RunReport extends JsonParameterisedAction {
   static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
@@ -57,17 +54,7 @@ public class RunReport extends JsonParameterisedAction {
           + " modules: \"~{modules}\"\n"
           + " }\n"
           + "}\n";
-  private static final Counter drmaaRequestErrors =
-      Counter.build(
-              "shesmu_drmaa_request_errors",
-              "The number of errors trying to countact the DRMAA web service")
-          .labelNames("target")
-          .register();
-  private static final LatencyHistogram drmaaRequestTime =
-      new LatencyHistogram(
-          "shesmu_drmaa_request_time",
-          "The request time latency to launch a remote action.",
-          "target");
+
   private static final Counter 观音RequestErrors =
       Counter.build(
               "shesmu_guanyin_request_errors",
@@ -161,7 +148,7 @@ public class RunReport extends JsonParameterisedAction {
 
   @Override
   public ActionState perform(ActionServices services) {
-    if (services.isOverloaded("all", "guanyin", "drmaa")) {
+    if (services.isOverloaded("all", "guanyin")) {
       return ActionState.THROTTLED;
     }
 
@@ -234,92 +221,45 @@ public class RunReport extends JsonParameterisedAction {
       }
     }
     // Now that exists, try to run it via Cromwell if configured
-    if (owner.get().cromwellUrl() != null) {
-      try {
-        ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(owner.get().cromwellUrl());
-        WorkflowsApi wfApi = new WorkflowsApi(apiClient);
-        if (cromwellId == null && create) {
-          ObjectNode inputs = MAPPER.createObjectNode();
-          inputs.put("guanyin.report.script", owner.get().script());
-          inputs.put("guanyin.report.guanyin", owner.get().观音Url());
-          inputs.put("guanyin.report.record", reportRecordId.getAsLong());
-          inputs.put("guanyin.report.modules", owner.get().modules());
-          inputs.put("guanyin.report.memory", owner.get().memory());
-          ObjectNode labels = MAPPER.createObjectNode();
-          labels.put(
-              "external_id",
-              String.format(
-                  "%s/reportdb/record/%d", owner.get().观音Url(), reportRecordId.getAsLong()));
-          cromwellId =
-              wfApi.submit(
-                  "v1",
-                  WDL,
-                  null,
-                  false,
-                  MAPPER.writeValueAsString(inputs),
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  "WDL",
-                  null,
-                  "1.0",
-                  MAPPER.writeValueAsString(labels),
-                  null);
-        } else if (cromwellId != null) {
-          cromwellId = wfApi.status("v1", cromwellId.getId());
-        }
-        return actionStatusFromCromwell(cromwellId);
-      } catch (ApiException | JsonProcessingException e) {
-        e.printStackTrace();
-        return ActionState.FAILED;
-      }
-    }
-    // Otherwise, try to run it via DRMAA
-    final HttpPost drmaaRequest = new HttpPost(String.format("%s/run", owner.get().drmaaUrl()));
     try {
-      final ObjectNode drmaaParameters = MAPPER.createObjectNode();
-      drmaaParameters.put("drmaa_remote_command", owner.get().script());
-      drmaaParameters
-          .putArray("drmaa_v_argv")
-          .add(
-              String.format(
-                  "%s/reportdb/record/%d", owner.get().观音Url(), reportRecordId.getAsLong()));
-      drmaaParameters.put(
-          "drmaa_output_path",
-          String.format(
-              ":$drmaa_hd_ph$/logs/reports/report%d-%d.out", reportId, reportRecordId.getAsLong()));
-      drmaaParameters.put(
-          "drmaa_error_path",
-          String.format(
-              ":$drmaa_hd_ph$/logs/reports/report%d-%d.err", reportId, reportRecordId.getAsLong()));
-      drmaaParameters.put("drmaa_native_specification", "-l h_vmem=2g");
-      final byte[] drmaaBody = MAPPER.writeValueAsBytes(drmaaParameters);
-      final MessageDigest digest = MessageDigest.getInstance("SHA-1");
-      digest.update(owner.get().drmaaPsk().getBytes(StandardCharsets.UTF_8));
-      digest.update(drmaaBody);
-      drmaaRequest.setHeader("Accept", "application/json");
-      drmaaRequest.addHeader("Authorization", "signed " + Utils.bytesToHex(digest.digest()));
-      drmaaRequest.setEntity(new ByteArrayEntity(drmaaBody, ContentType.APPLICATION_JSON));
-    } catch (final Exception e) {
-      e.printStackTrace();
-      return ActionState.FAILED;
-    }
-    try (AutoCloseable timer = drmaaRequestTime.start(owner.get().drmaaUrl());
-        CloseableHttpResponse response = HTTP_CLIENT.execute(drmaaRequest)) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        showError(response, "Error from DRMAA: ");
-        drmaaRequestErrors.labels(owner.get().drmaaUrl()).inc();
-        return ActionState.FAILED;
+      ApiClient apiClient = new ApiClient();
+      apiClient.setBasePath(owner.get().cromwellUrl());
+      WorkflowsApi wfApi = new WorkflowsApi(apiClient);
+      if (cromwellId == null && create) {
+        ObjectNode inputs = MAPPER.createObjectNode();
+        inputs.put("guanyin.report.script", owner.get().script());
+        inputs.put("guanyin.report.guanyin", owner.get().观音Url());
+        inputs.put("guanyin.report.record", reportRecordId.getAsLong());
+        inputs.put("guanyin.report.modules", owner.get().modules());
+        inputs.put("guanyin.report.memory", owner.get().memory());
+        ObjectNode labels = MAPPER.createObjectNode();
+        labels.put(
+            "external_id",
+            String.format(
+                "%s/reportdb/record/%d", owner.get().观音Url(), reportRecordId.getAsLong()));
+        cromwellId =
+            wfApi.submit(
+                "v1",
+                WDL,
+                null,
+                false,
+                MAPPER.writeValueAsString(inputs),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "WDL",
+                null,
+                "1.0",
+                MAPPER.writeValueAsString(labels),
+                null);
+      } else if (cromwellId != null) {
+        cromwellId = wfApi.status("v1", cromwellId.getId());
       }
-      final String result = MAPPER.readValue(response.getEntity().getContent(), String.class);
-      final ActionState state = ActionState.valueOf(result);
-      return state == null ? ActionState.UNKNOWN : state;
-    } catch (final Exception e) {
+      return actionStatusFromCromwell(cromwellId);
+    } catch (ApiException | JsonProcessingException e) {
       e.printStackTrace();
-      drmaaRequestErrors.labels(owner.get().drmaaUrl()).inc();
       return ActionState.FAILED;
     }
   }

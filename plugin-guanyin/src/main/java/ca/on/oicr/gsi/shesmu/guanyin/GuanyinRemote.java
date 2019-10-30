@@ -28,21 +28,10 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   public void configuration(SectionRenderer renderer) throws XMLStreamException {
     configuration.ifPresent(
         configuration -> {
-          renderer.link("DRMAAWS", configuration.getDrmaa(), configuration.getDrmaa());
           renderer.link("观音", configuration.getGuanyin(), configuration.getGuanyin());
-          if (configuration.getCromwell() != null) {
-            renderer.link("Cromwell", configuration.getCromwell(), configuration.getCromwell());
-          }
+          renderer.link("Cromwell", configuration.getCromwell(), configuration.getCromwell());
           renderer.line("Script", configuration.getScript());
         });
-  }
-
-  public String drmaaPsk() {
-    return configuration.get().getDrmaaPsk();
-  }
-
-  public String drmaaUrl() {
-    return configuration.get().getDrmaa();
   }
 
   public int memory() {
