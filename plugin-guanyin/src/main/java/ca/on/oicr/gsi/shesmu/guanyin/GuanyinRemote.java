@@ -1,27 +1,67 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
-import ca.on.oicr.gsi.shesmu.plugin.*;
-import ca.on.oicr.gsi.shesmu.plugin.action.*;
-import ca.on.oicr.gsi.shesmu.plugin.json.*;
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonParameter;
+import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.status.*;
+import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
 public class GuanyinRemote extends JsonPluginFile<Configuration> {
+
+  private class ReportsCache extends ValueCache<Stream<GuanyinReportValue>> {
+    public ReportsCache(Path fileName) {
+      super("guanyin-reports " + fileName, 20, ReplacingRecord::new);
+    }
+
+    @Override
+    protected Stream<GuanyinReportValue> fetch(Instant lastUpdated) throws Exception {
+      if (!configuration.isPresent()) {
+        return Stream.empty();
+      }
+      try (CloseableHttpResponse reportsResponse =
+              RunReport.HTTP_CLIENT.execute(
+                  new HttpGet(configuration.get().getGuanyin() + "/reportdb/reports"));
+          CloseableHttpResponse recordsResponse =
+              RunReport.HTTP_CLIENT.execute(
+                  new HttpGet(configuration.get().getGuanyin() + "/reportdb/records"))) {
+        final Map<Long, ReportDto> reports =
+            Stream.of(
+                    RunReport.MAPPER.readValue(
+                        reportsResponse.getEntity().getContent(), ReportDto[].class))
+                .collect(Collectors.toMap(ReportDto::getId, Function.identity()));
+        return Stream.of(
+                RunReport.MAPPER.readValue(
+                    recordsResponse.getEntity().getContent(), RecordDto[].class))
+            .map(dto -> new GuanyinReportValue(reports.get(dto.getReport()), dto));
+      }
+    }
+  }
+
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private Optional<Configuration> configuration = Optional.empty();
   private final Definer<GuanyinRemote> definer;
+  private final ReportsCache reports;
 
   public GuanyinRemote(Path fileName, String instanceName, Definer<GuanyinRemote> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
+    reports = new ReportsCache(fileName);
   }
 
   @Override
@@ -48,6 +88,11 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
   public String cromwellUrl() {
     return configuration.get().getCromwell();
+  }
+
+  @ShesmuInputSource
+  public Stream<GuanyinReportValue> stream() {
+    return reports.get();
   }
 
   @Override
