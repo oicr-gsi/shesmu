@@ -28,12 +28,14 @@ public final class PineryIUSValue {
   private final Path path;
   private final String project;
   private final Optional<Double> rin;
+  private final String run_status;
   private final String targeted_resequencing;
   private final Instant timestamp;
   private final String tissue_origin;
   private final String tissue_prep;
   private final String tissue_region;
   private final String tissue_type;
+  private final boolean umis;
 
   public PineryIUSValue(
       Path path,
@@ -60,6 +62,8 @@ public final class PineryIUSValue {
       String instrumentModel,
       Optional<Double> dv200,
       Optional<Double> rin,
+      String run_status,
+      boolean umis,
       boolean is_sample) {
     super();
     this.path = path;
@@ -87,6 +91,8 @@ public final class PineryIUSValue {
     this.completed_date = completed_date;
     this.dv200 = dv200;
     this.rin = rin;
+    this.run_status = run_status;
+    this.umis = umis;
   }
 
   @ShesmuVariable(signable = true)
@@ -133,12 +139,14 @@ public final class PineryIUSValue {
         && path.equals(that.path)
         && project.equals(that.project)
         && rin == that.rin
+        && run_status.equals(that.run_status)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
         && tissue_prep.equals(that.tissue_prep)
         && tissue_region.equals(that.tissue_region)
-        && tissue_type.equals(that.tissue_type);
+        && tissue_type.equals(that.tissue_type)
+        && umis == that.umis;
   }
 
   @ShesmuVariable(signable = true)
@@ -173,12 +181,14 @@ public final class PineryIUSValue {
         path,
         project,
         rin,
+        run_status,
         targeted_resequencing,
         timestamp,
         tissue_origin,
         tissue_prep,
         tissue_region,
-        tissue_type);
+        tissue_type,
+        umis);
   }
 
   @ShesmuVariable(signable = true)
@@ -251,6 +261,11 @@ public final class PineryIUSValue {
     return (String) ius.get(0);
   }
 
+  @ShesmuVariable
+  public String run_status() {
+    return run_status;
+  }
+
   @ShesmuVariable(signable = true)
   public String targeted_resequencing() {
     return targeted_resequencing;
@@ -279,5 +294,10 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public String tissue_type() {
     return tissue_type;
+  }
+
+  @ShesmuVariable
+  public boolean umis() {
+    return umis;
   }
 }
