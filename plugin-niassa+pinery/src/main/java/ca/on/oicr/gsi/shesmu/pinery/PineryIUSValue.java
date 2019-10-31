@@ -5,12 +5,14 @@ import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /** IUS information from Pinery */
 public final class PineryIUSValue {
   private final String bases_mask;
   private final Instant completed_date;
   private final String donor;
+  private final Optional<Double> dv200;
   private final String group_desc;
   private final String group_id;
   private final String instrumentModel;
@@ -25,6 +27,7 @@ public final class PineryIUSValue {
   private final String organism;
   private final Path path;
   private final String project;
+  private final Optional<Double> rin;
   private final String targeted_resequencing;
   private final Instant timestamp;
   private final String tissue_origin;
@@ -55,6 +58,8 @@ public final class PineryIUSValue {
       Instant completed_date,
       String bases_mask,
       String instrumentModel,
+      Optional<Double> dv200,
+      Optional<Double> rin,
       boolean is_sample) {
     super();
     this.path = path;
@@ -80,6 +85,8 @@ public final class PineryIUSValue {
     this.timestamp = timestamp;
     this.lims = lims;
     this.completed_date = completed_date;
+    this.dv200 = dv200;
+    this.rin = rin;
   }
 
   @ShesmuVariable(signable = true)
@@ -97,6 +104,11 @@ public final class PineryIUSValue {
     return donor;
   }
 
+  @ShesmuVariable
+  public Optional<Double> dv200() {
+    return dv200;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -107,6 +119,7 @@ public final class PineryIUSValue {
         && bases_mask.equals(that.bases_mask)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
+        && dv200 == that.dv200
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
         && instrumentModel.equals(that.instrumentModel)
@@ -119,6 +132,7 @@ public final class PineryIUSValue {
         && organism.equals(that.organism)
         && path.equals(that.path)
         && project.equals(that.project)
+        && rin == that.rin
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
@@ -143,6 +157,7 @@ public final class PineryIUSValue {
         bases_mask,
         completed_date,
         donor,
+        dv200,
         group_desc,
         group_id,
         instrumentModel,
@@ -157,6 +172,7 @@ public final class PineryIUSValue {
         organism,
         path,
         project,
+        rin,
         targeted_resequencing,
         timestamp,
         tissue_origin,
@@ -223,6 +239,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public String project() {
     return project;
+  }
+
+  @ShesmuVariable
+  public Optional<Double> rin() {
+    return rin;
   }
 
   @ShesmuVariable
