@@ -152,6 +152,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             : lp.getCreatedDate().toInstant(),
                         basesMask,
                         lp.getSequencerRunPlatformModel(),
+                        Optional.empty(),
+                        Optional.empty(),
                         false);
 
                 if (badSetInRecord.isEmpty()) {
@@ -220,6 +222,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             : sp.getCreatedDate().toInstant(),
                         runDirectoryAndMask.second(),
                         sp.getSequencerRunPlatformModel(),
+                        limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
+                        limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
