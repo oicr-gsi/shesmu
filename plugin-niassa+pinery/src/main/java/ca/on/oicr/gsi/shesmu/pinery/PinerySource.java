@@ -122,6 +122,21 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     lp.getSequencerRunName(), new Pair<>(runDirectory, basesMask));
                 final Instant lastModified =
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
+                String runStatus = "Unknown";
+                try {
+                  runStatus =
+                      client
+                          .getSequencerRun()
+                          .all()
+                          .stream()
+                          .filter(r -> lp.getSequencerRunName().equals(r.getName()))
+                          .map(RunDto::getState)
+                          .findFirst()
+                          .orElse("Unknown");
+                } catch (HttpResponseException e) {
+                  // Oh well
+                  e.printStackTrace();
+                }
                 final PineryIUSValue result =
                     new PineryIUSValue(
                         Paths.get(runDirectory),
@@ -154,6 +169,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         lp.getSequencerRunPlatformModel(),
                         Optional.empty(),
                         Optional.empty(),
+                        runStatus,
+                        false,
                         false);
 
                 if (badSetInRecord.isEmpty()) {
@@ -224,6 +241,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getSequencerRunPlatformModel(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
+                        "",
+                        limsAttr(sp, "umis", badSetInRecord::add, false)
+                            .map(Boolean::parseBoolean)
+                            .orElse(false),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
