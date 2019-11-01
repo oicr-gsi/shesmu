@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,9 +47,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
         final Map<String, Integer> badSetCounts = new TreeMap<>();
         final Map<String, Pair<String, String>> runDirectoriesAndMasks = new HashMap<>();
-        final Set<String> completeRuns =
+        final Map<String, RunDto> allRuns =
             c.getSequencerRun()
                 .all()
+                .stream()
+                .collect(Collectors.toMap(RunDto::getName, Function.identity()));
+        final Set<String> completeRuns =
+            allRuns
+                .values()
                 .stream()
                 .filter(
                     run ->
@@ -65,6 +71,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     cfg.getProvider(),
                     badSetCounts,
                     runDirectoriesAndMasks,
+                    allRuns,
                     completeRuns::contains),
                 samples(
                     c,
@@ -72,6 +79,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     cfg.getProvider(),
                     badSetCounts,
                     runDirectoriesAndMasks,
+                    allRuns,
                     completeRuns::contains))
             .onClose(
                 () ->
@@ -95,6 +103,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String provider,
         Map<String, Integer> badSetCounts,
         Map<String, Pair<String, String>> runDirectoriesAndMasks,
+        Map<String, RunDto> allRuns,
         Predicate<String> goodRun)
         throws HttpResponseException {
       return Utils.stream(client.getLaneProvenance().version(version))
@@ -122,21 +131,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     lp.getSequencerRunName(), new Pair<>(runDirectory, basesMask));
                 final Instant lastModified =
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
-                String runStatus = "Unknown";
-                try {
-                  runStatus =
-                      client
-                          .getSequencerRun()
-                          .all()
-                          .stream()
-                          .filter(r -> lp.getSequencerRunName().equals(r.getName()))
-                          .map(RunDto::getState)
-                          .findFirst()
-                          .orElse("Unknown");
-                } catch (HttpResponseException e) {
-                  // Oh well
-                  e.printStackTrace();
-                }
                 final PineryIUSValue result =
                     new PineryIUSValue(
                         Paths.get(runDirectory),
@@ -169,7 +163,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         lp.getSequencerRunPlatformModel(),
                         Optional.empty(),
                         Optional.empty(),
-                        runStatus,
+                        getRunStatus(allRuns, lp.getSequencerRunName()),
                         false,
                         false);
 
@@ -189,6 +183,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String provider,
         Map<String, Integer> badSetCounts,
         Map<String, Pair<String, String>> runDirectoriesAndMasks,
+        Map<String, RunDto> allRuns,
         Predicate<String> goodRun)
         throws HttpResponseException {
       return Utils.stream(client.getSampleProvenance().version(version))
@@ -241,7 +236,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getSequencerRunPlatformModel(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
-                        "",
+                        getRunStatus(allRuns, runDirectoryAndMask.first()),
                         limsAttr(sp, "umis", badSetInRecord::add, false)
                             .map(Boolean::parseBoolean)
                             .orElse(false),
@@ -298,6 +293,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         return client.getSampleProject().all().stream();
       }
     }
+  }
+
+  private String getRunStatus(Map<String, RunDto> allRuns, String runName) {
+    String status = "Unknown";
+    RunDto target = allRuns.get(runName);
+    if (target != null) {
+      status = target.getState();
+    }
+    return status;
   }
 
   private static Optional<String> limsAttr(
