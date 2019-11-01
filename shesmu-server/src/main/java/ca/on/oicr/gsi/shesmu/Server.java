@@ -2399,6 +2399,7 @@ public final class Server implements ServerConfig, ActionServices {
   private void oliveJson(ArrayNode array) {
     compiler
         .dashboard()
+        .sorted(Comparator.comparing(fileTable -> fileTable.second().filename()))
         .forEach(
             fileTable -> {
               final ObjectNode fileNode = array.addObject();
@@ -2423,6 +2424,7 @@ public final class Server implements ServerConfig, ActionServices {
               fileTable
                   .second()
                   .olives()
+                  .sorted(Comparator.comparing(OliveTable::line).thenComparing(OliveTable::column))
                   .forEach(
                       olive -> {
                         final SourceLocation location =
