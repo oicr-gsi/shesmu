@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
@@ -14,18 +15,44 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 public class SourceNodeContainer extends SourceNode {
+  private enum Mode {
+    LIST {
+      @Override
+      public void render(Renderer renderer) {
+        renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
+      }
+    },
+    OPTIONAL {
+      @Override
+      public void render(Renderer renderer) {
+        renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM);
+      }
+    },
+    JSON {
+      @Override
+      public void render(Renderer renderer) {
+        renderer
+            .methodGen()
+            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS);
+      }
+    };
+
+    public abstract void render(Renderer renderer);
+  }
 
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Method METHOD_RUNTIME_SUPPORT__STREAM =
       new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Optional.class)});
+  private static final Method METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS =
+      new Method("jsonElements", A_STREAM_TYPE, new Type[] {Type.getType(JsonNode.class)});
 
   private static final Method METHOD_SET__STREAM =
       new Method("stream", A_STREAM_TYPE, new Type[] {});
   private final ExpressionNode expression;
   private Imyhat initialType;
-  private boolean isOptional;
+  private Mode mode;
 
   public SourceNodeContainer(int line, int column, ExpressionNode expression) {
     super(line, column);
@@ -50,11 +77,7 @@ public class SourceNodeContainer extends SourceNode {
   @Override
   public JavaStreamBuilder render(Renderer renderer) {
     expression.render(renderer);
-    if (isOptional) {
-      renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM);
-    } else {
-      renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
-    }
+    mode.render(renderer);
     final JavaStreamBuilder builder = renderer.buildStream(initialType);
     return builder;
   }
@@ -90,14 +113,18 @@ public class SourceNodeContainer extends SourceNode {
     }
     if (type instanceof Imyhat.ListImyhat) {
       initialType = ((Imyhat.ListImyhat) type).inner();
-      isOptional = false;
+      mode = Mode.LIST;
       return true;
     } else if (type instanceof Imyhat.OptionalImyhat) {
       initialType = ((Imyhat.OptionalImyhat) type).inner();
-      isOptional = true;
+      mode = Mode.OPTIONAL;
+      return true;
+    } else if (type.isSame(Imyhat.JSON)) {
+      initialType = Imyhat.JSON;
+      mode = Mode.JSON;
       return true;
     } else {
-      expression.typeError("list or optional", type, errorHandler);
+      expression.typeError("list or json or optional", type, errorHandler);
       return false;
     }
   }

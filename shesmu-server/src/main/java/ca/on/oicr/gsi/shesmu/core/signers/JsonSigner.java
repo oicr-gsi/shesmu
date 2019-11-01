@@ -4,10 +4,10 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class JsonSigner implements DynamicSigner<String> {
+public class JsonSigner implements DynamicSigner<JsonNode> {
   private final ObjectNode node = RuntimeSupport.MAPPER.createObjectNode();
 
   @Override
@@ -16,12 +16,7 @@ public class JsonSigner implements DynamicSigner<String> {
   }
 
   @Override
-  public String finish() {
-    try {
-      return RuntimeSupport.MAPPER.writeValueAsString(node);
-    } catch (final JsonProcessingException e) {
-      e.printStackTrace();
-      return "";
-    }
+  public JsonNode finish() {
+    return node;
   }
 }

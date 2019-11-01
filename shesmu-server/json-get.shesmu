@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Run ok With ok =
+  (horror.foo Default 0) == (Switch accession
+    When "1" Then 3
+    When "2" Then 0
+    Else -1);

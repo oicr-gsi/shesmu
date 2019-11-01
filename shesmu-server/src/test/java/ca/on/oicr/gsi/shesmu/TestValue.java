@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -12,13 +13,14 @@ import java.util.TreeSet;
 public class TestValue {
   private final String accession;
   private final long file_size;
+  private final JsonNode horror;
   private final long library_size;
   private final Path path;
   private final String project;
+  private final Set<String> stuff = new TreeSet<>();
   private final Instant timestamp;
   private final String workflow;
   private final Tuple workflow_version;
-  private final Set<String> stuff = new TreeSet<>();
 
   public TestValue(
       String accession,
@@ -28,7 +30,8 @@ public class TestValue {
       Tuple workflow_version,
       String project,
       long library_size,
-      Instant timestamp) {
+      Instant timestamp,
+      JsonNode horror) {
     super();
     this.accession = accession;
     this.path = Paths.get(path);
@@ -38,14 +41,10 @@ public class TestValue {
     this.project = project;
     this.library_size = library_size;
     this.timestamp = timestamp;
+    this.horror = horror;
     stuff.add(accession);
     stuff.add(workflow);
     stuff.add(project);
-  }
-
-  @ShesmuVariable(type = "as")
-  public Set<String> stuff() {
-    return stuff;
   }
 
   @ShesmuVariable(type = "s")
@@ -56,6 +55,11 @@ public class TestValue {
   @ShesmuVariable(type = "i")
   public long file_size() {
     return file_size;
+  }
+
+  @ShesmuVariable
+  public JsonNode horror() {
+    return horror;
   }
 
   @ShesmuVariable(
@@ -77,6 +81,11 @@ public class TestValue {
       gangs = {@Gang(name = "useful_stuff", order = 0), @Gang(name = "workflow_run", order = 0)})
   public String project() {
     return project;
+  }
+
+  @ShesmuVariable(type = "as")
+  public Set<String> stuff() {
+    return stuff;
   }
 
   @ShesmuVariable(type = "d")

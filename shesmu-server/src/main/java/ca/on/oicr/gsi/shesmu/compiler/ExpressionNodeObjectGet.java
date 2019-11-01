@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -13,7 +15,12 @@ import org.objectweb.asm.commons.Method;
 public class ExpressionNodeObjectGet extends ExpressionNode {
 
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
+  private static final Type A_JSON_NODE_TYPE = Type.getType(JsonNode.class);
+  private static final Method METHOD_RUNTIME_SUPPORT_GET_JSON =
+      new Method(
+          "getJson", A_JSON_NODE_TYPE, new Type[] {A_JSON_NODE_TYPE, Type.getType(String.class)});
 
   private static final Method METHOD_TUPLE__GET =
       new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
@@ -46,10 +53,14 @@ public class ExpressionNodeObjectGet extends ExpressionNode {
   public void render(Renderer renderer) {
     expression.render(renderer);
     renderer.mark(line());
-
-    renderer.methodGen().push(index);
-    renderer.methodGen().invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
-    renderer.methodGen().unbox(type.apply(TypeUtils.TO_ASM));
+    if (index == -1) {
+      renderer.methodGen().push(field);
+      renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT_GET_JSON);
+    } else {
+      renderer.methodGen().push(index);
+      renderer.methodGen().invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
+      renderer.methodGen().unbox(type.apply(TypeUtils.TO_ASM));
+    }
   }
 
   @Override
@@ -83,9 +94,11 @@ public class ExpressionNodeObjectGet extends ExpressionNode {
         } else {
           index = objectType.index(field);
         }
+      } else if (expressionType.isSame(Imyhat.JSON)) {
+        type = Imyhat.JSON;
       } else {
         ok = false;
-        typeError("object", expressionType, errorHandler);
+        typeError("object or json", expressionType, errorHandler);
       }
     }
     return ok;

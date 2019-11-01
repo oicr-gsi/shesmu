@@ -2,7 +2,11 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import java.io.IOException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
@@ -308,15 +312,6 @@ public abstract class Imyhat {
       this.inner = inner;
     }
 
-    public Imyhat inner() {
-      return inner;
-    }
-
-    @Override
-    public Imyhat asOptional() {
-      return this;
-    }
-
     @Override
     public void accept(ImyhatConsumer dispatcher, Object value) {
       dispatcher.accept(inner, (Optional<?>) value);
@@ -330,6 +325,11 @@ public abstract class Imyhat {
     @Override
     public <R> R apply(ImyhatTransformer<R> transformer) {
       return transformer.optional(inner);
+    }
+
+    @Override
+    public Imyhat asOptional() {
+      return this;
     }
 
     @Override
@@ -347,6 +347,10 @@ public abstract class Imyhat {
       return "q" + inner.toString();
     }
 
+    public Imyhat inner() {
+      return inner;
+    }
+
     @Override
     public boolean isBad() {
       return inner.isBad();
@@ -355,14 +359,6 @@ public abstract class Imyhat {
     @Override
     public boolean isOrderable() {
       return false;
-    }
-
-    @Override
-    public Imyhat unify(Imyhat other) {
-      if (other == NOTHING) {
-        return this;
-      }
-      return new OptionalImyhat(inner.unify(((OptionalImyhat) other).inner));
     }
 
     @Override
@@ -385,6 +381,14 @@ public abstract class Imyhat {
     @Override
     public String name() {
       return inner.name() + "?";
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      if (other == NOTHING) {
+        return this;
+      }
+      return new OptionalImyhat(inner.unify(((OptionalImyhat) other).inner));
     }
   }
 
@@ -496,7 +500,7 @@ public abstract class Imyhat {
   }
 
   public static Stream<BaseImyhat> baseTypes() {
-    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, PATH, STRING);
+    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, JSON, PATH, STRING);
   }
 
   /**
@@ -634,6 +638,9 @@ public abstract class Imyhat {
       case 'i':
         output.set(input.subSequence(1, input.length()));
         return INTEGER;
+      case 'j':
+        output.set(input.subSequence(1, input.length()));
+        return JSON;
       case '!':
         output.set(input.subSequence(1, input.length()));
         return NOTHING;
@@ -1047,13 +1054,71 @@ public abstract class Imyhat {
           return Long.parseLong(s);
         }
       };
-  public static final BaseImyhat NOTHING =
+  private static final JsonNode JSON_NULL = JsonNodeFactory.instance.nullNode();
+  public static final BaseImyhat JSON =
       new BaseImyhat() {
+        @Override
+        public void accept(ImyhatConsumer dispatcher, Object value) {
+          dispatcher.accept((JsonNode) value);
+        }
 
         @Override
-        public Imyhat asOptional() {
-          return this;
+        public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+          return dispatcher.apply((JsonNode) value);
         }
+
+        @Override
+        public <R> R apply(ImyhatTransformer<R> transformer) {
+          return transformer.json();
+        }
+
+        @Override
+        public Comparator<?> comparator() {
+          return Comparator.comparingInt(
+              Object::hashCode); // This is awful, but I've got no better idea
+        }
+
+        @Override
+        public Object defaultValue() {
+          return JSON_NULL;
+        }
+
+        @Override
+        public String descriptor() {
+          return "j";
+        }
+
+        @Override
+        public boolean isOrderable() {
+          return false;
+        }
+
+        @Override
+        public Class<?> javaType() {
+          return JsonNode.class;
+        }
+
+        @Override
+        public Class<?> javaWrapperType() {
+          return JsonNode.class;
+        }
+
+        @Override
+        public String name() {
+          return "json";
+        }
+
+        @Override
+        public Object parse(String s) {
+          try {
+            return new ObjectMapper().readTree(s);
+          } catch (IOException e) {
+            return defaultValue();
+          }
+        }
+      };
+  public static final BaseImyhat NOTHING =
+      new BaseImyhat() {
 
         @Override
         public void accept(ImyhatConsumer dispatcher, Object value) {
@@ -1068,6 +1133,11 @@ public abstract class Imyhat {
         @Override
         public <R> R apply(ImyhatTransformer<R> transformer) {
           return transformer.optional(null);
+        }
+
+        @Override
+        public Imyhat asOptional() {
+          return this;
         }
 
         @Override
@@ -1096,12 +1166,12 @@ public abstract class Imyhat {
         }
 
         @Override
-        public Class<?> javaWrapperType() {
+        public Class<?> javaType() {
           return Optional.class;
         }
 
         @Override
-        public Class<?> javaType() {
+        public Class<?> javaWrapperType() {
           return Optional.class;
         }
 
@@ -1267,6 +1337,10 @@ public abstract class Imyhat {
     return new ListImyhat(this);
   }
 
+  public Imyhat asOptional() {
+    return new OptionalImyhat(this);
+  }
+
   /** Create a comparator for sorting sets. */
   public abstract Comparator<?> comparator();
 
@@ -1319,10 +1393,6 @@ public abstract class Imyhat {
   @Override
   public final String toString() {
     return descriptor();
-  }
-
-  public Imyhat asOptional() {
-    return new OptionalImyhat(this);
   }
 
   public abstract Imyhat unify(Imyhat other);

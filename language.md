@@ -515,6 +515,7 @@ machine-to-machine communication.
 | NamedTuple | `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
 | Optional   | _inner_`?`  or `nothing`                           | `q`_inner_ or `Q` |
 | Path       | `path`                                             | `p`        |
+| JSON       | `json`                                             | `j`        |
 
 Every input variable's type is available as _name_`_type`. For instance, the
 `shesmu` input format has the variable `locations`, so `locations_type` will be
@@ -717,10 +718,20 @@ _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the sam
 
 - `For` _var_ `In` _expr_`:` _modifications..._ _collector_
 
-Takes the elements in a list or optional and process them using the supplied
+Takes the elements in a list, JSON blob, or optional and process them using the supplied
 modifications and then computes a result using the collector. The modifications
-and
-collectors are described below.
+and collectors are described below.
+
+Any scalar JSON value is treated as an empty collection.
+
+- `For` _var_ `Fields` _expr_`:` _modifications..._ _collector_
+
+Takes the properties in a JSON object and process them using the supplied
+modifications and then computes a result using the collector. The modifications
+and collectors are described below.
+
+Any scalar or array JSON value is treated as an empty collection. _var_ will be
+a tuple of the property name and value.
 
 - `For` _var_ `From` _startexpr_` To `_endexpr_`:` _modifications..._ _collector_
 
@@ -887,9 +898,11 @@ tuple, an error occurs.
 #### Named Tuple Access
 - _expr_ `.` _field_
 
-Extracts a field from a named tuple. _field_ is the name of the field. The
-result type will be based on the type of that field in the named tuple. If
-_field_ is not in the named tuple, an error occurs.
+Extracts a field from a named tuple or JSON object. _field_ is the name of the
+field. The result type will be based on the type of that field in the named
+tuple or a JSON blob when accessing a JSON blob. If _field_ is not in the named
+tuple, an error occurs. If _field_ is not in the JSON blob (or applied to a
+scalar or array), the result is a JSON `null` value.
 
 ### Terminals
 #### Date Literal
@@ -1255,9 +1268,9 @@ to rerun even though the input BAM is not changed.
 
 The value of `sha1_signature` is a string containing a hexadecimal SHA-1 hash
 of all the names and values referenced variables. There is also
-`json_signature` which produced a string containing a JSON object filled with
-the referenced values.  By saving the signatures as part of the action, we save
-the input information.
+`json_signature` which produced a JSON object filled with the referenced
+values.  By saving the signatures as part of the action, we save the input
+information.
 
 In this example, the signature will save `donor`, and `tissue_type`.  That
 means if there was a sample swap and both tissues belong to a different donor,

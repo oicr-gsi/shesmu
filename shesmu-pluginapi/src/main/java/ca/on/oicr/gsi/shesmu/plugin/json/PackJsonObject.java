@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.json;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
@@ -23,6 +24,11 @@ public class PackJsonObject implements ImyhatConsumer {
 
   @Override
   public void accept(String value) {
+    node.put(name, value);
+  }
+
+  @Override
+  public void accept(JsonNode value) {
     node.put(name, value);
   }
 

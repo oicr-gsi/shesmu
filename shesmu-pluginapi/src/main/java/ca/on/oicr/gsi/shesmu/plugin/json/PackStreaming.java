@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -80,6 +81,15 @@ public class PackStreaming implements ImyhatConsumer {
   public void accept(String value) {
     try {
       generator.writeString(value);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void accept(JsonNode value) {
+    try {
+      generator.writeTree(value);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

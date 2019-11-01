@@ -1,14 +1,17 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Subgroup;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
@@ -123,6 +126,11 @@ public final class RuntimeSupport {
     return input.flatMap(i -> explode.apply(i).stream().map(v -> make.apply(i, v)));
   }
 
+  public static JsonNode getJson(JsonNode node, String name) {
+    final JsonNode result = node.get(name);
+    return result == null ? JsonNodeFactory.instance.nullNode() : result;
+  }
+
   @RuntimeInterop
   public static <I, N, K, O> Stream<O> join(
       Stream<I> input,
@@ -143,6 +151,14 @@ public final class RuntimeSupport {
                     .getOrDefault(e.getKey(), Collections.emptyList())
                     .stream()
                     .flatMap(n -> e.getValue().stream().map(i -> joiner.apply(i, n))));
+  }
+
+  public static Stream<JsonNode> jsonElements(JsonNode node) {
+    return Utils.stream(node.elements());
+  }
+
+  public static Stream<Tuple> jsonFields(JsonNode node) {
+    return Utils.stream(node.fields()).map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
   /**
@@ -368,19 +384,6 @@ public final class RuntimeSupport {
     return input.orElse(Optional.empty());
   }
 
-  @RuntimeInterop public static final String[] EMPTY = new String[0];
-  public static final ObjectMapper MAPPER = new ObjectMapper();
-
-  @RuntimeInterop
-  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
-      new BinaryOperator<Object>() {
-
-        @Override
-        public Object apply(Object t, Object u) {
-          throw new UnsupportedOperationException();
-        }
-      };
-
   @RuntimeInterop
   public static Stream<Tuple> zip(Set<Tuple> left, Set<Tuple> right, CopySemantics... semantics) {
     final Map<Object, Tuple> leftMap =
@@ -403,6 +406,19 @@ public final class RuntimeSupport {
               return new Tuple(output);
             });
   }
+
+  @RuntimeInterop public static final String[] EMPTY = new String[0];
+  public static final ObjectMapper MAPPER = new ObjectMapper();
+
+  @RuntimeInterop
+  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
+      new BinaryOperator<Object>() {
+
+        @Override
+        public Object apply(Object t, Object u) {
+          throw new UnsupportedOperationException();
+        }
+      };
 
   private static final Map<String, CallSite> callsites = new HashMap<>();
 

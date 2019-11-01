@@ -170,9 +170,9 @@ public abstract class ExpressionNode implements Renderable {
     return result;
   }
 
-  private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> COMPARISON =
-      new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> COALESCING =
+      new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> COMPARISON =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> CONJUNCTION =
       new Parser.ParseDispatch<>();
@@ -180,11 +180,13 @@ public abstract class ExpressionNode implements Renderable {
       Pattern.compile("^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}))?");
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> DISJUNCTION =
       new Parser.ParseDispatch<>();
+  private static final Pattern DOUBLE_PATTERN = Pattern.compile("\\d+\\.\\d*([eE][+-]?\\d+)?");
   public static final Parser.ParseDispatch<Integer> INT_SUFFIX = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_CONJUNCTION =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION =
       new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<ExpressionNode> OUTER = new Parser.ParseDispatch<>();
   private static final Pattern PATH = Pattern.compile("^([^\\\\']|\\\\')+");
   public static final Pattern REGEX = Pattern.compile("^/(([^\\\\/\n]|\\\\.)*)/");
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE =
@@ -192,11 +194,8 @@ public abstract class ExpressionNode implements Renderable {
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_TIGHT =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<ExpressionNode> TERMINAL = new Parser.ParseDispatch<>();
-  private static final Parser.ParseDispatch<ExpressionNode> OUTER = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> UNARY =
       new Parser.ParseDispatch<>();
-
-  private static final Pattern DOUBLE_PATTERN = Pattern.compile("\\d+\\.\\d*([eE][+-]?\\d+)?");
 
   static {
     final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
@@ -396,6 +395,17 @@ public abstract class ExpressionNode implements Renderable {
           if (result.isGood()) {
             final ExpressionNode c = collection.get();
             o.accept(node -> new ExpressionNodeContains(p.line(), p.column(), node, c));
+          }
+          return result;
+        });
+    SUFFIX_LOOSE.addKeyword(
+        "As",
+        (p, o) -> {
+          final AtomicReference<ImyhatNode> typeNode = new AtomicReference<>();
+          final Parser result = p.whitespace().then(ImyhatNode::parse, typeNode::set).whitespace();
+          if (result.isGood()) {
+            final ImyhatNode type = typeNode.get();
+            o.accept(node -> new ExpressionNodeJsonUnpack(p.line(), p.column(), node, type));
           }
           return result;
         });

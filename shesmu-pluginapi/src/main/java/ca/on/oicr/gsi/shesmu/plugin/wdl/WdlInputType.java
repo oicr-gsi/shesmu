@@ -64,6 +64,12 @@ public final class WdlInputType {
         }
 
         @Override
+        public String json() {
+          return "mixed"; // The WDL spec is unclear if this is a real type name or an indication of
+          // a hidden generic
+        }
+
+        @Override
         public String list(Imyhat inner) {
           return "Array[" + inner.apply(this) + "]";
         }

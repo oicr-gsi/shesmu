@@ -25,6 +25,9 @@ public interface ImyhatTransformer<R> {
   /** Convert an <tt>integer</tt> type */
   R integer();
 
+  /** Convert a <tt>json</tt> type */
+  R json();
+
   /**
    * Convert a list type
    *

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -44,6 +45,9 @@ public interface ImyhatFunction<R> {
 
   /** Convert an empty optional */
   R apply(Imyhat inner, Optional<?> value);
+
+  /** Convert a JSON value */
+  R apply(JsonNode value);
 
   /**
    * Convert a tuple

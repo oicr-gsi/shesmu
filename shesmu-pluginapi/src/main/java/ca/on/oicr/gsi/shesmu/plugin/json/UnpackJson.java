@@ -50,6 +50,11 @@ public class UnpackJson implements ImyhatTransformer<Object> {
   }
 
   @Override
+  public Object json() {
+    return value;
+  }
+
+  @Override
   public Object list(Imyhat inner) {
     return IntStream.range(0, value.size())
         .mapToObj(i -> inner.apply(new UnpackJson(value.get(i))))

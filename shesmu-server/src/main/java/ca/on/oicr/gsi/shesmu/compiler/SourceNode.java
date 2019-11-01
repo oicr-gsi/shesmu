@@ -28,6 +28,17 @@ public abstract class SourceNode {
           return result;
         });
     DISPATCH.addKeyword(
+        "Fields",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> source = new AtomicReference<>();
+          final Parser result =
+              p.whitespace().then(ExpressionNode::parse, source::set).whitespace();
+          if (result.isGood()) {
+            o.accept(new SourceNodeJsonObject(p.line(), p.column(), source.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
         "Splitting",
         (p, o) -> {
           final AtomicReference<ExpressionNode> source = new AtomicReference<>();

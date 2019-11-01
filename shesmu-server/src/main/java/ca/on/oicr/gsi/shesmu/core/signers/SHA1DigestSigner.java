@@ -5,6 +5,9 @@ import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +67,15 @@ public class SHA1DigestSigner implements DynamicSigner<String>, ImyhatConsumer {
   @Override
   public void accept(String value) {
     digest.update(value.getBytes(StandardCharsets.UTF_8));
+  }
+
+  @Override
+  public void accept(JsonNode value) {
+    try {
+      digest.update(RuntimeSupport.MAPPER.writeValueAsBytes(value));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
