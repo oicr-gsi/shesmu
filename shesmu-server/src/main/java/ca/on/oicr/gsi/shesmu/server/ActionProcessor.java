@@ -26,7 +26,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -574,11 +573,11 @@ public final class ActionProcessor
           .register();
   private static final Gauge oldest =
       Gauge.build("shesmu_action_oldest_time", "The oldest action in a particular state.")
-          .labelNames("state")
+          .labelNames("state", "type")
           .register();
   private static final Gauge stateCount =
       Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
-          .labelNames("state")
+          .labelNames("state", "type")
           .register();
   private final ActionServices actionServices;
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
@@ -586,6 +585,7 @@ public final class ActionProcessor
   private final Map<Map<String, String>, Alert> alerts = new HashMap<>();
   private final String baseUri;
   private String currentAlerts = "[]";
+  private final Set<String> knownActionTypes = ConcurrentHashMap.newKeySet();
   private final PluginManager manager;
   private final Set<SourceLocation> pausedOlives = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
@@ -607,11 +607,12 @@ public final class ActionProcessor
       Action action, String filename, int line, int column, long time, String[] tags) {
     Information information;
     boolean isDuplicate;
+    knownActionTypes.add(action.type());
     if (!actions.containsKey(action)) {
       action.accepted();
       information = new Information();
       actions.put(action, information);
-      stateCount.labels(ActionState.UNKNOWN.name()).inc();
+      stateCount.labels(ActionState.UNKNOWN.name(), action.type()).inc();
       isDuplicate = false;
     } else {
       information = actions.get(action);
@@ -833,7 +834,7 @@ public final class ActionProcessor
   public long purge(Filter... filters) {
     final Set<Action> deadActions =
         startStream(filters)
-            .peek(e -> stateCount.labels(e.getValue().lastState.name()).dec())
+            .peek(e -> stateCount.labels(e.getValue().lastState.name(), e.getKey().type()).dec())
             .map(Entry::getKey)
             .collect(Collectors.toSet());
     deadActions.forEach(Action::purgeCleanup);
@@ -1005,25 +1006,35 @@ public final class ActionProcessor
               }
               if (oldState != entry.getValue().lastState) {
                 entry.getValue().lastStateTransition = Instant.now();
-                stateCount.labels(oldState.name()).dec();
-                stateCount.labels(entry.getValue().lastState.name()).inc();
+                stateCount.labels(oldState.name(), entry.getKey().type()).dec();
+                stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
               }
               actionThrows.inc((entry.getValue().thrown ? 0 : 1) - (oldThrown ? 0 : 1));
             });
     lastRun.setToCurrentTime();
-    final Map<ActionState, List<Information>> lastTransitions =
-        actions.values().stream().collect(Collectors.groupingBy((Information i) -> i.lastState));
-    for (final ActionState state : ActionState.values()) {
-      final long time =
-          lastTransitions
-              .getOrDefault(state, Collections.emptyList())
-              .stream()
-              .map(i -> i.lastStateTransition)
-              .sorted()
-              .findFirst()
-              .orElse(Instant.now())
-              .getEpochSecond();
-      oldest.labels(state.name()).set(time);
+    final Map<Pair<ActionState, String>, Optional<Instant>> lastTransitions =
+        actions
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.groupingBy(
+                    (Entry<Action, Information> e) ->
+                        new Pair<>(e.getValue().lastState, e.getKey().type()),
+                    Collectors.mapping(
+                        (Entry<Action, Information> e) -> e.getValue().lastStateTransition,
+                        Collectors.maxBy(Comparator.naturalOrder()))));
+    for (final String actionType : knownActionTypes) {
+      for (final ActionState state : ActionState.values()) {
+        final Instant time =
+            lastTransitions
+                .getOrDefault(new Pair<>(state, actionType), Optional.empty())
+                .orElse(null);
+        if (time == null) {
+          oldest.remove(state.name(), actionType);
+        } else {
+          oldest.labels(state.name(), actionType).set(time.getEpochSecond());
+        }
+      }
     }
   }
 }
