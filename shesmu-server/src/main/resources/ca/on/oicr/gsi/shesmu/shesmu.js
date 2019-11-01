@@ -257,6 +257,136 @@ export const parser = {
       return { good: false, input: input, error: "Expected date." };
     }
   },
+  j: function(input) {
+    let match = input.match(/^\s*(\d+(\.\d*)?([eE][+-]?\d+)?)/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: parseFloat(match[1])
+      };
+    }
+    match = input.match(
+      /^\s*"(((?=\\)\\(["\\\/bfnrt]|u[0-9a-fA-F]{4}))|[^"\\\0-\x1F\x7F]+)*"/
+    );
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: match[1] || ""
+      };
+    }
+    match = input.match(/^\s*true/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: true
+      };
+    }
+    match = input.match(/^\s*false/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: false
+      };
+    }
+    match = input.match(/^\s*null/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: null
+      };
+    }
+    match = input.match(/^\s*\[/);
+    if (match) {
+      const result = [];
+      let current = input.substring(match[0].length);
+
+      while (true) {
+        match = current.match(/^\s*]/);
+        if (match) {
+          return {
+            good: true,
+            input: current.substring(match[0].length),
+            output: result
+          };
+        }
+        if (result.length) {
+          match = current.match(/^\s*,/);
+          if (!match) {
+            return {
+              good: false,
+              input: current,
+              error: "Expected , or ]."
+            };
+          }
+          current = current.substring(match[0].length);
+        }
+
+        const inner = parser.j(current);
+        if (!inner.good) {
+          return inner;
+        }
+        result.push(inner.output);
+        current = inner.input;
+      }
+    }
+    match = input.match(/^\s*{/);
+    if (match) {
+      const result = [];
+      let current = input.substring(match[0].length);
+
+      while (true) {
+        match = current.match(/^\s*}/);
+        if (match) {
+          return {
+            good: true,
+            input: current.substring(match[0].length),
+            output: Object.fromEntries(result)
+          };
+        }
+
+        if (result.length) {
+          match = current.match(/\s*,/);
+          if (!match) {
+            return {
+              good: false,
+              input: current,
+              error: "Expected }."
+            };
+          }
+          current = current.substring(match[0].length);
+        }
+        match = current.match(
+          /^\s*"(((?=\\)\\(["\\\/bfnrt]|u[0-9a-fA-F]{4}))|[^"\\\0-\x1F\x7F]+)*"\s*:/
+        );
+        if (!match) {
+          return {
+            good: false,
+            input: current,
+            error: "Expected property name."
+          };
+        }
+        const name = match[1];
+        current = current.substring(match[0].length);
+
+        const inner = parser.j(current);
+        if (!inner.good) {
+          return inner;
+        }
+        result.push([name, inner.output]);
+        current = inner.input;
+      }
+    }
+    return {
+      good: false,
+      input: input,
+      error: "Unexpected input."
+    };
+  },
   f: function(input) {
     let match = input.match(/^\s*(\d*(\.\d*([eE][+-]?\d+)?))/);
     if (match) {

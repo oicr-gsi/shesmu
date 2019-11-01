@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -90,6 +91,11 @@ public class PackWdlVariables implements ImyhatConsumer {
 
   @Override
   public void accept(String value) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void accept(JsonNode value) {
     throw new UnsupportedOperationException();
   }
 

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
@@ -38,6 +39,9 @@ public interface ImyhatConsumer {
 
   /** Collect a string */
   void accept(String value);
+
+  /** Collect a JSON value */
+  void accept(JsonNode value);
 
   /**
    * Collect an object

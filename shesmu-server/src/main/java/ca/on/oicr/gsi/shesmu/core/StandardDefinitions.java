@@ -316,7 +316,7 @@ public final class StandardDefinitions implements DefinitionRepository {
       new SignatureDefinition[] {
         new SignatureCount(),
         new SignatureNames(),
-        new SignatureVariableForDynamicSigner("json_signature", Imyhat.STRING) {
+        new SignatureVariableForDynamicSigner("json_signature", Imyhat.JSON) {
 
           @Override
           public Path filename() {

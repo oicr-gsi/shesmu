@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.GenericTransformer;
 import ca.on.oicr.gsi.shesmu.plugin.types.GenericTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -71,6 +72,7 @@ public class TypeUtils {
   private static final Type A_BOOLEAN_TYPE = Type.getType(Boolean.class);
   private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
+  private static final Type A_JSON_NODE_TYPE = Type.getType(JsonNode.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
@@ -114,6 +116,11 @@ public class TypeUtils {
         @Override
         public Type integer() {
           return Type.LONG_TYPE;
+        }
+
+        @Override
+        public Type json() {
+          return A_JSON_NODE_TYPE;
         }
 
         @Override
@@ -168,6 +175,11 @@ public class TypeUtils {
         @Override
         public Type integer() {
           return A_LONG_TYPE;
+        }
+
+        @Override
+        public Type json() {
+          return A_JSON_NODE_TYPE;
         }
 
         @Override
@@ -226,6 +238,11 @@ public class TypeUtils {
         @Override
         public String integer() {
           return "parser.i";
+        }
+
+        @Override
+        public String json() {
+          return "parser.j";
         }
 
         @Override

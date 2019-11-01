@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Run ok With ok =
+  Switch accession
+    When "1" Then (For {k, _} Fields horror: All k == "foo" || k == "bar")
+    When "2" Then (For v In horror: All v As date == `epoch`
+    Else False;

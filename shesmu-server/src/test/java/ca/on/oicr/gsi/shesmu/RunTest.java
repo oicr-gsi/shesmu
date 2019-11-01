@@ -22,7 +22,10 @@ import ca.on.oicr.gsi.shesmu.server.HotloadingCompiler;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import ca.on.oicr.gsi.status.ConfigurationSection;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -44,18 +47,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class RunTest {
-  public static final ThreadLocal<Boolean> REFILL_OKAY = new ThreadLocal<>();
-
-  public static class DummyRefiller<I> extends Refiller<I> {
-
-    public Function<I, Boolean> value;
-
-    @Override
-    public void consume(Stream<I> items) {
-      REFILL_OKAY.set(items.allMatch(value::apply));
-    }
-  }
-
   private class ActionChecker implements OliveServices {
 
     private int bad;
@@ -119,6 +110,16 @@ public class RunTest {
     }
   }
 
+  public static class DummyRefiller<I> extends Refiller<I> {
+
+    public Function<I, Boolean> value;
+
+    @Override
+    public void consume(Stream<I> items) {
+      REFILL_OKAY.set(items.allMatch(value::apply));
+    }
+  }
+
   private static class InputProviderChecker implements InputProvider {
     private final Set<String> usedFormats = new HashSet<>();
 
@@ -177,11 +178,22 @@ public class RunTest {
     }
   }
 
-  private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
+  private static JsonNode horror1() {
+    final ObjectNode node = JsonNodeFactory.instance.objectNode();
+    node.put("foo", 3);
+    node.put("bar", "hi");
+    return node;
+  }
 
+  private static JsonNode horror2() {
+    final ArrayNode node = JsonNodeFactory.instance.arrayNode();
+    node.add(0);
+    return node;
+  }
+
+  private static final Type A_OK_ACTION_TYPE = Type.getType(OkAction.class);
   private static final List<ConstantDefinition> CONSTANTS =
       Arrays.asList(ConstantDefinition.of("project_constant", "the_foo_study", "Testing constant"));
-
   private static InnerTestValue[] INNER_TEST_DATA =
       new InnerTestValue[] {new InnerTestValue(300, "a"), new InnerTestValue(307, "b")};
   public static final NameLoader<InputFormatDefinition> INPUT_FORMATS;
@@ -305,10 +317,19 @@ public class RunTest {
               A_OK_ACTION_TYPE, new Method("<init>", Type.VOID_TYPE, new Type[] {}));
         }
       };
+  public static final ThreadLocal<Boolean> REFILL_OKAY = new ThreadLocal<>();
   private static TestValue[] TEST_DATA =
       new TestValue[] {
         new TestValue(
-            "1", "/foo1", 3, "SlowA", new Tuple(1L, 2L, 3L), "the_foo_study", 307L, Instant.EPOCH),
+            "1",
+            "/foo1",
+            3,
+            "SlowA",
+            new Tuple(1L, 2L, 3L),
+            "the_foo_study",
+            307L,
+            Instant.EPOCH,
+            horror1()),
         new TestValue(
             "2",
             "/foo2",
@@ -317,7 +338,8 @@ public class RunTest {
             new Tuple(1L, 2L, 3L),
             "the_foo_study",
             300L,
-            Instant.EPOCH.plusSeconds(500))
+            Instant.EPOCH.plusSeconds(500),
+            horror2())
       };
 
   static {
@@ -373,9 +395,24 @@ public class RunTest {
                     }
 
                     @Override
+                    public Stream<FunctionDefinition> functions() {
+                      return Stream.of(INT2STR, INT2DATE);
+                    }
+
+                    @Override
+                    public Stream<ConfigurationSection> listConfiguration() {
+                      return Stream.empty();
+                    }
+
+                    @Override
                     public Stream<RefillerDefinition> refillers() {
                       return Stream.of(
                           new RefillerDefinition() {
+                            @Override
+                            public String description() {
+                              return "Test";
+                            }
+
                             @Override
                             public Path filename() {
                               return null;
@@ -387,19 +424,9 @@ public class RunTest {
                             }
 
                             @Override
-                            public String description() {
-                              return "Test";
-                            }
-
-                            @Override
                             public Stream<RefillerParameterDefinition> parameters() {
                               return Stream.of(
                                   new RefillerParameterDefinition() {
-                                    @Override
-                                    public Imyhat type() {
-                                      return Imyhat.BOOLEAN;
-                                    }
-
                                     @Override
                                     public String name() {
                                       return "value";
@@ -417,6 +444,11 @@ public class RunTest {
                                               "value",
                                               Type.getType(Function.class));
                                     }
+
+                                    @Override
+                                    public Imyhat type() {
+                                      return Imyhat.BOOLEAN;
+                                    }
                                   });
                             }
 
@@ -431,16 +463,6 @@ public class RunTest {
                                       new Method("<init>", Type.VOID_TYPE, new Type[0]));
                             }
                           });
-                    }
-
-                    @Override
-                    public Stream<FunctionDefinition> functions() {
-                      return Stream.of(INT2STR, INT2DATE);
-                    }
-
-                    @Override
-                    public Stream<ConfigurationSection> listConfiguration() {
-                      return Stream.empty();
                     }
 
                     @Override
