@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
@@ -46,7 +45,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final PineryConfiguration cfg = config.get();
       try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
         final Map<String, Integer> badSetCounts = new TreeMap<>();
-        final Map<String, Pair<String, String>> runDirectoriesAndMasks = new HashMap<>();
         final Map<String, RunDto> allRuns =
             c.getSequencerRun()
                 .all()
@@ -71,22 +69,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 .map(RunDto::getName)
                 .collect(Collectors.toSet());
         return Stream.concat(
-                lanes(
-                    c,
-                    cfg.getVersion(),
-                    cfg.getProvider(),
-                    badSetCounts,
-                    runDirectoriesAndMasks,
-                    allRuns,
-                    completeRuns::contains),
-                samples(
-                    c,
-                    cfg.getVersion(),
-                    cfg.getProvider(),
-                    badSetCounts,
-                    runDirectoriesAndMasks,
-                    allRuns,
-                    completeRuns::contains))
+                lanes(c, cfg.getVersion(), cfg.getProvider(), badSetCounts, allRuns),
+                samples(c, cfg.getVersion(), cfg.getProvider(), badSetCounts, allRuns))
             .onClose(
                 () ->
                     badSetCounts
@@ -103,38 +87,47 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       }
     }
 
+    private Predicate<RunDto> isRunComplete =
+        run -> {
+          return run != null
+              && run.getState().equals("Completed")
+              && run.getCreatedDate() != null
+              && run.getRunDirectory() != null
+              && !run.getRunDirectory().equals("");
+        };
+
     private Stream<PineryIUSValue> lanes(
         PineryClient client,
         String version,
         String provider,
         Map<String, Integer> badSetCounts,
-        Map<String, Pair<String, String>> runDirectoriesAndMasks,
-        Map<String, RunDto> allRuns,
-        Predicate<String> goodRun)
+        Map<String, RunDto> allRuns)
         throws HttpResponseException {
       return Utils.stream(client.getLaneProvenance().version(version))
           .filter(
               lp ->
-                  goodRun.test(lp.getSequencerRunName())
+                  isRunComplete.test(allRuns.get(lp.getSequencerRunName()))
                       && lp.getCreatedDate() != null
                       && (lp.getSkip() == null || !lp.getSkip()))
           .map(
               lp -> {
                 final Set<String> badSetInRecord = new TreeSet<>();
+                final RunDto run = allRuns.get(lp.getSequencerRunName());
+                if (run == null) {
+                  badSetInRecord.add(String.format("run: %s is null", lp.getSequencerRunName()));
+                }
                 final String runDirectory =
                     IUSUtils.singleton(
-                            lp.getSequencerRunAttributes().get("run_dir"),
+                            Collections.singleton(run.getRunDirectory()),
                             reason -> badSetInRecord.add("run_dir:" + reason),
                             true)
                         .orElse("");
                 final String basesMask =
                     IUSUtils.singleton(
-                            lp.getSequencerRunAttributes().get("run_bases_mask"),
+                            Collections.singleton(run.getRunBasesMask()),
                             reason -> badSetInRecord.add("bases_mask:" + reason),
                             false)
                         .orElse("");
-                runDirectoriesAndMasks.put(
-                    lp.getSequencerRunName(), new Pair<>(runDirectory, basesMask));
                 final Instant lastModified =
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
                 final PineryIUSValue result =
@@ -169,8 +162,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         lp.getSequencerRunPlatformModel(),
                         Optional.empty(),
                         Optional.empty(),
-                        getRunStatus(allRuns, lp.getSequencerRunName()),
+                        getRunField(run, RunDto::getState),
                         false,
+                        maybeGetRunField(run, RunDto::getSequencingKit),
+                        maybeGetRunField(run, RunDto::getContainerModel),
                         false);
 
                 if (badSetInRecord.isEmpty()) {
@@ -188,25 +183,23 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String version,
         String provider,
         Map<String, Integer> badSetCounts,
-        Map<String, Pair<String, String>> runDirectoriesAndMasks,
-        Map<String, RunDto> allRuns,
-        Predicate<String> goodRun)
+        Map<String, RunDto> allRuns)
         throws HttpResponseException {
       return Utils.stream(client.getSampleProvenance().version(version))
-          .filter(sp -> goodRun.test(sp.getSequencerRunName()) && sp.getCreatedDate() != null)
+          .filter(
+              sp ->
+                  isRunComplete.test(allRuns.get(sp.getSequencerRunName()))
+                      && sp.getCreatedDate() != null)
           .map(
               sp -> {
-                final Pair<String, String> runDirectoryAndMask =
-                    runDirectoriesAndMasks.get(sp.getSequencerRunName());
-                if (runDirectoryAndMask == null) {
-                  return null;
-                }
                 final Set<String> badSetInRecord = new TreeSet<>();
                 final Instant lastModified =
                     sp.getLastModified() == null ? Instant.EPOCH : sp.getLastModified().toInstant();
+                final RunDto run = allRuns.get(sp.getSequencerRunName());
+                if (run == null) return null;
                 final PineryIUSValue result =
                     new PineryIUSValue(
-                        Paths.get(runDirectoryAndMask.first()),
+                        Paths.get(run.getRunDirectory()),
                         sp.getStudyTitle(),
                         limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
                         sp.getSampleName(),
@@ -238,14 +231,16 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : sp.getCreatedDate().toInstant(),
-                        runDirectoryAndMask.second(),
+                        run.getRunBasesMask(),
                         sp.getSequencerRunPlatformModel(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
-                        getRunStatus(allRuns, runDirectoryAndMask.first()),
+                        getRunField(run, RunDto::getState),
                         limsAttr(sp, "umis", badSetInRecord::add, false)
                             .map(Boolean::parseBoolean)
                             .orElse(false),
+                        maybeGetRunField(run, RunDto::getSequencingKit),
+                        maybeGetRunField(run, RunDto::getContainerModel),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
@@ -301,13 +296,17 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
-  private String getRunStatus(Map<String, RunDto> allRuns, String runName) {
-    String status = "Unknown";
-    RunDto target = allRuns.get(runName);
-    if (target != null) {
-      status = target.getState();
+  private String getRunField(RunDto run, Function<RunDto, String> getField) {
+    Optional<String> val = maybeGetRunField(run, getField);
+    return val.orElse("");
+  }
+
+  private Optional<String> maybeGetRunField(RunDto run, Function<RunDto, String> getField) {
+    Optional<String> maybeVal = Optional.empty();
+    if (run != null) {
+      maybeVal = Optional.ofNullable(getField.apply(run));
     }
-    return status;
+    return maybeVal;
   }
 
   private static Optional<String> limsAttr(
