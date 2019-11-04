@@ -72,7 +72,7 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
       e.printStackTrace();
     }
     if (initialState) {
-      throw new InitialCachePopulationException();
+      throw new InitialCachePopulationException(owner.name());
     }
     return value;
   }
