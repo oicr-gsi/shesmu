@@ -1112,6 +1112,20 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
   }
 
   if (oliveFiles.length) {
+    const commonPrefix = oliveFiles[0].filename.split("/");
+    commonPrefix.pop();
+    for (var i = 1; i < oliveFiles.length; i++) {
+      const parts = oliveFiles[i].filename.split("/");
+      parts.pop();
+      let x = 0;
+      while (
+        x < parts.length &&
+        x < commonPrefix.length &&
+        parts[x] == commonPrefix[x]
+      )
+        x++;
+      commonPrefix.length = x;
+    }
     const oliveDropdown = document.createElement("SPAN");
     oliveDropdown.className = "dropdown";
     container.appendChild(oliveDropdown);
@@ -1154,7 +1168,11 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
 
     oliveFiles.forEach(file => {
       const title = document.createElement("h2");
-      title.innerText = breakSlashes(file.filename);
+      title.innerText = file.filename
+        .split("/")
+        .splice(commonPrefix.length)
+        .join("/\u200B");
+      title.title = file.filename;
       oliveList.appendChild(title);
       if (file.olives.length) {
         const table = document.createElement("table");
