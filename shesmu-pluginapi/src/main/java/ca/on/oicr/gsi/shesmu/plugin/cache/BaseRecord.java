@@ -69,7 +69,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
       }
     }
     if (shouldThrow) {
-      throw new InitialCachePopulationException();
+      throw new InitialCachePopulationException(owner.name());
     }
     return unpack(value);
   }
