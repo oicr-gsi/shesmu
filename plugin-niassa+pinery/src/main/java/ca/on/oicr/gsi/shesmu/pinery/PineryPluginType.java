@@ -37,9 +37,9 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
   public static Tuple convert_mask(
       @ShesmuParameter(
               description = "The mask object to convert",
-              type = "o5group$ilength$iordinal$iposition$itype$s")
+              type = "o7cycle_end$icycle_start$igroup$ilength$iordinal$iposition$itype$s")
           Tuple input) {
-    return new Tuple(input.get(0), input.get(1), input.get(3), input.get(4));
+    return new Tuple(input.get(2), input.get(3), input.get(5), input.get(6));
   }
 
   @ShesmuMethod(description = "Writes a bases mask string from a collection of objects")
@@ -73,11 +73,12 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
   @ShesmuMethod(
       description =
           "Parse a bases mask string into a collection of objects. Each object has the comma-separated group it belongs to, position within that group, the type of that mask, the length of that mask (or negative for *), and ordinal, the number of times that type has been seen previously in any group.",
-      type = "ao5group$ilength$iordinal$iposition$itype$s")
+      type = "ao7cycle_end$icycle_start$igroup$ilength$iordinal$iposition$itype$s")
   public static Set<Tuple> parse_bases_mask(
       @ShesmuParameter(description = "Bases mask string") String basesMask) {
     final Set<Tuple> result = BASES_MASK_TYPE.newSet();
     final Map<Mask, AtomicLong> instances = new EnumMap<>(Mask.class);
+    long cycle = 0;
     for (Mask mask : Mask.values()) {
       instances.put(mask, new AtomicLong());
     }
@@ -86,15 +87,19 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
       Matcher match = BASE_MASK.matcher(groups[i].trim());
       long position = 0;
       while (match.find()) {
-        final String length = match.group(2);
+        final long length = match.group(2).equals("*") ? -1L : Long.parseLong(match.group(2));
         final String type = match.group(1).toUpperCase();
+        final long endCycle = length < 0 || cycle < 0 ? -1L : (cycle + length);
         result.add(
             new Tuple(
+                endCycle,
+                cycle,
                 (long) i,
-                length.equals("*") ? -1L : Long.parseLong(length),
+                length,
                 instances.get(Mask.valueOf(type)).getAndIncrement(),
                 position++,
                 type));
+        cycle = endCycle;
       }
     }
     return result;
