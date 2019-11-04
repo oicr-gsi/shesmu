@@ -51,7 +51,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
             c.getSequencerRun()
                 .all()
                 .stream()
-                .collect(Collectors.toMap(RunDto::getName, Function.identity()));
+                .collect(
+                    Collectors.toMap(
+                        RunDto::getName,
+                        Function.identity(),
+                        // If duplicate run names occur, pick one at random, because the universe is
+                        // spiteful, so we spite it back.
+                        (a, b) -> a));
         final Set<String> completeRuns =
             allRuns
                 .values()
