@@ -4,9 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.runscanner.dto.IlluminaNotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.NotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
-import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
-import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
-import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
@@ -17,6 +15,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import javax.xml.stream.XMLStreamException;
@@ -27,15 +26,19 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 public final class RunScannerClient extends JsonPluginFile<Configuration> {
-  private class RunCache extends KeyValueCache<String, Optional<NotificationDto>> {
+  private abstract class BaseRunCache<T> extends KeyValueCache<String, Optional<T>> {
 
-    public RunCache(Path fileName) {
-      super("runscanner " + fileName.toString(), 30, SimpleRecord::new);
+    public BaseRunCache(
+        String name,
+        int ttl,
+        BiFunction<Owner, Updater<Optional<T>>, Record<Optional<T>>> recordCtor) {
+      super(name, ttl, recordCtor);
     }
 
+    protected abstract T extract(NotificationDto dto) throws Exception;
+
     @Override
-    protected Optional<NotificationDto> fetch(String runName, Instant lastUpdated)
-        throws Exception {
+    protected final Optional<T> fetch(String runName, Instant lastUpdated) throws Exception {
       if (!url.isPresent()) {
         return Optional.empty();
       }
@@ -47,9 +50,36 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
         }
         NotificationDto run =
             MAPPER.readValue(response.getEntity().getContent(), NotificationDto.class);
-        run.setMetrics(null); // Discard metrics to save memory
-        return Optional.of(run);
+        return Optional.ofNullable(extract(run));
       }
+    }
+  }
+
+  private class RunCache extends BaseRunCache<NotificationDto> {
+
+    public RunCache(Path fileName) {
+      super("runscanner " + fileName.toString(), 30, SimpleRecord::new);
+    }
+
+    @Override
+    protected NotificationDto extract(NotificationDto dto) throws Exception {
+      dto.setMetrics(null); // Discard metrics to save memory
+      return dto;
+    }
+  }
+  // Although this uses the same data as the run cache, it has a different TTL, so separate cache
+  private class RunCycleCache extends BaseRunCache<Long> {
+
+    public RunCycleCache(Path fileName) {
+      super("runscanner-cycles " + fileName.toString(), 5, SimpleRecord::new);
+    }
+
+    @Override
+    protected Long extract(NotificationDto dto) throws Exception {
+      if (dto instanceof IlluminaNotificationDto) {
+        return (long) ((IlluminaNotificationDto) dto).getScoreCycle();
+      }
+      return null;
     }
   }
 
@@ -102,11 +132,24 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   }
 
   private final RunCache runCache;
+  private final RunCycleCache runCycleCache;
   private Optional<String> url = Optional.empty();
 
   public RunScannerClient(Path fileName, String instanceName) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     runCache = new RunCache(fileName);
+    runCycleCache = new RunCycleCache(fileName);
+  }
+
+  @ShesmuMethod(
+      description =
+          "Get the current scored cycle detected by the Run Scanner defined in {file} for an Illumina run.")
+  public Optional<Long> $_cycle(@ShesmuParameter(description = "name of run") String runName) {
+    try {
+      return runCycleCache.get(runName);
+    } catch (InitialCachePopulationException e) {
+      return Optional.empty();
+    }
   }
 
   @ShesmuMethod(
