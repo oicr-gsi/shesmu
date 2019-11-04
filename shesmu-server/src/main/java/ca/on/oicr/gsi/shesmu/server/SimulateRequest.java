@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.actions.fake.FakeAction;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
@@ -436,69 +437,74 @@ public class SimulateRequest {
             final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
             RESULTS.set(response.putObject("refillers"));
 
-            action.run(
-                new OliveServices() {
-                  @Override
-                  public boolean accept(
-                      Action action,
-                      String filename,
-                      int line,
-                      int column,
-                      long time,
-                      String[] tags) {
-                    return actions.add(action);
-                  }
+            try {
+              action.run(
+                  new OliveServices() {
+                    @Override
+                    public boolean accept(
+                        Action action,
+                        String filename,
+                        int line,
+                        int column,
+                        long time,
+                        String[] tags) {
+                      return actions.add(action);
+                    }
 
-                  @Override
-                  public boolean accept(String[] labels, String[] annotation, long ttl)
-                      throws Exception {
-                    return alerts.add(new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
-                  }
+                    @Override
+                    public boolean accept(String[] labels, String[] annotation, long ttl)
+                        throws Exception {
+                      return alerts.add(
+                          new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
+                    }
 
-                  @Override
-                  public Dumper findDumper(String name, Imyhat... types) {
-                    return new Dumper() {
-                      private final ArrayNode dump = dumpers.putArray(name);
+                    @Override
+                    public Dumper findDumper(String name, Imyhat... types) {
+                      return new Dumper() {
+                        private final ArrayNode dump = dumpers.putArray(name);
 
-                      @Override
-                      public void stop() {
-                        // Do nothing
-                      }
-
-                      @Override
-                      public void write(Object... values) {
-                        final ArrayNode row = dump.addArray();
-                        for (int i = 0; i < types.length; i++) {
-                          types[i].accept(new PackJsonArray(row), values[i]);
+                        @Override
+                        public void stop() {
+                          // Do nothing
                         }
-                      }
-                    };
-                  }
 
-                  @Override
-                  public boolean isOverloaded(String... services) {
-                    return actionServices.isOverloaded(services);
-                  }
+                        @Override
+                        public void write(Object... values) {
+                          final ArrayNode row = dump.addArray();
+                          for (int i = 0; i < types.length; i++) {
+                            types[i].accept(new PackJsonArray(row), values[i]);
+                          }
+                        }
+                      };
+                    }
 
-                  @Override
-                  public <T> Stream<T> measureFlow(
-                      Stream<T> input,
-                      String filename,
-                      int line,
-                      int column,
-                      int oliveLine,
-                      int oliveColumn) {
-                    final AtomicLong counter = new AtomicLong();
-                    flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
-                    return input.peek(i -> counter.incrementAndGet());
-                  }
+                    @Override
+                    public boolean isOverloaded(String... services) {
+                      return actionServices.isOverloaded(services);
+                    }
 
-                  @Override
-                  public void oliveRuntime(String filename, int line, int column, long timeInNs) {
-                    durations.put(new Pair<>(line, column), timeInNs);
-                  }
-                },
-                format -> inputs.get(format).stream());
+                    @Override
+                    public <T> Stream<T> measureFlow(
+                        Stream<T> input,
+                        String filename,
+                        int line,
+                        int column,
+                        int oliveLine,
+                        int oliveColumn) {
+                      final AtomicLong counter = new AtomicLong();
+                      flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
+                      return input.peek(i -> counter.incrementAndGet());
+                    }
+
+                    @Override
+                    public void oliveRuntime(String filename, int line, int column, long timeInNs) {
+                      durations.put(new Pair<>(line, column), timeInNs);
+                    }
+                  },
+                  format -> inputs.get(format).stream());
+            } catch (InitialCachePopulationException e) {
+              errors.add(String.format("Failed to populate %s cache", e.getMessage()));
+            }
 
             final StringWriter writer = new StringWriter();
             try {
