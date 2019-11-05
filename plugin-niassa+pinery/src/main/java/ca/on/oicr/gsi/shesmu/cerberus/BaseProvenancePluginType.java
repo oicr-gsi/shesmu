@@ -88,38 +88,34 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           IUSUtils.singleton(
                                   fp.getStudyTitles(),
                                   reason -> badSetInRecord.add("study:" + reason),
-                                  true)
+                                  false)
                               .orElse(""),
-                          limsAttr(fp, "geo_organism", badSetInRecord::add, true).orElse(""),
+                          limsAttr(fp, "geo_organism", badSetInRecord::add).orElse(""),
                           IUSUtils.singleton(
                                   fp.getSampleNames(),
                                   reason -> badSetInRecord.add("librarynames:" + reason),
-                                  true)
+                                  false)
                               .orElse(""),
                           IUSUtils.singleton(
                                   fp.getRootSampleNames(),
                                   reason -> badSetInRecord.add("samplenames:" + reason),
-                                  true)
+                                  false)
                               .orElse(""),
                           packIUS(fp),
-                          limsAttr(
-                                  fp, "geo_library_source_template_type", badSetInRecord::add, true)
+                          limsAttr(fp, "geo_library_source_template_type", badSetInRecord::add)
                               .orElse(""),
-                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add, true).orElse(""),
-                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""),
-                          limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add, false)
-                              .orElse(""),
-                          limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add, false)
-                              .orElse(""),
-                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add, false).orElse(""),
-                          limsAttr(fp, "geo_group_id", badSetInRecord::add, false).orElse(""),
-                          limsAttr(fp, "geo_group_id_description", badSetInRecord::add, false)
-                              .orElse(""),
-                          limsAttr(fp, "geo_library_size_code", badSetInRecord::add, false)
+                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_group_id", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_group_id_description", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_library_size_code", badSetInRecord::add)
                               .map(IUSUtils::parseLong)
                               .orElse(0L),
-                          limsAttr(fp, "geo_library_type", badSetInRecord::add, false).orElse(""),
-                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
+                          limsAttr(fp, "geo_library_type", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add).orElse(""),
                           fp.getLastModified().toInstant(),
                           new Tuple(
                               limsKey.map(LimsKey::getId).orElse(""),
@@ -218,10 +214,9 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     }
   }
 
-  private static Optional<String> limsAttr(
-      FileProvenance fp, String key, Consumer<String> isBad, boolean required) {
+  private static Optional<String> limsAttr(FileProvenance fp, String key, Consumer<String> isBad) {
     return IUSUtils.singleton(
-        fp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
+        fp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), false);
   }
 
   private static Tuple packIUS(FileProvenance fp) {

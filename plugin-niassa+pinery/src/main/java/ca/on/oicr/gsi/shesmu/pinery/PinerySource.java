@@ -131,7 +131,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     IUSUtils.singleton(
                             lp.getSequencerRunAttributes().get("run_bases_mask"),
                             reason -> badSetInRecord.add("bases_mask:" + reason),
-                            true)
+                            false)
                         .orElse("");
                 runDirectoriesAndMasks.put(
                     lp.getSequencerRunName(), new Pair<>(runDirectory, basesMask));
