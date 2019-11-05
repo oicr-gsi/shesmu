@@ -596,3 +596,8 @@ div.editor {
     width: 100%;
     height: 70vh;
 }
+
+.olivemenu div {
+    max-height: 80vh;
+    overflow-y: auto;
+}

@@ -1196,7 +1196,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
       commonPrefix.length = x;
     }
     const oliveDropdown = document.createElement("SPAN");
-    oliveDropdown.className = "dropdown";
+    oliveDropdown.className = "olivemenu dropdown";
     container.appendChild(oliveDropdown);
     const activeOlive = document.createElement("SPAN");
     activeOlive.innerText = "Select";
