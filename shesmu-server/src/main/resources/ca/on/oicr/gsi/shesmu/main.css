@@ -152,7 +152,7 @@ a.load {
     color: #E0493B;
 }
 
-.action {
+.action, .alert {
     padding: 0.2em;
     margin-bottom: 0.5em;
 }
@@ -167,7 +167,7 @@ a.load {
     margin: 0.1em;
 }
 
-.state_failed , .filterlist .state_failed {
+.state_failed, .filterlist .state_failed, .alert {
     border: 1px solid #E0493B;
     background-color: #F9DDDB;
 }
@@ -213,19 +213,19 @@ a.load {
     margin: 0.5em;
 }
 
-.action a {
+.action a, .alert a {
     text-decoration: none;
 }
 
-.action.state_unknown a:link, .actionstate_failed a.:link {
+.action.state_unknown a:link, .actionstate_failed a:link, .alert a:link {
     color: #E0493B;
 }
 
-.action.state_unknown a:visited, .actionstate_failed a.:visited {
+.action.state_unknown a:visited, .actionstate_failed a:visited, .alert a:visited {
     color: #B83C31;
 }
 
-.action.state_unknown a:hover, .actionstate_failed a.:hover, .action.state_unknown a:active, .actionstate_failed a.:active {
+.action.state_unknown a:hover, .actionstate_failed a:hover, .action.state_unknown a:active, .actionstate_failed a:active, .alert a:hover, .alert a:active {
     color: #E56A5E;
 }
 
@@ -237,7 +237,7 @@ a.load {
     color: #FCEAE9;
 }
 
-.action.state_halp a:hover, .actionstate_halp a.active {
+.action.state_halp a:hover, .actionstate_halp a:active {
     color: #E56A5E;
 }
 
@@ -289,7 +289,7 @@ a.load {
     color: #33BCDC;
 }
 
-.action>  :first-child::before {
+.action> :first-child::before, .alert> :first-child::before {
     opacity: 0.5;
     font-size: 200%;
     float: right;
@@ -338,6 +338,16 @@ a.load {
 .action.state_simulated > :first-child::before {
     content: "Simulated 🤖";
     color: #06AED5;
+}
+
+.alert.expired > :first-child::before {
+    content: "Expired 😴";
+    color: #06AED5;
+}
+
+.action.live >  :first-child::before {
+    content: "Firing 🔔";
+    color: #E0493B;
 }
 
 .filterlist > span {
@@ -433,21 +443,8 @@ a.load {
     background-color: #D1F0F7;
 }
 
-.live .label {
-    border-color: #E0493B;
-    background-color: #F9DDDB;
-}
-
-.alert + .alert {
-    border-top: 1px solid #000;
-}
-
 .live {
     background-color: #F9DDDB;
-}
-
-.alert:target {
-    font-weight: bold;
 }
 
 div.olive {

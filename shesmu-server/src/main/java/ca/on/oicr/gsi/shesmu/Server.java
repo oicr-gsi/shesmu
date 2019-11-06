@@ -1285,6 +1285,18 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
+          final String query =
+              Optional.ofNullable(t.getRequestURI().getQuery())
+                  .flatMap(
+                      r ->
+                          AMPERSAND
+                              .splitAsStream(r)
+                              .filter(i -> i.length() > 0)
+                              .map(q -> EQUAL.split(q, 2))
+                              .filter(q -> q[0].equals("filters"))
+                              .map(q -> q[1])
+                              .findFirst())
+                  .orElse("[]");
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -1292,79 +1304,29 @@ public final class Server implements ServerConfig, ActionServices {
                 return "alerts";
               }
 
-              private void labelsToHtml(XMLStreamWriter writer, Map<String, String> labels)
-                  throws XMLStreamException {
-                for (Entry<String, String> entry : labels.entrySet()) {
-                  writer.writeStartElement("span");
-                  writer.writeAttribute("class", "label");
-                  writer.writeCharacters(entry.getKey());
-                  writer.writeCharacters(" = ");
-                  writer.writeCharacters(entry.getValue());
-                  writer.writeEndElement();
-                  writer.writeStartElement("br");
-                  writer.writeComment("");
-                  writer.writeEndElement();
+              @Override
+              public Stream<Header> headers() {
+                try {
+                  return Stream.of(
+                      Header.jsModule(
+                          String.format(
+                              "import {"
+                                  + "initialiseAlertDashboard"
+                                  + "} from \"./shesmu.js\";"
+                                  + "const output = document.getElementById(\"outputContainer\");"
+                                  + "initialiseAlertDashboard(JSON.parse(%s), %s, output);",
+                              RuntimeSupport.MAPPER.writeValueAsString(processor.currentAlerts()),
+                              RuntimeSupport.MAPPER.writeValueAsString(query))));
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
                 }
               }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement("table");
-                writer.writeStartElement("tr");
-                writer.writeStartElement("th");
-                writer.writeCharacters("ID");
-                writer.writeEndElement();
-                writer.writeStartElement("th");
-                writer.writeCharacters("Labels");
-                writer.writeEndElement();
-                writer.writeStartElement("th");
-                writer.writeCharacters("Annotations");
-                writer.writeEndElement();
-                writer.writeStartElement("th");
-                writer.writeCharacters("Starts");
-                writer.writeEndElement();
-                writer.writeStartElement("th");
-                writer.writeCharacters("Expires");
-                writer.writeEndElement();
-                writer.writeEndElement();
-                processor.alerts(
-                    a -> {
-                      try {
-                        writer.writeStartElement("tr");
-                        writer.writeAttribute("id", "alert-" + a.id());
-                        writer.writeAttribute("class", a.isLive() ? "live alert" : "expired alert");
-                        writer.writeStartElement("td");
-                        writer.writeCharacters(a.id());
-                        writer.writeEndElement();
-                        writer.writeStartElement("td");
-                        labelsToHtml(writer, a.getLabels());
-                        writer.writeEndElement();
-                        writer.writeStartElement("td");
-                        labelsToHtml(writer, a.getAnnotations());
-                        writer.writeEndElement();
-                        writer.writeStartElement("td");
-                        writer.writeCharacters(a.getStartsAt());
-                        writer.writeEndElement();
-                        writer.writeStartElement("td");
-                        writer.writeCharacters(a.expiryTime());
-                        writer.writeEndElement();
-                        writer.writeEndElement();
-                      } catch (XMLStreamException e) {
-                        throw new RuntimeException(e);
-                      }
-                    },
-                    () -> {
-                      try {
-                        writer.writeStartElement("tr");
-                        writer.writeStartElement("td");
-                        writer.writeAttribute("colspan", "5");
-                        writer.writeCharacters("No alerts have ever fired.");
-                        writer.writeEndElement();
-                        writer.writeEndElement();
-                      } catch (XMLStreamException e) {
-                        throw new RuntimeException(e);
-                      }
-                    });
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "outputContainer");
+                writer.writeComment("");
                 writer.writeEndElement();
               }
             }.renderPage(os);

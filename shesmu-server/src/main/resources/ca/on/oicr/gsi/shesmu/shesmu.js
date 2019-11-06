@@ -8,6 +8,7 @@ import {
   table,
   text,
   title,
+  objectTable,
   toggleCollapse,
   visibleText
 } from "./utils.js";
@@ -738,44 +739,6 @@ export function initialiseActionDash(
       redrawDropDown();
     }
   });
-
-  function savedSearches(
-    searches,
-    userDefined,
-    showSavedSearches,
-    shouldLoad,
-    savedQueryName
-  ) {
-    if (userDefined) {
-      clearChildren(searchContainer);
-    }
-    for (const [name, query] of Object.entries(searches)) {
-      const element = document.createElement("DIV");
-      searchContainer.appendChild(element);
-      element.innerText = name;
-      element.onclick = () => {
-        for (let i = 0; i < searchContainer.children.length; i++) {
-          searchContainer.children[i].className = "";
-        }
-        element.className = "selected";
-      };
-      if (userDefined) {
-        const close = document.createElement("SPAN");
-        element.appendChild(close);
-        close.innerText = "✖";
-      } else {
-        const link = document.createElement("SPAN");
-        element.appendChild(link);
-        link.innerText = "🔗";
-        link.onclick = () => {
-          window.history.pushState(null, name, `actiondash?saved=${name}`);
-        };
-      }
-      if (shouldLoad && name == savedQueryName) {
-        nextPage(queryJson, document.getElementById("results"), true);
-      }
-    }
-  }
 
   document.getElementById("pasteSearchButton").addEventListener("click", () => {
     const [dialog, close] = makePopup(true);
@@ -2119,17 +2082,26 @@ function editTimeAgo(original, callback) {
   }
 }
 
+function closeButton(title, callback) {
+  const close = document.createElement("SPAN");
+  close.className = "close";
+  close.innerText = "✖";
+  close.title = title;
+  close.style.cursor = "pointer";
+  close.addEventListener("click", e => {
+    e.stopPropagation();
+    callback();
+  });
+  return close;
+}
 function renderFilter(tile, filter, mutateCallback) {
   const deleteButton = (container, typeName, updateFunction) => {
     if (mutateCallback) {
-      const close = document.createElement("SPAN");
-      container.appendChild(close);
-      close.className = "close";
-      close.innerText = "✖";
-      close.addEventListener("click", e => {
-        e.stopPropagation();
-        mutateCallback(typeName, updateFunction);
-      });
+      container.appendChild(
+        closeButton("Remove filter.", () =>
+          mutateCallback(typeName, updateFunction)
+        )
+      );
     }
   };
   const editable = (container, typeName, original, editor) => {
@@ -3710,17 +3682,13 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
         );
       });
       editCell.appendChild(document.createTextNode(" "));
-      const close = document.createElement("SPAN");
-      editCell.appendChild(close);
-      close.innerText = "✖";
-      close.title = "Delete action.";
-      close.style.cursor = "pointer";
-      close.addEventListener("click", e => {
-        e.stopPropagation();
-        delete fakeActions[name];
-        storeFakeActions();
-        updateFakeActions();
-      });
+      editCell.appendChild(
+        closeButton("Delete action.", () => {
+          delete fakeActions[name];
+          storeFakeActions();
+          updateFakeActions();
+        })
+      );
     }
   };
   const importAction = (name, data) => {
@@ -3845,4 +3813,485 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
       checkTimeout = window.setTimeout(updateSyntax, 1000);
     }
   });
+}
+
+export function initialiseAlertDashboard(alerts, initialFilterString, output) {
+  initialise();
+  // The filters contain regular expressions, so add a method to serialise them
+  Object.defineProperty(RegExp.prototype, "toJSON", {
+    value: RegExp.prototype.toString
+  });
+  const drawAlert = (a, container) => {
+    container.classList.add(a.live ? "live" : "expired");
+    [
+      link(a.generatorURL, "Permalink"),
+      table(
+        Object.entries(a.labels).sort((a, b) => a[0].localeCompare(b[0])),
+        ["Label", x => x[0]],
+        ["Value", x => x[1]]
+      ),
+      [["Started", "startsAt"], ["Ended", "endsAt"]].map(([name, property]) => {
+        const time = a[property];
+        if (time) {
+          const [ago, exact] = formatTimeBin(time);
+          const timeInfo = document.createElement("P");
+          timeInfo.innerText = `${name} ${ago}`;
+          timeInfo.title = exact;
+          return timeInfo;
+        } else {
+          return blank();
+        }
+      }),
+      objectTable(a.annotations, "Annotations", x => x)
+    ]
+      .flat(Number.MAX_VALUE)
+      .forEach(element => container.appendChild(element));
+  };
+  const showAlertGroup = (container, alerts, usedLabels, addFilter) => {
+    clearChildren(container);
+    const count = document.createElement("P");
+    container.appendChild(count);
+    if (alerts.length == 0) {
+      count.innerText = "No matching alerts.";
+      return;
+    }
+    count.innerText =
+      alerts.length == 1 ? "Found 1 alert." : `Found ${alerts.length} alerts.`;
+    const commonLabels = { ...alerts[0].labels };
+    usedLabels.forEach(label => delete commonLabels[label]);
+    alerts.forEach(a => {
+      for (const [label, value] of Object.entries(a.labels)) {
+        if (commonLabels[label] != value) {
+          delete commonLabels[label];
+        }
+      }
+    });
+    const flex = document.createElement("DIV");
+    flex.style.display = "flex";
+    container.appendChild(flex);
+    const table = document.createElement("TABLE");
+    flex.appendChild(table);
+    if (Object.keys(commonLabels).length) {
+      for (const [label, value] of Object.entries(commonLabels)) {
+        const row = document.createElement("TR");
+        const header = document.createElement("TD");
+        header.innerText = label;
+        const labelValue = document.createElement("TD");
+        labelValue.colSpan = 2;
+        labelValue.innerText = value;
+        row.appendChild(header);
+        row.appendChild(labelValue);
+        table.appendChild(row);
+      }
+    }
+
+    const uselessLabels = Object.keys(commonLabels).concat(usedLabels);
+    if (alerts.length > 10) {
+      const breakdown = new Map();
+      for (const a of alerts) {
+        for (const [name, value] of Object.entries(a.labels)) {
+          if (!uselessLabels.includes(name)) {
+            if (!breakdown.has(name)) {
+              breakdown.set(name, { total: 0, values: new Map() });
+            }
+            const counts = breakdown.get(name);
+            counts.total++;
+            counts.values.set(value, (counts.values.get(value) || 0) + 1);
+          }
+        }
+      }
+
+      const bestBreakdown = [...breakdown.entries()]
+        .sort((a, b) => b[1].total - a[1].total)
+        .filter(
+          x =>
+            x[1].total > 1 &&
+            [...x[1].values.values()].some(c => c > 1 && c > x[1].total * 0.1)
+        );
+      bestBreakdown.length = Math.min(bestBreakdown.length, 10);
+      if (bestBreakdown.length) {
+        let activeBreakdown = null;
+        for (const [label, { total, values }] of bestBreakdown) {
+          const row = document.createElement("TR");
+          row.style.cursor = "pointer";
+          const header = document.createElement("TD");
+          row.appendChild(header);
+          header.appendChild(document.createTextNode(label));
+          const labelCount = document.createElement("TD");
+          labelCount.innerText = `${total} (${(
+            total /
+            alerts.length *
+            100
+          ).toFixed(2)}%)`;
+          row.appendChild(labelCount);
+          const more = document.createElement("TD");
+          more.innerText = "Details ▶";
+          row.appendChild(more);
+          table.appendChild(row);
+          row.addEventListener("click", e => {
+            while (flex.childElementCount > 1) {
+              flex.removeChild(flex.lastElementChild);
+            }
+            if (activeBreakdown == row) {
+              row.style.backgroundColor = "inherit";
+              activeBreakdown = null;
+              return;
+            }
+            if (activeBreakdown) {
+              activeBreakdown.style.backgroundColor = "inherit";
+            }
+            row.style.backgroundColor = "#D1EFED";
+            activeBreakdown = row;
+            const table = document.createElement("TABLE");
+            flex.appendChild(table);
+            const header = document.createElement("TR");
+            table.appendChild(header);
+            const labelCell = document.createElement("TH");
+            labelCell.colSpan = 2;
+            header.appendChild(labelCell);
+            labelCell.appendChild(
+              button(
+                "🏷️ Has Label",
+                "Show alerts that have this label with any value.",
+                () => addFilter({ label: label, value: null, type: "has" })
+              )
+            );
+            labelCell.appendChild(document.createTextNode(label));
+            for (const [value, count] of values) {
+              const row = document.createElement("TR");
+              const valueCell = document.createElement("TD");
+              valueCell.appendChild(
+                button("=", "Show alerts that match this value.", () =>
+                  addFilter({ label: label, value: value, type: "eq" })
+                )
+              );
+              valueCell.appendChild(
+                button("≠", "Hide alerts that match this value.", () =>
+                  addFilter({ label: label, value: value, type: "ne" })
+                )
+              );
+              row.appendChild(valueCell);
+              valueCell.appendChild(
+                document.createTextNode(value ? value : "<blank>")
+              );
+              const countCell = document.createElement("TD");
+              countCell.innerText = `${count} (${(count / total * 100).toFixed(
+                2
+              )}%)`;
+              row.appendChild(countCell);
+              table.appendChild(row);
+            }
+          });
+        }
+      }
+    }
+
+    const total = document.createElement("P");
+    const liveCount = alerts.filter(a => a.live).length;
+    if (liveCount == 0) {
+      total.innerText = `💤 ${alerts.length} expired alerts`;
+    }
+    if (liveCount == alerts.length) {
+      total.innerText = `🔔 ${alerts.length} firing alerts`;
+    } else {
+      total.innerText = `${
+        alerts.length
+      } alerts 🔔 ${liveCount} firing 💤 ${alerts.length - liveCount} expired`;
+    }
+    container.appendChild(total);
+
+    const pageList = document.createElement("DIV");
+    container.appendChild(pageList);
+    const numPerPage = 10;
+    const numButtons = Math.ceil(alerts.length / numPerPage);
+    const drawPager = current => {
+      clearChildren(pageList);
+      const pager = document.createElement("DIV");
+      const alertList = document.createElement("DIV");
+      pageList.appendChild(pager);
+      pageList.appendChild(alertList);
+
+      let rendering = true;
+      for (let i = 0; i < numButtons; i++) {
+        if (
+          i <= 2 ||
+          i >= numButtons - 2 ||
+          (i >= current - 2 && i <= current + 2)
+        ) {
+          rendering = true;
+          const page = document.createElement("SPAN");
+          const index = i;
+          page.innerText = `${index + 1}`;
+          if (index != current) {
+            page.className = "load accessory";
+            page.addEventListener("click", () => drawPager(index));
+          }
+          pager.appendChild(page);
+        } else if (rendering) {
+          const ellipsis = document.createElement("SPAN");
+          ellipsis.innerText = "...";
+          pager.appendChild(ellipsis);
+          rendering = false;
+        }
+      }
+      clearChildren(alertList);
+      alerts
+        .slice(current * numPerPage, (current + 1) * numPerPage)
+        .forEach(a => {
+          const alertTile = document.createElement("DIV");
+          alertTile.className = "alert";
+          drawAlert(a, alertTile);
+          alertList.appendChild(alertTile);
+        });
+    };
+    drawPager(0);
+  };
+  if (location.hash) {
+    const selectedAlert = alerts.filter(a =>
+      a.generatorURL.endsWith(location.hash)
+    );
+    if (selectedAlert) {
+      output.className = "alert";
+      drawAlert(selectedAlert[0], output);
+    } else {
+      output.innerText = "Unknown alert.";
+    }
+  } else if (alerts.length) {
+    let userFilters = [];
+    try {
+      for (const { label, value, type } of JSON.parse(initialFilterString)) {
+        switch (type) {
+          case "live":
+          case "has":
+          case "eq":
+          case "ne":
+            userFilters.push({ label: label, value: value, type: type });
+            break;
+
+          case "has-regex":
+            userFilters.push({
+              label: new RegExp(label.substring(1, label.length - 1)),
+              value: value,
+              type: type
+            });
+            break;
+          case "regex":
+            userFilters.push({
+              label: label,
+              value: new RegExp(value.substring(1, value.length - 1)),
+              type: type
+            });
+            break;
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    const filterbar = document.createElement("SPAN");
+    const toolbar = document.createElement("P");
+    const results = document.createElement("DIV");
+    output.appendChild(toolbar);
+    output.appendChild(results);
+    if (userFilters.length == 0 && alerts.some(a => a.live)) {
+      userFilters.push({ type: "live", value: true, label: null });
+    }
+    const renderAlerts = () => {
+      clearChildren(filterbar);
+      let userFilterdAlerts = alerts;
+      const uselessLabels = [];
+      for (const { label, value, type } of userFilters) {
+        const filterTile = document.createElement("SPAN");
+        filterbar.appendChild(filterTile);
+        const labelSpan = document.createElement("SPAN");
+        labelSpan.className = "load";
+        switch (type) {
+          case "live":
+            labelSpan.innerText = value ? "🔔 Firing" : "💤 Expired";
+            userFilterdAlerts = userFilterdAlerts.filter(a => a.live == value);
+            break;
+
+          case "has":
+            labelSpan.innerText = `🏷️ ${label}`;
+            userFilterdAlerts = userFilterdAlerts.filter(a =>
+              a.labels.hasOwnProperty(label)
+            );
+            break;
+          case "has-regex":
+            labelSpan.innerText = `🏷️ ~ ${label}`;
+            userFilterdAlerts = userFilterdAlerts.filter(a =>
+              Object.keys(a.labels).some(l => label.test(l))
+            );
+            break;
+          case "eq":
+            labelSpan.innerText = `${label} = ${value || "<blank>"}`;
+            userFilterdAlerts = userFilterdAlerts.filter(
+              a => a.labels[label] == value
+            );
+            uselessLabels.push(label);
+            break;
+
+          case "ne":
+            labelSpan.innerText = `${label} ≠ ${value || "<blank>"}`;
+            userFilterdAlerts = userFilterdAlerts.filter(
+              a => a.labels[label] != value
+            );
+            break;
+
+          case "regex":
+            labelSpan.innerText = `${label} ~ ${value}`;
+            userFilterdAlerts = userFilterdAlerts.filter(a =>
+              value.test(a.labels[label])
+            );
+            break;
+        }
+        labelSpan.appendChild(
+          closeButton("Remove filter.", () => {
+            userFilters = userFilters.filter(
+              x => x.label != label && x.value != value && x.type != type
+            );
+            renderAlerts();
+          })
+        );
+        filterTile.appendChild(labelSpan);
+      }
+      window.history.pushState(
+        userFilters,
+        "",
+        `alerts?filters=${encodeURIComponent(JSON.stringify(userFilters))}`
+      );
+
+      showAlertGroup(results, userFilterdAlerts, uselessLabels, f => {
+        userFilters.push(f);
+        renderAlerts();
+      });
+    };
+    window.addEventListener("popstate", e => {
+      if (e.state) {
+        userFilters = e.state;
+        renderAlerts();
+      }
+    });
+
+    toolbar.appendChild(
+      button(
+        "➕ Add Filter",
+        "Add a filter to limit the alerts displayed.",
+        () => {
+          const [dialog, close] = makePopup(true);
+          dialog.appendChild(
+            button("🔔 Firing", "Currently firing alerts.", () => {
+              close();
+              userFilters = userFilters.filter(x => x.type != "live");
+              userFilters.push({ type: "live", value: true, label: null });
+              renderAlerts();
+            })
+          );
+          dialog.appendChild(
+            button("💤 Expired", "Not currently firing alerts.", () => {
+              close();
+              userFilters = userFilters.filter(x => x.type != "live");
+              userFilters.push({ type: "live", value: false, label: null });
+              renderAlerts();
+            })
+          );
+          for (const { type, name, tooltip, processor } of [
+            {
+              type: "has",
+              name: "🏷️ Has Label",
+              tooltip: "Find actions a labels.",
+              processor: x => x
+            },
+            {
+              type: "has-regex",
+              name: "*️⃣  Label Name Matches Regular Expression",
+              tooltip:
+                "Find actions with label names that match a regular expression.",
+              processor: x => new RegExp(x)
+            }
+          ]) {
+            dialog.appendChild(
+              button(name, tooltip, () => {
+                clearChildren(dialog);
+                dialog.appendChild(document.createTextNode("Label: "));
+                const label = document.createElement("INPUT");
+                label.type = "text";
+                dialog.appendChild(label);
+                dialog.appendChild(document.createElement("BR"));
+                dialog.appendChild(
+                  button("Add", "Add alert filter.", () => {
+                    if (label.value.trim() && value.value.trim()) {
+                      close();
+                      userFilters.push({
+                        type: type,
+                        label: processor(value.value.trim()),
+                        value: null
+                      });
+                      renderAlerts();
+                    }
+                  })
+                );
+              })
+            );
+          }
+          for (const { type, name, tooltip, processor } of [
+            {
+              type: "eq",
+              name: "= Value Matches Text",
+              tooltip:
+                "Find actions with labels that match a particular value.",
+              processor: x => x
+            },
+            {
+              type: "ne",
+              name: "≠ Value Does Not Match Text",
+              tooltip:
+                "Find actions with labels that do not match a particular value.",
+              processor: x => x
+            },
+            {
+              type: "regex",
+              name: "*️⃣  Value Matches Regular Expression",
+              tooltip:
+                "Find actions with a label value that match a regular expression.",
+              processor: x => new RegExp(x)
+            }
+          ]) {
+            dialog.appendChild(
+              button(name, tooltip, () => {
+                clearChildren(dialog);
+                dialog.appendChild(document.createTextNode("Label: "));
+                const label = document.createElement("INPUT");
+                label.type = "text";
+                dialog.appendChild(label);
+                dialog.appendChild(document.createElement("BR"));
+                dialog.appendChild(document.createTextNode("Value: "));
+                const value = document.createElement("INPUT");
+                value.type = "text";
+                dialog.appendChild(value);
+                dialog.appendChild(document.createElement("BR"));
+                dialog.appendChild(
+                  button("Add", "Add alert filter.", () => {
+                    if (label.value.trim() && value.value.trim()) {
+                      close();
+                      userFilters.push({
+                        type: type,
+                        value: processor(value.value.trim()),
+                        label: label.value.trim()
+                      });
+                      renderAlerts();
+                    }
+                  })
+                );
+              })
+            );
+          }
+        }
+      )
+    );
+    toolbar.appendChild(filterbar);
+
+    renderAlerts();
+  } else {
+    output.innerText = "No alerts produced by this server.";
+  }
 }
