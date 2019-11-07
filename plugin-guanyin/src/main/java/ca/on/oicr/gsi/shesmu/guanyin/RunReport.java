@@ -233,6 +233,7 @@ public class RunReport extends JsonParameterisedAction {
             "external_id",
             String.format(
                 "%s/reportdb/record/%d", owner.get().观音Url(), reportRecordId.getAsLong()));
+        labels.put("type", reportName);
         cromwellId =
             wfApi.submit(
                 "v1",
