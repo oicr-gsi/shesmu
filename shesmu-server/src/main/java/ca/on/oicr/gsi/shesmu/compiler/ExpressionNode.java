@@ -315,6 +315,49 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
+    OUTER.addKeyword(
+        "Begin",
+        (p, o) -> {
+          final AtomicReference<List<Pair<DestructuredArgumentNode, ExpressionNode>>> definitions =
+              new AtomicReference<>();
+          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .list(
+                      definitions::set,
+                      (defp, defo) -> {
+                        final AtomicReference<DestructuredArgumentNode> name =
+                            new AtomicReference<>();
+                        final AtomicReference<ExpressionNode> expr = new AtomicReference<>();
+                        final Parser defResult =
+                            defp.whitespace()
+                                .then(DestructuredArgumentNode::parse, name::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .then(ExpressionNode::parse, expr::set)
+                                .whitespace()
+                                .symbol(";")
+                                .whitespace();
+                        if (defResult.isGood()) {
+                          defo.accept(new Pair<>(name.get(), expr.get()));
+                        }
+                        return defResult;
+                      })
+                  .whitespace()
+                  .keyword("Return")
+                  .whitespace()
+                  .then(ExpressionNode::parse0, expression::set)
+                  .symbol(";")
+                  .whitespace()
+                  .keyword("End")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                new ExpressionNodeBlock(p.line(), p.column(), definitions.get(), expression.get()));
+          }
+          return result;
+        });
     OUTER.addRaw("expression", ExpressionNode::parse1);
     LOGICAL_DISJUNCTION.addSymbol(
         "||",
