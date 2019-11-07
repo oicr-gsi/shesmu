@@ -285,6 +285,7 @@ public final class WorkflowAction extends Action {
       } catch (Exception e) {
         // Suppress all the batshit crazy errors this thing can throw
         e.printStackTrace();
+        this.errors = Collections.singletonList(e.getMessage());
         success = false;
       }
 
@@ -297,7 +298,6 @@ public final class WorkflowAction extends Action {
       return lastState;
     } catch (final Exception e) {
       e.printStackTrace();
-      // This might leak in-flight locks, but that's safe
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
