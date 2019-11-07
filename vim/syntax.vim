@@ -20,6 +20,7 @@ syn keyword shesmuKeyword Annotations
 syn keyword shesmuKeyword Any
 syn keyword shesmuKeyword Argument
 syn keyword shesmuKeyword As
+syn keyword shesmuKeyword Begin
 syn keyword shesmuKeyword By
 syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
@@ -28,6 +29,7 @@ syn keyword shesmuKeyword Description
 syn keyword shesmuKeyword Distinct
 syn keyword shesmuKeyword Dump
 syn keyword shesmuKeyword Else
+syn keyword shesmuKeyword End
 syn keyword shesmuKeyword EpochMilli
 syn keyword shesmuKeyword EpochSecond
 syn keyword shesmuKeyword Export

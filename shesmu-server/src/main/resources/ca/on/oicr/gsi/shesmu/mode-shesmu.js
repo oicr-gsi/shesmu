@@ -20,7 +20,7 @@ ace.define(
       var keywordMapper = (this.$keywords = this.createKeywordMapper(
         {
           "keyword.control":
-            "Alert|All|Annotations|Any|Argument|As|By|Count|Default|Define|Description|Distinct|Dump|Else|EpochMilli|EpochSecond|Export|First|Fixed|FixedConcat|Flatten|For|Function|From|Group|If|In|Into|Input|Join|Labels|LeftJoin|Let|LexicalConcat|Limit|List|Max|Min|Monitor|None|Olive|OnlyIf|PartitionCount|Pick|Reduce|Reject|Return|Reverse|Run|Univalued|Skip|Sort|Splitting|Squish|Subsample|Switch|Tag|Then|Timeout|To|TypeAlias|Using|When|Where|While|With|Zipping",
+            "Alert|All|Annotations|Any|Argument|As|Begin|By|Count|Default|Define|Description|Distinct|Dump|Else|End|EpochMilli|EpochSecond|Export|First|Fixed|FixedConcat|Flatten|For|Function|From|Group|If|In|Into|Input|Join|Labels|LeftJoin|Let|LexicalConcat|Limit|List|Max|Min|Monitor|None|Olive|OnlyIf|PartitionCount|Pick|Reduce|Reject|Return|Reverse|Run|Univalued|Skip|Sort|Splitting|Squish|Subsample|Switch|Tag|Then|Timeout|To|TypeAlias|Using|When|Where|While|With|Zipping",
           "storage.type": "boolean|date|float|integer|json|path|string",
           "keyword.operator": "`|~|:|<=?|>=?|==|\\|\\||-|!=?|/|\\*|&&",
           "constant.language":

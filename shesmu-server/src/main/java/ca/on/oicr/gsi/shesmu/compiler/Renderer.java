@@ -93,6 +93,11 @@ public class Renderer {
     loadables.put(name, value);
   }
 
+  public Renderer duplicate() {
+    return new Renderer(
+        root(), methodGen, streamArg, streamType, loadables.values().stream(), signerEmitter);
+  }
+
   /** Find a known variable by name and load it on the stack. */
   public void emitNamed(String name) {
     loadables.get(name).accept(this);

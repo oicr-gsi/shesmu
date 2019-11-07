@@ -654,7 +654,7 @@ And it can be used in the `Reduce` accumulator:
 
     For x In [1, 2, 3]: Reduce ({a, b} = {0, False}) {a + x, b || x == 2}
 
-It can be used in `Let` and `Flatten` in `For` expressions.
+It can be used in `Begin` expressions and in `Let` and `Flatten` in `For` expressions.
 
 It can also be used in `Let`, `Monitor`, `Run`, and `Alert` clauses in olives:
 
@@ -771,6 +771,18 @@ will produce:
 |---     |---        |---           |
 | `"a"`  | `` `1` `` | `` `True` `` |
 | `"b"`  | `` `2` `` | `` ` ` ``    |
+
+### Blocks
+- `Begin`  
+ _name0_ `=` _expr0_`;`  
+ [ _name1_ `=` _expr1_`;`]  
+ [...]  
+ `Return` _expr_`;`  
+ `End`
+
+Creates local variables in _name0_ by evaluating _expr1_. These variables are
+then accessible in `_expr1_` and so on. Finally _expr_ is evaluated with all
+the defined names and its result is used. The names can use destructuring.
 
 ### Optional Coalescence
 - _expr_ `Default` _default_

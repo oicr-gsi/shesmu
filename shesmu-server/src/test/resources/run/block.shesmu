@@ -1,0 +1,8 @@
+Input test;
+
+Olive Run ok With ok =
+  Begin
+    {x, _} = {1, "hi"};
+    y = x + 1;
+    Return y == 2;
+  End;
