@@ -14,40 +14,41 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class StringNodeGangName extends StringNode {
-  private class BadElement extends Element {
+  private enum ElementType {
+    STRING {
+      @Override
+      void check(GeneratorAdapter methodGen, Label skip) {
+        methodGen.invokeVirtual(A_STRING_TYPE, STRING__IS_EMPTY);
+        methodGen.ifZCmp(GeneratorAdapter.NE, skip);
+      }
 
-    private BadElement(Target source, boolean dropIfDefault) {
-      super(source, dropIfDefault);
-    }
+      @Override
+      boolean isGood(Consumer<String> errorHandler) {
+        return true;
+      }
 
-    @Override
-    void check(GeneratorAdapter methodGen, Label skip) {
-      throw new UnsupportedOperationException();
-    }
+      @Override
+      void render(GeneratorAdapter methodGen) {
+        methodGen.invokeVirtual(A_STRING_BUILDER_TYPE, STRING_BUILDER__APPEND_STRING);
+      }
+    },
+    INT {
 
-    @Override
-    boolean isGood(Consumer<String> errorHandler) {
-      errorHandler.accept(
-          String.format(
-              "%d:%d: Variable %s in gang %s cannot be converted to string.",
-              line, column, source.name(), definition.name()));
-      return false;
-    }
+      @Override
+      void check(GeneratorAdapter methodGen, Label skip) {
+        methodGen.ifCmp(Type.LONG_TYPE, GeneratorAdapter.EQ, skip);
+      }
 
-    @Override
-    void render(GeneratorAdapter methodGen) {
-      throw new UnsupportedOperationException();
-    }
-  }
+      @Override
+      boolean isGood(Consumer<String> errorHandler) {
+        return true;
+      }
 
-  private abstract static class Element {
-    protected final boolean dropIfDefault;
-    protected final Target source;
-
-    private Element(Target source, boolean dropIfDefault) {
-      this.source = source;
-      this.dropIfDefault = dropIfDefault;
-    }
+      @Override
+      void render(GeneratorAdapter methodGen) {
+        methodGen.invokeVirtual(A_STRING_BUILDER_TYPE, STRING_BUILDER__APPEND_LONG);
+      }
+    };
 
     abstract void check(GeneratorAdapter methodGen, Label skip);
 
@@ -56,48 +57,38 @@ public class StringNodeGangName extends StringNode {
     abstract void render(GeneratorAdapter methodGen);
   }
 
-  private class IntElement extends Element {
+  private final class Element {
+    final boolean dropIfDefault;
+    private final Imyhat expectedType;
+    final Target source;
+    ElementType type;
 
-    private IntElement(Target source, boolean dropIfDefault) {
-      super(source, dropIfDefault);
+    private Element(Target source, Imyhat expectedType, boolean dropIfDefault) {
+      this.source = source;
+      this.expectedType = expectedType;
+      this.dropIfDefault = dropIfDefault;
     }
 
-    @Override
-    void check(GeneratorAdapter methodGen, Label skip) {
-      methodGen.ifCmp(Type.LONG_TYPE, GeneratorAdapter.EQ, skip);
-    }
-
-    @Override
-    boolean isGood(Consumer<String> errorHandler) {
-      return true;
-    }
-
-    @Override
-    void render(GeneratorAdapter methodGen) {
-      methodGen.invokeVirtual(A_STRING_BUILDER_TYPE, STRING_BUILDER__APPEND_LONG);
-    }
-  }
-
-  private class StringElement extends Element {
-
-    private StringElement(Target source, boolean dropIfDefault) {
-      super(source, dropIfDefault);
-    }
-
-    @Override
-    void check(GeneratorAdapter methodGen, Label skip) {
-      methodGen.invokeVirtual(A_STRING_TYPE, STRING__IS_EMPTY);
-      methodGen.ifZCmp(GeneratorAdapter.NE, skip);
-    }
-
-    @Override
-    boolean isGood(Consumer<String> errorHandler) {
-      return true;
-    }
-
-    @Override
-    void render(GeneratorAdapter methodGen) {
-      methodGen.invokeVirtual(A_STRING_BUILDER_TYPE, STRING_BUILDER__APPEND_STRING);
+    public boolean typeCheck(Consumer<String> errorHandler) {
+      if (!expectedType.isSame(source.type())) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Gang variable %s should have type %s but got %s.",
+                line, column, source.name(), expectedType.name(), source.type().name()));
+      }
+      if (source.type().isSame(Imyhat.STRING)) {
+        type = ElementType.STRING;
+        return true;
+      } else if (source.type().isSame(Imyhat.INTEGER)) {
+        type = ElementType.INT;
+        return true;
+      } else {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Variable %s in gang %s has type %s which cannot be converted to string.",
+                line, column, source.name(), definition.name(), source.type().name()));
+        return false;
+      }
     }
   }
 
@@ -147,13 +138,13 @@ public class StringNodeGangName extends StringNode {
       if (element.dropIfDefault) {
         final Label skip = renderer.methodGen().newLabel();
         renderer.loadTarget(element.source);
-        element.check(renderer.methodGen(), skip);
+        element.type.check(renderer.methodGen(), skip);
         if (underscore) {
           renderer.methodGen().push("_");
           renderer.methodGen().invokeVirtual(A_STRING_BUILDER_TYPE, STRING_BUILDER__APPEND_STRING);
         }
         renderer.loadTarget(element.source);
-        element.render(renderer.methodGen());
+        element.type.render(renderer.methodGen());
         renderer.methodGen().mark(skip);
       } else {
         if (underscore) {
@@ -161,7 +152,7 @@ public class StringNodeGangName extends StringNode {
           renderer.methodGen().invokeVirtual(A_STRING_BUILDER_TYPE, STRING_BUILDER__APPEND_STRING);
         }
         renderer.loadTarget(element.source);
-        element.render(renderer.methodGen());
+        element.type.render(renderer.methodGen());
       }
       underscore = true;
     }
@@ -170,21 +161,7 @@ public class StringNodeGangName extends StringNode {
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     final Optional<List<Element>> result =
-        TypeUtils.matchGang(
-            line,
-            column,
-            defs,
-            definition,
-            (target, dropIfDefault) -> {
-              if (target.type().isSame(Imyhat.STRING)) {
-                return new StringElement(target, dropIfDefault);
-              }
-              if (target.type().isSame(Imyhat.INTEGER)) {
-                return new IntElement(target, dropIfDefault);
-              }
-              return new BadElement(target, dropIfDefault);
-            },
-            errorHandler);
+        TypeUtils.matchGang(line, column, defs, definition, Element::new, errorHandler);
     result.ifPresent(x -> elements = x);
     return result.isPresent();
   }
@@ -215,7 +192,7 @@ public class StringNodeGangName extends StringNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = true;
     for (final Element element : elements) {
-      ok &= element.isGood(errorHandler);
+      ok &= element.typeCheck(errorHandler);
     }
     return ok;
   }

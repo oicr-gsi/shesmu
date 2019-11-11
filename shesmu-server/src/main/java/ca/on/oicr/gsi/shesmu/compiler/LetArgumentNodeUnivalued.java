@@ -10,7 +10,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-public final class LetArgumentNodeUnivalued extends LetArgumentNode {
+public final class LetArgumentNodeUnivalued extends LetArgumentNodeBaseExpression {
   private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);

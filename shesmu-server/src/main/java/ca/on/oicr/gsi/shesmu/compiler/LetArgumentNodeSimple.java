@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
 
-public final class LetArgumentNodeSimple extends LetArgumentNode {
+public final class LetArgumentNodeSimple extends LetArgumentNodeBaseExpression {
   public LetArgumentNodeSimple(DestructuredArgumentNode name, ExpressionNode expression) {
     super(name, expression);
   }

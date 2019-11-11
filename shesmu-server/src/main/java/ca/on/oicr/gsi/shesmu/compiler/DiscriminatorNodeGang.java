@@ -14,9 +14,11 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
 
   private class GroupElement implements DefinedTarget, Consumer<Renderer> {
     private final Target source;
+    private final Imyhat expectedType;
 
-    private GroupElement(Target source, boolean dropIfDefault) {
+    private GroupElement(Target source, Imyhat expectedType, boolean dropIfDefault) {
       this.source = source;
+      this.expectedType = expectedType;
     }
 
     @Override
@@ -42,6 +44,17 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
     @Override
     public String name() {
       return source.name();
+    }
+
+    public boolean typeCheck(Consumer<String> errorHandler) {
+      if (expectedType.isSame(source.type())) {
+        return true;
+      }
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Variable %s in gang should have type %s but got %s.",
+              line, column, source.name(), expectedType.name(), source.type()));
+      return false;
     }
 
     @Override
@@ -131,6 +144,7 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return true;
+    return outputTargets.stream().filter(e -> e.typeCheck(errorHandler)).count()
+        == outputTargets.size();
   }
 }

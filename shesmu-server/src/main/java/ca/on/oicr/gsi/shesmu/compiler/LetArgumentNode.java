@@ -1,9 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
-
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,6 +12,16 @@ import java.util.stream.Stream;
 
 public abstract class LetArgumentNode {
   public static Parser parse(Parser input, Consumer<LetArgumentNode> output) {
+    final Parser gangParser = input.whitespace().symbol("@");
+    if (gangParser.isGood()) {
+      final AtomicReference<String> name = new AtomicReference<>();
+      final Parser gangResult = gangParser.whitespace().identifier(name::set).whitespace();
+      if (gangResult.isGood()) {
+        output.accept(new LetArgumentNodeGang(input.line(), input.column(), name.get()));
+      }
+      return gangResult;
+    }
+
     final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
     final AtomicReference<BiFunction<DestructuredArgumentNode, ExpressionNode, LetArgumentNode>>
         unwrap = new AtomicReference<>();
@@ -52,70 +59,23 @@ public abstract class LetArgumentNode {
   }
 
   private static final Pattern UNWRAP = Pattern.compile("(OnlyIf|Univalued|)");
-  private final ExpressionNode expression;
-  private final DestructuredArgumentNode name;
 
-  public LetArgumentNode(DestructuredArgumentNode name, ExpressionNode expression) {
-    super();
-    this.name = name;
-    this.expression = expression;
-    name.setFlavour(Target.Flavour.STREAM);
-  }
+  public abstract boolean blankCheck(Consumer<String> errorHandler);
 
-  public final boolean blankCheck(Consumer<String> errorHandler) {
-    if (name.isBlank()) {
-      errorHandler.accept(
-          String.format(
-              "%d:%d: Assignment in Let discards value.", expression.line(), expression.column()));
-      return false;
-    }
-    return true;
-  }
+  public abstract void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate);
 
-  public final void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    expression.collectFreeVariables(names, predicate);
-  }
-
-  public final void collectPlugins(Set<Path> pluginFileNames) {
-    expression.collectPlugins(pluginFileNames);
-  }
+  public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public abstract boolean filters();
 
-  protected abstract Consumer<Renderer> render(
-      LetBuilder let, Imyhat type, Consumer<Renderer> loadLocal);
+  public abstract void render(LetBuilder let);
 
-  public final void render(LetBuilder let) {
-    final Consumer<Renderer> loadLocal =
-        let.createLocal(expression.type().apply(TO_ASM), expression::render);
-    name.render(render(let, expression.type(), loadLocal))
-        .forEach(value -> let.add(value.type(), value.name(), value));
-  }
+  public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
-  public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    return expression.resolve(defs, errorHandler);
-  }
+  public abstract boolean resolveFunctions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
-  public final boolean resolveFunctions(
-      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
-  }
+  public abstract Stream<Target> targets();
 
-  public final Stream<Target> targets() {
-    return name.targets();
-  }
-
-  protected abstract boolean typeCheck(
-      int line,
-      int column,
-      Imyhat type,
-      DestructuredArgumentNode name,
-      Consumer<String> errorHandler);
-
-  public final boolean typeCheck(Consumer<String> errorHandler) {
-    if (!expression.typeCheck(errorHandler)) {
-      return false;
-    }
-    return typeCheck(expression.line(), expression.column(), expression.type(), name, errorHandler);
-  }
+  public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

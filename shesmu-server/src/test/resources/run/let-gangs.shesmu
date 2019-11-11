@@ -1,0 +1,6 @@
+Input test;
+
+Olive
+ Let @useful_stuff
+ Group By @useful_stuff Into a = Count
+ Run ok With ok = a == 1;
