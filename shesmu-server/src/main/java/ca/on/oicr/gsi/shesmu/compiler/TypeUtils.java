@@ -14,19 +14,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
 public class TypeUtils {
+  public interface GangProcessor<T> {
+    T apply(Target input, Imyhat expectedType, boolean dropIfEmpty);
+  }
+
   public static <T> Optional<List<T>> matchGang(
       int line,
       int column,
       NameDefinitions defs,
       GangDefinition definition,
-      BiFunction<Target, Boolean, ? extends T> constructor,
+      GangProcessor<? extends T> constructor,
       Consumer<String> errorHandler) {
     final AtomicBoolean ok = new AtomicBoolean(true);
     final List<T> result =
@@ -51,19 +54,7 @@ public class TypeUtils {
                             line, column, p.name(), definition.name()));
                     return Stream.empty();
                   }
-                  if (!source.get().type().isSame(p.type())) {
-                    errorHandler.accept(
-                        String.format(
-                            "%d:%d: Variable ”%s” from gang “%s” should have type %s, but got %s. The stream has been manipulated.",
-                            line,
-                            column,
-                            p.name(),
-                            definition.name(),
-                            p.type().name(),
-                            source.get().type().name()));
-                    return Stream.empty();
-                  }
-                  return Stream.of(constructor.apply(source.get(), p.dropIfDefault()));
+                  return Stream.of(constructor.apply(source.get(), p.type(), p.dropIfDefault()));
                 })
             .collect(Collectors.toList());
     return ok.get() ? Optional.of(result) : Optional.empty();

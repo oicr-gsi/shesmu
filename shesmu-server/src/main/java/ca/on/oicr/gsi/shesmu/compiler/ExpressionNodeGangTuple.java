@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -20,7 +21,7 @@ public class ExpressionNodeGangTuple extends ExpressionNode {
   private static final Method TUPLE__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
   private GangDefinition definition;
-  private List<Target> elements;
+  private List<Pair<Target, Imyhat>> elements;
   private final String name;
   private Imyhat type = Imyhat.BAD;
 
@@ -31,9 +32,9 @@ public class ExpressionNodeGangTuple extends ExpressionNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final Target element : elements) {
-      if (predicate.test(element.flavour())) {
-        names.add(element.name());
+    for (final Pair<Target, Imyhat> element : elements) {
+      if (predicate.test(element.first().flavour())) {
+        names.add(element.first().name());
       }
     }
   }
@@ -52,8 +53,8 @@ public class ExpressionNodeGangTuple extends ExpressionNode {
     for (int i = 0; i < elements.size(); i++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(i);
-      renderer.loadTarget(elements.get(i));
-      renderer.methodGen().valueOf(elements.get(i).type().apply(TO_ASM));
+      renderer.loadTarget(elements.get(i).first());
+      renderer.methodGen().valueOf(elements.get(i).first().type().apply(TO_ASM));
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
     renderer.methodGen().invokeConstructor(A_TUPLE_TYPE, TUPLE__CTOR);
@@ -61,9 +62,14 @@ public class ExpressionNodeGangTuple extends ExpressionNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<List<Target>> result =
+    final Optional<List<Pair<Target, Imyhat>>> result =
         TypeUtils.matchGang(
-            line(), column(), defs, definition, (target, dropIfDefault) -> target, errorHandler);
+            line(),
+            column(),
+            defs,
+            definition,
+            (target, expectedType, dropIfDefault) -> new Pair<>(target, expectedType),
+            errorHandler);
     result.ifPresent(x -> elements = x);
     return result.isPresent();
   }
@@ -92,7 +98,25 @@ public class ExpressionNodeGangTuple extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    type = Imyhat.tuple(elements.stream().map(Target::type).toArray(Imyhat[]::new));
-    return true;
+    type = Imyhat.tuple(elements.stream().map(e -> e.first().type()).toArray(Imyhat[]::new));
+    return elements
+            .stream()
+            .filter(
+                p -> {
+                  if (p.first().type().isSame(p.second())) {
+                    return true;
+                  }
+                  errorHandler.accept(
+                      String.format(
+                          "%d:%d: Gang variable %s should have type %s but got %s.",
+                          line(),
+                          column(),
+                          p.first().name(),
+                          p.second().name(),
+                          p.first().type().name()));
+                  return false;
+                })
+            .count()
+        == elements.size();
   }
 }

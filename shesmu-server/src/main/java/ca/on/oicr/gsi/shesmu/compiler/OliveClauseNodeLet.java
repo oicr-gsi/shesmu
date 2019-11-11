@@ -107,9 +107,28 @@ public class OliveClauseNodeLet extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    final boolean good =
+    boolean good =
         arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
             == arguments.size();
+    final Map<String, Long> nameCounts =
+        arguments
+            .stream()
+            .flatMap(LetArgumentNode::targets)
+            .map(Target::name)
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    for (final Map.Entry<String, Long> nameCount : nameCounts.entrySet()) {
+      if (nameCount.getValue() == 1) {
+        continue;
+      }
+      good = false;
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Duplicate variable %s in “Let” clause", line, column, nameCount.getKey()));
+    }
+
+    for (final LetArgumentNode arg : arguments) {
+      good &= arg.blankCheck(errorHandler);
+    }
     return defs.replaceStream(arguments.stream().flatMap(LetArgumentNode::targets), good);
   }
 
@@ -122,25 +141,6 @@ public class OliveClauseNodeLet extends OliveClauseNode {
                 .filter(argument -> argument.resolveFunctions(oliveCompilerServices, errorHandler))
                 .count()
             == arguments.size();
-    final Map<String, Long> nameCounts =
-        arguments
-            .stream()
-            .flatMap(LetArgumentNode::targets)
-            .map(Target::name)
-            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    for (final Map.Entry<String, Long> nameCount : nameCounts.entrySet()) {
-      if (nameCount.getValue() == 1) {
-        continue;
-      }
-      ok = false;
-      errorHandler.accept(
-          String.format(
-              "%d:%d: Duplicate variable %s in “Let” clause", line, column, nameCount.getKey()));
-    }
-
-    for (final LetArgumentNode arg : arguments) {
-      ok &= arg.blankCheck(errorHandler);
-    }
 
     return ok;
   }

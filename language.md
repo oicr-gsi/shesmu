@@ -691,10 +691,19 @@ The gang can then be used in the `By` of either a `Group` or `Pick` operation:
         paths = paths;
 
 The gang, in this case, `patient_tissue_prep` defines a number of fields that
-can be grouped together in `By` clause, prefixed with an `@`. The gang can
-also be converted to an underscore delimited string:
+can be grouped together in `By` clause, prefixed with an `@`.
+
+A gang can also be converted to an underscore delimited string:
 `"{@patient_tissue_prep}"`; the order of fields is defined by the input format.
-Additionally, the gang can be converted to a tuple `{@patient_tissue_prep}`.
+
+A gang can be converted to a tuple `{@patient_tissue_prep}`.
+
+A gang can also be used in a `Let` clause to preserve the contents of the gang:
+
+    Let
+      timestamp = timestamp,
+      @patient_tissue_prep,
+      project = project
 
 Note that gangs can be reused after the data has been reshaped. This is means
 it is possible to redefine the gangs in a nonsensical way.
