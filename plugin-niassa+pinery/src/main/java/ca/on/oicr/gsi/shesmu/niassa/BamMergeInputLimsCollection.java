@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.Comparator;
 import java.util.List;
@@ -28,13 +29,13 @@ public class BamMergeInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(groups);
+  public Stream<Integer> fileSwids() {
+    return groups.stream().flatMap(BamMergeGroup::swids);
   }
 
   @Override
-  public Stream<Integer> fileSwids() {
-    return groups.stream().flatMap(BamMergeGroup::swids);
+  public int hashCode() {
+    return Objects.hash(groups);
   }
 
   @Override
@@ -86,5 +87,10 @@ public class BamMergeInputLimsCollection implements InputLimsCollection {
       return true;
     }
     return groups.stream().filter(g -> g.shouldHalp(errorHandler)).count() > 0;
+  }
+
+  @Override
+  public Stream<Pair<? extends LimsKey, String>> signatures() {
+    return Stream.empty();
   }
 }

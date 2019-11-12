@@ -28,6 +28,10 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
     R pack(T first, U second, V third, W fourth);
   }
 
+  public interface Pack5<T, U, V, W, X, R> {
+    R pack(T first, U second, V third, W fourth, X fifth);
+  }
+
   public static <T> TypeGuarantee<List<T>> list(TypeGuarantee<T> inner) {
     final Imyhat listType = inner.type().asList();
     return new TypeGuarantee<List<T>>() {
@@ -137,6 +141,51 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
             second.unpack(input.get(1)),
             third.unpack(input.get(2)),
             fourth.unpack(input.get(3)));
+      }
+    };
+  }
+
+  public static <R, T, U, V, W, X> TypeGuarantee<R> object(
+      Pack5<? super T, ? super U, ? super V, ? super W, ? super X, ? extends R> convert,
+      String firstName,
+      TypeGuarantee<T> first,
+      String secondName,
+      TypeGuarantee<U> second,
+      String thirdName,
+      TypeGuarantee<V> third,
+      String fourthName,
+      TypeGuarantee<W> fourth,
+      String fifthName,
+      TypeGuarantee<X> fifth) {
+    final Imyhat tupleType =
+        new Imyhat.ObjectImyhat(
+            Stream.of(
+                new Pair<>(firstName, first.type()),
+                new Pair<>(secondName, second.type()),
+                new Pair<>(thirdName, third.type()),
+                new Pair<>(fourthName, fourth.type()),
+                new Pair<>(fifthName, fifth.type())));
+    if (firstName.compareTo(secondName) >= 0
+        || secondName.compareTo(thirdName) >= 0
+        || thirdName.compareTo(fourthName) >= 0
+        || fourthName.compareTo(fifthName) >= 0) {
+      throw new IllegalArgumentException("Object properties must be alphabetically ordered.");
+    }
+    return new TypeGuarantee<R>() {
+      @Override
+      public Imyhat type() {
+        return tupleType;
+      }
+
+      @Override
+      public R unpack(Object object) {
+        final Tuple input = (Tuple) object;
+        return convert.pack(
+            first.unpack(input.get(0)),
+            second.unpack(input.get(1)),
+            third.unpack(input.get(2)),
+            fourth.unpack(input.get(3)),
+            fifth.unpack(input.get(4)));
       }
     };
   }

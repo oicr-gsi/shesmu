@@ -75,6 +75,17 @@ actionRender.set("niassa", a => [
     )
   ),
   collapse(
+    "Signatures from Olive",
+    table(
+      a.signatures,
+      ["Provider", k => k.provider],
+      ["ID", k => k.id],
+      ["Version", k => k.version],
+      ["Last Modified", k => k.lastModified],
+      ["Signature SHA1", k => k.signature]
+    )
+  ),
+  collapse(
     "Prior Workflow Runs",
     table(
       a.matches,

@@ -8,6 +8,11 @@ public enum AnalysisComparison {
   /** Everything about this item matches. */
   EXACT,
   /**
+   * Everything about this item matches given the signatures. The LIMS keys are stale, but can be
+   * safely updated
+   */
+  FIXABLE,
+  /**
    * The workflow ID and input file SWIDs match. The LIMS keys have some in common (by ID and
    * provider), but have different Pinery data versions or unmatched LIMS keys.
    */

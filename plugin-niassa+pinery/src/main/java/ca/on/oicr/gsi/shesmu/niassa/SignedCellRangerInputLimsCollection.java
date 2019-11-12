@@ -8,22 +8,22 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-class CellRangerInputLimsCollection implements InputLimsCollection {
-  final List<CellRangerIUSEntry> limsKeys;
+class SignedCellRangerInputLimsCollection implements InputLimsCollection {
+  final List<SignedCellRangerIUSEntry> limsKeys;
 
-  public CellRangerInputLimsCollection(List<CellRangerIUSEntry> value) {
+  public SignedCellRangerInputLimsCollection(List<SignedCellRangerIUSEntry> value) {
     limsKeys = value;
     limsKeys.sort(
-        Comparator.comparing(CellRangerIUSEntry::getProvider)
-            .thenComparing(CellRangerIUSEntry::getId)
-            .thenComparing(CellRangerIUSEntry::getVersion));
+        Comparator.comparing(SignedCellRangerIUSEntry::getProvider)
+            .thenComparing(SignedCellRangerIUSEntry::getId)
+            .thenComparing(SignedCellRangerIUSEntry::getVersion));
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    CellRangerInputLimsCollection that = (CellRangerInputLimsCollection) o;
+    SignedCellRangerInputLimsCollection that = (SignedCellRangerInputLimsCollection) o;
     return limsKeys.equals(that.limsKeys);
   }
 
@@ -34,7 +34,7 @@ class CellRangerInputLimsCollection implements InputLimsCollection {
 
   @Override
   public void generateUUID(Consumer<byte[]> digest) {
-    for (final CellRangerIUSEntry limsKey : limsKeys) {
+    for (final SignedCellRangerIUSEntry limsKey : limsKeys) {
       limsKey.generateUUID(digest);
       digest.accept(new byte[] {0});
     }
@@ -58,7 +58,7 @@ class CellRangerInputLimsCollection implements InputLimsCollection {
   @Override
   public void prepare(ToIntFunction<LimsKey> createIusLimsKey, Properties ini) {
     final List<String> lanes = new ArrayList<>();
-    for (CellRangerIUSEntry limsKey : limsKeys) {
+    for (final SignedCellRangerIUSEntry limsKey : limsKeys) {
       lanes.add(limsKey.asLaneString(createIusLimsKey.applyAsInt(limsKey)));
     }
     ini.setProperty("lanes", String.join("+", lanes));
@@ -75,6 +75,6 @@ class CellRangerInputLimsCollection implements InputLimsCollection {
 
   @Override
   public Stream<Pair<? extends LimsKey, String>> signatures() {
-    return Stream.empty();
+    return limsKeys.stream().map(SignedCellRangerIUSEntry::signature);
   }
 }

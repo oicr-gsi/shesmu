@@ -11,34 +11,34 @@ import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-class FilesInputLimsCollection implements InputLimsCollection {
-  final List<FilesInputFile> filesInputFileInformation;
+class SignedFilesInputLimsCollection implements InputLimsCollection {
+  final List<SignedFilesInputFile> filesInputFileInformation;
 
-  public FilesInputLimsCollection(List<FilesInputFile> value) {
+  public SignedFilesInputLimsCollection(List<SignedFilesInputFile> value) {
     filesInputFileInformation = value;
     filesInputFileInformation.sort(
-        Comparator.comparing(FilesInputFile::swid)
-            .thenComparing(FilesInputFile::getProvider)
-            .thenComparing(FilesInputFile::getId)
-            .thenComparing(FilesInputFile::getVersion));
+        Comparator.comparing(SignedFilesInputFile::swid)
+            .thenComparing(SignedFilesInputFile::getProvider)
+            .thenComparing(SignedFilesInputFile::getId)
+            .thenComparing(SignedFilesInputFile::getVersion));
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    FilesInputLimsCollection that = (FilesInputLimsCollection) o;
+    SignedFilesInputLimsCollection that = (SignedFilesInputLimsCollection) o;
     return filesInputFileInformation.equals(that.filesInputFileInformation);
   }
 
   @Override
   public Stream<Integer> fileSwids() {
-    return filesInputFileInformation.stream().map(FilesInputFile::swid);
+    return filesInputFileInformation.stream().map(SignedFilesInputFile::swid);
   }
 
   @Override
   public void generateUUID(Consumer<byte[]> digest) {
-    for (final FilesInputFile fileInfo : filesInputFileInformation) {
+    for (final SignedFilesInputFile fileInfo : filesInputFileInformation) {
       fileInfo.generateUUID(digest);
       digest.accept(new byte[] {0});
     }
@@ -61,7 +61,7 @@ class FilesInputLimsCollection implements InputLimsCollection {
 
   @Override
   public void prepare(ToIntFunction<LimsKey> createIusLimsKey, Properties ini) {
-    for (FilesInputFile filesInputFile : filesInputFileInformation) {
+    for (final SignedFilesInputFile filesInputFile : filesInputFileInformation) {
       createIusLimsKey.applyAsInt(filesInputFile);
     }
   }
@@ -77,6 +77,6 @@ class FilesInputLimsCollection implements InputLimsCollection {
 
   @Override
   public Stream<Pair<? extends LimsKey, String>> signatures() {
-    return Stream.empty();
+    return filesInputFileInformation.stream().map(SignedFilesInputFile::signature);
   }
 }
