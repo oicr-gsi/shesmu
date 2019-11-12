@@ -427,17 +427,22 @@ public class SimulateRequest {
             final ObjectNode dumpers = response.putObject("dumpers");
             final ArrayNode olives = response.putArray("olives");
             final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
-            final Map<String, List<Object>> inputs =
-                action
-                    .inputs()
-                    .collect(
-                        Collectors.toMap(
-                            Function.identity(),
-                            name -> inputProvider.fetch(name).collect(Collectors.toList())));
+
             final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
             RESULTS.set(response.putObject("refillers"));
+            final Map<String, Long> counts = new HashMap<>();
 
             try {
+              final Map<String, List<Object>> inputs =
+                  action
+                      .inputs()
+                      .collect(
+                          Collectors.toMap(
+                              Function.identity(),
+                              name -> inputProvider.fetch(name).collect(Collectors.toList())));
+              for (final Map.Entry<String, List<Object>> input : inputs.entrySet()) {
+                counts.put(input.getKey(), (long) input.getValue().size());
+              }
               action.run(
                   new OliveServices() {
                     @Override
@@ -531,7 +536,7 @@ public class SimulateRequest {
                             fileTable.get().filename(),
                             fileTable.get().timestamp(),
                             olive,
-                            (long) inputs.get(fileTable.get().format().name()).size(),
+                            counts.get(fileTable.get().format().name()),
                             fileTable.get().format(),
                             (filename, line, column, oliveLine, oliveColumn) ->
                                 flow.get(Arrays.asList(line, column, oliveLine, oliveColumn))
