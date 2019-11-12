@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import net.sourceforge.seqware.common.model.IUSAttribute;
 import net.sourceforge.seqware.common.model.WorkflowRun;
 import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
 
@@ -183,13 +184,20 @@ public final class WorkflowAction extends Action {
       // Read the analysis provenance cache to determine if this workflow has already been run
       final Set<Integer> inputFileSWIDs =
           limsKeysCollection.fileSwids().collect(Collectors.toSet());
-      final List<? extends LimsKey> limsKeys =
+      final List<SimpleLimsKey> limsKeys =
           limsKeysCollection
               .limsKeys()
               .map(SimpleLimsKey::new)
               .sorted(LIMS_KEY_COMPARATOR)
               .distinct()
               .collect(Collectors.toList());
+      final Map<SimpleLimsKey, Set<String>> signatures =
+          limsKeysCollection
+              .signatures()
+              .collect(
+                  Collectors.groupingBy(
+                      p -> new SimpleLimsKey(p.first()),
+                      Collectors.mapping(Pair::second, Collectors.toSet())));
       try (AutoCloseable timer = matchTime.start(Long.toString(workflowAccession))) {
         matches =
             workflowAccessions()
@@ -209,6 +217,7 @@ public final class WorkflowAction extends Action {
                                         fileMatchingPolicy,
                                         inputFileSWIDs,
                                         limsKeys,
+                                        signatures,
                                         annotations)))
                 .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
                 .sorted()
@@ -219,9 +228,17 @@ public final class WorkflowAction extends Action {
         // newest workflow is selected; if that workflow run is stale, we know there are no better
         // candidates and we should ignore the workflow run's state and complain.
         final WorkflowRunMatch match = matches.get(0);
-        if (match.comparison() == AnalysisComparison.EXACT) {
+        if (match.comparison() == AnalysisComparison.EXACT
+            || match.comparison() == AnalysisComparison.FIXABLE) {
           // Don't associate with this workflow because we don't want to get ourselves to this state
           runAccession = match.state().workflowRunAccession();
+          // We matched, but we might need to update the LIMS keys OR add missing signatures (if the
+          // LIMS keys match exactly but signatures are absent)
+          if (match.comparison() == AnalysisComparison.FIXABLE) {
+            match.fixVersions(match.state().workflowAccession(), server.get().metadata());
+          } else {
+            match.fixSignatures(match.state().workflowAccession(), server.get().metadata());
+          }
         }
         externalTimestamp = Optional.ofNullable(match.state().lastModified());
         this.errors = Collections.emptyList();
@@ -268,6 +285,25 @@ public final class WorkflowAction extends Action {
                                       k.getLastModified()),
                               false)),
           ini);
+      for (final Map.Entry<? extends LimsKey, Set<String>> signature : signatures.entrySet()) {
+        final int iusAccession = iusAccessions.get(new SimpleLimsKey(signature.getKey()));
+        server
+            .get()
+            .metadata()
+            .annotateIUS(
+                iusAccession,
+                signature
+                    .getValue()
+                    .stream()
+                    .map(
+                        s -> {
+                          final IUSAttribute attribute = new IUSAttribute();
+                          attribute.setTag("signature");
+                          attribute.setValue(s);
+                          return attribute;
+                        })
+                    .collect(Collectors.toSet()));
+      }
 
       final File iniFile = File.createTempFile("niassa", ".ini");
       iniFile.deleteOnExit();
@@ -398,6 +434,21 @@ public final class WorkflowAction extends Action {
               return key;
             })
         .forEach(node.putArray("limsKeys")::add);
+    limsKeysCollection
+        .signatures()
+        .map(
+            signature -> {
+              final ObjectNode obj = mapper.createObjectNode();
+              obj.put("provider", signature.first().getProvider());
+              obj.put("id", signature.first().getId());
+              obj.put("version", signature.first().getVersion());
+              obj.put(
+                  "lastModified",
+                  DateTimeFormatter.ISO_INSTANT.format(signature.first().getLastModified()));
+              obj.put("signature", signature.second());
+              return obj;
+            })
+        .forEach(node.putArray("signatures")::add);
     final ObjectNode iniJson = node.putObject("ini");
     ini.forEach((key, value) -> iniJson.put(key.toString(), value.toString()));
     node.put("workflowAccession", workflowAccession);

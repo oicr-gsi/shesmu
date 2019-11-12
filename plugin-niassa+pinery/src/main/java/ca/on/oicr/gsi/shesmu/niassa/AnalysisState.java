@@ -5,19 +5,22 @@ import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import net.sourceforge.seqware.common.model.IUSAttribute;
 import net.sourceforge.seqware.common.model.WorkflowRun;
 
 public class AnalysisState implements Comparable<AnalysisState> {
   private final Map<String, Set<String>> annotations;
   private final Set<Integer> fileSWIDSToRun;
+  private final Set<String> knownSignatures;
   private final Instant lastModified;
-  private final List<LimsKey> limsKeys;
+  private final List<Pair<? extends LimsKey, Integer>> limsKeys;
   private final SortedSet<String> majorOliveVersion;
   private final ActionState state;
   private final long workflowAccession;
@@ -46,18 +49,20 @@ public class AnalysisState implements Comparable<AnalysisState> {
     // we can gather all the LIMS keys from the output. If it has failed or is still running, then
     // LIMS keys may have been partially provisioned, which will be very confusing; in which case,
     // go thet the workflow that has the full set of LIMS keys at additional cost.
-    final boolean fastFetch =
-        state == ActionState.SUCCEEDED || source.stream().allMatch(ap -> ap.getFilePath() == null);
-    if (!fastFetch) {
+    final WorkflowRun workflowRun =
+        state == ActionState.SUCCEEDED || source.stream().allMatch(ap -> ap.getFilePath() == null)
+            ? null
+            : run.get();
+    if (workflowRun == null) {
       incrementSlowFetch.run();
     }
     limsKeys =
-        (fastFetch
+        (workflowRun == null
                 ? source
                     .stream()
                     .flatMap(ap -> ap.getIusLimsKeys().stream())
-                    .map(lk -> new SimpleLimsKey(lk.getLimsKey()))
-                : run.get()
+                    .map(lk -> new Pair<>(new SimpleLimsKey(lk.getLimsKey()), lk.getIusSWID()))
+                : workflowRun
                     .getIus()
                     .stream()
                     .flatMap(
@@ -70,15 +75,37 @@ public class AnalysisState implements Comparable<AnalysisState> {
                           return limsKey == null
                               ? Stream.empty()
                               : Stream.of(
-                                  new SimpleLimsKey(
-                                      limsKey.getId(),
-                                      limsKey.getProvider(),
-                                      limsKey.getLastModified().toInstant(),
-                                      limsKey.getVersion()));
+                                  new Pair<>(
+                                      new SimpleLimsKey(
+                                          limsKey.getId(),
+                                          limsKey.getProvider(),
+                                          limsKey.getLastModified().toInstant(),
+                                          limsKey.getVersion()),
+                                      i.getSwAccession()));
                         }))
-            .sorted(WorkflowAction.LIMS_KEY_COMPARATOR)
+            .sorted(Comparator.comparing(Pair::first, WorkflowAction.LIMS_KEY_COMPARATOR))
             .distinct()
             .collect(Collectors.toList());
+    knownSignatures =
+        workflowRun == null
+            ? source
+                .stream()
+                .flatMap(
+                    ap ->
+                        ap.getIusAttributes()
+                            .getOrDefault("signature", Collections.emptySortedSet())
+                            .stream())
+                .collect(Collectors.toSet())
+            : workflowRun
+                .getIus()
+                .stream()
+                .flatMap(
+                    i ->
+                        i.getIusAttributes()
+                            .stream()
+                            .filter(a -> a.getTag().equals("signature"))
+                            .map(IUSAttribute::getValue))
+                .collect(Collectors.toSet());
 
     this.workflowRunAccession = workflowRunAccession;
     workflowAccession = source.get(0).getWorkflowId();
@@ -114,12 +141,13 @@ public class AnalysisState implements Comparable<AnalysisState> {
   }
 
   /** Check how much this analysis record matches the data provided */
-  public WorkflowRunMatch compare(
+  public <L extends LimsKey> WorkflowRunMatch compare(
       LongStream workflowAccessions,
       String majorOliveVersion,
       FileMatchingPolicy fileMatchingPolicy,
       Set<Integer> inputFiles,
-      List<? extends LimsKey> inputLimsKeys,
+      List<L> inputLimsKeys,
+      Map<L, Set<String>> signatures,
       Map<String, String> annotations) {
     // If the WF, version or input files doesn't match, bail
     if (workflowAccessions.noneMatch(a -> workflowAccession == a)
@@ -142,21 +170,50 @@ public class AnalysisState implements Comparable<AnalysisState> {
     int loneInputKeys = inputLimsKeys.size();
     int matches = 0;
     int stale = 0;
+    int signatureEquivalent = 0;
     int provenanceIndex = 0;
     int inputIndex = 0;
+    final Map<Integer, Set<String>> missingSignature = new HashMap<>();
+    final Map<Integer, Pair<String, ZonedDateTime>> updatedVersions = new HashMap<>();
     while (inputIndex < inputLimsKeys.size() && provenanceIndex < limsKeys.size()) {
       final int comparison =
           WorkflowAction.LIMS_ID_COMPARATOR.compare(
-              inputLimsKeys.get(inputIndex), limsKeys.get(provenanceIndex));
+              inputLimsKeys.get(inputIndex), limsKeys.get(provenanceIndex).first());
       if (comparison == 0) {
         // Match. Yay; advance both indices.
+        // Is the version correct?
         if (inputLimsKeys
             .get(inputIndex)
             .getVersion()
-            .equals(limsKeys.get(provenanceIndex).getVersion())) {
+            .equals(limsKeys.get(provenanceIndex).first().getVersion())) {
           matches++;
+          // Okay, we matched versions, but does this have the correct signature. If not, make a
+          // note of it and we will add the signature to IUS LIMS key later.
+          final Set<String> desiredSignatures = signatures.get(inputLimsKeys.get(inputIndex));
+          if (desiredSignatures != null && !knownSignatures.containsAll(desiredSignatures)) {
+            missingSignature
+                .computeIfAbsent(limsKeys.get(provenanceIndex).second(), k -> new TreeSet<>())
+                .addAll(desiredSignatures);
+          }
         } else {
-          stale++;
+          // We matched the provider and ID, but the version is different, is the signature the
+          // olive gave us (if any) already attached to this IUS; we have this in a big set rather
+          // than per IUS because of the complexity of having IUS records associated with multiple
+          // analysis provenance records we've merged.
+          final Set<String> desiredSignatures = signatures.get(inputLimsKeys.get(inputIndex));
+          if (desiredSignatures != null && knownSignatures.containsAll(desiredSignatures)) {
+            // The version might be stale, but the signature still matches, so make a note that we
+            // have to update the LIMS key's version
+            signatureEquivalent++;
+            updatedVersions.put(
+                limsKeys.get(provenanceIndex).second(),
+                new Pair<>(
+                    inputLimsKeys.get(inputIndex).getVersion(),
+                    inputLimsKeys.get(inputIndex).getLastModified()));
+          } else {
+            // No matching signature, so it's just plain old stale records
+            stale++;
+          }
         }
         loneProvenanceKeys--;
         provenanceIndex++;
@@ -168,16 +225,33 @@ public class AnalysisState implements Comparable<AnalysisState> {
         provenanceIndex++;
       }
     }
+    // Remove any signatures already associated with this workflow run. This is probably not
+    // necessary, but there's a possibility that signatures have been partially applied, so we're
+    // going to be extra paranoid and remove any.
+    for (final Set<String> requiredSignatures : missingSignature.values()) {
+      requiredSignatures.removeAll(knownSignatures);
+    }
+    missingSignature.entrySet().removeIf(e -> e.getValue().isEmpty());
     final AnalysisComparison comparison;
-    // There are matches and no left overs, we're an exact match
-    if (matches > 0 && stale == 0 && loneInputKeys == 0 && loneProvenanceKeys == 0) {
+    if (matches > 0
+        && signatureEquivalent == 0
+        && stale == 0
+        && loneInputKeys == 0
+        && loneProvenanceKeys == 0) {
+      // There are matches and no left overs, we're an exact match
       comparison = AnalysisComparison.EXACT;
+    } else if (signatureEquivalent > 0
+        && stale == 0
+        && loneInputKeys == 0
+        && loneProvenanceKeys == 0) {
+      // There are "matches" (thanks to signature) and no left overs, we're an fixable match
+      comparison = AnalysisComparison.FIXABLE;
+    } else if (inputFiles.isEmpty() && matches == 0 && stale == 0) {
       // If there were no input files, this must mean it is a root workflow, so there should always
       // be the LIMS key for the lane in common; if there are none, then these really don't match
-    } else if (inputFiles.isEmpty() && matches == 0 && stale == 0) {
       comparison = AnalysisComparison.DIFFERENT;
-      // There's some overlap, so we need a human
     } else {
+      // There's some overlap, so we need a human
       comparison = AnalysisComparison.PARTIAL;
     }
     return new WorkflowRunMatch(
@@ -186,7 +260,9 @@ public class AnalysisState implements Comparable<AnalysisState> {
         loneProvenanceKeys > 0,
         loneInputKeys > 0,
         stale > 0,
-        !this.fileSWIDSToRun.equals(inputFiles));
+        !this.fileSWIDSToRun.equals(inputFiles),
+        missingSignature,
+        updatedVersions);
   }
 
   /** Sort so that the latest, most successful run is first. */
@@ -205,6 +281,10 @@ public class AnalysisState implements Comparable<AnalysisState> {
 
   public ActionState state() {
     return state;
+  }
+
+  public long workflowAccession() {
+    return workflowAccession;
   }
 
   public int workflowRunAccession() {

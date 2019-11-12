@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import java.util.*;
 import java.util.function.Consumer;
@@ -71,5 +72,10 @@ public class Bcl2FastqInputLimsCollection implements InputLimsCollection {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public Stream<Pair<? extends LimsKey, String>> signatures() {
+    return Stream.empty();
   }
 }

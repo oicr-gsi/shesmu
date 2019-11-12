@@ -94,6 +94,32 @@ public enum InputLimsKeyType {
                   TypeGuarantee.STRING), // LIMS key
               TypeGuarantee.STRING) // group id
           )),
+  CELL_RANGER_SIGNED(
+      "lanes",
+      SignedCellRangerInputLimsCollection::new,
+      TypeGuarantee.list(
+          TypeGuarantee.object(
+              SignedCellRangerIUSEntry::new,
+              "group_id",
+              TypeGuarantee.STRING,
+              "ius",
+              TypeGuarantee.tuple(
+                  IusTriple::new, TypeGuarantee.STRING, TypeGuarantee.LONG, TypeGuarantee.STRING),
+              "library_name",
+              TypeGuarantee.STRING,
+              "lims",
+              TypeGuarantee.object(
+                  SimpleLimsKey::new,
+                  "id",
+                  TypeGuarantee.STRING,
+                  "provider",
+                  TypeGuarantee.STRING,
+                  "time",
+                  TypeGuarantee.DATE,
+                  "version",
+                  TypeGuarantee.STRING),
+              "signature",
+              TypeGuarantee.STRING))),
 
   FILES(
       "inputs",
@@ -112,6 +138,29 @@ public enum InputLimsKeyType {
                   TypeGuarantee.DATE,
                   "version",
                   TypeGuarantee.STRING), // LIMS key
+              TypeGuarantee.BOOLEAN))), // staleness
+  FILES_SIGNED(
+      "inputs",
+      SignedFilesInputLimsCollection::new,
+      TypeGuarantee.list(
+          TypeGuarantee.object(
+              SignedFilesInputFile::new,
+              "accession",
+              TypeGuarantee.STRING, // SWID
+              "lims",
+              TypeGuarantee.object(
+                  SimpleLimsKey::new,
+                  "id",
+                  TypeGuarantee.STRING,
+                  "provider",
+                  TypeGuarantee.STRING,
+                  "time",
+                  TypeGuarantee.DATE,
+                  "version",
+                  TypeGuarantee.STRING), // LIMS key
+              "signature",
+              TypeGuarantee.STRING,
+              "stale",
               TypeGuarantee.BOOLEAN))); // staleness
 
   private final CustomActionParameter<WorkflowAction> parameter;
