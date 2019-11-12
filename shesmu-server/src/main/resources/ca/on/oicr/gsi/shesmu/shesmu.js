@@ -1386,7 +1386,14 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
           [
             {
               type: "sourcelocation",
-              locations: [deadPause]
+              locations: [
+                {
+                  file: deadPause.file,
+                  line: deadPause.line,
+                  column: deadPause.column,
+                  time: deadPause.time
+                }
+              ]
             }
           ],
           [],
@@ -1403,21 +1410,42 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
             const cleanup = () => {
               deadTableBody.removeChild(tr);
               if (--remainingPauses == 0) {
-                container.removeChild(deadContainer);
+                olives.removeChild(title);
+                olives.removeChild(deadTable);
               }
             };
             infoPane.appendChild(
               dangerButton(
                 "▶ Resume Actions",
                 "Allow an actions currently paused to resume.",
-                e => clearDeadPause(deadPause, false, cleanup)
+                e =>
+                  clearDeadPause(
+                    {
+                      file: deadPause.file,
+                      line: deadPause.line,
+                      column: deadPause.column,
+                      time: deadPause.time
+                    },
+                    false,
+                    cleanup
+                  )
               )
             );
             infoPane.appendChild(
               dangerButton(
                 "☠️ PURGE ACTIONS",
                 "Remove any actions currently paused.",
-                e => clearDeadPause(deadPause, true, cleanup)
+                e =>
+                  clearDeadPause(
+                    {
+                      file: deadPause.file,
+                      line: deadPause.line,
+                      column: deadPause.column,
+                      time: deadPause.time
+                    },
+                    true,
+                    cleanup
+                  )
               )
             );
 
