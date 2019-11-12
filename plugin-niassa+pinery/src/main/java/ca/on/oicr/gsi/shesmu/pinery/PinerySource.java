@@ -111,69 +111,47 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                       && (lp.getSkip() == null || !lp.getSkip()))
           .map(
               lp -> {
-                final Set<String> badSetInRecord = new TreeSet<>();
                 final RunDto run = allRuns.get(lp.getSequencerRunName());
                 if (run == null) {
-                  badSetInRecord.add(String.format("run: %s is null", lp.getSequencerRunName()));
-                }
-                final String runDirectory =
-                    IUSUtils.singleton(
-                            Collections.singleton(run.getRunDirectory()),
-                            reason -> badSetInRecord.add("run_dir:" + reason),
-                            true)
-                        .orElse("");
-                final String basesMask =
-                    IUSUtils.singleton(
-                            Collections.singleton(run.getRunBasesMask()),
-                            reason -> badSetInRecord.add("bases_mask:" + reason),
-                            false)
-                        .orElse("");
-                final Instant lastModified =
-                    lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
-                final PineryIUSValue result =
-                    new PineryIUSValue(
-                        Paths.get(runDirectory),
-                        "",
-                        "",
-                        "",
-                        "",
-                        new Tuple(
-                            lp.getSequencerRunName(),
-                            IUSUtils.parseLaneNumber(lp.getLaneNumber()),
-                            "NoIndex"),
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        0L,
-                        "",
-                        "",
-                        lastModified,
-                        new Tuple(
-                            lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
-                        lp.getCreatedDate() == null
-                            ? Instant.EPOCH
-                            : lp.getCreatedDate().toInstant(),
-                        basesMask,
-                        lp.getSequencerRunPlatformModel(),
-                        Optional.empty(),
-                        Optional.empty(),
-                        getRunField(run, RunDto::getState),
-                        false,
-                        maybeGetRunField(run, RunDto::getSequencingKit),
-                        maybeGetRunField(run, RunDto::getContainerModel),
-                        false);
-
-                if (badSetInRecord.isEmpty()) {
-                  return result;
-                } else {
-                  badSetInRecord.forEach(name -> badSetCounts.merge(name, 1, Integer::sum));
+                  badSetCounts.merge("run:null", 1, Integer::sum);
                   return null;
                 }
+                final Instant lastModified =
+                    lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
+
+                return new PineryIUSValue(
+                    Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
+                    "",
+                    "",
+                    "",
+                    "",
+                    new Tuple(
+                        lp.getSequencerRunName(),
+                        IUSUtils.parseLaneNumber(lp.getLaneNumber()),
+                        "NoIndex"),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    0L,
+                    "",
+                    "",
+                    lastModified,
+                    new Tuple(lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
+                    lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(),
+                    run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                    lp.getSequencerRunPlatformModel(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    getRunField(run, RunDto::getState),
+                    false,
+                    maybeGetRunField(run, RunDto::getSequencingKit),
+                    maybeGetRunField(run, RunDto::getContainerModel),
+                    false);
               })
           .filter(Objects::nonNull);
     }
@@ -199,7 +177,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 if (run == null) return null;
                 final PineryIUSValue result =
                     new PineryIUSValue(
-                        Paths.get(run.getRunDirectory()),
+                        Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
                         sp.getStudyTitle(),
                         limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
                         sp.getSampleName(),
@@ -231,7 +209,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getCreatedDate() == null
                             ? Instant.EPOCH
                             : sp.getCreatedDate().toInstant(),
-                        run.getRunBasesMask(),
+                        run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                         sp.getSequencerRunPlatformModel(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
