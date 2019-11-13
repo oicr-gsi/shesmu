@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -68,10 +69,17 @@ public class ExpressionNodeRegex extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
+    boolean patternOk = true;
+    try {
+      Pattern.compile(regex);
+    } catch (PatternSyntaxException e) {
+      errorHandler.accept(String.format("%d:%d: %s", line(), column(), e.getMessage()));
+      patternOk = false;
+    }
     final boolean ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (expression.type().isSame(Imyhat.STRING)) {
-        return true;
+        return patternOk;
       }
       typeError(Imyhat.STRING.name(), expression.type(), errorHandler);
       return false;
