@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.pinery;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.IUSUtils;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
@@ -24,9 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -68,9 +67,22 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             && !run.getRunDirectory().equals(""))
                 .map(RunDto::getName)
                 .collect(Collectors.toSet());
+        final Set<Pair<String, String>> validLanes = new HashSet<>();
         return Stream.concat(
-                lanes(c, cfg.getVersion(), cfg.getProvider(), badSetCounts, allRuns),
-                samples(c, cfg.getVersion(), cfg.getProvider(), badSetCounts, allRuns))
+                lanes(
+                    c,
+                    cfg.getVersion(),
+                    cfg.getProvider(),
+                    badSetCounts,
+                    allRuns,
+                    (run, lane) -> validLanes.add(new Pair<>(run, lane))),
+                samples(
+                    c,
+                    cfg.getVersion(),
+                    cfg.getProvider(),
+                    badSetCounts,
+                    allRuns,
+                    (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
             .onClose(
                 () ->
                     badSetCounts
@@ -101,7 +113,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String version,
         String provider,
         Map<String, Integer> badSetCounts,
-        Map<String, RunDto> allRuns)
+        Map<String, RunDto> allRuns,
+        BiConsumer<String, String> addLane)
         throws HttpResponseException {
       return Utils.stream(client.getLaneProvenance().version(version))
           .filter(
@@ -118,6 +131,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 }
                 final Instant lastModified =
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
+                  addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
                 return new PineryIUSValue(
                     Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
@@ -161,13 +175,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         String version,
         String provider,
         Map<String, Integer> badSetCounts,
-        Map<String, RunDto> allRuns)
+        Map<String, RunDto> allRuns,
+        BiPredicate<String, String> hasLane)
         throws HttpResponseException {
       return Utils.stream(client.getSampleProvenance().version(version))
           .filter(
               sp ->
                   isRunComplete.test(allRuns.get(sp.getSequencerRunName()))
-                      && sp.getCreatedDate() != null)
+                      && sp.getCreatedDate() != null
+                      && hasLane.test(sp.getSequencerRunName(), sp.getLaneNumber()))
           .map(
               sp -> {
                 final Set<String> badSetInRecord = new TreeSet<>();
