@@ -6,6 +6,7 @@ import static org.objectweb.asm.Type.*;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.PartitionCount;
+import ca.on.oicr.gsi.shesmu.runtime.UnivaluedGroupAccumulator;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -156,6 +157,15 @@ public final class RegroupVariablesBuilder implements Regrouper {
     @Override
     public void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
       elements.add(new Univalued(valueType, fieldName, loader));
+    }
+
+    @Override
+    public void addUnivalued(
+        Imyhat valueType,
+        String fieldName,
+        Consumer<Renderer> loader,
+        Consumer<Renderer> defaultValue) {
+      elements.add(new UnivaluedWithDefault(valueType, fieldName, loader, defaultValue));
     }
 
     @Override
@@ -911,12 +921,107 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
+  private class UnivaluedWithDefault extends Element {
+    private final Consumer<Renderer> defaultValue;
+    private final String fieldName;
+    private final Consumer<Renderer> loader;
+    private final Imyhat valueType;
+
+    private UnivaluedWithDefault(
+        Imyhat valueType,
+        String fieldName,
+        Consumer<Renderer> loader,
+        Consumer<Renderer> defaultValue) {
+      super();
+      this.valueType = valueType;
+      this.fieldName = fieldName;
+      this.loader = loader;
+      this.defaultValue = defaultValue;
+      classVisitor
+          .visitField(
+              Opcodes.ACC_PUBLIC,
+              fieldName,
+              A_UNIVALUED_GROUP_ACCUMULATOR_TYPE.getDescriptor(),
+              null,
+              null)
+          .visitEnd();
+      final GeneratorAdapter getMethod =
+          new GeneratorAdapter(
+              Opcodes.ACC_PUBLIC,
+              new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
+              null,
+              null,
+              classVisitor);
+      getMethod.visitCode();
+      getMethod.loadThis();
+      getMethod.getField(self, fieldName, A_UNIVALUED_GROUP_ACCUMULATOR_TYPE);
+      getMethod.invokeVirtual(
+          A_UNIVALUED_GROUP_ACCUMULATOR_TYPE, METHOD_UNIVALUED_GROUP_ACCUMULATOR__GET);
+      getMethod.unbox(valueType.apply(TO_ASM));
+      getMethod.returnValue();
+      getMethod.visitMaxs(0, 0);
+      getMethod.visitEnd();
+    }
+
+    @Override
+    public void buildCollect() {
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer.methodGen().getField(self, fieldName, A_UNIVALUED_GROUP_ACCUMULATOR_TYPE);
+      loader.accept(collectRenderer);
+      collectRenderer.methodGen().valueOf(valueType.apply(TO_ASM));
+      collectRenderer
+          .methodGen()
+          .invokeVirtual(
+              A_UNIVALUED_GROUP_ACCUMULATOR_TYPE, METHOD_UNIVALUED_GROUP_ACCUMULATOR__ADD);
+    }
+
+    @Override
+    public int buildConstructor(GeneratorAdapter ctor, int index) {
+      ctor.loadThis();
+      ctor.newInstance(A_UNIVALUED_GROUP_ACCUMULATOR_TYPE);
+      ctor.dup();
+      ctor.loadArg(index);
+      ctor.valueOf(valueType.apply(TO_ASM));
+      ctor.invokeConstructor(
+          A_UNIVALUED_GROUP_ACCUMULATOR_TYPE, METHOD_UNIVALUED_GROUP_ACCUMULATOR__CTOR);
+      ctor.putField(self, fieldName, A_UNIVALUED_GROUP_ACCUMULATOR_TYPE);
+      return index + 1;
+    }
+
+    @Override
+    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+      // Univalued are not included in equality.
+    }
+
+    @Override
+    public void buildHashCode(GeneratorAdapter hashMethod) {
+      // Univalued are not included in the hash.
+    }
+
+    @Override
+    public Stream<Type> constructorType() {
+      return Stream.of(this.valueType.apply(TO_ASM));
+    }
+
+    @Override
+    public void failIfBad(GeneratorAdapter okMethod) {
+      // Univalued with default is always ok
+    }
+
+    @Override
+    public void loadConstructorArgument() {
+      defaultValue.accept(newRenderer);
+    }
+  }
+
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
+  private static final Type A_UNIVALUED_GROUP_ACCUMULATOR_TYPE =
+      Type.getType(UnivaluedGroupAccumulator.class);
   private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
   private static final Method ITERATOR__NEXT = new Method("next", A_OBJECT_TYPE, new Type[] {});
   private static final Method METHOD_DEFAULT_CTOR = new Method("<init>", VOID_TYPE, new Type[] {});
@@ -934,6 +1039,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
       new Method("add", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
   private static final Method METHOD_SET__ADD_ALL =
       new Method("addAll", BOOLEAN_TYPE, new Type[] {Type.getType(Collection.class)});
+  private static final Method METHOD_UNIVALUED_GROUP_ACCUMULATOR__ADD =
+      new Method("add", VOID_TYPE, new Type[] {A_OBJECT_TYPE});
+  private static final Method METHOD_UNIVALUED_GROUP_ACCUMULATOR__CTOR =
+      new Method("<init>", VOID_TYPE, new Type[] {A_OBJECT_TYPE});
+  private static final Method METHOD_UNIVALUED_GROUP_ACCUMULATOR__GET =
+      new Method("get", A_OBJECT_TYPE, new Type[] {});
   private static final Method SET__ITERATOR =
       new Method("iterator", A_ITERATOR_TYPE, new Type[] {});
   private static final Method SET__SIZE = new Method("size", INT_TYPE, new Type[] {});
@@ -1020,6 +1131,15 @@ public final class RegroupVariablesBuilder implements Regrouper {
   @Override
   public void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
     elements.add(new Univalued(valueType, fieldName, loader));
+  }
+
+  @Override
+  public void addUnivalued(
+      Imyhat valueType,
+      String fieldName,
+      Consumer<Renderer> loader,
+      Consumer<Renderer> defaultValue) {
+    elements.add(new UnivaluedWithDefault(valueType, fieldName, loader, defaultValue));
   }
 
   @Override

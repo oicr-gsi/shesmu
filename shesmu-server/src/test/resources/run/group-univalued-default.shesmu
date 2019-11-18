@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Group By workflow
+   Into
+    a = Univalued workflow Default "foo",
+    b = Univalued accession Default "foo"
+ Run ok With ok = a == "SlowA" && b == "foo";

@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** A collection action that should only have a single value in a “Group” clause */
-public final class GroupNodeUnivalued extends GroupNode {
+public final class GroupNodeUnivalued extends GroupNodeDefaultable {
 
   private final ExpressionNode expression;
   private final String name;
@@ -36,6 +36,11 @@ public final class GroupNodeUnivalued extends GroupNode {
   @Override
   public void render(Regrouper regroup, RootBuilder rootBuilder) {
     regroup.addUnivalued(expression.type(), name(), expression::render);
+  }
+
+  @Override
+  public void render(Regrouper regroup, ExpressionNode initial, RootBuilder builder) {
+    regroup.addUnivalued(expression.type(), name(), expression::render, initial::render);
   }
 
   @Override

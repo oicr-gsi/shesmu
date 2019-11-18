@@ -82,6 +82,12 @@ public interface Regrouper {
    */
   void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
 
+  void addUnivalued(
+      Imyhat valueType,
+      String fieldName,
+      Consumer<Renderer> loader,
+      Consumer<Renderer> defaultValue);
+
   /**
    * Conditionally add a variable
    *
