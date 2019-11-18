@@ -20,6 +20,7 @@ public final class CerberusFileProvenanceValue {
   private final long file_size;
   private final String group_desc;
   private final String group_id;
+  private final String instrument_model;
   private final Tuple ius;
   private final String kit;
   private final String library_design;
@@ -32,7 +33,6 @@ public final class CerberusFileProvenanceValue {
   private final String organism;
   private final Path path;
   private final String project;
-  private final String source;
   private final boolean stale;
   private final String targeted_resequencing;
   private final Instant timestamp;
@@ -42,8 +42,8 @@ public final class CerberusFileProvenanceValue {
   private final String tissue_type;
   private final String workflow;
   private final String workflow_accession;
-  private final Set<Tuple> workflow_run_attributes;
   private final String workflow_run_accession;
+  private final Set<Tuple> workflow_run_attributes;
   private final Tuple workflow_version;
 
   public CerberusFileProvenanceValue(
@@ -78,7 +78,7 @@ public final class CerberusFileProvenanceValue {
       boolean stale,
       SortedMap<String, SortedSet<String>> file_attributes,
       SortedMap<String, SortedSet<String>> workflow_run_attributes,
-      String source) {
+      String instrument_model) {
     super();
     this.accession = accession;
     this.path = path;
@@ -111,7 +111,7 @@ public final class CerberusFileProvenanceValue {
     this.stale = stale;
     this.file_attributes = IUSUtils.attributes(file_attributes);
     this.workflow_run_attributes = IUSUtils.attributes(workflow_run_attributes);
-    this.source = source;
+    this.instrument_model = instrument_model;
   }
 
   @ShesmuVariable
@@ -145,6 +145,7 @@ public final class CerberusFileProvenanceValue {
         && file_attributes.equals(that.file_attributes)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
+        && instrument_model.equals(that.instrument_model)
         && ius.equals(that.ius)
         && kit.equals(that.kit)
         && library_design.equals(that.library_design)
@@ -156,7 +157,6 @@ public final class CerberusFileProvenanceValue {
         && organism.equals(that.organism)
         && path.equals(that.path)
         && project.equals(that.project)
-        && source.equals(that.source)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
@@ -201,6 +201,7 @@ public final class CerberusFileProvenanceValue {
         file_size,
         group_desc,
         group_id,
+        instrument_model,
         ius,
         kit,
         library_design,
@@ -213,7 +214,6 @@ public final class CerberusFileProvenanceValue {
         organism,
         path,
         project,
-        source,
         stale,
         targeted_resequencing,
         timestamp,
@@ -225,6 +225,11 @@ public final class CerberusFileProvenanceValue {
         workflow_run_attributes,
         workflow_run_accession,
         workflow_version);
+  }
+
+  @ShesmuVariable
+  public String instrument_model() {
+    return instrument_model;
   }
 
   @ShesmuVariable(type = "t3sis")
@@ -287,11 +292,6 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable(signable = true)
   public String project() {
     return project;
-  }
-
-  @ShesmuVariable
-  public String source() {
-    return source;
   }
 
   @ShesmuVariable
