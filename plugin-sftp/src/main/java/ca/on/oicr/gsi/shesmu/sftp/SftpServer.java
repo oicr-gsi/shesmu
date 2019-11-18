@@ -230,7 +230,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
                 try (final Session.Command process = session.exec(command);
                     final BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                        new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    final BufferedReader errorReader =
+                        new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                   if ("UPDATE".equals(reader.readLine())) {
                     try (final OutputStream output = process.getOutputStream()) {
                       MAPPER.writeValue(output, data);
@@ -242,6 +244,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                               new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
                     }
                   }
+                  System.out.println(String.format("=== SSH REFILL %s STDERR ===\n", name));
+                  errorReader.lines().forEach(System.out::println);
+                  System.out.println("=== END ===");
+                  System.out.println(String.format("=== SSH REFILL %s STDOUT ===\n", name));
+                  reader.lines().forEach(System.out::println);
+                  System.out.println("=== END ===");
                   process.join();
                   exitStatus = process.getExitStatus() == null ? 255 : process.getExitStatus();
                 }
