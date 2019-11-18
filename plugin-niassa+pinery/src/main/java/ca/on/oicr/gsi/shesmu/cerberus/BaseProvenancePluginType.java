@@ -129,7 +129,11 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           fp.getStatus() == FileProvenance.Status.STALE,
                           fp.getFileAttributes(),
                           fp.getWorkflowRunAttributes(),
-                          "file_provenance");
+                          IUSUtils.singleton(
+                                  fp.getSequencerRunPlatformNames(),
+                                  reason -> badSetInRecord.add("instrument_model: " + reason),
+                                  true)
+                              .orElse(""));
 
                   if (!badSetInRecord.isEmpty()) {
                     badSets.incrementAndGet();
