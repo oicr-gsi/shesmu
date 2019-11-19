@@ -99,15 +99,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       }
     }
 
-    private Predicate<RunDto> isRunComplete =
-        run -> {
-          return run != null
-              && run.getState().equals("Completed")
-              && run.getCreatedDate() != null
-              && run.getRunDirectory() != null
-              && !run.getRunDirectory().equals("");
-        };
-
     private Stream<PineryIUSValue> lanes(
         PineryClient client,
         String version,
@@ -119,8 +110,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       return Utils.stream(client.getLaneProvenance().version(version))
           .filter(
               lp ->
-                  isRunComplete.test(allRuns.get(lp.getSequencerRunName()))
-                      && lp.getCreatedDate() != null
+                  isRunValid(allRuns.get(lp.getSequencerRunName()))
                       && (lp.getSkip() == null || !lp.getSkip()))
           .map(
               lp -> {
@@ -131,7 +121,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 }
                 final Instant lastModified =
                     lp.getLastModified() == null ? Instant.EPOCH : lp.getLastModified().toInstant();
-                  addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
+                addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
                 return new PineryIUSValue(
                     Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
@@ -181,8 +171,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       return Utils.stream(client.getSampleProvenance().version(version))
           .filter(
               sp ->
-                  isRunComplete.test(allRuns.get(sp.getSequencerRunName()))
-                      && sp.getCreatedDate() != null
+                  isRunValid(allRuns.get(sp.getSequencerRunName()))
                       && hasLane.test(sp.getSequencerRunName(), sp.getLaneNumber()))
           .map(
               sp -> {
@@ -290,17 +279,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
-  private String getRunField(RunDto run, Function<RunDto, String> getField) {
-    Optional<String> val = maybeGetRunField(run, getField);
-    return val.orElse("");
-  }
-
-  private Optional<String> maybeGetRunField(RunDto run, Function<RunDto, String> getField) {
-    Optional<String> maybeVal = Optional.empty();
-    if (run != null) {
-      maybeVal = Optional.ofNullable(getField.apply(run));
-    }
-    return maybeVal;
+  private static boolean isRunValid(RunDto run) {
+    return run != null
+        && run.getCreatedDate() != null
+        && run.getRunDirectory() != null
+        && !run.getRunDirectory().equals("");
   }
 
   private static Optional<String> limsAttr(
@@ -349,6 +332,19 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     final Optional<String> url = config.map(PineryConfiguration::getUrl);
     renderer.link("URL", url.orElse("about:blank"), url.orElse("Unknown"));
     renderer.line("Provider", config.map(PineryConfiguration::getProvider).orElse("Unknown"));
+  }
+
+  private String getRunField(RunDto run, Function<RunDto, String> getField) {
+    Optional<String> val = maybeGetRunField(run, getField);
+    return val.orElse("");
+  }
+
+  private Optional<String> maybeGetRunField(RunDto run, Function<RunDto, String> getField) {
+    Optional<String> maybeVal = Optional.empty();
+    if (run != null) {
+      maybeVal = Optional.ofNullable(getField.apply(run));
+    }
+    return maybeVal;
   }
 
   @ShesmuMethod(
