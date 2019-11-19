@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
@@ -83,12 +84,29 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
   static final ObjectMapper MAPPER = new ObjectMapper();
   private static final FileAttributes NXFILE = new FileAttributes.Builder().withSize(-1).build();
+  private static final Gauge refillBytes =
+      Gauge.build(
+              "shesmu_sftp_refill_bytes_sent", "The number of bytes sent to the refill command.")
+          .labelNames("filename", "name")
+          .register();
   private static final Gauge refillExitStatus =
       Gauge.build(
               "shesmu_sftp_refill_exit_status",
               "The last exit status of the remotely executed SSH process.")
           .labelNames("filename", "name")
           .register();
+  private static final Gauge refillLastUpdate =
+      Gauge.build(
+              "shesmu_sftp_refill_last_updated",
+              "The timestamp when the refill command was last run.")
+          .labelNames("filename", "name")
+          .register();
+  private static final LatencyHistogram refillLatency =
+      new LatencyHistogram(
+          "shesmu_sftp_refill_processing_time",
+          "The time to run the remote refill script in seconds.",
+          "filename",
+          "name");
   private static final Counter symlinkErrors =
       Counter.build(
               "shesmu_sftp_symlink_errors",
@@ -226,7 +244,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         .map(
             client -> {
               int exitStatus;
-              try (final Session session = client.startSession()) {
+              refillLastUpdate.labels(fileName().toString(), name).setToCurrentTime();
+              try (final AutoCloseable latency = refillLatency.start(fileName().toString(), name);
+                  final Session session = client.startSession()) {
 
                 try (final Session.Command process = session.exec(command);
                     final BufferedReader reader =
@@ -234,7 +254,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                     final BufferedReader errorReader =
                         new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                   if ("UPDATE".equals(reader.readLine())) {
-                    try (final OutputStream output = process.getOutputStream()) {
+                    try (final OutputStream output =
+                        new PrometheusLoggingOutputStream(
+                            process.getOutputStream(), refillBytes, fileName().toString(), name)) {
                       MAPPER.writeValue(output, data);
                       // Send EOF to the remote end since closing the stream doesn't do that:
                       // https://github.com/hierynomus/sshj/issues/143
