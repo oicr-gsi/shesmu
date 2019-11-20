@@ -20,6 +20,7 @@ public final class CerberusFileProvenanceValue {
   private final long file_size;
   private final String group_desc;
   private final String group_id;
+  private final Set<String> inputFiles;
   private final String instrument_model;
   private final Tuple ius;
   private final String kit;
@@ -78,7 +79,8 @@ public final class CerberusFileProvenanceValue {
       boolean stale,
       SortedMap<String, SortedSet<String>> file_attributes,
       SortedMap<String, SortedSet<String>> workflow_run_attributes,
-      String instrument_model) {
+      String instrument_model,
+      Set<String> inputFiles) {
     super();
     this.accession = accession;
     this.path = path;
@@ -112,6 +114,7 @@ public final class CerberusFileProvenanceValue {
     this.file_attributes = IUSUtils.attributes(file_attributes);
     this.workflow_run_attributes = IUSUtils.attributes(workflow_run_attributes);
     this.instrument_model = instrument_model;
+    this.inputFiles = inputFiles;
   }
 
   @ShesmuVariable
@@ -225,6 +228,11 @@ public final class CerberusFileProvenanceValue {
         workflow_run_attributes,
         workflow_run_accession,
         workflow_version);
+  }
+
+  @ShesmuVariable
+  public Set<String> input_files() {
+    return inputFiles;
   }
 
   @ShesmuVariable

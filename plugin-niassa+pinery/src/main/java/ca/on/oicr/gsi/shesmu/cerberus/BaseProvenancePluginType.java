@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
@@ -133,7 +134,11 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   fp.getSequencerRunPlatformNames(),
                                   reason -> badSetInRecord.add("instrument_model: " + reason),
                                   true)
-                              .orElse(""));
+                              .orElse(""),
+                          fp.getWorkflowRunInputFileSWIDs()
+                              .stream()
+                              .map(Object::toString)
+                              .collect(Collectors.toSet()));
 
                   if (!badSetInRecord.isEmpty()) {
                     badSets.incrementAndGet();
