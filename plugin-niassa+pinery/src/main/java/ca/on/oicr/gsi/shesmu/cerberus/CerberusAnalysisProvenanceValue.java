@@ -28,10 +28,10 @@ public final class CerberusAnalysisProvenanceValue {
               new Pair<>("time", Imyhat.DATE),
               new Pair<>("version", Imyhat.STRING)));
   private final Optional<Long> fileAccession;
-  private Set<Tuple> fileAttributes;
+  private final Set<Tuple> fileAttributes;
   private final Optional<Path> filePath;
-  private Set<Long> inputFiles;
-  private Set<Tuple> iusAttributes;
+  private final Set<Long> inputFiles;
+  private final Set<Tuple> iusAttributes;
   private final Set<Tuple> lims;
   private final Optional<String> md5;
   private final Optional<String> metatype;
