@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +34,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   private final String description;
   private final int line;
   private final Set<String> tags;
+  private final List<ExpressionNode> variableTags;
 
   public OliveNodeRun(
       int line,
@@ -41,7 +43,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       List<OliveArgumentNode> arguments,
       List<OliveClauseNode> clauses,
       Set<String> tags,
-      String description) {
+      String description,
+      List<ExpressionNode> variableTags) {
     super(clauses);
     this.line = line;
     this.column = column;
@@ -49,6 +52,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     this.arguments = arguments;
     this.tags = tags;
     this.description = description;
+    this.variableTags = variableTags;
   }
 
   @Override
@@ -58,9 +62,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 
   @Override
   protected void collectArgumentSignableVariables() {
-    arguments
-        .stream()
-        .forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+    arguments.forEach(
+        arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
   }
 
   @Override
@@ -74,6 +77,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   @Override
   public void collectPluginsExtra(Set<Path> pluginFileNames) {
     arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
+    variableTags.forEach(tag -> tag.collectPlugins(pluginFileNames));
   }
 
   @Override
@@ -106,6 +110,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     // Not exportable
   }
 
+  private static final Type A_STRING_TYPE = Type.getType(String.class);
+
   @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     final Set<String> captures = new HashSet<>();
@@ -130,7 +136,24 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     action.methodGen().loadLocal(local);
     action.methodGen().invokeVirtual(A_ACTION_TYPE, METHOD_ACTION__PREPARE);
-    oliveBuilder.emitAction(action.methodGen(), local, tags);
+    action.methodGen().push(variableTags.size() + tags.size());
+    action.methodGen().newArray(A_STRING_TYPE);
+    int tagIndex = 0;
+    for (final String tag : tags) {
+      action.methodGen().dup();
+      action.methodGen().push(tagIndex++);
+      action.methodGen().push(tag);
+      action.methodGen().arrayStore(A_STRING_TYPE);
+    }
+    for (final ExpressionNode tag : variableTags) {
+      action.methodGen().dup();
+      action.methodGen().push(tagIndex++);
+      tag.render(action);
+      action.methodGen().arrayStore(A_STRING_TYPE);
+    }
+    int tagArray = action.methodGen().newLocal(A_STRING_TYPE);
+    action.methodGen().storeLocal(tagArray);
+    oliveBuilder.emitAction(action.methodGen(), local, tagArray);
     action.methodGen().visitInsn(Opcodes.RETURN);
     action.methodGen().visitMaxs(0, 0);
     action.methodGen().visitEnd();
@@ -153,7 +176,9 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                 });
     return defs.isGood()
         & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
-            == arguments.size();
+            == arguments.size()
+        & variableTags.stream().filter(tag -> tag.resolve(defs, errorHandler)).count()
+            == variableTags.size();
   }
 
   @Override
@@ -177,6 +202,12 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       ok = false;
     }
 
+    ok &=
+        variableTags
+                .stream()
+                .filter(tag -> tag.resolveDefinitions(oliveCompilerServices, errorHandler))
+                .count()
+            == variableTags.size();
     definition = oliveCompilerServices.action(actionName);
     if (definition != null) {
 
@@ -241,6 +272,16 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                   .filter(argument -> argument.checkArguments(parameterInfo::get, errorHandler))
                   .count()
               == arguments.size();
+    }
+    for (final ExpressionNode tag : variableTags) {
+      if (tag.typeCheck(errorHandler)) {
+        if (!tag.type().isSame(Imyhat.STRING)) {
+          tag.typeError(Imyhat.STRING.name(), tag.type(), errorHandler);
+          ok = false;
+        }
+      } else {
+        ok = false;
+      }
     }
     return ok;
   }
