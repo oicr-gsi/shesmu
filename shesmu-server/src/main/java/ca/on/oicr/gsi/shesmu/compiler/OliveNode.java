@@ -74,11 +74,21 @@ public abstract class OliveNode {
         "Run",
         (input, output) -> {
           final AtomicReference<String> name = new AtomicReference<>();
+          final AtomicReference<List<ExpressionNode>> variableTags = new AtomicReference<>();
           final AtomicReference<List<OliveArgumentNode>> arguments = new AtomicReference<>();
           final Parser result =
               input
                   .whitespace()
                   .identifier(name::set)
+                  .whitespace()
+                  .list(
+                      variableTags::set,
+                      (i, o) ->
+                          i.whitespace()
+                              .keyword("Tag")
+                              .whitespace()
+                              .then(ExpressionNode::parse, o)
+                              .whitespace())
                   .whitespace()
                   .keyword("With")
                   .whitespace()
@@ -87,7 +97,14 @@ public abstract class OliveNode {
             output.accept(
                 (line, column, clauses, tags, description) ->
                     new OliveNodeRun(
-                        line, column, name.get(), arguments.get(), clauses, tags, description));
+                        line,
+                        column,
+                        name.get(),
+                        arguments.get(),
+                        clauses,
+                        tags,
+                        description,
+                        variableTags.get()));
           }
           return result;
         });
