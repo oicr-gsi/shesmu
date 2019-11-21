@@ -35,7 +35,7 @@ public class PackWdlVariables implements ImyhatConsumer {
         for (final Pair<String[], Imyhat> field : group.getValue()) {
           final String fieldName = field.first()[index];
           final String propertyName = String.join(".", field.first());
-          handlers.put(fieldName, result -> new PackWdlJsonObject(result, propertyName));
+          handlers.put(fieldName, result -> new PackWdlJsonObject(result, propertyName, true));
           fields.add(new Pair<>(fieldName, field.second()));
         }
       } else {
