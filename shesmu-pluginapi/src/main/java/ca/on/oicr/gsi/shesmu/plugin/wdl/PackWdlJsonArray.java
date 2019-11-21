@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 public class PackWdlJsonArray extends PackJsonArray {
   @Override
   protected ImyhatConsumer createObject(ObjectNode object, String property) {
-    return new PackWdlJsonObject(object, property);
+    return new PackWdlJsonObject(object, property, false);
   }
 
   @Override
