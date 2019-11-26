@@ -165,7 +165,7 @@ public class CompiledGenerator implements DefinitionRepository {
         return "Completed normally";
       } catch (final Exception e) {
         e.printStackTrace();
-        return e.getMessage();
+        return e.toString();
       }
     }
 
