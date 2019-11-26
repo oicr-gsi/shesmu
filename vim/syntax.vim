@@ -62,6 +62,7 @@ syn keyword shesmuKeyword OnlyIf
 syn keyword shesmuKeyword PartitionCount
 syn keyword shesmuKeyword Pick
 syn keyword shesmuKeyword Reduce
+syn keyword shesmuKeyword Refill
 syn keyword shesmuKeyword Reject
 syn keyword shesmuKeyword Return
 syn keyword shesmuKeyword Reverse
