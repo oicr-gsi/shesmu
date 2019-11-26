@@ -1007,7 +1007,7 @@ public final class ActionProcessor
                 entry.getValue().thrown = null;
               } catch (final Throwable e) {
                 entry.getValue().lastState = ActionState.UNKNOWN;
-                entry.getValue().thrown = e.getMessage();
+                entry.getValue().thrown = e.toString();
                 e.printStackTrace();
                 if (e instanceof Error) {
                   throw (Error) e;
