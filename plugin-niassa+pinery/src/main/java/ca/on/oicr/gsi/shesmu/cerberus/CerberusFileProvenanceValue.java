@@ -22,6 +22,7 @@ public final class CerberusFileProvenanceValue {
   private final String group_id;
   private final Set<String> inputFiles;
   private final String instrument_model;
+  private final String external_name;
   private final Tuple ius;
   private final String kit;
   private final String library_design;
@@ -61,6 +62,7 @@ public final class CerberusFileProvenanceValue {
       String organism,
       String library_name,
       String donor,
+      String external_name,
       Tuple ius,
       String library_design,
       String tissue_type,
@@ -95,6 +97,7 @@ public final class CerberusFileProvenanceValue {
     this.organism = organism;
     this.library_name = library_name;
     this.donor = donor;
+    this.external_name = external_name;
     this.ius = ius;
     this.library_design = library_design;
     this.tissue_type = tissue_type;
@@ -134,6 +137,11 @@ public final class CerberusFileProvenanceValue {
     return donor;
   }
 
+  @ShesmuVariable(signable = true)
+  public String external_name() {
+    return external_name;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -145,6 +153,7 @@ public final class CerberusFileProvenanceValue {
         && accession.equals(that.accession)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
+        && external_name.equals(that.external_name)
         && file_attributes.equals(that.file_attributes)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
@@ -200,6 +209,7 @@ public final class CerberusFileProvenanceValue {
         accession,
         completed_date,
         donor,
+        external_name,
         file_attributes,
         file_size,
         group_desc,
