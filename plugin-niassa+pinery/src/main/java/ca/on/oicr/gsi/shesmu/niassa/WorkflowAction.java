@@ -183,6 +183,7 @@ public final class WorkflowAction extends Action {
           runAccession = match.state().workflowRunAccession();
         }
         externalTimestamp = Optional.ofNullable(match.state().lastModified());
+        this.errors = Collections.emptyList();
         return match.actionState();
       }
 
@@ -295,6 +296,7 @@ public final class WorkflowAction extends Action {
           .labels(server.get().url(), Long.toString(workflowAccession))
           .inc();
       lastState = success ? ActionState.QUEUED : ActionState.FAILED;
+      this.errors = Collections.emptyList();
       return lastState;
     } catch (final Exception e) {
       e.printStackTrace();
