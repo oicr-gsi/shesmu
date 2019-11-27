@@ -116,6 +116,42 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  private class MaxInFlightCache extends KeyValueCache<Long, Optional<Integer>> {
+    public MaxInFlightCache(Path fileName) {
+      super("niassa-max-in-flight " + fileName.toString(), 5, SimpleRecord::new);
+    }
+
+    private int countRecords(String report) {
+      int counter = 0;
+      for (int i = 0; i < report.length(); i++) {
+        if (report.charAt(i) == '\n') {
+          counter++;
+        }
+      }
+      return Math.max(0, counter - 1);
+    }
+
+    @Override
+    protected Optional<Integer> fetch(Long workflowRunSwid, Instant lastUpdated)
+        throws IOException {
+      if (metadata == null) {
+        return Optional.empty();
+      }
+      return Optional.of(
+          Stream.of(
+                  WorkflowRunStatus.pending,
+                  WorkflowRunStatus.running,
+                  WorkflowRunStatus.submitted,
+                  WorkflowRunStatus.submitted_retry)
+              .mapToInt(
+                  status ->
+                      countRecords(
+                          metadata.getWorkflowRunReport(
+                              workflowRunSwid.intValue(), status, null, null)))
+              .sum());
+    }
+  }
+
   private class SkipLaneCache extends ValueCache<Stream<Pair<Tuple, Tuple>>> {
     public SkipLaneCache(Path fileName) {
       super("niassa-skipped " + fileName.toString(), 20, ReplacingRecord::new);
@@ -262,6 +298,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
   private final Map<Long, Integer> maxInFlight = new ConcurrentHashMap<>();
+  private final MaxInFlightCache maxInFlightCache;
   private Metadata metadata;
   private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>> skipCache;
@@ -274,6 +311,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     analysisCache = new AnalysisCache(fileName);
     analysisDataCache = new AnalysisDataCache(fileName);
     directoryAndIniCache = new DirectoryAndIniCache(fileName);
+    maxInFlightCache = new MaxInFlightCache(fileName);
     skipCache = new SkipLaneCache(fileName);
   }
 
@@ -321,21 +359,23 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return host;
   }
 
+  public void invalidateMaxInFlight(long workflowRunSwid) {
+    maxInFlightCache.invalidate(workflowRunSwid);
+  }
+
   public synchronized boolean maxInFlight(long workflowAccession) {
     // Ban all jobs with invalid accessions from running
     if (workflowAccession < 1) {
       return true;
     }
-    final long running =
-        analysisCache()
-            .get(workflowAccession)
-            .filter(
-                analysisState ->
-                    analysisState.state() != ActionState.FAILED
-                        && analysisState.state() != ActionState.SUCCEEDED)
-            .count();
-    foundRunning.labels(url(), Long.toString(workflowAccession)).set(running);
-    return running >= maxInFlight.getOrDefault(workflowAccession, 0);
+    return maxInFlightCache
+        .get(workflowAccession)
+        .map(
+            running -> {
+              foundRunning.labels(url(), Long.toString(workflowAccession)).set(running);
+              return running >= maxInFlight.getOrDefault(workflowAccession, 0);
+            })
+        .orElse(true);
   }
 
   public Metadata metadata() {
@@ -379,6 +419,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     url = settings.getProperty("SW_REST_URL", url);
     this.settings = settings;
     analysisCache.invalidateAll();
+    maxInFlightCache.invalidateAll();
     skipCache.invalidate();
     configuration = Optional.of(value);
     updateWorkflows();

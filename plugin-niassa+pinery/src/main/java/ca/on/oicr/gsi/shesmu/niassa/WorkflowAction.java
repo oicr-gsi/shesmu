@@ -138,7 +138,7 @@ public final class WorkflowAction extends Action {
           // see a state transition before any of our sibling workflow runs. If we see that happen,
           // zap the cache so they will see it. We may have selected a previous workflow run, so zap
           // the right cache.
-          server.get().analysisCache().invalidate(run.getWorkflowAccession().longValue());
+          server.get().invalidateMaxInFlight(run.getWorkflowAccession().longValue());
         }
         return state;
       }
@@ -269,7 +269,7 @@ public final class WorkflowAction extends Action {
         hasLaunched = true;
         // Zap the cache so any other workflows will see this workflow running and won't exceed our
         // budget
-        server.get().analysisCache().invalidate(workflowAccession);
+        server.get().invalidateMaxInFlight(workflowAccession);
         final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
         attribute.setTag(MAJOR_OLIVE_VERSION);
         attribute.setValue(Long.toString(majorOliveVersion));
