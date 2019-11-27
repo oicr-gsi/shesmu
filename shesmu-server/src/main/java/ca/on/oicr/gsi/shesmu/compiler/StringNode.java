@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  */
 public abstract class StringNode {
   private static final Pattern DATE_FORMAT = Pattern.compile("^[GyMdhHmsSEDFwWakKz]");
-  private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt{])");
+  private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt{}])");
   private static final Pattern LITERAL = Pattern.compile("^[^\\\\\"{]+");
   private static final Parser.ParseDispatch<StringNode> PARTS = new Parser.ParseDispatch<>();
 
@@ -87,6 +87,7 @@ public abstract class StringNode {
       case "t":
         return "\t";
       case "{":
+      case "}":
       case "\\":
       case "\"":
         return escape;
