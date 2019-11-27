@@ -102,6 +102,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   reason -> badSetInRecord.add("samplenames:" + reason),
                                   false)
                               .orElse(""),
+                          limsAttr(fp, "geo_external_name", badSetInRecord::add).orElse(""),
                           packIUS(fp),
                           limsAttr(fp, "geo_library_source_template_type", badSetInRecord::add)
                               .orElse(""),
