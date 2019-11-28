@@ -110,6 +110,7 @@ are available:
 - `integer`: treated in Shesmu and the INI file as an integer
 - `path`: treated in Shesmu as a path and as a string in the INI file
 - `string`: treated as as a string in both Shesmu and the INI file
+- `json`: an arbitrary chunk of JSON data
 - a number: treated as an integer in Shesmu; in the INI, the value provided by the olive is divided by this number. Since Shesmu provides convenient suffixes for units of data and time, this allows everything in Shesmu to be done in bytes and seconds and then corrected to the units provided. So, if the units in the INI file should be minutes, setting `60` will allow setting the units in second in Shesmu and having that rounded up to the nearest minute in the INI file
 
 There are also complex types: dates, lists, and tuples.

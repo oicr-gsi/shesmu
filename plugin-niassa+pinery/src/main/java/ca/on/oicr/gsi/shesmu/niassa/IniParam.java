@@ -51,6 +51,8 @@ public final class IniParam<T> {
             return FLOAT;
           case "integer":
             return INTEGER;
+          case "json":
+            return JSON;
           case "path":
             return PATH;
           case "string":
@@ -280,6 +282,25 @@ public final class IniParam<T> {
         @Override
         public Imyhat type() {
           return Imyhat.INTEGER;
+        }
+      };
+  /** Save a JSON blob */
+  public static final Stringifier JSON =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          try {
+            return NiassaServer.MAPPER.writeValueAsString(value);
+          } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "null";
+          }
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.JSON;
         }
       };
   /** Save a path */
