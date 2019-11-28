@@ -444,6 +444,11 @@ public abstract class ExpressionNode implements Renderable {
     SUFFIX_LOOSE.addKeyword(
         "As",
         (p, o) -> {
+          final Parser jsonParser = p.whitespace().keyword("json").whitespace();
+          if (jsonParser.isGood()) {
+            o.accept(node -> new ExpressionNodeJsonPack(p.line(), p.column(), node));
+            return jsonParser;
+          }
           final AtomicReference<ImyhatNode> typeNode = new AtomicReference<>();
           final Parser result = p.whitespace().then(ImyhatNode::parse, typeNode::set).whitespace();
           if (result.isGood()) {

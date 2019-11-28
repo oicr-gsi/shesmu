@@ -787,6 +787,16 @@ will produce:
 | `"a"`  | `` `1` `` | `` `True` `` |
 | `"b"`  | `` `2` `` | `` ` ` ``    |
 
+### JSON Conversion
+- _expr_ `As` _type_
+
+Convert a value to or from JSON. If _type_ is `json`, then the result from
+_expr_ will be convert to JSON in the Shesmu-standard way. If _type_ is any
+other type, then _expr_ must be a `json` value and it will be converted from
+JSON to the matching Shesmu type. Since the conversion from JSON to Shesmu
+cannot be guaranteed, it will return an optional of _type_. To create a JSON
+`null` value, use `` ` ` As json ``.
+
 ### Blocks
 - `Begin`  
  _name0_ `=` _expr0_`;`  
