@@ -1,0 +1,8 @@
+Input test;
+
+Olive Run ok With ok = Begin
+  j = "hello" As json;
+  s = j As string;
+  i = j As integer;
+  Return s == `"hello"` && i == ``;
+  End;
