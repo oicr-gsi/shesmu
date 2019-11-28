@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -560,6 +561,11 @@ public final class ActionProcessor
           return input;
         }
       };
+  private static final LatencyHistogram actionPerformTime =
+      new LatencyHistogram(
+          "shesmu_action_perform_time",
+          "The length of time for an action to update it state in seconds.",
+          "type");
   private static final Gauge actionThrows =
       Gauge.build(
               "shesmu_action_perform_throw",
@@ -995,11 +1001,12 @@ public final class ActionProcessor
               entry.getValue().lastChecked = Instant.now();
               final ActionState oldState = entry.getValue().lastState;
               final boolean oldThrown = entry.getValue().thrown != null;
-              try (AutoCloseable inflight =
-                  Server.inflightCloseable(
-                      String.format(
-                          "Performing action %s of type %s",
-                          entry.getValue(), entry.getKey().type()))) {
+              try (AutoCloseable timer = actionPerformTime.start(entry.getKey().type());
+                  AutoCloseable inflight =
+                      Server.inflightCloseable(
+                          String.format(
+                              "Performing action %s of type %s",
+                              entry.getValue(), entry.getKey().type()))) {
                 entry.getValue().lastState =
                     entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
                         ? ActionState.THROTTLED
