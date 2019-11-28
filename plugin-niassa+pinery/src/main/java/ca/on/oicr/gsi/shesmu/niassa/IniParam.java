@@ -32,83 +32,126 @@ import java.util.stream.Stream;
  * WorkflowAction}
  */
 public final class IniParam<T> {
-  /** Save a Boolean value as "true" or "false" */
-  public static final Stringifier BOOLEAN =
-      new Stringifier() {
+  @JsonDeserialize(using = StringifierDeserializer.class)
+  public abstract static class Stringifier {
+    public abstract String stringify(WorkflowAction action, Object value);
 
+    public abstract Imyhat type();
+  }
+
+  public static class StringifierDeserializer extends JsonDeserializer<Stringifier> {
+
+    private Stringifier deserialize(JsonNode node) {
+      if (node.isTextual()) {
+        final String str = node.asText();
+        switch (str) {
+          case "boolean":
+            return BOOLEAN;
+          case "float":
+            return FLOAT;
+          case "integer":
+            return INTEGER;
+          case "path":
+            return PATH;
+          case "string":
+            return STRING;
+          default:
+            throw new IllegalArgumentException("Unknown INI type: " + str);
+        }
+      }
+      if (node.isNumber()) {
+        return correctInteger(node.asInt());
+      }
+      if (node.isObject()) {
+        final String type = node.get("is").asText();
+        switch (type) {
+          case "date":
+            return date(node.get("format").asText());
+          case "list":
+            return list(node.get("delimiter").asText(), deserialize(node.get("of")));
+          case "tuple":
+            return tuple(
+                node.get("delimiter").asText(),
+                Utils.stream(node.get("of")).map(this::deserialize));
+          case "wdl":
+            return wdl((ObjectNode) node.get("parameters"));
+          default:
+            throw new IllegalArgumentException("Unknown INI type: " + type);
+        }
+      }
+      throw new IllegalArgumentException("Cannot parse INI type: " + node.getNodeType());
+    }
+
+    @Override
+    public Stringifier deserialize(JsonParser parser, DeserializationContext context)
+        throws IOException {
+      final ObjectCodec oc = parser.getCodec();
+      final JsonNode node = oc.readTree(parser);
+      return deserialize(node);
+    }
+
+    private Stringifier wdl(ObjectNode inputs) {
+      final Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> handler =
+          PackWdlVariables.create(
+              WdlInputType.of(
+                  inputs,
+                  (line, column, errorMessage) ->
+                      System.err.printf("%d:%d: %s\n", line, column, errorMessage)));
+      return new Stringifier() {
         @Override
         public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
+          final ObjectNode result = NiassaServer.MAPPER.createObjectNode();
+          handler.second().accept(handler.first().apply(result), value);
+          try {
+            return NiassaServer.MAPPER.writeValueAsString(result);
+          } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{}";
+          }
         }
 
         @Override
         public Imyhat type() {
-          return Imyhat.BOOLEAN;
+          return handler.second();
         }
       };
+    }
+  }
 
-  public static final Stringifier FLOAT =
-      new Stringifier() {
+  /**
+   * Save an integer, but first correct the units
+   *
+   * <p>We have this problem where workflows use different units as parameters (e.g., memory is in
+   * megabytes). We want all values in Shesmu to be specified in base units (bytes, bases) because
+   * it has convenient suffixes. This will divide the value specified into those units and round
+   * accordingly so the user never has to be concerned about this.
+   *
+   * @param factor the units of the target value (i.e., 1024*1024 for a value in megabytes)
+   */
+  public static Stringifier correctInteger(int factor) {
+    return new Stringifier() {
 
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
+      @Override
+      public String stringify(WorkflowAction action, Object v) {
+        final long value = (Long) v;
+        if (value == 0) {
+          return "0";
         }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.FLOAT;
+        int round;
+        if (value % factor == 0) {
+          round = 0;
+        } else {
+          round = value < 0 ? -1 : 1;
         }
-      };
-  /** Save an integer in the way you'd expect */
-  public static final Stringifier INTEGER =
-      new Stringifier() {
+        return Long.toString(value / factor + round);
+      }
 
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.INTEGER;
-        }
-      };
-  /** Save a string exactly as it is passed by the user */
-  public static final Stringifier STRING =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return (String) value;
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.STRING;
-        }
-      };
-  /** Save a path */
-  public static final Stringifier PATH =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.PATH;
-        }
-      };
-
-  private String iniName;
-  private String name;
-  private boolean required;
-  private Stringifier type;
-
-  public IniParam() {}
+      @Override
+      public Imyhat type() {
+        return Imyhat.INTEGER;
+      }
+    };
+  }
 
   /**
    * Convert a date to the specified format, in UTC.
@@ -197,56 +240,98 @@ public final class IniParam<T> {
       }
     };
   }
+  /** Save a Boolean value as "true" or "false" */
+  public static final Stringifier BOOLEAN =
+      new Stringifier() {
 
-  /**
-   * Save an integer, but first correct the units
-   *
-   * <p>We have this problem where workflows use different units as parameters (e.g., memory is in
-   * megabytes). We want all values in Shesmu to be specified in base units (bytes, bases) because
-   * it has convenient suffixes. This will divide the value specified into those units and round
-   * accordingly so the user never has to be concerned about this.
-   *
-   * @param factor the units of the target value (i.e., 1024*1024 for a value in megabytes)
-   */
-  public static Stringifier correctInteger(int factor) {
-    return new Stringifier() {
-
-      @Override
-      public String stringify(WorkflowAction action, Object v) {
-        final long value = (Long) v;
-        if (value == 0) {
-          return "0";
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
         }
-        int round;
-        if (value % factor == 0) {
-          round = 0;
-        } else {
-          round = value < 0 ? -1 : 1;
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.BOOLEAN;
         }
-        return Long.toString(value / factor + round);
-      }
+      };
 
-      @Override
-      public Imyhat type() {
-        return Imyhat.INTEGER;
-      }
-    };
-  }
+  public static final Stringifier FLOAT =
+      new Stringifier() {
 
-  public boolean getRequired() {
-    return required;
-  }
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
 
-  public void setRequired(boolean required) {
-    this.required = required;
+        @Override
+        public Imyhat type() {
+          return Imyhat.FLOAT;
+        }
+      };
+  /** Save an integer in the way you'd expect */
+  public static final Stringifier INTEGER =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.INTEGER;
+        }
+      };
+  /** Save a path */
+  public static final Stringifier PATH =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.PATH;
+        }
+      };
+  /** Save a string exactly as it is passed by the user */
+  public static final Stringifier STRING =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return (String) value;
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.STRING;
+        }
+      };
+
+  private String iniName;
+  private String name;
+  private boolean required;
+  private Stringifier type;
+
+  public IniParam() {}
+
+  public String getIniName() {
+    return iniName;
   }
 
   public String getName() {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public boolean getRequired() {
+    return required;
+  }
+
+  public Stringifier getType() {
+    return type;
   }
 
   CustomActionParameter<WorkflowAction> parameter() {
@@ -258,105 +343,19 @@ public final class IniParam<T> {
     };
   }
 
-  public String getIniName() {
-    return iniName;
-  }
-
   public void setIniName(String iniName) {
     this.iniName = iniName;
   }
 
-  public Stringifier getType() {
-    return type;
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setRequired(boolean required) {
+    this.required = required;
   }
 
   public void setType(Stringifier type) {
     this.type = type;
-  }
-
-  @JsonDeserialize(using = StringifierDeserializer.class)
-  public abstract static class Stringifier {
-    public abstract String stringify(WorkflowAction action, Object value);
-
-    public abstract Imyhat type();
-  }
-
-  public static class StringifierDeserializer extends JsonDeserializer<Stringifier> {
-
-    private Stringifier deserialize(JsonNode node) {
-      if (node.isTextual()) {
-        final String str = node.asText();
-        switch (str) {
-          case "boolean":
-            return BOOLEAN;
-          case "float":
-            return FLOAT;
-          case "integer":
-            return INTEGER;
-          case "path":
-            return PATH;
-          case "string":
-            return STRING;
-          default:
-            throw new IllegalArgumentException("Unknown INI type: " + str);
-        }
-      }
-      if (node.isNumber()) {
-        return correctInteger(node.asInt());
-      }
-      if (node.isObject()) {
-        final String type = node.get("is").asText();
-        switch (type) {
-          case "date":
-            return date(node.get("format").asText());
-          case "list":
-            return list(node.get("delimiter").asText(), deserialize(node.get("of")));
-          case "tuple":
-            return tuple(
-                node.get("delimiter").asText(),
-                Utils.stream(node.get("of")).map(this::deserialize));
-          case "wdl":
-            return wdl((ObjectNode) node.get("parameters"));
-          default:
-            throw new IllegalArgumentException("Unknown INI type: " + type);
-        }
-      }
-      throw new IllegalArgumentException("Cannot parse INI type: " + node.getNodeType());
-    }
-
-    private Stringifier wdl(ObjectNode inputs) {
-      final Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> handler =
-          PackWdlVariables.create(
-              WdlInputType.of(
-                  inputs,
-                  (line, column, errorMessage) ->
-                      System.err.printf("%d:%d: %s\n", line, column, errorMessage)));
-      return new Stringifier() {
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          final ObjectNode result = NiassaServer.MAPPER.createObjectNode();
-          handler.second().accept(handler.first().apply(result), value);
-          try {
-            return NiassaServer.MAPPER.writeValueAsString(result);
-          } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "{}";
-          }
-        }
-
-        @Override
-        public Imyhat type() {
-          return handler.second();
-        }
-      };
-    }
-
-    @Override
-    public Stringifier deserialize(JsonParser parser, DeserializationContext context)
-        throws IOException {
-      final ObjectCodec oc = parser.getCodec();
-      final JsonNode node = oc.readTree(parser);
-      return deserialize(node);
-    }
   }
 }
