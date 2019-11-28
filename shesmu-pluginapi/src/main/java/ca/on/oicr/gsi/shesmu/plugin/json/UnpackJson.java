@@ -32,7 +32,7 @@ public class UnpackJson implements ImyhatTransformer<Object> {
   public Object date() {
     if (value == null || value.isNull()) {
       return Instant.EPOCH;
-    } else if (value.isLong()) {
+    } else if (value.isNumber()) {
       return Instant.ofEpochMilli(value.asLong());
     } else {
       return DateTimeFormatter.ISO_INSTANT.parse(value.asText(), Instant::from);

@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 /** Utilities for making bytecode generation easier */
 public final class RuntimeSupport {
+
   private static class Holder<T> {
 
     private final BiPredicate<T, T> equals;
