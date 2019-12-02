@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 public class WorkflowConfiguration {
   private long accession;
   private Map<String, String> annotations = Collections.emptyMap();
+  private FileMatchingPolicy fileMatchingPolicy = FileMatchingPolicy.SUPERSET;
   private int maxInFlight;
   private IniParam<?>[] parameters;
   private long[] previousAccessions;
@@ -33,7 +34,9 @@ public class WorkflowConfiguration {
         name,
         description,
         WorkflowAction.class,
-        () -> new WorkflowAction(definer, accession, previousAccessions, services, annotations),
+        () ->
+            new WorkflowAction(
+                definer, accession, previousAccessions, fileMatchingPolicy, services, annotations),
         Stream.concat(
             Stream.of(getType().parameter()), Stream.of(getParameters()).map(IniParam::parameter)));
   }
@@ -44,6 +47,10 @@ public class WorkflowConfiguration {
 
   public Map<String, String> getAnnotations() {
     return annotations;
+  }
+
+  public FileMatchingPolicy getFileMatchingPolicy() {
+    return fileMatchingPolicy;
   }
 
   public int getMaxInFlight() {
@@ -72,6 +79,10 @@ public class WorkflowConfiguration {
 
   public void setAnnotations(Map<String, String> annotations) {
     this.annotations = annotations;
+  }
+
+  public void setFileMatchingPolicy(FileMatchingPolicy fileMatchingPolicy) {
+    this.fileMatchingPolicy = fileMatchingPolicy;
   }
 
   public void setMaxInFlight(int maxInFlight) {

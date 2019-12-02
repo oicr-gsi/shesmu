@@ -117,6 +117,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
   public WorkflowRunMatch compare(
       LongStream workflowAccessions,
       String majorOliveVersion,
+      FileMatchingPolicy fileMatchingPolicy,
       Set<Integer> inputFiles,
       List<? extends LimsKey> inputLimsKeys,
       Map<String, String> annotations) {
@@ -131,7 +132,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
                     this.annotations
                         .getOrDefault(e.getKey(), Collections.emptySet())
                         .contains(e.getValue()))
-        || !this.fileSWIDSToRun.containsAll(inputFiles)) {
+        || !fileMatchingPolicy.matches(inputFiles, fileSWIDSToRun)) {
       return new WorkflowRunMatch(AnalysisComparison.DIFFERENT, this);
     }
 

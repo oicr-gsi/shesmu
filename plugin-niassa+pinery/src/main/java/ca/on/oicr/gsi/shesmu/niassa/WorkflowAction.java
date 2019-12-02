@@ -70,6 +70,7 @@ public final class WorkflowAction extends Action {
   private final Map<String, String> annotations;
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
+  private final FileMatchingPolicy fileMatchingPolicy;
   private boolean hasLaunched;
   Properties ini = new Properties();
   private ActionState lastState = ActionState.UNKNOWN;
@@ -86,12 +87,14 @@ public final class WorkflowAction extends Action {
       Supplier<NiassaServer> server,
       long workflowAccession,
       long[] previousAccessions,
+      FileMatchingPolicy fileMatchingPolicy,
       List<String> services,
       Map<String, String> annotations) {
     super("niassa");
     this.server = server;
     this.workflowAccession = workflowAccession;
     this.previousAccessions = previousAccessions;
+    this.fileMatchingPolicy = fileMatchingPolicy;
     this.services = services;
     this.annotations = annotations;
   }
@@ -182,6 +185,7 @@ public final class WorkflowAction extends Action {
                                     as.compare(
                                         workflowAccessions(),
                                         Long.toString(majorOliveVersion),
+                                        fileMatchingPolicy,
                                         inputFileSWIDs,
                                         limsKeys,
                                         annotations)))
