@@ -139,7 +139,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           fp.getWorkflowRunInputFileSWIDs()
                               .stream()
                               .map(Object::toString)
-                              .collect(Collectors.toSet()));
+                              .collect(Collectors.toSet()),
+                          limsAttr(fp, "sex", badSetInRecord::add));
 
                   if (!badSetInRecord.isEmpty()) {
                     badSets.incrementAndGet();
@@ -154,17 +155,15 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                   badFilePathError.labels(fileName().toString()).set(badFilePaths.get());
                   badSetError.labels(fileName().toString()).set(badSets.get());
                   badWorkflowVersions.labels(fileName().toString()).set(badVersions.get());
-                  badSetCounts
-                      .entrySet()
-                      .forEach(
-                          e ->
-                              badSetMap
-                                  .labels(
-                                      Stream.concat(
-                                              Stream.of(fileName().toString()),
-                                              COLON.splitAsStream(e.getKey()))
-                                          .toArray(String[]::new))
-                                  .set(e.getValue()));
+                  badSetCounts.forEach(
+                      (key, value) ->
+                          badSetMap
+                              .labels(
+                                  Stream.concat(
+                                          Stream.of(fileName().toString()),
+                                          COLON.splitAsStream(key))
+                                      .toArray(String[]::new))
+                              .set(value));
                 });
       }
     }

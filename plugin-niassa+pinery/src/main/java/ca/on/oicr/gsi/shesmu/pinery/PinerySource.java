@@ -85,17 +85,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     (run, lane) -> validLanes.contains(new Pair<>(run, lane))))
             .onClose(
                 () ->
-                    badSetCounts
-                        .entrySet()
-                        .forEach(
-                            e ->
-                                badSetMap
-                                    .labels(
-                                        Stream.concat(
-                                                Stream.of(fileName().toString()),
-                                                Stream.of(e.getKey().split(":")))
-                                            .toArray(String[]::new))
-                                    .set(e.getValue())));
+                    badSetCounts.forEach(
+                        (key, value) ->
+                            badSetMap
+                                .labels(
+                                    Stream.concat(
+                                            Stream.of(fileName().toString()),
+                                            Stream.of(key.split(":")))
+                                        .toArray(String[]::new))
+                                .set(value)));
       }
     }
 
@@ -155,6 +153,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     false,
                     maybeGetRunField(run, RunDto::getSequencingKit),
                     maybeGetRunField(run, RunDto::getContainerModel),
+                    Optional.empty(),
                     false);
               })
           .filter(Objects::nonNull);
@@ -224,6 +223,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             .orElse(false),
                         maybeGetRunField(run, RunDto::getSequencingKit),
                         maybeGetRunField(run, RunDto::getContainerModel),
+                        limsAttr(sp, "sex", badSetInRecord::add, false),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
