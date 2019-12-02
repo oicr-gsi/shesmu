@@ -16,13 +16,13 @@ public final class CerberusFileProvenanceValue {
   private final String accession;
   private final Instant completed_date;
   private final String donor;
+  private final String external_name;
   private Set<Tuple> file_attributes;
   private final long file_size;
   private final String group_desc;
   private final String group_id;
   private final Set<String> inputFiles;
   private final String instrument_model;
-  private final String external_name;
   private final Tuple ius;
   private final String kit;
   private final String library_design;
@@ -35,6 +35,7 @@ public final class CerberusFileProvenanceValue {
   private final String organism;
   private final Path path;
   private final String project;
+  private final Optional<String> sex;
   private final boolean stale;
   private final String targeted_resequencing;
   private final Instant timestamp;
@@ -82,7 +83,8 @@ public final class CerberusFileProvenanceValue {
       SortedMap<String, SortedSet<String>> file_attributes,
       SortedMap<String, SortedSet<String>> workflow_run_attributes,
       String instrument_model,
-      Set<String> inputFiles) {
+      Set<String> inputFiles,
+      Optional<String> sex) {
     super();
     this.accession = accession;
     this.path = path;
@@ -118,6 +120,7 @@ public final class CerberusFileProvenanceValue {
     this.workflow_run_attributes = IUSUtils.attributes(workflow_run_attributes);
     this.instrument_model = instrument_model;
     this.inputFiles = inputFiles;
+    this.sex = sex;
   }
 
   @ShesmuVariable
@@ -135,11 +138,6 @@ public final class CerberusFileProvenanceValue {
       gangs = {@Gang(name = "merged_library", order = 0)})
   public String donor() {
     return donor;
-  }
-
-  @ShesmuVariable(signable = true)
-  public String external_name() {
-    return external_name;
   }
 
   @Override
@@ -169,6 +167,7 @@ public final class CerberusFileProvenanceValue {
         && organism.equals(that.organism)
         && path.equals(that.path)
         && project.equals(that.project)
+        && sex.equals(that.sex)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
@@ -179,6 +178,11 @@ public final class CerberusFileProvenanceValue {
         && workflow_run_attributes.equals(that.workflow_run_attributes)
         && workflow_run_accession.equals(that.workflow_run_accession)
         && workflow_version.equals(that.workflow_version);
+  }
+
+  @ShesmuVariable(signable = true)
+  public String external_name() {
+    return external_name;
   }
 
   @ShesmuVariable(type = "at2sas")
@@ -227,6 +231,7 @@ public final class CerberusFileProvenanceValue {
         organism,
         path,
         project,
+        sex,
         stale,
         targeted_resequencing,
         timestamp,
@@ -310,6 +315,11 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable(signable = true)
   public String project() {
     return project;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> sex() {
+    return sex;
   }
 
   @ShesmuVariable
