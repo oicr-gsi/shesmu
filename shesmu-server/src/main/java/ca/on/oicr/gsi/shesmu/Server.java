@@ -1521,7 +1521,7 @@ public final class Server implements ServerConfig, ActionServices {
             }
           }
         });
-    add(
+    server.createContext( // This uses createContext instead of add to bypass the fail-fast handler
         "/metrics",
         t -> {
           t.getResponseHeaders().set("Content-type", TextFormat.CONTENT_TYPE_004);
@@ -1547,7 +1547,7 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             RuntimeSupport.MAPPER.writeValue(
-                os, query.perform(RuntimeSupport.MAPPER, pluginManager::sourceUrl, processor));
+                os, query.perform(RuntimeSupport.MAPPER, pluginManager, processor));
           }
         });
     add(
