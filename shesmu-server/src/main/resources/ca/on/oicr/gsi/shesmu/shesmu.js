@@ -85,8 +85,21 @@ function fetchJsonWithBusyDialog(url, parameters, callback) {
     .then(response => {
       if (response.ok) {
         return Promise.resolve(response);
+      } else if (response.status == 503) {
+        closeBusy();
+        const dialog = makePopup();
+        dialog.appendChild(text("Shesmu is currently overloaded."));
+        dialog.appendChild(
+          button("Retry", "Attempt operation again.", () =>
+            fetchJsonWithBusyDialog(url, parameters, callback)
+          )
+        );
+
+        return Promise.reject(null);
       } else {
-        return Promise.reject(new Error("Failed to load"));
+        return Promise.reject(
+          new Error(`Failed to load: ${response.status} ${response.statusText}`)
+        );
       }
     })
     .then(response => response.json())
@@ -94,7 +107,9 @@ function fetchJsonWithBusyDialog(url, parameters, callback) {
       callback(response);
     })
     .catch(error => {
-      makePopup().innerText = error.message;
+      if (error) {
+        makePopup().innerText = error.message;
+      }
     })
     .finally(closeBusy);
 }
@@ -1049,38 +1064,55 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
         tagRow.appendChild(tagCell);
       });
 
-      fetch("/metrodiagram", {
-        body: JSON.stringify({
-          file: file.filename,
-          line: olive.line,
-          column: olive.column,
-          time: file.lastCompiled
-        }),
-        method: "POST"
-      })
-        .then(response => {
-          if (response.ok) {
-            return Promise.resolve(response);
-          } else if (response.status == 404) {
-            return Promise.reject(new Error("Olive has been replaced"));
-          } else {
-            return Promise.reject(new Error("Failed to load"));
-          }
+      const metroRequest = () => {
+        clearChildren(metroPane);
+        fetch("/metrodiagram", {
+          body: JSON.stringify({
+            file: file.filename,
+            line: olive.line,
+            column: olive.column,
+            time: file.lastCompiled
+          }),
+          method: "POST"
         })
-        .then(response => response.text())
-        .then(data => {
-          const svg = new window.DOMParser().parseFromString(
-            data,
-            "image/svg+xml"
-          );
-          metroPane.appendChild(document.adoptNode(svg.documentElement));
-        })
-        .catch(function(error) {
-          const element = document.createElement("SPAN");
-          element.innerText = error.message;
-          element.className = "error";
-          metroPane.appendChild(element);
-        });
+          .then(response => {
+            if (response.ok) {
+              return Promise.resolve(response);
+            } else if (response.status == 404) {
+              return Promise.reject(new Error("Olive has been replaced"));
+            } else if (response.status == 503) {
+              metroPane.appendChild(text("Shesmu is overloaded"));
+              metroPane.appendChild(
+                button("Retry", "Try to draw metro diagram", metroRequest)
+              );
+
+              return Promise.reject(null);
+            } else {
+              return Promise.reject(
+                new Error(
+                  `Failed to load: ${response.status} ${response.statusText}`
+                )
+              );
+            }
+          })
+          .then(response => response.text())
+          .then(data => {
+            const svg = new window.DOMParser().parseFromString(
+              data,
+              "image/svg+xml"
+            );
+            metroPane.appendChild(document.adoptNode(svg.documentElement));
+          })
+          .catch(function(error) {
+            if (error) {
+              const element = document.createElement("SPAN");
+              element.innerText = error.message;
+              element.className = "error";
+              metroPane.appendChild(element);
+            }
+          });
+      };
+      metroRequest();
     };
     if (olive.produces == "ACTIONS") {
       const throttleButton = document.createElement("SPAN");
@@ -1512,6 +1544,15 @@ function results(container, slug, body, render) {
     .then(response => {
       if (response.ok) {
         return Promise.resolve(response);
+      } else if (response.status == 503) {
+        clearChildren(container);
+        container.appendChild(text("Shesmu is overloaded"));
+        container.appendChild(
+          button("Retry", "Try to get results again", () =>
+            results(container, slug, body, render)
+          )
+        );
+        return Promise.reject(null);
       } else {
         return Promise.reject(new Error("Failed to load"));
       }
@@ -1522,11 +1563,13 @@ function results(container, slug, body, render) {
       render(container, data);
     })
     .catch(function(error) {
-      clearChildren(container);
-      const element = document.createElement("SPAN");
-      element.innerText = error.message;
-      element.className = "error";
-      container.appendChild(element);
+      if (error) {
+        clearChildren(container);
+        const element = document.createElement("SPAN");
+        element.innerText = error.message;
+        element.className = "error";
+        container.appendChild(element);
+      }
     });
 }
 
@@ -3004,34 +3047,6 @@ function getStats(
   refresh();
 }
 
-export function runCheck(button, sourceCode, outputContainer) {
-  clearChildren(outputContainer);
-  addThrobber(outputContainer);
-  fetch("/checkhtml", {
-    body: sourceCode,
-    method: "POST"
-  })
-    .then(response => {
-      if (response.ok) {
-        return Promise.resolve(response);
-      } else {
-        return Promise.reject(new Error("Failed to load"));
-      }
-    })
-    .then(response => response.text())
-    .then(text => new window.DOMParser().parseFromString(text, "text/html"))
-    .then(response => {
-      clearChildren(outputContainer);
-      const body = response.getElementsByTagName("body")[0];
-      while (body.children.length > 0) {
-        outputContainer.appendChild(document.adoptNode(body.children[0]));
-      }
-    })
-    .catch(function(error) {
-      outputContainer.innerText = error.message;
-    });
-}
-
 export function loadFile(callback) {
   const input = document.createElement("INPUT");
   input.type = "file";
@@ -3554,6 +3569,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   const updateSyntax = () => {
     if (!checking) {
       checking = true;
+      // This does not check for overload because editor is best-effort
       fetch("/simulate", {
         body: JSON.stringify({
           fakeActions: fakeActions,
