@@ -32,6 +32,7 @@ public final class PineryIUSValue {
   private final String run_status;
   private final Optional<String> sequencing_kit;
   private final Optional<String> sex;
+  private final Instant startDate;
   private final String targeted_resequencing;
   private final Instant timestamp;
   private final String tissue_origin;
@@ -70,6 +71,7 @@ public final class PineryIUSValue {
       Optional<String> sequencing_kit,
       Optional<String> container_model,
       Optional<String> sex,
+      Instant startDate,
       boolean is_sample) {
     super();
     this.path = path;
@@ -77,6 +79,7 @@ public final class PineryIUSValue {
     this.bases_mask = bases_mask;
     this.instrumentModel = instrumentModel;
     this.sex = sex;
+    this.startDate = startDate;
     this.is_sample = is_sample;
     this.project = project;
     this.library_name = library_name;
@@ -157,6 +160,7 @@ public final class PineryIUSValue {
         && run_status.equals(that.run_status)
         && sequencing_kit.equals(that.sequencing_kit)
         && sex.equals(that.sex)
+        && startDate.equals(that.startDate)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
@@ -202,6 +206,7 @@ public final class PineryIUSValue {
         run_status,
         sequencing_kit,
         sex,
+        startDate,
         targeted_resequencing,
         timestamp,
         tissue_origin,
@@ -294,6 +299,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public Optional<String> sex() {
     return sex;
+  }
+
+  @ShesmuVariable
+  public Instant start_date() {
+    return startDate;
   }
 
   @ShesmuVariable(signable = true)

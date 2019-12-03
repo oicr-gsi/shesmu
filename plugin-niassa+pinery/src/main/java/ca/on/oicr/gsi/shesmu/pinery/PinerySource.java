@@ -24,6 +24,7 @@ import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
@@ -154,6 +155,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     maybeGetRunField(run, RunDto::getSequencingKit),
                     maybeGetRunField(run, RunDto::getContainerModel),
                     Optional.empty(),
+                    run.getStartDate() == null || run.getStartDate().isEmpty()
+                        ? Instant.EPOCH
+                        : ZonedDateTime.parse(run.getStartDate()).toInstant(),
                     false);
               })
           .filter(Objects::nonNull);
@@ -224,6 +228,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         maybeGetRunField(run, RunDto::getSequencingKit),
                         maybeGetRunField(run, RunDto::getContainerModel),
                         limsAttr(sp, "sex", badSetInRecord::add, false),
+                        run.getStartDate() == null || run.getStartDate().isEmpty()
+                            ? Instant.EPOCH
+                            : ZonedDateTime.parse(run.getStartDate()).toInstant(),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
