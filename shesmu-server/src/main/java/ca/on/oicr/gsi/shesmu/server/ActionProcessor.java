@@ -26,16 +26,8 @@ import io.prometheus.client.Gauge;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -1005,8 +997,15 @@ public final class ActionProcessor
                   AutoCloseable inflight =
                       Server.inflightCloseable(
                           String.format(
-                              "Performing action %s of type %s",
-                              entry.getValue(), entry.getKey().type()))) {
+                              "Performing %s action from %s",
+                              entry.getKey().type(),
+                              entry
+                                  .getValue()
+                                  .locations
+                                  .stream()
+                                  .map(Object::toString)
+                                  .sorted()
+                                  .collect(Collectors.joining(" "))))) {
                 entry.getValue().lastState =
                     entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
                         ? ActionState.THROTTLED
