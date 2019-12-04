@@ -117,6 +117,11 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     url(linker).ifPresent(url -> node.put("url", url));
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s:%d:%d[%s]", fileName, line, column, time);
+  }
+
   public Optional<String> url(SourceLoctionLinker linker) {
     return linker.sourceUrl(fileName, line, column, time).filter(Objects::nonNull).findAny();
   }
