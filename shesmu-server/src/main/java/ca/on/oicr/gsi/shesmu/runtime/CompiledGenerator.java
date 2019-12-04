@@ -398,7 +398,10 @@ public class CompiledGenerator implements DefinitionRepository {
         scripts().flatMap(s -> s.generator.inputs()).collect(Collectors.toSet());
     // Allow inhibitions to be set on a per-input format format and skip fetching this data.
     final Set<String> inhibitedFormats =
-        usedFormats.stream().filter(consumer::isOverloaded).collect(Collectors.toSet());
+        usedFormats
+            .stream()
+            .filter(consumer::isOverloaded)
+            .collect(Collectors.toCollection(TreeSet::new));
     final InputProvider cache =
         new InputProvider() {
           final Map<String, List<Object>> data =
@@ -421,6 +424,9 @@ public class CompiledGenerator implements DefinitionRepository {
                               return results;
                             } catch (final Exception e) {
                               e.printStackTrace();
+                              // If we failed to load this format, pretend like it was inhibited and
+                              // don't run dependent olives
+                              inhibitedFormats.add(format.name());
                               return Collections.emptyList();
                             }
                           }));
