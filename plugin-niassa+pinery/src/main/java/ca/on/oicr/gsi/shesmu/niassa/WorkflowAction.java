@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
@@ -43,19 +44,31 @@ public final class WorkflowAction extends Action {
   static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
       LIMS_ID_COMPARATOR.thenComparing(LimsKey::getVersion);
   public static final String MAJOR_OLIVE_VERSION = "major_olive_version";
-
+  private static final LatencyHistogram launchTime =
+      new LatencyHistogram(
+          "shesmu_niassa_wr_launch_time", "The time to launch a workflow run.", "workflow");
+  private static final LatencyHistogram matchTime =
+      new LatencyHistogram(
+          "shesmu_niassa_wr_match_time",
+          "The time to match an action against the workflow runs in the database.",
+          "workflow");
   private static final Gauge runCreated =
       Gauge.build("shesmu_niassa_run_created", "The number of workflow runs launched.")
           .labelNames("target", "workflow")
           .register();
-
   private static final Gauge runFailed =
       Gauge.build(
               "shesmu_niassa_run_failed", "The number of workflow runs that failed to be launched.")
           .labelNames("target", "workflow")
           .register();
+  private static final LatencyHistogram updateTime =
+      new LatencyHistogram(
+          "shesmu_niassa_wr_update_time",
+          "The time to pull the status of a workflow run.",
+          "workflow");
 
   private final Map<String, String> annotations;
+  private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
   private boolean hasLaunched;
   Properties ini = new Properties();
@@ -68,7 +81,6 @@ public final class WorkflowAction extends Action {
   private final Supplier<NiassaServer> server;
   private final List<String> services;
   private final long workflowAccession;
-  private List<String> errors = Collections.emptyList();
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
@@ -128,19 +140,21 @@ public final class WorkflowAction extends Action {
     try {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
-        final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+        try (AutoCloseable timer = updateTime.start(Long.toString(workflowAccession))) {
+          final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
 
-        final ActionState state = NiassaServer.processingStateToActionState(run.getStatus());
-        if (state != lastState) {
-          lastState = state;
-          externalTimestamp = Optional.of(run.getUpdateTimestamp().toInstant());
-          // When we are getting the analysis state, we are bypassing the analysis cache, so we may
-          // see a state transition before any of our sibling workflow runs. If we see that happen,
-          // zap the cache so they will see it. We may have selected a previous workflow run, so zap
-          // the right cache.
-          server.get().invalidateMaxInFlight(run.getWorkflowAccession().longValue());
+          final ActionState state = NiassaServer.processingStateToActionState(run.getStatus());
+          if (state != lastState) {
+            lastState = state;
+            externalTimestamp = Optional.of(run.getUpdateTimestamp().toInstant());
+            // When we are getting the analysis state, we are bypassing the analysis cache, so we
+            // may see a state transition before any of our sibling workflow runs. If we see that
+            // happen, zap the cache so they will see it. We may have selected a previous workflow
+            // run, so zap the right cache.
+            server.get().invalidateMaxInFlight(run.getWorkflowAccession().longValue());
+          }
+          return state;
         }
-        return state;
       }
       // Read the analysis provenance cache to determine if this workflow has already been run
       final Set<Integer> inputFileSWIDs =
@@ -152,27 +166,29 @@ public final class WorkflowAction extends Action {
               .sorted(LIMS_KEY_COMPARATOR)
               .distinct()
               .collect(Collectors.toList());
-      matches =
-          workflowAccessions()
-              .distinct()
-              .boxed()
-              .flatMap(
-                  accession ->
-                      server
-                          .get()
-                          .analysisCache()
-                          .get(accession)
-                          .map(
-                              as ->
-                                  as.compare(
-                                      workflowAccessions(),
-                                      Long.toString(majorOliveVersion),
-                                      inputFileSWIDs,
-                                      limsKeys,
-                                      annotations)))
-              .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
-              .sorted()
-              .collect(Collectors.toList());
+      try (AutoCloseable timer = matchTime.start(Long.toString(workflowAccession))) {
+        matches =
+            workflowAccessions()
+                .distinct()
+                .boxed()
+                .flatMap(
+                    accession ->
+                        server
+                            .get()
+                            .analysisCache()
+                            .get(accession)
+                            .map(
+                                as ->
+                                    as.compare(
+                                        workflowAccessions(),
+                                        Long.toString(majorOliveVersion),
+                                        inputFileSWIDs,
+                                        limsKeys,
+                                        annotations)))
+                .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
+                .sorted()
+                .collect(Collectors.toList());
+      }
       if (!matches.isEmpty()) {
         // We found a matching workflow run in analysis provenance; the least stale, most complete,
         // newest workflow is selected; if that workflow run is stale, we know there are no better
@@ -235,7 +251,7 @@ public final class WorkflowAction extends Action {
       }
 
       boolean success;
-      try {
+      try (AutoCloseable timer = launchTime.start(Long.toString(workflowAccession))) {
         final Scheduler scheduler =
             new Scheduler(
                 server.get().metadata(),
