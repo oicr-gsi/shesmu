@@ -37,7 +37,7 @@ import net.sourceforge.seqware.common.model.*;
 class NiassaServer extends JsonPluginFile<Configuration> {
   private class AnalysisCache extends KeyValueCache<Long, Stream<AnalysisState>> {
     public AnalysisCache(Path fileName) {
-      super("niassa-analysis " + fileName.toString(), 20, ReplacingRecord::new);
+      super("niassa-analysis " + fileName.toString(), 120, ReplacingRecord::new);
     }
 
     @Override
