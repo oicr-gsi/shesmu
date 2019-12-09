@@ -323,7 +323,9 @@ public final class WorkflowAction extends Action {
 
   @Override
   public final int priority() {
-    return 0;
+    // This sort will group workflows together by SWID so that as many as possible will performed
+    // sequentially before analysis cache expires and needs reloading.
+    return (int) (workflowAccession % 10);
   }
 
   @Override
