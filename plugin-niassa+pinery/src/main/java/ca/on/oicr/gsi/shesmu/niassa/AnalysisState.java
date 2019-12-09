@@ -27,7 +27,8 @@ public class AnalysisState implements Comparable<AnalysisState> {
       int workflowRunAccession,
       Supplier<WorkflowRun> run,
       IntFunction<net.sourceforge.seqware.common.model.LimsKey> getLimsKey,
-      List<AnalysisProvenance> source) {
+      List<AnalysisProvenance> source,
+      Runnable incrementSlowFetch) {
     fileSWIDSToRun =
         source
             .stream()
@@ -45,8 +46,13 @@ public class AnalysisState implements Comparable<AnalysisState> {
     // we can gather all the LIMS keys from the output. If it has failed or is still running, then
     // LIMS keys may have been partially provisioned, which will be very confusing; in which case,
     // go thet the workflow that has the full set of LIMS keys at additional cost.
+    final boolean fastFetch =
+        state == ActionState.SUCCEEDED || source.stream().allMatch(ap -> ap.getFilePath() == null);
+    if (!fastFetch) {
+      incrementSlowFetch.run();
+    }
     limsKeys =
-        (state == ActionState.SUCCEEDED
+        (fastFetch
                 ? source
                     .stream()
                     .flatMap(ap -> ap.getIusLimsKeys().stream())

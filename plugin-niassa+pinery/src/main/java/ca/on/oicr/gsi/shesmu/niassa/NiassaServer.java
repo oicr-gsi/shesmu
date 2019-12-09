@@ -45,6 +45,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       if (metadata == null) {
         return Stream.empty();
       }
+      slowFetch.labels(key.toString()).set(0);
+      final Runnable incrementSlowFetch = slowFetch.labels(key.toString())::inc;
       final Map<Integer, LimsKey> limsKeyCache = new HashMap<>();
       final Map<FileProvenanceFilter, Set<String>> filters =
           new EnumMap<>(FileProvenanceFilter.class);
@@ -81,7 +83,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                       () -> metadata.getWorkflowRunWithIuses(e.getKey()),
                       iusAccession ->
                           limsKeyCache.computeIfAbsent(iusAccession, metadata::getLimsKeyFrom),
-                      e.getValue()));
+                      e.getValue(),
+                      incrementSlowFetch));
     }
   }
 
@@ -290,6 +293,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               "shesmu_niassa_found_running",
               "The number of workflow runs that Shesmu believes it has found. This is used for the max in flight checks.")
           .labelNames("target", "workflow")
+          .register();
+  static final Gauge slowFetch =
+      Gauge.build(
+              "shesmu_niassa_slow_fetch_count",
+              "The number of times a slow fetch (get workflow run and LIMS keys separately) had to be used.")
+          .labelNames("workflow")
           .register();
   private final AnalysisCache analysisCache;
   private final AnalysisDataCache analysisDataCache;
