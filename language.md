@@ -264,6 +264,7 @@ The `Let` clause can also be used to unpack optional types and single-entry list
        Let
           {run_name, lane, _} = ius, # Take the IUS tuple and extract the first element as run_name
                                      # and the second as lane
+          project,              # assume project is an existing variable and copy it; shorthand for project=project
           path = OnlyIf path,   # path is an optional type; if present, it will be available as path;
                                 # if absent, the row is dropped
           tag = Univalued tags  # tag is a set; if exactly one item is present, it will be available
