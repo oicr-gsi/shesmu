@@ -54,6 +54,17 @@ public abstract class LetArgumentNode {
 
     if (result.isGood()) {
       output.accept(unwrap.get().apply(name.get(), expression.get()));
+      return result;
+    } else {
+      final AtomicReference<String> loneName = new AtomicReference<>();
+      final Parser justName = input.whitespace().identifier(loneName::set).whitespace();
+      if (justName.isGood()) {
+        output.accept(
+            new LetArgumentNodeSimple(
+                new DestructuredArgumentNodeVariable(loneName.get()),
+                new ExpressionNodeVariable(input.line(), input.column(), loneName.get())));
+        return justName;
+      }
     }
     return result;
   }

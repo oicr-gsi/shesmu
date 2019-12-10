@@ -1,5 +1,5 @@
 Input test;
 
 Olive
- Let x = workflow
- Run ok With ok = x == "SlowA";
+ Let x = workflow, project
+ Run ok With ok = x == "SlowA" && project == "the_foo_study";
