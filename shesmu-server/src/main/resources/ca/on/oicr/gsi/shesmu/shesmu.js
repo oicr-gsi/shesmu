@@ -1075,6 +1075,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
 
       const metroRequest = () => {
         clearChildren(metroPane);
+        const metroLock = getDelayLock(container);
         fetch("/metrodiagram", {
           body: JSON.stringify({
             file: file.filename,
@@ -1106,14 +1107,16 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
           })
           .then(response => response.text())
           .then(data => {
-            const svg = new window.DOMParser().parseFromString(
-              data,
-              "image/svg+xml"
-            );
-            metroPane.appendChild(document.adoptNode(svg.documentElement));
+            if (metroLock()) {
+              const svg = new window.DOMParser().parseFromString(
+                data,
+                "image/svg+xml"
+              );
+              metroPane.appendChild(document.adoptNode(svg.documentElement));
+            }
           })
           .catch(function(error) {
-            if (error) {
+            if (error && metroLock()) {
               const element = document.createElement("SPAN");
               element.innerText = error.message;
               element.className = "error";
@@ -1546,6 +1549,7 @@ function clearDeadPause(sourceLocation, purgeFirst, callback) {
 function results(container, slug, body, render) {
   clearChildren(container);
   addThrobber(container);
+  const checkLock = getDelayLock(container);
   fetch(slug, {
     body: body,
     method: "POST"
@@ -1554,13 +1558,15 @@ function results(container, slug, body, render) {
       if (response.ok) {
         return Promise.resolve(response);
       } else if (response.status == 503) {
-        clearChildren(container);
-        container.appendChild(text("Shesmu is overloaded"));
-        container.appendChild(
-          button("Retry", "Try to get results again", () =>
-            results(container, slug, body, render)
-          )
-        );
+        if (checkLock()) {
+          clearChildren(container);
+          container.appendChild(text("Shesmu is overloaded"));
+          container.appendChild(
+            button("Retry", "Try to get results again", () =>
+              results(container, slug, body, render)
+            )
+          );
+        }
         return Promise.reject(null);
       } else {
         return Promise.reject(new Error("Failed to load"));
@@ -1568,11 +1574,13 @@ function results(container, slug, body, render) {
     })
     .then(response => response.json())
     .then(data => {
-      clearChildren(container);
-      render(container, data);
+      if (checkLock()) {
+        clearChildren(container);
+        render(container, data);
+      }
     })
     .catch(function(error) {
-      if (error) {
+      if (error && checkLock()) {
         clearChildren(container);
         const element = document.createElement("SPAN");
         element.innerText = error.message;
@@ -2365,6 +2373,23 @@ function synthesiseFilters(metaFilter) {
     );
   }
   return filters;
+}
+
+const delayLock = new WeakMap();
+
+// Get a function that will check if this request was the last one the user
+// issued. This is useful for slow queries where the users can trigger another
+// query before the first one completes; if the newly triggered query returns
+// first, this will prevent overwriting the output.
+function getDelayLock(targetElement) {
+  if (delayLock.has(targetElement)) {
+    const value = delayLock.get(targetElement) + 1;
+    delayLock.set(targetElement, value);
+    return () => delayLock.get(targetElement) == value;
+  } else {
+    delayLock.set(targetElement, 0);
+    return () => delayLock.get(targetElement) == 0;
+  }
 }
 
 function getStats(
