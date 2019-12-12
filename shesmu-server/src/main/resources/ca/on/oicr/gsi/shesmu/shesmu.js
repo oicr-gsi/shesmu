@@ -715,9 +715,11 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
       },
       ([name, query]) => name,
       ([name, query]) => name == savedQueryName,
-      [["All Actions", []]]
-        .concat(Object.entries(serverSearches))
-        .concat(Object.entries(localSearches))
+      [["All Actions", []]].concat(
+        Object.entries(serverSearches)
+          .concat(Object.entries(localSearches))
+          .sort(([a], [b]) => a.localeCompare(b))
+      )
     );
   const updateLocalSearches = () => {
     localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
