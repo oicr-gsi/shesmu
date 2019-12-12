@@ -2646,6 +2646,66 @@ function getStats(
               close();
             })
           );
+          dialog.appendChild(
+            button(
+              "🖥 cURL Actions",
+              "Convert search to a cURL command to extract actions.",
+              () => {
+                copyText(
+                  `curl -d '${JSON.stringify({
+                    filters: customFilters,
+                    skip: 0,
+                    limit: 100000
+                  })}' -X POST ${location.origin}/query`
+                );
+                close();
+              }
+            )
+          );
+          dialog.appendChild(
+            button(
+              "🖥 Wget Actions",
+              "Convert search to a Wget command to extract actions.",
+              () => {
+                copyText(
+                  `wget --post-data '${JSON.stringify({
+                    filters: customFilters,
+                    skip: 0,
+                    limit: 100000
+                  })}' ${location.origin}/query`
+                );
+                close();
+              }
+            )
+          );
+          dialog.appendChild(
+            button(
+              "🖥 cURL Purge",
+              "Convert search to a cURL command to purge matching actions.",
+              () => {
+                copyText(
+                  `curl -d '${JSON.stringify(customFilters)}' -X POST ${
+                    location.origin
+                  }/purge`
+                );
+                close();
+              }
+            )
+          );
+          dialog.appendChild(
+            button(
+              "🖥 cURL Purge",
+              "Convert search to a Wget command to purge matching actions.",
+              () => {
+                copyText(
+                  `wget --post-data '${JSON.stringify(customFilters)}' ${
+                    location.origin
+                  }/purge`
+                );
+                close();
+              }
+            )
+          );
         } else {
           makePopup().innerText = "No search to save.";
         }
