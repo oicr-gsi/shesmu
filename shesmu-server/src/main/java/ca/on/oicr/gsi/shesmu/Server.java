@@ -1546,8 +1546,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            RuntimeSupport.MAPPER.writeValue(
-                os, query.perform(RuntimeSupport.MAPPER, pluginManager, processor));
+            query.perform(os, pluginManager, processor);
           }
         });
     add(

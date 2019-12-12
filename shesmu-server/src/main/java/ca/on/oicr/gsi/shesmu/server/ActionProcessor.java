@@ -870,6 +870,10 @@ public final class ActionProcessor
     pausedOlives.remove(location);
   }
 
+  public int size() {
+    return actions.size();
+  }
+
   public Stream<SourceLocation> sources() {
     return sourceLocations.stream();
   }
@@ -930,12 +934,11 @@ public final class ActionProcessor
    *
    * @param filters the filters to match
    */
-  public Stream<ObjectNode> stream(
-      ObjectMapper mapper, SourceLoctionLinker linker, Filter... filters) {
+  public Stream<ObjectNode> stream(SourceLoctionLinker linker, Filter... filters) {
     return startStream(filters)
         .map(
             entry -> {
-              final ObjectNode node = entry.getKey().toJson(mapper);
+              final ObjectNode node = entry.getKey().toJson(RuntimeSupport.MAPPER);
               node.put("state", entry.getValue().lastState.name());
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());

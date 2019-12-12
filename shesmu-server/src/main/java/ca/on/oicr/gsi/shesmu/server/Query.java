@@ -1,13 +1,17 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.SourceLocation.SourceLoctionLinker;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
@@ -296,21 +300,6 @@ public class Query {
     }
   }
 
-  private class Limiter<T> implements Predicate<T> {
-    private long count;
-    private final long limit;
-
-    public Limiter(long hardLimit) {
-      super();
-      this.limit = Math.max(1, Math.min(getLimit(), hardLimit)) + Math.max(0, getSkip());
-    }
-
-    @Override
-    public boolean test(T t) {
-      return count++ < limit;
-    }
-  }
-
   public static final class LocationJson implements Predicate<SourceLocation> {
     private Integer column;
     private String file;
@@ -478,23 +467,33 @@ public class Query {
     return skip;
   }
 
-  public Response perform(
-      ObjectMapper mapper, SourceLoctionLinker linker, ActionProcessor processor) {
+  public void perform(OutputStream output, SourceLoctionLinker linker, ActionProcessor processor)
+      throws IOException {
     final Filter[] filters =
         Arrays.stream(getFilters())
             .filter(Objects::nonNull)
             .map(FilterJson::convert)
             .toArray(Filter[]::new);
-    final Response result = new Response();
-    final Limiter<ObjectNode> limiter = new Limiter<>(500);
-    result.setResults(
-        processor
-            .stream(mapper, linker, filters)
-            .filter(limiter)
-            .skip(Math.max(0, getSkip()))
-            .toArray(ObjectNode[]::new));
-    result.setTotal(limiter.count);
-    return result;
+    final JsonGenerator jsonOutput = new JsonFactory().createGenerator(output, JsonEncoding.UTF8);
+    jsonOutput.setCodec(RuntimeSupport.MAPPER);
+    jsonOutput.writeStartObject();
+    jsonOutput.writeNumberField("total", processor.size());
+    jsonOutput.writeArrayFieldStart("results");
+    processor
+        .stream(linker, filters)
+        .skip(Math.max(0, getSkip()))
+        .limit(limit)
+        .forEach(
+            action -> {
+              try {
+                jsonOutput.writeTree(action);
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            });
+    jsonOutput.writeEndArray();
+    jsonOutput.writeEndObject();
+    jsonOutput.close();
   }
 
   public void setFilters(FilterJson[] filters) {
