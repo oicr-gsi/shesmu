@@ -10,6 +10,8 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.WorkflowIdAndStatus;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -63,6 +65,8 @@ public class RunReport extends JsonParameterisedAction {
           "The request time latency to launch a remote action.",
           "target");
   private WorkflowIdAndStatus cromwellId;
+  private List<String> errors = Collections.emptyList();
+  private Optional<Instant> externalTimestamp = Optional.empty();
   private final Supplier<GuanyinRemote> owner;
   private final ObjectNode parameters;
   private final long reportId;
@@ -128,6 +132,11 @@ public class RunReport extends JsonParameterisedAction {
   }
 
   @Override
+  public Optional<Instant> externalTimestamp() {
+    return externalTimestamp;
+  }
+
+  @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
@@ -179,6 +188,7 @@ public class RunReport extends JsonParameterisedAction {
         final RecordDto record =
             Stream.of(results).max(Comparator.comparing(RecordDto::getGenerated)).get();
         reportRecordId = OptionalLong.of(record.getId());
+        externalTimestamp = Optional.of(ZonedDateTime.parse(record.getGenerated()).toInstant());
         if (record.isFinished()) {
           return ActionState.SUCCEEDED;
         }
@@ -209,6 +219,7 @@ public class RunReport extends JsonParameterisedAction {
         reportRecordId =
             OptionalLong.of(
                 MAPPER.readValue(response.getEntity().getContent(), CreateDto.class).getId());
+        externalTimestamp = Optional.of(Instant.now());
       } catch (final Exception e) {
         e.printStackTrace();
         this.errors = Collections.singletonList(e.getMessage());
@@ -276,8 +287,6 @@ public class RunReport extends JsonParameterisedAction {
   public long retryMinutes() {
     return 10;
   }
-
-  private List<String> errors = Collections.emptyList();
 
   private void showError(CloseableHttpResponse response, String prefix)
       throws UnsupportedOperationException, IOException {
