@@ -465,6 +465,7 @@ public final class Server implements ServerConfig, ActionServices {
                 String savedSearches;
                 String queryJson;
                 String tags;
+                String locations;
                 try {
                   savedSearches = RuntimeSupport.MAPPER.writeValueAsString(searchInfo);
                   tags =
@@ -475,12 +476,16 @@ public final class Server implements ServerConfig, ActionServices {
                               .flatMap(FileTable::olives)
                               .flatMap(OliveTable::tags)
                               .collect(Collectors.toSet()));
+                  final ArrayNode locationArray = RuntimeSupport.MAPPER.createArrayNode();
+                  processor.locations().forEach(l -> l.toJson(locationArray, pluginManager));
+                  locations = RuntimeSupport.MAPPER.writeValueAsString(locationArray);
                   queryJson = RuntimeSupport.MAPPER.writeValueAsString(query);
                 } catch (JsonProcessingException e) {
                   e.printStackTrace();
                   savedSearches = "{}";
                   queryJson = "null";
                   tags = "[]";
+                  locations = "[]";
                 }
                 return Stream.of(
                     Header.jsModule(
@@ -491,6 +496,8 @@ public final class Server implements ServerConfig, ActionServices {
                             + savedSearches
                             + ", "
                             + tags
+                            + ", "
+                            + locations
                             + ", "
                             + queryJson
                             + ");"));
