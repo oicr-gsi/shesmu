@@ -345,6 +345,8 @@ public final class WorkflowAction extends Action {
     return ini.values().stream().anyMatch(v -> query.matcher(v.toString()).matches())
         || (runAccession != 0 && query.matcher(Integer.toString(runAccession)).matches())
         || limsKeysCollection.matches(query)
+        || workflowAccessions()
+            .anyMatch(workflow -> query.matcher(Long.toString(workflow)).matches())
         || matches
             .stream()
             .anyMatch(
