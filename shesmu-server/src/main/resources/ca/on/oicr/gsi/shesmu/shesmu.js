@@ -892,14 +892,21 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
 }
 
 function copyJson(data) {
+  copyText(JSON.stringify(data, null, 2));
+}
+function copyText(data) {
   const closeBusy = makeBusyDialog();
-  const buffer = document.getElementById("copybuffer");
-  buffer.value = JSON.stringify(data, null, 2);
+  const buffer = document.createElement("TEXTAREA");
+  buffer.value = data;
   buffer.style = "display: inline;";
+  document.body.appendChild(buffer);
   buffer.select();
   document.execCommand("Copy");
   buffer.style = "display: none;";
-  window.setTimeout(closeBusy, 300);
+  window.setTimeout(() => {
+    closeBusy();
+    document.body.removeChild(buffer);
+  }, 300);
 }
 
 function downloadData(data, mimetype, fileName) {
