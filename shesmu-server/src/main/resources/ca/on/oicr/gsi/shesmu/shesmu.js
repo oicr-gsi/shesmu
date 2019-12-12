@@ -666,7 +666,12 @@ function dropDown(setter, labelMaker, isDefault, items) {
   return container;
 }
 
-export function initialiseActionDash(serverSearches, tags, savedQueryName) {
+export function initialiseActionDash(
+  serverSearches,
+  tags,
+  sources,
+  savedQueryName
+) {
   initialise();
   let localSearches = {};
   try {
@@ -694,6 +699,7 @@ export function initialiseActionDash(serverSearches, tags, savedQueryName) {
         getStats(
           query,
           tags,
+          sources,
           results,
           true,
           targetElement => makeTabs(targetElement, 1, "Overview", "Actions"),
@@ -1173,6 +1179,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
           }
         ],
         [],
+        [],
         results,
         false,
         targetElement => {
@@ -1440,6 +1447,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
               ]
             }
           ],
+          [],
           [],
           results,
           false,
@@ -2236,21 +2244,47 @@ function renderFilter(tile, filter, mutateCallback) {
         const title = document.createElement("DIV");
         title.innerText = "Olive Source";
         tile.appendChild(title);
-        tile.appendChild(
-          table(
-            filter.locations,
-            ["File", l => l.file],
-            ["Line", l => l.line],
-            ["Column", l => l.column],
-            [
-              "Time",
-              l => {
+        const headers = [
+          ["File", l => l.file],
+          ["Line", l => l.line || "*"],
+          ["Column", l => l.column || "*"],
+          [
+            "Time",
+            l => {
+              if (l.time) {
                 const [ago, absolute] = formatTimeBin(l.time);
                 return `${absolute} (${ago})`;
+              } else {
+                return "*";
               }
-            ]
-          )
-        );
+            }
+          ]
+        ];
+
+        if (mutateCallback) {
+          headers.push([
+            "",
+            l => {
+              const close = document.createElement("SPAN");
+              close.className = "close";
+              close.innerText = "✖";
+              close.addEventListener("click", e => {
+                e.stopPropagation();
+                mutateCallback("sourcelocation", x =>
+                  x.filter(
+                    li =>
+                      li.file != l.file ||
+                      li.line != l.line ||
+                      li.column != l.column ||
+                      li.time != l.time
+                  )
+                );
+              });
+              return close;
+            }
+          ]);
+        }
+        tile.appendChild(table(filter.locations, ...headers));
       }
       break;
 
@@ -2341,6 +2375,16 @@ function synthesiseFilters(metaFilter) {
     filters.push({ type: "sourcefile", files: metaFilter.sourcefile });
   }
 
+  if (
+    metaFilter.hasOwnProperty("sourcelocation") &&
+    metaFilter.sourcelocation.length > 0
+  ) {
+    filters.push({
+      type: "sourcelocation",
+      locations: metaFilter.sourcelocation
+    });
+  }
+
   for (const timespan of ["added", "checked", "statuschanged", "external"]) {
     if (metaFilter.hasOwnProperty(timespan)) {
       const start = metaFilter[timespan].start || null;
@@ -2395,6 +2439,7 @@ function getDelayLock(targetElement) {
 function getStats(
   filters,
   tags,
+  sources,
   targetElement,
   onActionPage,
   prepareTabs,
@@ -2614,6 +2659,123 @@ function getStats(
                 const help = document.createElement("P");
                 help.innerText = "Control-click to select multiple.";
                 tagDialog.appendChild(help);
+              }
+            )
+          );
+        }
+        if (sources.length) {
+          dialog.appendChild(
+            button(
+              "📍 Source Olive",
+              "Add a filter that searches for actions that came from a particular olive (even if that olive has been replaced or deleted).",
+              () => {
+                close();
+                const [sourceDialog, sourceClose] = makePopup(true);
+                const addButton = (file, line, column, time) => {
+                  const [ago, exact] = time ? formatTimeBin(time) : [null, ""];
+
+                  sourceDialog.appendChild(
+                    button(
+                      file +
+                        (line
+                          ? ":" +
+                            line +
+                            (column
+                              ? ":" + column + (ago ? "[" + ago + "]" : "")
+                              : "")
+                          : ""),
+                      exact,
+                      e => {
+                        addFilters([
+                          "sourcelocation",
+                          list => {
+                            if (!list) {
+                              return [
+                                {
+                                  file: file,
+                                  line: line,
+                                  column: column,
+                                  time: time
+                                }
+                              ];
+                            } else if (
+                              list.some(
+                                loc =>
+                                  loc.file == file &&
+                                  (!loc.line || loc.line == line) &&
+                                  (!loc.column || loc.column == column) &&
+                                  (!loc.time || loc.time == time)
+                              )
+                            ) {
+                              // If the item we are adding is already a subset of something in the list, discard it.
+                              return list;
+                            } else {
+                              // Discard anything which is a subset of what we have
+                              const result = list.filter(
+                                loc =>
+                                  loc.file != file ||
+                                  (line && loc.line != line) ||
+                                  (column && loc.column != column) ||
+                                  (time && loc.time != time)
+                              );
+                              result.push({
+                                file: file,
+                                line: line,
+                                column: column,
+                                time: time
+                              });
+                              return result;
+                            }
+                          }
+                        ]);
+                        if (!e.ctrlKey) {
+                          e.stopPropagation();
+                          sourceClose();
+                        }
+                      }
+                    )
+                  );
+                  sourceDialog.appendChild(document.createElement("BR"));
+                };
+                sources
+                  .sort(
+                    (a, b) =>
+                      a.file.localeCompare(b.file) ||
+                      a.line - b.line ||
+                      a.column - b.column ||
+                      a.time - b.time
+                  )
+                  .forEach((source, index, array) => {
+                    const previous = index == 0 ? null : array[index - 1];
+                    if (index == 0 || source.file != previous.file) {
+                      addButton(source.file, null, null, null);
+                    }
+                    if (
+                      index == 0 ||
+                      source.file != previous.file ||
+                      source.line != previous.line
+                    ) {
+                      addButton(source.file, source.line, null, null);
+                    }
+                    if (
+                      index == 0 ||
+                      source.file != previous.file ||
+                      source.line != previous.line ||
+                      source.column != previous.column
+                    ) {
+                      addButton(source.file, source.line, source.column, null);
+                    }
+                    addButton(
+                      source.file,
+                      source.line,
+                      source.column,
+                      source.time
+                    );
+                  });
+
+                const help = document.createElement("P");
+                help.innerText = "Control-click to select multiple.";
+                sourceDialog.appendChild(help);
               }
             )
           );

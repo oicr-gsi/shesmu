@@ -800,6 +800,10 @@ public final class ActionProcessor
     return pausedOlives.contains(location);
   }
 
+  public Stream<SourceLocation> locations() {
+    return actions.values().stream().flatMap(i -> i.locations.stream()).distinct();
+  }
+
   @Override
   public <T> Stream<T> measureFlow(
       Stream<T> input, String fileName, int line, int column, int oliveLine, int oliveColumn) {
