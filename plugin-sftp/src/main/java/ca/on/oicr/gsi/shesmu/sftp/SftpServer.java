@@ -56,12 +56,13 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
     @Override
     protected Optional<Pair<SSHClient, SFTPClient>> fetch(Instant lastUpdated) throws Exception {
-      if (!configuration.isPresent()) return Optional.empty();
+      final Configuration config = configuration.orElse(null);
+      if (config == null) return Optional.empty();
       final SSHClient client = new SSHClient();
       client.addHostKeyVerifier((s, i, publicKey) -> true);
 
-      client.connect(configuration.get().getHost(), configuration.get().getPort());
-      client.authPublickey(configuration.get().getUser());
+      client.connect(config.getHost(), config.getPort());
+      client.authPublickey(config.getUser());
       return Optional.of(new Pair<>(client, client.newSFTPClient()));
     }
   }
@@ -238,51 +239,51 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   public synchronized boolean refill(String name, String command, ArrayNode data) {
-    return connection
-        .get()
-        .map(Pair::first)
-        .map(
-            client -> {
-              int exitStatus;
-              refillLastUpdate.labels(fileName().toString(), name).setToCurrentTime();
-              try (final AutoCloseable latency = refillLatency.start(fileName().toString(), name);
-                  final Session session = client.startSession()) {
+    final Configuration config = configuration.orElse(null);
+    if (config == null) return false;
+    int exitStatus;
+    try (final SSHClient client = new SSHClient()) {
+      client.addHostKeyVerifier((s, i, publicKey) -> true);
 
-                try (final Session.Command process = session.exec(command);
-                    final BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(process.getInputStream()));
-                    final BufferedReader errorReader =
-                        new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                  if ("UPDATE".equals(reader.readLine())) {
-                    try (final OutputStream output =
-                        new PrometheusLoggingOutputStream(
-                            process.getOutputStream(), refillBytes, fileName().toString(), name)) {
-                      MAPPER.writeValue(output, data);
-                      // Send EOF to the remote end since closing the stream doesn't do that:
-                      // https://github.com/hierynomus/sshj/issues/143
-                      client
-                          .getTransport()
-                          .write(
-                              new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
-                    }
-                  }
-                  System.out.println(String.format("=== SSH REFILL %s STDERR ===\n", name));
-                  errorReader.lines().forEach(System.out::println);
-                  System.out.println("=== END ===");
-                  System.out.println(String.format("=== SSH REFILL %s STDOUT ===\n", name));
-                  reader.lines().forEach(System.out::println);
-                  System.out.println("=== END ===");
-                  process.join();
-                  exitStatus = process.getExitStatus() == null ? 255 : process.getExitStatus();
-                }
-              } catch (Exception e) {
-                e.printStackTrace();
-                exitStatus = 255;
-              }
-              refillExitStatus.labels(fileName().toString(), name).set(exitStatus);
-              return exitStatus == 0;
-            })
-        .orElse(false);
+      client.connect(config.getHost(), config.getPort());
+      client.authPublickey(config.getUser());
+      refillLastUpdate.labels(fileName().toString(), name).setToCurrentTime();
+      try (final AutoCloseable latency = refillLatency.start(fileName().toString(), name);
+          final Session session = client.startSession()) {
+
+        try (final Session.Command process = session.exec(command);
+            final BufferedReader reader =
+                new BufferedReader(new InputStreamReader(process.getInputStream()));
+            final BufferedReader errorReader =
+                new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+          if ("UPDATE".equals(reader.readLine())) {
+            try (final OutputStream output =
+                new PrometheusLoggingOutputStream(
+                    process.getOutputStream(), refillBytes, fileName().toString(), name)) {
+              MAPPER.writeValue(output, data);
+              // Send EOF to the remote end since closing the stream doesn't do that:
+              // https://github.com/hierynomus/sshj/issues/143
+              client
+                  .getTransport()
+                  .write(new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
+            }
+          }
+          System.out.println(String.format("=== SSH REFILL %s STDERR ===\n", name));
+          errorReader.lines().forEach(System.out::println);
+          System.out.println("=== END ===");
+          System.out.println(String.format("=== SSH REFILL %s STDOUT ===\n", name));
+          reader.lines().forEach(System.out::println);
+          System.out.println("=== END ===");
+          process.join();
+          exitStatus = process.getExitStatus() == null ? 255 : process.getExitStatus();
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      exitStatus = 255;
+    }
+    refillExitStatus.labels(fileName().toString(), name).set(exitStatus);
+    return exitStatus == 0;
   }
 
   synchronized boolean rm(String path) {
