@@ -76,9 +76,16 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         throws IOException {
       final SFTPClient client = connection.get().map(Pair::second).orElse(null);
       if (client == null) return Optional.empty();
-      final FileAttributes attributes = client.statExistence(fileName.toString());
+      try {
+        final FileAttributes attributes = client.statExistence(fileName.toString());
 
-      return Optional.of(attributes == null ? NXFILE : attributes);
+        return Optional.of(attributes == null ? NXFILE : attributes);
+      } catch (SFTPException e) {
+        if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
+          return Optional.empty();
+        }
+        throw e;
+      }
     }
   }
 
