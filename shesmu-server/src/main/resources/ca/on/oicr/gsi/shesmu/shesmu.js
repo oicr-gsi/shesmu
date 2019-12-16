@@ -2883,7 +2883,7 @@ function getStats(
           );
           dialog.appendChild(
             button(
-              "🖥 cURL Purge",
+              "🖥 Wget Purge",
               "Convert search to a Wget command to purge matching actions.",
               () => {
                 copyText(
