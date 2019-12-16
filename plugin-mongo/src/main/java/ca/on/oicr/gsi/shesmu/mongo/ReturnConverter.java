@@ -218,7 +218,7 @@ public abstract class ReturnConverter {
           return document
               .entrySet()
               .stream()
-              .map(e -> new Tuple(e.getKey(), e.getValue().toString()))
+              .map(e -> new Tuple(e.getKey(), Objects.toString(e.getValue())))
               .collect(Collectors.toCollection(ATTR::newSet));
         }
       };
