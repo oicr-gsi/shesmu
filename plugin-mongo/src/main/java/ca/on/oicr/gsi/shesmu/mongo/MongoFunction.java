@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.bson.BsonValue;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -19,6 +20,11 @@ import org.bson.Document;
 public abstract class MongoFunction {
   public static class MongoAggregateFunction extends MongoFunction {
     private List<QueryBuilder> operations;
+    private String collection;
+
+    public String getCollection() {
+      return collection;
+    }
 
     public List<QueryBuilder> getOperations() {
       return operations;
@@ -26,13 +32,18 @@ public abstract class MongoFunction {
 
     @Override
     protected MongoIterable<Document> run(MongoClient client, BsonValue... arguments) {
-      return client
-          .getDatabase(getDatabase())
-          .aggregate(
-              operations
-                  .stream()
-                  .map(operation -> operation.buildRoot(arguments))
-                  .collect(Collectors.toList()));
+      final List<Bson> operations =
+          this.operations
+              .stream()
+              .map(operation -> operation.buildRoot(arguments))
+              .collect(Collectors.toList());
+      return getCollection() == null
+          ? client.getDatabase(getDatabase()).aggregate(operations)
+          : client.getDatabase(getDatabase()).getCollection(getCollection()).aggregate(operations);
+    }
+
+    public void setCollection(String collection) {
+      this.collection = collection;
     }
 
     public void setOperations(List<QueryBuilder> operations) {
