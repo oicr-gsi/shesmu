@@ -477,7 +477,7 @@ public class Query {
     final JsonGenerator jsonOutput = new JsonFactory().createGenerator(output, JsonEncoding.UTF8);
     jsonOutput.setCodec(RuntimeSupport.MAPPER);
     jsonOutput.writeStartObject();
-    jsonOutput.writeNumberField("total", processor.size());
+    jsonOutput.writeNumberField("total", processor.size(filters));
     jsonOutput.writeArrayFieldStart("results");
     processor
         .stream(linker, filters)

@@ -874,8 +874,8 @@ public final class ActionProcessor
     pausedOlives.remove(location);
   }
 
-  public int size() {
-    return actions.size();
+  public long size(Filter... filters) {
+    return startStream(filters).count();
   }
 
   public Stream<SourceLocation> sources() {
