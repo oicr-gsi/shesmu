@@ -497,6 +497,19 @@ Stop the script after _integer_ seconds. The usual integer suffixes, especially
 `minutes` and `hours` can be added here. When a script runs over its time
 budget, the Prometheus variable `shesmu_run_overtime` will be set. 
 
+### Frequency
+
+- `Frequency` _integer_ `;`
+
+Run the script every _integer_ seconds. The usual integer suffixes, especially `minutes`
+and `hours` can be added here. 
+
+###Required Services
+
+- `RequiredServices` _service1 [, service2, ...]_ `;`
+
+Calls the throttler to check for services. Multiple services are separated by a comma.
+
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a descriptor that is used for

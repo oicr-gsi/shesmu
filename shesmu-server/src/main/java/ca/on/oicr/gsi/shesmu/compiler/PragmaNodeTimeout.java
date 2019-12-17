@@ -18,6 +18,12 @@ public class PragmaNodeTimeout extends PragmaNode {
   }
 
   @Override
+  public void renderAtExit(RootBuilder root) {
+    // Do nothing.
+
+  }
+
+  @Override
   public void timeout(AtomicInteger timeout) {
     timeout.set(this.timeout);
   }
