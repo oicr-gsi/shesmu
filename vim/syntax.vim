@@ -39,8 +39,9 @@ syn keyword shesmuKeyword Fixed
 syn keyword shesmuKeyword FixedConcat
 syn keyword shesmuKeyword Flatten
 syn keyword shesmuKeyword For
-syn keyword shesmuKeyword Function
+syn keyword shesmuKeyword Frequency
 syn keyword shesmuKeyword From
+syn keyword shesmuKeyword Function
 syn keyword shesmuKeyword Group
 syn keyword shesmuKeyword If
 syn keyword shesmuKeyword In
@@ -66,6 +67,7 @@ syn keyword shesmuKeyword Refill
 syn keyword shesmuKeyword Reject
 syn keyword shesmuKeyword Return
 syn keyword shesmuKeyword Reverse
+syn keyword shesmuKeyword RequiredServices
 syn keyword shesmuKeyword Run
 syn keyword shesmuKeyword Univalued
 syn keyword shesmuKeyword Skip

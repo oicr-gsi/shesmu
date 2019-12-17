@@ -115,6 +115,7 @@ public class ProgramNode {
     pragmas.forEach(pragma -> pragma.renderGuard(builder));
     olives.forEach(olive -> olive.build(builder, definitions));
     olives.forEach(olive -> olive.render(builder, definitions));
+    pragmas.forEach(pragma -> pragma.renderAtExit(builder));
   }
 
   public int timeout() {
