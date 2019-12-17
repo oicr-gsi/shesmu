@@ -70,6 +70,10 @@ public final class WorkflowAction extends Action {
           "The time to pull the status of a workflow run.",
           "workflow");
 
+  void setAnnotation(String tag, String value) {
+    annotations.putIfAbsent(tag, value);
+  }
+
   private final Map<String, String> annotations;
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
@@ -99,7 +103,7 @@ public final class WorkflowAction extends Action {
     this.previousAccessions = previousAccessions;
     this.fileMatchingPolicy = fileMatchingPolicy;
     this.services = services;
-    this.annotations = annotations;
+    this.annotations = new TreeMap<>(annotations);
   }
 
   @Override
@@ -109,6 +113,7 @@ public final class WorkflowAction extends Action {
     WorkflowAction that = (WorkflowAction) o;
     return majorOliveVersion == that.majorOliveVersion
         && workflowAccession == that.workflowAccession
+        && Objects.equals(annotations, that.annotations)
         && Objects.equals(limsKeysCollection, that.limsKeysCollection);
   }
 
@@ -132,7 +137,7 @@ public final class WorkflowAction extends Action {
 
   @Override
   public int hashCode() {
-    return Objects.hash(majorOliveVersion, workflowAccession, limsKeysCollection);
+    return Objects.hash(majorOliveVersion, workflowAccession, annotations, limsKeysCollection);
   }
 
   void limsKeyCollection(InputLimsCollection limsKeys) {

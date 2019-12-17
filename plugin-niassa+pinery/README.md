@@ -70,13 +70,15 @@ Each workflow is configured in a separate file named
 
     {
       "accession": 1234,
+      "annotations": {},
       "type": "FILES",
       "maxInFlight": 3,
       "parameters": [],
       "previousAccessions": [],
       "services": [
         "sqws"
-      ]
+      ],
+      "userAnnotations": {}
     }
 
 The `accession` is the workflow SWID. `type` describes how LIMS keys will be
@@ -89,8 +91,23 @@ array. The `maxInFlight` is a best-effort attempt to limit the number of
 simultaneous workflow runs launched by this olive. The `services` list is the
 name of services presented to throttlers to block launching of this workflow.
 A workflow will use the union of the services in the `.niassa` file and the
-`.niassawf` file.  The `parameters` array describes all the INI parameters and
-how they should be available to olives. Each parameter is defined as follows:
+`.niassawf` file.
+
+The `annotations` are workflow run attributes (as key-value pairs) that will be
+attached to the created run and will be used for matching existing workflow
+runs. This allows creating two non-overlapping workflows that share a SWID.
+Additionally, the olive may specify annotations using `userAnnotations`. The
+keys are both the parameter names that the olive must supply and the _tag_ that
+will be attached to the workflow run. The value is a Shesmu type descriptor for
+the annotation, which will be converted to a string in an arbitrary but
+consistent way. For example:
+
+    "userAnnotations": { "foo": "i" }
+
+will create a new required parameter `foo`, which must be an integer.
+
+The `parameters` array describes all the INI parameters and how they should be
+available to olives. Each parameter is defined as follows:
  
         {
           "name": "foo",
