@@ -935,8 +935,143 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
   initialise();
   const container = document.getElementById("olives");
   const results = document.getElementById("results");
+  const prepareFileInfo = (file, infoPane, bytecodePane) => {
+    bytecodePane.appendChild(preformatted(file.bytecode));
 
+    const infoTable = document.createElement("TABLE");
+    infoPane.appendChild(infoTable);
+
+    const statusRow = document.createElement("TR");
+    infoTable.appendChild(statusRow);
+    const statusHeader = document.createElement("TD");
+    statusHeader.innerText = "Status";
+    statusRow.appendChild(statusHeader);
+    const statusCell = document.createElement("TD");
+    statusCell.innerText = file.status;
+    statusRow.appendChild(statusCell);
+
+    const lastRunRow = document.createElement("TR");
+    infoTable.appendChild(lastRunRow);
+    const lastRunHeader = document.createElement("TD");
+    lastRunHeader.innerText = "Last Run";
+    lastRunRow.appendChild(lastRunHeader);
+    const lastRunCell = document.createElement("TD");
+    if (file.lastRun) {
+      const [ago, exact] = formatTimeBin(file.lastRun);
+      lastRunCell.innerText = ago;
+      lastRunCell.title = exact;
+    } else {
+      lastRunCell.innerText = "Never";
+    }
+    lastRunRow.appendChild(lastRunCell);
+
+    const runtimeRow = document.createElement("TR");
+    infoTable.appendChild(runtimeRow);
+    const runtimeHeader = document.createElement("TD");
+    runtimeHeader.innerText = "Run Time";
+    runtimeRow.appendChild(runtimeHeader);
+    const runtimeCell = document.createElement("TD");
+    if (file.runtime) {
+      runtimeCell.innerText = formatTimeSpan(file.runtime);
+    } else {
+      runtimeCell.innerText = "Unknown";
+    }
+    runtimeRow.appendChild(runtimeCell);
+
+    const inputFormatRow = document.createElement("TR");
+    infoTable.appendChild(inputFormatRow);
+    const inputFormatHeader = document.createElement("TD");
+    inputFormatHeader.innerText = "Input Format";
+    inputFormatRow.appendChild(inputFormatHeader);
+    const inputFormatCell = document.createElement("TD");
+    inputFormatRow.appendChild(inputFormatCell);
+    const inputFormatLink = document.createElement("A");
+    inputFormatLink.innerText = file.format;
+    inputFormatLink.href = `inputdefs#${file.format}`;
+    inputFormatCell.appendChild(inputFormatLink);
+
+    const compileTimeRow = document.createElement("TR");
+    infoTable.appendChild(compileTimeRow);
+    const compileTimeHeader = document.createElement("TD");
+    compileTimeHeader.innerText = "Last Compiled";
+    compileTimeRow.appendChild(compileTimeHeader);
+    const compileTimeCell = document.createElement("TD");
+    const [ago, exact] = formatTimeBin(file.lastCompiled);
+    compileTimeCell.innerText = ago;
+    compileTimeCell.title = exact;
+    compileTimeRow.appendChild(compileTimeCell);
+
+    return infoTable;
+  };
+  const activeOlive = document.createElement("SPAN");
+
+  const renderFile = (file, prettyFileName) => {
+    clearChildren(activeOlive);
+    activeOlive.innerText = `All Olives in ${prettyFileName}`;
+    window.history.pushState(
+      { file: file.filename, prettyFileName: prettyFileName, filters: null },
+      file.filename,
+      "olivedash?saved=" +
+        encodeURIComponent(JSON.stringify({ file: file.filename }))
+    );
+
+    if (file.olives.some(olive => olive.produces == "ACTIONS")) {
+      getStats(
+        [
+          {
+            type: "sourcefile",
+            files: [file.filename]
+          }
+        ],
+        [],
+        [],
+        results,
+        false,
+        targetElement => {
+          const [infoPane, listPane, bytecodePane] = makeTabs(
+            targetElement,
+            0,
+            "Overview",
+            "Actions",
+            "Bytecode"
+          );
+          prepareFileInfo(file, infoPane, bytecodePane);
+
+          const statsHeader = document.createElement("H2");
+          statsHeader.innerText = "Actions";
+          infoPane.appendChild(statsHeader);
+          const stats = document.createElement("DIV");
+          infoPane.appendChild(stats);
+
+          return [stats, listPane];
+        },
+        (reset, updateLocalSearches) => {
+          if (updateLocalSearches) {
+            updateLocalSearches(localSearches);
+            localStorage.setItem(
+              "shesmu_searches",
+              JSON.stringify(localSearches)
+            );
+          }
+        }
+      );
+    } else {
+      clearChildren(results);
+      const [infoPane, bytecodePane] = makeTabs(
+        results,
+        0,
+        "Overview",
+        "Bytecode"
+      );
+      prepareFileInfo(file, infoPane, bytecodePane);
+    }
+  };
   const renderOlive = (file, olive, pauseSpan) => {
+    clearChildren(activeOlive);
+    const oliveSyntax = document.createElement("I");
+    oliveSyntax.innerText = olive.syntax;
+    activeOlive.appendChild(oliveSyntax);
+    activeOlive.appendChild(document.createTextNode(" ― " + olive.description));
     const sourceLocation = JSON.stringify({
       file: file.filename,
       line: olive.line,
@@ -952,70 +1087,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
     }
 
     const prepareInfo = (infoPane, metroPane, bytecodePane) => {
-      bytecodePane.appendChild(preformatted(file.bytecode));
-
-      const infoTable = document.createElement("TABLE");
-      infoPane.appendChild(infoTable);
-
-      const statusRow = document.createElement("TR");
-      infoTable.appendChild(statusRow);
-      const statusHeader = document.createElement("TD");
-      statusHeader.innerText = "Status";
-      statusRow.appendChild(statusHeader);
-      const statusCell = document.createElement("TD");
-      statusCell.innerText = file.status;
-      statusRow.appendChild(statusCell);
-
-      const lastRunRow = document.createElement("TR");
-      infoTable.appendChild(lastRunRow);
-      const lastRunHeader = document.createElement("TD");
-      lastRunHeader.innerText = "Last Run";
-      lastRunRow.appendChild(lastRunHeader);
-      const lastRunCell = document.createElement("TD");
-      if (file.lastRun) {
-        const [ago, exact] = formatTimeBin(file.lastRun);
-        lastRunCell.innerText = ago;
-        lastRunCell.title = exact;
-      } else {
-        lastRunCell.innerText = "Never";
-      }
-      lastRunRow.appendChild(lastRunCell);
-
-      const runtimeRow = document.createElement("TR");
-      infoTable.appendChild(runtimeRow);
-      const runtimeHeader = document.createElement("TD");
-      runtimeHeader.innerText = "Run Time";
-      runtimeRow.appendChild(runtimeHeader);
-      const runtimeCell = document.createElement("TD");
-      if (file.runtime) {
-        runtimeCell.innerText = formatTimeSpan(file.runtime);
-      } else {
-        runtimeCell.innerText = "Unknown";
-      }
-      runtimeRow.appendChild(runtimeCell);
-
-      const inputFormatRow = document.createElement("TR");
-      infoTable.appendChild(inputFormatRow);
-      const inputFormatHeader = document.createElement("TD");
-      inputFormatHeader.innerText = "Input Format";
-      inputFormatRow.appendChild(inputFormatHeader);
-      const inputFormatCell = document.createElement("TD");
-      inputFormatRow.appendChild(inputFormatCell);
-      const inputFormatLink = document.createElement("A");
-      inputFormatLink.innerText = file.format;
-      inputFormatLink.href = `inputdefs#${file.format}`;
-      inputFormatCell.appendChild(inputFormatLink);
-
-      const compileTimeRow = document.createElement("TR");
-      infoTable.appendChild(compileTimeRow);
-      const compileTimeHeader = document.createElement("TD");
-      compileTimeHeader.innerText = "Last Compiled";
-      compileTimeRow.appendChild(compileTimeHeader);
-      const compileTimeCell = document.createElement("TD");
-      const [ago, exact] = formatTimeBin(file.lastCompiled);
-      compileTimeCell.innerText = ago;
-      compileTimeCell.title = exact;
-      compileTimeRow.appendChild(compileTimeCell);
+      const infoTable = prepareFileInfo(file, infoPane, bytecodePane);
 
       if (olive.url) {
         const sourceRow = document.createElement("TR");
@@ -1212,7 +1284,6 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
     const oliveDropdown = document.createElement("SPAN");
     oliveDropdown.className = "olivemenu dropdown";
     container.appendChild(oliveDropdown);
-    const activeOlive = document.createElement("SPAN");
     activeOlive.innerText = "Select";
     oliveDropdown.appendChild(activeOlive);
     oliveDropdown.appendChild(document.createTextNode(" ▼"));
@@ -1251,13 +1322,17 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
 
     oliveFiles.forEach(file => {
       const title = document.createElement("h2");
-      title.innerText = file.filename
+      const prettyFileName = file.filename
         .split("/")
         .splice(commonPrefix.length)
         .join("/\u200B");
+      title.innerText = prettyFileName;
       title.title = file.filename;
       oliveList.appendChild(title);
       if (file.olives.length) {
+        title.style.cursor = "pointer";
+        title.addEventListener("click", () => renderFile(file, prettyFileName));
+
         const table = document.createElement("table");
         oliveList.appendChild(table);
         const header = document.createElement("tr");
@@ -1299,13 +1374,6 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
           tr.appendChild(badges);
           tr.style.cursor = "pointer";
           tr.addEventListener("click", e => {
-            clearChildren(activeOlive);
-            const oliveSyntax = document.createElement("I");
-            oliveSyntax.innerText = olive.syntax;
-            activeOlive.appendChild(oliveSyntax);
-            activeOlive.appendChild(
-              document.createTextNode(" ― " + olive.description)
-            );
             renderOlive(file, olive, pauseSpan);
             if (open) {
               closeActiveMenu(false);
@@ -1318,18 +1386,14 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
             saved.column == olive.column &&
             saved.time == file.lastCompiled
           ) {
-            clearChildren(activeOlive);
-            const oliveSyntax = document.createElement("I");
-            oliveSyntax.innerText = olive.syntax;
-            activeOlive.appendChild(oliveSyntax);
-            activeOlive.appendChild(
-              document.createTextNode(" ― " + olive.description)
-            );
             open = false;
             saved = null;
             renderOlive(file, olive, pauseSpan);
           }
         });
+        if (saved && saved.file == file.filename && !saved.line) {
+          renderFile(file, prettyFileName);
+        }
       } else {
         const empty = document.createElement("P");
         empty.innerText = "No olives in this file.";
