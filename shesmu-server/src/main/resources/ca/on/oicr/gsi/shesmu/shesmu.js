@@ -779,6 +779,25 @@ export function initialiseActionDash(
   });
 
   document.getElementById("importButton").addEventListener("click", () => {
+    const createSaveDialog = (imported, provisionalName) => {
+      const [nameDialog, nameClose] = makePopup(true);
+      const nameInput = document.createElement("INPUT");
+      nameInput.type = "text";
+      nameInput.value = provisionalName;
+      nameDialog.appendChild(document.createTextNode("Name for search: "));
+      nameDialog.appendChild(nameInput);
+      nameDialog.appendChild(document.createElement("BR"));
+      nameDialog.appendChild(
+        button("Import", "Adds the search to your collection", () => {
+          if (nameInput.value) {
+            nameClose();
+            const newName = nameInput.value.trim();
+            localSearches[newName] = imported;
+            updateLocalSearches(newName);
+          }
+        })
+      );
+    };
     const [dialog, close] = makePopup(true);
     let provisionalName = "New Search";
     const input = document.createElement("TEXTAREA");
@@ -795,27 +814,17 @@ export function initialiseActionDash(
     dialog.appendChild(
       button("Import", "Import search from JSON data.", () => {
         try {
+          if (input.value.trim().startsWith("shesmusearch:")) {
+            close();
+            createSaveDialog(
+              JSON.parse(atob(input.value.split(/:/, 2)[1])),
+              "Search from Ticket"
+            );
+            return;
+          }
           const imported = JSON.parse(input.value);
           if (Array.isArray(imported)) {
-            const [nameDialog, nameClose] = makePopup(true);
-            const nameInput = document.createElement("INPUT");
-            nameInput.type = "text";
-            nameInput.value = provisionalName;
-            nameDialog.appendChild(
-              document.createTextNode("Name for search: ")
-            );
-            nameDialog.appendChild(nameInput);
-            nameDialog.appendChild(document.createElement("BR"));
-            nameDialog.appendChild(
-              button("Import", "Adds the search to your collection", () => {
-                if (nameInput.value) {
-                  nameClose();
-                  const newName = nameInput.value.trim();
-                  localSearches[newName] = imported;
-                  updateLocalSearches(newName);
-                }
-              })
-            );
+            createSaveDialog(imported, provisionalName);
           } else {
             for (const entry of Object.entries(imported)) {
               localSearches[entry[0]] = entry[1];
@@ -3056,6 +3065,26 @@ function getStats(
               copyJson(customFilters);
               close();
             })
+          );
+          dialog.appendChild(
+            button(
+              "⎘ To Clipboard for Ticket",
+              "Export search to the clipboard in a way that can be pasted in a text document.",
+              () => {
+                copyText(
+                  "shesmusearch:" +
+                    btoa(
+                      JSON.stringify(customFilters).replace(
+                        /[\u007F-\uFFFF]/g,
+                        chr =>
+                          "\\u" +
+                          ("0000" + chr.charCodeAt(0).toString(16)).substr(-4)
+                      )
+                    )
+                );
+                close();
+              }
+            )
           );
           dialog.appendChild(
             button("📁 To File", "Download search as a file.", () => {
