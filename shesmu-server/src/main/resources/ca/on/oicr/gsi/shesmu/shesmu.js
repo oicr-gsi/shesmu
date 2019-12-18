@@ -671,7 +671,8 @@ export function initialiseActionDash(
   serverSearches,
   tags,
   sources,
-  savedQueryName
+  savedQueryName,
+  userFilters
 ) {
   initialise();
   let localSearches = {};
@@ -681,62 +682,69 @@ export function initialiseActionDash(
     console.log(e);
   }
 
-  let selectedName = null;
-  let selectedQuery = null;
+  let currentName = null;
   const searchList = document.getElementById("searches");
   const searchName = document.getElementById("searchName");
   const results = document.getElementById("results");
-  const redrawDropDown = () =>
+  const redrawDropDown = (selectedName, initialCustomFilter, isPop) =>
     makeDropDown(
       searchName,
       searchList,
       ([name, query]) => {
-        if (window.history.state != name) {
-          window.history.pushState(name, name, `actiondash?saved=${name}`);
-        }
-        savedQueryName = null;
-        selectedName = name;
-        selectedQuery = query;
+        currentName = name;
         getStats(
           query,
           tags,
           sources,
           results,
           true,
-          targetElement => makeTabs(targetElement, 1, "Overview", "Actions"),
+          targetElement => makeTabs(targetElement, 0, "Overview", "Actions"),
 
-          (reset, updateLocalSearches) => {
-            if (reset) {
-              savedQueryName = "All Actions";
-            }
+          (reset, updateLocalSearches, newName) => {
             if (updateLocalSearches) {
               updateLocalSearches(localSearches);
               localStorage.setItem(
                 "shesmu_searches",
                 JSON.stringify(localSearches)
               );
+              redrawDropDown(newName, {}, false);
             }
-            redrawDropDown();
+          },
+          name == selectedName ? initialCustomFilter : null,
+          filters => {
+            if (
+              !isPop ||
+              name != selectedName ||
+              initialCustomFilter != filters
+            ) {
+              window.history.pushState(
+                [name, filters],
+                name,
+                `actiondash?saved=${encodeURIComponent(
+                  name
+                )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
+              );
+            }
           }
         );
       },
       ([name, query]) => name,
-      ([name, query]) => name == savedQueryName,
+      ([name, query]) => name == selectedName,
       [["All Actions", []]].concat(
         Object.entries(serverSearches)
           .concat(Object.entries(localSearches))
           .sort(([a], [b]) => a.localeCompare(b))
       )
     );
-  const updateLocalSearches = () => {
+  const updateLocalSearches = name => {
     localStorage.setItem("shesmu_searches", JSON.stringify(localSearches));
-    redrawDropDown();
+    redrawDropDown(name, null, false);
   };
 
   window.addEventListener("popstate", e => {
     if (e.state) {
-      savedQueryName = e.state;
-      redrawDropDown();
+      const [selectedQuery, initialCustomFilter] = e.state;
+      redrawDropDown(selectedQuery, initialCustomFilter, true);
     }
   });
 
@@ -764,7 +772,7 @@ export function initialiseActionDash(
         if (name) {
           localSearches[name] = filters;
           close();
-          updateLocalSearches();
+          updateLocalSearches(name);
         }
       })
     );
@@ -802,8 +810,9 @@ export function initialiseActionDash(
               button("Import", "Adds the search to your collection", () => {
                 if (nameInput.value) {
                   nameClose();
-                  localSearches[nameInput.value.trim()] = imported;
-                  updateLocalSearches();
+                  const newName = nameInput.value.trim();
+                  localSearches[newName] = imported;
+                  updateLocalSearches(newName);
                 }
               })
             );
@@ -811,7 +820,7 @@ export function initialiseActionDash(
             for (const entry of Object.entries(imported)) {
               localSearches[entry[0]] = entry[1];
             }
-            updateLocalSearches();
+            updateLocalSearches("All Actions");
           }
           close();
         } catch (e) {
@@ -823,10 +832,9 @@ export function initialiseActionDash(
   document
     .getElementById("deleteSearchButton")
     .addEventListener("click", () => {
-      if (localSearches.hasOwnProperty(selectedName)) {
-        delete localSearches[selectedName];
-        savedQueryName = "All Actions";
-        updateLocalSearches();
+      if (localSearches.hasOwnProperty(currentName)) {
+        delete localSearches[currentName];
+        updateLocalSearches("All Actions");
       } else {
         makePopup().innerText =
           "Search is stored on the Shesmu server and cannot be deleted from this interface.";
@@ -856,8 +864,14 @@ export function initialiseActionDash(
       makePopup().innerText = "No saved searches to export.";
     }
   });
+  let savedCustomFilter = null;
+  try {
+    savedCustomFilter = JSON.parse(userFilters);
+  } catch (e) {
+    console.log(e);
+  }
 
-  redrawDropDown();
+  redrawDropDown(savedQueryName, savedCustomFilter, false);
 }
 
 function copyJson(data) {
@@ -908,7 +922,10 @@ function saveSearch(filters, updateSearchList) {
       const name = input.value.trim();
       if (name) {
         close();
-        updateSearchList(localSearches => (localSearches[name] = filters));
+        updateSearchList(
+          localSearches => (localSearches[name] = filters),
+          name
+        );
       }
     })
   );
@@ -931,7 +948,12 @@ function initialise() {
   });
 }
 
-export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
+export function initialiseOliveDash(
+  oliveFiles,
+  deadPauses,
+  saved,
+  userFilters
+) {
   initialise();
   const container = document.getElementById("olives");
   const results = document.getElementById("results");
@@ -1066,7 +1088,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
       prepareFileInfo(file, infoPane, bytecodePane);
     }
   };
-  const renderOlive = (file, olive, pauseSpan) => {
+  const renderOlive = (file, olive, pauseSpan, initialCustomFilter, isPop) => {
     clearChildren(activeOlive);
     const oliveSyntax = document.createElement("I");
     oliveSyntax.innerText = olive.syntax;
@@ -1078,14 +1100,6 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
       column: olive.column,
       time: file.lastCompiled
     });
-    if (window.history.state != sourceLocation) {
-      window.history.pushState(
-        sourceLocation,
-        olive.syntax + " ― " + olive.description,
-        "olivedash?saved=" + encodeURIComponent(sourceLocation)
-      );
-    }
-
     const prepareInfo = (infoPane, metroPane, bytecodePane) => {
       const infoTable = prepareFileInfo(file, infoPane, bytecodePane);
 
@@ -1245,6 +1259,24 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
             );
           }
         },
+        initialCustomFilter,
+        filters => {
+          if (!isPop || filters != initialCustomFilter) {
+            window.history.pushState(
+              {
+                file: file.filename,
+                line: olive.line,
+                column: olive.column,
+                time: file.lastCompiled,
+                filters: filters
+              },
+              olive.syntax + " ― " + olive.description,
+              `olivedash?saved=${encodeURIComponent(
+                sourceLocation
+              )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
+            );
+          }
+        },
         throttleButton
       );
     } else {
@@ -1258,6 +1290,19 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
         "Bytecode"
       );
       prepareInfo(infoPane, metroPane, bytecodePane);
+      if (!isPop) {
+        window.history.pushState(
+          {
+            file: file.filename,
+            line: olive.line,
+            column: olive.column,
+            time: file.lastCompiled,
+            filters: null
+          },
+          olive.syntax + " ― " + olive.description,
+          `olivedash?saved=${encodeURIComponent(sourceLocation)}&filters=null`
+        );
+      }
     }
   };
   if (deadPauses.length > 0) {
@@ -1366,6 +1411,7 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
           badges.innerText = producesIcon;
           badges.title = producesDescription;
           const pauseSpan = document.createElement("span");
+          olive.pauseSpan = pauseSpan;
           badges.appendChild(pauseSpan);
           if (olive.produces == "ACTIONS") {
             pauseSpan.innerText = olive.paused ? " ⏸" : " ▶";
@@ -1374,7 +1420,14 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
           tr.appendChild(badges);
           tr.style.cursor = "pointer";
           tr.addEventListener("click", e => {
-            renderOlive(file, olive, pauseSpan);
+            clearChildren(activeOlive);
+            const oliveSyntax = document.createElement("I");
+            oliveSyntax.innerText = olive.syntax;
+            activeOlive.appendChild(oliveSyntax);
+            activeOlive.appendChild(
+              document.createTextNode(" ― " + olive.description)
+            );
+            renderOlive(file, olive, pauseSpan, null, false);
             if (open) {
               closeActiveMenu(false);
             }
@@ -1386,9 +1439,22 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
             saved.column == olive.column &&
             saved.time == file.lastCompiled
           ) {
+            clearChildren(activeOlive);
+            const oliveSyntax = document.createElement("I");
+            oliveSyntax.innerText = olive.syntax;
+            activeOlive.appendChild(oliveSyntax);
+            activeOlive.appendChild(
+              document.createTextNode(" ― " + olive.description)
+            );
             open = false;
             saved = null;
-            renderOlive(file, olive, pauseSpan);
+            let initialCustomFilter = null;
+            try {
+              initialCustomFilter = JSON.parse(userFilters);
+            } catch (e) {
+              console.log(e);
+            }
+            renderOlive(file, olive, pauseSpan, initialCustomFilter, false);
           }
         });
         if (saved && saved.file == file.filename && !saved.line) {
@@ -1544,11 +1610,31 @@ export function initialiseOliveDash(oliveFiles, deadPauses, saved) {
                 JSON.stringify(localSearches)
               );
             }
-          }
+          },
+          null,
+          filters => {}
         );
       });
     });
   }
+  window.addEventListener("popstate", e => {
+    if (e.state) {
+      oliveFiles
+        .filter(file => file.filename == e.state.file)
+        .forEach(file =>
+          file.olives
+            .filter(
+              olive =>
+                e.state.line == olive.line &&
+                e.state.column == olive.column &&
+                e.state.time == file.lastCompiled
+            )
+            .forEach(olive =>
+              renderOlive(file, olive, olive.pauseSpan, e.state.filters, true)
+            )
+        );
+    }
+  });
 }
 
 function clearDeadPause(sourceLocation, purgeFirst, callback) {
@@ -2480,9 +2566,14 @@ function getStats(
   onActionPage,
   prepareTabs,
   updateSearchList,
+  userSuppliedFilter,
+  updateURL,
   ...toolbarExtras
 ) {
   let additionalFilters = [];
+  if (userSuppliedFilter) {
+    additionalFilters.push(userSuppliedFilter);
+  }
   clearChildren(targetElement);
   const toolBar = document.createElement("P");
   toolBar.className = "accessory";
@@ -2509,6 +2600,11 @@ function getStats(
         renderFilter(filterTile, filter, null);
       });
     }
+    updateURL(
+      additionalFilters.length == 0
+        ? null
+        : additionalFilters[additionalFilters.length - 1]
+    );
     const customFilters =
       additionalFilters.length == 0
         ? []
@@ -2831,8 +2927,10 @@ function getStats(
                 additionalFilters[additionalFilters.length - 1]
               );
         if (customFilters.length > 0) {
-          saveSearch(filters.concat(customFilters), updateLocalSearches =>
-            updateSearchList(false, updateLocalSearches)
+          saveSearch(
+            filters.concat(customFilters),
+            (updateLocalSearches, name) =>
+              updateSearchList(false, updateLocalSearches, name)
           );
         } else {
           makePopup().innerText = "No changes to save.";
