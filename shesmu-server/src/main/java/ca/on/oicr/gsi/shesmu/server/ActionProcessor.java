@@ -972,6 +972,10 @@ public final class ActionProcessor
             });
   }
 
+  public Stream<String> tags() {
+    return actions.values().stream().flatMap(info -> info.tags.stream());
+  }
+
   private void update() {
     try (AutoCloseable lock = alertLock.acquire();
         AutoCloseable inflight = Server.inflightCloseable("Push alerts")) {
