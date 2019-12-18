@@ -247,13 +247,17 @@ public abstract class FileWatcher {
     }
 
     private void start(WatchedFileListener file, Path path) {
-      file.start();
-      file.update()
-          .ifPresent(
-              timeout ->
-                  retry.offer(
-                      new RetryProcess(
-                          Instant.now().plus(timeout, ChronoUnit.MINUTES), file, path)));
+      try {
+        file.start();
+        file.update()
+            .ifPresent(
+                timeout ->
+                    retry.offer(
+                        new RetryProcess(
+                            Instant.now().plus(timeout, ChronoUnit.MINUTES), file, path)));
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 
