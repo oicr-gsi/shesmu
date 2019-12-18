@@ -6,9 +6,11 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.sourceforge.seqware.common.model.Annotatable;
@@ -43,6 +45,15 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
   @Override
   public Optional<Instant> externalTimestamp() {
     return Optional.empty();
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(type.name().getBytes(StandardCharsets.UTF_8));
+    digest.accept(accession.getBytes(StandardCharsets.UTF_8));
+    digest.accept(key.getBytes(StandardCharsets.UTF_8));
+    digest.accept(new byte[] {0});
+    digest.accept(value.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

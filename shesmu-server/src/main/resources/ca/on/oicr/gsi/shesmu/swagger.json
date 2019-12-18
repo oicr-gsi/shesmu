@@ -108,6 +108,7 @@
             "checkedago": "#/components/schemas/FilterCheckedAgo",
             "external": "#/components/schemas/FilterExternal",
             "externalago": "#/components/schemas/FilterExternalAgo",
+            "id": "#/components/schemas/FilterId",
             "or": "#/components/schemas/FilterOr",
             "regex": "#/components/schemas/FilterRegex",
             "sourcefile": "#/components/schemas/FilterSourceFile",
@@ -142,6 +143,9 @@
           },
           {
             "$ref": "#/components/schemas/FilterExternalAgo"
+          },
+          {
+            "$ref": "#/components/schemas/FilterIds"
           },
           {
             "$ref": "#/components/schemas/FilterOr"
@@ -291,6 +295,25 @@
           "offset": {
             "description": "miliseconds since the current time",
             "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FilterId": {
+        "properties": {
+          "filters": {
+            "description": "the action IDs; note that action IDs are unique, but even across restarts",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
           },
           "type": {
             "type": "string"

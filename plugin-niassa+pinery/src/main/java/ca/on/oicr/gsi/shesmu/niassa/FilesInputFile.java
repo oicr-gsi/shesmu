@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -36,6 +38,15 @@ public final class FilesInputFile implements LimsKey {
         && provider.equals(that.provider)
         && sampleId.equals(that.sampleId)
         && version.equals(that.version);
+  }
+
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(new byte[] {(byte) (stale ? 's' : 'f')});
+    digest.accept(Utils.toBytes(swid));
+    digest.accept(Utils.toBytes(lastModified.toEpochSecond()));
+    digest.accept(provider.getBytes(StandardCharsets.UTF_8));
+    digest.accept(sampleId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(version.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

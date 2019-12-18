@@ -16,6 +16,12 @@ public interface InputLimsCollection {
   /** List all the input file SWIDs that should be associated with this workflow run */
   Stream<Integer> fileSwids();
 
+  /**
+   * Generate a UUID compatible with {@link
+   * ca.on.oicr.gsi.shesmu.plugin.action.Action#generateUUID(Consumer)}
+   */
+  void generateUUID(Consumer<byte[]> digest);
+
   /** List all the LIMS keys that should be associated with this workflow run */
   Stream<? extends LimsKey> limsKeys();
 
@@ -33,8 +39,6 @@ public interface InputLimsCollection {
   /**
    * Check whether the input is broken or stale in such a way that the action should go into {@link
    * ca.on.oicr.gsi.shesmu.plugin.action.ActionState#HALP} and not run.
-   *
-   * @param errorHandler
    */
   boolean shouldHalp(Consumer<String> errorHandler);
 }

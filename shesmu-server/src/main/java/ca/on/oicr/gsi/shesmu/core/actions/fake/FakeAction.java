@@ -3,12 +3,21 @@ package ca.on.oicr.gsi.shesmu.core.actions.fake;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.JsonParameterisedAction;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 public class FakeAction extends JsonParameterisedAction {
 
   public static final ObjectMapper MAPPER = new ObjectMapper();
+
+  static {
+    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+  }
+
   private final String name;
   private final ObjectNode parameters = MAPPER.createObjectNode();
 
@@ -44,6 +53,16 @@ public class FakeAction extends JsonParameterisedAction {
       return false;
     }
     return true;
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(name.getBytes(StandardCharsets.UTF_8));
+    try {
+      digest.accept(MAPPER.writeValueAsBytes(parameters));
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override

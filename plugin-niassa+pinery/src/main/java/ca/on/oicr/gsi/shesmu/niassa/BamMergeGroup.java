@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -10,13 +12,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class BamMergeGroup {
+public final class BamMergeGroup {
   private final List<BamMergeEntry> entries;
   private final String groupName;
 
   public BamMergeGroup(String groupName, List<BamMergeEntry> entries) {
     this.groupName = groupName;
     this.entries = entries;
+    entries.sort(
+        Comparator.comparing(BamMergeEntry::swid)
+            .thenComparing(BamMergeEntry::getProvider)
+            .thenComparing(BamMergeEntry::getId)
+            .thenComparing(BamMergeEntry::getVersion));
   }
 
   @Override
@@ -25,6 +32,14 @@ public class BamMergeGroup {
     if (o == null || getClass() != o.getClass()) return false;
     BamMergeGroup that = (BamMergeGroup) o;
     return entries.equals(that.entries) && groupName.equals(that.groupName);
+  }
+
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(groupName.getBytes(StandardCharsets.UTF_8));
+    digest.accept(new byte[] {0});
+    for (final BamMergeEntry entry : entries) {
+      entry.generateUUID(digest);
+    }
   }
 
   @Override
@@ -39,6 +54,10 @@ public class BamMergeGroup {
   public boolean matches(Pattern query) {
     return query.matcher(groupName).matches()
         || entries.stream().anyMatch(entry -> entry.matches(query));
+  }
+
+  public String name() {
+    return groupName;
   }
 
   public BamMergeOutputInfo prepare(ToIntFunction<LimsKey> createIusLimsKey) {

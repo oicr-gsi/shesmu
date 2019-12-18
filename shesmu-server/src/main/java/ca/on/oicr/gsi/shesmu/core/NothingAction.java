@@ -6,6 +6,8 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class NothingAction extends Action {
@@ -36,6 +38,11 @@ public class NothingAction extends Action {
       return false;
     }
     return true;
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(value.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

@@ -12,9 +12,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -149,6 +151,13 @@ public abstract class BaseTicketAction extends Action {
   @Override
   public Optional<Instant> externalTimestamp() {
     return issueLastModified;
+  }
+
+  @Override
+  public final void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(summary.getBytes(StandardCharsets.UTF_8));
+    digest.accept(new byte[] {0});
+    digest.accept(connection.get().projectKey().getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

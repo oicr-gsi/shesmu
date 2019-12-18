@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -14,6 +15,11 @@ class FilesInputLimsCollection implements InputLimsCollection {
 
   public FilesInputLimsCollection(List<FilesInputFile> value) {
     filesInputFileInformation = value;
+    filesInputFileInformation.sort(
+        Comparator.comparing(FilesInputFile::swid)
+            .thenComparing(FilesInputFile::getProvider)
+            .thenComparing(FilesInputFile::getId)
+            .thenComparing(FilesInputFile::getVersion));
   }
 
   @Override
@@ -27,6 +33,14 @@ class FilesInputLimsCollection implements InputLimsCollection {
   @Override
   public Stream<Integer> fileSwids() {
     return filesInputFileInformation.stream().map(FilesInputFile::swid);
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    for (final FilesInputFile fileInfo : filesInputFileInformation) {
+      fileInfo.generateUUID(digest);
+      digest.accept(new byte[] {0});
+    }
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
@@ -50,6 +51,16 @@ public abstract class Action {
   public Optional<Instant> externalTimestamp() {
     return Optional.empty();
   }
+
+  /**
+   * Produce a reproducible unique identifier for this action
+   *
+   * <p>It should use the same data as {@link #equals(Object)}
+   *
+   * @param digest a callback to write bytes into a cryptographic hash; this may be called as many
+   *     times as required
+   */
+  public abstract void generateUUID(Consumer<byte[]> digest);
 
   @Override
   public abstract int hashCode();

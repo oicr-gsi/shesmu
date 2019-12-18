@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -119,6 +120,7 @@ public class Query {
     @Type(value = FilterCheckedAgo.class, name = "checkedago"),
     @Type(value = FilterExternal.class, name = "external"),
     @Type(value = FilterExternalAgo.class, name = "externalago"),
+    @Type(value = FilterIds.class, name = "id"),
     @Type(value = FilterOr.class, name = "or"),
     @Type(value = FilterRegex.class, name = "regex"),
     @Type(value = FilterSourceFile.class, name = "sourcefile"),
@@ -220,6 +222,23 @@ public class Query {
 
     public void setState(ActionState[] states) {
       this.states = states;
+    }
+  }
+
+  public static class FilterIds extends FilterJson {
+    private List<String> ids;
+
+    @Override
+    public Filter convert() {
+      return maybeNegate(ActionProcessor.ids(ids));
+    }
+
+    public List<String> getIds() {
+      return ids;
+    }
+
+    public void setIds(List<String> ids) {
+      this.ids = ids;
     }
   }
 

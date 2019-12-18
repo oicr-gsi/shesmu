@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -23,6 +24,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -168,6 +172,7 @@ public final class ActionProcessor
   }
 
   private static class Information {
+    final String id;
     Instant lastAdded = Instant.now();
     Instant lastChecked = Instant.EPOCH;
     ActionState lastState = ActionState.UNKNOWN;
@@ -175,6 +180,20 @@ public final class ActionProcessor
     final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
     final Set<String> tags = ConcurrentHashMap.newKeySet();
     String thrown;
+
+    private Information(Action action) {
+      String id;
+      try {
+        final MessageDigest digest = MessageDigest.getInstance("SHA1");
+        digest.update(action.type().getBytes(StandardCharsets.UTF_8));
+        action.generateUUID(digest::update);
+        id = "shesmu:" + Utils.bytesToHex(digest.digest());
+      } catch (NoSuchAlgorithmException e) {
+        e.printStackTrace();
+        id = "";
+      }
+      this.id = id;
+    }
   }
 
   private abstract static class InstantFilter extends Filter {
@@ -287,6 +306,21 @@ public final class ActionProcessor
       @Override
       protected boolean check(Action action, Information info) {
         return info.locations.stream().map(SourceLocation::fileName).anyMatch(set::contains);
+      }
+    };
+  }
+
+  /**
+   * Get actions by unique ID.
+   *
+   * @param ids the allowed identifiers
+   */
+  public static Filter ids(List<String> ids) {
+    return new Filter() {
+
+      @Override
+      protected boolean check(Action action, Information info) {
+        return ids.contains(info.id);
       }
     };
   }
@@ -553,6 +587,7 @@ public final class ActionProcessor
           return input;
         }
       };
+  private static final AtomicLong actionIdGenerator = new AtomicLong();
   private static final LatencyHistogram actionPerformTime =
       new LatencyHistogram(
           "shesmu_action_perform_time",
@@ -608,7 +643,7 @@ public final class ActionProcessor
     knownActionTypes.add(action.type());
     if (!actions.containsKey(action)) {
       action.accepted();
-      information = new Information();
+      information = new Information(action);
       actions.put(action, information);
       stateCount.labels(ActionState.UNKNOWN.name(), action.type()).inc();
       isDuplicate = false;
@@ -943,6 +978,7 @@ public final class ActionProcessor
         .map(
             entry -> {
               final ObjectNode node = entry.getKey().toJson(RuntimeSupport.MAPPER);
+              node.put("actionId", entry.getValue().id);
               node.put("state", entry.getValue().lastState.name());
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
