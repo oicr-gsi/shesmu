@@ -470,11 +470,13 @@ public final class Server implements ServerConfig, ActionServices {
                   savedSearches = RuntimeSupport.MAPPER.writeValueAsString(searchInfo);
                   tags =
                       RuntimeSupport.MAPPER.writeValueAsString(
-                          compiler
-                              .dashboard()
-                              .map(Pair::second)
-                              .flatMap(FileTable::olives)
-                              .flatMap(OliveTable::tags)
+                          Stream.concat(
+                                  compiler
+                                      .dashboard()
+                                      .map(Pair::second)
+                                      .flatMap(FileTable::olives)
+                                      .flatMap(OliveTable::tags),
+                                  processor.tags())
                               .collect(Collectors.toSet()));
                   final ArrayNode locationArray = RuntimeSupport.MAPPER.createArrayNode();
                   processor.locations().forEach(l -> l.toJson(locationArray, pluginManager));
