@@ -107,6 +107,18 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
+  public static Map<String, String> getParameters(HttpExchange t) {
+    return Optional.ofNullable(t.getRequestURI().getQuery())
+        .map(
+            r ->
+                AMPERSAND
+                    .splitAsStream(r)
+                    .filter(i -> i.length() > 0)
+                    .map(q -> EQUAL.split(q, 2))
+                    .collect(Collectors.toMap(q -> q[0], q -> q[1], (a, b) -> a)))
+        .orElseGet(Collections::emptyMap);
+  }
+
   public static Runnable inflight(String name) {
     INFLIGHT.putIfAbsent(name, Instant.now());
     return () -> INFLIGHT.remove(name);
@@ -125,7 +137,6 @@ public final class Server implements ServerConfig, ActionServices {
 
   private static final Pattern AMPERSAND = Pattern.compile("&");
   private static final Pattern EQUAL = Pattern.compile("=");
-
   public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   private static final Map<String, Instant> INFLIGHT = new ConcurrentHashMap<>();
   private static final String instanceName =
@@ -351,6 +362,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
+          final Map<String, String> parameters = getParameters(t);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -363,6 +375,7 @@ public final class Server implements ServerConfig, ActionServices {
                 String olivesJson = "[]";
                 String deadPausesJson = "[]";
                 String savedJson = "null";
+                String userFilters = "'null'";
                 try {
                   final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
                   oliveJson(olives);
@@ -383,24 +396,17 @@ public final class Server implements ServerConfig, ActionServices {
                       .forEach(location -> location.toJson(deadPauses, pluginManager));
                   deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses);
 
-                  final Optional<String> savedString =
-                      Optional.ofNullable(t.getRequestURI().getQuery())
-                          .flatMap(
-                              r ->
-                                  AMPERSAND
-                                      .splitAsStream(r)
-                                      .filter(i -> i.length() > 0)
-                                      .map(q -> EQUAL.split(q, 2))
-                                      .filter(q -> q[0].equals("saved"))
-                                      .map(q -> q[1])
-                                      .findFirst());
-                  if (savedString.isPresent()) {
+                  final String savedString = parameters.get("saved");
+                  if (savedString != null) {
                     final Query.LocationJson savedLocation =
                         RuntimeSupport.MAPPER.readValue(
-                            URLDecoder.decode(savedString.get(), "UTF-8"),
-                            Query.LocationJson.class);
+                            URLDecoder.decode(savedString, "UTF-8"), Query.LocationJson.class);
                     savedJson = RuntimeSupport.MAPPER.writeValueAsString(savedLocation);
                   }
+                  userFilters =
+                      RuntimeSupport.MAPPER.writeValueAsString(
+                          parameters.getOrDefault("filters", "null"));
+
                 } catch (IOException e) {
                   e.printStackTrace();
                 }
@@ -415,6 +421,8 @@ public final class Server implements ServerConfig, ActionServices {
                             + deadPausesJson
                             + ", "
                             + savedJson
+                            + ", "
+                            + userFilters
                             + ");"));
               }
 
@@ -438,18 +446,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final String query =
-              Optional.ofNullable(t.getRequestURI().getQuery())
-                  .flatMap(
-                      r ->
-                          AMPERSAND
-                              .splitAsStream(r)
-                              .filter(i -> i.length() > 0)
-                              .map(q -> EQUAL.split(q, 2))
-                              .filter(q -> q[0].equals("saved"))
-                              .map(q -> q[1])
-                              .findFirst())
-                  .orElse("All Actions");
+          final Map<String, String> parameters = getParameters(t);
+
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -463,9 +461,10 @@ public final class Server implements ServerConfig, ActionServices {
                 final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
                 savedSearches.stream().forEach(search -> search.write(searchInfo));
                 String savedSearches;
-                String queryJson;
+                String savedSearch;
                 String tags;
                 String locations;
+                String userFilter;
                 try {
                   savedSearches = RuntimeSupport.MAPPER.writeValueAsString(searchInfo);
                   tags =
@@ -481,13 +480,19 @@ public final class Server implements ServerConfig, ActionServices {
                   final ArrayNode locationArray = RuntimeSupport.MAPPER.createArrayNode();
                   processor.locations().forEach(l -> l.toJson(locationArray, pluginManager));
                   locations = RuntimeSupport.MAPPER.writeValueAsString(locationArray);
-                  queryJson = RuntimeSupport.MAPPER.writeValueAsString(query);
+                  savedSearch =
+                      RuntimeSupport.MAPPER.writeValueAsString(
+                          parameters.getOrDefault("saved", "All Actions"));
+                  userFilter =
+                      RuntimeSupport.MAPPER.writeValueAsString(
+                          parameters.getOrDefault("filters", "null"));
                 } catch (JsonProcessingException e) {
                   e.printStackTrace();
                   savedSearches = "{}";
-                  queryJson = "null";
+                  savedSearch = "null";
                   tags = "[]";
                   locations = "[]";
+                  userFilter = "'{}'";
                 }
                 return Stream.of(
                     Header.jsModule(
@@ -501,7 +506,9 @@ public final class Server implements ServerConfig, ActionServices {
                             + ", "
                             + locations
                             + ", "
-                            + queryJson
+                            + savedSearch
+                            + ", "
+                            + userFilter
                             + ");"));
               }
 
@@ -1768,13 +1775,13 @@ public final class Server implements ServerConfig, ActionServices {
               (new Compiler(true) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
-                    private final NameLoader<RefillerDefinition> refillers =
-                        new NameLoader<>(
-                            definitionRepository.refillers(), RefillerDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             Stream.concat(definitionRepository.functions(), compiler.functions()),
                             FunctionDefinition::name);
+                    private final NameLoader<RefillerDefinition> refillers =
+                        new NameLoader<>(
+                            definitionRepository.refillers(), RefillerDefinition::name);
 
                     @Override
                     protected ClassVisitor createClassVisitor() {
@@ -1792,11 +1799,6 @@ public final class Server implements ServerConfig, ActionServices {
                     }
 
                     @Override
-                    protected RefillerDefinition getRefiller(String name) {
-                      return refillers.get(name);
-                    }
-
-                    @Override
                     protected FunctionDefinition getFunction(String name) {
                       return functions.get(name);
                     }
@@ -1804,6 +1806,11 @@ public final class Server implements ServerConfig, ActionServices {
                     @Override
                     protected InputFormatDefinition getInputFormats(String name) {
                       return CompiledGenerator.SOURCES.get(name);
+                    }
+
+                    @Override
+                    protected RefillerDefinition getRefiller(String name) {
+                      return refillers.get(name);
                     }
                   })
                   .compile(
@@ -1843,13 +1850,13 @@ public final class Server implements ServerConfig, ActionServices {
               (new Compiler(false) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
-                    private final NameLoader<RefillerDefinition> refillers =
-                        new NameLoader<>(
-                            definitionRepository.refillers(), RefillerDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             Stream.concat(definitionRepository.functions(), compiler.functions()),
                             FunctionDefinition::name);
+                    private final NameLoader<RefillerDefinition> refillers =
+                        new NameLoader<>(
+                            definitionRepository.refillers(), RefillerDefinition::name);
 
                     @Override
                     protected ClassVisitor createClassVisitor() {
@@ -1867,11 +1874,6 @@ public final class Server implements ServerConfig, ActionServices {
                     }
 
                     @Override
-                    protected RefillerDefinition getRefiller(String name) {
-                      return refillers.get(name);
-                    }
-
-                    @Override
                     protected FunctionDefinition getFunction(String name) {
                       return functions.get(name);
                     }
@@ -1879,6 +1881,11 @@ public final class Server implements ServerConfig, ActionServices {
                     @Override
                     protected InputFormatDefinition getInputFormats(String name) {
                       return CompiledGenerator.SOURCES.get(name);
+                    }
+
+                    @Override
+                    protected RefillerDefinition getRefiller(String name) {
+                      return refillers.get(name);
                     }
                   })
                   .compile(
