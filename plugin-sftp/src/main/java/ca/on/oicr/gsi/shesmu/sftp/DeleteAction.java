@@ -6,10 +6,12 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -33,6 +35,11 @@ public class DeleteAction extends Action {
   @Override
   public Optional<Instant> externalTimestamp() {
     return Optional.empty();
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(target.toString().getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

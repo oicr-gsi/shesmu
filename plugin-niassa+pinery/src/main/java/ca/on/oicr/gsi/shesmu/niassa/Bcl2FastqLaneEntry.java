@@ -1,9 +1,12 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -38,6 +41,17 @@ public class Bcl2FastqLaneEntry implements LimsKey {
         && limsTimestamp.equals(that.limsTimestamp)
         && limsVersion.equals(that.limsVersion)
         && samples.equals(that.samples);
+  }
+
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(Utils.toBytes(laneNumber));
+    digest.accept(limsId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(limsProvider.getBytes(StandardCharsets.UTF_8));
+    digest.accept(Utils.toBytes(limsTimestamp.toEpochSecond()));
+    digest.accept(limsVersion.getBytes(StandardCharsets.UTF_8));
+    for (final Bcl2FastqSampleEntry sample : samples) {
+      sample.generateUUID(digest);
+    }
   }
 
   @Override

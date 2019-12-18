@@ -13,6 +13,10 @@ public class Bcl2FastqInputLimsCollection implements InputLimsCollection {
 
   public Bcl2FastqInputLimsCollection(List<Bcl2FastqLaneEntry> lanes) {
     this.lanes = lanes;
+    lanes.sort(
+        Comparator.comparing(Bcl2FastqLaneEntry::getProvider)
+            .thenComparing(Bcl2FastqLaneEntry::getId)
+            .thenComparing(Bcl2FastqLaneEntry::getVersion));
   }
 
   @Override
@@ -26,6 +30,13 @@ public class Bcl2FastqInputLimsCollection implements InputLimsCollection {
   @Override
   public Stream<Integer> fileSwids() {
     return Stream.empty();
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    for (final Bcl2FastqLaneEntry lane : lanes) {
+      lane.generateUUID(digest);
+    }
   }
 
   @Override

@@ -3,7 +3,9 @@ package ca.on.oicr.gsi.shesmu.guanyin;
 import ca.on.oicr.gsi.prometheus.*;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
 import io.swagger.client.ApiClient;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -52,7 +55,6 @@ public class RunReport extends JsonParameterisedAction {
           + " modules: \"~{modules}\"\n"
           + " }\n"
           + "}\n";
-
   private static final Counter 观音RequestErrors =
       Counter.build(
               "shesmu_guanyin_request_errors",
@@ -64,6 +66,11 @@ public class RunReport extends JsonParameterisedAction {
           "shesmu_guanyin_request_time",
           "The request time latency to launch a remote action.",
           "target");
+
+  static {
+    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+  }
+
   private WorkflowIdAndStatus cromwellId;
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
@@ -134,6 +141,16 @@ public class RunReport extends JsonParameterisedAction {
   @Override
   public Optional<Instant> externalTimestamp() {
     return externalTimestamp;
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(Utils.toBytes(reportId));
+    try {
+      digest.accept(MAPPER.writeValueAsBytes(parameters));
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override

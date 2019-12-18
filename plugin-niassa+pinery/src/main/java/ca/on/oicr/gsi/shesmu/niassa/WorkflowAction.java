@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -17,9 +18,11 @@ import io.seqware.pipeline.api.Scheduler;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -112,6 +115,19 @@ public final class WorkflowAction extends Action {
   @Override
   public Optional<Instant> externalTimestamp() {
     return externalTimestamp;
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(Utils.toBytes(majorOliveVersion));
+    digest.accept(Utils.toBytes(workflowAccession));
+    for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
+      digest.accept(annotation.getKey().getBytes(StandardCharsets.UTF_8));
+      digest.accept(new byte[] {'='});
+      digest.accept(annotation.getValue().getBytes(StandardCharsets.UTF_8));
+      digest.accept(new byte[] {0});
+    }
+    limsKeysCollection.generateUUID(digest);
   }
 
   @Override

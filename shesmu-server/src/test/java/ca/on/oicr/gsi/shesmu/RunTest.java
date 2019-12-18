@@ -148,6 +148,11 @@ public class RunTest {
     }
 
     @Override
+    public void generateUUID(Consumer<byte[]> digest) {
+      digest.accept(new byte[] {(byte) (ok ? 1 : 0)});
+    }
+
+    @Override
     public int hashCode() {
       return 31;
     }

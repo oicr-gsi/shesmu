@@ -1,8 +1,11 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 final class CellRangerIUSEntry implements LimsKey {
@@ -53,6 +56,17 @@ final class CellRangerIUSEntry implements LimsKey {
         && provider.equals(limsKey.provider)
         && sampleId.equals(limsKey.sampleId)
         && version.equals(limsKey.version);
+  }
+
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(Utils.toBytes(ius_1));
+    digest.accept(groupId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(ius_2.getBytes(StandardCharsets.UTF_8));
+    digest.accept(Utils.toBytes(lastModified.toEpochSecond()));
+    digest.accept(libraryName.getBytes(StandardCharsets.UTF_8));
+    digest.accept(provider.getBytes(StandardCharsets.UTF_8));
+    digest.accept(sampleId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(version.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

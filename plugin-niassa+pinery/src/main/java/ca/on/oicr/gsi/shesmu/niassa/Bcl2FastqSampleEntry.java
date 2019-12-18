@@ -1,19 +1,22 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 
 public class Bcl2FastqSampleEntry implements LimsKey {
   private final String barcode;
   private final String groupId;
+  private final String libraryName;
   private final String limsId;
   private final String limsProvider;
   private final ZonedDateTime limsTimestamp;
   private final String limsVersion;
-  private final String libraryName;
 
   public Bcl2FastqSampleEntry(String barcode, String libraryName, LimsKey limsKey, String groupId) {
     this.barcode = barcode;
@@ -37,6 +40,17 @@ public class Bcl2FastqSampleEntry implements LimsKey {
         && limsTimestamp.equals(that.limsTimestamp)
         && limsVersion.equals(that.limsVersion)
         && libraryName.equals(that.libraryName);
+  }
+
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(barcode.getBytes(StandardCharsets.UTF_8));
+    digest.accept(groupId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(limsId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(limsProvider.getBytes(StandardCharsets.UTF_8));
+    digest.accept(Utils.toBytes(limsTimestamp.toEpochSecond()));
+    digest.accept(limsVersion.getBytes(StandardCharsets.UTF_8));
+    digest.accept(libraryName.getBytes(StandardCharsets.UTF_8));
+    digest.accept(new byte[] {0});
   }
 
   @Override

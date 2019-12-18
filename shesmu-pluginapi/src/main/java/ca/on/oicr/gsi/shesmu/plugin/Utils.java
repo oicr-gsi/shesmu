@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -25,6 +26,11 @@ public class Utils {
     return new String(hexChars);
   }
 
+  public static byte[] toBytes(long x) {
+    final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+    buffer.putLong(x);
+    return buffer.array();
+  }
   /**
    * Combine two optionals, taking the other if one is empty, or combining the values if both exist
    */

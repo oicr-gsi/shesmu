@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -43,6 +45,16 @@ public final class BamMergeEntry implements LimsKey {
 
   public String fileName() {
     return fileName;
+  }
+
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(new byte[] {(byte) (stale ? 's' : 'f')});
+    digest.accept(Utils.toBytes(swid));
+    digest.accept(fileName.getBytes(StandardCharsets.UTF_8));
+    digest.accept(Utils.toBytes(lastModified.toEpochSecond()));
+    digest.accept(provider.getBytes(StandardCharsets.UTF_8));
+    digest.accept(sampleId.getBytes(StandardCharsets.UTF_8));
+    digest.accept(version.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

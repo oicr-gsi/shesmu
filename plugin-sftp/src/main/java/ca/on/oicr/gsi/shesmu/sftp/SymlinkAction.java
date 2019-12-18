@@ -8,10 +8,12 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -50,6 +52,13 @@ public class SymlinkAction extends Action {
   @ActionParameter(required = false)
   public void force(boolean force) {
     this.force = force;
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    digest.accept(link.toString().getBytes(StandardCharsets.UTF_8));
+    digest.accept(new byte[] {0});
+    digest.accept(target.toString().getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

@@ -12,6 +12,10 @@ class CellRangerInputLimsCollection implements InputLimsCollection {
 
   public CellRangerInputLimsCollection(List<CellRangerIUSEntry> value) {
     limsKeys = value;
+    limsKeys.sort(
+        Comparator.comparing(CellRangerIUSEntry::getProvider)
+            .thenComparing(CellRangerIUSEntry::getId)
+            .thenComparing(CellRangerIUSEntry::getVersion));
   }
 
   @Override
@@ -25,6 +29,14 @@ class CellRangerInputLimsCollection implements InputLimsCollection {
   @Override
   public Stream<Integer> fileSwids() {
     return Stream.empty();
+  }
+
+  @Override
+  public void generateUUID(Consumer<byte[]> digest) {
+    for (final CellRangerIUSEntry limsKey : limsKeys) {
+      limsKey.generateUUID(digest);
+      digest.accept(new byte[] {0});
+    }
   }
 
   @Override
