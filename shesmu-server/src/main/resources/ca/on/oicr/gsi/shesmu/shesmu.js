@@ -1810,7 +1810,33 @@ function nextPage(query, targetElement, onActionPage) {
     data.results.forEach(action => {
       const tile = document.createElement("DIV");
       tile.className = `action state_${action.state.toLowerCase()}`;
-      (actionRender.get(action.type) || defaultRenderer)(action)
+      const toolbar = document.createElement("P");
+      toolbar.appendChild(
+        link(
+          `actiondash?filters=${encodeURIComponent(
+            JSON.stringify({ id: [action.actionId] })
+          )}&saved=All%20Actions`,
+          action.actionId
+        )
+      );
+      toolbar.appendChild(
+        dangerButton("☠️ PURGE ACTION", "Remove this action.", () =>
+          fetchJsonWithBusyDialog(
+            "/purge",
+            {
+              body: JSON.stringify([
+                {
+                  type: "id",
+                  ids: [action.actionId]
+                }
+              ]),
+              method: "POST"
+            },
+            () => nextPage(query, targetElement, onActionPage)
+          )
+        )
+      );
+      [toolbar, (actionRender.get(action.type) || defaultRenderer)(action)]
         .flat(Number.MAX_VALUE)
         .forEach(element => tile.appendChild(element));
       const json = document.createElement("PRE");
@@ -2344,6 +2370,32 @@ function renderFilter(tile, filter, mutateCallback) {
       }
       break;
 
+    case "id":
+      {
+        const title = document.createElement("DIV");
+        title.innerText = "Action IDs";
+        tile.appendChild(title);
+        const headers = [["ID", a => a]];
+
+        if (mutateCallback) {
+          headers.push([
+            "",
+            a => {
+              const close = document.createElement("SPAN");
+              close.className = "close";
+              close.innerText = "✖";
+              close.addEventListener("click", e => {
+                e.stopPropagation();
+                mutateCallback("id", x => x.filter(ai => ai != a));
+              });
+              return close;
+            }
+          ]);
+        }
+        tile.appendChild(table(filter.ids, ...headers));
+      }
+      break;
+
     case "sourcefile":
       {
         const title = document.createElement("DIV");
@@ -2489,6 +2541,9 @@ function synthesiseFilters(metaFilter) {
   }
   if (metaFilter.hasOwnProperty("tag") && metaFilter.tag.length > 0) {
     filters.push({ type: "tag", tags: metaFilter.tag });
+  }
+  if (metaFilter.hasOwnProperty("id") && metaFilter.id.length > 0) {
+    filters.push({ type: "id", ids: metaFilter.id });
   }
   if (
     metaFilter.hasOwnProperty("sourcefile") &&
@@ -2677,6 +2732,49 @@ function getStats(
               close();
               timeDialog(n =>
                 editTimeAgo(0, update => mutateFilters(n + "ago", update))
+              );
+            }
+          )
+        );
+        dialog.appendChild(
+          button(
+            "👾 Action Identifier",
+            "Add a unique action identifier.",
+            () => {
+              close();
+              const [idDialog, closeId] = makePopup(true);
+              idDialog.appendChild(
+                document.createTextNode("Action Identifiers:")
+              );
+              idDialog.appendChild(document.createElement("BR"));
+              const idText = document.createElement("TEXTAREA");
+              idDialog.appendChild(idText);
+              idDialog.appendChild(document.createElement("BR"));
+              idDialog.appendChild(
+                button(
+                  "Add All",
+                  "Add any action IDs in the text to the filter.",
+                  () => {
+                    closeId();
+                    const ids = Array.from(
+                      idText.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
+                      m => "shesmu:" + m[1].toUpperCase()
+                    );
+                    mutateFilters(
+                      "id",
+                      list =>
+                        list
+                          ? list
+                              .concat(ids)
+                              .sort()
+                              .filter(
+                                (item, index, array) =>
+                                  item == 0 || item != array[index - 1]
+                              )
+                          : [ids]
+                    );
+                  }
+                )
               );
             }
           )
