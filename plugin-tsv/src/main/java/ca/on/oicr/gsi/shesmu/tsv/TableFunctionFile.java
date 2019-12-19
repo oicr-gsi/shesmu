@@ -48,20 +48,22 @@ class TableFunctionFile extends PluginFile {
     }
   }
 
-  private static final Pattern TAB = Pattern.compile("\t");
-
   private static final Gauge tableBad =
-      Gauge.build("shesmu_tsv_lookup_bad", "A TSV lookup table is badly formed.")
+      Gauge.build("shesmu_tsv_lookup_bad", "A TSV/CSV lookup table is badly formed.")
           .labelNames("fileName")
           .register();
 
   private final Definer definer;
 
+  private final Pattern separator;
+
   private boolean good;
 
-  public TableFunctionFile(Path fileName, String instanceName, Definer<TableFunctionFile> definer) {
+  public TableFunctionFile(
+      Path fileName, String instanceName, Definer<TableFunctionFile> definer, Pattern separator) {
     super(fileName, instanceName);
     this.definer = definer;
+    this.separator = separator;
   }
 
   @Override
@@ -81,7 +83,7 @@ class TableFunctionFile extends PluginFile {
       }
 
       final List<BaseImyhat> types =
-          TAB.splitAsStream(lines.get(0)).map(Imyhat::forName).collect(Collectors.toList());
+          separator.splitAsStream(lines.get(0)).map(Imyhat::forName).collect(Collectors.toList());
       if (types.size() < 2) {
         tableBad.labels(fileName().toString()).set(1);
         System.err.printf("%s header has too few columns: %d\n", fileName(), types.size());
@@ -89,7 +91,7 @@ class TableFunctionFile extends PluginFile {
       }
 
       final List<String[]> grid =
-          lines.stream().skip(1).map(TAB::split).collect(Collectors.toList());
+          lines.stream().skip(1).map(separator::split).collect(Collectors.toList());
 
       if (grid.stream().anyMatch(columns -> columns.length != types.size())) {
         tableBad.labels(fileName().toString()).set(1);
@@ -99,7 +101,7 @@ class TableFunctionFile extends PluginFile {
 
       final List<Object[]> attempts =
           grid.stream()
-              .<Object[]>map(
+              .map(
                   columns -> {
                     final Object[] attempt = new Object[types.size()];
                     for (int index = 0; index < columns.length; index++) {

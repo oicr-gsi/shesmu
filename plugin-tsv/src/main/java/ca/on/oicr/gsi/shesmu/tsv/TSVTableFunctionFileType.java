@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 import org.kohsuke.MetaInfServices;
 
 /**
@@ -16,17 +17,17 @@ import org.kohsuke.MetaInfServices;
  * returned.
  */
 @MetaInfServices(PluginFileType.class)
-public class TableFunctionFileType extends PluginFileType<TableFunctionFile> {
+public class TSVTableFunctionFileType extends PluginFileType<TableFunctionFile> {
 
-  static final String EXTENSION = ".lookup";
+  private static final Pattern TAB = Pattern.compile("\t");
 
-  public TableFunctionFileType() {
-    super(MethodHandles.lookup(), TableFunctionFile.class, EXTENSION);
+  public TSVTableFunctionFileType() {
+    super(MethodHandles.lookup(), TableFunctionFile.class, ".lookup");
   }
 
   @Override
   public TableFunctionFile create(
       Path filePath, String instanceName, Definer<TableFunctionFile> definer) {
-    return new TableFunctionFile(filePath, instanceName, definer);
+    return new TableFunctionFile(filePath, instanceName, definer, TAB);
   }
 }

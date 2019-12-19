@@ -8,11 +8,13 @@ The tab-delimited file plugin provides several different features:
 
 ## Table-based Lookup Functions
 These are Shesmu functions create from TSV dictionaries. A file ending
-`.lookup` must contain tab-separated values. The first row defines the types of
-the columns using a Shesmu type name (`string`, `boolean`, `integer`, `path`,
-`date`). Each subsequent row contains a value for each column, or `*` for a
-wild card match. The final column, which cannot be a wild card, is the result
-value.
+`.lookup` must contain tab-separated values. A `.commalookup` is the same but
+uses comma-separated values instead of tab-separated.
+
+ The first row defines the types of the columns using a Shesmu type name
+(`string`, `boolean`, `integer`, `path`, `date`). Each subsequent row contains
+a value for each column, or `*` for a wild card match. The final column, which
+cannot be a wild card, is the result value.
 
 For example, suppose we want to create a way to assign users responsibility for projects. Create a `person_for_project.lookup`:
 
