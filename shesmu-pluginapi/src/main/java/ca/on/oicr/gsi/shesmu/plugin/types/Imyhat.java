@@ -521,7 +521,7 @@ public abstract class Imyhat {
     if (callsites.containsKey(descriptor)) {
       return callsites.get(descriptor);
     }
-    final Imyhat imyhat = parse(descriptor);
+    final Imyhat imyhat = parse(descriptor, true);
     if (imyhat.isBad()) {
       throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
     }
@@ -608,8 +608,12 @@ public abstract class Imyhat {
    * @return the parsed type; if the type is malformed, {@link #BAD} is returned
    */
   public static Imyhat parse(CharSequence input) {
+    return parse(input, false);
+  }
+
+  private static Imyhat parse(CharSequence input, boolean allowEmpty) {
     final AtomicReference<CharSequence> output = new AtomicReference<>();
-    final Imyhat result = parse(input, output);
+    final Imyhat result = parse(input, output, allowEmpty);
     return output.get().length() == 0 ? result : BAD;
   }
 
@@ -621,11 +625,22 @@ public abstract class Imyhat {
    * @return the parsed type; if the type is malformed, {@link #BAD} is returned
    */
   public static Imyhat parse(CharSequence input, AtomicReference<CharSequence> output) {
+    return parse(input, output, false);
+  }
+
+  private static Imyhat parse(
+      CharSequence input, AtomicReference<CharSequence> output, boolean allowEmpty) {
     if (input.length() == 0) {
       output.set(input);
       return BAD;
     }
     switch (input.charAt(0)) {
+      case 'A':
+        output.set(input.subSequence(1, input.length()));
+        return allowEmpty ? EMPTY : BAD;
+      case 'Q':
+        output.set(input.subSequence(1, input.length()));
+        return allowEmpty ? NOTHING : BAD;
       case 'b':
         output.set(input.subSequence(1, input.length()));
         return BOOLEAN;
@@ -651,9 +666,9 @@ public abstract class Imyhat {
         output.set(input.subSequence(1, input.length()));
         return STRING;
       case 'a':
-        return parse(input.subSequence(1, input.length()), output).asList();
+        return parse(input.subSequence(1, input.length()), output, allowEmpty).asList();
       case 'q':
-        return parse(input.subSequence(1, input.length()), output).asOptional();
+        return parse(input.subSequence(1, input.length()), output, allowEmpty).asOptional();
       case 't':
       case 'o':
         int count = 0;
@@ -668,7 +683,7 @@ public abstract class Imyhat {
         if (input.charAt(0) == 't') {
           final Imyhat[] inner = new Imyhat[count];
           for (int i = 0; i < count; i++) {
-            inner[i] = parse(output.get(), output);
+            inner[i] = parse(output.get(), output, allowEmpty);
           }
           return tuple(inner);
         } else {
@@ -681,7 +696,7 @@ public abstract class Imyhat {
               dollar++;
             }
             output.set(output.get().subSequence(dollar + 1, output.get().length()));
-            fields.add(new Pair<>(name.toString(), parse(output.get(), output)));
+            fields.add(new Pair<>(name.toString(), parse(output.get(), output, allowEmpty)));
           }
           return new ObjectImyhat(fields.stream());
         }
