@@ -39,14 +39,17 @@ Optional runtime dependencies:
 - GitHub, GitLabs, or BitBucket for storing configuration files (recommended)
 
 ## Running an Instance
+Maybe you want to first check [if Shesmu is right for you](ask-your-doctor.md)
+and figure out what you would need for an installation.
 
 Setting up Shesmu involves collecting all the necessary bits and putting them
 into one place. It will discover most of the configuration from there.
 
-First create `/srv/shesmu`. In this directory, the other configuration files will
-be placed (see below). Shesmu can read many `.shesmu` scripts containing
-multiple olives from `/srv/shesmu`. If you don't know how to write them, just
-create an empty file and Shesmu will start with that.
+To bring up a test instance, first create `/srv/shesmu`. In this directory, the
+other configuration files will be placed (see below). Shesmu can read many
+`.shesmu` scripts containing multiple olives from `/srv/shesmu`. If you don't
+know how to write them, have a look at [the tutorial](tutorial.md) and [the
+language guide](language.md).
 
 ### Docker Setup
 You can build and run the container with:
@@ -101,7 +104,7 @@ the configuration read. The _Definitions_ page will show all the actions and
 lookups available to the script and the provenance variables and their types.
 
 To start doing something, write some olives. A description for olives is found
-in [the language guide](language.md).
+in [the tutorial](tutorial.md).
 
 ### Static Actions
 Due to the imperfect nature of reality, it might be useful to launch bespoke
