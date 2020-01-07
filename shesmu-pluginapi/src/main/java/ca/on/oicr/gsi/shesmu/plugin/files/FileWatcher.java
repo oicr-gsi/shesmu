@@ -147,17 +147,15 @@ public abstract class FileWatcher {
         while (running) {
           try {
             final Instant now = Instant.now();
-            final Optional<Long> timeout =
+            final long timeout =
                 Optional.ofNullable(retry.peek())
-                    .map(p -> Duration.between(now, p.time()).toMillis());
+                    .map(p -> Duration.between(now, p.time()).toMillis())
+                    .orElse(60_000L);
             final WatchKey wk =
-                timeout.isPresent()
-                    ? timeout.get() < 0
-                        ? null
-                        : watchService.poll(timeout.get(), TimeUnit.MILLISECONDS)
-                    : watchService.take();
+                timeout < 0
+                    ? null
+                    : watchService.poll(Math.min(timeout, 60_000), TimeUnit.MILLISECONDS);
             if (wk == null) {
-              System.out.println("Timeout occurred. Reloading stale files.");
               final List<RetryProcess> retryOutput = new ArrayList<>();
               while (true) {
                 final RetryProcess current = retry.poll();
