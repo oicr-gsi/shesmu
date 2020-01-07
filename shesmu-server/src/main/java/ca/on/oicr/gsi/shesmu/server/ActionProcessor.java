@@ -85,9 +85,13 @@ public final class ActionProcessor
     private String endsAt;
     @JsonIgnore private Instant expiryTime;
     private String generatorURL;
-    private final String id = Long.toString(alertIdGenerator.getAndIncrement());
+    private final String id;
     private Map<String, String> labels = new TreeMap<>();
     private String startsAt;
+
+    public Alert(String id) {
+      this.id = id;
+    }
 
     public void expiresIn(long ttl) {
       expiryTime = Instant.now().plusSeconds(ttl);
@@ -587,7 +591,6 @@ public final class ActionProcessor
           return input;
         }
       };
-  private static final AtomicLong actionIdGenerator = new AtomicLong();
   private static final LatencyHistogram actionPerformTime =
       new LatencyHistogram(
           "shesmu_action_perform_time",
@@ -598,7 +601,6 @@ public final class ActionProcessor
               "shesmu_action_perform_throw",
               "The number of actions that threw an exception in their last attempt.")
           .register();
-  private static final AtomicLong alertIdGenerator = new AtomicLong();
   private static final Gauge lastAdd =
       Gauge.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
   private static final Gauge lastRun =
@@ -670,7 +672,14 @@ public final class ActionProcessor
       if (duplicate) {
         alert = alerts.get(labelMap);
       } else {
-        alert = new Alert();
+        final MessageDigest digest = MessageDigest.getInstance("SHA1");
+        for (final Entry<String, String> entry : labelMap.entrySet()) {
+          digest.update(entry.getKey().getBytes(StandardCharsets.UTF_8));
+          digest.update((byte) 0);
+          digest.update(entry.getValue().getBytes(StandardCharsets.UTF_8));
+          digest.update((byte) 0);
+        }
+        alert = new Alert(Utils.bytesToHex(digest.digest()));
         alert.setLabels(labelMap);
         alert.setStartsAt(Instant.now());
         alerts.put(labelMap, alert);
