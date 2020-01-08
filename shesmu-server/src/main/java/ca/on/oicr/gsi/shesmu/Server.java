@@ -1623,6 +1623,23 @@ public final class Server implements ServerConfig, ActionServices {
                         .toArray(Filter[]::new)));
           }
         });
+    add(
+        "/parsefiltertext",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "application/json");
+          final String text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final Optional<FilterJson> result =
+              FilterJson.extractFromText(text, RuntimeSupport.MAPPER);
+          if (result.isPresent()) {
+            t.sendResponseHeaders(200, 0);
+            try (OutputStream os = t.getResponseBody()) {
+              RuntimeSupport.MAPPER.writeValue(os, result.get());
+            }
+          } else {
+            t.sendResponseHeaders(400, 0);
+            t.getResponseBody().close();
+          }
+        });
 
     add(
         "/currentalerts",
