@@ -1064,6 +1064,39 @@
         ]
       }
     },
+    "/parsefiltertext": {
+      "post": {
+        "description": "",
+        "operationId": "parseFilterText",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "type": "string"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Filter"
+                }
+              }
+            },
+            "description": "The filters that were parsed from the text"
+          },
+          "400": {
+            "description": "No filters were found in the text"
+          }
+        },
+        "summary": "Extract ASCII-encoded filters from text",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
     "/purge": {
       "post": {
         "description": "",
