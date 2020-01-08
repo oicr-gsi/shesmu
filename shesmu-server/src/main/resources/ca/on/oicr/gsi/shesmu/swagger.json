@@ -1,6 +1,38 @@
 {
   "components": {
     "schemas": {
+      "Alert": {
+        "properties": {
+          "annotations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "generatorURL": {
+            "format": "uri",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AnyValue": {
         "anyOf": [
           {
@@ -577,6 +609,31 @@
         ]
       }
     },
+    "/allalerts": {
+      "get": {
+        "description": "",
+        "operationId": "getAllAlerts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Alert"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "All alerts produced by this instance"
+          }
+        },
+        "summary": "Get a list of current firing alerts.",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
     "/caches": {
       "get": {
         "description": "",
@@ -693,36 +750,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "annotations": {
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "type": "object"
-                    },
-                    "endsAt": {
-                      "format": "date-time",
-                      "type": "string"
-                    },
-                    "generatorURL": {
-                      "format": "uri",
-                      "type": "string"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "labels": {
-                      "additionalProperties": {
-                        "type": "string"
-                      },
-                      "type": "object"
-                    },
-                    "startsAt": {
-                      "format": "date-time",
-                      "type": "string"
-                    }
+                  "items": {
+                    "$ref": "#/components/schemas/Alert"
                   },
-                  "type": "object"
+                  "type": "array"
                 }
               }
             },
@@ -835,6 +866,46 @@
         "summary": "Get a list of functions that can be use in olives on this server.",
         "tags": [
           "functions"
+        ]
+      }
+    },
+    "/getalert": {
+      "post": {
+        "description": "",
+        "operationId": "getAlert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Alert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "$ref": "#/components/schemas/AnyValue"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The current value of the constant or an error"
+          }
+        },
+        "summary": "Get the value of a constant",
+        "tags": [
+          "constants"
         ]
       }
     },

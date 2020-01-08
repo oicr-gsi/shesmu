@@ -17,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.server.SourceLocation.SourceLoctionLinker;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.AutoLock;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -24,6 +25,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Gauge;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -696,6 +699,14 @@ public final class ActionProcessor
     }
   }
 
+  public void allAlerts(JsonGenerator output) throws IOException {
+    output.writeStartArray();
+    for (final Alert alert : alerts.values()) {
+      output.writeObject(alert);
+    }
+    output.writeEndArray();
+  }
+
   private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(
       ArrayNode output,
       List<Entry<Action, Information>> input,
@@ -772,6 +783,12 @@ public final class ActionProcessor
   @Override
   public Dumper findDumper(String name, Imyhat... types) {
     return null;
+  }
+
+  public void getAlert(OutputStream output, String id) throws IOException {
+    final Alert alert =
+        alerts.values().stream().filter(a -> a.id.equals(id)).findAny().orElse(null);
+    RuntimeSupport.MAPPER.writeValue(output, alert);
   }
 
   @SafeVarargs
