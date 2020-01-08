@@ -1323,8 +1323,7 @@ public final class Server implements ServerConfig, ActionServices {
                                   + "initialiseAlertDashboard"
                                   + "} from \"./shesmu.js\";"
                                   + "const output = document.getElementById(\"outputContainer\");"
-                                  + "initialiseAlertDashboard(JSON.parse(%s), %s, output);",
-                              RuntimeSupport.MAPPER.writeValueAsString(processor.currentAlerts()),
+                                  + "initialiseAlertDashboard(%s, output);",
                               RuntimeSupport.MAPPER.writeValueAsString(query))));
                 } catch (Exception e) {
                   throw new RuntimeException(e);
@@ -1630,6 +1629,27 @@ public final class Server implements ServerConfig, ActionServices {
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             os.write(processor.currentAlerts().getBytes(StandardCharsets.UTF_8));
+          }
+        });
+    add(
+        "/allalerts",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          final JsonFactory jfactory = new JsonFactory();
+          try (OutputStream os = t.getResponseBody();
+              JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+            processor.allAlerts(jGenerator);
+          }
+        });
+    add(
+        "/getalert",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          final String id = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          try (OutputStream os = t.getResponseBody()) {
+            processor.getAlert(os, id);
           }
         });
 

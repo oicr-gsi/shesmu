@@ -4104,7 +4104,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   });
 }
 
-export function initialiseAlertDashboard(alerts, initialFilterString, output) {
+export function initialiseAlertDashboard(initialFilterString, output) {
   initialise();
   // The filters contain regular expressions, so add a method to serialise them
   Object.defineProperty(RegExp.prototype, "toJSON", {
@@ -4336,251 +4336,262 @@ export function initialiseAlertDashboard(alerts, initialFilterString, output) {
     drawPager(0);
   };
   if (location.hash) {
-    const selectedAlert = alerts.filter(a =>
-      a.generatorURL.endsWith(location.hash)
+    fetchJsonWithBusyDialog(
+      "/getalert",
+      { body: JSON.stringify(location.hash), method: "POST" },
+      selectedAlert => {
+        if (selectedAlert) {
+          output.className = "alert";
+          drawAlert(selectedAlert, output);
+        } else {
+          output.innerText = "Unknown alert.";
+        }
+      }
     );
-    if (selectedAlert) {
-      output.className = "alert";
-      drawAlert(selectedAlert[0], output);
-    } else {
-      output.innerText = "Unknown alert.";
-    }
-  } else if (alerts.length) {
-    let userFilters = [];
-    try {
-      for (const { label, value, type } of JSON.parse(initialFilterString)) {
-        switch (type) {
-          case "live":
-          case "has":
-          case "eq":
-          case "ne":
-            userFilters.push({ label: label, value: value, type: type });
-            break;
+  } else {
+    fetchJsonWithBusyDialog("/allalerts", { method: "GET" }, alerts => {
+      if (alerts.length) {
+        let userFilters = [];
+        try {
+          for (const { label, value, type } of JSON.parse(
+            initialFilterString
+          )) {
+            switch (type) {
+              case "live":
+              case "has":
+              case "eq":
+              case "ne":
+                userFilters.push({ label: label, value: value, type: type });
+                break;
 
-          case "has-regex":
-            userFilters.push({
-              label: new RegExp(label.substring(1, label.length - 1)),
-              value: value,
-              type: type
-            });
-            break;
-          case "regex":
-            userFilters.push({
-              label: label,
-              value: new RegExp(value.substring(1, value.length - 1)),
-              type: type
-            });
-            break;
+              case "has-regex":
+                userFilters.push({
+                  label: new RegExp(label.substring(1, label.length - 1)),
+                  value: value,
+                  type: type
+                });
+                break;
+              case "regex":
+                userFilters.push({
+                  label: label,
+                  value: new RegExp(value.substring(1, value.length - 1)),
+                  type: type
+                });
+                break;
+            }
+          }
+        } catch (e) {
+          console.log(e);
         }
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    const filterbar = document.createElement("SPAN");
-    const toolbar = document.createElement("P");
-    const results = document.createElement("DIV");
-    output.appendChild(toolbar);
-    output.appendChild(results);
-    if (userFilters.length == 0 && alerts.some(a => a.live)) {
-      userFilters.push({ type: "live", value: true, label: null });
-    }
-    const renderAlerts = () => {
-      clearChildren(filterbar);
-      let userFilterdAlerts = alerts;
-      const uselessLabels = [];
-      for (const { label, value, type } of userFilters) {
-        const filterTile = document.createElement("SPAN");
-        filterbar.appendChild(filterTile);
-        const labelSpan = document.createElement("SPAN");
-        labelSpan.className = "load";
-        switch (type) {
-          case "live":
-            labelSpan.innerText = value ? "🔔 Firing" : "💤 Expired";
-            userFilterdAlerts = userFilterdAlerts.filter(a => a.live == value);
-            break;
-
-          case "has":
-            labelSpan.innerText = `🏷️ ${label}`;
-            userFilterdAlerts = userFilterdAlerts.filter(a =>
-              a.labels.hasOwnProperty(label)
-            );
-            break;
-          case "has-regex":
-            labelSpan.innerText = `🏷️ ~ ${label}`;
-            userFilterdAlerts = userFilterdAlerts.filter(a =>
-              Object.keys(a.labels).some(l => label.test(l))
-            );
-            break;
-          case "eq":
-            labelSpan.innerText = `${label} = ${value || "<blank>"}`;
-            userFilterdAlerts = userFilterdAlerts.filter(
-              a => a.labels[label] == value
-            );
-            uselessLabels.push(label);
-            break;
-
-          case "ne":
-            labelSpan.innerText = `${label} ≠ ${value || "<blank>"}`;
-            userFilterdAlerts = userFilterdAlerts.filter(
-              a => a.labels[label] != value
-            );
-            break;
-
-          case "regex":
-            labelSpan.innerText = `${label} ~ ${value}`;
-            userFilterdAlerts = userFilterdAlerts.filter(a =>
-              value.test(a.labels[label])
-            );
-            break;
+        const filterbar = document.createElement("SPAN");
+        const toolbar = document.createElement("P");
+        const results = document.createElement("DIV");
+        output.appendChild(toolbar);
+        output.appendChild(results);
+        if (userFilters.length == 0 && alerts.some(a => a.live)) {
+          userFilters.push({ type: "live", value: true, label: null });
         }
-        labelSpan.appendChild(
-          closeButton("Remove filter.", () => {
-            userFilters = userFilters.filter(
-              x => x.label != label && x.value != value && x.type != type
+        const renderAlerts = () => {
+          clearChildren(filterbar);
+          let userFilterdAlerts = alerts;
+          const uselessLabels = [];
+          for (const { label, value, type } of userFilters) {
+            const filterTile = document.createElement("SPAN");
+            filterbar.appendChild(filterTile);
+            const labelSpan = document.createElement("SPAN");
+            labelSpan.className = "load";
+            switch (type) {
+              case "live":
+                labelSpan.innerText = value ? "🔔 Firing" : "💤 Expired";
+                userFilterdAlerts = userFilterdAlerts.filter(
+                  a => a.live == value
+                );
+                break;
+
+              case "has":
+                labelSpan.innerText = `🏷️ ${label}`;
+                userFilterdAlerts = userFilterdAlerts.filter(a =>
+                  a.labels.hasOwnProperty(label)
+                );
+                break;
+              case "has-regex":
+                labelSpan.innerText = `🏷️ ~ ${label}`;
+                userFilterdAlerts = userFilterdAlerts.filter(a =>
+                  Object.keys(a.labels).some(l => label.test(l))
+                );
+                break;
+              case "eq":
+                labelSpan.innerText = `${label} = ${value || "<blank>"}`;
+                userFilterdAlerts = userFilterdAlerts.filter(
+                  a => a.labels[label] == value
+                );
+                uselessLabels.push(label);
+                break;
+
+              case "ne":
+                labelSpan.innerText = `${label} ≠ ${value || "<blank>"}`;
+                userFilterdAlerts = userFilterdAlerts.filter(
+                  a => a.labels[label] != value
+                );
+                break;
+
+              case "regex":
+                labelSpan.innerText = `${label} ~ ${value}`;
+                userFilterdAlerts = userFilterdAlerts.filter(a =>
+                  value.test(a.labels[label])
+                );
+                break;
+            }
+            labelSpan.appendChild(
+              closeButton("Remove filter.", () => {
+                userFilters = userFilters.filter(
+                  x => x.label != label && x.value != value && x.type != type
+                );
+                renderAlerts();
+              })
             );
+            filterTile.appendChild(labelSpan);
+          }
+          window.history.pushState(
+            userFilters,
+            "",
+            `alerts?filters=${encodeURIComponent(JSON.stringify(userFilters))}`
+          );
+
+          showAlertGroup(results, userFilterdAlerts, uselessLabels, f => {
+            userFilters.push(f);
             renderAlerts();
-          })
-        );
-        filterTile.appendChild(labelSpan);
-      }
-      window.history.pushState(
-        userFilters,
-        "",
-        `alerts?filters=${encodeURIComponent(JSON.stringify(userFilters))}`
-      );
+          });
+        };
+        window.addEventListener("popstate", e => {
+          if (e.state) {
+            userFilters = e.state;
+            renderAlerts();
+          }
+        });
 
-      showAlertGroup(results, userFilterdAlerts, uselessLabels, f => {
-        userFilters.push(f);
+        toolbar.appendChild(
+          button(
+            "➕ Add Filter",
+            "Add a filter to limit the alerts displayed.",
+            () => {
+              const [dialog, close] = makePopup(true);
+              dialog.appendChild(
+                button("🔔 Firing", "Currently firing alerts.", () => {
+                  close();
+                  userFilters = userFilters.filter(x => x.type != "live");
+                  userFilters.push({ type: "live", value: true, label: null });
+                  renderAlerts();
+                })
+              );
+              dialog.appendChild(
+                button("💤 Expired", "Not currently firing alerts.", () => {
+                  close();
+                  userFilters = userFilters.filter(x => x.type != "live");
+                  userFilters.push({ type: "live", value: false, label: null });
+                  renderAlerts();
+                })
+              );
+              for (const { type, name, tooltip, processor } of [
+                {
+                  type: "has",
+                  name: "🏷️ Has Label",
+                  tooltip: "Find actions a labels.",
+                  processor: x => x
+                },
+                {
+                  type: "has-regex",
+                  name: "*️⃣  Label Name Matches Regular Expression",
+                  tooltip:
+                    "Find actions with label names that match a regular expression.",
+                  processor: x => new RegExp(x)
+                }
+              ]) {
+                dialog.appendChild(
+                  button(name, tooltip, () => {
+                    clearChildren(dialog);
+                    dialog.appendChild(document.createTextNode("Label: "));
+                    const label = document.createElement("INPUT");
+                    label.type = "text";
+                    dialog.appendChild(label);
+                    dialog.appendChild(document.createElement("BR"));
+                    dialog.appendChild(
+                      button("Add", "Add alert filter.", () => {
+                        if (label.value.trim() && value.value.trim()) {
+                          close();
+                          userFilters.push({
+                            type: type,
+                            label: processor(value.value.trim()),
+                            value: null
+                          });
+                          renderAlerts();
+                        }
+                      })
+                    );
+                  })
+                );
+              }
+              for (const { type, name, tooltip, processor } of [
+                {
+                  type: "eq",
+                  name: "= Value Matches Text",
+                  tooltip:
+                    "Find actions with labels that match a particular value.",
+                  processor: x => x
+                },
+                {
+                  type: "ne",
+                  name: "≠ Value Does Not Match Text",
+                  tooltip:
+                    "Find actions with labels that do not match a particular value.",
+                  processor: x => x
+                },
+                {
+                  type: "regex",
+                  name: "*️⃣  Value Matches Regular Expression",
+                  tooltip:
+                    "Find actions with a label value that match a regular expression.",
+                  processor: x => new RegExp(x)
+                }
+              ]) {
+                dialog.appendChild(
+                  button(name, tooltip, () => {
+                    clearChildren(dialog);
+                    dialog.appendChild(document.createTextNode("Label: "));
+                    const label = document.createElement("INPUT");
+                    label.type = "text";
+                    dialog.appendChild(label);
+                    dialog.appendChild(document.createElement("BR"));
+                    dialog.appendChild(document.createTextNode("Value: "));
+                    const value = document.createElement("INPUT");
+                    value.type = "text";
+                    dialog.appendChild(value);
+                    dialog.appendChild(document.createElement("BR"));
+                    dialog.appendChild(
+                      button("Add", "Add alert filter.", () => {
+                        if (label.value.trim() && value.value.trim()) {
+                          close();
+                          userFilters.push({
+                            type: type,
+                            value: processor(value.value.trim()),
+                            label: label.value.trim()
+                          });
+                          renderAlerts();
+                        }
+                      })
+                    );
+                  })
+                );
+              }
+            }
+          )
+        );
+        toolbar.appendChild(filterbar);
+
         renderAlerts();
-      });
-    };
-    window.addEventListener("popstate", e => {
-      if (e.state) {
-        userFilters = e.state;
-        renderAlerts();
+      } else {
+        output.innerText = "No alerts produced by this server.";
       }
     });
-
-    toolbar.appendChild(
-      button(
-        "➕ Add Filter",
-        "Add a filter to limit the alerts displayed.",
-        () => {
-          const [dialog, close] = makePopup(true);
-          dialog.appendChild(
-            button("🔔 Firing", "Currently firing alerts.", () => {
-              close();
-              userFilters = userFilters.filter(x => x.type != "live");
-              userFilters.push({ type: "live", value: true, label: null });
-              renderAlerts();
-            })
-          );
-          dialog.appendChild(
-            button("💤 Expired", "Not currently firing alerts.", () => {
-              close();
-              userFilters = userFilters.filter(x => x.type != "live");
-              userFilters.push({ type: "live", value: false, label: null });
-              renderAlerts();
-            })
-          );
-          for (const { type, name, tooltip, processor } of [
-            {
-              type: "has",
-              name: "🏷️ Has Label",
-              tooltip: "Find actions a labels.",
-              processor: x => x
-            },
-            {
-              type: "has-regex",
-              name: "*️⃣  Label Name Matches Regular Expression",
-              tooltip:
-                "Find actions with label names that match a regular expression.",
-              processor: x => new RegExp(x)
-            }
-          ]) {
-            dialog.appendChild(
-              button(name, tooltip, () => {
-                clearChildren(dialog);
-                dialog.appendChild(document.createTextNode("Label: "));
-                const label = document.createElement("INPUT");
-                label.type = "text";
-                dialog.appendChild(label);
-                dialog.appendChild(document.createElement("BR"));
-                dialog.appendChild(
-                  button("Add", "Add alert filter.", () => {
-                    if (label.value.trim() && value.value.trim()) {
-                      close();
-                      userFilters.push({
-                        type: type,
-                        label: processor(value.value.trim()),
-                        value: null
-                      });
-                      renderAlerts();
-                    }
-                  })
-                );
-              })
-            );
-          }
-          for (const { type, name, tooltip, processor } of [
-            {
-              type: "eq",
-              name: "= Value Matches Text",
-              tooltip:
-                "Find actions with labels that match a particular value.",
-              processor: x => x
-            },
-            {
-              type: "ne",
-              name: "≠ Value Does Not Match Text",
-              tooltip:
-                "Find actions with labels that do not match a particular value.",
-              processor: x => x
-            },
-            {
-              type: "regex",
-              name: "*️⃣  Value Matches Regular Expression",
-              tooltip:
-                "Find actions with a label value that match a regular expression.",
-              processor: x => new RegExp(x)
-            }
-          ]) {
-            dialog.appendChild(
-              button(name, tooltip, () => {
-                clearChildren(dialog);
-                dialog.appendChild(document.createTextNode("Label: "));
-                const label = document.createElement("INPUT");
-                label.type = "text";
-                dialog.appendChild(label);
-                dialog.appendChild(document.createElement("BR"));
-                dialog.appendChild(document.createTextNode("Value: "));
-                const value = document.createElement("INPUT");
-                value.type = "text";
-                dialog.appendChild(value);
-                dialog.appendChild(document.createElement("BR"));
-                dialog.appendChild(
-                  button("Add", "Add alert filter.", () => {
-                    if (label.value.trim() && value.value.trim()) {
-                      close();
-                      userFilters.push({
-                        type: type,
-                        value: processor(value.value.trim()),
-                        label: label.value.trim()
-                      });
-                      renderAlerts();
-                    }
-                  })
-                );
-              })
-            );
-          }
-        }
-      )
-    );
-    toolbar.appendChild(filterbar);
-
-    renderAlerts();
-  } else {
-    output.innerText = "No alerts produced by this server.";
   }
 }
