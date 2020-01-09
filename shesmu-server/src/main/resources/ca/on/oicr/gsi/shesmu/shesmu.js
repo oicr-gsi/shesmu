@@ -1036,16 +1036,17 @@ export function initialiseOliveDash(
   };
   const activeOlive = document.createElement("SPAN");
 
-  const renderFile = (file, prettyFileName) => {
+  const renderFile = (file, prettyFileName, initialCustomFilter, isPop) => {
     clearChildren(activeOlive);
     activeOlive.innerText = `All Olives in ${prettyFileName}`;
-    window.history.pushState(
-      { file: file.filename, prettyFileName: prettyFileName, filters: null },
-      file.filename,
-      "olivedash?saved=" +
-        encodeURIComponent(JSON.stringify({ file: file.filename }))
-    );
-
+    if (!isPop) {
+      window.history.pushState(
+        { file: file.filename, prettyFileName: prettyFileName, filters: null },
+        file.filename,
+        "olivedash?saved=" +
+          encodeURIComponent(JSON.stringify({ file: file.filename }))
+      );
+    }
     if (file.olives.some(olive => olive.produces == "ACTIONS")) {
       getStats(
         [
@@ -1082,6 +1083,29 @@ export function initialiseOliveDash(
             localStorage.setItem(
               "shesmu_searches",
               JSON.stringify(localSearches)
+            );
+          }
+        },
+        initialCustomFilter,
+        filters => {
+          if (!isPop || filters != initialCustomFilter) {
+            window.history.pushState(
+              {
+                file: file.filename,
+                line: null,
+                column: null,
+                time: file.lastCompiled,
+                filters: filters
+              },
+              file.filename,
+              `olivedash?saved=${encodeURIComponent(
+                JSON.stringify({
+                  file: file.filename,
+                  line: null,
+                  column: null,
+                  time: null
+                })
+              )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
             );
           }
         }
@@ -1281,7 +1305,12 @@ export function initialiseOliveDash(
               },
               olive.syntax + " ― " + olive.description,
               `olivedash?saved=${encodeURIComponent(
-                sourceLocation
+                JSON.stringify({
+                  file: file.filename,
+                  line: null,
+                  column: null,
+                  time: null
+                })
               )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
             );
           }
@@ -1385,7 +1414,9 @@ export function initialiseOliveDash(
       oliveList.appendChild(title);
       if (file.olives.length) {
         title.style.cursor = "pointer";
-        title.addEventListener("click", () => renderFile(file, prettyFileName));
+        title.addEventListener("click", () =>
+          renderFile(file, prettyFileName, null, false)
+        );
 
         const table = document.createElement("table");
         oliveList.appendChild(table);
@@ -1467,7 +1498,13 @@ export function initialiseOliveDash(
           }
         });
         if (saved && saved.file == file.filename && !saved.line) {
-          renderFile(file, prettyFileName);
+          let initialCustomFilter = null;
+          try {
+            initialCustomFilter = JSON.parse(userFilters);
+          } catch (e) {
+            console.log(e);
+          }
+          renderFile(file, prettyFileName, initialCustomFilter, true);
         }
       } else {
         const empty = document.createElement("P");
@@ -1628,9 +1665,8 @@ export function initialiseOliveDash(
   }
   window.addEventListener("popstate", e => {
     if (e.state) {
-      oliveFiles
-        .filter(file => file.filename == e.state.file)
-        .forEach(file =>
+      oliveFiles.filter(file => file.filename == e.state.file).forEach(file => {
+        if (e.state.line) {
           file.olives
             .filter(
               olive =>
@@ -1640,8 +1676,11 @@ export function initialiseOliveDash(
             )
             .forEach(olive =>
               renderOlive(file, olive, olive.pauseSpan, e.state.filters, true)
-            )
-        );
+            );
+        } else {
+          renderFile(file, e.state.prettyFileName, e.state.filters, true);
+        }
+      });
     }
   });
 }
