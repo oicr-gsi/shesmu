@@ -4,16 +4,18 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLoctionLinker;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
-import ca.on.oicr.gsi.shesmu.server.SourceLocation.SourceLoctionLinker;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.AutoLock;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -52,7 +54,10 @@ import org.apache.http.client.utils.URIBuilder;
  * successful.
  */
 public final class ActionProcessor
-    implements OliveServices, InputProvider, MetroDiagram.OliveFlowReader {
+    implements OliveServices,
+        InputProvider,
+        MetroDiagram.OliveFlowReader,
+        FilterBuilder<ActionProcessor.Filter> {
 
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
@@ -219,13 +224,17 @@ public final class ActionProcessor
     protected abstract Optional<Instant> get(Action action, Information info);
   }
 
+  public Filter negate(Filter filter) {
+    return filter.negate();
+  }
+
   /**
    * Check that an action was last added in the time range provided
    *
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  public static Filter added(Optional<Instant> start, Optional<Instant> end) {
+  public Filter added(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
 
       @Override
@@ -236,12 +245,13 @@ public final class ActionProcessor
   }
 
   /** Check that all of the filters match */
-  public static Filter and(Filter... filters) {
+  public Filter and(Stream<Filter> filters) {
     return new Filter() {
+      private final List<Filter> filterList = filters.collect(Collectors.toList());
 
       @Override
       protected boolean check(Action action, Information info) {
-        return Stream.of(filters).allMatch(f -> f.check(action, info));
+        return filterList.stream().allMatch(f -> f.check(action, info));
       }
     };
   }
@@ -252,7 +262,7 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  public static Filter checked(Optional<Instant> start, Optional<Instant> end) {
+  public Filter checked(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
 
       @Override
@@ -268,7 +278,7 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  public static Filter external(Optional<Instant> start, Optional<Instant> end) {
+  public Filter external(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
 
       @Override
@@ -283,7 +293,7 @@ public final class ActionProcessor
    *
    * @param locations the source locations
    */
-  public static Filter fromFile(Stream<Predicate<SourceLocation>> locations) {
+  public Filter fromSourceLocation(Stream<Predicate<SourceLocation>> locations) {
     final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
     return new Filter() {
 
@@ -299,7 +309,7 @@ public final class ActionProcessor
    *
    * @param files the names of the files
    */
-  public static Filter fromFile(String... files) {
+  public Filter fromFile(String... files) {
     final Set<String> set = Stream.of(files).collect(Collectors.toSet());
     return new Filter() {
 
@@ -315,7 +325,7 @@ public final class ActionProcessor
    *
    * @param ids the allowed identifiers
    */
-  public static Filter ids(List<String> ids) {
+  public Filter ids(List<String> ids) {
     return new Filter() {
 
       @Override
@@ -330,7 +340,7 @@ public final class ActionProcessor
    *
    * @param states the permitted states
    */
-  public static Filter isState(ActionState... states) {
+  public Filter isState(ActionState... states) {
     final EnumSet<ActionState> set = EnumSet.noneOf(ActionState.class);
     set.addAll(Arrays.asList(states));
     return new Filter() {
@@ -343,12 +353,13 @@ public final class ActionProcessor
   }
 
   /** Check that any of the filters match */
-  public static Filter or(Filter... filters) {
+  public Filter or(Stream<Filter> filters) {
     return new Filter() {
+      private final List<Filter> filterList = filters.collect(Collectors.toList());
 
       @Override
       protected boolean check(Action action, Information info) {
-        return Stream.of(filters).anyMatch(f -> f.check(action, info));
+        return filterList.stream().anyMatch(f -> f.check(action, info));
       }
     };
   }
@@ -378,7 +389,7 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  public static Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
+  public Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
 
       @Override
@@ -393,7 +404,7 @@ public final class ActionProcessor
    *
    * @param tags the set of tags
    */
-  public static Filter tags(Stream<String> tags) {
+  public Filter tags(Stream<String> tags) {
     final Set<String> tagSet = tags.collect(Collectors.toSet());
     return new Filter() {
       @Override
@@ -408,7 +419,7 @@ public final class ActionProcessor
    *
    * @param pattern the pattern
    */
-  public static Filter textSearch(Pattern pattern) {
+  public Filter textSearch(Pattern pattern) {
     return new Filter() {
       @Override
       protected boolean check(Action action, Information info) {
@@ -418,7 +429,7 @@ public final class ActionProcessor
   }
 
   /** Check that an action has one of the types specified */
-  public static Filter type(String... types) {
+  public Filter type(String... types) {
     final Set<String> set = Stream.of(types).collect(Collectors.toSet());
     return new Filter() {
 

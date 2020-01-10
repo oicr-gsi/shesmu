@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.server;
+package ca.on.oicr.gsi.shesmu.plugin;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
