@@ -4174,7 +4174,7 @@ export function initialiseAlertDashboard(initialFilterString, output) {
       table(
         Object.entries(a.labels).sort((a, b) => a[0].localeCompare(b[0])),
         ["Label", x => x[0]],
-        ["Value", x => x[1]]
+        ["Value", x => x[1].split(/\n/).map(t => text(t))]
       ),
       [["Started", "startsAt"], ["Ended", "endsAt"]].map(([name, property]) => {
         const time = a[property];
