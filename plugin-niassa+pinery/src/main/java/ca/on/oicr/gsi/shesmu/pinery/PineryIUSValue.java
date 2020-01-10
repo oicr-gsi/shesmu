@@ -10,6 +10,7 @@ import java.util.Optional;
 /** IUS information from Pinery */
 public final class PineryIUSValue {
   private final String bases_mask;
+  private final Optional<Double> cell_viability;
   private final Instant completed_date;
   private final Optional<String> container_model;
   private final String donor;
@@ -28,11 +29,16 @@ public final class PineryIUSValue {
   private final String organism;
   private final Path path;
   private final String project;
+  private final Optional<String> reference_slide_id;
   private final Optional<Double> rin;
   private final String run_status;
   private final Optional<String> sequencing_kit;
   private final Optional<String> sex;
+  private final Optional<String> spike_in;
+  private final Optional<String> spike_in_dilution_factor;
+  private final Optional<Double> spike_in_volume_ul;
   private final Instant startDate;
+  private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
   private final Instant timestamp;
   private final String tissue_origin;
@@ -42,44 +48,56 @@ public final class PineryIUSValue {
   private final boolean umis;
 
   public PineryIUSValue(
+      String bases_mask,
+      Optional<Double> cell_viability,
+      Instant completed_date,
+      Optional<String> container_model,
+      String donor,
+      Optional<Double> dv200,
+      String group_desc,
+      String group_id,
+      String instrumentModel,
+      Tuple ius,
+      String kit,
+      String library_design,
+      String library_name,
+      long library_size,
+      String library_type,
+      Tuple lims,
+      String organism,
       Path path,
       String project,
-      String organism,
-      String library_name,
-      String donor,
-      Tuple ius,
-      String library_design,
+      Optional<String> reference_slide_id,
+      Optional<Double> rin,
+      String run_status,
+      Optional<String> sequencing_kit,
+      Optional<String> sex,
+      Optional<String> spike_in,
+      Optional<String> spike_in_dilution_factor,
+      Optional<Double> spike_in_volume_ul,
+      Instant startDate,
+      Optional<Double> target_cell_recovery,
       String tissue_type,
       String tissue_origin,
       String tissue_prep,
       String targeted_resequencing,
       String tissue_region,
-      String group_id,
-      String group_desc,
-      long library_size,
-      String library_type,
-      String kit,
       Instant timestamp,
-      Tuple lims,
-      Instant completed_date,
-      String bases_mask,
-      String instrumentModel,
-      Optional<Double> dv200,
-      Optional<Double> rin,
-      String run_status,
       boolean umis,
-      Optional<String> sequencing_kit,
-      Optional<String> container_model,
-      Optional<String> sex,
-      Instant startDate,
       boolean is_sample) {
     super();
+    this.cell_viability = cell_viability;
     this.path = path;
     this.organism = organism;
     this.bases_mask = bases_mask;
     this.instrumentModel = instrumentModel;
+    this.reference_slide_id = reference_slide_id;
     this.sex = sex;
+    this.spike_in = spike_in;
+    this.spike_in_dilution_factor = spike_in_dilution_factor;
+    this.spike_in_volume_ul = spike_in_volume_ul;
     this.startDate = startDate;
+    this.target_cell_recovery = target_cell_recovery;
     this.is_sample = is_sample;
     this.project = project;
     this.library_name = library_name;
@@ -112,6 +130,11 @@ public final class PineryIUSValue {
     return bases_mask;
   }
 
+  @ShesmuVariable(signable = true)
+  public Optional<Double> cell_viability() {
+    return cell_viability;
+  }
+
   @ShesmuVariable
   public Instant completed_date() {
     return completed_date;
@@ -139,7 +162,9 @@ public final class PineryIUSValue {
     PineryIUSValue that = (PineryIUSValue) o;
     return is_sample == that.is_sample
         && library_size == that.library_size
+        && umis == that.umis
         && bases_mask.equals(that.bases_mask)
+        && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
         && container_model.equals(that.container_model)
         && donor.equals(that.donor)
@@ -156,18 +181,22 @@ public final class PineryIUSValue {
         && organism.equals(that.organism)
         && path.equals(that.path)
         && project.equals(that.project)
+        && reference_slide_id.equals(that.reference_slide_id)
         && rin.equals(that.rin)
         && run_status.equals(that.run_status)
         && sequencing_kit.equals(that.sequencing_kit)
         && sex.equals(that.sex)
+        && spike_in.equals(that.spike_in)
+        && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
+        && spike_in_volume_ul.equals(that.spike_in_volume_ul)
         && startDate.equals(that.startDate)
+        && target_cell_recovery.equals(that.target_cell_recovery)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
         && tissue_prep.equals(that.tissue_prep)
         && tissue_region.equals(that.tissue_region)
-        && tissue_type.equals(that.tissue_type)
-        && umis == that.umis;
+        && tissue_type.equals(that.tissue_type);
   }
 
   @ShesmuVariable(signable = true)
@@ -184,6 +213,7 @@ public final class PineryIUSValue {
   public int hashCode() {
     return Objects.hash(
         bases_mask,
+        cell_viability,
         completed_date,
         container_model,
         donor,
@@ -202,11 +232,16 @@ public final class PineryIUSValue {
         organism,
         path,
         project,
+        reference_slide_id,
         rin,
         run_status,
         sequencing_kit,
         sex,
+        spike_in,
+        spike_in_dilution_factor,
+        spike_in_volume_ul,
         startDate,
+        target_cell_recovery,
         targeted_resequencing,
         timestamp,
         tissue_origin,
@@ -277,6 +312,11 @@ public final class PineryIUSValue {
   }
 
   @ShesmuVariable(signable = true)
+  public Optional<String> reference_slide_id() {
+    return reference_slide_id;
+  }
+
+  @ShesmuVariable
   public Optional<Double> rin() {
     return rin;
   }
@@ -301,9 +341,29 @@ public final class PineryIUSValue {
     return sex;
   }
 
+  @ShesmuVariable(signable = true)
+  public Optional<String> spike_in() {
+    return spike_in;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> spike_in_dilution_factor() {
+    return spike_in_dilution_factor;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<Double> spike_in_volume_ul() {
+    return spike_in_volume_ul;
+  }
+
   @ShesmuVariable
   public Instant start_date() {
     return startDate;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<Double> target_cell_recovery() {
+    return target_cell_recovery;
   }
 
   @ShesmuVariable(signable = true)

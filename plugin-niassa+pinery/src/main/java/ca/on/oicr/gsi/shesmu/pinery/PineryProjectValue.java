@@ -16,6 +16,11 @@ public class PineryProjectValue {
   }
 
   @ShesmuVariable
+  public boolean clinical() {
+    return backing.isClinical();
+  }
+
+  @ShesmuVariable
   public String name() {
     return backing.getName();
   }

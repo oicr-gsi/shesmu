@@ -71,67 +71,19 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                   final CerberusFileProvenanceValue result =
                       new CerberusFileProvenanceValue(
                           fp.getFileSWID().toString(),
-                          Paths.get(fp.getFilePath()),
-                          fp.getFileMetaType(),
-                          fp.getFileMd5sum(),
-                          IUSUtils.parseLong(fp.getFileSize()),
-                          fp.getWorkflowName(),
-                          fp.getWorkflowSWID().toString(),
-                          Optional.ofNullable(fp.getWorkflowRunSWID())
-                              .map(Object::toString)
-                              .orElse(""),
-                          parseWorkflowVersion(
-                              fp.getWorkflowVersion(),
-                              () -> {
-                                badVersions.incrementAndGet();
-                                badRecord.set(true);
-                              }),
-                          IUSUtils.singleton(
-                                  fp.getStudyTitles(),
-                                  reason -> badSetInRecord.add("study:" + reason),
-                                  false)
-                              .orElse(""),
-                          limsAttr(fp, "geo_organism", badSetInRecord::add).orElse(""),
-                          IUSUtils.singleton(
-                                  fp.getSampleNames(),
-                                  reason -> badSetInRecord.add("librarynames:" + reason),
-                                  false)
-                              .orElse(""),
+                          limsAttr(fp, "cell_viability", badSetInRecord::add)
+                              .map(Double::parseDouble),
+                          fp.getLastModified().toInstant(),
                           IUSUtils.singleton(
                                   fp.getRootSampleNames(),
                                   reason -> badSetInRecord.add("samplenames:" + reason),
                                   false)
                               .orElse(""),
                           limsAttr(fp, "geo_external_name", badSetInRecord::add).orElse(""),
-                          packIUS(fp),
-                          limsAttr(fp, "geo_library_source_template_type", badSetInRecord::add)
-                              .orElse(""),
-                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_group_id", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_group_id_description", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_library_size_code", badSetInRecord::add)
-                              .map(IUSUtils::parseLong)
-                              .orElse(0L),
-                          limsAttr(fp, "geo_library_type", badSetInRecord::add).orElse(""),
-                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add).orElse(""),
-                          fp.getLastModified().toInstant(),
-                          new Tuple(
-                              limsKey.map(LimsKey::getId).orElse(""),
-                              limsKey.map(LimsKey::getProvider).orElse(""),
-                              limsKey
-                                  .map(LimsKey::getLastModified)
-                                  .map(ZonedDateTime::toInstant)
-                                  .orElse(Instant.EPOCH),
-                              limsKey.map(LimsKey::getVersion).orElse("")),
-                          fp.getLastModified().toInstant(),
-                          fp.getStatus() == FileProvenance.Status.STALE,
                           fp.getFileAttributes(),
-                          fp.getWorkflowAttributes(),
-                          fp.getWorkflowRunAttributes(),
+                          IUSUtils.parseLong(fp.getFileSize()),
+                          limsAttr(fp, "geo_group_id_description", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_group_id", badSetInRecord::add).orElse(""),
                           IUSUtils.singleton(
                                   fp.getSequencerRunPlatformNames(),
                                   reason -> badSetInRecord.add("instrument_model: " + reason),
@@ -141,7 +93,64 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                               .stream()
                               .map(Object::toString)
                               .collect(Collectors.toSet()),
-                          limsAttr(fp, "sex", badSetInRecord::add));
+                          packIUS(fp),
+                          limsAttr(fp, "geo_prep_kit", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_library_source_template_type", badSetInRecord::add)
+                              .orElse(""),
+                          IUSUtils.singleton(
+                                  fp.getSampleNames(),
+                                  reason -> badSetInRecord.add("librarynames:" + reason),
+                                  false)
+                              .orElse(""),
+                          limsAttr(fp, "geo_library_size_code", badSetInRecord::add)
+                              .map(IUSUtils::parseLong)
+                              .orElse(0L),
+                          limsAttr(fp, "geo_library_type", badSetInRecord::add).orElse(""),
+                          new Tuple(
+                              limsKey.map(LimsKey::getId).orElse(""),
+                              limsKey.map(LimsKey::getProvider).orElse(""),
+                              limsKey
+                                  .map(LimsKey::getLastModified)
+                                  .map(ZonedDateTime::toInstant)
+                                  .orElse(Instant.EPOCH),
+                              limsKey.map(LimsKey::getVersion).orElse("")),
+                          fp.getFileMetaType(),
+                          fp.getFileMd5sum(),
+                          limsAttr(fp, "geo_organism", badSetInRecord::add).orElse(""),
+                          Paths.get(fp.getFilePath()),
+                          IUSUtils.singleton(
+                                  fp.getStudyTitles(),
+                                  reason -> badSetInRecord.add("study:" + reason),
+                                  false)
+                              .orElse(""),
+                          limsAttr(fp, "reference_slide_id", badSetInRecord::add),
+                          limsAttr(fp, "sex", badSetInRecord::add),
+                          limsAttr(fp, "spike_in", badSetInRecord::add),
+                          limsAttr(fp, "spike_in_dilution_factor", badSetInRecord::add),
+                          limsAttr(fp, "spike_in_volume_ul", badSetInRecord::add)
+                              .map(Double::parseDouble),
+                          fp.getStatus() == FileProvenance.Status.STALE,
+                          limsAttr(fp, "target_cell_recovery", badSetInRecord::add)
+                              .map(Double::parseDouble),
+                          limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add).orElse(""),
+                          fp.getLastModified().toInstant(),
+                          limsAttr(fp, "geo_tissue_origin", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_region", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tissue_type", badSetInRecord::add).orElse(""),
+                          fp.getWorkflowName(),
+                          fp.getWorkflowSWID().toString(),
+                          fp.getWorkflowAttributes(),
+                          Optional.ofNullable(fp.getWorkflowRunSWID())
+                              .map(Object::toString)
+                              .orElse(""),
+                          fp.getWorkflowRunAttributes(),
+                          parseWorkflowVersion(
+                              fp.getWorkflowVersion(),
+                              () -> {
+                                badVersions.incrementAndGet();
+                                badRecord.set(true);
+                              }));
 
                   if (!badSetInRecord.isEmpty()) {
                     badSets.incrementAndGet();
