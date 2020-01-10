@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
@@ -20,6 +21,8 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
+import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
@@ -27,7 +30,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.*;
 import ca.on.oicr.gsi.shesmu.server.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
-import ca.on.oicr.gsi.shesmu.server.Query.FilterJson;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.JarHashRepository;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
@@ -398,9 +400,9 @@ public final class Server implements ServerConfig, ActionServices {
 
                   final String savedString = parameters.get("saved");
                   if (savedString != null) {
-                    final Query.LocationJson savedLocation =
+                    final LocationJson savedLocation =
                         RuntimeSupport.MAPPER.readValue(
-                            URLDecoder.decode(savedString, "UTF-8"), Query.LocationJson.class);
+                            URLDecoder.decode(savedString, "UTF-8"), LocationJson.class);
                     savedJson = RuntimeSupport.MAPPER.writeValueAsString(savedLocation);
                   }
                   userFilters =
@@ -1453,8 +1455,8 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/metrodiagram",
         t -> {
-          final Query.LocationJson location =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.LocationJson.class);
+          final LocationJson location =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), LocationJson.class);
           final Pair<Pair<OliveRunInfo, FileTable>, OliveTable> match =
               compiler
                   .dashboard()
@@ -1594,7 +1596,7 @@ public final class Server implements ServerConfig, ActionServices {
                     RuntimeSupport.MAPPER,
                     Stream.of(filters)
                         .filter(Objects::nonNull)
-                        .map(FilterJson::convert)
+                        .map(filterJson -> filterJson.convert(processor))
                         .toArray(Filter[]::new)));
           }
         });
@@ -1617,7 +1619,7 @@ public final class Server implements ServerConfig, ActionServices {
                 processor.purge(
                     Stream.of(filters)
                         .filter(Objects::nonNull)
-                        .map(FilterJson::convert)
+                        .map(filterJson -> filterJson.convert(processor))
                         .toArray(Filter[]::new)));
           }
         });

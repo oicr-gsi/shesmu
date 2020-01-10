@@ -1,10 +1,10 @@
 package ca.on.oicr.gsi.shesmu.core.input.shesmu;
 
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
-import ca.on.oicr.gsi.shesmu.server.SourceLocation;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Set;
