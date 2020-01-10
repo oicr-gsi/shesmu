@@ -2233,6 +2233,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("favicon.png", "image/png");
     add("flamethrower.gif", "image/gif");
     add("holtburn.gif", "image/gif");
+    add("ohno.gif", "image/gif");
     add("shrek.gif", "image/gif");
     add("starwars.gif", "image/gif");
     add("thorschariot.gif", "image/gif");
