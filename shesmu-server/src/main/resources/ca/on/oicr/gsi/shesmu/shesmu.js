@@ -1868,6 +1868,11 @@ function nextPage(query, targetElement, onActionPage) {
         )
       );
       toolbar.appendChild(
+        button("⎘ Copy Id", "Copy action identifier to clipboard.", () =>
+          copyText(action.actionId)
+        )
+      );
+      toolbar.appendChild(
         dangerButton("☠️ PURGE ACTION", "Remove this action.", () =>
           fetchJsonWithBusyDialog(
             "/purge",
