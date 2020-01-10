@@ -123,11 +123,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
                 return new PineryIUSValue(
-                    Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
+                    run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                    Optional.empty(),
+                    lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(),
+                    maybeGetRunField(run, RunDto::getContainerModel),
+                    "",
+                    Optional.empty(),
                     "",
                     "",
-                    "",
-                    "",
+                    lp.getSequencerRunPlatformModel(),
                     new Tuple(
                         lp.getSequencerRunName(),
                         IUSUtils.parseLaneNumber(lp.getLaneNumber()),
@@ -135,29 +139,31 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     "",
                     "",
                     "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
                     0L,
                     "",
-                    "",
-                    lastModified,
                     new Tuple(lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
-                    lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(),
-                    run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
-                    lp.getSequencerRunPlatformModel(),
+                    "",
+                    Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
+                    "",
                     Optional.empty(),
                     Optional.empty(),
                     getRunField(run, RunDto::getState),
-                    false,
                     maybeGetRunField(run, RunDto::getSequencingKit),
-                    maybeGetRunField(run, RunDto::getContainerModel),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
                     Optional.empty(),
                     run.getStartDate() == null || run.getStartDate().isEmpty()
                         ? Instant.EPOCH
                         : ZonedDateTime.parse(run.getStartDate()).toInstant(),
+                    Optional.empty(),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    lastModified,
+                    false,
                     false);
               })
           .filter(Objects::nonNull);
@@ -185,17 +191,50 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 if (run == null) return null;
                 final PineryIUSValue result =
                     new PineryIUSValue(
-                        Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
-                        sp.getStudyTitle(),
-                        limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
-                        sp.getSampleName(),
+                        run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
+                        limsAttr(sp, "cell_viability", badSetInRecord::add, false)
+                            .map(Double::parseDouble),
+                        sp.getCreatedDate() == null
+                            ? Instant.EPOCH
+                            : sp.getCreatedDate().toInstant(),
+                        maybeGetRunField(run, RunDto::getContainerModel),
                         sp.getRootSampleName(),
+                        limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
+                        limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
+                            .orElse(""),
+                        limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""),
+                        sp.getSequencerRunPlatformModel(),
                         new Tuple(
                             sp.getSequencerRunName(),
                             IUSUtils.parseLaneNumber(sp.getLaneNumber()),
                             sp.getIusTag()),
+                        limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
                         limsAttr(sp, "geo_library_source_template_type", badSetInRecord::add, true)
                             .orElse(""),
+                        sp.getSampleName(),
+                        limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false)
+                            .map(IUSUtils::parseLong)
+                            .orElse(0L),
+                        limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""),
+                        new Tuple(
+                            sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
+                        limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
+                        Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
+                        sp.getStudyTitle(),
+                        limsAttr(sp, "reference_slide_id", badSetInRecord::add, false),
+                        limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
+                        getRunField(run, RunDto::getState),
+                        maybeGetRunField(run, RunDto::getSequencingKit),
+                        limsAttr(sp, "sex", badSetInRecord::add, false),
+                        limsAttr(sp, "spike_in", badSetInRecord::add, false),
+                        limsAttr(sp, "spike_in_dilution_factor", badSetInRecord::add, false),
+                        limsAttr(sp, "spike_in_volume_ul", badSetInRecord::add, false)
+                            .map(Double::parseDouble),
+                        run.getStartDate() == null || run.getStartDate().isEmpty()
+                            ? Instant.EPOCH
+                            : ZonedDateTime.parse(run.getStartDate()).toInstant(),
+                        limsAttr(sp, "target_cell_recovery", badSetInRecord::add, false)
+                            .map(Double::parseDouble),
                         limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""),
                         limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""),
                         limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false)
@@ -203,34 +242,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "geo_targeted_resequencing", badSetInRecord::add, false)
                             .orElse(""),
                         limsAttr(sp, "geo_tissue_region", badSetInRecord::add, false).orElse(""),
-                        limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""),
-                        limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
-                            .orElse(""),
-                        limsAttr(sp, "geo_library_size_code", badSetInRecord::add, false)
-                            .map(IUSUtils::parseLong)
-                            .orElse(0L),
-                        limsAttr(sp, "geo_library_type", badSetInRecord::add, false).orElse(""),
-                        limsAttr(sp, "geo_prep_kit", badSetInRecord::add, false).orElse(""),
                         lastModified,
-                        new Tuple(
-                            sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
-                        sp.getCreatedDate() == null
-                            ? Instant.EPOCH
-                            : sp.getCreatedDate().toInstant(),
-                        run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
-                        sp.getSequencerRunPlatformModel(),
-                        limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
-                        limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
-                        getRunField(run, RunDto::getState),
                         limsAttr(sp, "umis", badSetInRecord::add, false)
                             .map(Boolean::parseBoolean)
                             .orElse(false),
-                        maybeGetRunField(run, RunDto::getSequencingKit),
-                        maybeGetRunField(run, RunDto::getContainerModel),
-                        limsAttr(sp, "sex", badSetInRecord::add, false),
-                        run.getStartDate() == null || run.getStartDate().isEmpty()
-                            ? Instant.EPOCH
-                            : ZonedDateTime.parse(run.getStartDate()).toInstant(),
                         true);
 
                 if (badSetInRecord.isEmpty()) {
@@ -332,6 +347,17 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   @ShesmuMethod(name = "$_projects", description = "All projects from in Pinery defined in {file}.")
   public Set<String> allProjects() {
     return projects.get().map(SampleProjectDto::getName).collect(Collectors.toSet());
+  }
+
+  @ShesmuMethod(
+      name = "$_clinical_projects",
+      description = "Projects marked clinical from in Pinery defined in {file}.")
+  public Set<String> clinicalProjects() {
+    return projects
+        .get()
+        .filter(SampleProjectDto::isClinical)
+        .map(SampleProjectDto::getName)
+        .collect(Collectors.toSet());
   }
 
   @Override

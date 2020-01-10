@@ -14,6 +14,7 @@ import java.util.*;
  */
 public final class CerberusFileProvenanceValue {
   private final String accession;
+  private final Optional<Double> cell_viability;
   private final Instant completed_date;
   private final String donor;
   private final String external_name;
@@ -35,8 +36,13 @@ public final class CerberusFileProvenanceValue {
   private final String organism;
   private final Path path;
   private final String project;
+  private final Optional<String> reference_slide_id;
   private final Optional<String> sex;
+  private final Optional<String> spike_in;
+  private final Optional<String> spike_in_dilution_factor;
+  private final Optional<Double> spike_in_volume_ul;
   private final boolean stale;
+  private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
   private final Instant timestamp;
   private final String tissue_origin;
@@ -51,43 +57,50 @@ public final class CerberusFileProvenanceValue {
 
   public CerberusFileProvenanceValue(
       String accession,
-      Path path,
-      String metatype,
-      String md5,
-      long file_size,
-      String workflow,
-      String workflow_accession,
-      String workflow_run_accession,
-      Tuple workflow_version,
-      String project,
-      String organism,
-      String library_name,
+      Optional<Double> cell_viability,
+      Instant completed_date,
       String donor,
       String external_name,
-      Tuple ius,
-      String library_design,
-      String tissue_type,
-      String tissue_origin,
-      String tissue_prep,
-      String targeted_resequencing,
-      String tissue_region,
-      String group_id,
-      String group_desc,
-      long library_size,
-      String library_type,
-      String kit,
-      Instant timestamp,
-      Tuple lims,
-      Instant completed_date,
-      boolean stale,
       SortedMap<String, SortedSet<String>> file_attributes,
-      SortedMap<String, SortedSet<String>> workflow_attributes,
-      SortedMap<String, SortedSet<String>> workflow_run_attributes,
+      long file_size,
+      String group_desc,
+      String group_id,
       String instrument_model,
       Set<String> inputFiles,
-      Optional<String> sex) {
+      Tuple ius,
+      String kit,
+      String library_design,
+      String library_name,
+      long library_size,
+      String library_type,
+      Tuple lims,
+      String metatype,
+      String md5,
+      String organism,
+      Path path,
+      String project,
+      Optional<String> reference_slide_id,
+      Optional<String> sex,
+      Optional<String> spike_in,
+      Optional<String> spike_in_dilution_factor,
+      Optional<Double> spike_in_volume_ul,
+      boolean stale,
+      Optional<Double> target_cell_recovery,
+      String targeted_resequencing,
+      Instant timestamp,
+      String tissue_origin,
+      String tissue_prep,
+      String tissue_region,
+      String tissue_type,
+      String workflow,
+      String workflow_accession,
+      SortedMap<String, SortedSet<String>> workflow_attributes,
+      String workflow_run_accession,
+      SortedMap<String, SortedSet<String>> workflow_run_attributes,
+      Tuple workflow_version) {
     super();
     this.accession = accession;
+    this.cell_viability = cell_viability;
     this.path = path;
     this.metatype = metatype;
     this.md5 = md5;
@@ -118,6 +131,11 @@ public final class CerberusFileProvenanceValue {
     this.completed_date = completed_date;
     this.stale = stale;
     this.file_attributes = IUSUtils.attributes(file_attributes);
+    this.reference_slide_id = reference_slide_id;
+    this.spike_in = spike_in;
+    this.spike_in_dilution_factor = spike_in_dilution_factor;
+    this.spike_in_volume_ul = spike_in_volume_ul;
+    this.target_cell_recovery = target_cell_recovery;
     final SortedMap<String, SortedSet<String>> mergedAttributes =
         new TreeMap<>(workflow_attributes);
     mergedAttributes.putAll(workflow_run_attributes);
@@ -130,6 +148,11 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable
   public String accession() {
     return accession;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<Double> cell_viability() {
+    return cell_viability;
   }
 
   @ShesmuVariable
@@ -153,12 +176,14 @@ public final class CerberusFileProvenanceValue {
         && library_size == that.library_size
         && stale == that.stale
         && accession.equals(that.accession)
+        && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
         && external_name.equals(that.external_name)
         && file_attributes.equals(that.file_attributes)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
+        && inputFiles.equals(that.inputFiles)
         && instrument_model.equals(that.instrument_model)
         && ius.equals(that.ius)
         && kit.equals(that.kit)
@@ -171,7 +196,12 @@ public final class CerberusFileProvenanceValue {
         && organism.equals(that.organism)
         && path.equals(that.path)
         && project.equals(that.project)
+        && reference_slide_id.equals(that.reference_slide_id)
         && sex.equals(that.sex)
+        && spike_in.equals(that.spike_in)
+        && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
+        && spike_in_volume_ul.equals(that.spike_in_volume_ul)
+        && target_cell_recovery.equals(that.target_cell_recovery)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
         && tissue_origin.equals(that.tissue_origin)
@@ -179,8 +209,9 @@ public final class CerberusFileProvenanceValue {
         && tissue_region.equals(that.tissue_region)
         && tissue_type.equals(that.tissue_type)
         && workflow.equals(that.workflow)
-        && workflow_run_attributes.equals(that.workflow_run_attributes)
+        && workflow_accession.equals(that.workflow_accession)
         && workflow_run_accession.equals(that.workflow_run_accession)
+        && workflow_run_attributes.equals(that.workflow_run_attributes)
         && workflow_version.equals(that.workflow_version);
   }
 
@@ -215,6 +246,7 @@ public final class CerberusFileProvenanceValue {
   public int hashCode() {
     return Objects.hash(
         accession,
+        cell_viability,
         completed_date,
         donor,
         external_name,
@@ -222,6 +254,7 @@ public final class CerberusFileProvenanceValue {
         file_size,
         group_desc,
         group_id,
+        inputFiles,
         instrument_model,
         ius,
         kit,
@@ -235,8 +268,13 @@ public final class CerberusFileProvenanceValue {
         organism,
         path,
         project,
+        reference_slide_id,
         sex,
+        spike_in,
+        spike_in_dilution_factor,
+        spike_in_volume_ul,
         stale,
+        target_cell_recovery,
         targeted_resequencing,
         timestamp,
         tissue_origin,
@@ -244,8 +282,9 @@ public final class CerberusFileProvenanceValue {
         tissue_region,
         tissue_type,
         workflow,
-        workflow_run_attributes,
+        workflow_accession,
         workflow_run_accession,
+        workflow_run_attributes,
         workflow_version);
   }
 
@@ -322,13 +361,38 @@ public final class CerberusFileProvenanceValue {
   }
 
   @ShesmuVariable(signable = true)
+  public Optional<String> reference_slide_id() {
+    return reference_slide_id;
+  }
+
+  @ShesmuVariable(signable = true)
   public Optional<String> sex() {
     return sex;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> spike_in() {
+    return spike_in;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> spike_in_dilution_factor() {
+    return spike_in_dilution_factor;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<Double> spike_in_volume_ul() {
+    return spike_in_volume_ul;
   }
 
   @ShesmuVariable
   public boolean stale() {
     return stale;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<Double> target_cell_recovery() {
+    return target_cell_recovery;
   }
 
   @ShesmuVariable(signable = true)
