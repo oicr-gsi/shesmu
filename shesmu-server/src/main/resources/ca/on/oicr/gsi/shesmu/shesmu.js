@@ -1885,7 +1885,20 @@ function nextPage(query, targetElement, onActionPage) {
               ]),
               method: "POST"
             },
-            () => nextPage(query, targetElement, onActionPage)
+            count => {
+              if (count > 1) {
+                const dialog = makePopup();
+                dialog.appendChild(
+                  document.createTextNode(
+                    `Purged ${count} actions!!! This is awkward. The unique action IDs aren't unique!`
+                  )
+                );
+                const image = document.createElement("IMG");
+                dialog.appendChild(image);
+                image.src = "ohno.gif";
+              }
+              nextPage(query, targetElement, onActionPage);
+            }
           )
         )
       );
