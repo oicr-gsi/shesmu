@@ -1775,20 +1775,21 @@ function makePopup(returnClose, afterClose) {
   dialog.appendChild(inner);
 
   document.body.appendChild(modal);
-  modal.onclick = e => {
+  modal.addEventListener("click", e => {
     if (e.target == modal) {
       document.body.removeChild(modal);
       if (afterClose) {
         afterClose();
       }
     }
-  };
-  closeButton.onclick = e => {
+  });
+  closeButton.addEventListener("click", e => {
     document.body.removeChild(modal);
     if (afterClose) {
       afterClose();
     }
-  };
+  });
+  inner.addEventListener("click", e => e.stopPropagation());
 
   return returnClose ? [inner, closeButton.onclick] : inner;
 }
