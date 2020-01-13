@@ -502,14 +502,15 @@ budget, the Prometheus variable `shesmu_run_overtime` will be set.
 
 - `Frequency` _integer_ `;`
 
-Run the script every _integer_ seconds. The usual integer suffixes, especially `minutes`
-and `hours` can be added here. 
+Run the script every _integer_ seconds. The usual integer suffixes can be used, where seconds 
+is the default and others such as `minutes` and `hours` can be used. 
 
 ###Required Services
 
 - `RequiredServices` _service1 [, service2, ...]_ `;`
 
-Calls the throttler to check for services. Multiple services are separated by a comma.
+Ensures that the olive will only run if the specified services are not
+throttled. Multiple services are separated by a comma.
 
 ## Types
 There are a small number of types in the language, listed below. Each has
