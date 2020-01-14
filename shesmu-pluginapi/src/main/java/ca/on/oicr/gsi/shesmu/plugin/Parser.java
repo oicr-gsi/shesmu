@@ -190,7 +190,12 @@ public abstract class Parser {
         if (commentMatch.lookingAt()) {
           c = 1;
           l++;
-          i = consume(i, commentMatch.end());
+          i = consume(i, Math.min(commentMatch.end() + 1, i.length()));
+          inputConsumed = true;
+        } else if (i.length() > 0 && i.charAt(0) == '\n') {
+          c = 1;
+          l++;
+          i = consume(i, 1);
           inputConsumed = true;
         }
       } while (inputConsumed);
@@ -266,7 +271,7 @@ public abstract class Parser {
     return new Good(errorConsumer, input, 1, 1);
   }
 
-  private static final Pattern COMMENT = Pattern.compile("(#[^\\n]*)?\\n");
+  private static final Pattern COMMENT = Pattern.compile("#[^\\n]*");
   public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-zA-Z0-9_]*");
   private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
   private final int column;
