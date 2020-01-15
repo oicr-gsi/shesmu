@@ -33,12 +33,71 @@ import java.util.stream.StreamSupport;
  * <p>All other types are errors.
  */
 public final class WdlInputType {
-  private static final ParseDispatch<Imyhat> DISPATCH = new ParseDispatch<>();
-  private static final Pattern PERIOD = Pattern.compile("\\.");
+  private static Rule<Imyhat> just(Imyhat type) {
+    return (p, o) -> {
+      o.accept(type);
+      return p.whitespace();
+    };
+  }
 
+  /**
+   * Take a womtool inputs JSON object and convert it into a list of workflow configurations
+   *
+   * <p>Each womtool record looks like <tt>"WORKFLOW.TASK.VARIABLE":"TYPE"</tt> and we want to
+   * transform it into something that would be <tt>workflow = { task = {variable = type}}</tt> in
+   * Shesmu, collecting all the input variables for a single task into an object.
+   */
+  public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errorHandler) {
+    return StreamSupport.stream(
+            Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
+        .map(
+            entry -> {
+              final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
+              final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
+              final Parser parser =
+                  Parser.start(
+                          entry.getValue().asText(),
+                          (line, column, errorMessage) -> {
+                            if (error.get() == null || error.get().first() < column) {
+                              error.set(new Pair<>(column, errorMessage));
+                            }
+                          })
+                      .then(WdlInputType::parse, type::set);
+              if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
+                return new Pair<>(
+                    PERIOD.split(entry.getKey()), type.get()); // Slice the WF.TASK.VAR = TYPE
+              } else {
+                errorHandler.raise(1, error.get().first(), error.get().second());
+                return null;
+              }
+            })
+        .filter(Objects::nonNull);
+  }
+
+  public static Parser parse(Parser parser, Consumer<Imyhat> output) {
+    final AtomicReference<Imyhat> value = new AtomicReference<>();
+    final Parser result =
+        parser
+            .whitespace()
+            .dispatch(DISPATCH, value::set)
+            .regex(
+                OPTIONAL,
+                q -> {
+                  if (q.group(0).equals("?")) value.updateAndGet(Imyhat::asOptional);
+                },
+                "Optional or nothing.")
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(value.get());
+    }
+    return result;
+  }
+
+  private static final ParseDispatch<Imyhat> DISPATCH = new ParseDispatch<>();
   private static final Consumer<Matcher> IGNORE = m -> {};
   private static final Pattern OPTIONAL = Pattern.compile("\\??");
   private static final Pattern OPTIONAL_PLUS = Pattern.compile("\\+?");
+  private static final Pattern PERIOD = Pattern.compile("\\.");
   /** Convert a Shesmu type into its equivalent WDL type */
   public static final ImyhatTransformer<String> TO_WDL_TYPE =
       new ImyhatTransformer<String>() {
@@ -147,66 +206,6 @@ public final class WdlInputType {
           }
           return result;
         });
-  }
-
-  private static Rule<Imyhat> just(Imyhat type) {
-    return (p, o) -> {
-      o.accept(type);
-      return p.whitespace();
-    };
-  }
-
-  /**
-   * Take a womtool inputs JSON object and convert it into a list of workflow configurations
-   *
-   * <p>Each womtool record looks like <tt>"WORKFLOW.TASK.VARIABLE":"TYPE"</tt> and we want to
-   * transform it into something that would be <tt>workflow = { task = {variable = type}}</tt> in
-   * Shesmu, collecting all the input variables for a single task into an object.
-   */
-  public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errorHandler) {
-    return StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
-        .map(
-            entry -> {
-              final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
-              final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
-              final Parser parser =
-                  Parser.start(
-                          entry.getValue().asText(),
-                          (line, column, errorMessage) -> {
-                            if (error.get() == null || error.get().first() < column) {
-                              error.set(new Pair<>(column, errorMessage));
-                            }
-                          })
-                      .then(WdlInputType::parse, type::set);
-              if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
-                return new Pair<>(
-                    PERIOD.split(entry.getKey()), type.get()); // Slice the WF.TASK.VAR = TYPE
-              } else {
-                errorHandler.raise(1, error.get().first(), error.get().second());
-                return null;
-              }
-            })
-        .filter(Objects::nonNull);
-  }
-
-  public static Parser parse(Parser parser, Consumer<Imyhat> output) {
-    final AtomicReference<Imyhat> value = new AtomicReference<>();
-    final Parser result =
-        parser
-            .whitespace()
-            .dispatch(DISPATCH, value::set)
-            .regex(
-                OPTIONAL,
-                q -> {
-                  if (q.group(0).equals("?")) value.updateAndGet(Imyhat::asOptional);
-                },
-                "Optional or nothing.")
-            .whitespace();
-    if (result.isGood()) {
-      output.accept(value.get());
-    }
-    return result;
   }
 
   private WdlInputType() {}
