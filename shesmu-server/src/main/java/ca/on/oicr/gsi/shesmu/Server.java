@@ -27,6 +27,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import ca.on.oicr.gsi.shesmu.runtime.*;
 import ca.on.oicr.gsi.shesmu.server.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
@@ -1223,6 +1224,10 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeCharacters("Descriptor");
                 writer.writeEndElement();
                 writer.writeStartElement("option");
+                writer.writeAttribute("value", "1");
+                writer.writeCharacters("WDL Type");
+                writer.writeEndElement();
+                writer.writeStartElement("option");
                 writer.writeAttribute("value", "");
                 writer.writeCharacters("Human-friendly");
                 writer.writeEndElement();
@@ -1281,6 +1286,17 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeStartElement("td");
                 writer.writeStartElement("span");
                 writer.writeAttribute("id", "descriptorType");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters("WDL Type");
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("span");
+                writer.writeAttribute("id", "wdlType");
                 writer.writeEndElement();
                 writer.writeEndElement();
                 writer.writeEndElement();
@@ -2100,9 +2116,11 @@ public final class Server implements ServerConfig, ActionServices {
           final TypeParseRequest request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), TypeParseRequest.class);
           Imyhat type;
+          t.getResponseHeaders().set("Content-type", "application/json");
           if (request.getFormat() == null || request.getFormat().equals("0")) {
             type = Imyhat.parse(request.getValue());
-            t.getResponseHeaders().set("Content-type", "application/json");
+          } else if (request.getFormat().equals("1")) {
+            type = WdlInputType.parseString(request.getValue());
           } else {
             Optional<Function<String, Imyhat>> existingTypes =
                 request.getFormat().isEmpty()
