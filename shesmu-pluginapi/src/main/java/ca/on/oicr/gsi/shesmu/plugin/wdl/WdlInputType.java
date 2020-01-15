@@ -93,6 +93,15 @@ public final class WdlInputType {
     return result;
   }
 
+  public static Imyhat parseString(String input) {
+    final AtomicReference<Imyhat> type = new AtomicReference<>();
+    final Parser result = parse(Parser.start(input, (line, column, errorMessage) -> {}), type::set);
+    if (result.isGood()) {
+      return type.get();
+    }
+    return Imyhat.BAD;
+  }
+
   private static final ParseDispatch<Imyhat> DISPATCH = new ParseDispatch<>();
   private static final Consumer<Matcher> IGNORE = m -> {};
   private static final Pattern OPTIONAL = Pattern.compile("\\??");
@@ -135,8 +144,9 @@ public final class WdlInputType {
 
         @Override
         public String object(Stream<Pair<String, Imyhat>> contents) {
-          contents.close();
-          return "Object";
+          return contents
+              .map(field -> field.first() + " -> " + field.second().apply(this))
+              .collect(Collectors.joining("\n", "WomCompositeType {\n", "}"));
         }
 
         @Override
@@ -203,6 +213,38 @@ public final class WdlInputType {
                   .symbol("]");
           if (result.isGood()) {
             o.accept(Imyhat.tuple(inner.stream().toArray(Imyhat[]::new)));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
+        "WomCompositeType",
+        (p, o) -> {
+          final AtomicReference<List<Pair<String, Imyhat>>> fields = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .symbol("{")
+                  .whitespace()
+                  .list(
+                      fields::set,
+                      (fp, fo) -> {
+                        final AtomicReference<String> name = new AtomicReference<>();
+                        final AtomicReference<Imyhat> type = new AtomicReference<>();
+                        final Parser fieldResult =
+                            fp.whitespace()
+                                .identifier(name::set)
+                                .whitespace()
+                                .symbol("->")
+                                .whitespace()
+                                .then(WdlInputType::parse, type::set)
+                                .whitespace();
+                        if (fieldResult.isGood()) {
+                          fo.accept(new Pair<>(name.get(), type.get()));
+                        }
+                        return fieldResult;
+                      })
+                  .symbol("}");
+          if (result.isGood()) {
+            o.accept(new Imyhat.ObjectImyhat(fields.get().stream()));
           }
           return result;
         });
