@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
@@ -698,7 +699,7 @@ public final class ActionProcessor
    *
    * @param locations the source locations
    */
-  public Filter fromSourceLocation(Stream<Predicate<SourceLocation>> locations) {
+  public Filter fromSourceLocation(Stream<LocationJson> locations) {
     final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
     return new Filter() {
 

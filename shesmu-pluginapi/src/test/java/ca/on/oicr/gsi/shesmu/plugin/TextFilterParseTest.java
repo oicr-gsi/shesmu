@@ -3,11 +3,11 @@ package ca.on.oicr.gsi.shesmu.plugin;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -41,7 +41,7 @@ public class TextFilterParseTest {
     }
 
     @Override
-    public Boolean fromSourceLocation(Stream<Predicate<SourceLocation>> locations) {
+    public Boolean fromSourceLocation(Stream<LocationJson> locations) {
       return false;
     }
 
