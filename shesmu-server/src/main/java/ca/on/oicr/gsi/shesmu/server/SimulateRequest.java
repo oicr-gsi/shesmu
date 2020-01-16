@@ -457,7 +457,14 @@ public class SimulateRequest {
                     }
 
                     @Override
-                    public boolean accept(String[] labels, String[] annotation, long ttl)
+                    public boolean accept(
+                        String[] labels,
+                        String[] annotation,
+                        long ttl,
+                        String filename,
+                        int line,
+                        int column,
+                        long time)
                         throws Exception {
                       return alerts.add(
                           new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));

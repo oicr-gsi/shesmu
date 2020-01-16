@@ -64,7 +64,14 @@ public class RunTest {
     }
 
     @Override
-    public boolean accept(String[] labels, String[] annotation, long ttl) {
+    public boolean accept(
+        String[] labels,
+        String[] annotation,
+        long ttl,
+        String filename,
+        int line,
+        int column,
+        long time) {
       if (IntStream.range(0, labels.length / 2)
           .anyMatch(i -> labels[i * 2].equals("value") && labels[i * 2 + 1].equals("true"))) {
         good++;
