@@ -1,10 +1,15 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
+import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
+import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
@@ -34,6 +39,43 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
 public class JiraConnection extends JsonPluginFile<Configuration> {
+  private class FilterCache extends KeyValueCache<String, Stream<JiraActionFilter>> {
+    public FilterCache(Path fileName) {
+      super("jira-filters " + fileName.toString(), 15, ReplacingRecord::new);
+    }
+
+    @Override
+    protected Stream<JiraActionFilter> fetch(String jql, Instant lastUpdated) throws Exception {
+      if (client == null) {
+        return Stream.empty();
+      }
+      final List<JiraActionFilter> buffer = new ArrayList<>();
+      for (int page = 0; true; page++) {
+        final SearchResult results =
+            client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_FILTERS).claim();
+        for (final Issue issue : results.getIssues()) {
+          final String assignee;
+          if (issue.getAssignee() == null) {
+            assignee = "Unassigned";
+          } else if (issue.getAssignee().getDisplayName() == null) {
+            assignee = "Unknown";
+          } else {
+            assignee = issue.getAssignee().getDisplayName();
+          }
+          FilterJson.extractFromText(issue.getDescription(), MAPPER)
+              .ifPresent(
+                  filter ->
+                      buffer.add(
+                          new JiraActionFilter(
+                              filter, issue.getKey(), issue.getSummary(), assignee)));
+        }
+        if (buffer.size() >= results.getTotal()) {
+          break;
+        }
+      }
+      return buffer.stream();
+    }
+  }
 
   private class IssueCache extends ValueCache<Stream<Issue>> {
     public IssueCache(Path fileName) {
@@ -52,7 +94,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       final List<Issue> buffer = new ArrayList<>();
       for (int page = 0; true; page++) {
         final SearchResult results =
-            client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS).claim();
+            client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_STANDARD).claim();
         for (final Issue issue : results.getIssues()) {
           buffer.add(issue);
         }
@@ -82,8 +124,35 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     }
   }
 
+  private static class JiraActionFilter {
+    private final String assignee;
+    private final FilterJson filter;
+    private final String key;
+    private final String summary;
+
+    private JiraActionFilter(FilterJson filter, String key, String summary, String assignee) {
+      this.filter = filter;
+      this.key = key;
+      this.summary = summary;
+      this.assignee = assignee;
+    }
+
+    <F> Pair<String, F> process(String name, FilterBuilder<F> builder) {
+      return new Pair<>(
+          name.replace("{key}", key).replace("{summary}", summary).replace("{assignee}", assignee),
+          filter.convert(builder));
+    }
+  }
+
   protected static final String EXTENSION = ".jira";
-  private static final Set<String> FIELDS =
+  private static final Set<String> FIELDS_FILTERS =
+      Stream.of(
+              IssueFieldId.SUMMARY_FIELD,
+              IssueFieldId.DESCRIPTION_FIELD,
+              IssueFieldId.ASSIGNEE_FIELD)
+          .map(x -> x.id)
+          .collect(Collectors.toSet());
+  private static final Set<String> FIELDS_STANDARD =
       Stream.of(
               IssueFieldId.SUMMARY_FIELD,
               IssueFieldId.ISSUE_TYPE_FIELD,
@@ -103,9 +172,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
 
   private List<String> closedStatuses = Collections.emptyList();
   private final Supplier<JiraConnection> definer;
-
+  private final FilterCache filters;
   private final IssueCache issues;
-
   private String passwordFile;
 
   private String projectKey = "FAKE";
@@ -119,6 +187,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   public JiraConnection(Path fileName, String instanceName, Definer<JiraConnection> definer) {
     super(fileName, instanceName, MAPPER, Configuration.class);
     issues = new IssueCache(fileName);
+    filters = new FilterCache(fileName);
     this.definer = definer;
   }
 
