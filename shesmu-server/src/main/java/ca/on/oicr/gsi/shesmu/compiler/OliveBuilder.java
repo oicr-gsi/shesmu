@@ -25,10 +25,21 @@ import org.objectweb.asm.commons.Method;
 public final class OliveBuilder extends BaseOliveBuilder {
 
   public static void emitAlert(
-      GeneratorAdapter methodGen, int labelLocal, int annotationLocal, int ttlLocal) {
+      GeneratorAdapter methodGen,
+      int labelLocal,
+      int annotationLocal,
+      int ttlLocal,
+      String filename,
+      int column,
+      int line,
+      long time) {
     methodGen.loadLocal(labelLocal);
     methodGen.loadLocal(annotationLocal);
     methodGen.loadLocal(ttlLocal);
+    methodGen.push(filename);
+    methodGen.push(column);
+    methodGen.push(line);
+    methodGen.push(time);
     methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ALERT);
     methodGen.pop();
   }
@@ -54,7 +65,17 @@ public final class OliveBuilder extends BaseOliveBuilder {
           });
   private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ALERT =
       new Method(
-          "accept", BOOLEAN_TYPE, new Type[] {A_STRING_ARRAY_TYPE, A_STRING_ARRAY_TYPE, LONG_TYPE});
+          "accept",
+          BOOLEAN_TYPE,
+          new Type[] {
+            A_STRING_ARRAY_TYPE,
+            A_STRING_ARRAY_TYPE,
+            LONG_TYPE,
+            A_STRING_TYPE,
+            INT_TYPE,
+            INT_TYPE,
+            LONG_TYPE
+          });
   private static final Method METHOD_OLIVE_SERVICES__OLIVE_RUNTIME =
       new Method(
           "oliveRuntime", VOID_TYPE, new Type[] {A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE});

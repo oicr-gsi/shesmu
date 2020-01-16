@@ -66,8 +66,17 @@ public class MasterRunner {
             }
 
             @Override
-            public boolean accept(String[] labels, String[] annotation, long ttl) throws Exception {
-              final boolean isDuplicated = services.accept(labels, annotation, ttl);
+            public boolean accept(
+                String[] labels,
+                String[] annotation,
+                long ttl,
+                String filename,
+                int line,
+                int column,
+                long time)
+                throws Exception {
+              final boolean isDuplicated =
+                  services.accept(labels, annotation, ttl, filename, line, column, time);
               if (isDuplicated) {
                 currentAlertDuplicates.incrementAndGet();
               }

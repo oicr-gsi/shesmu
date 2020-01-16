@@ -225,9 +225,16 @@ public final class Server implements ServerConfig, ActionServices {
               }
 
               @Override
-              public boolean accept(String[] labels, String[] annotation, long ttl)
+              public boolean accept(
+                  String[] labels,
+                  String[] annotation,
+                  long ttl,
+                  String filename,
+                  int line,
+                  int column,
+                  long time)
                   throws Exception {
-                return processor.accept(labels, annotation, ttl);
+                return processor.accept(labels, annotation, ttl, filename, line, column, time);
               }
 
               @Override

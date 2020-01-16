@@ -8,7 +8,15 @@ import java.util.stream.Stream;
 public interface OliveServices {
   boolean accept(Action action, String filename, int line, int column, long time, String[] tags);
 
-  boolean accept(String[] labels, String[] annotation, long ttl) throws Exception;
+  boolean accept(
+      String[] labels,
+      String[] annotation,
+      long ttl,
+      String filename,
+      int line,
+      int column,
+      long time)
+      throws Exception;
 
   Dumper findDumper(String name, Imyhat... types);
 

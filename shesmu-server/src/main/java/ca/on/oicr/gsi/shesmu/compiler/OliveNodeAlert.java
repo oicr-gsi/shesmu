@@ -204,7 +204,15 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
     renderer.methodGen().storeLocal(ttlLocal);
 
     loadOliveServices.accept(renderer);
-    OliveBuilder.emitAlert(renderer.methodGen(), labelLocal, annotationLocal, ttlLocal);
+    OliveBuilder.emitAlert(
+        renderer.methodGen(),
+        labelLocal,
+        annotationLocal,
+        ttlLocal,
+        renderer.root().sourcePath(),
+        line,
+        column,
+        renderer.root().compileTime);
   }
 
   @Override
