@@ -9,6 +9,15 @@ public final class LocationJson implements Predicate<SourceLocation> {
   private Integer line;
   private Long time;
 
+  public LocationJson() {}
+
+  public LocationJson(LocationJson original) {
+    this.column = original.column;
+    this.file = original.file;
+    this.line = original.line;
+    this.time = original.time;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
