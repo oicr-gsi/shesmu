@@ -3647,6 +3647,8 @@ function processIniType(name, type, toplevel) {
     return "p";
   } else if (type === "string") {
     return "s";
+  } else if (type === "json") {
+    return "j";
   } else if (typeof type === "object" && type && type.hasOwnProperty("is")) {
     switch (type.is) {
       case "date":
