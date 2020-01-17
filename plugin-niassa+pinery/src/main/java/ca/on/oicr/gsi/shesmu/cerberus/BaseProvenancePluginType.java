@@ -130,6 +130,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           fp.getLastModified().toInstant(),
                           fp.getStatus() == FileProvenance.Status.STALE,
                           fp.getFileAttributes(),
+                          fp.getWorkflowAttributes(),
                           fp.getWorkflowRunAttributes(),
                           IUSUtils.singleton(
                                   fp.getSequencerRunPlatformNames(),

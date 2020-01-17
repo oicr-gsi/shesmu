@@ -81,6 +81,7 @@ public final class CerberusFileProvenanceValue {
       Instant completed_date,
       boolean stale,
       SortedMap<String, SortedSet<String>> file_attributes,
+      SortedMap<String, SortedSet<String>> workflow_attributes,
       SortedMap<String, SortedSet<String>> workflow_run_attributes,
       String instrument_model,
       Set<String> inputFiles,
@@ -117,7 +118,10 @@ public final class CerberusFileProvenanceValue {
     this.completed_date = completed_date;
     this.stale = stale;
     this.file_attributes = IUSUtils.attributes(file_attributes);
-    this.workflow_run_attributes = IUSUtils.attributes(workflow_run_attributes);
+    final SortedMap<String, SortedSet<String>> mergedAttributes =
+        new TreeMap<>(workflow_attributes);
+    mergedAttributes.putAll(workflow_run_attributes);
+    this.workflow_run_attributes = IUSUtils.attributes(mergedAttributes);
     this.instrument_model = instrument_model;
     this.inputFiles = inputFiles;
     this.sex = sex;
