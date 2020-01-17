@@ -1,13 +1,13 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
-public abstract class AgoFilterJson extends FilterJson {
+public abstract class BaseAgoActionFilter extends ActionFilter {
 
   private long offset;
 
-  protected abstract <F> F convert(long offset, FilterBuilder<F> filterBuilder);
+  protected abstract <F> F convert(long offset, ActionFilterBuilder<F> filterBuilder);
 
   @Override
-  public final <F> F convert(FilterBuilder<F> filterBuilder) {
+  public final <F> F convert(ActionFilterBuilder<F> filterBuilder) {
     return maybeNegate(convert(offset, filterBuilder), filterBuilder);
   }
 

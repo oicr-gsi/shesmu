@@ -21,9 +21,10 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
-import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
@@ -77,10 +78,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -409,9 +407,9 @@ public final class Server implements ServerConfig, ActionServices {
 
                   final String savedString = parameters.get("saved");
                   if (savedString != null) {
-                    final LocationJson savedLocation =
+                    final SourceOliveLocation savedLocation =
                         RuntimeSupport.MAPPER.readValue(
-                            URLDecoder.decode(savedString, "UTF-8"), LocationJson.class);
+                            URLDecoder.decode(savedString, "UTF-8"), SourceOliveLocation.class);
                     savedJson = RuntimeSupport.MAPPER.writeValueAsString(savedLocation);
                   }
                   userFilters =
@@ -471,7 +469,7 @@ public final class Server implements ServerConfig, ActionServices {
                 final Instant now = Instant.now();
                 final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
                 pluginManager
-                    .searches(FilterBuilder.JSON)
+                    .searches(ActionFilterBuilder.JSON)
                     .forEach(pair -> searchInfo.putArray(pair.first()).addPOJO(pair.second()));
                 savedSearches.stream().forEach(search -> search.write(searchInfo));
                 String savedSearches;
@@ -1482,8 +1480,8 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/metrodiagram",
         t -> {
-          final LocationJson location =
-              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), LocationJson.class);
+          final SourceOliveLocation location =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SourceOliveLocation.class);
           final Pair<Pair<OliveRunInfo, FileTable>, OliveTable> match =
               compiler
                   .dashboard()
@@ -1607,9 +1605,9 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/stats",
         t -> {
-          final FilterJson[] filters;
+          final ActionFilter[] filters;
           try {
-            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FilterJson[].class);
+            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
             try (OutputStream os = t.getResponseBody()) {}
@@ -1631,9 +1629,9 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/purge",
         t -> {
-          final FilterJson[] filters;
+          final ActionFilter[] filters;
           try {
-            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), FilterJson[].class);
+            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
             try (OutputStream os = t.getResponseBody()) {}
@@ -1678,8 +1676,8 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
           final String text = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
-          final Optional<FilterJson> result =
-              FilterJson.extractFromText(text, RuntimeSupport.MAPPER);
+          final Optional<ActionFilter> result =
+              ActionFilter.extractFromText(text, RuntimeSupport.MAPPER);
           if (result.isPresent()) {
             t.sendResponseHeaders(200, 0);
             try (OutputStream os = t.getResponseBody()) {
@@ -1709,7 +1707,23 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody();
               JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
             jGenerator.setCodec(RuntimeSupport.MAPPER);
-            processor.allAlerts(jGenerator);
+            processor.alerts(jGenerator, a -> true);
+          }
+        });
+    add(
+        "/queryalerts",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          final Predicate<ActionProcessor.Alert> predicate =
+              RuntimeSupport.MAPPER
+                  .readValue(t.getRequestBody(), AlertFilter.class)
+                  .convert(ActionProcessor.ALERT_FILTER_BUILDER);
+          final JsonFactory jfactory = new JsonFactory();
+          try (OutputStream os = t.getResponseBody();
+              JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+            jGenerator.setCodec(RuntimeSupport.MAPPER);
+            processor.alerts(jGenerator, predicate);
           }
         });
     add(

@@ -7,140 +7,141 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public interface FilterBuilder<F> {
+public interface ActionFilterBuilder<F> {
   /** Do a "transformation" of the JSON representation to an exact copy. */
-  FilterBuilder<FilterJson> JSON =
-      new FilterBuilder<FilterJson>() {
+  ActionFilterBuilder<ActionFilter> JSON =
+      new ActionFilterBuilder<ActionFilter>() {
         @Override
-        public FilterJson added(Optional<Instant> start, Optional<Instant> end) {
-          final FilterAdded result = new FilterAdded();
+        public ActionFilter added(Optional<Instant> start, Optional<Instant> end) {
+          final ActionFilterAdded result = new ActionFilterAdded();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return result;
         }
 
         @Override
-        public FilterJson addedAgo(long offset) {
-          final FilterAddedAgo result = new FilterAddedAgo();
+        public ActionFilter addedAgo(long offset) {
+          final ActionFilterAddedAgo result = new ActionFilterAddedAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
-        public FilterJson and(Stream<FilterJson> filters) {
-          final FilterAnd result = new FilterAnd();
-          result.setFilters(filters.toArray(FilterJson[]::new));
+        public ActionFilter and(Stream<ActionFilter> filters) {
+          final ActionFilterAnd result = new ActionFilterAnd();
+          result.setFilters(filters.toArray(ActionFilter[]::new));
           return result;
         }
 
         @Override
-        public FilterJson checked(Optional<Instant> start, Optional<Instant> end) {
-          final FilterChecked result = new FilterChecked();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
-          return null;
-        }
-
-        @Override
-        public FilterJson checkedAgo(long offset) {
-          final FilterCheckedAgo result = new FilterCheckedAgo();
-          result.setOffset(offset);
-          return result;
-        }
-
-        @Override
-        public FilterJson external(Optional<Instant> start, Optional<Instant> end) {
-          final FilterExternal result = new FilterExternal();
+        public ActionFilter checked(Optional<Instant> start, Optional<Instant> end) {
+          final ActionFilterChecked result = new ActionFilterChecked();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return null;
         }
 
         @Override
-        public FilterJson externalAgo(long offset) {
-          final FilterExternalAgo result = new FilterExternalAgo();
+        public ActionFilter checkedAgo(long offset) {
+          final ActionFilterCheckedAgo result = new ActionFilterCheckedAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
-        public FilterJson fromFile(String... files) {
-          final FilterSourceFile result = new FilterSourceFile();
+        public ActionFilter external(Optional<Instant> start, Optional<Instant> end) {
+          final ActionFilterExternal result = new ActionFilterExternal();
+          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
+          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          return null;
+        }
+
+        @Override
+        public ActionFilter externalAgo(long offset) {
+          final ActionFilterExternalAgo result = new ActionFilterExternalAgo();
+          result.setOffset(offset);
+          return result;
+        }
+
+        @Override
+        public ActionFilter fromFile(String... files) {
+          final ActionFilterSourceFile result = new ActionFilterSourceFile();
           result.setFiles(files);
           return result;
         }
 
         @Override
-        public FilterJson fromSourceLocation(Stream<LocationJson> locations) {
-          final FilterSourceLocation result = new FilterSourceLocation();
-          result.setLocations(locations.map(LocationJson::new).toArray(LocationJson[]::new));
+        public ActionFilter fromSourceLocation(Stream<SourceOliveLocation> locations) {
+          final ActionFilterSourceLocation result = new ActionFilterSourceLocation();
+          result.setLocations(
+              locations.map(SourceOliveLocation::new).toArray(SourceOliveLocation[]::new));
           return result;
         }
 
         @Override
-        public FilterJson ids(List<String> ids) {
-          final FilterIds result = new FilterIds();
+        public ActionFilter ids(List<String> ids) {
+          final ActionFilterIds result = new ActionFilterIds();
           result.setIds(ids);
           return result;
         }
 
         @Override
-        public FilterJson isState(ActionState... states) {
-          final FilterStatus result = new FilterStatus();
+        public ActionFilter isState(ActionState... states) {
+          final ActionFilterStatus result = new ActionFilterStatus();
           result.setState(states);
           return result;
         }
 
         @Override
-        public FilterJson negate(FilterJson filter) {
+        public ActionFilter negate(ActionFilter filter) {
           // In the real use of the filter, the negation produces a new filter which returns the
           // logical not of the provided filter. In the case of JSON objects, the negation is a
           // field in the object. So, we copy the object and then negate it. Since it may already
           // have been negated, we flip the negation bit rather than setting it.
-          final FilterJson copy = filter.convert(this);
+          final ActionFilter copy = filter.convert(this);
           copy.setNegate(!copy.isNegate());
           return copy;
         }
 
         @Override
-        public FilterJson or(Stream<FilterJson> filters) {
-          final FilterOr result = new FilterOr();
-          result.setFilters(filters.toArray(FilterJson[]::new));
+        public ActionFilter or(Stream<ActionFilter> filters) {
+          final ActionFilterOr result = new ActionFilterOr();
+          result.setFilters(filters.toArray(ActionFilter[]::new));
           return result;
         }
 
         @Override
-        public FilterJson statusChanged(Optional<Instant> start, Optional<Instant> end) {
-          final FilterStatusChanged result = new FilterStatusChanged();
+        public ActionFilter statusChanged(Optional<Instant> start, Optional<Instant> end) {
+          final ActionFilterStatusChanged result = new ActionFilterStatusChanged();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
           return null;
         }
 
         @Override
-        public FilterJson statusChangedAgo(long offset) {
-          final FilterStatusChangedAgo result = new FilterStatusChangedAgo();
+        public ActionFilter statusChangedAgo(long offset) {
+          final ActionFilterStatusChangedAgo result = new ActionFilterStatusChangedAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
-        public FilterJson tags(Stream<String> tags) {
-          final FilterTag result = new FilterTag();
+        public ActionFilter tags(Stream<String> tags) {
+          final ActionFilterTag result = new ActionFilterTag();
           result.setTags(tags.toArray(String[]::new));
           return result;
         }
 
         @Override
-        public FilterJson textSearch(Pattern pattern) {
-          final FilterRegex result = new FilterRegex();
+        public ActionFilter textSearch(Pattern pattern) {
+          final ActionFilterRegex result = new ActionFilterRegex();
           result.setPattern(pattern.pattern());
           return result;
         }
 
         @Override
-        public FilterJson type(String... types) {
-          final FilterType result = new FilterType();
+        public ActionFilter type(String... types) {
+          final ActionFilterType result = new ActionFilterType();
           result.setTypes(types);
           return result;
         }
@@ -211,7 +212,7 @@ public interface FilterBuilder<F> {
    *
    * @param locations the source locations
    */
-  F fromSourceLocation(Stream<LocationJson> locations);
+  F fromSourceLocation(Stream<SourceOliveLocation> locations);
 
   /**
    * Get actions by unique ID.

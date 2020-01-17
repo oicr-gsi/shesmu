@@ -8,8 +8,8 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
@@ -67,7 +67,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
           } else {
             assignee = issue.getAssignee().getDisplayName();
           }
-          FilterJson.extractFromText(issue.getDescription(), MAPPER)
+          ActionFilter.extractFromText(issue.getDescription(), MAPPER)
               .ifPresent(
                   filter ->
                       buffer.add(
@@ -131,18 +131,18 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
 
   private static class JiraActionFilter {
     private final String assignee;
-    private final FilterJson filter;
+    private final ActionFilter filter;
     private final String key;
     private final String summary;
 
-    private JiraActionFilter(FilterJson filter, String key, String summary, String assignee) {
+    private JiraActionFilter(ActionFilter filter, String key, String summary, String assignee) {
       this.filter = filter;
       this.key = key;
       this.summary = summary;
       this.assignee = assignee;
     }
 
-    <F> Pair<String, F> process(String name, FilterBuilder<F> builder) {
+    <F> Pair<String, F> process(String name, ActionFilterBuilder<F> builder) {
       return new Pair<>(
           name.replace("{key}", key).replace("{summary}", summary).replace("{assignee}", assignee),
           filter.convert(builder));
@@ -274,7 +274,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public <F> Stream<Pair<String, F>> searches(FilterBuilder<F> builder) {
+  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
     try {
       return searches
           .stream()

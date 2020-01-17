@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
-import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TextFilterParseTest {
-  private abstract static class TestFilterBuilder implements FilterBuilder<Boolean> {
+  private abstract static class TestFilterBuilder implements ActionFilterBuilder<Boolean> {
     @Override
     public Boolean added(Optional<Instant> start, Optional<Instant> end) {
       return false;
@@ -41,7 +41,7 @@ public class TextFilterParseTest {
     }
 
     @Override
-    public Boolean fromSourceLocation(Stream<LocationJson> locations) {
+    public Boolean fromSourceLocation(Stream<SourceOliveLocation> locations) {
       return false;
     }
 
@@ -81,7 +81,7 @@ public class TextFilterParseTest {
   @Test
   public void testGoodBoth() {
     Assert.assertTrue(
-        FilterJson.extractFromText(
+        ActionFilter.extractFromText(
                 "Random stuff \nshesmu:799AEF722968FF2D5433515989dc565e5ab54AAA shesmusearch:W3sidHlwZSI6InRleHQiLCJtYXRjaENhc2UiOmZhbHNlLCJ0ZXh0IjoidGVzdCJ9XQ==  ",
                 MAPPER)
             .map(
@@ -106,7 +106,7 @@ public class TextFilterParseTest {
   @Test
   public void testGoodID() {
     Assert.assertTrue(
-        FilterJson.extractFromText(
+        ActionFilter.extractFromText(
                 "Hot garbage shesmu:799AEF722968FF2D5433515989DC565E5AB54AAA  ", MAPPER)
             .map(
                 filter ->
@@ -130,7 +130,7 @@ public class TextFilterParseTest {
   @Test
   public void testGoodQuery() {
     Assert.assertTrue(
-        FilterJson.extractFromText(
+        ActionFilter.extractFromText(
                 "So much garbage shesmusearch:W3sidHlwZSI6InRleHQiLCJtYXRjaENhc2UiOmZhbHNlLCJ0ZXh0IjoidGVzdCJ9XQ==  ",
                 MAPPER)
             .map(
@@ -153,7 +153,7 @@ public class TextFilterParseTest {
   @Test
   public void testNothing() {
     Assert.assertFalse(
-        FilterJson.extractFromText("NOTHING OF VALUE!!! SADNESS!!! DESPAIR!!!", MAPPER)
+        ActionFilter.extractFromText("NOTHING OF VALUE!!! SADNESS!!! DESPAIR!!!", MAPPER)
             .isPresent());
   }
 }

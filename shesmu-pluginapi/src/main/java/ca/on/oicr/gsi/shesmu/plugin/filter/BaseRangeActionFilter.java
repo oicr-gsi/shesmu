@@ -3,16 +3,16 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 import java.time.Instant;
 import java.util.Optional;
 
-public abstract class RangeFilterJson extends FilterJson {
+public abstract class BaseRangeActionFilter extends ActionFilter {
   private Long end;
 
   private Long start;
 
   protected abstract <F> F convert(
-      Optional<Instant> start, Optional<Instant> end, FilterBuilder<F> filterBuilder);
+      Optional<Instant> start, Optional<Instant> end, ActionFilterBuilder<F> filterBuilder);
 
   @Override
-  public final <F> F convert(FilterBuilder<F> filterBuilder) {
+  public final <F> F convert(ActionFilterBuilder<F> filterBuilder) {
     return maybeNegate(
         convert(
             Optional.ofNullable(start).map(Instant::ofEpochMilli),
