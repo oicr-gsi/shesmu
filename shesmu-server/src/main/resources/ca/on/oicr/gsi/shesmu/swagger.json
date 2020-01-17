@@ -1,6 +1,405 @@
 {
   "components": {
     "schemas": {
+      "ActionFilter": {
+        "description": "Action filtering.",
+        "discriminator": {
+          "mapping": {
+            "added": "#/components/schemas/ActionFilterAdded",
+            "addedago": "#/components/schemas/ActionFilterAddedAgo",
+            "and": "#/components/schemas/ActionFilterAnd",
+            "checked": "#/components/schemas/ActionFilterChecked",
+            "checkedago": "#/components/schemas/ActionFilterCheckedAgo",
+            "external": "#/components/schemas/ActionFilterExternal",
+            "externalago": "#/components/schemas/ActionFilterExternalAgo",
+            "id": "#/components/schemas/ActionFilterId",
+            "or": "#/components/schemas/ActionFilterOr",
+            "regex": "#/components/schemas/ActionFilterRegex",
+            "sourcefile": "#/components/schemas/ActionFilterSourceFile",
+            "sourcelocation": "#/components/schemas/ActionFilterSourceLocation",
+            "status": "#/components/schemas/ActionFilterStatus",
+            "statuschanged": "#/components/schemas/ActionFilterStatusChanged",
+            "statuschangedago": "#/components/schemas/ActionFilterStatusChangedAgo",
+            "tag": "#/components/schemas/ActionFilterTag",
+            "text": "#/components/schemas/ActionFilterText",
+            "type": "#/components/schemas/ActionFilterType"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ActionFilterAdded"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterAddedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterAnd"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterChecked"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterCheckedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterExternal"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterExternalAgo"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterId"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterOr"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterRegex"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterSourceFile"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterSourceLocation"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterStatus"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterStatusChanged"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterStatusChangedAgo"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterTag"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterText"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterType"
+          }
+        ]
+      },
+      "ActionFilterAdded": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterAddedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterAnd": {
+        "properties": {
+          "filters": {
+            "description": "the filters which must be all be satisified",
+            "items": {
+              "$ref": "#/components/schemas/ActionFilter"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterChecked": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterCheckedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterExternal": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterExternalAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterId": {
+        "properties": {
+          "filters": {
+            "description": "the action IDs; note that action IDs are unique, but even across restarts",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterOr": {
+        "properties": {
+          "filters": {
+            "description": "the filters from which at least one must be satisified",
+            "items": {
+              "$ref": "#/components/schemas/ActionFilter"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterRegex": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "pattern": {
+            "description": "a Java regular expression the action must match",
+            "type": "regex"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterSourceFile": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterSourceLocation": {
+        "properties": {
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOliveLocation"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterStatus": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "states": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterStatusChanged": {
+        "properties": {
+          "end": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "miliseconds since UNIX epoch",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterStatusChangedAgo": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "miliseconds since the current time",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterTag": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "tags": {
+            "description": "tags which must appear attached to the action",
+            "type": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterText": {
+        "properties": {
+          "matchCase": {
+            "description": "whether the text must match as provided or if the case can be different",
+            "type": "boolean"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "text": {
+            "description": "text which must appear in the action",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterType": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          },
+          "types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "Alert": {
         "properties": {
           "annotations": {
@@ -28,6 +427,143 @@
           },
           "startsAt": {
             "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlertFilter": {
+        "description": "Alert filtering.",
+        "discriminator": {
+          "mapping": {
+            "and": "#/components/schemas/AlertFilterAnd",
+            "eq": "#/components/schemas/AlertFilterLabelValue",
+            "has": "#/components/schemas/AlertFilterLabelName",
+            "is_live": "#/components/schemas/AlertFilterIsLive",
+            "or": "#/components/schemas/AlertFilterOr",
+            "sourcelocation": "#/components/schemas/AlertFilterSourceLocation"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AlertFilterAnd"
+          },
+          {
+            "$ref": "#/components/schemas/AlertFilterIsLive"
+          },
+          {
+            "$ref": "#/components/schemas/AlertFilterLabelName"
+          },
+          {
+            "$ref": "#/components/schemas/AlertFilterLabelValue"
+          },
+          {
+            "$ref": "#/components/schemas/AlertFilterOr"
+          },
+          {
+            "$ref": "#/components/schemas/AlertFilterSourceLocation"
+          }
+        ]
+      },
+      "AlertFilterAnd": {
+        "properties": {
+          "filters": {
+            "description": "the filters which must be all be satisified",
+            "items": {
+              "$ref": "#/components/schemas/AlertFilter"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlertFilterIsLive": {
+        "properties": {
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlertFilterLabelName": {
+        "properties": {
+          "isRegex": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlertFilterLabelValue": {
+        "properties": {
+          "isRegex": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlertFilterOr": {
+        "properties": {
+          "filters": {
+            "description": "the filters from which at least one must be satisified",
+            "items": {
+              "$ref": "#/components/schemas/AlertFilter"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlertFilterSourceLocation": {
+        "properties": {
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOliveLocation"
+            },
+            "type": "array"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "type": {
             "type": "string"
           }
         },
@@ -129,415 +665,19 @@
         },
         "type": "object"
       },
-      "Filter": {
-        "description": "Action filtering.",
-        "discriminator": {
-          "mapping": {
-            "added": "#/components/schemas/FilterAdded",
-            "addedago": "#/components/schemas/FilterAddedAgo",
-            "and": "#/components/schemas/FilterAnd",
-            "checked": "#/components/schemas/FilterChecked",
-            "checkedago": "#/components/schemas/FilterCheckedAgo",
-            "external": "#/components/schemas/FilterExternal",
-            "externalago": "#/components/schemas/FilterExternalAgo",
-            "id": "#/components/schemas/FilterId",
-            "or": "#/components/schemas/FilterOr",
-            "regex": "#/components/schemas/FilterRegex",
-            "sourcefile": "#/components/schemas/FilterSourceFile",
-            "sourcelocation": "#/components/schemas/FilterSourceLocation",
-            "status": "#/components/schemas/FilterStatus",
-            "statuschanged": "#/components/schemas/FilterStatusChanged",
-            "statuschangedago": "#/components/schemas/FilterStatusChangedAgo",
-            "tag": "#/components/schemas/FilterTag",
-            "text": "#/components/schemas/FilterText",
-            "type": "#/components/schemas/FilterType"
-          },
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/FilterAdded"
-          },
-          {
-            "$ref": "#/components/schemas/FilterAddedAgo"
-          },
-          {
-            "$ref": "#/components/schemas/FilterAnd"
-          },
-          {
-            "$ref": "#/components/schemas/FilterChecked"
-          },
-          {
-            "$ref": "#/components/schemas/FilterCheckedAgo"
-          },
-          {
-            "$ref": "#/components/schemas/FilterExternal"
-          },
-          {
-            "$ref": "#/components/schemas/FilterExternalAgo"
-          },
-          {
-            "$ref": "#/components/schemas/FilterId"
-          },
-          {
-            "$ref": "#/components/schemas/FilterOr"
-          },
-          {
-            "$ref": "#/components/schemas/FilterRegex"
-          },
-          {
-            "$ref": "#/components/schemas/FilterSourceFile"
-          },
-          {
-            "$ref": "#/components/schemas/FilterSourceLocation"
-          },
-          {
-            "$ref": "#/components/schemas/FilterStatus"
-          },
-          {
-            "$ref": "#/components/schemas/FilterStatusChanged"
-          },
-          {
-            "$ref": "#/components/schemas/FilterStatusChangedAgo"
-          },
-          {
-            "$ref": "#/components/schemas/FilterTag"
-          },
-          {
-            "$ref": "#/components/schemas/FilterText"
-          },
-          {
-            "$ref": "#/components/schemas/FilterType"
-          }
-        ]
-      },
-      "FilterAdded": {
+      "SourceOliveLocation": {
         "properties": {
-          "end": {
-            "description": "miliseconds since UNIX epoch",
+          "column": {
             "type": "integer"
           },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
+          "file": {
+            "type": "string"
           },
-          "start": {
-            "description": "miliseconds since UNIX epoch",
+          "line": {
             "type": "integer"
           },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterAddedAgo": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "offset": {
-            "description": "miliseconds since the current time",
+          "time": {
             "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterAnd": {
-        "properties": {
-          "filters": {
-            "description": "the filters which must be all be satisified",
-            "items": {
-              "$ref": "#/components/schemas/Filter"
-            },
-            "type": "array"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterChecked": {
-        "properties": {
-          "end": {
-            "description": "miliseconds since UNIX epoch",
-            "type": "integer"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "start": {
-            "description": "miliseconds since UNIX epoch",
-            "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterCheckedAgo": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "offset": {
-            "description": "miliseconds since the current time",
-            "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterExternal": {
-        "properties": {
-          "end": {
-            "description": "miliseconds since UNIX epoch",
-            "type": "integer"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "start": {
-            "description": "miliseconds since UNIX epoch",
-            "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterExternalAgo": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "offset": {
-            "description": "miliseconds since the current time",
-            "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterId": {
-        "properties": {
-          "filters": {
-            "description": "the action IDs; note that action IDs are unique, but even across restarts",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterOr": {
-        "properties": {
-          "filters": {
-            "description": "the filters from which at least one must be satisified",
-            "items": {
-              "$ref": "#/components/schemas/Filter"
-            },
-            "type": "array"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterRegex": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "pattern": {
-            "description": "a Java regular expression the action must match",
-            "type": "regex"
-          }
-        },
-        "type": "object"
-      },
-      "FilterSourceFile": {
-        "properties": {
-          "files": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterSourceLocation": {
-        "properties": {
-          "locations": {
-            "items": {
-              "properties": {
-                "column": {
-                  "type": "integer"
-                },
-                "file": {
-                  "type": "string"
-                },
-                "line": {
-                  "type": "integer"
-                },
-                "time": {
-                  "type": "integer"
-                }
-              },
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterStatus": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "states": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterStatusChanged": {
-        "properties": {
-          "end": {
-            "description": "miliseconds since UNIX epoch",
-            "type": "integer"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "start": {
-            "description": "miliseconds since UNIX epoch",
-            "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterStatusChangedAgo": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "offset": {
-            "description": "miliseconds since the current time",
-            "type": "integer"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterTag": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "tags": {
-            "description": "tags which must appear attached to the action",
-            "type": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            }
-          }
-        },
-        "type": "object"
-      },
-      "FilterText": {
-        "properties": {
-          "matchCase": {
-            "description": "whether the text must match as provided or if the case can be different",
-            "type": "boolean"
-          },
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "text": {
-            "description": "text which must appear in the action",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FilterType": {
-        "properties": {
-          "negate": {
-            "description": "if true, the filter's output will be inverted",
-            "type": "boolean"
-          },
-          "type": {
-            "type": "string"
-          },
-          "types": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
           }
         },
         "type": "object"
@@ -673,7 +813,7 @@
                   },
                   "filters": {
                     "items": {
-                      "$ref": "#/components/schemas/Filter"
+                      "$ref": "#/components/schemas/ActionFilter"
                     },
                     "type": "array"
                   }
@@ -1161,7 +1301,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Filter"
+                  "$ref": "#/components/schemas/ActionFilter"
                 }
               }
             },
@@ -1186,7 +1326,7 @@
             "application/json": {
               "schema": {
                 "items": {
-                  "$ref": "#/components/schemas/Filter"
+                  "$ref": "#/components/schemas/ActionFilter"
                 },
                 "type": "array"
               }
@@ -1224,7 +1364,7 @@
                 "properties": {
                   "filters": {
                     "items": {
-                      "$ref": "#/components/schemas/Filter"
+                      "$ref": "#/components/schemas/ActionFilter"
                     },
                     "type": "array"
                   },
@@ -1274,6 +1414,42 @@
         "summary": "Get actions generated by olives",
         "tags": [
           "actions"
+        ]
+      }
+    },
+    "/queryalerts": {
+      "post": {
+        "description": "",
+        "operationId": "queryAlerts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertFilter"
+              }
+            }
+          },
+          "description": "Causes an action to be launched. The status code indicates whether the job has successfully finished running. If completed successfully, an optional URL may be provided where the result may be viewed.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Alert"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "All alerts produced by this instance"
+          }
+        },
+        "summary": "Get a list of current firing alerts.",
+        "tags": [
+          "alerts"
         ]
       }
     },

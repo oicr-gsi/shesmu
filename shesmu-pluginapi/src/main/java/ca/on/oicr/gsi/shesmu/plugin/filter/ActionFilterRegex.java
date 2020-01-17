@@ -2,11 +2,11 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import java.util.regex.Pattern;
 
-public class FilterRegex extends FilterJson {
+public class ActionFilterRegex extends ActionFilter {
   private String pattern;
 
   @Override
-  public <F> F convert(FilterBuilder<F> filterBuilder) {
+  public <F> F convert(ActionFilterBuilder<F> filterBuilder) {
     return maybeNegate(filterBuilder.textSearch(Pattern.compile(pattern)), filterBuilder);
   }
 

@@ -2,11 +2,11 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 
-public class FilterStatus extends FilterJson {
+public class ActionFilterStatus extends ActionFilter {
   private ActionState[] states;
 
   @Override
-  public <F> F convert(FilterBuilder<F> filterBuilder) {
+  public <F> F convert(ActionFilterBuilder<F> filterBuilder) {
     return maybeNegate(filterBuilder.isState(states), filterBuilder);
   }
 

@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.server;
 
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public class SavedSearch implements WatchedFileListener {
   private final Path filename;
-  private FilterJson[] filters;
+  private ActionFilter[] filters;
 
   public SavedSearch(Path filename) {
     this.filename = filename;
@@ -21,7 +21,7 @@ public class SavedSearch implements WatchedFileListener {
 
   public Optional<Integer> update() {
     try {
-      filters = RuntimeSupport.MAPPER.readValue(filename.toFile(), FilterJson[].class);
+      filters = RuntimeSupport.MAPPER.readValue(filename.toFile(), ActionFilter[].class);
     } catch (final Exception e) {
       e.printStackTrace();
     }

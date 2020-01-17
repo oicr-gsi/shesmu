@@ -1,15 +1,15 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.JoiningRule;
 
 public class Search {
-  private FilterJson filter;
+  private ActionFilter filter;
   private String jql;
   private String name;
   private JoiningRule type;
 
-  public FilterJson getFilter() {
+  public ActionFilter getFilter() {
     return filter;
   }
 
@@ -25,7 +25,7 @@ public class Search {
     return type;
   }
 
-  public void setFilter(FilterJson filter) {
+  public void setFilter(ActionFilter filter) {
     this.filter = filter;
   }
 

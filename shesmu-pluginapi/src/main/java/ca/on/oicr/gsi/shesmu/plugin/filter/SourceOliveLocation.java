@@ -3,15 +3,15 @@ package ca.on.oicr.gsi.shesmu.plugin.filter;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import java.util.function.Predicate;
 
-public final class LocationJson implements Predicate<SourceLocation> {
+public final class SourceOliveLocation implements Predicate<SourceLocation> {
   private Integer column;
   private String file;
   private Integer line;
   private Long time;
 
-  public LocationJson() {}
+  public SourceOliveLocation() {}
 
-  public LocationJson(LocationJson original) {
+  public SourceOliveLocation(SourceOliveLocation original) {
     this.column = original.column;
     this.file = original.file;
     this.line = original.line;
@@ -29,7 +29,7 @@ public final class LocationJson implements Predicate<SourceLocation> {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final LocationJson other = (LocationJson) obj;
+    final SourceOliveLocation other = (SourceOliveLocation) obj;
     if (column == null) {
       if (other.column != null) {
         return false;

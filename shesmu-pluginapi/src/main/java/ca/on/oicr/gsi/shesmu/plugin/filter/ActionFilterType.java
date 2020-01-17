@@ -1,10 +1,10 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
-public class FilterType extends FilterJson {
+public class ActionFilterType extends ActionFilter {
   private String[] types;
 
   @Override
-  public <F> F convert(FilterBuilder<F> filterBuilder) {
+  public <F> F convert(ActionFilterBuilder<F> filterBuilder) {
     return maybeNegate(filterBuilder.type(types), filterBuilder);
   }
 

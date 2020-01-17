@@ -15,13 +15,13 @@ import java.util.Objects;
 /** Translate JSON-formatted queries into Java objects and perform the query */
 public class Query {
 
-  FilterJson[] filters;
+  ActionFilter[] filters;
 
   long limit = 100;
 
   long skip = 0;
 
-  public FilterJson[] getFilters() {
+  public ActionFilter[] getFilters() {
     return filters;
   }
 
@@ -62,7 +62,7 @@ public class Query {
     jsonOutput.close();
   }
 
-  public void setFilters(FilterJson[] filters) {
+  public void setFilters(ActionFilter[] filters) {
     this.filters = filters;
   }
 

@@ -1,16 +1,16 @@
 package ca.on.oicr.gsi.shesmu.server;
 
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 
 public final class CommandRequest {
   private String command;
-  private FilterJson[] filters;
+  private ActionFilter[] filters;
 
   public String getCommand() {
     return command;
   }
 
-  public FilterJson[] getFilters() {
+  public ActionFilter[] getFilters() {
     return filters;
   }
 
@@ -18,7 +18,7 @@ public final class CommandRequest {
     this.command = command;
   }
 
-  public void setFilters(FilterJson[] filters) {
+  public void setFilters(ActionFilter[] filters) {
     this.filters = filters;
   }
 }

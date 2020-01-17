@@ -1,10 +1,10 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
-public class FilterSourceFile extends FilterJson {
+public class ActionFilterSourceFile extends ActionFilter {
   private String[] files;
 
   @Override
-  public <F> F convert(FilterBuilder<F> filterBuilder) {
+  public <F> F convert(ActionFilterBuilder<F> filterBuilder) {
     return maybeNegate(filterBuilder.fromFile(files), filterBuilder);
   }
 

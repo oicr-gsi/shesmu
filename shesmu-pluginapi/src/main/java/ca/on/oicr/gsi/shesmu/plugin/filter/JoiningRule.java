@@ -12,7 +12,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<Pair<String, F>> accessoryFilters,
-        FilterBuilder<F> builder) {
+        ActionFilterBuilder<F> builder) {
       return Stream.of(
           new Pair<>(
               baseName,
@@ -29,7 +29,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<Pair<String, F>> accessoryFilters,
-        FilterBuilder<F> builder) {
+        ActionFilterBuilder<F> builder) {
       return Stream.of(
           new Pair<>(
               baseName,
@@ -46,7 +46,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<Pair<String, F>> accessoryFilters,
-        FilterBuilder<F> builder) {
+        ActionFilterBuilder<F> builder) {
       return accessoryFilters.map(
           p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
     }
@@ -67,5 +67,5 @@ public enum JoiningRule {
       String baseName,
       F baseFilters,
       Stream<Pair<String, F>> accessoryFilters,
-      FilterBuilder<F> builder);
+      ActionFilterBuilder<F> builder);
 }

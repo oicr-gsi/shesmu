@@ -11,8 +11,9 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
-import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
@@ -40,7 +41,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -57,7 +57,7 @@ public final class ActionProcessor
     implements OliveServices,
         InputSource,
         MetroDiagram.OliveFlowReader,
-        FilterBuilder<ActionProcessor.Filter> {
+        ActionFilterBuilder<ActionProcessor.Filter> {
 
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
@@ -262,6 +262,65 @@ public final class ActionProcessor
           return "added";
         }
       };
+  public static final AlertFilterBuilder<Predicate<Alert>> ALERT_FILTER_BUILDER =
+      new AlertFilterBuilder<Predicate<Alert>>() {
+        @Override
+        public Predicate<Alert> and(Stream<Predicate<Alert>> filters) {
+          final List<Predicate<Alert>> predicates = filters.collect(Collectors.toList());
+          return alert -> predicates.stream().allMatch(predicate -> predicate.test(alert));
+        }
+
+        @Override
+        public Predicate<Alert> fromSourceLocation(Stream<SourceOliveLocation> locations) {
+          final List<Predicate<SourceLocation>> predicates = locations.collect(Collectors.toList());
+          return alert ->
+              alert
+                  .locations
+                  .stream()
+                  .anyMatch(
+                      location ->
+                          predicates.stream().anyMatch(predicate -> predicate.test(location)));
+        }
+
+        @Override
+        public Predicate<Alert> hasLabelName(Pattern labelName) {
+          return alert -> alert.labels.keySet().stream().anyMatch(labelName.asPredicate());
+        }
+
+        @Override
+        public Predicate<Alert> hasLabelName(String labelName) {
+          return alert -> alert.labels.containsKey(labelName);
+        }
+
+        @Override
+        public Predicate<Alert> hasLabelValue(String labelName, Pattern regex) {
+          return alert -> {
+            final String value = alert.labels.get(labelName);
+            return value != null && regex.matcher(value).matches();
+          };
+        }
+
+        @Override
+        public Predicate<Alert> hasLabelValue(String labelName, String labelValue) {
+          return alert -> labelValue.equals(alert.labels.get(labelName));
+        }
+
+        @Override
+        public Predicate<Alert> isLive() {
+          return Alert::isLive;
+        }
+
+        @Override
+        public Predicate<Alert> negate(Predicate<Alert> filter) {
+          return filter.negate();
+        }
+
+        @Override
+        public Predicate<Alert> or(Stream<Predicate<Alert>> filters) {
+          final List<Predicate<Alert>> predicates = filters.collect(Collectors.toList());
+          return alert -> predicates.stream().anyMatch(predicate -> predicate.test(alert));
+        }
+      };
   private static final BinMember<Instant> CHECKED =
       new BinMember<Instant>() {
 
@@ -417,6 +476,11 @@ public final class ActionProcessor
               "shesmu_action_perform_throw",
               "The number of actions that threw an exception in their last attempt.")
           .register();
+  private static final Gauge currentRunningActionsGauge =
+      Gauge.build(
+              "shesmu_action_currently_running",
+              "The number of actions that are running (or waiting for a thread).")
+          .register();
   private static final Gauge lastAdd =
       Gauge.build("shesmu_action_add_last_time", "The last time an actions was added.").register();
   private static final Gauge lastRun =
@@ -430,11 +494,6 @@ public final class ActionProcessor
       Gauge.build(
               "shesmu_action_scheduled_in_round",
               "The number of actions that were schedule for processing in the last round.")
-          .register();
-  private static final Gauge currentRunningActionsGauge =
-      Gauge.build(
-              "shesmu_action_currently_running",
-              "The number of actions that are running (or waiting for a thread).")
           .register();
   private static final Gauge stateCount =
       Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
@@ -547,22 +606,12 @@ public final class ActionProcessor
     };
   }
 
-  public void alerts(Consumer<Alert> consumer, Runnable noAlerts) {
-    try (AutoCloseable lock = alertLock.acquire()) {
-      if (alerts.isEmpty()) {
-        noAlerts.run();
-      } else {
-        alerts.values().stream().forEach(consumer);
-      }
-    } catch (final Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  public void allAlerts(JsonGenerator output) throws IOException {
+  public void alerts(JsonGenerator output, Predicate<Alert> predicate) throws IOException {
     output.writeStartArray();
     for (final Alert alert : alerts.values()) {
-      output.writeObject(alert);
+      if (predicate.test(alert)) {
+        output.writeObject(alert);
+      }
     }
     output.writeEndArray();
   }
@@ -721,7 +770,7 @@ public final class ActionProcessor
    *
    * @param locations the source locations
    */
-  public Filter fromSourceLocation(Stream<LocationJson> locations) {
+  public Filter fromSourceLocation(Stream<SourceOliveLocation> locations) {
     final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
     return new Filter() {
 

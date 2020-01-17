@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
-import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
@@ -113,7 +113,7 @@ public abstract class PluginFileType<T extends PluginFile> {
   public void writeJavaScriptRenderer(PrintStream writer) {}
 
   /** Create a list of searches */
-  public <F> Stream<Pair<String, F>> searches(FilterBuilder<F> builder) {
+  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
     return Stream.empty();
   }
 }
