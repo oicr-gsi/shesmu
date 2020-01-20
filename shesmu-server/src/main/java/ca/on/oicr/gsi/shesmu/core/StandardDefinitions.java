@@ -193,6 +193,20 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.BOOLEAN,
             new FunctionParameter("first", Imyhat.STRING),
             new FunctionParameter("second", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            "parse_int",
+            RuntimeSupport.class,
+            "parseLong",
+            "Convert a string containing digits into an integer.",
+            Imyhat.INTEGER.asOptional(),
+            new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            "parse_float",
+            RuntimeSupport.class,
+            "parseDouble",
+            "Convert a string containing digits and a decimal point into an float.",
+            Imyhat.FLOAT.asOptional(),
+            new FunctionParameter("String to parse", Imyhat.STRING)),
         new FunctionDefinition() {
 
           @Override
