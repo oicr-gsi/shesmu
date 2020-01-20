@@ -236,6 +236,24 @@ public final class RuntimeSupport {
     type.accept(new PackJsonArray(node), value);
   }
 
+  @RuntimeInterop
+  public static Optional<Double> parseDouble(String input) {
+    try {
+      return Optional.of(Double.parseDouble(input));
+    } catch (NumberFormatException e) {
+      return Optional.empty();
+    }
+  }
+
+  @RuntimeInterop
+  public static Optional<Long> parseLong(String input) {
+    try {
+      return Optional.of(Long.parseLong(input));
+    } catch (NumberFormatException e) {
+      return Optional.empty();
+    }
+  }
+
   /**
    * Pick the first value for sorted groups of items.
    *
