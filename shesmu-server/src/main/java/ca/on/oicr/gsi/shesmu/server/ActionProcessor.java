@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -908,8 +907,9 @@ public final class ActionProcessor
   }
 
   /** Begin the action processor */
-  public ScheduledFuture<?> start(ScheduledExecutorService executor) {
-    return executor.scheduleWithFixedDelay(this::update, 5, 5, TimeUnit.MINUTES);
+  public void start(ScheduledExecutorService executor) {
+    executor.scheduleWithFixedDelay(this::update, 5, 5, TimeUnit.MINUTES);
+    executor.scheduleWithFixedDelay(this::updateAlerts, 5, 5, TimeUnit.MINUTES);
   }
 
   private Stream<Entry<Action, Information>> startStream(Filter... filters) {
@@ -1060,17 +1060,6 @@ public final class ActionProcessor
   }
 
   private void update() {
-    try (AutoCloseable lock = alertLock.acquire();
-        AutoCloseable inflight = Server.inflightCloseable("Push alerts")) {
-      currentAlerts =
-          RuntimeSupport.MAPPER.writeValueAsString(
-              alerts.values().stream().filter(Alert::isLive).collect(Collectors.toList()));
-    } catch (final Exception e) {
-      e.printStackTrace();
-    }
-    if (currentAlerts != null) {
-      manager.pushAlerts(currentAlerts);
-    }
 
     final Instant now = Instant.now();
     actions
@@ -1144,6 +1133,20 @@ public final class ActionProcessor
           oldest.labels(state.name(), actionType).set(time.getEpochSecond());
         }
       }
+    }
+  }
+
+  private void updateAlerts() {
+    try (AutoCloseable lock = alertLock.acquire();
+        AutoCloseable inflight = Server.inflightCloseable("Push alerts")) {
+      currentAlerts =
+          RuntimeSupport.MAPPER.writeValueAsString(
+              alerts.values().stream().filter(Alert::isLive).collect(Collectors.toList()));
+    } catch (final Exception e) {
+      e.printStackTrace();
+    }
+    if (currentAlerts != null) {
+      manager.pushAlerts(currentAlerts);
     }
   }
 }
