@@ -53,7 +53,12 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       for (int page = 0; true; page++) {
         final SearchResult results =
             client.getSearchClient().searchJql(jql, 500, 500 * page, FIELDS_FILTERS).claim();
+        boolean empty = true;
         for (final Issue issue : results.getIssues()) {
+          empty = false;
+          if (issue.getDescription() == null) {
+            continue;
+          }
           final String assignee;
           if (issue.getAssignee() == null) {
             assignee = "Unassigned";
@@ -69,7 +74,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                           new JiraActionFilter(
                               filter, issue.getKey(), issue.getSummary(), assignee)));
         }
-        if (buffer.size() >= results.getTotal()) {
+        if (empty) {
           break;
         }
       }
@@ -148,6 +153,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private static final Set<String> FIELDS_FILTERS =
       Stream.of(
               IssueFieldId.SUMMARY_FIELD,
+              IssueFieldId.ISSUE_TYPE_FIELD,
+              IssueFieldId.CREATED_FIELD,
+              IssueFieldId.UPDATED_FIELD,
+              IssueFieldId.PROJECT_FIELD,
+              IssueFieldId.STATUS_FIELD,
               IssueFieldId.DESCRIPTION_FIELD,
               IssueFieldId.ASSIGNEE_FIELD)
           .map(x -> x.id)
@@ -179,9 +189,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private String projectKey = "FAKE";
 
   private List<String> reopenActions = Collections.emptyList();
-
+  private List<Search> searches = Collections.emptyList();
   private String url;
-
   private String user;
 
   public JiraConnection(Path fileName, String instanceName, Definer<JiraConnection> definer) {
@@ -265,6 +274,28 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   @Override
+  public <F> Stream<Pair<String, F>> searches(FilterBuilder<F> builder) {
+    try {
+      return searches
+          .stream()
+          .flatMap(
+              search ->
+                  search
+                      .getType()
+                      .join(
+                          search.getName(),
+                          search.getFilter().convert(builder),
+                          filters
+                              .get(search.getJql())
+                              .map(jiraFilter -> jiraFilter.process(search.getName(), builder)),
+                          builder));
+    } catch (Exception e) {
+      e.printStackTrace();
+      return Stream.empty();
+    }
+  }
+
+  @Override
   public Stream<String> services() {
     return Stream.of("jira", projectKey);
   }
@@ -289,7 +320,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       closedStatuses = config.getClosedStatuses();
       closeActions = config.getCloseActions();
       reopenActions = config.getReopenActions();
+      searches = config.getSearches();
       issues.invalidate();
+      filters.invalidateAll();
     } catch (final Exception e) {
       e.printStackTrace();
     }
