@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
+import java.util.Collections;
 import java.util.List;
 
 public final class Configuration {
@@ -8,6 +9,7 @@ public final class Configuration {
   private String passwordFile;
   private String projectKey;
   private List<String> reopenActions;
+  private List<Search> searches = Collections.emptyList();
   private String url;
   private String user;
 
@@ -29,6 +31,10 @@ public final class Configuration {
 
   public List<String> getReopenActions() {
     return reopenActions;
+  }
+
+  public List<Search> getSearches() {
+    return searches;
   }
 
   public String getUrl() {
@@ -57,6 +63,10 @@ public final class Configuration {
 
   public void setReopenActions(List<String> reopenActions) {
     this.reopenActions = reopenActions;
+  }
+
+  public void setSearches(List<Search> searches) {
+    this.searches = searches;
   }
 
   public void setUrl(String url) {

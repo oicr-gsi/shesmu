@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.Pair;
-import java.util.List;
 import java.util.stream.Stream;
 
 /** Rules for combining prepared filters with ones discovered from another source (e.g., JIRA) */
@@ -11,7 +10,7 @@ public enum JoiningRule {
     @Override
     public <F> Stream<Pair<String, F>> join(
         String baseName,
-        List<F> baseFilters,
+        F baseFilters,
         Stream<Pair<String, F>> accessoryFilters,
         FilterBuilder<F> builder) {
       return Stream.of(
@@ -19,7 +18,7 @@ public enum JoiningRule {
               baseName,
               builder.and(
                   Stream.concat(
-                      baseFilters.stream(),
+                      Stream.of(baseFilters),
                       accessoryFilters.map(Pair::second).map(builder::negate)))));
     }
   },
@@ -28,16 +27,13 @@ public enum JoiningRule {
     @Override
     public <F> Stream<Pair<String, F>> join(
         String baseName,
-        List<F> baseFilters,
+        F baseFilters,
         Stream<Pair<String, F>> accessoryFilters,
         FilterBuilder<F> builder) {
       return Stream.of(
           new Pair<>(
               baseName,
-              builder.and(
-                  Stream.concat(
-                      baseFilters.stream(),
-                      Stream.of(builder.or(accessoryFilters.map(Pair::second)))))));
+              builder.and(Stream.of(baseFilters, builder.or(accessoryFilters.map(Pair::second))))));
     }
   },
   /**
@@ -48,14 +44,11 @@ public enum JoiningRule {
     @Override
     public <F> Stream<Pair<String, F>> join(
         String baseName,
-        List<F> baseFilters,
+        F baseFilters,
         Stream<Pair<String, F>> accessoryFilters,
         FilterBuilder<F> builder) {
       return accessoryFilters.map(
-          p ->
-              new Pair<>(
-                  p.first(),
-                  builder.and(Stream.concat(Stream.of(p.second()), baseFilters.stream()))));
+          p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
     }
   };
 
@@ -72,7 +65,7 @@ public enum JoiningRule {
    */
   public abstract <F> Stream<Pair<String, F>> join(
       String baseName,
-      List<F> baseFilters,
+      F baseFilters,
       Stream<Pair<String, F>> accessoryFilters,
       FilterBuilder<F> builder);
 }
