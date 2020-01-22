@@ -177,7 +177,7 @@
             "$ref": "#/components/schemas/FilterExternalAgo"
           },
           {
-            "$ref": "#/components/schemas/FilterIds"
+            "$ref": "#/components/schemas/FilterId"
           },
           {
             "$ref": "#/components/schemas/FilterOr"
