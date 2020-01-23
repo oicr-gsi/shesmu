@@ -117,7 +117,7 @@ public final class PineryIUSValue {
     return completed_date;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public Optional<String> container_model() {
     return container_model;
   }
@@ -127,7 +127,7 @@ public final class PineryIUSValue {
     return donor;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public Optional<Double> dv200() {
     return dv200;
   }
@@ -276,12 +276,12 @@ public final class PineryIUSValue {
     return project;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public Optional<Double> rin() {
     return rin;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public String run_name() {
     return (String) ius.get(0);
   }
@@ -291,7 +291,7 @@ public final class PineryIUSValue {
     return run_status;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public Optional<String> sequencing_kit() {
     return sequencing_kit;
   }
@@ -336,7 +336,7 @@ public final class PineryIUSValue {
     return tissue_type;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public boolean umis() {
     return umis;
   }
