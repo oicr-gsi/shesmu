@@ -1681,6 +1681,7 @@ public final class Server implements ServerConfig, ActionServices {
           final JsonFactory jfactory = new JsonFactory();
           try (OutputStream os = t.getResponseBody();
               JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+            jGenerator.setCodec(RuntimeSupport.MAPPER);
             processor.allAlerts(jGenerator);
           }
         });
