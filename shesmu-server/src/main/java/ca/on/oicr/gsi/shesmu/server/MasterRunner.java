@@ -6,7 +6,6 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
-import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
@@ -34,15 +33,15 @@ public class MasterRunner {
   private static final LatencyHistogram runTime =
       new LatencyHistogram("shesmu_run_time", "The time the script takes to run on all the input.");
   private final CompiledGenerator generator;
-  private final InputProvider inputProvider;
+  private final InputSource inputSource;
   private ScheduledFuture<?> scheduled;
   private final OliveServices services;
 
   public MasterRunner(
-      CompiledGenerator generator, OliveServices services, InputProvider inputProvider) {
+      CompiledGenerator generator, OliveServices services, InputSource inputSource) {
     this.generator = generator;
     this.services = services;
-    this.inputProvider = inputProvider;
+    this.inputSource = inputSource;
   }
 
   private void run() {
@@ -109,7 +108,7 @@ public class MasterRunner {
               services.oliveRuntime(filename, line, column, timeInNs);
             }
           },
-          inputProvider);
+          inputSource);
       actionDuplicates.set(currentActionDuplicates.get());
       alertDuplicates.set(currentAlertDuplicates.get());
     } catch (final Exception e) {

@@ -35,8 +35,8 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
-import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.status.TableRowWriter;
@@ -75,8 +75,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  * A source of actions, constants, and functions based on configuration files where every
  * configuration file can create plugins using annotations on methods.
  */
-public final class PluginManager
-    implements DefinitionRepository, InputProvider, SourceLoctionLinker {
+public final class PluginManager implements DefinitionRepository, InputSource, SourceLoctionLinker {
   private interface Binder<D> {
     D bind(String name, Path path);
   }
@@ -647,9 +646,11 @@ public final class PluginManager
                 name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
       }
 
-      public Stream<Object> fetch(String format) {
+      public Stream<Object> fetch(String format, boolean readStale) {
         final Queue<DynamicInputDataSource> sources = dynamicSources.get(format);
-        return sources == null ? Stream.empty() : sources.stream().flatMap(s -> s.fetch(instance));
+        return sources == null
+            ? Stream.empty()
+            : sources.stream().flatMap(s -> s.fetch(instance, readStale));
       }
 
       public Stream<Dumper> findDumper(String name, Imyhat... types) {
@@ -829,7 +830,7 @@ public final class PluginManager
         if (Modifier.isStatic(method.getModifiers())) {
           throw new IllegalArgumentException(
               String.format(
-                  "Method %s of %s has ShesmuSigner annotation but is not virtual.",
+                  "Method %s of %s has ShesmuInputSource annotation but is not virtual.",
                   method.getName(), method.getDeclaringClass().getName()));
         }
         processSourceMethod(method, true);
@@ -896,11 +897,13 @@ public final class PluginManager
           staticConstants.stream(), configuration.stream().flatMap(FileWrapper::constants));
     }
 
-    public Stream<Object> fetch(String format) {
+    public Stream<Object> fetch(String format, boolean readStale) {
       Queue<InputDataSource> sources = staticSources.get(format);
       return Stream.concat(
-          sources == null ? Stream.empty() : sources.stream().flatMap(InputDataSource::fetch),
-          configuration.stream().flatMap(f -> f.fetch(format)));
+          sources == null
+              ? Stream.empty()
+              : sources.stream().flatMap(source -> source.fetch(readStale)),
+          configuration.stream().flatMap(f -> f.fetch(format, readStale)));
     }
 
     public Stream<Dumper> findDumper(String name, Imyhat... types) {
@@ -1273,21 +1276,44 @@ public final class PluginManager
                 "Method %s of %s does not return Stream<T> where T is a class. Cannot deal with %s.",
                 method.getName(), method.getDeclaringClass().getName(), typeParameter));
       }
+      boolean dropBoolean;
+      switch (method.getParameterCount()) {
+        case 0:
+          dropBoolean = true;
+          break;
+        case 1:
+          if (method.getParameterTypes()[0].equals(boolean.class)) {
+            dropBoolean = false;
+            break;
+          } else {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Method %s of %s has argument which is not a boolean.",
+                    method.getName(), method.getDeclaringClass().getName()));
+          }
+        default:
+          throw new IllegalArgumentException(
+              String.format(
+                  "Method %s of %s has too many parameters. Needs to be none or a single boolean.",
+                  method.getName(), method.getDeclaringClass().getName()));
+      }
       Class<?> dataType = (Class<?>) typeParameter;
       final Consumer<String> writeSource;
+      MethodHandle handle = fileFormat.lookup().unreflect(method);
+      if (dropBoolean) {
+        handle = MethodHandles.dropArguments(handle, handle.type().parameterCount(), boolean.class);
+      }
       if (isInstance) {
-        DynamicInputDataSource source =
-            MethodHandleProxies.asInterfaceInstance(
-                DynamicInputDataSource.class, fileFormat.lookup().unreflect(method));
+        final DynamicInputDataSource source =
+            MethodHandleProxies.asInterfaceInstance(DynamicInputDataSource.class, handle);
         writeSource =
             name ->
                 dynamicSources
                     .computeIfAbsent(name, k -> new ConcurrentLinkedQueue<>())
                     .add(source);
       } else {
-        InputDataSource source =
-            MethodHandleProxies.asInterfaceInstance(
-                InputDataSource.class, fileFormat.lookup().unreflect(method));
+        final InputDataSource source =
+            MethodHandleProxies.asInterfaceInstance(InputDataSource.class, handle);
         writeSource =
             name ->
                 staticSources.computeIfAbsent(name, k -> new ConcurrentLinkedQueue<>()).add(source);
@@ -1600,8 +1626,8 @@ public final class PluginManager
   }
 
   @Override
-  public Stream<Object> fetch(String format) {
-    return formatTypes.stream().flatMap(f -> f.fetch(format));
+  public Stream<Object> fetch(String format, boolean readStale) {
+    return formatTypes.stream().flatMap(f -> f.fetch(format, readStale));
   }
 
   /**

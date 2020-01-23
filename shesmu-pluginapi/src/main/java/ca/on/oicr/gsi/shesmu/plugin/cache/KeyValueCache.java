@@ -86,6 +86,18 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
     count.labels(name).set(records.size());
     return record.refresh();
   }
+  /**
+   * Get an item from cache without updating it
+   *
+   * @param key the key to use
+   * @return the last value that was fetched
+   */
+  public final V getStale(K key) {
+    final Record<V> record =
+        records.computeIfAbsent(
+            key, k -> recordCtor.apply(this, lastModified -> fetch(k, lastModified)));
+    return record.readStale();
+  }
 
   public final void invalidate(K key) {
     final Record<V> record = records.get(key);

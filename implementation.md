@@ -539,8 +539,13 @@ Plugins may provide data for each input format. A data format must already
 exist. Suppose the type of the format is _T_. To add a source of data:
 
 1. Create a static method in `PluginFileType` or a virtual method in
-   `PluginFile`. It must take no arguments and it must return `Stream<`_T_`>`.
+   `PluginFile`. It must take no arguments or one `boolean` argument and it
+   must return `Stream<`_T_`>`.
 1. Add the `@ShesmuInputSource` to this method.
 
 The method may also return a subclass of _T_, but not a wildcard (_e.g._,
 `Stream<? extends `_T_`>`).
+
+The `boolean`, if desired, indicates whether the fetch should trigger a
+refresh. If false, the client is happy to read stale data and the input source
+is free to not make the effort to refresh it.

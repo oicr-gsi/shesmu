@@ -369,13 +369,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @ShesmuInputSource
-  public Stream<PineryIUSValue> streamIUS() {
-    return cache.get();
+  public Stream<PineryIUSValue> streamIUS(boolean readStale) {
+    return readStale ? cache.getStale() : cache.get();
   }
 
   @ShesmuInputSource
-  public Stream<PineryProjectValue> streamProjects() {
-    return projects.get().map(PineryProjectValue::new);
+  public Stream<PineryProjectValue> streamProjects(boolean readStale) {
+    return (readStale ? projects.getStale() : projects.get()).map(PineryProjectValue::new);
   }
 
   @Override

@@ -392,8 +392,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuInputSource
-  public Stream<CerberusAnalysisProvenanceValue> provenance() {
-    return analysisDataCache.get();
+  public Stream<CerberusAnalysisProvenanceValue> provenance(boolean readStale) {
+    return readStale ? analysisDataCache.getStale() : analysisDataCache.get();
   }
 
   public Stream<String> services() {
