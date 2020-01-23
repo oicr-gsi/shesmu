@@ -254,7 +254,7 @@ public final class CerberusFileProvenanceValue {
     return inputFiles;
   }
 
-  @ShesmuVariable
+  @ShesmuVariable(signable = true)
   public String instrument_model() {
     return instrument_model;
   }
