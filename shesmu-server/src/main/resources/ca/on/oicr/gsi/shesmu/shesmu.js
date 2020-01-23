@@ -3720,6 +3720,13 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
     editor.getSession().setAnnotations(annotations);
     return orphanedErrors;
   };
+  const updateDataLabel = document.createElement("LABEL");
+  const updateData = document.createElement("INPUT");
+  updateData.type = "checkbox";
+  updateData.checked = false;
+  updateDataLabel.appendChild(updateData);
+  updateDataLabel.appendChild(document.createTextNode("Wait for fresh data"));
+
   toolBar.appendChild(
     button("🤖 Simulate", "Run olive simulation and fetch results", () => {
       editor.getSession().clearAnnotations();
@@ -3729,6 +3736,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
           body: JSON.stringify({
             fakeActions: fakeActions,
             dryRun: false,
+            readStale: !updateData.checked,
             script: editor.getValue()
           }),
           method: "POST"
@@ -3935,6 +3943,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
       );
     })
   );
+  toolBar.appendChild(updateDataLabel);
   toolBar.appendChild(
     accessoryButton(
       "🠝 Upload File",
@@ -4147,6 +4156,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
         body: JSON.stringify({
           fakeActions: fakeActions,
           dryRun: true,
+          readStale: true,
           script: editor.getValue()
         }),
         method: "POST"

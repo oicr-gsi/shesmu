@@ -290,6 +290,7 @@ public class SimulateRequest {
   private static final ThreadLocal<ObjectNode> RESULTS = new ThreadLocal<>();
   private boolean dryRun;
   private Map<String, Map<String, FakeActionParameter>> fakeActions = Collections.emptyMap();
+  private boolean readStale;
   private String script;
 
   public Map<String, Map<String, FakeActionParameter>> getFakeActions() {
@@ -308,7 +309,7 @@ public class SimulateRequest {
       DefinitionRepository definitionRepository,
       Supplier<Stream<FunctionDefinition>> importableFunctions,
       ActionServices actionServices,
-      InputProvider inputProvider,
+      InputSource inputSource,
       HttpExchange http)
       throws IOException {
     final ObjectNode response = RuntimeSupport.MAPPER.createObjectNode();
@@ -439,7 +440,8 @@ public class SimulateRequest {
                       .collect(
                           Collectors.toMap(
                               Function.identity(),
-                              name -> inputProvider.fetch(name).collect(Collectors.toList())));
+                              name ->
+                                  inputSource.fetch(name, readStale).collect(Collectors.toList())));
               for (final Map.Entry<String, List<Object>> input : inputs.entrySet()) {
                 counts.put(input.getKey(), (long) input.getValue().size());
               }
@@ -592,6 +594,10 @@ public class SimulateRequest {
 
   public void setFakeActions(Map<String, Map<String, FakeActionParameter>> fakeActions) {
     this.fakeActions = fakeActions;
+  }
+
+  public void setReadStale(boolean readStale) {
+    this.readStale = readStale;
   }
 
   public void setScript(String script) {

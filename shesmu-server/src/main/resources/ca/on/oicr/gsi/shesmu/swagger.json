@@ -945,6 +945,42 @@
         ]
       }
     },
+    "/input/{format}/stale": {
+      "get": {
+        "description": "",
+        "operationId": "getStaleInputCatalog",
+        "parameters": [
+          {
+            "description": "The name of the input format",
+            "in": "path",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Input data catalog transmitted"
+          }
+        },
+        "summary": "Get a list of olive input data known by this server but do not attempt to refresh it.",
+        "tags": [
+          "inputdata"
+        ]
+      }
+    },
     "/invalidate": {
       "post": {
         "description": "Invalidates caches; DO NOT USE IN PRODUCTION",
@@ -1232,6 +1268,9 @@
                       "type": "object"
                     },
                     "type": "object"
+                  },
+                  "readStale": {
+                    "type": "boolean"
                   },
                   "script": {
                     "type": "string"

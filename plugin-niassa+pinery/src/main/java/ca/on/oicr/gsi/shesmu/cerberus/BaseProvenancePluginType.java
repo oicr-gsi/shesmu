@@ -196,8 +196,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     }
 
     @ShesmuInputSource
-    public Stream<CerberusFileProvenanceValue> stream() {
-      return cache.get();
+    public Stream<CerberusFileProvenanceValue> stream(boolean readStale) {
+      return readStale ? cache.getStale() : cache.get();
     }
 
     @Override

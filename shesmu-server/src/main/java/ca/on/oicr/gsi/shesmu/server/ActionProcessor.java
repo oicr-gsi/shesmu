@@ -14,7 +14,6 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
@@ -58,7 +57,7 @@ import org.apache.http.client.utils.URIBuilder;
  */
 public final class ActionProcessor
     implements OliveServices,
-        InputProvider,
+        InputSource,
         MetroDiagram.OliveFlowReader,
         FilterBuilder<ActionProcessor.Filter> {
 
@@ -656,7 +655,7 @@ public final class ActionProcessor
   }
 
   @Override
-  public Stream<Object> fetch(String format) {
+  public Stream<Object> fetch(String format, boolean readStale) {
     return format.equals("shesmu")
         ? actions
             .entrySet()

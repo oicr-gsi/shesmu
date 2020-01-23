@@ -37,6 +37,14 @@ public abstract class BaseRecord<R, S> implements Record<R> {
   }
 
   @Override
+  public synchronized R readStale() {
+    if (initialState) {
+      throw new InitialCachePopulationException(owner.name());
+    }
+    return unpack(value);
+  }
+
+  @Override
   public final R refresh() {
     final boolean doRefresh;
     boolean shouldThrow;

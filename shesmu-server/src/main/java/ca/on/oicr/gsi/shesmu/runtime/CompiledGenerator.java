@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.server.HotloadingCompiler;
+import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.CallSiteRegistry;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
@@ -391,7 +392,7 @@ public class CompiledGenerator implements DefinitionRepository {
     return Stream.empty();
   }
 
-  public void run(OliveServices consumer, InputProvider input) {
+  public void run(OliveServices consumer, InputSource input) {
     // Load all the input data in an attempt to cache it before any olives try to
     // use it. This avoids making the first olive seem really slow.
     final Set<String> usedFormats =
@@ -419,7 +420,7 @@ public class CompiledGenerator implements DefinitionRepository {
                                 AutoCloseable inflight =
                                     Server.inflightCloseable("Fetching " + format.name())) {
                               final List<Object> results =
-                                  input.fetch(format.name()).collect(Collectors.toList());
+                                  input.fetch(format.name(), false).collect(Collectors.toList());
                               INPUT_RECORDS.labels(format.name()).set(results.size());
                               return results;
                             } catch (final Exception e) {

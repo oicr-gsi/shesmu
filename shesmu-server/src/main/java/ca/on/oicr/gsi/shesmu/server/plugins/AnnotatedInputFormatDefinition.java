@@ -21,8 +21,8 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackStreaming;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
-import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.status.TableRowWriter;
@@ -54,7 +54,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Define a <tt>Input</tt> format for olives to consume */
-public final class AnnotatedInputFormatDefinition implements InputFormatDefinition, InputProvider {
+public final class AnnotatedInputFormatDefinition implements InputFormatDefinition, InputSource {
 
   public interface JsonFieldWriter {
     void write(JsonGenerator generator, Object value);
@@ -222,8 +222,8 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       return Optional.empty();
     }
 
-    public Stream<Object> variables() {
-      return cache.get();
+    public Stream<Object> variables(boolean readStale) {
+      return readStale ? cache.getStale() : cache.get();
     }
   }
 
@@ -445,9 +445,9 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   @Override
-  public Stream<Object> fetch(String name) {
+  public Stream<Object> fetch(String name, boolean readStale) {
     if (name.equals(format.name())) {
-      return variables();
+      return variables(readStale);
     } else {
       return Stream.empty();
     }
@@ -481,16 +481,17 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     return A_OBJECT_TYPE;
   }
 
-  private Stream<Object> variables() {
+  private Stream<Object> variables(boolean readStale) {
     return Stream.concat(
         local.stream().flatMap(LocalJsonFile::variables),
-        remotes.stream().flatMap(RemoteJsonSource::variables));
+        remotes.stream().flatMap(source -> source.variables(readStale)));
   }
 
-  public void writeJson(JsonGenerator generator, InputProvider inputProvider) throws IOException {
+  public void writeJson(JsonGenerator generator, InputSource inputProvider, boolean readStale)
+      throws IOException {
     generator.writeStartArray();
     inputProvider
-        .fetch(format.name())
+        .fetch(format.name(), readStale)
         .forEach(
             value -> {
               try {

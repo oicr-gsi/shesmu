@@ -209,11 +209,11 @@ public final class Server implements ServerConfig, ActionServices {
     compiler = new CompiledGenerator(executor, definitionRepository);
     processor = new ActionProcessor(localname(), pluginManager, this);
     staticActions = new StaticActions(processor, definitionRepository);
-    final InputProvider inputProvider =
-        format ->
+    final InputSource inputSource =
+        (format, readStale) ->
             Stream.concat(
                     AnnotatedInputFormatDefinition.formats(), Stream.of(pluginManager, processor))
-                .flatMap(source -> source.fetch(format));
+                .flatMap(source -> source.fetch(format, readStale));
     master =
         new MasterRunner(
             compiler,
@@ -301,7 +301,7 @@ public final class Server implements ServerConfig, ActionServices {
                 processor.oliveRuntime(filename, line, column, timeInNs);
               }
             },
-            inputProvider);
+            inputSource);
 
     add(
         "/",
@@ -1786,27 +1786,10 @@ public final class Server implements ServerConfig, ActionServices {
             format -> {
               add(
                   String.format("/input/%s", format.name()),
-                  t -> {
-                    if (processor.isOverloaded(format.name())
-                        || pluginManager.isOverloaded(Collections.singleton(format.name()))
-                        || !inputDownloadSemaphore.tryAcquire()) {
-                      t.sendResponseHeaders(503, 0);
-                      try (OutputStream os = t.getResponseBody()) {}
-                      return;
-                    }
-                    t.getResponseHeaders().set("Content-type", "application/json");
-                    t.sendResponseHeaders(200, 0);
-                    final JsonFactory jfactory = new JsonFactory();
-                    try (OutputStream os = t.getResponseBody();
-                        JsonGenerator jGenerator =
-                            jfactory.createGenerator(os, JsonEncoding.UTF8)) {
-                      format.writeJson(jGenerator, inputProvider);
-                    } catch (final IOException e) {
-                      e.printStackTrace();
-                    } finally {
-                      inputDownloadSemaphore.release();
-                    }
-                  });
+                  t -> downloadInputData(t, inputSource, format, false));
+              add(
+                  String.format("/input/%s/stale", format.name()),
+                  t -> downloadInputData(t, inputSource, format, true));
             });
 
     add(
@@ -1879,7 +1862,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final SimulateRequest request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
-          request.run(definitionRepository, compiler::functions, this, inputProvider, t);
+          request.run(definitionRepository, compiler::functions, this, inputSource, t);
         });
 
     add(
@@ -2331,6 +2314,32 @@ public final class Server implements ServerConfig, ActionServices {
             RuntimeSupport.MAPPER.writeValue(os, node);
           }
         });
+  }
+
+  public void downloadInputData(
+      HttpExchange t,
+      InputSource inputSource,
+      AnnotatedInputFormatDefinition format,
+      boolean readStale)
+      throws IOException {
+    if (processor.isOverloaded(format.name())
+        || pluginManager.isOverloaded(Collections.singleton(format.name()))
+        || !inputDownloadSemaphore.tryAcquire()) {
+      t.sendResponseHeaders(503, 0);
+      try (OutputStream os = t.getResponseBody()) {}
+      return;
+    }
+    t.getResponseHeaders().set("Content-type", "application/json");
+    t.sendResponseHeaders(200, 0);
+    final JsonFactory jfactory = new JsonFactory();
+    try (OutputStream os = t.getResponseBody();
+        JsonGenerator jGenerator = jfactory.createGenerator(os, JsonEncoding.UTF8)) {
+      format.writeJson(jGenerator, inputSource, readStale);
+    } catch (final IOException e) {
+      e.printStackTrace();
+    } finally {
+      inputDownloadSemaphore.release();
+    }
   }
 
   private void emergencyThrottle(boolean stopped) {

@@ -74,6 +74,14 @@ public abstract class ValueCache<V> implements Owner {
     innerCount.labels(name).set(value.collectionSize());
     return item;
   }
+  /**
+   * Get an item from cache, but do not update it
+   *
+   * @return the last value put in the cache
+   */
+  public V getStale() {
+    return value.readStale();
+  }
 
   public void invalidate() {
     value.invalidate();

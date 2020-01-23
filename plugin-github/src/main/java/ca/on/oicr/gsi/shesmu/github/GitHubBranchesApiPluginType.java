@@ -79,8 +79,8 @@ public class GitHubBranchesApiPluginType
     }
 
     @ShesmuInputSource
-    public Stream<GithubBranchValue> stream() {
-      return cache.get();
+    public Stream<GithubBranchValue> stream(boolean readStale) {
+      return readStale ? cache.getStale() : cache.get();
     }
 
     @Override

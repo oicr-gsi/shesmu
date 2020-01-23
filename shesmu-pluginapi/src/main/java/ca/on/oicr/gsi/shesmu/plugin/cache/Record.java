@@ -10,6 +10,11 @@ import java.time.Instant;
  * @param <V> the type of cached item
  */
 public interface Record<V> {
+  public static final LatencyHistogram refreshLatency =
+      new LatencyHistogram(
+          "shesmu_cache_refresh_latency",
+          "Attempted to refresh a value stored in cache, but the refresh failed.",
+          "name");
   public static final Counter staleRefreshError =
       Counter.build(
               "shesmu_cache_refresh_error",
@@ -17,11 +22,8 @@ public interface Record<V> {
           .labelNames("name")
           .register();
 
-  public static final LatencyHistogram refreshLatency =
-      new LatencyHistogram(
-          "shesmu_cache_refresh_latency",
-          "Attempted to refresh a value stored in cache, but the refresh failed.",
-          "name");
+  /** The number of items stored in this cache record F */
+  int collectionSize();
 
   /** Force the cached item to be reloaded on the next use. */
   void invalidate();
@@ -29,9 +31,9 @@ public interface Record<V> {
   /** Get the last time the item was updated */
   Instant lastUpdate();
 
+  /** Get the current item value, but do not fetch */
+  V readStale();
+
   /** Get the current item value, fetching if necessary */
   V refresh();
-
-  /** The number of items stored in this cache record F */
-  int collectionSize();
 }

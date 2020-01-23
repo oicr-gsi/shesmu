@@ -91,8 +91,8 @@ public class GuanyinRemote extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuInputSource
-  public Stream<GuanyinReportValue> stream() {
-    return reports.get();
+  public Stream<GuanyinReportValue> stream(boolean readStale) {
+    return readStale ? reports.getStale() : reports.get();
   }
 
   @Override
