@@ -1783,15 +1783,16 @@ function makePopup(returnClose, afterClose) {
       }
     }
   });
-  closeButton.addEventListener("click", e => {
+  const close = () => {
     document.body.removeChild(modal);
     if (afterClose) {
       afterClose();
     }
-  });
+  };
+  closeButton.addEventListener("click", close);
   inner.addEventListener("click", e => e.stopPropagation());
 
-  return returnClose ? [inner, closeButton.onclick] : inner;
+  return returnClose ? [inner, close] : inner;
 }
 
 function makeTabs(container, selectedTab, ...tabs) {
