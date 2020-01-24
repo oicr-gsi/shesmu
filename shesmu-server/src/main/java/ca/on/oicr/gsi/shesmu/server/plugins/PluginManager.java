@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
+import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
@@ -707,6 +708,10 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
         return Stream.concat(refillers.values().stream(), refillersFromAnnotations.stream());
       }
 
+      public <F> Stream<Pair<String, F>> searches(FilterBuilder<F> builder) {
+        return instance.searches(builder);
+      }
+
       public Stream<SignatureDefinition> signatures() {
         return Stream.concat(signatures.values().stream(), signaturesFromAnnotations.stream());
       }
@@ -1334,6 +1339,11 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
           staticRefillers.stream(), configuration.stream().flatMap(FileWrapper::refillers));
     }
 
+    public <F> Stream<Pair<String, F>> searches(FilterBuilder<F> builder) {
+      return Stream.concat(
+          fileFormat.searches(builder), configuration.stream().flatMap(f -> f.searches(builder)));
+    }
+
     public Stream<SignatureDefinition> signatures() {
       return Stream.concat(
           staticSignatures.stream(), configuration.stream().flatMap(FileWrapper::signatures));
@@ -1350,90 +1360,7 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
     }
   }
 
-  @SuppressWarnings("unused")
-  public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
-    return CONFIG_FILE_ARBITRARY_BINDINGS.get(methodName);
-  }
-
-  @SuppressWarnings("unused")
-  public static CallSite bootstrap(
-      Lookup lookup, String methodName, MethodType methodType, String fileName) {
-    // We're going to build our call site in two parts
-    // First, we get a call site that contains a method handle that just returns the
-    // instance associated with our configuration file. That file might be deleted
-    // or updated, so we will keep that instance as a weak reference. If the olive
-    // using it is garbage collected and the file is deleted, this will drop out of
-    // the map. Otherwise, if the file is updated, it can change the instance in the
-    // call site and all the olives will use the new one.
-    final MutableCallSite instance = CONFIG_FILE_INSTANCES.get(fileName);
-    // For the method, we know the type of the thing in the call site, so let's go
-    // find a method that can handle it in our cache. We cache these forever because
-    // they can't be created or destroyed without reloading the whole server.
-    @SuppressWarnings("SuspiciousMethodCalls")
-    final MethodHandle methodHandle =
-        CONFIG_FILE_METHOD_BINDINGS.get(new Pair<>(instance.type().returnType(), methodName));
-    // Now we smash the instance from above with the method. We can create a
-    // constant call site (i.e., one that can't be updated) because the method
-    // called
-    // will never change but the instance is referenced through it's mutable call
-    // site, so we can update the instance.
-    return new ConstantCallSite(
-        MethodHandles.foldArguments(methodHandle, instance.dynamicInvoker()));
-  }
-
-  /** Bootstrap method to get a plugin collection as a stream of throttleable services */
-  public static CallSite bootstrapServices(
-      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
-    // Our goal here is to create list of services that plugins use so we can block an olive if
-    // one of those services is throttled. We're given the file names of those plugins as
-    // parameters to this method and
-    // we're going to want a produce a method that takes no arguments and returns an array of
-    // strings, being the service names.
-
-    // Some of the files on that list might be from exported functions, and so have no plugin
-    // associated with them
-    // First, take the servicesForPlugins(RequiredServices[]) → String[] and convert it to have a
-    // fixed
-    // number of arguments (RequiredServices[0], RequiredServices[1], ..., RequiredServices[N-1]) →
-    // String[] where N
-    // is the number of plugins
-    MethodHandle collector =
-        SERVICES_REQUIRED.asCollector(RequiredServices[].class, fileNames.length);
-    // Now, repeatedly fill in the first argument with one of the plugins; we've got a premade
-    // callsite for each plugin, so get it from our table and convert it to return the base type
-    for (String fileName : fileNames) {
-      final CallSite callsite =
-          fileName.endsWith(".shesmu")
-              ? CompiledGenerator.scriptCallsite(fileName)
-              : CONFIG_FILE_INSTANCES.get(fileName);
-      collector =
-          MethodHandles.foldArguments(
-              collector,
-              callsite.dynamicInvoker().asType(MethodType.methodType(RequiredServices.class)));
-    }
-    // Now, we should have a method thats () → String[], which is what we wanted, so shove it in the
-    // olive
-    return new ConstantCallSite(collector.asType(methodType));
-  }
-
-  public static Stream<Pair<String, MethodType>> dumpArbitrary() {
-    return CONFIG_FILE_ARBITRARY_BINDINGS.stream();
-  }
-
-  public static Stream<Pair<String, MethodType>> dumpBound() {
-    return CONFIG_FILE_INSTANCES.stream();
-  }
-
-  private static String mangleDescription(String description, String instanceName, Path path) {
-    return description.replace("{instance}", instanceName).replace("{file}", path.toString());
-  }
-
-  public static String[] requiredServices(RequiredServices... users) {
-    return Stream.of(users).flatMap(RequiredServices::services).distinct().toArray(String[]::new);
-  }
-
   private static final Type A_REFILLER_TYPE = Type.getType(Refiller.class);
-
   private static final String BSM_DESCRIPTOR_ARBITRARY =
       Type.getMethodDescriptor(
           Type.getType(CallSite.class),
@@ -1518,6 +1445,88 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
     } catch (NoSuchMethodException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @SuppressWarnings("unused")
+  public static CallSite bootstrap(Lookup lookup, String methodName, MethodType methodType) {
+    return CONFIG_FILE_ARBITRARY_BINDINGS.get(methodName);
+  }
+
+  @SuppressWarnings("unused")
+  public static CallSite bootstrap(
+      Lookup lookup, String methodName, MethodType methodType, String fileName) {
+    // We're going to build our call site in two parts
+    // First, we get a call site that contains a method handle that just returns the
+    // instance associated with our configuration file. That file might be deleted
+    // or updated, so we will keep that instance as a weak reference. If the olive
+    // using it is garbage collected and the file is deleted, this will drop out of
+    // the map. Otherwise, if the file is updated, it can change the instance in the
+    // call site and all the olives will use the new one.
+    final MutableCallSite instance = CONFIG_FILE_INSTANCES.get(fileName);
+    // For the method, we know the type of the thing in the call site, so let's go
+    // find a method that can handle it in our cache. We cache these forever because
+    // they can't be created or destroyed without reloading the whole server.
+    @SuppressWarnings("SuspiciousMethodCalls")
+    final MethodHandle methodHandle =
+        CONFIG_FILE_METHOD_BINDINGS.get(new Pair<>(instance.type().returnType(), methodName));
+    // Now we smash the instance from above with the method. We can create a
+    // constant call site (i.e., one that can't be updated) because the method
+    // called
+    // will never change but the instance is referenced through it's mutable call
+    // site, so we can update the instance.
+    return new ConstantCallSite(
+        MethodHandles.foldArguments(methodHandle, instance.dynamicInvoker()));
+  }
+
+  /** Bootstrap method to get a plugin collection as a stream of throttleable services */
+  public static CallSite bootstrapServices(
+      Lookup lookup, String methodName, MethodType methodType, String... fileNames) {
+    // Our goal here is to create list of services that plugins use so we can block an olive if
+    // one of those services is throttled. We're given the file names of those plugins as
+    // parameters to this method and
+    // we're going to want a produce a method that takes no arguments and returns an array of
+    // strings, being the service names.
+
+    // Some of the files on that list might be from exported functions, and so have no plugin
+    // associated with them
+    // First, take the servicesForPlugins(RequiredServices[]) → String[] and convert it to have a
+    // fixed
+    // number of arguments (RequiredServices[0], RequiredServices[1], ..., RequiredServices[N-1]) →
+    // String[] where N
+    // is the number of plugins
+    MethodHandle collector =
+        SERVICES_REQUIRED.asCollector(RequiredServices[].class, fileNames.length);
+    // Now, repeatedly fill in the first argument with one of the plugins; we've got a premade
+    // callsite for each plugin, so get it from our table and convert it to return the base type
+    for (String fileName : fileNames) {
+      final CallSite callsite =
+          fileName.endsWith(".shesmu")
+              ? CompiledGenerator.scriptCallsite(fileName)
+              : CONFIG_FILE_INSTANCES.get(fileName);
+      collector =
+          MethodHandles.foldArguments(
+              collector,
+              callsite.dynamicInvoker().asType(MethodType.methodType(RequiredServices.class)));
+    }
+    // Now, we should have a method thats () → String[], which is what we wanted, so shove it in the
+    // olive
+    return new ConstantCallSite(collector.asType(methodType));
+  }
+
+  public static Stream<Pair<String, MethodType>> dumpArbitrary() {
+    return CONFIG_FILE_ARBITRARY_BINDINGS.stream();
+  }
+
+  public static Stream<Pair<String, MethodType>> dumpBound() {
+    return CONFIG_FILE_INSTANCES.stream();
+  }
+
+  private static String mangleDescription(String description, String instanceName, Path path) {
+    return description.replace("{instance}", instanceName).replace("{file}", path.toString());
+  }
+
+  public static String[] requiredServices(RequiredServices... users) {
+    return Stream.of(users).flatMap(RequiredServices::services).distinct().toArray(String[]::new);
   }
 
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
@@ -1670,6 +1679,10 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
   @Override
   public Stream<RefillerDefinition> refillers() {
     return formatTypes.stream().flatMap(FormatTypeWrapper::refillers);
+  }
+
+  public <F> Stream<Pair<String, F>> searches(FilterBuilder<F> builder) {
+    return formatTypes.stream().flatMap(formatType -> formatType.searches(builder));
   }
 
   @Override
