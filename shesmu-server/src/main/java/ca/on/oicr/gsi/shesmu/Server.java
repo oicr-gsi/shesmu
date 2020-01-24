@@ -21,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
+import ca.on.oicr.gsi.shesmu.plugin.filter.FilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.FilterJson;
 import ca.on.oicr.gsi.shesmu.plugin.filter.LocationJson;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
@@ -469,6 +470,9 @@ public final class Server implements ServerConfig, ActionServices {
               public Stream<Header> headers() {
                 final Instant now = Instant.now();
                 final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
+                pluginManager
+                    .searches(FilterBuilder.JSON)
+                    .forEach(pair -> searchInfo.putArray(pair.first()).addPOJO(pair.second()));
                 savedSearches.stream().forEach(search -> search.write(searchInfo));
                 String savedSearches;
                 String savedSearch;
