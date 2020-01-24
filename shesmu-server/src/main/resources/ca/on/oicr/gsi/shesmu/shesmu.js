@@ -2591,7 +2591,11 @@ function renderFilter(tile, filter, mutateCallback) {
         list.className = "filters";
         list.style.marginLeft = "1em";
         tile.appendChild(list);
-        filter.filters.forEach(child => renderFilter(list, child));
+        filter.filters.forEach(child => {
+          const childTile = document.createElement("DIV");
+          renderFilter(childTile, child);
+          list.appendChild(childTile);
+        });
       }
       break;
 
