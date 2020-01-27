@@ -590,7 +590,7 @@ public final class ActionProcessor
       Property<U> column) {
     final Set<T> rows = input.stream().flatMap(row::extract).collect(Collectors.toSet());
     final Set<U> columns = input.stream().flatMap(column::extract).collect(Collectors.toSet());
-    if (rows.size() < 2 && columns.size() < 2) {
+    if (rows.size() < 2 || columns.size() < 2) {
       return;
     }
     final ObjectNode node = output.addObject();
@@ -609,15 +609,15 @@ public final class ActionProcessor
               columnJson.put("name", colPair.first());
               columnJson.set("value", colPair.second());
             });
-    final Map<T, List<Entry<Action, Information>>> map =
+    final Map<T, Set<Entry<Action, Information>>> map =
         input
             .stream()
             .flatMap(e -> row.extract(e).map(t -> new Pair<>(t, e)))
             .collect(
                 Collectors.groupingBy(
-                    Pair::first, Collectors.mapping(Pair::second, Collectors.toList())));
+                    Pair::first, Collectors.mapping(Pair::second, Collectors.toSet())));
     final ObjectNode data = node.putObject("data");
-    for (final Entry<T, List<Entry<Action, Information>>> entry : map.entrySet()) {
+    for (final Entry<T, Set<Entry<Action, Information>>> entry : map.entrySet()) {
       final String name = row.name(entry.getKey());
       final ObjectNode inner = data.putObject(name);
       rowsJson.set(name, row.json(entry.getKey()));
