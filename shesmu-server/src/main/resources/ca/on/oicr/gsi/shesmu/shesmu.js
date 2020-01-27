@@ -4410,7 +4410,7 @@ export function initialiseAlertDashboard(initialFilterString, output) {
   if (location.hash) {
     fetchJsonWithBusyDialog(
       "/getalert",
-      { body: JSON.stringify(location.hash), method: "POST" },
+      { body: JSON.stringify(location.hash.substring(1)), method: "POST" },
       selectedAlert => {
         if (selectedAlert) {
           output.className = "alert";
