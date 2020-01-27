@@ -509,7 +509,7 @@ public final class ActionProcessor
         alert.setStartsAt(Instant.now());
         alerts.put(labelMap, alert);
         final URIBuilder builder = new URIBuilder(baseUri);
-        builder.setFragment("alert-" + alert.id());
+        builder.setFragment(alert.id());
         alert.setGeneratorURL(builder.build().toASCIIString());
       }
       alert.setAnnotations(repack(annotations, "Annotations"));
