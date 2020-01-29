@@ -89,10 +89,12 @@ public final class WorkflowAction extends Action {
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final List<String> services;
+  private final String workflowName;
   private final long workflowAccession;
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
+      String workflowName,
       long workflowAccession,
       long[] previousAccessions,
       FileMatchingPolicy fileMatchingPolicy,
@@ -100,6 +102,7 @@ public final class WorkflowAction extends Action {
       Map<String, String> annotations) {
     super("niassa");
     this.server = server;
+    this.workflowName = workflowName;
     this.workflowAccession = workflowAccession;
     this.previousAccessions = previousAccessions;
     this.fileMatchingPolicy = fileMatchingPolicy;
@@ -255,7 +258,7 @@ public final class WorkflowAction extends Action {
 
       // Check if there are already too many copies of this workflow running; if so, wait until
       // later.
-      if (server.get().maxInFlight(workflowAccession)) {
+      if (server.get().maxInFlight(workflowName, workflowAccession)) {
         this.errors =
             Collections.singletonList(
                 "Too many workflows running. Sit tight or increase max-in-flight setting.");
@@ -452,6 +455,7 @@ public final class WorkflowAction extends Action {
     final ObjectNode iniJson = node.putObject("ini");
     ini.forEach((key, value) -> iniJson.put(key.toString(), value.toString()));
     node.put("workflowAccession", workflowAccession);
+    node.put("workflowName", workflowName);
     if (runAccession != 0) {
       final Pair<String, Map<Object, Object>> directoryAndIni =
           server.get().directoryAndIni(runAccession);

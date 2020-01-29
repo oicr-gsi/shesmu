@@ -306,7 +306,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final Definer<NiassaServer> definer;
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
-  private final Map<Long, Integer> maxInFlight = new ConcurrentHashMap<>();
+  private final Map<String, Integer> maxInFlight = new ConcurrentHashMap<>();
   private final MaxInFlightCache maxInFlightCache;
   private Metadata metadata;
   private Properties settings = new Properties();
@@ -372,7 +372,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     maxInFlightCache.invalidate(workflowRunSwid);
   }
 
-  public synchronized boolean maxInFlight(long workflowAccession) {
+  public synchronized boolean maxInFlight(String workflowName, long workflowAccession) {
     // Ban all jobs with invalid accessions from running
     if (workflowAccession < 1) {
       return true;
@@ -381,8 +381,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         .get(workflowAccession)
         .map(
             running -> {
-              foundRunning.labels(url(), Long.toString(workflowAccession)).set(running);
-              return running >= maxInFlight.getOrDefault(workflowAccession, 0);
+              foundRunning.labels(url(), workflowName).set(running);
+              return running >= maxInFlight.getOrDefault(workflowName, 0);
             })
         .orElse(true);
   }
@@ -447,7 +447,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                     .flatMap(WorkflowFile::stream)
                     .forEach(
                         wc -> {
-                          maxInFlight.put(wc.second().getAccession(), wc.second().getMaxInFlight());
+                          maxInFlight.put(prefix + wc.first(), wc.second().getMaxInFlight());
                           wc.second().define(prefix + wc.first(), definer);
                         }));
   }
