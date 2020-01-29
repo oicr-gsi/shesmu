@@ -3968,6 +3968,20 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
       () => downloadData(editor.getValue(), "text/plain", fileName)
     )
   );
+  document.addEventListener(
+    "keydown",
+    function(e) {
+      // Map Ctrl-S or Command-S to download/save
+      if (
+        (window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey) &&
+        e.keyCode == 83
+      ) {
+        e.preventDefault();
+        downloadData(editor.getValue(), "text/plain", fileName);
+      }
+    },
+    false
+  );
   const savedTheme = localStorage.getItem("shesmu_theme") || "ace/theme/chrome";
   toolBar.appendChild(document.createTextNode(" Theme: "));
   toolBar.appendChild(
