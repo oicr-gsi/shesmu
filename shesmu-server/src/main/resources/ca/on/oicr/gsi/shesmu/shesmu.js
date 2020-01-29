@@ -3700,6 +3700,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   editor.session.setTabSize(2);
   editor.session.setUseSoftTabs(true);
   editor.setFontSize("14pt");
+  editor.setValue(localStorage.getItem("shesmu_script") || "", 0);
   const extra = document.createElement("DIV");
   const toolBar = document.createElement("P");
   container.appendChild(toolBar);
@@ -4191,6 +4192,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
       clearTimeout(checkTimeout);
       checkTimeout = window.setTimeout(updateSyntax, 1000);
     }
+    localStorage.setItem("shesmu_script", editor.getValue());
   });
 }
 
