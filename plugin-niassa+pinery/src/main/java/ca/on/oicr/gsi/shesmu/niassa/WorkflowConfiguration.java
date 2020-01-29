@@ -44,7 +44,13 @@ public class WorkflowConfiguration {
         WorkflowAction.class,
         () ->
             new WorkflowAction(
-                definer, accession, previousAccessions, fileMatchingPolicy, services, annotations),
+                definer,
+                name,
+                accession,
+                previousAccessions,
+                fileMatchingPolicy,
+                services,
+                annotations),
         Stream.of(
                 Stream.of(getType().parameter()),
                 Stream.of(getParameters()).map(IniParam::parameter),

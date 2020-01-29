@@ -18,7 +18,7 @@ const maybeJsonVisibleText = input => {
 };
 
 actionRender.set("niassa", a => [
-  title(a, `Workflow ${a.workflowAccession}`),
+  title(a, `Workflow ${a.workflowName} (${a.workflowAccession})`),
   a.workflowRunAccession
     ? text(`Workflow Run Accession: ${a.workflowRunAccession}`)
     : blank(),
