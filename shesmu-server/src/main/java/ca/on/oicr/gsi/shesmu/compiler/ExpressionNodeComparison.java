@@ -82,7 +82,7 @@ public class ExpressionNodeComparison extends ExpressionNode {
     final boolean ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
     if (ok) {
       if (!left.type().isSame(right.type())) {
-        typeError(left.type().name(), right.type(), errorHandler);
+        typeError(left.type(), right.type(), errorHandler);
         return false;
       }
       if (comparison.isOrdered() && !left.type().isOrderable()) {

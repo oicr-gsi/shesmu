@@ -82,7 +82,7 @@ public class ExpressionNodeRegex extends ExpressionNode {
       if (expression.type().isSame(Imyhat.STRING)) {
         return patternOk;
       }
-      typeError(Imyhat.STRING.name(), expression.type(), errorHandler);
+      typeError(Imyhat.STRING, expression.type(), errorHandler);
       return false;
     }
     return ok;

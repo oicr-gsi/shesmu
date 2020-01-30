@@ -142,7 +142,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
                           arguments
                               .get(index)
                               .typeError(
-                                  argumentTypes.get(index).name(),
+                                  argumentTypes.get(index),
                                   arguments.get(index).type(),
                                   errorHandler);
                         }

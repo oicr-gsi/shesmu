@@ -77,11 +77,11 @@ public class SourceNodeRange extends SourceNode {
     boolean ok = start.typeCheck(errorHandler) & end.typeCheck(errorHandler);
     if (ok) {
       if (!start.type().isSame(Imyhat.INTEGER)) {
-        start.typeError(Imyhat.INTEGER.name(), start.type(), errorHandler);
+        start.typeError(Imyhat.INTEGER, start.type(), errorHandler);
         ok = false;
       }
       if (!end.type().isSame(Imyhat.INTEGER)) {
-        end.typeError(Imyhat.INTEGER.name(), end.type(), errorHandler);
+        end.typeError(Imyhat.INTEGER, end.type(), errorHandler);
         ok = false;
       }
     }

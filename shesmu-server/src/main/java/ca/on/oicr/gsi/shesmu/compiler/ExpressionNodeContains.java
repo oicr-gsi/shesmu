@@ -73,7 +73,7 @@ public class ExpressionNodeContains extends ExpressionNode {
       if (needle.type().asList().isSame(haystack.type())) {
         return true;
       }
-      typeError(needle.type().asList().name(), haystack.type(), errorHandler);
+      typeError(needle.type().asList(), haystack.type(), errorHandler);
       return false;
     }
     return ok;

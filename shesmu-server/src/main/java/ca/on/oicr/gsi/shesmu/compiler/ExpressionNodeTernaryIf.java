@@ -83,7 +83,7 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
     if (testOk) {
       testOk = testExpression.type().isSame(Imyhat.BOOLEAN);
       if (!testOk) {
-        typeError("boolean", testExpression.type(), errorHandler);
+        typeError(Imyhat.BOOLEAN, testExpression.type(), errorHandler);
       }
     }
     boolean resultOk =
@@ -91,7 +91,7 @@ public class ExpressionNodeTernaryIf extends ExpressionNode {
     if (resultOk) {
       resultOk = trueExpression.type().isSame(falseExpression.type());
       if (!resultOk) {
-        typeError(trueExpression.type().name(), falseExpression.type(), errorHandler);
+        typeError(trueExpression.type(), falseExpression.type(), errorHandler);
       } else {
         type = trueExpression.type().unify(falseExpression.type());
       }

@@ -53,7 +53,7 @@ public class ExpressionNodeLogicalNot extends ExpressionNode {
     if (ok) {
       ok = inner.type().isSame(Imyhat.BOOLEAN);
       if (!ok) {
-        typeError("boolean", inner.type(), errorHandler);
+        typeError(Imyhat.BOOLEAN, inner.type(), errorHandler);
       }
     }
     return ok;

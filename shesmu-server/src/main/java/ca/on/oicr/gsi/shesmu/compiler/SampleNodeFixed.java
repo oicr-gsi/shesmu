@@ -79,7 +79,7 @@ public class SampleNodeFixed extends SampleNode {
   public boolean typeCheck(Imyhat type, Consumer<String> errorHandler) {
     final boolean ok = expression.typeCheck(errorHandler);
     if (ok && !expression.type().isSame(Imyhat.INTEGER)) {
-      expression.typeError(Imyhat.INTEGER.name(), expression.type(), errorHandler);
+      expression.typeError(Imyhat.INTEGER, expression.type(), errorHandler);
       return false;
     }
     return true;

@@ -63,7 +63,7 @@ public abstract class ListNodeBaseRange extends ListNode {
   public final Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler) {
     final boolean ok = expression.typeCheck(errorHandler);
     if (ok && !expression.type().isSame(Imyhat.INTEGER)) {
-      expression.typeError(Imyhat.INTEGER.name(), expression.type(), errorHandler);
+      expression.typeError(Imyhat.INTEGER, expression.type(), errorHandler);
       return Optional.empty();
     }
     return Optional.of(incoming);

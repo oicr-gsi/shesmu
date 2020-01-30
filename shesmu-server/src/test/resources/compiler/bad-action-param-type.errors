@@ -1,1 +1,1 @@
-6:5: Expected argument “memory” to have type integer, but got string.
+6:5: Expected integer for argument “memory”, but got string.

@@ -149,13 +149,13 @@ public class ExpressionNodeSwitch extends ExpressionNode {
                       c -> {
                         boolean isSame = true;
                         if (!c.first().type().isSame(test.type())) {
-                          c.first().typeError(test.type().name(), c.first().type(), errorHandler);
+                          c.first().typeError(test.type(), c.first().type(), errorHandler);
                           isSame = false;
                         }
                         if (c.second().type().isSame(type)) {
                           type = type.unify(c.second().type());
                         } else {
-                          c.second().typeError(type.name(), c.second().type(), errorHandler);
+                          c.second().typeError(type, c.second().type(), errorHandler);
                           isSame = false;
                         }
                         return isSame;

@@ -1,0 +1,7 @@
+3:45: Type mismatch { integer vs string, _ }.
+5:48: Type mismatch { integer vs string, _, missing }.
+7:50: Type mismatch { integer vs string, _, missing }?.
+9:39: Type mismatch (integer vs string)?.
+11:53: Type mismatch { x = integer vs string, missing y, extra z }.
+13:39: Type mismatch [integer vs string].
+15:47: Type mismatch { integer vs string, _, extra }?.

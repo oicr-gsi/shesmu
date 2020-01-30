@@ -75,14 +75,13 @@ public abstract class OliveArgumentNode {
               definitions.put(target.name(), definition);
               boolean ok = definition.type().isSame(target.type());
               if (!ok) {
-                errorHandler.accept(
-                    String.format(
-                        "%d:%d: Expected argument “%s” to have type %s, but got %s.",
-                        line,
-                        column,
-                        definition.name(),
-                        definition.type().name(),
-                        target.type().name()));
+                ExpressionNode.generateTypeError(
+                    line,
+                    column,
+                    String.format(" for argument “%s”", definition.name()),
+                    definition.type(),
+                    target.type(),
+                    errorHandler);
               }
               if (definition.required() && isConditional()) {
                 errorHandler.accept(

@@ -89,7 +89,7 @@ public class CollectNodePartitionCount extends CollectNode {
     boolean ok = expression.typeCheck(errorHandler);
     if (ok) {
       if (!expression.type().isSame(Imyhat.BOOLEAN)) {
-        expression.typeError(Imyhat.BOOLEAN.name(), expression.type(), errorHandler);
+        expression.typeError(Imyhat.BOOLEAN, expression.type(), errorHandler);
         ok = false;
       }
     }
