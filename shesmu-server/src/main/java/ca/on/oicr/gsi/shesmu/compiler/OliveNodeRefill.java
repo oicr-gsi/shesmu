@@ -288,14 +288,13 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
                                     if (requiredType.isSame(t.type())) {
                                       return false;
                                     }
-                                    errorHandler.accept(
-                                        String.format(
-                                            "%d:%d: Expected %s for %s, but got %s.",
-                                            p.second().line(),
-                                            p.second().column(),
-                                            requiredType.name(),
-                                            t.name(),
-                                            t.type().name()));
+                                    ExpressionNode.generateTypeError(
+                                        p.second().line(),
+                                        p.second().column(),
+                                        " for " + t.name(),
+                                        requiredType,
+                                        t.type(),
+                                        errorHandler);
                                     return true;
                                   }))
                   .count()

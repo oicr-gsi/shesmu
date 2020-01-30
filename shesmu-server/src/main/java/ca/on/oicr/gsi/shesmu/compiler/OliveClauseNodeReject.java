@@ -163,7 +163,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
     if (success) {
       if (!expression.type().isSame(Imyhat.BOOLEAN)) {
         success = false;
-        expression.typeError(Imyhat.BOOLEAN.name(), expression.type(), errorHandler);
+        expression.typeError(Imyhat.BOOLEAN, expression.type(), errorHandler);
       }
     }
     return success

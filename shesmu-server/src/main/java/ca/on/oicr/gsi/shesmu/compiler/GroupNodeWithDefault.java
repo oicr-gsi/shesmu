@@ -66,7 +66,7 @@ public class GroupNodeWithDefault extends GroupNode {
       if (inner.type().isSame(initial.type())) {
         type = inner.type().unify(initial.type());
       } else {
-        initial.typeError(inner.type().name(), initial.type(), errorHandler);
+        initial.typeError(inner.type(), initial.type(), errorHandler);
         ok = false;
       }
     }

@@ -108,7 +108,7 @@ public class ExpressionNodeList extends ExpressionNode {
                           resultType.updateAndGet(item.type()::unify);
                           return true;
                         }
-                        item.typeError(resultType.get().name(), item.type(), errorHandler);
+                        item.typeError(resultType.get(), item.type(), errorHandler);
                         return false;
                       })
                   .count()

@@ -276,7 +276,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     for (final ExpressionNode tag : variableTags) {
       if (tag.typeCheck(errorHandler)) {
         if (!tag.type().isSame(Imyhat.STRING)) {
-          tag.typeError(Imyhat.STRING.name(), tag.type(), errorHandler);
+          tag.typeError(Imyhat.STRING, tag.type(), errorHandler);
           ok = false;
         }
       } else {

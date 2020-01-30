@@ -12,8 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -42,6 +42,101 @@ public abstract class ExpressionNode implements Renderable {
                   () -> Stream.of(operations), symbol, p.line(), p.column(), l, r));
       return p;
     };
+  }
+
+  private static Optional<Pair<String, Boolean>> generateRecursiveError(
+      Imyhat acceptable, Imyhat found, boolean root) {
+    if (acceptable.isSame(found)) return Optional.empty();
+    if (acceptable instanceof Imyhat.ObjectImyhat && found instanceof Imyhat.ObjectImyhat) {
+      final List<String> errors = new ArrayList<>();
+      final Map<String, Imyhat> acceptableFields =
+          ((Imyhat.ObjectImyhat) acceptable)
+              .fields()
+              .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().first()));
+      final Map<String, Imyhat> foundFields =
+          ((Imyhat.ObjectImyhat) found)
+              .fields()
+              .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().first()));
+      final Set<String> union = new TreeSet<>(acceptableFields.keySet());
+      union.addAll(foundFields.keySet());
+      for (final String field : union) {
+        final Imyhat acceptableFieldType = acceptableFields.get(field);
+        final Imyhat foundFieldType = foundFields.get(field);
+        if (acceptableFieldType == null) {
+          errors.add(String.format("extra %s", field));
+        } else if (foundFieldType == null) {
+          errors.add(String.format("missing %s", field));
+        } else {
+          generateRecursiveError(acceptableFieldType, foundFieldType, false)
+              .ifPresent(error -> errors.add(String.format("%s = %s", field, error.first())));
+        }
+      }
+      return errors.isEmpty()
+          ? Optional.empty()
+          : Optional.of(new Pair<>("{ " + String.join(", ", errors) + " }", false));
+    }
+    if (acceptable instanceof Imyhat.ListImyhat && found instanceof Imyhat.ListImyhat) {
+      return generateRecursiveError(
+              ((Imyhat.ListImyhat) acceptable).inner(), ((Imyhat.ListImyhat) found).inner(), false)
+          .map(p -> new Pair<>("[" + p.first() + "]", false));
+    }
+    if (acceptable instanceof Imyhat.OptionalImyhat && found instanceof Imyhat.OptionalImyhat) {
+      return generateRecursiveError(
+              ((Imyhat.OptionalImyhat) acceptable).inner(),
+              ((Imyhat.OptionalImyhat) found).inner(),
+              false)
+          .map(p -> new Pair<>(p.second() ? ("(" + p.first() + ")?") : (p.first() + "?"), false));
+    }
+    if (acceptable instanceof Imyhat.TupleImyhat && found instanceof Imyhat.TupleImyhat) {
+      final List<Imyhat> acceptableElements =
+          ((Imyhat.TupleImyhat) acceptable).inner().collect(Collectors.toList());
+      final List<Imyhat> foundElements =
+          ((Imyhat.TupleImyhat) found).inner().collect(Collectors.toList());
+      final List<String> errors = new ArrayList<>();
+      for (int index = 0;
+          index < Math.min(acceptableElements.size(), foundElements.size());
+          index++) {
+        final Imyhat acceptableFieldType = acceptableElements.get(index);
+        final Imyhat foundFieldType = foundElements.get(index);
+        errors.add(
+            generateRecursiveError(acceptableFieldType, foundFieldType, false)
+                .map(Pair::first)
+                .orElse("_"));
+      }
+      while (errors.size() < acceptableElements.size()) {
+        errors.add("missing");
+      }
+      while (errors.size() < foundElements.size()) {
+        errors.add("extra");
+      }
+
+      return errors.isEmpty()
+          ? Optional.empty()
+          : Optional.of(new Pair<>("{ " + String.join(", ", errors) + " }", false));
+    }
+    return root
+        ? Optional.empty()
+        : Optional.of(new Pair<>(String.format("%s vs %s", acceptable.name(), found.name()), true));
+  }
+
+  static void generateTypeError(
+      int line,
+      int column,
+      String context,
+      Imyhat acceptable,
+      Imyhat found,
+      Consumer<String> errorHandler) {
+    final Optional<String> recursiveError =
+        generateRecursiveError(acceptable, found, true).map(Pair::first);
+    if (recursiveError.isPresent()) {
+      errorHandler.accept(
+          String.format("%d:%d: Type mismatch%s %s.", line, column, context, recursiveError.get()));
+    } else {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Expected %s%s, but got %s.",
+              line, column, acceptable.name(), context, found.name()));
+    }
   }
 
   private static <T> Parser.Rule<T> just(T value) {
@@ -718,7 +813,6 @@ public abstract class ExpressionNode implements Renderable {
   }
 
   private final int column;
-
   private final int line;
 
   public ExpressionNode(int line, int column) {
@@ -759,6 +853,16 @@ public abstract class ExpressionNode implements Renderable {
 
   /** Perform type checking on this expression and its children. */
   public abstract boolean typeCheck(Consumer<String> errorHandler);
+
+  /**
+   * Convenience function to produce a type error
+   *
+   * @param acceptable the allowed type
+   * @param found the type provided
+   */
+  protected void typeError(Imyhat acceptable, Imyhat found, Consumer<String> errorHandler) {
+    generateTypeError(line(), column(), "", acceptable, found, errorHandler);
+  }
 
   /**
    * Convenience function to produce a type error

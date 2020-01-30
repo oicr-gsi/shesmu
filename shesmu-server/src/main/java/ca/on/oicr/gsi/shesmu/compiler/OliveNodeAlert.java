@@ -330,7 +330,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
                 == annotations.size()
             & ttl.typeCheck(errorHandler);
     if (ok && !ttl.type().isSame(Imyhat.INTEGER)) {
-      ttl.typeError(Imyhat.INTEGER.name(), ttl.type(), errorHandler);
+      ttl.typeError(Imyhat.INTEGER, ttl.type(), errorHandler);
       ok = false;
     }
     return ok;

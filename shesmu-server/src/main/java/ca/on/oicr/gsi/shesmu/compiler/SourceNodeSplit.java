@@ -75,7 +75,7 @@ public class SourceNodeSplit extends SourceNode {
     if (expression.type().isSame(Imyhat.STRING)) {
       return true;
     }
-    expression.typeError(Imyhat.STRING.name(), expression.type(), errorHandler);
+    expression.typeError(Imyhat.STRING, expression.type(), errorHandler);
     return false;
   }
 }

@@ -61,7 +61,7 @@ public class GroupNodeMatches extends GroupNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = condition.typeCheck(errorHandler);
     if (ok && !condition.type().isSame(Imyhat.BOOLEAN)) {
-      condition.typeError(Imyhat.BOOLEAN.name(), condition.type(), errorHandler);
+      condition.typeError(Imyhat.BOOLEAN, condition.type(), errorHandler);
       ok = false;
     }
     return ok;

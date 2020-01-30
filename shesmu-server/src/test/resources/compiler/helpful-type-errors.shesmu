@@ -1,0 +1,15 @@
+Input test;
+
+Function x(integer a, string b) {a, True} == {b, False};
+
+Function y(integer a, string b) {a, True, 9} == {b, False};
+
+Function z(integer a, string b) `{a, True, 9}` == `{b, False}`;
+
+Function w(integer a, string b) `a` == `b`;
+
+Function u(integer a, string b) {x = a, y = True} == {x = b, z = True};
+
+Function t(integer a, string b) [a] == [b];
+
+Function s(integer a, string b) `{a, True}` == `{b, False, 9}`;

@@ -146,7 +146,7 @@ public class CollectNodeConcatenate extends CollectNode {
     boolean ok = true;
     if (getter.typeCheck(errorHandler)) {
       if (!getter.type().isSame(Imyhat.STRING)) {
-        getter.typeError(Imyhat.STRING.name(), getter.type(), errorHandler);
+        getter.typeError(Imyhat.STRING, getter.type(), errorHandler);
         ok = false;
       }
     } else {
@@ -154,7 +154,7 @@ public class CollectNodeConcatenate extends CollectNode {
     }
     if (delimiter.typeCheck(errorHandler)) {
       if (!delimiter.type().isSame(Imyhat.STRING)) {
-        delimiter.typeError(Imyhat.STRING.name(), delimiter.type(), errorHandler);
+        delimiter.typeError(Imyhat.STRING, delimiter.type(), errorHandler);
         ok = false;
       }
     } else {

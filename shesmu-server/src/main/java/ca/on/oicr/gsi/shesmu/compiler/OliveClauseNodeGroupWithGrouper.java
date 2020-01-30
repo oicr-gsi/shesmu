@@ -514,7 +514,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
           inputExpressions
               .get(i)
               .typeError(
-                  grouper.input(i).type().toString(typeVariables),
+                  grouper.input(i).type().render(typeVariables),
                   inputExpressions.get(i).type(),
                   errorHandler);
           ok = false;

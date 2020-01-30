@@ -126,12 +126,11 @@ public class SampleNodeFixedWithCondition extends SampleNode {
     boolean limitok = limitExpression.typeCheck(errorHandler);
     boolean conditionok = conditionExpression.typeCheck(errorHandler);
     if (limitok && !limitExpression.type().isSame(Imyhat.INTEGER)) {
-      limitExpression.typeError(Imyhat.INTEGER.name(), limitExpression.type(), errorHandler);
+      limitExpression.typeError(Imyhat.INTEGER, limitExpression.type(), errorHandler);
       limitok = false;
     }
     if (conditionok && !conditionExpression.type().isSame(Imyhat.BOOLEAN)) {
-      conditionExpression.typeError(
-          Imyhat.BOOLEAN.name(), conditionExpression.type(), errorHandler);
+      conditionExpression.typeError(Imyhat.BOOLEAN, conditionExpression.type(), errorHandler);
       conditionok = false;
     }
     return limitok & conditionok;

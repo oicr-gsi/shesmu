@@ -278,7 +278,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   public final boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = outerKey.typeCheck(errorHandler) & innerKey.typeCheck(errorHandler);
     if (ok && !outerKey.type().isSame(innerKey.type())) {
-      innerKey.typeError(outerKey.type().name(), innerKey.type(), errorHandler);
+      innerKey.typeError(outerKey.type(), innerKey.type(), errorHandler);
       ok = false;
     }
     return ok
