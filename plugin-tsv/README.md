@@ -106,3 +106,26 @@ columns, the start of that range and the value to return:
 
 This will create a function available to olives that will return the value
 associated with the previous date. So, 2018-09-15 would return `"v2.1"`.
+
+## Complex JSON Objects
+Not really tab-separated, but here we are. This is useful for creating a
+structure like a lookup, but with a complex object as a return value. In a file
+ending in `.jsonconfig`, create a structure as follows:
+
+    {
+       "types": {
+          "foo": "s",
+          "bar": "qi",
+          "quux" "i"
+       },
+       "defaults": { "quux": 9000 },
+       "values": {
+          "A": { "foo": "a thing", "bar": 3, "quux": 12 },
+          "B": { "foo": "a diferent thing", "bar": null }
+       }
+    }
+
+This will create a function that will take a single string as an argument and
+return the matching object in `"values"`, or the empty optional if none
+matches. The `"defaults"` object can provide values that are used if not
+provided in the individual `"values"` objects.
