@@ -160,17 +160,17 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     final Renderer rootRenderer = builder.rootRenderer(true);
     LoadableValue[] grouperCaptures = new LoadableValue[inputExpressions.size()];
     for (int i = 0; i < grouperCaptures.length; i++) {
+      final int local = i;
       switch (grouper.input(i).kind()) {
         case STATIC:
-          final Type asmType = grouper.input(i).type().render(typeVariables).apply(TO_ASM);
-          final int local = rootRenderer.methodGen().newLocal(asmType);
-          inputExpressions.get(i).render(rootRenderer);
-          rootRenderer.methodGen().storeLocal(local);
           grouperCaptures[i] =
               new LoadableValue() {
+                private final Type asmType =
+                    grouper.input(local).type().render(typeVariables).apply(TO_ASM);
+
                 @Override
                 public void accept(Renderer renderer) {
-                  renderer.methodGen().loadLocal(local);
+                  inputExpressions.get(local).render(renderer);
                 }
 
                 @Override
@@ -185,7 +185,6 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
               };
           break;
         case ROW_VALUE:
-          final int localLambda = rootRenderer.methodGen().newLocal(A_FUNCTION_TYPE);
           final Set<String> freeVariablesForLambda = new HashSet<>();
           inputExpressions
               .get(i)
@@ -207,18 +206,16 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
           lambdaRenderer.methodGen().returnValue();
           lambdaRenderer.methodGen().endMethod();
 
-          lambda.push(rootRenderer);
-          rootRenderer.methodGen().storeLocal(localLambda);
           grouperCaptures[i] =
               new LoadableValue() {
                 @Override
                 public void accept(Renderer renderer) {
-                  renderer.methodGen().loadLocal(localLambda);
+                  lambda.push(renderer);
                 }
 
                 @Override
                 public String name() {
-                  return "Grouper Function " + localLambda;
+                  return "Grouper Function " + local;
                 }
 
                 @Override
