@@ -4050,7 +4050,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
             errorDialog.appendChild(text(error));
           }
         } else if (result.name || name) {
-          fakeActions[result.name] = result.parameters;
+          fakeActions[result.name || name] = result.parameters;
           storeFakeActions();
           updateFakeActions();
         } else {
