@@ -12,7 +12,7 @@ import {
   toggleCollapse,
   visibleText
 } from "./utils.js";
-import { actionRender } from "./actions.js";
+import { actionRender, specialImports } from "./actions.js";
 
 function makeButton(label, title, className, callback) {
   const button = document.createElement("SPAN");
@@ -3642,45 +3642,6 @@ export function loadFile(callback) {
   input.click();
 }
 
-function processIniType(name, type, toplevel) {
-  if (type === "boolean") {
-    return "b";
-  } else if (type === "integer") {
-    return "i";
-  } else if (type === "float") {
-    return "f";
-  } else if (type === "path") {
-    return "p";
-  } else if (type === "string") {
-    return "s";
-  } else if (type === "json") {
-    return "j";
-  } else if (typeof type === "object" && type && type.hasOwnProperty("is")) {
-    switch (type.is) {
-      case "date":
-        return "d";
-      case "list":
-        return "a" + processIniType(name, type.of, false);
-      case "tuple":
-        const elements = type.of.map(element =>
-          processIniType(name, element, false)
-        );
-        return "a" + elements.length + elements.join("");
-      case "wdl":
-        if (toplevel) {
-          return type.parameters;
-        } else {
-          makePopup().innerText = `In ${name}, WDL type is nested. WDL type block may only appear as a top-level type.`;
-          return "!";
-        }
-    }
-  }
-  makePopup().innerText = `Utterly incomprehensible type ${JSON.stringify(
-    type
-  )} for parameter ${name}.`;
-  return "!";
-}
-
 export function initialiseSimulationDashboard(ace, container, completeSound) {
   initialise();
   let fakeActions = {};
@@ -4028,7 +3989,16 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
       copy.style.cursor = "pointer";
       copy.addEventListener("click", e => {
         e.stopPropagation();
-        copyJson(declaration);
+        copyJson({
+          name: name,
+          parameters: Object.entries(declaration).map(
+            ([paramName, parameter]) => ({
+              name: paramName,
+              required: parameter.required,
+              type: parameter.type
+            })
+          )
+        });
       });
       editCell.appendChild(document.createTextNode(" "));
       const edit = document.createElement("SPAN");
@@ -4071,70 +4041,41 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
     }
   };
   const importAction = (name, data) => {
-    if (name) {
-      try {
-        let output;
-        const processArray = a => {
-          output = { major_olive_version: { required: true, type: "i" } };
-          for (const parameter of a) {
-            output[parameter.name] = {
-              required: parameter.required || false,
-              type: parameter.hasOwnProperty("iniName")
-                ? processIniType(parameter.name, parameter.type, true)
-                : parameter.type
-            };
+    for (const importReads of specialImports) {
+      const result = importReads(data);
+      if (result) {
+        if (result.errors.length) {
+          const errorDialog = makePopup();
+          for (const error of result.errors) {
+            errorDialog.appendChild(text(error));
           }
-          switch (json.type) {
-            case "FILES":
-              output.inputs = {
-                type: "at3so4id$sprovider$stime$dversion$sb",
-                required: true
-              };
-              break;
-            case "CELL_RANGER":
-              output.lanes = {
-                required: true,
-                type: "at4t3sisso4id$sprovider$stime$dversion$ss"
-              };
-              break;
-            case "BAM_MERGE":
-              output.inputs = {
-                type: "at2sat4sso4id$sprovider$stime$dversion$sb",
-                required: true
-              };
-              break;
-            case "BCL2FASTQ":
-              output.lanes = {
-                required: true,
-                type:
-                  "at3io4id$sprovider$stime$dversion$sat4sso4id$sprovider$stime$dversion$ss"
-              };
-
-            default:
-              makePopup().innerText = `Unknown workflow type ${json.type}.`;
-              return;
-          }
-        };
-        const json = JSON.parse(data);
-        if (Array.isArray(json)) {
-          processArray(json);
-        } else if (typeof json == "object" && json) {
-          if (json.hasOwnProperty("accession")) {
-            processArray(json.parameters);
-          } else {
-            output = json;
-          }
+        } else if (result.name || name) {
+          fakeActions[result.name] = result.parameters;
+          storeFakeActions();
+          updateFakeActions();
         } else {
-          makePopup().innerText = "I have no idea what this is.";
-          return;
+          const [dialog, close] = makePopup(true);
+          dialog.appendChild(document.createTextNode("Save action as: "));
+          const input = document.createElement("INPUT");
+          input.type = "text";
+          dialog.appendChild(input);
+          dialog.appendChild(document.createElement("BR"));
+          dialog.appendChild(
+            button("Add", "Save to fake action collection.", () => {
+              const newName = input.value.trim();
+              if (newName) {
+                fakeActions[newName] = result.parameters;
+                storeFakeActions();
+                updateFakeActions();
+              }
+              close();
+            })
+          );
         }
-        fakeActions[name] = output;
-        storeFakeActions();
-        updateFakeActions();
-      } catch (e) {
-        makePopup().innerText = e;
+        return;
       }
     }
+    makePopup().innerText = "I have no idea what this is.";
   };
   const extraToolBar = document.createElement("P");
   extraToolBar.className = "accessory";
@@ -4145,20 +4086,15 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
     )
   );
   extraToolBar.appendChild(
-    button("➕ Add Action", "Adds an action from a JSON definition.", () => {
+    button("➕ Add Action", "Adds an action from a definition.", () => {
       const [dialog, close] = makePopup(true);
-      dialog.appendChild(document.createTextNode("Save action as: "));
-      const input = document.createElement("INPUT");
-      input.type = "text";
-      dialog.appendChild(input);
-      dialog.appendChild(document.createElement("BR"));
-      dialog.appendChild(document.createTextNode("Action JSON:"));
+      dialog.appendChild(document.createTextNode("Action definition:"));
       const actionJSON = document.createElement("TEXTAREA");
       dialog.appendChild(actionJSON);
 
       dialog.appendChild(
         button("Add", "Save to fake action collection.", () => {
-          importAction(input.value.trim(), actionJSON.value);
+          importAction(null, actionJSON.value);
           close();
         })
       );

@@ -2188,7 +2188,7 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody();
               PrintStream writer = new PrintStream(os, false, "UTF-8")) {
             writer.println(
-                "import { blank, collapse, jsonParameters, link, objectTable, preformatted, table, text, timespan, title, visibleText } from './utils.js';\nexport const actionRender = new Map();\n");
+                "import { blank, collapse, jsonParameters, link, objectTable, preformatted, table, text, timespan, title, visibleText } from './utils.js';\nexport const actionRender = new Map();\nexport const specialImports = [];\n");
             definitionRepository.writeJavaScriptRenderer(writer);
           }
         });
