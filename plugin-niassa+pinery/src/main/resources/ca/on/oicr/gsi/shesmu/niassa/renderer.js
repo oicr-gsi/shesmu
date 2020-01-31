@@ -117,3 +117,86 @@ actionRender.set("niassa-annotation", a => [
   text(`Key: ${a.key}`),
   text(`Value: ${a.value}`)
 ]);
+
+function processIniType(name, type, toplevel) {
+  if (type === "boolean") {
+    return "b";
+  } else if (type === "integer") {
+    return "i";
+  } else if (type === "float") {
+    return "f";
+  } else if (type === "path") {
+    return "p";
+  } else if (type === "string") {
+    return "s";
+  } else if (type === "json") {
+    return "j";
+  } else if (typeof type === "object" && type && type.hasOwnProperty("is")) {
+    switch (type.is) {
+      case "date":
+        return "d";
+      case "list":
+        return "a" + processIniType(name, type.of, false);
+      case "tuple":
+        const elements = type.of.map(element =>
+          processIniType(name, element, false)
+        );
+        return "a" + elements.length + elements.join("");
+      case "wdl":
+        if (toplevel) {
+          return type.parameters;
+        } else {
+          makePopup().innerText = `In ${name}, WDL type is nested. WDL type block may only appear as a top-level type.`;
+          return "!";
+        }
+    }
+  }
+  makePopup().innerText = `Utterly incomprehensible type ${JSON.stringify(
+    type
+  )} for parameter ${name}.`;
+  return "!";
+}
+
+specialImports.push(data => {
+  try {
+    const json = JSON.parse(data);
+    if (typeof json == "object" && json && json.hasOwnProperty("accession")) {
+      const errors = [];
+      const output = { major_olive_version: { required: true, type: "i" } };
+      for (const parameter of json.parameters || []) {
+        if (
+          parameter.hasOwnProperty("required") &&
+          parameter.hasOwnProperty("iniName") &&
+          parameter.hasOwnProperty("name") &&
+          parameter.hasOwnProperty("type")
+        ) {
+          output[parameter.name] = {
+            required: parameter.required || false,
+            type: processIniType(parameter.name, parameter.type, true)
+          };
+        } else {
+          errors.push(`Malformed parameter: ${JSON.stringify(parameter)}`);
+        }
+      }
+      for (const userAnnotation of json.userAnnotations || []) {
+        output[userAnnotation] = { required: true, type: "s" };
+      }
+      if (json.hasOwnProperty("type")) {
+        const limsKeyType = niassaLimsKeyTypes[json.type];
+        if (!limsKeyType) {
+          errors.push(`Invalid type ${json.type} found in file.`);
+        } else {
+          output[limsKeyType[0]] = { required: true, type: limsKeyType[1] };
+        }
+        return { name: null, errors: errors, parameters: output };
+      } else {
+        return null;
+      }
+    } else {
+      return { errors: ["No workflow type is specified."] };
+    }
+  } catch (e) {
+    // This is not JSON, so it can't be ours
+    return null;
+  }
+});

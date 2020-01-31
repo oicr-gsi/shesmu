@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
+import java.util.Scanner;
 import org.kohsuke.MetaInfServices;
 
 /**
@@ -22,8 +23,11 @@ public class FakeRemoteDefinitionInstance extends PluginFileType<RemoteInstance>
 
   @Override
   public void writeJavaScriptRenderer(PrintStream writer) {
-    writer.print(
-        "actionRender.set('fake', a => [title(a, `Fake ${a.name}`)].concat(jsonParameters(a)));");
+    try (final Scanner input =
+        new Scanner(
+            FakeRemoteDefinitionInstance.class.getResourceAsStream("renderer.js"), "UTF-8")) {
+      writer.print(input.useDelimiter("\\Z").next());
+    }
   }
 
   @Override
