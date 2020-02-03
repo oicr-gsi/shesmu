@@ -23,6 +23,12 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
               "The number of IUS LIMS keys that have had their signatures updated.")
           .labelNames("workflow")
           .register();
+  private static final Counter updateVersionAlreadyNewer =
+      Counter.build(
+              "shesmu_niassa_update_version_already_newer",
+              "The number of IUS LIMS keys that we would have updated their LIMS keys, but it was already newer.")
+          .labelNames("workflow")
+          .register();
   private static final Counter updateVersions =
       Counter.build(
               "shesmu_niassa_update_version",
@@ -144,10 +150,18 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
    */
   public void fixVersions(long workflowAccession, Metadata metadata) {
     final Counter.Child counter = updateVersions.labels(Long.toString(workflowAccession));
+    final Counter.Child alreadyNewerCounter =
+        updateVersionAlreadyNewer.labels(Long.toString(workflowAccession));
     for (final Map.Entry<Integer, Pair<String, ZonedDateTime>> version :
         updatedVersions.entrySet()) {
       final LimsKey limsKey = metadata.getLimsKeyFrom(version.getKey());
       final String oldValue = limsKey.getVersion();
+      if (limsKey.getLastModified().isAfter(version.getValue().second())) {
+        // We are in some kind of race condition where an action that has newer LIMS data than us
+        // has already updated this LIMS key. We're just going to shut up about it.
+        alreadyNewerCounter.inc();
+        continue;
+      }
       limsKey.setVersion(version.getValue().first());
       limsKey.setLastModified(version.getValue().second());
       metadata.updateLimsKey(limsKey);
