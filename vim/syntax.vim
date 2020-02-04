@@ -100,7 +100,7 @@ syn match shesmuConstant "'\([^\\']\|\\'\)\+\'" display
 syn match shesmuIdentifier "\<[a-z][a-zA-Z0-9_]*\>\s*=[^=>]" display
 syn match shesmuDate "Date\s*\d\d\d\d-\d\d-\d\d\(T\d\d\:\d\d:\d\d\(Z\|[+-]\d\d\(:\d\d\)\=\)\)\=" display
 syn match shesmuComment /#.*$/ contains=shesmuTodo,@Spell display
-syn match shesmuRegex /\/\([^\\]*\|\\[\\\[\]AbBdDGsSwWzZ\/.]\)*\//
+syn match shesmuRegex /\/\([^\\/]*\|\\[\\\[\]AbBdDGsSwWzZ\/.]\)*\//
 syn match shesmuDelimiter contained containedin=shesmuRegex "\~"
 syn match shesmuDelimiter contained containedin=shesmuRegex "?"
 syn match shesmuDelimiter contained containedin=shesmuRegex "\*"
