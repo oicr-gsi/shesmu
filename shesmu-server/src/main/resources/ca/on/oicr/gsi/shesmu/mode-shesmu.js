@@ -75,6 +75,24 @@ ace.define(
             ]
           },
           {
+            token: "punctuation.definition.regex.begin.shesmu",
+            regex: "/",
+            push: [
+              {
+                token: "constant.language.escape",
+                regex: /\\[\\\[\]AbBdDGsSwWzZ\/.]|[\[\].*?^$()]/
+              },
+              {
+                token: "punctuation.definition.regex.end.shesmu",
+                regex: "/",
+                next: "pop"
+              },
+              {
+                defaultToken: "string.regex.shesmu"
+              }
+            ]
+          },
+          {
             token: "punctuation.definition.string.begin.shesmu",
             regex: '"',
             push: [
