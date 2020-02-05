@@ -178,8 +178,10 @@ specialImports.push(data => {
           errors.push(`Malformed parameter: ${JSON.stringify(parameter)}`);
         }
       }
-      for (const userAnnotation of json.userAnnotations || []) {
-        output[userAnnotation] = { required: true, type: "s" };
+      for (const [userAnnotation, type] of Object.entries(
+        json.userAnnotations || {}
+      )) {
+        output[userAnnotation] = { required: true, type: type };
       }
       if (json.hasOwnProperty("type")) {
         const limsKeyType = niassaLimsKeyTypes[json.type];
