@@ -54,7 +54,8 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
 
   void processInput(Stream<Pair<String, ObjectNode>> input) {
     WorkflowQueryResponse workflowQueryResponse;
-    List<String> status = Collections.singletonList("Running"); // Other in progress statuses?
+    // https://github.com/broadinstitute/cromwell/blob/develop/core/src/main/scala/cromwell/core/WorkflowState.scala
+    List<String> status = Arrays.asList("Running", "On Hold", "Submitted");
     List<String> names = Collections.singletonList(workflowName);
     AtomicBoolean ok = new AtomicBoolean(true);
 
