@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,6 +44,21 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
       @Override
       public List<T> unpack(Object object) {
         return ((Set<?>) object).stream().map(inner::unpack).collect(Collectors.toList());
+      }
+    };
+  }
+
+  public static <T> TypeGuarantee<Optional<T>> optional(TypeGuarantee<T> inner) {
+    final Imyhat listType = inner.type().asOptional();
+    return new TypeGuarantee<Optional<T>>() {
+      @Override
+      public Imyhat type() {
+        return listType;
+      }
+
+      @Override
+      public Optional<T> unpack(Object object) {
+        return ((Optional<?>) object).map(inner::unpack);
       }
     };
   }

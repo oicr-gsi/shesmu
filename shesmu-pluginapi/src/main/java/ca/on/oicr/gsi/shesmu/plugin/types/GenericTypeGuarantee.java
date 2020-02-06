@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,7 +45,43 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public Set<T> unpack(Object object) {
-        return null;
+        return ((Set<?>) object).stream().map(inner::unpack).collect(Collectors.toSet());
+      }
+    };
+  }
+  /**
+   * Create a list containing a generic type
+   *
+   * @param inner the type of the contents of the list
+   */
+  public static <T> GenericTypeGuarantee<Optional<T>> genericOptional(
+      GenericTypeGuarantee<T> inner) {
+    return new GenericTypeGuarantee<Optional<T>>() {
+
+      @Override
+      public <R> R apply(GenericTransformer<R> transformer) {
+        return transformer.genericOptional(inner);
+      }
+
+      @Override
+      public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
+        return reference instanceof Imyhat.OptionalImyhat
+            && inner.check(variables, ((Imyhat.OptionalImyhat) reference).inner());
+      }
+
+      @Override
+      public Imyhat render(Map<String, Imyhat> variables) {
+        return inner.render(variables).asOptional();
+      }
+
+      @Override
+      public String toString(Map<String, Imyhat> typeVariables) {
+        return inner.toString(typeVariables) + "?";
+      }
+
+      @Override
+      public Optional<T> unpack(Object object) {
+        return ((Optional<?>) object).map(inner::unpack);
       }
     };
   }
