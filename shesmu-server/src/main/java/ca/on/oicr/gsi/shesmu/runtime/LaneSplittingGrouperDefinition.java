@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutput;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperOutputs;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperParameter;
+import ca.on.oicr.gsi.shesmu.plugin.types.GenericTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 import org.kohsuke.MetaInfServices;
@@ -18,7 +19,10 @@ public class LaneSplittingGrouperDefinition extends GrouperDefinition {
             TypeGuarantee.list(TypeGuarantee.list(TypeGuarantee.LONG)),
             "A description of which lanes may be merged. A list of lists of which lanes are physically connected on the flow cell. Samples must be in the lowest numbered lane in each group."),
         GrouperParameter.dynamic(
-            "is_sample", TypeGuarantee.BOOLEAN, "Whether this is a sample (rather than a lane)."),
+            "is_sample",
+            GenericTypeGuarantee.genericOptional(
+                ReturnTypeGuarantee.variable(Object.class, "𝒯").first()),
+            "A unique identifier for each sample (or a constant value for a lane). This will be used to determine if samples are common across lanes."),
         GrouperParameter.dynamic("lane", TypeGuarantee.LONG, "The lane number."),
         GrouperOutputs.of(
             GrouperOutput.fixed(

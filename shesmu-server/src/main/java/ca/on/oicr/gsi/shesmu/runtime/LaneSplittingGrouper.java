@@ -8,19 +8,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LaneSplittingGrouper<I, O> implements Grouper<I, O> {
+public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
   private final Function<Set<Long>, BiConsumer<O, I>> collectorForLanes;
-  private final Function<I, List<List<Long>>> permittedMerges;
-  private final Function<I, Boolean> isSample;
+  private final Function<I, Optional<T>> identifier;
   private final Function<I, Long> laneNumber;
+  private final Function<I, List<List<Long>>> permittedMerges;
 
   public LaneSplittingGrouper(
       Function<I, List<List<Long>>> permittedMerges,
-      Function<I, Boolean> isSample,
+      Function<I, Optional<T>> identifier,
       Function<I, Long> laneNumber,
       Function<Set<Long>, BiConsumer<O, I>> collectorForLanes) {
     this.permittedMerges = permittedMerges;
-    this.isSample = isSample;
+    this.identifier = identifier;
     this.laneNumber = laneNumber;
     this.collectorForLanes = collectorForLanes;
   }
@@ -60,6 +60,7 @@ public class LaneSplittingGrouper<I, O> implements Grouper<I, O> {
         canMerge.isEmpty() ? Function.identity() : canMerge::get;
 
     Set<Long> lanes = null;
+    Set<T> idsForLane = null;
     final Deque<Subgroup<I, O>> results = new ArrayDeque<>();
     for (Map.Entry<Long, List<I>> entry : groups.entrySet()) {
       final Long target = targetLane.apply(entry.getKey());
@@ -72,14 +73,34 @@ public class LaneSplittingGrouper<I, O> implements Grouper<I, O> {
 
         lanes = new TreeSet<>();
         results.add(new Subgroup<>(collectorForLanes.apply(lanes)));
-      } else if (!target.equals(entry.getKey())
-          && entry.getValue().stream().anyMatch(isSample::apply)) {
-        // If this isn't the first lane in a group, it should have only samples
-        return Stream.empty();
+        idsForLane = sampleIdsForLane(entry);
+        lanes.add(entry.getKey());
+        results.getLast().addAll(entry.getValue());
+      } else {
+        // If this isn't the first lane in a group, it should have no samples in it or the samples
+        // must match the ones in the first lane
+        final Set<T> idsForThisLane = sampleIdsForLane(entry);
+        if (idsForThisLane.isEmpty() || idsForThisLane.equals(idsForLane)) {
+          lanes.add(entry.getKey());
+          // Add only the lane and dump the samples
+          entry
+              .getValue()
+              .stream()
+              .filter(v -> !identifier.apply(v).isPresent())
+              .forEach(results.getLast()::add);
+        } else {
+          return Stream.empty();
+        }
       }
-      lanes.add(entry.getKey());
-      results.getLast().addAll(entry.getValue());
     }
     return results.stream();
+  }
+
+  private Set<T> sampleIdsForLane(Map.Entry<Long, List<I>> entry) {
+    return entry
+        .getValue()
+        .stream()
+        .flatMap(v -> identifier.apply(v).map(Stream::of).orElseGet(Stream::empty))
+        .collect(Collectors.toSet());
   }
 }
