@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Monitor foo "The foos." { x = If True Then project Else "" }
+ Run ok With ok = True;
