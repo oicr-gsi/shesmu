@@ -95,7 +95,12 @@ public class TypeUtils {
         }
 
         @Override
-        public Type genericList(GenericTypeGuarantee inner) {
+        public Type genericOptional(GenericTypeGuarantee<?> inner) {
+          return A_OPTIONAL_TYPE;
+        }
+
+        @Override
+        public Type genericList(GenericTypeGuarantee<?> inner) {
           return A_SET_TYPE;
         }
 

@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,6 +21,16 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
       @Override
       public Imyhat type() {
         return listType;
+      }
+    };
+  }
+
+  public static <T> ReturnTypeGuarantee<Optional<T>> optional(ReturnTypeGuarantee<T> inner) {
+    final Imyhat optionalType = inner.type().asOptional();
+    return new ReturnTypeGuarantee<Optional<T>>() {
+      @Override
+      public Imyhat type() {
+        return optionalType;
       }
     };
   }
@@ -73,6 +84,8 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
         }
       };
 
+  ReturnTypeGuarantee() {}
+
   @Override
   public final boolean check(Map<String, Imyhat> variables, Imyhat reference) {
     return type().isSame(reference);
@@ -87,8 +100,6 @@ public abstract class ReturnTypeGuarantee<T> extends GenericReturnTypeGuarantee<
   public final String toString(Map<String, Imyhat> typeVariables) {
     return type().name();
   }
-
-  ReturnTypeGuarantee() {}
 
   public abstract Imyhat type();
 }
