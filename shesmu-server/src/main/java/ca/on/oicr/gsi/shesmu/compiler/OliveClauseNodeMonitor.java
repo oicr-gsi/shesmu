@@ -213,6 +213,10 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    return labels.stream().filter(arg -> arg.ensureType(errorHandler)).count() == labels.size();
+    return labels
+            .stream()
+            .filter(arg -> arg.typeCheck(errorHandler) && arg.ensureType(errorHandler))
+            .count()
+        == labels.size();
   }
 }
