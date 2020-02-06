@@ -456,14 +456,14 @@ public class CompiledGenerator implements DefinitionRepository {
                           Server.inflight("Queued " + script.fileName.toString()));
                   // For each script, create two futures: one that runs the olive script and
                   // return true and one that will wait for the timeout and return false
-                  final CompletableFuture<Boolean> timeoutFuture = new CompletableFuture<>();
-                  final CompletableFuture<Boolean> processFuture =
+                  final CompletableFuture<OliveRunInfo> timeoutFuture = new CompletableFuture<>();
+                  final CompletableFuture<OliveRunInfo> processFuture =
                       CompletableFuture.supplyAsync(
                           () -> {
                             final Instant startTime = Instant.now();
                             inflight.get().run();
-                            inflight.set(Server.inflight("Runnning " + script.fileName.toString()));
-                            script.runInfo = new OliveRunInfo("Running now", null, startTime);
+                            inflight.set(Server.inflight("Running " + script.fileName.toString()));
+                            script.runInfo = new OliveRunInfo(true, "Running now", null, startTime);
                             final long inputCount =
                                 script.dashboard == null
                                     ? 0
@@ -471,17 +471,14 @@ public class CompiledGenerator implements DefinitionRepository {
                             // We wait to schedule the timeout for when the script is actually
                             // starting
                             executor.schedule(
-                                () -> {
-                                  script.runInfo =
-                                      new OliveRunInfo("Deadline exceeded", inputCount, startTime);
-                                  timeoutFuture.complete(false);
-                                },
+                                () ->
+                                    timeoutFuture.complete(
+                                        new OliveRunInfo(
+                                            false, "Deadline exceeded", inputCount, startTime)),
                                 script.generator.timeout(),
                                 TimeUnit.SECONDS);
-                            script.runInfo =
-                                new OliveRunInfo(
-                                    script.run(consumer, cache), inputCount, startTime);
-                            return true;
+                            return new OliveRunInfo(
+                                true, script.run(consumer, cache), inputCount, startTime);
                           },
                           workExecutor);
 
@@ -490,9 +487,13 @@ public class CompiledGenerator implements DefinitionRepository {
                   return CompletableFuture.anyOf(timeoutFuture, processFuture)
                       .thenAccept(
                           obj -> {
-                            final boolean ok = (Boolean) obj;
-                            OLIVE_WATCHDOG.labels(script.fileName.toString()).set(ok ? 0 : 1);
-                            (ok ? timeoutFuture : processFuture).cancel(true);
+                            final OliveRunInfo runInfo = (OliveRunInfo) obj;
+                            script.runInfo = runInfo;
+                            OLIVE_WATCHDOG
+                                .labels(script.fileName.toString())
+                                .set(runInfo.isOk() ? 0 : 1);
+                            timeoutFuture.cancel(true);
+                            processFuture.cancel(true);
                             inflight.get().run();
                           });
                 })
