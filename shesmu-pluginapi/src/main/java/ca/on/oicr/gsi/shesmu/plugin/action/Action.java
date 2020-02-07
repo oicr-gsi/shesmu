@@ -1,11 +1,13 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
+import ca.on.oicr.gsi.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * An action that can be performed as a result of the decision-making process
@@ -36,6 +38,16 @@ public abstract class Action {
    * #perform(ActionServices)}.
    */
   public void accepted() {}
+
+  /**
+   * Get the actions that are appropriate for this action
+   *
+   * @return a stream of pairs of the user-friendly name for the command and the command name that
+   *     should be used in {@link #performCommand(String)}
+   */
+  public Stream<Pair<String, String>> commands() {
+    return Stream.empty();
+  }
 
   @Override
   public abstract boolean equals(Object other);
@@ -74,6 +86,20 @@ public abstract class Action {
    * permanent state (e.g., job id) as a field.
    */
   public abstract ActionState perform(ActionServices services);
+
+  /**
+   * Perform an action-specific command
+   *
+   * <p>Commands are a way for a user to provide specific direction to actions. This is meant to
+   * provide a way to adjust an action's behaviour at runtime. Actions may receive invalid or
+   * inappropriate commands and should simply ignore them.
+   *
+   * @param commandName the name of the command
+   * @return true if the command was followed; false if inappropriate or not understood
+   */
+  public boolean performCommand(String commandName) {
+    return false;
+  }
 
   /** Perform any preparation needed after parameters have been set. */
   public void prepare() {}

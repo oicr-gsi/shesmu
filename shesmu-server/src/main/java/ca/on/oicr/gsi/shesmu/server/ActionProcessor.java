@@ -582,6 +582,17 @@ public final class ActionProcessor
     };
   }
 
+  /**
+   * Execute a command on matching actions
+   *
+   * @param command the command to perform
+   * @param filters the filters to select actions
+   * @return the number of actions that were able to execute the command
+   */
+  public long command(String command, Filter... filters) {
+    return startStream(filters).filter(e -> e.getKey().performCommand(command)).count();
+  }
+
   private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(
       ArrayNode output,
       List<Entry<Action, Information>> input,
@@ -1009,6 +1020,8 @@ public final class ActionProcessor
                   .stream()
                   .sorted()
                   .forEach(location -> location.toJson(locations, linker));
+              final ObjectNode commands = node.putObject("commands");
+              entry.getKey().commands().forEach(p -> commands.put(p.first(), p.second()));
               return node;
             });
   }
