@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class NothingAction extends Action {
 
@@ -16,6 +18,11 @@ public class NothingAction extends Action {
 
   public NothingAction() {
     super("nothing");
+  }
+
+  @Override
+  public Stream<Pair<String, String>> commands() {
+    return Stream.of(new Pair<>("📢 Complain loudly", "NOTHING-COMPLAIN"));
   }
 
   @Override
@@ -56,6 +63,16 @@ public class NothingAction extends Action {
   @Override
   public ActionState perform(ActionServices services) {
     return ActionState.SUCCEEDED;
+  }
+
+  @Override
+  public boolean performCommand(String commandName) {
+    if (commandName.equals("NOTHING-COMPLAIN")) {
+      System.err.println(value);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override

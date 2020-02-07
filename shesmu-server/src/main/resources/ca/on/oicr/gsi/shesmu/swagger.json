@@ -659,6 +659,50 @@
         ]
       }
     },
+    "/command": {
+      "post": {
+        "description": "",
+        "operationId": "sendCommandToActions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "command": {
+                    "type": "string"
+                  },
+                  "filters": {
+                    "items": {
+                      "$ref": "#/components/schemas/Filter"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Sends a command to the actions that match the supplied filters.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "description": "The number of actions that enacted the command"
+          }
+        },
+        "summary": "Send commands to actions",
+        "tags": [
+          "actions"
+        ]
+      }
+    },
     "/constant": {
       "post": {
         "description": "",

@@ -1651,6 +1651,29 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/command",
+        t -> {
+          final CommandRequest request;
+          try {
+            request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), CommandRequest.class);
+          } catch (final Exception e) {
+            t.sendResponseHeaders(400, 0);
+            try (OutputStream os = t.getResponseBody()) {}
+            return;
+          }
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            RuntimeSupport.MAPPER.writeValue(
+                os,
+                processor.command(
+                    request.getCommand(),
+                    Stream.of(request.getFilters())
+                        .filter(Objects::nonNull)
+                        .map(filterJson -> filterJson.convert(processor))
+                        .toArray(Filter[]::new)));
+          }
+        });
+    add(
         "/parsefiltertext",
         t -> {
           t.getResponseHeaders().set("Content-type", "application/json");
@@ -2265,6 +2288,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("favicon.png", "image/png");
     add("flamethrower.gif", "image/gif");
     add("holtburn.gif", "image/gif");
+    add("indifferent.gif", "image/gif");
     add("ohno.gif", "image/gif");
     add("shrek.gif", "image/gif");
     add("starwars.gif", "image/gif");

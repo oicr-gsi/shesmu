@@ -1914,6 +1914,57 @@ function nextPage(query, targetElement, onActionPage) {
       json.className = "json";
       json.innerText = JSON.stringify(action, null, 2);
       collapse("JSON", json).forEach(x => tile.appendChild(x));
+
+      for (const [commandName, command] of Object.entries(
+        action.commands || {}
+      )) {
+        toolbar.appendChild(
+          dangerButton(
+            commandName,
+            `Perform special command ${command} on this action.`,
+            () =>
+              fetchJsonWithBusyDialog(
+                "/command",
+                {
+                  body: JSON.stringify({
+                    command: command,
+                    filters: [
+                      {
+                        type: "id",
+                        ids: [action.actionId]
+                      }
+                    ]
+                  }),
+                  method: "POST"
+                },
+                count => {
+                  if (count == 0) {
+                    const dialog = makePopup();
+                    dialog.appendChild(
+                      document.createTextNode(
+                        "This action is indifferent to your pleas."
+                      )
+                    );
+                    const image = document.createElement("IMG");
+                    dialog.appendChild(image);
+                    image.src = "indifferent.gif";
+                  } else if (count > 1) {
+                    const dialog = makePopup();
+                    dialog.appendChild(
+                      document.createTextNode(
+                        `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`
+                      )
+                    );
+                    const image = document.createElement("IMG");
+                    dialog.appendChild(image);
+                    image.src = "ohno.gif";
+                  }
+                  nextPage(query, targetElement, onActionPage);
+                }
+              )
+          )
+        );
+      }
       jumble.appendChild(tile);
     });
 
