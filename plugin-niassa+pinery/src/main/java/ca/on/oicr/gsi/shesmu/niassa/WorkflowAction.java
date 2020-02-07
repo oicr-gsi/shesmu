@@ -70,27 +70,28 @@ public final class WorkflowAction extends Action {
           "shesmu_niassa_wr_update_time",
           "The time to pull the status of a workflow run.",
           "workflow");
-
-  void setAnnotation(String tag, String value) {
-    annotations.putIfAbsent(tag, value);
-  }
-
   private final Map<String, String> annotations;
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
   private final FileMatchingPolicy fileMatchingPolicy;
   private boolean hasLaunched;
+  private boolean ignoreMaxInFlight;
   Properties ini = new Properties();
   private ActionState lastState = ActionState.UNKNOWN;
   private InputLimsCollection limsKeysCollection;
   private long majorOliveVersion;
   private List<WorkflowRunMatch> matches = Collections.emptyList();
   private final long[] previousAccessions;
+
+  @ActionParameter(required = false)
+  public long priority;
+
+  private boolean priorityBoost;
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final List<String> services;
-  private final String workflowName;
   private final long workflowAccession;
+  private final String workflowName;
 
   public WorkflowAction(
       Supplier<NiassaServer> server,
@@ -108,6 +109,31 @@ public final class WorkflowAction extends Action {
     this.fileMatchingPolicy = fileMatchingPolicy;
     this.services = services;
     this.annotations = new TreeMap<>(annotations);
+    // This sort will group workflows together by SWID so that as many as possible will performed
+    // sequentially before analysis cache expires and needs reloading.
+
+    priority = (workflowAccession % 10);
+  }
+
+  @Override
+  public Stream<Pair<String, String>> commands() {
+    return Stream.concat(
+        Stream.of(
+            ignoreMaxInFlight
+                ? new Pair<>("🚲 Respect Max-in-flight Limit", "NIASSA-RESPECT-MAX-IN-FLIGHT")
+                : new Pair<>("✈️ Ignore Max-in-flight Limit", "NIASSA-IGNORE-MAX-IN-FLIGHT"),
+            priorityBoost
+                ? new Pair<>("🚀 Use Normal Priority", "NIASSA-PRIORITY-NICE")
+                : new Pair<>("🚀 Use High Priority", "NIASSA-PRIORITY-BOOST")),
+        runAccession == 0
+            ? (matches.isEmpty()
+                ? Stream.empty()
+                : Stream.of(
+                    new Pair<>(
+                        "🚧 Skip All Partially Matched Workflow Runs", "NIASSA-SKIP-CANDIDATES")))
+            : Stream.of(
+                new Pair<>("💔 Reset Workflow Run Connection", "NIASSA-RESET-WFR"),
+                new Pair<>("🚧 Skip and Re-run", "NIASSA-SKIP-RERUN")));
   }
 
   @Override
@@ -258,7 +284,7 @@ public final class WorkflowAction extends Action {
 
       // Check if there are already too many copies of this workflow running; if so, wait until
       // later.
-      if (server.get().maxInFlight(workflowName, workflowAccession)) {
+      if (!ignoreMaxInFlight && server.get().maxInFlight(workflowName, workflowAccession)) {
         this.errors =
             Collections.singletonList(
                 "Too many workflows running. Sit tight or increase max-in-flight setting.");
@@ -386,10 +412,73 @@ public final class WorkflowAction extends Action {
   }
 
   @Override
+  public synchronized boolean performCommand(String commandName) {
+    switch (commandName) {
+      case "NIASSA-RESPECT-MAX-IN-FLIGHT":
+        if (ignoreMaxInFlight) {
+          ignoreMaxInFlight = false;
+          return true;
+        }
+        return false;
+      case "NIASSA-IGNORE-MAX-IN-FLIGHT":
+        if (!ignoreMaxInFlight) {
+          ignoreMaxInFlight = true;
+          return true;
+        }
+        return false;
+      case "NIASSA-PRIORITY-BOOST":
+        if (!priorityBoost) {
+          priorityBoost = true;
+          return true;
+        }
+        return false;
+      case "NIASSA-PRIORITY-NICE":
+        if (priorityBoost) {
+          priorityBoost = false;
+          return true;
+        }
+        return false;
+      case "NIASSA-SKIP-CANDIDATES":
+        if (matches.isEmpty() || runAccession != 0) {
+          return false;
+        }
+        for (final WorkflowRunMatch match : matches) {
+          final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+          attribute.setTag("skip");
+          attribute.setValue("shesmu-ui");
+          server
+              .get()
+              .metadata()
+              .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
+        }
+        return true;
+      case "NIASSA-SKIP-RERUN":
+        if (runAccession == 0) {
+          return false;
+        } else {
+          final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+          attribute.setTag("skip");
+          attribute.setValue("shesmu-ui");
+          server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+        }
+        // Intentional fall through
+      case "NIASSA-RESET-WFR":
+        if (runAccession == 0) {
+          return false;
+        } else {
+          runAccession = 0;
+          hasLaunched = false;
+          lastState = ActionState.UNKNOWN;
+          server.get().analysisCache().invalidate(workflowAccession);
+          return true;
+        }
+    }
+    return false;
+  }
+
+  @Override
   public final int priority() {
-    // This sort will group workflows together by SWID so that as many as possible will performed
-    // sequentially before analysis cache expires and needs reloading.
-    return (int) (workflowAccession % 10);
+    return (int) ((priorityBoost ? 10 : 1) * priority);
   }
 
   @Override
@@ -418,6 +507,10 @@ public final class WorkflowAction extends Action {
                     query
                         .matcher(Integer.toString(match.state().workflowRunAccession()))
                         .matches());
+  }
+
+  void setAnnotation(String tag, String value) {
+    annotations.putIfAbsent(tag, value);
   }
 
   @Override
