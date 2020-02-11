@@ -702,7 +702,9 @@ export function initialiseActionDash(
           targetElement => makeTabs(targetElement, 0, "Overview", "Actions"),
 
           (reset, updateLocalSearches, newName) => {
-            if (updateLocalSearches) {
+            if (reset) {
+              redrawDropDown("All Actions", {}, false);
+            } else if (updateLocalSearches) {
               updateLocalSearches(localSearches);
               localStorage.setItem(
                 "shesmu_searches",
@@ -3252,7 +3254,7 @@ function getStats(
       accessoryButton(
         "✖ Clear Search",
         "Remove all search filters and view everything.",
-        () => updateSearchList(true, null)
+        () => updateSearchList(true, null, null)
       )
     );
   }
