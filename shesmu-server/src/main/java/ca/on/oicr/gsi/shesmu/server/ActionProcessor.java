@@ -42,7 +42,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -236,9 +235,9 @@ public final class ActionProcessor
     final TreeMap<T, Long> states =
         actions
             .stream()
-            .flatMap(property::extract)
-            .collect(
-                Collectors.groupingBy(Function.identity(), TreeMap::new, Collectors.counting()));
+            .flatMap(
+                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
+            .collect(Collectors.groupingBy(Pair::first, TreeMap::new, Collectors.counting()));
     for (final Entry<T, Long> state : states.entrySet()) {
       final ObjectNode row = table.addObject();
       row.put("title", "Total");
