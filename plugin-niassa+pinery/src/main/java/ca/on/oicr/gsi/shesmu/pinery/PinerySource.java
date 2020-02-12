@@ -125,7 +125,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 return new PineryIUSValue(
                     run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                     Optional.empty(),
-                    lp.getCreatedDate() == null ? Instant.EPOCH : lp.getCreatedDate().toInstant(),
+                    Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
                     maybeGetRunField(run, RunDto::getContainerModel),
                     "",
                     Optional.empty(),
@@ -194,9 +194,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),
-                        sp.getCreatedDate() == null
-                            ? Instant.EPOCH
-                            : sp.getCreatedDate().toInstant(),
+                        Optional.ofNullable(sp.getCreatedDate()).map(ZonedDateTime::toInstant),
                         maybeGetRunField(run, RunDto::getContainerModel),
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
