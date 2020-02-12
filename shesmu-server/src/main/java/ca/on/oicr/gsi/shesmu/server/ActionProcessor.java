@@ -37,9 +37,8 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -189,6 +188,7 @@ public final class ActionProcessor
     ActionState lastState = ActionState.UNKNOWN;
     Instant lastStateTransition = Instant.now();
     final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
+    volatile boolean scheduled;
     final Set<String> tags = ConcurrentHashMap.newKeySet();
     String thrown;
 
@@ -426,6 +426,16 @@ public final class ActionProcessor
       Gauge.build("shesmu_action_oldest_time", "The oldest action in a particular state.")
           .labelNames("state", "type")
           .register();
+  private static final Gauge scheduledInRound =
+      Gauge.build(
+              "shesmu_action_scheduled_in_round",
+              "The number of actions that were schedule for processing in the last round.")
+          .register();
+  private static final Gauge currentRunningActionsGauge =
+      Gauge.build(
+              "shesmu_action_currently_running",
+              "The number of actions that are running (or waiting for a thread).")
+          .register();
   private static final Gauge stateCount =
       Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
           .labelNames("state", "type")
@@ -436,10 +446,13 @@ public final class ActionProcessor
   private final Map<Map<String, String>, Alert> alerts = new HashMap<>();
   private final String baseUri;
   private String currentAlerts = "[]";
+  private final AtomicInteger currentRunningActions = new AtomicInteger();
   private final Set<String> knownActionTypes = ConcurrentHashMap.newKeySet();
   private final PluginManager manager;
   private final Set<SourceLocation> pausedOlives = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
+  private final ExecutorService workExecutor =
+      Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1));
 
   public ActionProcessor(String baseUri, PluginManager manager, ActionServices actionServices) {
     super();
@@ -918,7 +931,7 @@ public final class ActionProcessor
 
   /** Begin the action processor */
   public void start(ScheduledExecutorService executor) {
-    executor.scheduleWithFixedDelay(this::update, 5, 5, TimeUnit.MINUTES);
+    executor.scheduleWithFixedDelay(this::update, 5, 1, TimeUnit.MINUTES);
     executor.scheduleWithFixedDelay(this::updateAlerts, 5, 5, TimeUnit.MINUTES);
   }
 
@@ -1074,53 +1087,70 @@ public final class ActionProcessor
   private void update() {
 
     final Instant now = Instant.now();
-    actions
-        .entrySet()
-        .stream()
-        .sorted(Comparator.comparingInt(e -> e.getKey().priority()))
-        .filter(
-            entry ->
-                entry.getValue().lastState != ActionState.SUCCEEDED
-                    && Duration.between(entry.getValue().lastChecked, now).toMinutes()
-                        >= Math.max(5, entry.getKey().retryMinutes()))
-        .forEach(
-            entry -> {
-              entry.getValue().lastChecked = Instant.now();
-              final ActionState oldState = entry.getValue().lastState;
-              final boolean oldThrown = entry.getValue().thrown != null;
-              try (AutoCloseable timer = actionPerformTime.start(entry.getKey().type());
-                  AutoCloseable inflight =
-                      Server.inflightCloseable(
-                          String.format(
-                              "Performing %s action from %s",
-                              entry.getKey().type(),
-                              entry
-                                  .getValue()
-                                  .locations
-                                  .stream()
-                                  .map(Object::toString)
-                                  .sorted()
-                                  .collect(Collectors.joining(" "))))) {
-                entry.getValue().lastState =
-                    entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
-                        ? ActionState.THROTTLED
-                        : entry.getKey().perform(actionServices);
-                entry.getValue().thrown = null;
-              } catch (final Throwable e) {
-                entry.getValue().lastState = ActionState.UNKNOWN;
-                entry.getValue().thrown = e.toString();
-                e.printStackTrace();
-                if (e instanceof Error) {
-                  throw (Error) e;
-                }
+    final List<Entry<Action, Information>> candidates =
+        actions
+            .entrySet()
+            .stream()
+            .sorted(Comparator.comparingInt(e -> e.getKey().priority()))
+            .filter(
+                entry ->
+                    entry.getValue().lastState != ActionState.SUCCEEDED
+                        && !entry.getValue().scheduled
+                        && Duration.between(entry.getValue().lastChecked, now).toMinutes()
+                            >= Math.max(10, entry.getKey().retryMinutes()))
+            .limit(200 - currentRunningActions.get())
+            .collect(Collectors.toList());
+    currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
+
+    for (final Entry<Action, Information> entry : candidates) {
+      entry.getValue().scheduled = true;
+      final String location =
+          entry
+              .getValue()
+              .locations
+              .stream()
+              .map(Object::toString)
+              .sorted()
+              .collect(Collectors.joining(" "));
+      final Runnable queuedInflight =
+          Server.inflight(
+              String.format(
+                  "Waiting to perform %s action from %s", entry.getKey().type(), location));
+      workExecutor.submit(
+          () -> {
+            entry.getValue().lastChecked = Instant.now();
+            final ActionState oldState = entry.getValue().lastState;
+            final boolean oldThrown = entry.getValue().thrown != null;
+            queuedInflight.run();
+            try (AutoCloseable timer = actionPerformTime.start(entry.getKey().type());
+                AutoCloseable inflight =
+                    Server.inflightCloseable(
+                        String.format(
+                            "Performing %s action from %s", entry.getKey().type(), location))) {
+              entry.getValue().lastState =
+                  entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
+                      ? ActionState.THROTTLED
+                      : entry.getKey().perform(actionServices);
+              entry.getValue().thrown = null;
+            } catch (final Throwable e) {
+              entry.getValue().lastState = ActionState.UNKNOWN;
+              entry.getValue().thrown = e.toString();
+              e.printStackTrace();
+              if (e instanceof Error) {
+                throw (Error) e;
               }
-              if (oldState != entry.getValue().lastState) {
-                entry.getValue().lastStateTransition = Instant.now();
-                stateCount.labels(oldState.name(), entry.getKey().type()).dec();
-                stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
-              }
-              actionThrows.inc((entry.getValue().thrown != null ? 0 : 1) - (oldThrown ? 0 : 1));
-            });
+            }
+            if (oldState != entry.getValue().lastState) {
+              entry.getValue().lastStateTransition = Instant.now();
+              stateCount.labels(oldState.name(), entry.getKey().type()).dec();
+              stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
+            }
+            actionThrows.inc((entry.getValue().thrown != null ? 0 : 1) - (oldThrown ? 0 : 1));
+            entry.getValue().scheduled = false;
+            currentRunningActionsGauge.set(currentRunningActions.decrementAndGet());
+          });
+    }
+    scheduledInRound.set(candidates.size());
     lastRun.setToCurrentTime();
     final Map<Pair<ActionState, String>, Optional<Instant>> lastTransitions =
         actions
