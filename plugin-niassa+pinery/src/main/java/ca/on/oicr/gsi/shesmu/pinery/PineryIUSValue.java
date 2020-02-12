@@ -11,7 +11,7 @@ import java.util.Optional;
 public final class PineryIUSValue {
   private final String bases_mask;
   private final Optional<Double> cell_viability;
-  private final Instant completed_date;
+  private final Optional<Instant> completed_date;
   private final Optional<String> container_model;
   private final String donor;
   private final Optional<Double> dv200;
@@ -50,7 +50,7 @@ public final class PineryIUSValue {
   public PineryIUSValue(
       String bases_mask,
       Optional<Double> cell_viability,
-      Instant completed_date,
+      Optional<Instant> completed_date,
       Optional<String> container_model,
       String donor,
       Optional<Double> dv200,
@@ -136,7 +136,7 @@ public final class PineryIUSValue {
   }
 
   @ShesmuVariable
-  public Instant completed_date() {
+  public Optional<Instant> completed_date() {
     return completed_date;
   }
 
