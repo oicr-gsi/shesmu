@@ -408,6 +408,7 @@ public final class WorkflowAction extends Action {
   public boolean search(Pattern query) {
     return ini.values().stream().anyMatch(v -> query.matcher(v.toString()).matches())
         || (runAccession != 0 && query.matcher(Integer.toString(runAccession)).matches())
+        || query.matcher(workflowName).matches()
         || limsKeysCollection.matches(query)
         || workflowAccessions()
             .anyMatch(workflow -> query.matcher(Long.toString(workflow)).matches())
