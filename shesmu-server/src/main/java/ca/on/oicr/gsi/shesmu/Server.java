@@ -142,7 +142,7 @@ public final class Server implements ServerConfig, ActionServices {
   private static final Pattern AMPERSAND = Pattern.compile("&");
   private static final Pattern EQUAL = Pattern.compile("=");
   public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-  private static final Map<String, Instant> INFLIGHT = new ConcurrentHashMap<>();
+  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
   private static final String instanceName =
       Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
           .map("Shesmu - "::concat)
