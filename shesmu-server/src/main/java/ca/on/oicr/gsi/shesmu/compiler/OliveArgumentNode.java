@@ -7,17 +7,75 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 
 /** The arguments defined in the “With” section of a “Run” olive. */
 public abstract class OliveArgumentNode {
+  private interface ArgumentStorer {
+
+    void store(Renderer renderer, int action, LoadableValue value);
+  }
+
+  private static class OptionalProvided implements ArgumentStorer {
+    private final ActionParameterDefinition parameterDefinition;
+
+    private OptionalProvided(ActionParameterDefinition parameterDefinition) {
+      this.parameterDefinition = parameterDefinition;
+    }
+
+    @Override
+    public void store(Renderer renderer, int action, LoadableValue value) {
+      value.accept(renderer);
+      renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
+      final Label end = renderer.methodGen().newLabel();
+      renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, end);
+      parameterDefinition.store(
+          renderer,
+          action,
+          new LoadableValue() {
+            @Override
+            public void accept(Renderer renderer) {
+              value.accept(renderer);
+              renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
+              renderer.methodGen().unbox(parameterDefinition.type().apply(TO_ASM));
+            }
+
+            @Override
+            public String name() {
+              return value.name() + " inner";
+            }
+
+            @Override
+            public Type type() {
+              return parameterDefinition.type().apply(TO_ASM);
+            }
+          });
+      renderer.methodGen().mark(end);
+    }
+  }
+
+  private static class Unmodified implements ArgumentStorer {
+    private final ActionParameterDefinition parameterDefinition;
+
+    private Unmodified(ActionParameterDefinition parameterDefinition) {
+      this.parameterDefinition = parameterDefinition;
+    }
+
+    @Override
+    public void store(Renderer renderer, int action, LoadableValue value) {
+      parameterDefinition.store(renderer, action, value);
+    }
+  }
+
   public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {
     final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
     final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
@@ -48,8 +106,13 @@ public abstract class OliveArgumentNode {
     return result;
   }
 
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
+  private static final Method METHOD_OPTIONAL__GET =
+      new Method("get", Type.getType(Object.class), new Type[0]);
+  private static final Method METHOD_OPTIONAL__IS_PRESENT =
+      new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
   protected final int column;
-  private final Map<String, ActionParameterDefinition> definitions = new HashMap<>();
+  private final Map<String, ArgumentStorer> definitions = new HashMap<>();
   protected final int line;
   protected final DestructuredArgumentNode name;
 
@@ -63,8 +126,7 @@ public abstract class OliveArgumentNode {
       Function<String, ActionParameterDefinition> parameterDefinitions,
       Consumer<String> errorHandler) {
     if (name.isBlank()) {
-      errorHandler.accept(
-          String.format("%d:%d: Assignment in Monitor discards value.", line, column));
+      errorHandler.accept(String.format("%d:%d: Assignment discards value.", line, column));
       return false;
     }
     return name.targets()
@@ -72,9 +134,19 @@ public abstract class OliveArgumentNode {
             target -> {
               final ActionParameterDefinition definition =
                   parameterDefinitions.apply(target.name());
-              definitions.put(target.name(), definition);
-              boolean ok = definition.type().isSame(target.type());
-              if (!ok) {
+
+              if (definition.required() && isConditional()) {
+                errorHandler.accept(
+                    String.format("%d:%d: Argument “%s” is required.", line, column, name));
+                return false;
+              } else if (definition.type().isSame(target.type())) {
+                definitions.put(target.name(), new Unmodified(definition));
+                return true;
+              } else if (!definition.required()
+                  && definition.type().asOptional().isSame(target.type())) {
+                definitions.put(target.name(), new OptionalProvided(definition));
+                return true;
+              } else {
                 ExpressionNode.generateTypeError(
                     line,
                     column,
@@ -82,13 +154,8 @@ public abstract class OliveArgumentNode {
                     definition.type(),
                     target.type(),
                     errorHandler);
+                return false;
               }
-              if (definition.required() && isConditional()) {
-                errorHandler.accept(
-                    String.format("%d:%d: Argument “%s” is required.", line, column, name));
-                ok = false;
-              }
-              return ok;
             });
   }
 
