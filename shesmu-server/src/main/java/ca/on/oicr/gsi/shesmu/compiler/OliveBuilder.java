@@ -103,44 +103,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
     final List<Target> signables = signableNames.collect(Collectors.toList());
     owner
         .signatureVariables()
-        .forEach(
-            signer -> {
-              final String name = signerPrefix + signer.name();
-              switch (signer.storage()) {
-                case STATIC:
-                  owner.classVisitor.visitField(
-                      Opcodes.ACC_STATIC,
-                      name,
-                      signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
-                      null,
-                      null);
-                  signer.build(owner.classInitMethod, initialFormat.type(), signables.stream());
-                  owner.classInitMethod.putStatic(
-                      owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
-                  break;
-                case DYNAMIC:
-                  final Method method =
-                      new Method(
-                          name,
-                          signer.type().apply(TypeUtils.TO_ASM),
-                          new Type[] {initialFormat.type()});
-                  final GeneratorAdapter methodGen =
-                      new GeneratorAdapter(
-                          Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-                          method,
-                          null,
-                          null,
-                          owner.classVisitor);
-                  methodGen.visitCode();
-                  signer.build(methodGen, initialFormat.type(), signables.stream());
-                  methodGen.returnValue();
-                  methodGen.visitMaxs(0, 0);
-                  methodGen.visitEnd();
-                  break;
-                default:
-                  throw new UnsupportedOperationException();
-              }
-            });
+        .forEach(signer -> createSignature(signerPrefix, initialFormat, signables, signer));
   }
 
   /**
@@ -165,29 +128,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   @Override
   protected void emitSigner(SignatureDefinition signer, Renderer renderer) {
-    switch (signer.storage()) {
-      case DYNAMIC:
-        renderer.loadStream();
-        renderer
-            .methodGen()
-            .invokeStatic(
-                owner.selfType(),
-                new Method(
-                    signerPrefix + signer.name(),
-                    signer.type().apply(TypeUtils.TO_ASM),
-                    new Type[] {initialFormat.type()}));
-        break;
-      case STATIC:
-        renderer
-            .methodGen()
-            .getStatic(
-                owner.selfType(),
-                signerPrefix + signer.name(),
-                signer.type().apply(TypeUtils.TO_ASM));
-        break;
-      default:
-        throw new UnsupportedOperationException();
-    }
+    renderSigner(signerPrefix, signer, renderer);
   }
 
   private void finish(Consumer<Renderer> finishStream) {

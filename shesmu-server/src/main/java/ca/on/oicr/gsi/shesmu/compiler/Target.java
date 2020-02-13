@@ -57,6 +57,54 @@ public interface Target {
     }
   }
 
+  static Target softWrap(Target target) {
+    if (!target.flavour().isStream) {
+      throw new IllegalArgumentException(
+          String.format("Cannot wrap %s variable %s", target.flavour().name(), target.name()));
+    }
+    return new Target() {
+
+      @Override
+      public Flavour flavour() {
+        return target.flavour();
+      }
+
+      @Override
+      public String name() {
+        return target.name();
+      }
+
+      @Override
+      public Imyhat type() {
+        return target.type();
+      }
+    };
+  }
+
+  static Target wrap(Target target) {
+    if (!target.flavour().isStream) {
+      throw new IllegalArgumentException(
+          String.format("Cannot wrap %s variable %s", target.flavour().name(), target.name()));
+    }
+    return new Target() {
+
+      @Override
+      public Flavour flavour() {
+        return Flavour.STREAM;
+      }
+
+      @Override
+      public String name() {
+        return target.name();
+      }
+
+      @Override
+      public Imyhat type() {
+        return target.type();
+      }
+    };
+  }
+
   public static final Target BAD =
       new Target() {
 
@@ -84,28 +132,4 @@ public interface Target {
 
   /** The Shesmu type for this variable */
   Imyhat type();
-
-  static Target wrap(Target target) {
-    if (!target.flavour().isStream) {
-      throw new IllegalArgumentException(
-          String.format("Cannot wrap %s variable %s", target.flavour().name(), target.name()));
-    }
-    return new Target() {
-
-      @Override
-      public Flavour flavour() {
-        return Flavour.STREAM;
-      }
-
-      @Override
-      public String name() {
-        return target.name();
-      }
-
-      @Override
-      public Imyhat type() {
-        return target.type();
-      }
-    };
-  }
 }

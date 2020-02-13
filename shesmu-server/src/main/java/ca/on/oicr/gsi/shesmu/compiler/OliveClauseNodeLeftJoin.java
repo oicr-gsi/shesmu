@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -96,9 +97,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   public final ClauseStreamOrder ensureRoot(
       ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE) {
-      children
-          .stream()
-          .forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+      // This should be impossible since a pure stream would have duplicate signatures from both
+      // sides and fail.
       return ClauseStreamOrder.TRANSFORMED;
     }
     return state;
@@ -114,12 +114,31 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
       Map<String, OliveDefineBuilder> definitions) {
+    final String prefix = String.format("LeftJoin %d:%d To %s ", line, column, inputFormat.name());
     final Set<String> freeVariables = new HashSet<>();
-    children
-        .stream()
-        .forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
+    children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
+    final Set<String> innerSignatures = new HashSet<>();
+    children.forEach(
+        group -> group.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals));
+    innerKey.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals);
+    final Set<String> innerSignables = new HashSet<>();
+    children.forEach(
+        group -> group.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals));
+    innerKey.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals);
+    final List<Target> signables =
+        inputFormat
+            .baseStreamVariables()
+            .filter(input -> innerSignables.contains(input.name()))
+            .collect(Collectors.toList());
+
+    builder
+        .signatureVariables()
+        .filter(signature -> innerSignatures.contains(signature.name()))
+        .forEach(
+            signatureDefinition ->
+                oliveBuilder.createSignature(prefix, inputFormat, signables, signatureDefinition));
 
     oliveBuilder.line(line);
     final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin =
@@ -128,6 +147,9 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
             column,
             inputFormat,
             outerKey.type(),
+            (signatureDefinition, renderer) -> {
+              oliveBuilder.renderSigner(prefix, signatureDefinition, renderer);
+            },
             oliveBuilder
                 .loadableValues()
                 .filter(value -> freeVariables.contains(value.name()))
@@ -167,7 +189,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
                                 new Type[] {}));
                   });
         });
-    children.stream().forEach(group -> group.render(leftJoin.second(), builder));
+    children.forEach(group -> group.render(leftJoin.second(), builder));
 
     leftJoin.second().finish();
 
@@ -187,7 +209,9 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     }
 
     final Set<String> newNames =
-        inputFormat.baseStreamVariables().map(Target::name).collect(Collectors.toSet());
+        Stream.concat(inputFormat.baseStreamVariables(), oliveCompilerServices.signatures())
+            .map(Target::name)
+            .collect(Collectors.toSet());
 
     final List<String> duplicates =
         defs.stream()
@@ -216,8 +240,11 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
 
     final NameDefinitions joinedDefs =
         defs.replaceStream(
-            Stream.concat(
-                discriminators.stream(), inputFormat.baseStreamVariables().map(Target::wrap)),
+            Stream.of(
+                    discriminators.stream(),
+                    inputFormat.baseStreamVariables().map(Target::softWrap),
+                    oliveCompilerServices.signatures())
+                .flatMap(Function.identity()),
             true);
 
     final boolean ok =
