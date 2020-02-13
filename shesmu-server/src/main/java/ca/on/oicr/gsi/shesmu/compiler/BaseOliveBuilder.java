@@ -115,11 +115,8 @@ public abstract class BaseOliveBuilder {
       new Method("map", A_STREAM_TYPE, new Type[] {A_FUNCTION_TYPE});
   private static final Method METHOD_STREAM__PEEK =
       new Method("peek", A_STREAM_TYPE, new Type[] {A_CONSUMER_TYPE});
-
   private Type currentType;
-
   protected final InputFormatDefinition initialFormat;
-
   protected final RootBuilder owner;
   protected final List<Consumer<Renderer>> steps = new ArrayList<>();
 
@@ -160,6 +157,42 @@ public abstract class BaseOliveBuilder {
           renderer.methodGen().invokeVirtual(owner.selfType(), defineOlive.method());
         });
     currentType = defineOlive.currentType();
+  }
+
+  public final void createSignature(
+      String prefix,
+      InputFormatDefinition inputFormat,
+      List<Target> signables,
+      SignatureDefinition signer) {
+    final String name = prefix + signer.name();
+    switch (signer.storage()) {
+      case STATIC:
+        owner.classVisitor.visitField(
+            Opcodes.ACC_STATIC,
+            name,
+            signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
+            null,
+            null);
+        signer.build(owner.classInitMethod, inputFormat.type(), signables.stream());
+        owner.classInitMethod.putStatic(
+            owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
+        break;
+      case DYNAMIC:
+        final Method method =
+            new Method(
+                name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
+        final GeneratorAdapter methodGen =
+            new GeneratorAdapter(
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, method, null, null, owner.classVisitor);
+        methodGen.visitCode();
+        signer.build(methodGen, inputFormat.type(), signables.stream());
+        methodGen.returnValue();
+        methodGen.visitMaxs(0, 0);
+        methodGen.visitEnd();
+        break;
+      default:
+        throw new UnsupportedOperationException();
+    }
   }
 
   /**
@@ -297,6 +330,7 @@ public abstract class BaseOliveBuilder {
       int column,
       InputFormatDefinition innerType,
       Imyhat keyType,
+      BiConsumer<SignatureDefinition, Renderer> innerSigner,
       LoadableValue... capturedVariables) {
     final String joinedClassName =
         String.format("shesmu/dyn/LeftJoinTemporary %d:%d", line, column);
@@ -358,8 +392,8 @@ public abstract class BaseOliveBuilder {
 
     final Renderer newMethodGen = newMethod.renderer(joinedType, this::emitSigner);
     final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
-    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), this::emitSigner);
-    final Renderer collectedMethodGen = collectLambda.renderer(joinedType, 1, this::emitSigner);
+    final Renderer innerKeyMethodGen = innerKeyLambda.renderer(innerType.type(), innerSigner);
+    final Renderer collectedMethodGen = collectLambda.renderer(joinedType, 1, innerSigner);
 
     return new Pair<>(
         new JoinBuilder(
@@ -793,5 +827,29 @@ public abstract class BaseOliveBuilder {
         newRenderer,
         collectedRenderer,
         capturedVariables.length + collectorBuilderType.parameters());
+  }
+
+  public void renderSigner(String prefix, SignatureDefinition signer, Renderer renderer) {
+    switch (signer.storage()) {
+      case DYNAMIC:
+        renderer.loadStream();
+        renderer
+            .methodGen()
+            .invokeStatic(
+                owner.selfType(),
+                new Method(
+                    prefix + signer.name(),
+                    signer.type().apply(TypeUtils.TO_ASM),
+                    new Type[] {initialFormat.type()}));
+        break;
+      case STATIC:
+        renderer
+            .methodGen()
+            .getStatic(
+                owner.selfType(), prefix + signer.name(), signer.type().apply(TypeUtils.TO_ASM));
+        break;
+      default:
+        throw new UnsupportedOperationException();
+    }
   }
 }

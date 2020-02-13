@@ -1,6 +1,7 @@
 Input test;
 
 Olive
+ Let p = project
  LeftJoin True To inner_test True
     ls = List l
  Run ok With ok = (For l In ls: Count) == 2;

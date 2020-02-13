@@ -1,6 +1,7 @@
 Input test;
 
 Define foo()
+ Let library_size
  LeftJoin library_size To inner_test l
     ls = List l;
 

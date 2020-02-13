@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Where project == "the_foo_study"
+ Let p = project
+ LeftJoin p To test(project)
+  xs = List signature_names
+ Run ok With ok = For x In xs: All "project" In x;
