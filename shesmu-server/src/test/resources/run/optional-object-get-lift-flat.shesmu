@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = ((`{ x = `1` }`).x Default 0) == 1;

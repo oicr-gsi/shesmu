@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = ((`{ 1 }`)[0] Default 0) == 1;
