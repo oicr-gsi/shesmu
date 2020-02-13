@@ -518,6 +518,9 @@ zero-based index of the item in the tuple. The result type will be based on the
 type of that position in the tuple. If _n_ is beyond the number of items in the
 tuple, an error occurs.
 
+The _expr_ can also be an optional of a tuple. If it is, the result will be an
+optional of the appropriate type.
+
 #### Named Tuple Access
 - _expr_ `.` _field_
 
@@ -526,6 +529,9 @@ field. The result type will be based on the type of that field in the named
 tuple or a JSON blob when accessing a JSON blob. If _field_ is not in the named
 tuple, an error occurs. If _field_ is not in the JSON blob (or applied to a
 scalar or array), the result is a JSON `null` value.
+
+The _expr_ can also be an optional of a named tuple or JSON object. If it is,
+the result will be an optional of the appropriate type.
 
 ### Terminals
 #### Date Literal
