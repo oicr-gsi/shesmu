@@ -76,6 +76,6 @@ public class Bcl2FastqInputLimsCollection implements InputLimsCollection {
 
   @Override
   public Stream<Pair<? extends LimsKey, String>> signatures() {
-    return Stream.empty();
+    return lanes.stream().flatMap(Bcl2FastqLaneEntry::signatures);
   }
 }

@@ -41,9 +41,11 @@ public enum InputLimsKeyType {
       "lanes",
       Bcl2FastqInputLimsCollection::new,
       TypeGuarantee.list(
-          TypeGuarantee.tuple(
+          TypeGuarantee.object(
               Bcl2FastqLaneEntry::new,
-              TypeGuarantee.LONG, // lane number
+              "lane",
+              TypeGuarantee.LONG,
+              "lims",
               TypeGuarantee.object(
                   SimpleLimsKey::new,
                   "id",
@@ -53,12 +55,18 @@ public enum InputLimsKeyType {
                   "time",
                   TypeGuarantee.DATE,
                   "version",
-                  TypeGuarantee.STRING), // lane LIMS key
+                  TypeGuarantee.STRING),
+              "samples",
               TypeGuarantee.list(
-                  TypeGuarantee.tuple(
+                  TypeGuarantee.object(
                       Bcl2FastqSampleEntry::new,
-                      TypeGuarantee.STRING, // sample barcode
-                      TypeGuarantee.STRING, // sample library name
+                      "barcode",
+                      TypeGuarantee.STRING,
+                      "group_id",
+                      TypeGuarantee.STRING,
+                      "library_name",
+                      TypeGuarantee.STRING,
+                      "lims",
                       TypeGuarantee.object(
                           SimpleLimsKey::new,
                           "id",
@@ -68,9 +76,11 @@ public enum InputLimsKeyType {
                           "time",
                           TypeGuarantee.DATE,
                           "version",
-                          TypeGuarantee.STRING), // sample LIMS key
-                      TypeGuarantee.STRING) // sample group id
-                  )))),
+                          TypeGuarantee.STRING),
+                      "signature",
+                      TypeGuarantee.STRING)),
+              "signature",
+              TypeGuarantee.STRING))),
   CELL_RANGER("lanes", SignedCellRangerInputLimsCollection::new, cellRangerTypeGuarantee()),
   CELL_RANGER_SIGNED("lanes", SignedCellRangerInputLimsCollection::new, cellRangerTypeGuarantee()),
 
