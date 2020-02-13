@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import java.nio.charset.StandardCharsets;
@@ -17,8 +18,10 @@ public class Bcl2FastqSampleEntry implements LimsKey {
   private final String limsProvider;
   private final ZonedDateTime limsTimestamp;
   private final String limsVersion;
+  private final String signature;
 
-  public Bcl2FastqSampleEntry(String barcode, String libraryName, LimsKey limsKey, String groupId) {
+  public Bcl2FastqSampleEntry(
+      String barcode, String groupId, String libraryName, LimsKey limsKey, String signature) {
     this.barcode = barcode;
     this.libraryName = libraryName;
     limsId = limsKey.getId();
@@ -26,6 +29,7 @@ public class Bcl2FastqSampleEntry implements LimsKey {
     limsVersion = limsKey.getVersion();
     limsTimestamp = limsKey.getLastModified();
     this.groupId = groupId;
+    this.signature = signature;
   }
 
   @Override
@@ -35,11 +39,12 @@ public class Bcl2FastqSampleEntry implements LimsKey {
     Bcl2FastqSampleEntry that = (Bcl2FastqSampleEntry) o;
     return barcode.equals(that.barcode)
         && groupId.equals(that.groupId)
+        && libraryName.equals(that.libraryName)
         && limsId.equals(that.limsId)
         && limsProvider.equals(that.limsProvider)
         && limsTimestamp.equals(that.limsTimestamp)
         && limsVersion.equals(that.limsVersion)
-        && libraryName.equals(that.libraryName);
+        && signature.equals(that.signature);
   }
 
   public void generateUUID(Consumer<byte[]> digest) {
@@ -76,7 +81,7 @@ public class Bcl2FastqSampleEntry implements LimsKey {
   @Override
   public int hashCode() {
     return Objects.hash(
-        barcode, groupId, limsId, limsProvider, limsTimestamp, limsVersion, libraryName);
+        barcode, groupId, libraryName, limsId, limsProvider, limsTimestamp, limsVersion, signature);
   }
 
   public boolean matches(Pattern query) {
@@ -91,5 +96,9 @@ public class Bcl2FastqSampleEntry implements LimsKey {
   public String prepare(ToIntFunction<LimsKey> createIusLimsKey) {
     return String.format(
         "%s,%d,%s,%s", barcode, createIusLimsKey.applyAsInt(this), libraryName, groupId);
+  }
+
+  public Pair<? extends LimsKey, String> signature() {
+    return new Pair<>(this, signature);
   }
 }

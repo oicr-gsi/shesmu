@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import java.nio.charset.StandardCharsets;
@@ -19,14 +20,16 @@ public class Bcl2FastqLaneEntry implements LimsKey {
   private final ZonedDateTime limsTimestamp;
   private final String limsVersion;
   private final List<Bcl2FastqSampleEntry> samples;
+  private final String signature;
 
-  public Bcl2FastqLaneEntry(long laneNumber, LimsKey limsKey, List<Bcl2FastqSampleEntry> samples) {
-
+  public Bcl2FastqLaneEntry(
+      long laneNumber, LimsKey limsKey, List<Bcl2FastqSampleEntry> samples, String signature) {
     this.laneNumber = (int) laneNumber;
     limsId = limsKey.getId();
     limsProvider = limsKey.getProvider();
     limsVersion = limsKey.getVersion();
     limsTimestamp = limsKey.getLastModified();
+    this.signature = signature;
     this.samples = samples;
   }
 
@@ -34,13 +37,14 @@ public class Bcl2FastqLaneEntry implements LimsKey {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    Bcl2FastqLaneEntry that = (Bcl2FastqLaneEntry) o;
-    return laneNumber == that.laneNumber
-        && limsId.equals(that.limsId)
-        && limsProvider.equals(that.limsProvider)
-        && limsTimestamp.equals(that.limsTimestamp)
-        && limsVersion.equals(that.limsVersion)
-        && samples.equals(that.samples);
+    Bcl2FastqLaneEntry entry = (Bcl2FastqLaneEntry) o;
+    return laneNumber == entry.laneNumber
+        && limsId.equals(entry.limsId)
+        && limsProvider.equals(entry.limsProvider)
+        && limsTimestamp.equals(entry.limsTimestamp)
+        && limsVersion.equals(entry.limsVersion)
+        && signature.equals(entry.signature)
+        && samples.equals(entry.samples);
   }
 
   public void generateUUID(Consumer<byte[]> digest) {
@@ -76,7 +80,8 @@ public class Bcl2FastqLaneEntry implements LimsKey {
 
   @Override
   public int hashCode() {
-    return Objects.hash(laneNumber, limsId, limsProvider, limsTimestamp, limsVersion, samples);
+    return Objects.hash(
+        laneNumber, limsId, limsProvider, limsTimestamp, limsVersion, signature, samples);
   }
 
   public Stream<LimsKey> limsKeys() {
@@ -96,5 +101,11 @@ public class Bcl2FastqLaneEntry implements LimsKey {
             .stream()
             .map(sample -> sample.prepare(createIusLimsKey))
             .collect(Collectors.joining("+"));
+  }
+
+  public Stream<Pair<? extends LimsKey, String>> signatures() {
+    return Stream.concat(
+        Stream.of(new Pair<>(this, signature)),
+        samples.stream().map(Bcl2FastqSampleEntry::signature));
   }
 }
