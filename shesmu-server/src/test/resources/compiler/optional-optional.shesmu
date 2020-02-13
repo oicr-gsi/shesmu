@@ -1,0 +1,7 @@
+Input test;
+
+Olive Run optional
+  With
+    junk = True,
+    ok = `project == "hi"`
+  ;
