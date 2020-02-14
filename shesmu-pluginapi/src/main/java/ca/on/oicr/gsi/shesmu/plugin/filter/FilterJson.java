@@ -78,7 +78,7 @@ public abstract class FilterJson {
   private static final Pattern ACTION_ID = Pattern.compile("shesmu:([0-9a-fA-F]{40})");
   private static final Pattern SEARCH =
       Pattern.compile(
-          "shesmusearch:((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=))");
+          "shesmusearch:((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|))");
   private boolean negate;
 
   public abstract <F> F convert(FilterBuilder<F> f);
