@@ -104,9 +104,8 @@ public interface Target {
       }
     };
   }
-
-  public static final Target BAD =
-      new Target() {
+  public static final TargetWithContext BAD =
+      new TargetWithContext() {
 
         @Override
         public Flavour flavour() {
@@ -116,6 +115,11 @@ public interface Target {
         @Override
         public String name() {
           return "<BAD>";
+        }
+
+        @Override
+        public void setContext(NameDefinitions defs) {
+          // Ignore it
         }
 
         @Override

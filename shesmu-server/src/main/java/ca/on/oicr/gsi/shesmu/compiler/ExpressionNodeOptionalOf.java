@@ -1,26 +1,71 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeOptionalOf extends ExpressionNode {
 
+  private static class UnboxableExpression implements TargetWithContext {
+    private Optional<NameDefinitions> defs = Optional.empty();
+    private final ExpressionNode expression;
+
+    public UnboxableExpression(ExpressionNode expression) {
+      this.expression = expression;
+      name = String.format("Lift of %d:%d", expression.line(), expression.column());
+    }
+
+    @Override
+    public void setContext(NameDefinitions defs) {
+      this.defs = Optional.of(defs);
+    }
+
+    private final String name;
+
+    @Override
+    public Flavour flavour() {
+      return Flavour.LAMBDA;
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public Imyhat type() {
+      return expression.type() instanceof Imyhat.OptionalImyhat
+          ? ((Imyhat.OptionalImyhat) expression.type()).inner()
+          : expression.type();
+    }
+  }
+
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
-
+  private static final Method METHOD_OPTIONAL__EMPTY =
+      new Method("of", A_OPTIONAL_TYPE, new Type[0]);
+  private static final Method METHOD_OPTIONAL__GET = new Method("get", A_OBJECT_TYPE, new Type[0]);
+  private static final Method METHOD_OPTIONAL__IS_PRESENT =
+      new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
   private static final Method METHOD_OPTIONAL__OF =
       new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
-
+  private final List<UnboxableExpression> captures = new ArrayList<>();
   private final ExpressionNode item;
-
   private Imyhat type = Imyhat.BAD;
 
   public ExpressionNodeOptionalOf(int line, int column, ExpressionNode item) {
@@ -30,31 +75,133 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
+    for (final UnboxableExpression capture : captures) {
+      capture.expression.collectFreeVariables(names, predicate);
+    }
     item.collectFreeVariables(names, predicate);
   }
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
+    for (final UnboxableExpression capture : captures) {
+      capture.expression.collectPlugins(pluginFileNames);
+    }
     item.collectPlugins(pluginFileNames);
   }
 
   @Override
   public void render(Renderer renderer) {
-    item.render(renderer);
+    // Okay, we are going to build two radically different kinds of code. If we have an optional
+    // with no captures, we just compute the value and stick it in an optional
     renderer.mark(line());
-    renderer.methodGen().box(type.apply(TypeUtils.TO_ASM));
-    renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
+    if (captures.isEmpty()) {
+      item.render(renderer);
+      renderer.methodGen().box(type.apply(TO_ASM));
+      renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
+    } else {
+      // If we have captures, we need to unbox all of them, store their guts, compute the result,
+      // and then wrap it all back up in an optional (if the inner result isn't already)
+      final Label end = renderer.methodGen().newLabel();
+      final Label empty = renderer.methodGen().newLabel();
+      for (final UnboxableExpression capture : captures) {
+        capture.expression.render(renderer);
+        renderer.methodGen().dup();
+        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
+        renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
+        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
+        final Type type = capture.type().apply(TO_ASM);
+        renderer.methodGen().unbox(type);
+        final int local = renderer.methodGen().newLocal(type);
+        renderer.methodGen().storeLocal(local);
+        renderer.define(
+            capture.name(),
+            new LoadableValue() {
+              @Override
+              public void accept(Renderer renderer) {
+                renderer.methodGen().loadLocal(local);
+              }
+
+              @Override
+              public String name() {
+                return capture.name();
+              }
+
+              @Override
+              public Type type() {
+                return type;
+              }
+            });
+      }
+      item.render(renderer);
+      // The value might already be wrapped in an optional; if it ins't do that now.
+      if (!item.type().isSame(item.type().asOptional())) {
+        renderer.methodGen().box(item.type().apply(TO_ASM));
+        renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
+      }
+      renderer.methodGen().goTo(end);
+      renderer.methodGen().mark(empty);
+      renderer.methodGen().pop();
+      renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);
+      renderer.methodGen().mark(end);
+    }
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    return item.resolve(defs, errorHandler);
+    // In most of the passes, we evaluate the captured expressions first because they will be
+    // evaluated first and the type information from them needs to flow into the inner expression.
+    // However, since it looks like the capture expressions exist inside the inner expression, it's
+    // possible to define a variable in the inner expression that the capture will be unable to
+    // access.
+    // We resolve variables inside the expression first because this
+    // will define those variables and populate shadow contexts in the captures allowing us to
+    // produce a useful error message
+    // if a
+    // capture tries to use a variable which is in scope at the point of capture but not in scope in
+    // the current scope where the evaluation actually happens. See TargetWithContext for examples.
+    return item.resolve(defs, errorHandler)
+        && captures
+                .stream()
+                .filter(
+                    capture ->
+                        capture.expression.resolve(
+                            capture.defs.map(defs::withShadowContext).orElse(defs), errorHandler))
+                .count()
+            == captures.size();
   }
 
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return item.resolveDefinitions(expressionCompilerServices, errorHandler);
+    return item.resolveDefinitions(
+        new ExpressionCompilerServices() {
+          @Override
+          public Optional<TargetWithContext> captureOptional(ExpressionNode expression) {
+            if (expression.resolveDefinitions(expressionCompilerServices, errorHandler)) {
+              final UnboxableExpression target = new UnboxableExpression(expression);
+              captures.add(target);
+              return Optional.of(target);
+            } else {
+              return Optional.empty();
+            }
+          }
+
+          @Override
+          public FunctionDefinition function(String name) {
+            return expressionCompilerServices.function(name);
+          }
+
+          @Override
+          public Imyhat imyhat(String name) {
+            return expressionCompilerServices.imyhat(name);
+          }
+
+          @Override
+          public InputFormatDefinition inputFormat() {
+            return expressionCompilerServices.inputFormat();
+          }
+        },
+        errorHandler);
   }
 
   @Override
@@ -64,14 +211,36 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = item.typeCheck(errorHandler);
-    if (ok) {
+    if (captures.isEmpty()) {
+      boolean ok = item.typeCheck(errorHandler);
       type = item.type();
       if (type.isSame(type.asOptional())) {
         item.typeError("non-optional", item.type(), errorHandler);
         ok = false;
       }
+      return ok;
+    } else {
+      boolean ok =
+          captures
+                      .stream()
+                      .filter(
+                          capture -> {
+                            boolean captureOk = capture.expression.typeCheck(errorHandler);
+                            if (!capture
+                                .expression
+                                .type()
+                                .isSame(capture.expression.type().asOptional())) {
+                              capture.expression.typeError(
+                                  "optional", capture.expression.type(), errorHandler);
+                              captureOk = false;
+                            }
+                            return captureOk;
+                          })
+                      .count()
+                  == captures.size()
+              && item.typeCheck(errorHandler);
+      type = item.type();
+      return ok;
     }
-    return ok;
   }
 }

@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Run ok With ok =
+  (Begin
+    x = `project`;
+    Return `x? == "the_foo_study"`;
+  End) Default False;

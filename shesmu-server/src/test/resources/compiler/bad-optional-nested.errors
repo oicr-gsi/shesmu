@@ -1,0 +1,1 @@
+5:24: Variable “s” is locally defined, but this cannot be used with the “?” operator. Only variables outside the `` may be used. Maybe add `` in a narrower place.

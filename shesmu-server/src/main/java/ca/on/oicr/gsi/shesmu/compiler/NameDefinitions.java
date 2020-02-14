@@ -38,12 +38,18 @@ public class NameDefinitions {
   }
 
   private final boolean isGood;
-
+  private final Optional<NameDefinitions> shadowContext;
   private final Map<String, Target> variables;
 
   public NameDefinitions(Map<String, Target> variables, boolean isGood) {
+    this(variables, isGood, Optional.empty());
+  }
+
+  private NameDefinitions(
+      Map<String, Target> variables, boolean isGood, Optional<NameDefinitions> shadowContext) {
     this.variables = variables;
     this.isGood = isGood;
+    this.shadowContext = shadowContext;
   }
 
   /**
@@ -96,6 +102,10 @@ public class NameDefinitions {
     return Optional.ofNullable(variables.get(name));
   }
 
+  public boolean hasShadowName(String name) {
+    return shadowContext.map(defs -> defs.variables.containsKey(name)).orElse(false);
+  }
+
   /** Determine if any failures have occurred so far. */
   public boolean isGood() {
     return isGood;
@@ -118,5 +128,9 @@ public class NameDefinitions {
 
   public Stream<Target> stream() {
     return variables.values().stream();
+  }
+
+  public NameDefinitions withShadowContext(NameDefinitions shadowContext) {
+    return new NameDefinitions(variables, isGood, Optional.of(shadowContext));
   }
 }
