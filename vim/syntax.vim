@@ -91,7 +91,7 @@ syn keyword shesmuBool False True
 syn keyword shesmuConstant json_signature
 syn keyword shesmuConstant sha1_signature
 syn keyword shesmuConstant signature_names
-syn match shesmuOperators '\(`\|\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|\)' display
+syn match shesmuOperators '\(`\|\~\|:\|<=\=\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&&\|?\)' display
 syn keyword shesmuType boolean date float integer json path string
 syn match shesmuConstant "\<\d\+\>" display
 syn match shesmuConstant "\<\d\+[kMG]i\=\>" display

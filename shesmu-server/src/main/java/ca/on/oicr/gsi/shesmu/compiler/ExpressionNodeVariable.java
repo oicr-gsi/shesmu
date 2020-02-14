@@ -71,6 +71,11 @@ public class ExpressionNodeVariable extends ExpressionNode {
     final Optional<Target> result = defs.get(name);
     if (result.isPresent()) {
       target = result.get();
+    } else if (defs.hasShadowName(name)) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Variable “%s” is locally defined, but this cannot be used with the “?” operator. Only variables outside the `` may be used. Maybe add `` in a narrower place.",
+              line(), column(), name));
     } else {
       errorHandler.accept(String.format("%d:%d: Undefined variable “%s”.", line(), column(), name));
     }

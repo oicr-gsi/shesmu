@@ -22,7 +22,7 @@ ace.define(
           "keyword.control":
             "Alert|All|Annotations|Any|Argument|As|Begin|By|Count|Default|Define|Description|Distinct|Dump|Else|End|EpochMilli|EpochSecond|Export|First|Fixed|FixedConcat|Flatten|For|Frequency|From|Function|Group|If|In|Into|Input|Join|Labels|LeftJoin|Let|LexicalConcat|Limit|List|Max|Min|Monitor|None|Olive|OnlyIf|PartitionCount|Pick|Reduce|Refill|Reject|Return|Reverse|RequiredServices|Run|Univalued|Skip|Sort|Splitting|Squish|Subsample|Switch|Tag|Then|Timeout|To|TypeAlias|Using|When|Where|While|With|Zipping",
           "storage.type": "boolean|date|float|integer|json|path|string",
-          "keyword.operator": "`|~|:|<=?|>=?|==|\\|\\||-|!=?|/|\\*|&&",
+          "keyword.operator": "`|~|:|<=?|>=?|==|\\|\\||-|!=?|/|\\*|&&|\\?",
           "constant.language":
             "False|True|json_signature|sha1_signature|signature_names|\\d+[kMG]i?|\\d+(weeks|days|hours|mins)|Date\\s*\\d\\d\\d\\d-\\d\\d-\\d\\d\\(T\\d\\d\\:\\d\\d:\\d\\d\\(Z|[+-]\\d\\d\\(:\\d\\d)?))?"
         },

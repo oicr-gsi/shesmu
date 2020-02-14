@@ -489,6 +489,14 @@ Determines if the expression _needle_ is present in the list _haystack_ and
 returns the result as a boolean. _needle_ may be any type, but _haystack_ must
 be a list of the same type.
 
+#### Optional Use
+- _expr_ `?`
+
+This must be used inside _optional creation_. Evaluates _expr_, which must have
+an optional type, and provides the inner (non-optional) value inside. If the
+expression has an empty optional, the entire optional creation will be the
+empty optional.
+
 ### Unary Operators
 #### Boolean Not
 - `!` _expr_
@@ -503,7 +511,19 @@ Computes the arithmetic additive inverse of the expression, which must be an int
 #### Optional Creation
 - `` ` `` _expr_ `` ` ``
 
-Puts the value of _expr_ in an optional.
+Puts the value of _expr_ in an optional. In _expr_, the `?` suffix maybe used to apply changes to the entire optional.
+
+For example:
+
+    Begin
+      x = `3`;
+      Return `x? * 2`;
+    End
+
+In this example, the `x?` will get the value inside the variable `x`, which may
+be missing. If it is missing, the block will return an empty optional;
+otherwise it will return an optional containing the original value multiplied
+by 2.
 
 - `` ` ` ``
 
