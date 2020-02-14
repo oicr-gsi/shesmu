@@ -138,6 +138,9 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add).orElse(""),
                           limsAttr(fp, "geo_tissue_region", badSetInRecord::add).orElse(""),
                           limsAttr(fp, "geo_tissue_type", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "umis", badSetInRecord::add)
+                              .map("true"::equalsIgnoreCase)
+                              .orElse(false),
                           fp.getWorkflowName(),
                           fp.getWorkflowSWID().toString(),
                           fp.getWorkflowAttributes(),

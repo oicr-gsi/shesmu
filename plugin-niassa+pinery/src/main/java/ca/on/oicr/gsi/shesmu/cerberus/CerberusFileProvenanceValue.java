@@ -49,6 +49,7 @@ public final class CerberusFileProvenanceValue {
   private final String tissue_prep;
   private final String tissue_region;
   private final String tissue_type;
+  private final boolean umis;
   private final String workflow;
   private final String workflow_accession;
   private final String workflow_run_accession;
@@ -92,6 +93,7 @@ public final class CerberusFileProvenanceValue {
       String tissue_prep,
       String tissue_region,
       String tissue_type,
+      boolean umis,
       String workflow,
       String workflow_accession,
       SortedMap<String, SortedSet<String>> workflow_attributes,
@@ -105,6 +107,7 @@ public final class CerberusFileProvenanceValue {
     this.metatype = metatype;
     this.md5 = md5;
     this.file_size = file_size;
+    this.umis = umis;
     this.workflow = workflow;
     this.workflow_accession = workflow_accession;
     this.workflow_run_accession = workflow_run_accession;
@@ -208,6 +211,7 @@ public final class CerberusFileProvenanceValue {
         && tissue_prep.equals(that.tissue_prep)
         && tissue_region.equals(that.tissue_region)
         && tissue_type.equals(that.tissue_type)
+        && umis == that.umis
         && workflow.equals(that.workflow)
         && workflow_accession.equals(that.workflow_accession)
         && workflow_run_accession.equals(that.workflow_run_accession)
@@ -281,6 +285,7 @@ public final class CerberusFileProvenanceValue {
         tissue_prep,
         tissue_region,
         tissue_type,
+        umis,
         workflow,
         workflow_accession,
         workflow_run_accession,
@@ -427,6 +432,11 @@ public final class CerberusFileProvenanceValue {
       gangs = {@Gang(name = "merged_library", order = 2)})
   public String tissue_type() {
     return tissue_type;
+  }
+
+  @ShesmuVariable(signable = true)
+  public boolean umis() {
+    return umis;
   }
 
   @ShesmuVariable
