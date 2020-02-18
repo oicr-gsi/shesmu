@@ -58,7 +58,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
 
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Method METHOD_OPTIONAL__EMPTY =
-      new Method("of", A_OPTIONAL_TYPE, new Type[0]);
+      new Method("empty", A_OPTIONAL_TYPE, new Type[0]);
   private static final Method METHOD_OPTIONAL__GET = new Method("get", A_OBJECT_TYPE, new Type[0]);
   private static final Method METHOD_OPTIONAL__IS_PRESENT =
       new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
