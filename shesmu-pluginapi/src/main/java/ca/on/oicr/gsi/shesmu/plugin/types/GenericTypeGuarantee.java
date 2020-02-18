@@ -65,8 +65,9 @@ public abstract class GenericTypeGuarantee<T> {
 
       @Override
       public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
-        return reference instanceof Imyhat.OptionalImyhat
-            && inner.check(variables, ((Imyhat.OptionalImyhat) reference).inner());
+        return reference == Imyhat.NOTHING
+            || reference instanceof Imyhat.OptionalImyhat
+                && inner.check(variables, ((Imyhat.OptionalImyhat) reference).inner());
       }
 
       @Override
