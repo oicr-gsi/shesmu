@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -70,98 +71,60 @@ public enum InputLimsKeyType {
                           TypeGuarantee.STRING), // sample LIMS key
                       TypeGuarantee.STRING) // sample group id
                   )))),
-  CELL_RANGER(
-      "lanes",
-      CellRangerInputLimsCollection::new,
-      TypeGuarantee.list(
-          TypeGuarantee.tuple(
-              CellRangerIUSEntry::new,
-              TypeGuarantee.tuple(
-                  IusTriple::new,
-                  TypeGuarantee.STRING,
-                  TypeGuarantee.LONG,
-                  TypeGuarantee.STRING), // IUS
-              TypeGuarantee.STRING, // library name
-              TypeGuarantee.object(
-                  SimpleLimsKey::new,
-                  "id",
-                  TypeGuarantee.STRING,
-                  "provider",
-                  TypeGuarantee.STRING,
-                  "time",
-                  TypeGuarantee.DATE,
-                  "version",
-                  TypeGuarantee.STRING), // LIMS key
-              TypeGuarantee.STRING) // group id
-          )),
-  CELL_RANGER_SIGNED(
-      "lanes",
-      SignedCellRangerInputLimsCollection::new,
-      TypeGuarantee.list(
-          TypeGuarantee.object(
-              SignedCellRangerIUSEntry::new,
-              "group_id",
-              TypeGuarantee.STRING,
-              "ius",
-              TypeGuarantee.tuple(
-                  IusTriple::new, TypeGuarantee.STRING, TypeGuarantee.LONG, TypeGuarantee.STRING),
-              "library_name",
-              TypeGuarantee.STRING,
-              "lims",
-              TypeGuarantee.object(
-                  SimpleLimsKey::new,
-                  "id",
-                  TypeGuarantee.STRING,
-                  "provider",
-                  TypeGuarantee.STRING,
-                  "time",
-                  TypeGuarantee.DATE,
-                  "version",
-                  TypeGuarantee.STRING),
-              "signature",
-              TypeGuarantee.STRING))),
+  CELL_RANGER("lanes", SignedCellRangerInputLimsCollection::new, cellRangerTypeGuarantee()),
+  CELL_RANGER_SIGNED("lanes", SignedCellRangerInputLimsCollection::new, cellRangerTypeGuarantee()),
 
-  FILES(
-      "inputs",
-      FilesInputLimsCollection::new,
-      TypeGuarantee.list(
-          TypeGuarantee.tuple(
-              FilesInputFile::new,
-              TypeGuarantee.STRING, // SWID
-              TypeGuarantee.object(
-                  SimpleLimsKey::new,
-                  "id",
-                  TypeGuarantee.STRING,
-                  "provider",
-                  TypeGuarantee.STRING,
-                  "time",
-                  TypeGuarantee.DATE,
-                  "version",
-                  TypeGuarantee.STRING), // LIMS key
-              TypeGuarantee.BOOLEAN))), // staleness
-  FILES_SIGNED(
-      "inputs",
-      SignedFilesInputLimsCollection::new,
-      TypeGuarantee.list(
-          TypeGuarantee.object(
-              SignedFilesInputFile::new,
-              "accession",
-              TypeGuarantee.STRING, // SWID
-              "lims",
-              TypeGuarantee.object(
-                  SimpleLimsKey::new,
-                  "id",
-                  TypeGuarantee.STRING,
-                  "provider",
-                  TypeGuarantee.STRING,
-                  "time",
-                  TypeGuarantee.DATE,
-                  "version",
-                  TypeGuarantee.STRING), // LIMS key
-              "signature",
-              TypeGuarantee.STRING,
-              "stale",
-              TypeGuarantee.BOOLEAN))); // staleness
+  FILES("inputs", SignedFilesInputLimsCollection::new, filesTypeGuarantee()),
+  FILES_SIGNED("inputs", SignedFilesInputLimsCollection::new, filesTypeGuarantee());
+
+  private static TypeGuarantee<List<SignedCellRangerIUSEntry>> cellRangerTypeGuarantee() {
+    return TypeGuarantee.list(
+        TypeGuarantee.object(
+            SignedCellRangerIUSEntry::new,
+            "group_id",
+            TypeGuarantee.STRING,
+            "ius",
+            TypeGuarantee.tuple(
+                IusTriple::new, TypeGuarantee.STRING, TypeGuarantee.LONG, TypeGuarantee.STRING),
+            "library_name",
+            TypeGuarantee.STRING,
+            "lims",
+            TypeGuarantee.object(
+                SimpleLimsKey::new,
+                "id",
+                TypeGuarantee.STRING,
+                "provider",
+                TypeGuarantee.STRING,
+                "time",
+                TypeGuarantee.DATE,
+                "version",
+                TypeGuarantee.STRING),
+            "signature",
+            TypeGuarantee.STRING));
+  }
+
+  private static TypeGuarantee<List<SignedFilesInputFile>> filesTypeGuarantee() {
+    return TypeGuarantee.list(
+        TypeGuarantee.object(
+            SignedFilesInputFile::new,
+            "accession",
+            TypeGuarantee.STRING, // SWID
+            "lims",
+            TypeGuarantee.object(
+                SimpleLimsKey::new,
+                "id",
+                TypeGuarantee.STRING,
+                "provider",
+                TypeGuarantee.STRING,
+                "time",
+                TypeGuarantee.DATE,
+                "version",
+                TypeGuarantee.STRING), // LIMS key
+            "signature",
+            TypeGuarantee.STRING,
+            "stale",
+            TypeGuarantee.BOOLEAN));
+  }
 
   private final CustomActionParameter<WorkflowAction> parameter;
 
