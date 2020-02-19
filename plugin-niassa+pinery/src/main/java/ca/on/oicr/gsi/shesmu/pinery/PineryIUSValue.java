@@ -26,6 +26,7 @@ public final class PineryIUSValue {
   private final long library_size;
   private final String library_type;
   private final Tuple lims;
+  private final String tissue_name;
   private final String organism;
   private final Path path;
   private final String project;
@@ -77,6 +78,7 @@ public final class PineryIUSValue {
       Optional<Double> spike_in_volume_ul,
       Instant startDate,
       Optional<Double> target_cell_recovery,
+      String tissue_name,
       String tissue_type,
       String tissue_origin,
       String tissue_prep,
@@ -98,6 +100,7 @@ public final class PineryIUSValue {
     this.spike_in_volume_ul = spike_in_volume_ul;
     this.startDate = startDate;
     this.target_cell_recovery = target_cell_recovery;
+    this.tissue_name = tissue_name;
     this.is_sample = is_sample;
     this.project = project;
     this.library_name = library_name;
@@ -193,6 +196,7 @@ public final class PineryIUSValue {
         && target_cell_recovery.equals(that.target_cell_recovery)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
+        && tissue_name.equals(that.tissue_name)
         && tissue_origin.equals(that.tissue_origin)
         && tissue_prep.equals(that.tissue_prep)
         && tissue_region.equals(that.tissue_region)
@@ -244,6 +248,7 @@ public final class PineryIUSValue {
         target_cell_recovery,
         targeted_resequencing,
         timestamp,
+        tissue_name,
         tissue_origin,
         tissue_prep,
         tissue_region,
@@ -379,6 +384,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public String tissue_origin() {
     return tissue_origin;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String tissue_name() {
+    return tissue_name;
   }
 
   @ShesmuVariable(signable = true)

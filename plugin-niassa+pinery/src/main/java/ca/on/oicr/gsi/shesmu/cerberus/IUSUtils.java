@@ -68,8 +68,22 @@ public final class IUSUtils {
     return collection == null ? Stream.empty() : collection.stream();
   }
 
+  public static String tissue(String parents) {
+    // This tissue are order as a climb up the sample hierarchy (i.e., from library to identity), so
+    // the first tissue we see is the most derived, which is what we want.
+    return COLON
+        .splitAsStream(parents)
+        .filter(parent -> TISSUE_REGEX.matcher(parent).matches())
+        .findFirst()
+        .orElse("");
+  }
+
   private static final Imyhat ATTR_TYPE = Imyhat.tuple(Imyhat.STRING, Imyhat.STRING.asList());
+  private static final Pattern COLON = Pattern.compile(":");
   private static final Pattern LANE_NUMBER = Pattern.compile("^.*_(\\d+)$");
+  private static final Pattern TISSUE_REGEX =
+      Pattern.compile(
+          "^([A-Z0-9]{3,10}_\\d{4,}_\\d{2,}|[A-Z0-9]{3,10}_\\d{4,}_[A-Zn][a-z]_[A-Zn]_(nn|\\d{2})_\\d+-\\d+)$");
 
   private IUSUtils() {}
 }

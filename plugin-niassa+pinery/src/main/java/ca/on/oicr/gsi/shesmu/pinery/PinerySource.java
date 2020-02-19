@@ -162,6 +162,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     "",
                     "",
                     "",
+                    "",
                     lastModified,
                     false,
                     false);
@@ -233,6 +234,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                             : ZonedDateTime.parse(run.getStartDate()).toInstant(),
                         limsAttr(sp, "target_cell_recovery", badSetInRecord::add, false)
                             .map(Double::parseDouble),
+                        IUSUtils.tissue(sp.getParentSampleName()),
                         limsAttr(sp, "geo_tissue_type", badSetInRecord::add, true).orElse(""),
                         limsAttr(sp, "geo_tissue_origin", badSetInRecord::add, true).orElse(""),
                         limsAttr(sp, "geo_tissue_preparation", badSetInRecord::add, false)
