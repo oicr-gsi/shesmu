@@ -1134,7 +1134,7 @@ public final class ActionProcessor
               entry.getValue().thrown = null;
             } catch (final Throwable e) {
               entry.getValue().lastState = ActionState.UNKNOWN;
-              entry.getValue().thrown = e.toString();
+              entry.getValue().thrown = "Exception thrown during evaluation: " + e;
               e.printStackTrace();
               if (e instanceof Error) {
                 throw (Error) e;
