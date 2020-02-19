@@ -134,6 +134,12 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                               .map(Double::parseDouble),
                           limsAttr(fp, "geo_targeted_resequencing", badSetInRecord::add).orElse(""),
                           fp.getLastModified().toInstant(),
+                          IUSUtils.singleton(
+                                  fp.getParentSampleNames(),
+                                  reason -> badSetInRecord.add("parents:" + reason),
+                                  true)
+                              .map(IUSUtils::tissue)
+                              .orElse(""),
                           limsAttr(fp, "geo_tissue_origin", badSetInRecord::add).orElse(""),
                           limsAttr(fp, "geo_tissue_preparation", badSetInRecord::add).orElse(""),
                           limsAttr(fp, "geo_tissue_region", badSetInRecord::add).orElse(""),

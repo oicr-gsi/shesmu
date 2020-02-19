@@ -45,6 +45,7 @@ public final class CerberusFileProvenanceValue {
   private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
   private final Instant timestamp;
+  private final String tissue_name;
   private final String tissue_origin;
   private final String tissue_prep;
   private final String tissue_region;
@@ -89,6 +90,7 @@ public final class CerberusFileProvenanceValue {
       Optional<Double> target_cell_recovery,
       String targeted_resequencing,
       Instant timestamp,
+      String tissue_name,
       String tissue_origin,
       String tissue_prep,
       String tissue_region,
@@ -120,6 +122,7 @@ public final class CerberusFileProvenanceValue {
     this.ius = ius;
     this.library_design = library_design;
     this.tissue_type = tissue_type;
+    this.tissue_name = tissue_name;
     this.tissue_origin = tissue_origin;
     this.tissue_prep = tissue_prep;
     this.targeted_resequencing = targeted_resequencing;
@@ -207,6 +210,7 @@ public final class CerberusFileProvenanceValue {
         && target_cell_recovery.equals(that.target_cell_recovery)
         && targeted_resequencing.equals(that.targeted_resequencing)
         && timestamp.equals(that.timestamp)
+        && tissue_name.equals(that.tissue_name)
         && tissue_origin.equals(that.tissue_origin)
         && tissue_prep.equals(that.tissue_prep)
         && tissue_region.equals(that.tissue_region)
@@ -281,6 +285,7 @@ public final class CerberusFileProvenanceValue {
         target_cell_recovery,
         targeted_resequencing,
         timestamp,
+        tissue_name,
         tissue_origin,
         tissue_prep,
         tissue_region,
@@ -408,6 +413,11 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable
   public Instant timestamp() {
     return timestamp;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String tissue_name() {
+    return tissue_name;
   }
 
   @ShesmuVariable(
