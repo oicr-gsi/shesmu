@@ -2897,7 +2897,7 @@ function getStats(
                                 (item, index, array) =>
                                   item == 0 || item != array[index - 1]
                               )
-                          : [ids]
+                          : ids
                     );
                   }
                 )
