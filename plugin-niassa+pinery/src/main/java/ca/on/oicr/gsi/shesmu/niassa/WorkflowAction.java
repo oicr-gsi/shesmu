@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -71,6 +72,7 @@ public final class WorkflowAction extends Action {
           "The time to pull the status of a workflow run.",
           "workflow");
   private final Map<String, String> annotations;
+  private boolean cacheCollision;
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
   private final FileMatchingPolicy fileMatchingPolicy;
@@ -182,6 +184,7 @@ public final class WorkflowAction extends Action {
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
   public final ActionState perform(ActionServices actionServices) {
+    cacheCollision = false;
     if (actionServices.isOverloaded(
         Stream.concat(services.stream(), server.get().services()).collect(Collectors.toSet()))) {
       return ActionState.THROTTLED;
@@ -251,6 +254,12 @@ public final class WorkflowAction extends Action {
                 .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
                 .sorted()
                 .collect(Collectors.toList());
+      } catch (InitialCachePopulationException e) {
+        this.errors =
+            Collections.singletonList(
+                "Failed to pull previous workflow runs from Niassa. This can either be a temporary error if another action is fetching that data or a permanent one caused by an incorrect workflow SWID.");
+        cacheCollision = true;
+        return ActionState.FAILED;
       }
       if (!matches.isEmpty()) {
         // We found a matching workflow run in analysis provenance; the least stale, most complete,
@@ -281,14 +290,21 @@ public final class WorkflowAction extends Action {
             Collections.singletonList("Workflow has already been attempted. Purge to try again.");
         return ActionState.FAILED;
       }
-
-      // Check if there are already too many copies of this workflow running; if so, wait until
-      // later.
-      if (!ignoreMaxInFlight && server.get().maxInFlight(workflowName, workflowAccession)) {
+      try {
+        // Check if there are already too many copies of this workflow running; if so, wait until
+        // later.
+        if (!ignoreMaxInFlight && server.get().maxInFlight(workflowName, workflowAccession)) {
+          this.errors =
+              Collections.singletonList(
+                  "Too many workflows running. Sit tight or increase max-in-flight setting.");
+          return ActionState.WAITING;
+        }
+      } catch (InitialCachePopulationException e) {
         this.errors =
             Collections.singletonList(
-                "Too many workflows running. Sit tight or increase max-in-flight setting.");
-        return ActionState.WAITING;
+                "Failed to pull active workflow run count from Niassa. This can either be a temporary error if another action is fetching that data or a permanent one caused by an incorrect workflow SWID.");
+        cacheCollision = true;
+        return ActionState.FAILED;
       }
 
       // Tell the input LIMS collection to register all the LIMS keys and prepare the INI file as
@@ -490,7 +506,9 @@ public final class WorkflowAction extends Action {
 
   @Override
   public final long retryMinutes() {
-    return 10;
+    // If there was an error populating the cache, then it's likely that the cache was being
+    // populated by another action and it will be ready for us to consume very soon.
+    return cacheCollision ? 2 : 10;
   }
 
   @Override
