@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.*;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
@@ -74,6 +75,7 @@ public class RunReport extends JsonParameterisedAction {
   private WorkflowIdAndStatus cromwellId;
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
+  private boolean forceRelaunch;
   private final Supplier<GuanyinRemote> owner;
   private final ObjectNode parameters;
   private final long reportId;
@@ -108,6 +110,13 @@ public class RunReport extends JsonParameterisedAction {
         return ActionState.SUCCEEDED;
     }
     return ActionState.UNKNOWN;
+  }
+
+  @Override
+  public Stream<Pair<String, String>> commands() {
+    return reportRecordId.isPresent()
+        ? Stream.of(new Pair<>("🚀 Relaunch on Cromwell", "GUANYIN-FORCE-RELAUNCH"))
+        : Stream.empty();
   }
 
   @Override
@@ -249,7 +258,8 @@ public class RunReport extends JsonParameterisedAction {
       ApiClient apiClient = new ApiClient();
       apiClient.setBasePath(owner.get().cromwellUrl());
       WorkflowsApi wfApi = new WorkflowsApi(apiClient);
-      if (cromwellId == null && create) {
+      if (cromwellId == null && create || forceRelaunch) {
+        forceRelaunch = false;
         ObjectNode inputs = MAPPER.createObjectNode();
         inputs.put("guanyin.report.script", owner.get().script());
         inputs.put("guanyin.report.guanyin", owner.get().观音Url());
@@ -293,6 +303,15 @@ public class RunReport extends JsonParameterisedAction {
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
+  }
+
+  @Override
+  public boolean performCommand(String commandName) {
+    if (commandName.equals("GUANYIN-FORCE-RELAUNCH") && reportRecordId.isPresent()) {
+      forceRelaunch = true;
+      return true;
+    }
+    return false;
   }
 
   @Override
