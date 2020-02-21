@@ -1,5 +1,6 @@
 import {
   blank,
+  breakSlashes,
   collapse,
   formatTimeBin,
   formatTimeSpan,
@@ -48,10 +49,6 @@ function statusButton(state) {
   button.innerText = state;
   button.className = `load state_${state.toLowerCase()}`;
   return button;
-}
-
-function breakSlashes(text) {
-  return text.replace(/\//g, "/\u200B");
 }
 
 function addThrobber(container) {

@@ -2,6 +2,10 @@ export function blank() {
   return [];
 }
 
+export function breakSlashes(text) {
+  return text.replace(/\//g, "/\u200B");
+}
+
 export function collapse(title, ...inner) {
   const items = inner.flat(Number.MAX_VALUE);
   if (items.length == 0) return [];
@@ -89,7 +93,6 @@ export function preformatted(text) {
   pre.innerText = text;
   return pre;
 }
-
 
 export function table(rows, ...headers) {
   if (rows.length == 0) return [];
