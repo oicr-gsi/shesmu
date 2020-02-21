@@ -537,52 +537,12 @@ textarea {
     text-align: right;
 }
 
-.lds-circle {
-    display: inline-block;
-    transform: translateZ(1px);
-}
-
-.lds-circle > div {
-    display: inline-block;
-    width: 51px;
-    height: 51px;
-    margin: 6px;
-    border-radius: 50%;
-    background: #06AED5;
-    animation: lds-circle 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-}
-
-@keyframes lds-circle {
-    0%, 100% {
-        animation-timing-function: cubic-bezier(0.5, 0, 1, 0.5);
-    }
-
-    0% {
-        transform: rotateY(0deg);
-    }
-
-    50% {
-        transform: rotateY(1800deg);
-        animation-timing-function: cubic-bezier(0, 0.5, 0.5, 1);
-    }
-
-    100% {
-        transform: rotateY(3600deg);
-    }
-}
-
-.modal .lds-circle {
+.modal .throbber {
     position: absolute;
-    transform: translateY(-50%);
+    transform: translateX(-50%) translateY(-50%);
     display: block;
-    top: calc(50% - 10vh);
-    left: calc(50% - 10vh);
-}
-
-.modal .lds-circle > div {
-    background: #D1F0F7;
-    width: 20vh;
-    height: 20vh;
+    top: calc(50%);
+    left: calc(50%);
 }
 
 div.histogram {

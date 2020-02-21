@@ -55,10 +55,13 @@ function breakSlashes(text) {
 }
 
 function addThrobber(container) {
-  const throbber = document.createElement("DIV");
-  throbber.className = "lds-circle";
-  throbber.appendChild(document.createElement("DIV"));
+  const throbber = document.createElement("OBJECT");
+  throbber.data = "press.svg";
+  throbber.type = "image/svg+xml";
+  throbber.className = "throbber";
+  throbber.style.visibility = "hidden";
   container.appendChild(throbber);
+  window.setTimeout(() => (throbber.style.visibility = "visible"), 500);
 }
 
 function infoForProduces(produces) {
@@ -4676,3 +4679,6 @@ export function initialiseAlertDashboard(initialFilterString, output) {
     });
   }
 }
+
+// Preload throbber image
+new Image().src = "press.svg";
