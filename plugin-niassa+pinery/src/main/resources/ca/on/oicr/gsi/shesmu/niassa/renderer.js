@@ -19,13 +19,33 @@ const maybeJsonVisibleText = input => {
 
 actionRender.set("niassa", a => [
   title(a, `Workflow ${a.workflowName} (${a.workflowAccession})`),
-  a.workflowRunAccession
-    ? text(`Workflow Run Accession: ${a.workflowRunAccession}`)
-    : blank(),
-  a.workingDirectory
-    ? text(`Working Directory: ${a.workingDirectory}`)
-    : blank(),
-  text(`Major Olive Version: ${a.majorOliveVersion}`),
+  table(
+    [
+      ["Major Olive Version", a.majorOliveVersion],
+      a.workflowRunAccession
+        ? ["Workflow Run Accession", a.workflowRunAccession]
+        : null,
+      a.workingDirectory
+        ? ["Working Directory", breakSlashes(a.workingDirectory)]
+        : null,
+      a.cromwellId
+        ? [
+            "Cromwell ID",
+            a.cromwellUrl
+              ? link(
+                  `${a.cromwellUrl}/api/workflows/v1/${a.cromwellId}/metadata`,
+                  a.cromwellId
+                )
+              : a.cromwellId
+          ]
+        : null,
+      a.cromwellRoot
+        ? ["Cromwell Workflow Directory", breakSlashes(a.cromwellRoot)]
+        : null
+    ].filter(x => x),
+    ["Workflow Information", x => x[0]],
+    ["Value", x => x[1]]
+  ),
   objectTable(a.annotations, "Annotations", x => x),
   objectTable(a.ini, "INI from Olive", maybeJsonVisibleText),
   objectTable(
@@ -83,6 +103,17 @@ actionRender.set("niassa", a => [
       ["Version", k => k.version],
       ["Last Modified", k => k.lastModified],
       ["Signature SHA1", k => k.signature]
+    )
+  ),
+  collapse(
+    `Logs from Cromwell Job ${a.cromwellId}`,
+    table(
+      a.cromwellLogs || [],
+      ["Task", x => x.task],
+      ["Attempt", x => x.attempt],
+      ["Scatter", x => (x.shardIndex < 0 ? "N/A" : x.shardIndex)],
+      ["Standard Error", x => breakSlashes(x.stderr)],
+      ["Standard Output", x => breakSlashes(x.stdout)]
     )
   ),
   collapse(

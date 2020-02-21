@@ -6,9 +6,14 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Configuration {
+  private String cromwellUrl;
   private String prefix = "";
   private List<String> services = Collections.emptyList();
   private String settings;
+
+  public String getCromwellUrl() {
+    return cromwellUrl;
+  }
 
   public String getPrefix() {
     return prefix;
@@ -20,6 +25,10 @@ public class Configuration {
 
   public String getSettings() {
     return settings;
+  }
+
+  public void setCromwellUrl(String cromwellUrl) {
+    this.cromwellUrl = cromwellUrl;
   }
 
   public void setPrefix(String prefix) {

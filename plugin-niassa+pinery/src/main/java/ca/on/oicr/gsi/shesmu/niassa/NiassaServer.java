@@ -33,6 +33,11 @@ import javax.xml.stream.XMLStreamException;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.metadata.MetadataWS;
 import net.sourceforge.seqware.common.model.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 class NiassaServer extends JsonPluginFile<Configuration> {
   private class AnalysisCache extends KeyValueCache<Long, Stream<AnalysisState>> {
@@ -103,19 +108,55 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class DirectoryAndIniCache
-      extends KeyValueCache<Long, Optional<Pair<String, Map<Object, Object>>>> {
+  private class DirectoryAndIniCache extends KeyValueCache<Long, Optional<WorkflowRunEssentials>> {
     public DirectoryAndIniCache(Path fileName) {
       super("niassa-dir+ini " + fileName.toString(), 60 * 24 * 365, SimpleRecord::new);
     }
 
     @Override
-    protected Optional<Pair<String, Map<Object, Object>>> fetch(Long key, Instant lastUpdated)
+    protected Optional<WorkflowRunEssentials> fetch(Long key, Instant lastUpdated)
         throws Exception {
       final WorkflowRun run = metadata.getWorkflowRun(key.intValue());
       final Properties ini = new Properties();
       ini.load(new StringReader(run.getIniFile()));
-      return Optional.of(new Pair<>(run.getCurrentWorkingDir(), ini));
+      final Optional<String> cromwellId =
+          run.getWorkflowRunAttributes()
+              .stream()
+              .filter(attr -> attr.getTag().equals("cromwell-workflow-id"))
+              .map(WorkflowRunAttribute::getValue)
+              .findFirst();
+      final Pair<String, Map<String, List<CromwellCall>>> cromwellCalls =
+          cromwellId
+              .flatMap(
+                  id ->
+                      cromwellUrl.map(
+                          root -> String.format("%s/api/workflows/v1/%s/metadata", root, id)))
+              .flatMap(
+                  url -> {
+                    final HttpGet request = new HttpGet(url);
+                    request.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType());
+                    try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+                      if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                        return Optional.empty();
+                      }
+                      final CromwellMetadataResponse results =
+                          MAPPER.readValue(
+                              response.getEntity().getContent(), CromwellMetadataResponse.class);
+                      return Optional.of(new Pair<>(results.getWorkflowRoot(), results.getCalls()));
+                    } catch (Exception e) {
+                      e.printStackTrace();
+                      return Optional.empty();
+                    }
+                  })
+              .orElse(new Pair<>(null, Collections.emptyMap()));
+
+      return Optional.of(
+          new WorkflowRunEssentials(
+              run.getCurrentWorkingDir(),
+              cromwellId.orElse(null),
+              cromwellCalls.first(),
+              ini,
+              cromwellCalls.second()));
     }
   }
 
@@ -237,6 +278,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateFile(accession, attribute, null);
         }
       };
+  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   private static final AnnotationType<IUSAttribute> IUS =
       new AnnotationType<IUSAttribute>() {
         @Override
@@ -303,6 +345,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final AnalysisCache analysisCache;
   private final AnalysisDataCache analysisDataCache;
   private Optional<Configuration> configuration = Optional.empty();
+  private Optional<String> cromwellUrl = Optional.empty();
   private final Definer<NiassaServer> definer;
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
@@ -360,8 +403,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         });
   }
 
-  public Pair<String, Map<Object, Object>> directoryAndIni(long workflowRun) {
-    return directoryAndIniCache.get(workflowRun).orElse(new Pair<>(null, Collections.emptyMap()));
+  public Optional<String> cromwellUrl() {
+    return cromwellUrl;
+  }
+
+  public WorkflowRunEssentials directoryAndIni(long workflowRun) {
+    return directoryAndIniCache.get(workflowRun).orElse(WorkflowRunEssentials.EMPTY);
   }
 
   public String host() {
@@ -419,6 +466,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       e.printStackTrace();
       return Optional.of(2);
     }
+    cromwellUrl = Optional.ofNullable(value.getCromwellUrl());
     metadata =
         new MetadataWS(
             settings.getProperty("SW_REST_URL"),

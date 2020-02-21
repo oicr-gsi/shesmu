@@ -568,13 +568,29 @@ public final class WorkflowAction extends Action {
     ini.forEach((key, value) -> iniJson.put(key.toString(), value.toString()));
     node.put("workflowAccession", workflowAccession);
     node.put("workflowName", workflowName);
+    node.put("cromwellUrl", server.get().cromwellUrl().orElse(null));
     if (runAccession != 0) {
-      final Pair<String, Map<Object, Object>> directoryAndIni =
-          server.get().directoryAndIni(runAccession);
+      final WorkflowRunEssentials essentials = server.get().directoryAndIni(runAccession);
       node.put("workflowRunAccession", runAccession);
-      node.put("workingDirectory", directoryAndIni.first());
+      node.put("workingDirectory", essentials.currentDirectory());
+      node.put("cromwellId", essentials.cromwellId());
+      node.put("cromwellRoot", essentials.cromwellRoot());
       final ObjectNode discoveredIniNode = node.putObject("discoveredIni");
-      directoryAndIni.second().forEach((k, v) -> discoveredIniNode.put(k.toString(), v.toString()));
+      essentials.ini().forEach((k, v) -> discoveredIniNode.put(k.toString(), v.toString()));
+      final ArrayNode cromwellLogs = node.putArray("cromwellLogs");
+      essentials
+          .cromwellLogs()
+          .forEach(
+              (task, logs) ->
+                  logs.forEach(
+                      log -> {
+                        final ObjectNode logEntry = cromwellLogs.addObject();
+                        logEntry.put("task", task);
+                        logEntry.put("attempt", log.getAttempt());
+                        logEntry.put("shardIndex", log.getShardIndex());
+                        logEntry.put("stderr", log.getStderr());
+                        logEntry.put("stdout", log.getStdout());
+                      }));
     }
     final ObjectNode iniNode = node.putObject("ini");
     ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
