@@ -431,8 +431,13 @@ dates, the lesser value occurs temporally earlier.
 #### Regular Expression
 - _expr_` ~ /`_re_`/`
 
-Check whether _expr_, which must be a string, must matches the provided regular
+Check whether _expr_, which must be a string, matches the provided regular
 expression.
+
+- _expr_` !~ /`_re_`/`
+
+Check whether _expr_, which must be a string, does not match the provided
+regular expression.
 
 ### Disjunction
 #### Addition
