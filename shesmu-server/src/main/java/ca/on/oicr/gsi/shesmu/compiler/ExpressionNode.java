@@ -493,6 +493,24 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
+    COMPARISON.addSymbol(
+        "!~",
+        (p, o) -> {
+          final AtomicReference<String> regex = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .regex(REGEX, m -> regex.set(m.group(1)), "Regular expression.")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                left ->
+                    new ExpressionNodeLogicalNot(
+                        p.line(),
+                        p.column(),
+                        new ExpressionNodeRegex(p.line(), p.column(), left, regex.get())));
+          }
+          return result;
+        });
     DISJUNCTION.addSymbol(
         "+",
         binaryOperators(
