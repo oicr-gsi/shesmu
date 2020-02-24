@@ -1,11 +1,13 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
+import ca.on.oicr.gsi.Pair;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -29,7 +31,6 @@ import java.util.regex.Pattern;
   @JsonSubTypes.Type(value = ActionFilterType.class, name = "type")
 })
 public abstract class ActionFilter {
-
   public static Optional<ActionFilter> extractFromText(String text, ObjectMapper mapper) {
     final Set<String> actionIds = new TreeSet<>();
     final List<ActionFilter> filters = new ArrayList<>();
@@ -73,6 +74,46 @@ public abstract class ActionFilter {
         or.setFilters(filters.stream().toArray(ActionFilter[]::new));
         return Optional.of(or);
     }
+  }
+
+  /** Take the base filter and intersect it with the union of all accessory filters */
+  public static <F> Stream<Pair<String, F>> joinAllAnd(
+      String baseName,
+      F baseFilters,
+      Stream<Pair<String, F>> accessoryFilters,
+      ActionFilterBuilder<F> builder) {
+    return Stream.of(
+        new Pair<>(
+            baseName,
+            builder.and(Stream.of(baseFilters, builder.or(accessoryFilters.map(Pair::second))))));
+  }
+
+  /** Take the base filter and remove all the accessory filters */
+  public static <F> Stream<Pair<String, F>> joinAllExcept(
+      String baseName,
+      F baseFilters,
+      Stream<Pair<String, F>> accessoryFilters,
+      ActionFilterBuilder<F> builder) {
+    return Stream.of(
+        new Pair<>(
+            baseName,
+            builder.and(
+                Stream.concat(
+                    Stream.of(baseFilters),
+                    accessoryFilters.map(Pair::second).map(builder::negate)))));
+  }
+
+  /**
+   * Take each accessory filter and produce the intersection of the base filter and the accessory
+   * filter
+   */
+  public static <F> Stream<Pair<String, F>> joinEachAnd(
+      String baseName,
+      F baseFilters,
+      Stream<Pair<String, F>> accessoryFilters,
+      ActionFilterBuilder<F> builder) {
+    return accessoryFilters.map(
+        p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
   }
 
   private static final Pattern ACTION_ID = Pattern.compile("shesmu:([0-9a-fA-F]{40})");

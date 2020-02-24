@@ -110,3 +110,6 @@ These collected searches are combined with the base search `filter` using the
   the ticket filters.
 - `ALL_EXCEPT` creates one search that matches the base filter and none of the
   ticket filters.
+- `BY_ASSIGNEE` creates one search that matches the base filter and any of the
+	ticket filters that are assigned to a particular person. The name can contain
+  `{assignee}` for the full name of the person for the ticket group.

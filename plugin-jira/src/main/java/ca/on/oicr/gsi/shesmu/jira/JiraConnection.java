@@ -129,7 +129,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     }
   }
 
-  private static class JiraActionFilter {
+  static class JiraActionFilter {
     private final String assignee;
     private final ActionFilter filter;
     private final String key;
@@ -140,6 +140,10 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       this.key = key;
       this.summary = summary;
       this.assignee = assignee;
+    }
+
+    public String assignee() {
+      return assignee;
     }
 
     <F> Pair<String, F> process(String name, ActionFilterBuilder<F> builder) {
@@ -285,9 +289,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
                       .join(
                           search.getName(),
                           search.getFilter().convert(builder),
-                          filters
-                              .get(search.getJql())
-                              .map(jiraFilter -> jiraFilter.process(search.getName(), builder)),
+                          filters.get(search.getJql()),
                           builder));
     } catch (Exception e) {
       e.printStackTrace();

@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
-import ca.on.oicr.gsi.shesmu.plugin.filter.JoiningRule;
 
 public class Search {
   private ActionFilter filter;
