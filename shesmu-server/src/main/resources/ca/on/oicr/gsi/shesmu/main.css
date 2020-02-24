@@ -364,9 +364,12 @@ a.load {
     border: 1px solid #058FAF;
     margin: 0.2em;
     white-space: nowrap;
-    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
     border-radius: 0.1em;
     display: inline-block;
+}
+
+.filterlist > span.editable {
+    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
 }
 
 .filters > div {
@@ -399,19 +402,6 @@ a.load {
 
 .filters > div:nth-child(even) {
     background-color: #EAF5F7;
-}
-
-.filters > div:hover {
-    background-color: #D2EBEE;
-}
-
-.filters > div.negated {
-    color: #fff;
-    background-color: #B83C31;
-}
-
-.filters > div.negated:hover {
-    background-color: #E0493B;
 }
 
 .tab {
