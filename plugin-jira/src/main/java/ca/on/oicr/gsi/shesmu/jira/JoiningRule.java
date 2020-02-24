@@ -1,6 +1,9 @@
-package ca.on.oicr.gsi.shesmu.plugin.filter;
+package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Rules for combining prepared filters with ones discovered from another source (e.g., JIRA) */
@@ -11,15 +14,10 @@ public enum JoiningRule {
     public <F> Stream<Pair<String, F>> join(
         String baseName,
         F baseFilters,
-        Stream<Pair<String, F>> accessoryFilters,
+        Stream<JiraConnection.JiraActionFilter> accessoryFilters,
         ActionFilterBuilder<F> builder) {
-      return Stream.of(
-          new Pair<>(
-              baseName,
-              builder.and(
-                  Stream.concat(
-                      Stream.of(baseFilters),
-                      accessoryFilters.map(Pair::second).map(builder::negate)))));
+      return ActionFilter.joinAllExcept(
+          baseName, baseFilters, accessoryFilters.map(f -> f.process(baseName, builder)), builder);
     }
   },
   /** Take the base filter and intersect it with the union of all accessory filters */
@@ -28,12 +26,10 @@ public enum JoiningRule {
     public <F> Stream<Pair<String, F>> join(
         String baseName,
         F baseFilters,
-        Stream<Pair<String, F>> accessoryFilters,
+        Stream<JiraConnection.JiraActionFilter> accessoryFilters,
         ActionFilterBuilder<F> builder) {
-      return Stream.of(
-          new Pair<>(
-              baseName,
-              builder.and(Stream.of(baseFilters, builder.or(accessoryFilters.map(Pair::second))))));
+      return ActionFilter.joinAllAnd(
+          baseName, baseFilters, accessoryFilters.map(f -> f.process(baseName, builder)), builder);
     }
   },
   /**
@@ -45,10 +41,30 @@ public enum JoiningRule {
     public <F> Stream<Pair<String, F>> join(
         String baseName,
         F baseFilters,
-        Stream<Pair<String, F>> accessoryFilters,
+        Stream<JiraConnection.JiraActionFilter> accessoryFilters,
         ActionFilterBuilder<F> builder) {
-      return accessoryFilters.map(
-          p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
+      return ActionFilter.joinEachAnd(
+          baseName, baseFilters, accessoryFilters.map(f -> f.process(baseName, builder)), builder);
+    }
+  },
+  BY_ASSIGNEE {
+    @Override
+    public <F> Stream<Pair<String, F>> join(
+        String baseName,
+        F baseFilters,
+        Stream<JiraConnection.JiraActionFilter> accessoryFilters,
+        ActionFilterBuilder<F> builder) {
+      return accessoryFilters
+          .collect(Collectors.groupingBy(JiraConnection.JiraActionFilter::assignee))
+          .entrySet()
+          .stream()
+          .flatMap(
+              entry ->
+                  ActionFilter.joinAllAnd(
+                      baseName.replace("{assignee}", entry.getKey()),
+                      baseFilters,
+                      entry.getValue().stream().map(f -> f.process(baseName, builder)),
+                      builder));
     }
   };
 
@@ -66,6 +82,6 @@ public enum JoiningRule {
   public abstract <F> Stream<Pair<String, F>> join(
       String baseName,
       F baseFilters,
-      Stream<Pair<String, F>> accessoryFilters,
+      Stream<JiraConnection.JiraActionFilter> accessoryFilters,
       ActionFilterBuilder<F> builder);
 }
