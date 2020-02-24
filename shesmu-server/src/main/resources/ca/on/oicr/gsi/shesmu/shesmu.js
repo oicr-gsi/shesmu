@@ -24,6 +24,32 @@ function makeButton(label, title, className, callback) {
   return button;
 }
 
+function commonPathPrefix(items) {
+  if (!items.length) {
+    return x => x;
+  }
+
+  const commonPrefix = items[0].split("/");
+  commonPrefix.pop();
+  for (var i = 1; i < items.length; i++) {
+    const parts = items[i].split("/");
+    parts.pop();
+    let x = 0;
+    while (
+      x < parts.length &&
+      x < commonPrefix.length &&
+      parts[x] == commonPrefix[x]
+    )
+      x++;
+    commonPrefix.length = x;
+  }
+  return x =>
+    x
+      .split("/")
+      .splice(commonPrefix.length)
+      .join("/\u200B");
+}
+
 function button(label, title, callback) {
   return makeButton(label, title, "", callback);
 }
@@ -43,11 +69,14 @@ function alertEntries(entries) {
   });
 }
 
-function statusButton(state) {
+function statusButton(state, isButton) {
   const button = document.createElement("SPAN");
   button.title = actionStates[state];
   button.innerText = state;
-  button.className = `load state_${state.toLowerCase()}`;
+  button.classList.add(`state_${state.toLowerCase()}`);
+  if (isButton) {
+    button.classList.add("load");
+  }
   return button;
 }
 
@@ -1397,20 +1426,7 @@ export function initialiseOliveDash(
   }
 
   if (oliveFiles.length) {
-    const commonPrefix = oliveFiles[0].filename.split("/");
-    commonPrefix.pop();
-    for (var i = 1; i < oliveFiles.length; i++) {
-      const parts = oliveFiles[i].filename.split("/");
-      parts.pop();
-      let x = 0;
-      while (
-        x < parts.length &&
-        x < commonPrefix.length &&
-        parts[x] == commonPrefix[x]
-      )
-        x++;
-      commonPrefix.length = x;
-    }
+    const fileNameFormatter = commonPathPrefix(oliveFiles.map(f => f.filename));
     const oliveDropdown = document.createElement("SPAN");
     oliveDropdown.className = "olivemenu dropdown";
     container.appendChild(oliveDropdown);
@@ -1452,10 +1468,7 @@ export function initialiseOliveDash(
 
     oliveFiles.forEach(file => {
       const title = document.createElement("h2");
-      const prettyFileName = file.filename
-        .split("/")
-        .splice(commonPrefix.length)
-        .join("/\u200B");
+      const prettyFileName = fileNameFormatter(file.filename);
       title.innerText = prettyFileName;
       title.title = file.filename;
       oliveList.appendChild(title);
@@ -2436,6 +2449,7 @@ function closeButton(title, callback) {
   });
   return close;
 }
+
 function renderFilter(tile, filter, mutateCallback) {
   const deleteButton = (container, typeName, updateFunction) => {
     if (mutateCallback) {
@@ -2453,9 +2467,6 @@ function renderFilter(tile, filter, mutateCallback) {
       );
     }
   };
-  if (filter.negate) {
-    tile.className = "negated";
-  }
   switch (filter.type) {
     case "added":
     case "checked":
@@ -2463,7 +2474,8 @@ function renderFilter(tile, filter, mutateCallback) {
     case "external":
       {
         const title = document.createElement("DIV");
-        title.innerText = nameForBin(filter.type);
+        title.innerText =
+          (filter.negate ? "Not " : "") + nameForBin(filter.type);
         tile.appendChild(title);
         deleteButton(title, filter.type, x => ({ start: null, end: null }));
         if (filter.start) {
@@ -2500,7 +2512,9 @@ function renderFilter(tile, filter, mutateCallback) {
       {
         const title = document.createElement("DIV");
         title.innerText =
-          nameForBin(filter.type.slice(0, -3)) + " Since Present";
+          (filter.negate ? "Not " : "") +
+          nameForBin(filter.type.slice(0, -3)) +
+          " Since Present";
         tile.appendChild(title);
         deleteButton(title, filter.type, x => 0);
         const duration = document.createElement("DIV");
@@ -2512,7 +2526,7 @@ function renderFilter(tile, filter, mutateCallback) {
 
     case "regex": {
       const title = document.createElement("DIV");
-      title.innerText = "Regular Expression";
+      title.innerText = (filter.negate ? "Not " : "") + "Regular Expression";
       tile.appendChild(title);
       deleteButton(title, "regex", x => x.filter(v => v != filter.pattern));
       const pattern = document.createElement("PRE");
@@ -2524,9 +2538,11 @@ function renderFilter(tile, filter, mutateCallback) {
     case "text":
       {
         const title = document.createElement("DIV");
-        title.innerText = filter.matchCase
-          ? "Case-Sensitive Text Search"
-          : "Case-Insensitive Text Search";
+        title.innerText =
+          (filter.negate ? "Not " : "") +
+          (filter.matchCase
+            ? "Case-Sensitive Text Search"
+            : "Case-Insensitive Text Search");
         tile.appendChild(title);
         deleteButton(title, "text", x => x.filter(v => v.text != filter.text));
         const text = document.createElement("PRE");
@@ -2539,7 +2555,7 @@ function renderFilter(tile, filter, mutateCallback) {
     case "id":
       {
         const title = document.createElement("DIV");
-        title.innerText = "Action IDs";
+        title.innerText = (filter.negate ? "Not " : "") + "Action IDs";
         tile.appendChild(title);
         const headers = [["ID", a => a]];
 
@@ -2565,14 +2581,16 @@ function renderFilter(tile, filter, mutateCallback) {
     case "sourcefile":
       {
         const title = document.createElement("DIV");
-        title.innerText = "Olive Source File";
+        title.innerText =
+          (filter.negate ? "Not from " : "") + "Olive Source File";
         tile.appendChild(title);
+        const fileNameFormatter = commonPathPrefix(filter.files);
         const list = document.createElement("DIV");
         list.className = "filterlist";
         tile.appendChild(list);
         filter.files.forEach(file => {
           const fileButton = document.createElement("SPAN");
-          fileButton.innerText = breakSlashes(file);
+          fileButton.innerText = fileNameFormatter(file);
           list.appendChild(fileButton);
           deleteButton(fileButton, "sourcefile", removeFromList(file));
         });
@@ -2582,10 +2600,13 @@ function renderFilter(tile, filter, mutateCallback) {
     case "sourcelocation":
       {
         const title = document.createElement("DIV");
-        title.innerText = "Olive Source";
+        title.innerText = (filter.negate ? "Not from " : "") + "Olive Source";
         tile.appendChild(title);
+        const fileNameFormatter = commonPathPrefix(
+          filter.locations.map(l => l.file)
+        );
         const headers = [
-          ["File", l => l.file],
+          ["File", l => fileNameFormatter(l.file)],
           ["Line", l => l.line || "*"],
           ["Column", l => l.column || "*"],
           [
@@ -2631,13 +2652,13 @@ function renderFilter(tile, filter, mutateCallback) {
     case "status":
       {
         const title = document.createElement("DIV");
-        title.innerText = "Action State";
+        title.innerText = (filter.negate ? "Not in " : "") + "Action State";
         tile.appendChild(title);
         const list = document.createElement("DIV");
         list.className = "filterlist";
         tile.appendChild(list);
         filter.states.forEach(state => {
-          const button = statusButton(state);
+          const button = statusButton(state, !!mutateCallback);
           deleteButton(button, "status", removeFromList(state));
           list.appendChild(button);
         });
@@ -2647,7 +2668,7 @@ function renderFilter(tile, filter, mutateCallback) {
     case "tag":
       {
         const title = document.createElement("DIV");
-        title.innerText = "Tag";
+        title.innerText = (filter.negate ? "Without " : "") + "Tag";
         tile.appendChild(title);
         const list = document.createElement("DIV");
         list.className = "filterlist";
@@ -2664,7 +2685,7 @@ function renderFilter(tile, filter, mutateCallback) {
     case "type":
       {
         const title = document.createElement("DIV");
-        title.innerText = "Action Type";
+        title.innerText = (filter.negate ? "Not of " : "") + "Action Type";
         tile.appendChild(title);
         const list = document.createElement("DIV");
         list.className = "filterlist";
@@ -2682,7 +2703,13 @@ function renderFilter(tile, filter, mutateCallback) {
     case "or":
       {
         const title = document.createElement("DIV");
-        title.innerText = filter.type == "and" ? "All of" : "Any of";
+        title.innerText = filter.negate
+          ? filter.type == "and"
+            ? "None of"
+            : "Not one of"
+          : filter.type == "and"
+            ? "All of"
+            : "Any of";
         tile.appendChild(title);
         const list = document.createElement("DIV");
         list.className = "filters";
@@ -2818,10 +2845,17 @@ function getStats(
   const refresh = () => {
     clearChildren(queryBuilder);
     // Don't show base filters on the olive page since it's always the olive context.
-    if (onActionPage) {
+    if (onActionPage && filters.length) {
+      const filterList = document.createElement("DIV");
+      const filterPane = document.createElement("DIV");
+      queryBuilder.appendChild(filterPane);
+      collapse("Base Filters", filterList).forEach(x =>
+        filterPane.appendChild(x)
+      );
+
       filters.forEach(filter => {
         const filterTile = document.createElement("DIV");
-        queryBuilder.appendChild(filterTile);
+        filterList.appendChild(filterTile);
         renderFilter(filterTile, filter, null);
       });
     }
@@ -2985,7 +3019,7 @@ function getStats(
                 table.appendChild(row);
                 const buttonCell = document.createElement("TD");
                 row.appendChild(buttonCell);
-                const button = statusButton(state);
+                const button = statusButton(state, true);
                 buttonCell.appendChild(button);
                 button.addEventListener("click", e => {
                   addFilters(["status", addToSet(state)]);
