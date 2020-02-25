@@ -2,9 +2,8 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Subgroup;
+import ca.on.oicr.gsi.shesmu.plugin.grouper.TriGrouper;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,14 +11,15 @@ import java.util.stream.Stream;
 public class BarcodeGrouper<I, O> implements Grouper<I, O> {
   private final Function<I, List<String>> barcodeReader;
   private final Function<I, String> basesMaskReader;
-  private final BiFunction<String, Function<I, Set<String>>, BiConsumer<O, I>> collectorFactory;
+  private final TriGrouper<String, Function<I, Set<String>>, Function<I, String>, O, I>
+      collectorFactory;
   private final int minAllowedEditDistance;
 
   public <T, C> BarcodeGrouper(
       long minAllowedEditDistance,
       Function<I, String> basesMaskReader,
       Function<I, List<String>> barcodeReader,
-      BiFunction<String, Function<I, Set<String>>, BiConsumer<O, I>> collectorFactory) {
+      TriGrouper<String, Function<I, Set<String>>, Function<I, String>, O, I> collectorFactory) {
     this.minAllowedEditDistance = (int) minAllowedEditDistance;
     this.basesMaskReader = basesMaskReader;
     this.barcodeReader = barcodeReader;
@@ -42,6 +42,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
     final List<Barcode> barcodes = new ArrayList<>();
     // Barcode length → input row → trimmed barcodes
     final Map<String, Map<I, Set<String>>> groups = new HashMap<>();
+    final Map<I, String> newMasks = new HashMap<>();
     for (I input : inputs) {
       for (String barcodeString : barcodeReader.apply(input)) {
         final Barcode barcode =
@@ -56,6 +57,13 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
             .computeIfAbsent(barcode.getLengthString(), k -> new HashMap<>())
             .computeIfAbsent(input, k -> new TreeSet<>())
             .add(barcode.toString());
+        final BasesMask newMask =
+            BarcodeAndBasesMask.calculateBasesMask(barcode, basesMasks.get(0));
+        if (newMask == null) {
+          // If we've got an mess of a mask, (╯°□°)╯︵ ┻━┻
+          return Stream.empty();
+        }
+        newMasks.put(input, newMask.toString());
       }
     }
     List<BarcodeCollision> collisions =
@@ -71,7 +79,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
         .map(
             entry ->
                 new Subgroup<>(
-                    collectorFactory.apply(entry.getKey(), entry.getValue()::get),
+                    collectorFactory.apply(entry.getKey(), entry.getValue()::get, newMasks::get),
                     entry.getValue().keySet().stream()));
   }
 }

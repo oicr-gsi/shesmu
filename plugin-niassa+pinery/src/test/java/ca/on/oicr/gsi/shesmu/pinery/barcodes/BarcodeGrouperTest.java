@@ -25,7 +25,7 @@ public class BarcodeGrouperTest {
             2,
             i -> basesMask,
             Collections::singletonList,
-            (len, barcodes) ->
+            (len, barcodes, newMask) ->
                 (Result o, String i) ->
                     o.ok &= barcodes.apply(i).iterator().next().equals(i.substring(0, 6)));
     assertTrue(
@@ -42,7 +42,7 @@ public class BarcodeGrouperTest {
             2,
             i -> basesMask,
             Collections::singletonList,
-            (len, barcodes) ->
+            (len, barcodes, newMask) ->
                 (Result o, String i) ->
                     o.ok &= barcodes.apply(i).iterator().next().equals(i.substring(0, 6)));
     assertEquals(0L, grouper.group(Arrays.asList("CTTTTT", "ATTTTT")).count());

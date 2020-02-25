@@ -28,7 +28,11 @@ public class BarcodeGrouperDefinition extends GrouperDefinition {
             GrouperOutput.dynamic(
                 "trimmed_barcodes",
                 ReturnTypeGuarantee.list(ReturnTypeGuarantee.STRING),
-                "The trimmed barcodes for the sample sheet.")),
+                "The trimmed barcodes for the sample sheet."),
+            GrouperOutput.dynamic(
+                "trimmed_bases_mask",
+                ReturnTypeGuarantee.STRING,
+                "The trimmed bases mask appropriate for this lane.")),
         BarcodeGrouper::new);
   }
 
