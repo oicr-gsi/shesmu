@@ -2,6 +2,7 @@ import {
   blank,
   breakSlashes,
   collapse,
+  commonPathPrefix,
   formatTimeBin,
   formatTimeSpan,
   link,
@@ -22,32 +23,6 @@ function makeButton(label, title, className, callback) {
   button.title = title;
   button.addEventListener("click", callback);
   return button;
-}
-
-function commonPathPrefix(items) {
-  if (!items.length) {
-    return x => x;
-  }
-
-  const commonPrefix = items[0].split("/");
-  commonPrefix.pop();
-  for (var i = 1; i < items.length; i++) {
-    const parts = items[i].split("/");
-    parts.pop();
-    let x = 0;
-    while (
-      x < parts.length &&
-      x < commonPrefix.length &&
-      parts[x] == commonPrefix[x]
-    )
-      x++;
-    commonPrefix.length = x;
-  }
-  return x =>
-    x
-      .split("/")
-      .splice(commonPrefix.length)
-      .join("/\u200B");
 }
 
 function button(label, title, callback) {
