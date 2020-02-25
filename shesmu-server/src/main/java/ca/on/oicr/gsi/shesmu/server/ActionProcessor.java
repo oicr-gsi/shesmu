@@ -41,6 +41,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -82,7 +83,7 @@ public final class ActionProcessor
 
     String name();
 
-    String name(T input);
+    Function<T, String> name(Stream<T> input);
   }
 
   public static final class Alert {
@@ -230,6 +231,26 @@ public final class ActionProcessor
     protected abstract Optional<Instant> get(Action action, Information info);
   }
 
+  static Function<String, String> commonPathPrefix(Stream<String> input) {
+    final List<String> items = input.collect(Collectors.toList());
+    if (items.isEmpty()) {
+      return Function.identity();
+    }
+
+    final List<String> commonPrefix =
+        SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
+    commonPrefix.remove(commonPrefix.size() - 1);
+    for (int i = 1; i < items.size(); i++) {
+      final List<String> parts = Arrays.asList(SLASH.split(items.get(i)));
+      int x = 0;
+      while (x < parts.size() - 1
+          && x < commonPrefix.size()
+          && parts.get(x).equals(commonPrefix.get(x))) x++;
+      commonPrefix.subList(x, commonPrefix.size()).clear();
+    }
+    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
+  }
+
   private static <T extends Comparable<T>> void propertySummary(
       ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
     final TreeMap<T, Long> states =
@@ -238,13 +259,15 @@ public final class ActionProcessor
             .flatMap(
                 action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
             .collect(Collectors.groupingBy(Pair::first, TreeMap::new, Collectors.counting()));
+
+    final Function<T, String> namer = property.name(states.keySet().stream());
     for (final Entry<T, Long> state : states.entrySet()) {
       final ObjectNode row = table.addObject();
       row.put("title", "Total");
       row.put("value", state.getValue());
       row.put("kind", "property");
       row.put("type", property.name());
-      row.put("property", property.name(state.getKey()));
+      row.put("property", namer.apply(state.getKey()));
       row.set("json", property.json(state.getKey()));
     }
   }
@@ -397,8 +420,9 @@ public final class ActionProcessor
         }
 
         @Override
-        public String name(ActionState input) {
-          return input.name();
+        public Function<ActionState, String> name(Stream<ActionState> input) {
+          input.close();
+          return ActionState::name;
         }
       };
   public static final Gauge OLIVE_FLOW =
@@ -410,6 +434,7 @@ public final class ActionProcessor
       Gauge.build("shesmu_olive_run_time", "The runtime of an olive in seconds.")
           .labelNames("filename", "line", "column")
           .register();
+  private static final Pattern SLASH = Pattern.compile("/");
   private static final Property<String> SOURCE_FILE =
       new Property<String>() {
 
@@ -429,8 +454,8 @@ public final class ActionProcessor
         }
 
         @Override
-        public String name(String input) {
-          return input;
+        public Function<String, String> name(Stream<String> input) {
+          return commonPathPrefix(input);
         }
       };
   private static final BinMember<Instant> STATUS_CHANGED =
@@ -465,8 +490,9 @@ public final class ActionProcessor
         }
 
         @Override
-        public String name(String input) {
-          return input;
+        public Function<String, String> name(Stream<String> input) {
+          input.close();
+          return Function.identity();
         }
       };
   private static final LatencyHistogram actionPerformTime =
@@ -672,10 +698,12 @@ public final class ActionProcessor
     node.put("column", column.name());
     node.put("row", row.name());
     final ObjectNode rowsJson = node.putObject("rows");
+    final Function<T, String> rowNamer = row.name(rows.stream());
+    final Function<U, String> columnNamer = column.name(columns.stream());
     final ArrayNode columnsJson = node.putArray("columns");
     columns
         .stream()
-        .map(c -> new Pair<>(column.name(c), column.json(c)))
+        .map(c -> new Pair<>(columnNamer.apply(c), column.json(c)))
         .sorted(Comparator.comparing(Pair::first))
         .forEach(
             colPair -> {
@@ -692,7 +720,7 @@ public final class ActionProcessor
                     Pair::first, Collectors.mapping(Pair::second, Collectors.toSet())));
     final ObjectNode data = node.putObject("data");
     for (final Entry<T, Set<Entry<Action, Information>>> entry : map.entrySet()) {
-      final String name = row.name(entry.getKey());
+      final String name = rowNamer.apply(entry.getKey());
       final ObjectNode inner = data.putObject(name);
       rowsJson.set(name, row.json(entry.getKey()));
 
@@ -703,7 +731,7 @@ public final class ActionProcessor
               .flatMap(e -> column.extract(e).map(u -> new Pair<>(u, e)))
               .collect(Collectors.groupingBy(Pair::first, Collectors.counting()))
               .entrySet()) {
-        inner.put(column.name(i.getKey()), i.getValue());
+        inner.put(columnNamer.apply(i.getKey()), i.getValue());
       }
     }
   }
