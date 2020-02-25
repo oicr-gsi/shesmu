@@ -14,6 +14,32 @@ export function collapse(title, ...inner) {
   return [showHide, contents];
 }
 
+export function commonPathPrefix(items) {
+  if (!items.length) {
+    return x => x;
+  }
+
+  const commonPrefix = items[0].split("/");
+  commonPrefix.pop();
+  for (var i = 1; i < items.length; i++) {
+    const parts = items[i].split("/");
+    parts.pop();
+    let x = 0;
+    while (
+      x < parts.length &&
+      x < commonPrefix.length &&
+      parts[x] == commonPrefix[x]
+    )
+      x++;
+    commonPrefix.length = x;
+  }
+  return x =>
+    x
+      .split("/")
+      .splice(commonPrefix.length)
+      .join("/\u200B");
+}
+
 export function toggleCollapse(title) {
   const visible = !title.nextSibling.style.maxHeight;
 
@@ -90,7 +116,6 @@ export function preformatted(text) {
   return pre;
 }
 
-
 export function table(rows, ...headers) {
   if (rows.length == 0) return [];
   const table = document.createElement("TABLE");
@@ -149,11 +174,12 @@ export function title(action, t) {
   } else {
     tags = [];
   }
+  const fileNameFormatter = commonPathPrefix(action.locations.map(l => l.file));
   return [
     element,
     table(
       action.locations,
-      ["File", l => l.file],
+      ["File", l => fileNameFormatter(l.file)],
       ["Line", l => l.line],
       ["Column", l => l.column],
       [
