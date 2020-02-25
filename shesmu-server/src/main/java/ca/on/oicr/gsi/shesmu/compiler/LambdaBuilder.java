@@ -5,6 +5,7 @@ import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.grouper.TriGrouper;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.lang.invoke.LambdaMetafactory;
 import java.util.Arrays;
@@ -825,6 +826,47 @@ public final class LambdaBuilder {
     };
   }
 
+  public static LambdaType trigrouper(
+      Type parameter1Type, Type parameter2Type, Type parameter3Type) {
+    assertNonPrimitive(parameter1Type);
+    assertNonPrimitive(parameter2Type);
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_TRIGROUPER_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "apply";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+          case REAL:
+            return Stream.of(parameter1Type, parameter2Type, parameter3Type);
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE, A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 3;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        return A_BICONSUMER_TYPE;
+      }
+    };
+  }
+
   private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
   private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
   private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
@@ -834,6 +876,7 @@ public final class LambdaBuilder {
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
+  private static final Type A_TRIGROUPER_TYPE = Type.getType(TriGrouper.class);
   private static final Handle LAMBDA_METAFACTORY_BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
