@@ -49,6 +49,22 @@ public final class GrouperOutputs<I, O, C> {
       GrouperOutput<I, T> first, GrouperOutput<I, S> second) {
     return new GrouperOutputs<>(first, second);
   }
+  /**
+   * A grouper that exports two variables to the olive.
+   *
+   * @param first the type of the first variable that will be exported to the olive
+   * @param second the type of the second variable that will be exported to the olive
+   * @param third the type of the third variable that will be exported to the olive
+   * @param <I> the input row type; this is provided by Shesmu
+   * @param <O> the output row type; this is provided by Shesmu
+   * @param <T> the type of the first exported variable
+   * @param <S> the type of the second exported variable
+   * @param <U> the type of the third exported variable
+   */
+  public static <I, O, T, S, U> GrouperOutputs<I, O, TriGrouper<T, S, U, O, I>> of(
+      GrouperOutput<I, T> first, GrouperOutput<I, S> second, GrouperOutput<I, U> third) {
+    return new GrouperOutputs<>(first, second, third);
+  }
 
   private final GrouperOutput<I, ?>[] arguments;
 

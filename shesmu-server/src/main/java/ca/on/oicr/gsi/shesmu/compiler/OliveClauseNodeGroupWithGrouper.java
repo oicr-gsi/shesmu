@@ -245,6 +245,10 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
             LambdaBuilder.bifunction(A_BICONSUMER_TYPE, typeForOutput(0), typeForOutput(1));
         outputBindings = Arrays.asList(pairForOutput(0), pairForOutput(1));
         break;
+      case 3:
+        lambdaType = LambdaBuilder.trigrouper(typeForOutput(0), typeForOutput(1), typeForOutput(2));
+        outputBindings = Arrays.asList(pairForOutput(0), pairForOutput(1), pairForOutput(2));
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format(
