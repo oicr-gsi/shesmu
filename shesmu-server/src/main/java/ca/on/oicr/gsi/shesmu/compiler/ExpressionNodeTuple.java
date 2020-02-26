@@ -20,11 +20,11 @@ public class ExpressionNodeTuple extends ExpressionNode {
   private static final Method CTOR_TUPLE =
       new Method("<init>", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
 
-  private final List<ExpressionNode> items;
+  private final List<TupleElementNode> items;
 
-  private Imyhat type = Imyhat.BAD;
+  private Imyhat.TupleImyhat type;
 
-  public ExpressionNodeTuple(int line, int column, List<ExpressionNode> items) {
+  public ExpressionNodeTuple(int line, int column, List<TupleElementNode> items) {
     super(line, column);
     this.items = items;
   }
@@ -45,14 +45,11 @@ public class ExpressionNodeTuple extends ExpressionNode {
 
     renderer.methodGen().newInstance(A_TUPLE_TYPE);
     renderer.methodGen().dup();
-    renderer.methodGen().push(items.size());
+    renderer.methodGen().push(type.count());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
-    for (int index = 0; index < items.size(); index++) {
-      renderer.methodGen().dup();
-      renderer.methodGen().push(index);
-      items.get(index).render(renderer);
-      renderer.methodGen().valueOf(items.get(index).type().apply(TypeUtils.TO_ASM));
-      renderer.methodGen().arrayStore(A_OBJECT_TYPE);
+    int index = 0;
+    for (final TupleElementNode element : items) {
+      index = element.render(renderer, index);
     }
     renderer.mark(line());
 
@@ -76,7 +73,7 @@ public class ExpressionNodeTuple extends ExpressionNode {
 
   @Override
   public Imyhat type() {
-    return type;
+    return type == null ? Imyhat.BAD : type;
   }
 
   @Override
@@ -84,7 +81,7 @@ public class ExpressionNodeTuple extends ExpressionNode {
     final boolean ok =
         items.stream().filter(item -> item.typeCheck(errorHandler)).count() == items.size();
     if (ok) {
-      type = Imyhat.tuple(items.stream().map(ExpressionNode::type).toArray(Imyhat[]::new));
+      type = Imyhat.tuple(items.stream().flatMap(TupleElementNode::types).toArray(Imyhat[]::new));
     }
     return ok;
   }

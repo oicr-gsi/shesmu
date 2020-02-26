@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = ({"hi",...{False, 0}, 4})[2] == 0;

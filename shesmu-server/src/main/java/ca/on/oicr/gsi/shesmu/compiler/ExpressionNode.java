@@ -657,28 +657,10 @@ public abstract class ExpressionNode implements Renderable {
             }
             return gangResult;
           }
-          final AtomicReference<List<Pair<String, ExpressionNode>>> fields =
-              new AtomicReference<>();
+          final AtomicReference<List<ObjectElementNode>> fields = new AtomicReference<>();
           final Parser objectResult =
               p.whitespace()
-                  .<Pair<String, ExpressionNode>>list(
-                      fields::set,
-                      (fp, fo) -> {
-                        final AtomicReference<String> name = new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-                        final Parser fresult =
-                            fp.whitespace()
-                                .identifier(name::set)
-                                .whitespace()
-                                .symbol("=")
-                                .whitespace()
-                                .then(ExpressionNode::parse, value::set);
-                        if (fresult.isGood()) {
-                          fo.accept(new Pair<>(name.get(), value.get()));
-                        }
-                        return fresult;
-                      },
-                      ',')
+                  .list(fields::set, ObjectElementNode::parse, ',')
                   .whitespace()
                   .symbol("}")
                   .whitespace();
@@ -687,10 +669,10 @@ public abstract class ExpressionNode implements Renderable {
             return objectResult;
           }
 
-          final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();
+          final AtomicReference<List<TupleElementNode>> items = new AtomicReference<>();
           final Parser result =
               p.whitespace()
-                  .list(items::set, (cp, co) -> parse(cp.whitespace(), co).whitespace(), ',')
+                  .list(items::set, TupleElementNode::parse, ',')
                   .whitespace()
                   .symbol("}")
                   .whitespace();

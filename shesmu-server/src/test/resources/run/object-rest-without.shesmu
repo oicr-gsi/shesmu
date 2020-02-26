@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = ({ a = "hi",...{ b = False, d = 0, c = "BAD"} Without c, c = 4}).d == 0;
