@@ -60,6 +60,12 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
   }
 
   @Override
+  public boolean resolve(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   public void setFlavour(Target.Flavour flavour) {
     this.flavour = flavour;
   }

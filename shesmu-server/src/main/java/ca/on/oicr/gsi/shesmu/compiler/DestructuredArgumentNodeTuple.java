@@ -50,6 +50,16 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   }
 
   @Override
+  public boolean resolve(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return elements
+            .stream()
+            .filter(element -> element.resolve(expressionCompilerServices, errorHandler))
+            .count()
+        == elements.size();
+  }
+
+  @Override
   public void setFlavour(Target.Flavour flavour) {
     for (final DestructuredArgumentNode element : elements) {
       element.setFlavour(flavour);

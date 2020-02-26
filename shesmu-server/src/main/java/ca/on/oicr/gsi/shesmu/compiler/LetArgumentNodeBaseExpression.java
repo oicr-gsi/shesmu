@@ -60,7 +60,8 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   @Override
   public final boolean resolveFunctions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & name.resolve(expressionCompilerServices, errorHandler);
   }
 
   @Override

@@ -652,6 +652,10 @@ For tuples, elements cannot be omitted, but they can be discarded with `_`:
 
     For {x, _} In [{1, "a"}, {2, "b"}]: Where x > 5 Count
 
+Type conversion to JSON and strings is also supported:
+
+    For {x As string, _} In [{1, "a"}, {2, "b"}]: LexicalConcat x With ", "
+
 Destructuring can also be nested:
 
     For {{x, _} = n} In [{n = {1, True}, l = "a"}, {n = {2, True}, l = "b"}]: Where x > 5 Count

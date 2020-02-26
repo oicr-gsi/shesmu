@@ -34,6 +34,12 @@ public class ListNodeFilter extends ListNodeWithExpression {
   }
 
   @Override
+  protected boolean resolveExtraDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   protected Optional<Imyhat> typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
     if (expression.type().isSame(Imyhat.BOOLEAN)) {
       return Optional.of(incoming);

@@ -48,7 +48,7 @@ public final class OliveArgumentNodeProvided extends OliveArgumentNode {
 
   /** Resolve functions in this argument */
   @Override
-  public boolean resolveFunctions(
+  public boolean resolveExtraFunctions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return expression.resolveDefinitions(oliveCompilerServices, errorHandler);
   }

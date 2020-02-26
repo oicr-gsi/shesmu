@@ -91,8 +91,12 @@ public abstract class ListNodeWithExpression extends ListNode {
   @Override
   public final boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & resolveExtraDefinitions(expressionCompilerServices, errorHandler);
   }
+
+  protected abstract boolean resolveExtraDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   @Override
   public final Optional<Imyhat> typeCheck(Imyhat incoming, Consumer<String> errorHandler) {

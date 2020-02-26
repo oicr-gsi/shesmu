@@ -192,7 +192,10 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
     boolean ok =
         arguments
                 .stream()
-                .filter(arg -> arg.second().resolveDefinitions(oliveCompilerServices, errorHandler))
+                .filter(
+                    arg ->
+                        arg.first().resolve(oliveCompilerServices, errorHandler)
+                            & arg.second().resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == arguments.size();
 
