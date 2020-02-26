@@ -33,6 +33,12 @@ public class ListNodeSort extends ListNodeWithExpression {
   }
 
   @Override
+  protected boolean resolveExtraDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   protected Optional<Imyhat> typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
     if (expression.type().isOrderable()) {
       return Optional.of(incoming);

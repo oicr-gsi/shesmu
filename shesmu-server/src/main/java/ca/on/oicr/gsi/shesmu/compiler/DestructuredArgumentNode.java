@@ -49,6 +49,12 @@ public abstract class DestructuredArgumentNode {
         }
 
         @Override
+        public boolean resolve(
+            ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+          return true;
+        }
+
+        @Override
         public void setFlavour(Target.Flavour flavour) {
           // Do nothing
         }
@@ -110,6 +116,18 @@ public abstract class DestructuredArgumentNode {
           final AtomicReference<String> name = new AtomicReference<>();
           final Parser result = p.identifier(name::set).whitespace();
           if (result.isGood()) {
+            final Parser asResult = result.keyword("As");
+            if (asResult.isGood()) {
+              final AtomicReference<ImyhatNode> type = new AtomicReference<>();
+              final Parser converted =
+                  asResult.whitespace().then(ImyhatNode::parse, type::set).whitespace();
+              if (converted.isGood()) {
+                o.accept(
+                    new DestructuredArgumentNodeConvertedVariable(
+                        p.line(), p.column(), name.get(), type.get()));
+              }
+              return converted;
+            }
             o.accept(new DestructuredArgumentNodeVariable(name.get()));
           }
           return result;
@@ -119,6 +137,9 @@ public abstract class DestructuredArgumentNode {
   public abstract boolean isBlank();
 
   public abstract Stream<LoadableValue> render(Consumer<Renderer> loader);
+
+  public abstract boolean resolve(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
   public abstract void setFlavour(Target.Flavour flavour);
 

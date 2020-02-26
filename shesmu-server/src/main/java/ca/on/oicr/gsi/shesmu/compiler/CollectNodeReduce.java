@@ -90,7 +90,8 @@ public class CollectNodeReduce extends CollectNode {
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return initial.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & reducer.resolveDefinitions(expressionCompilerServices, errorHandler);
+        & reducer.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & accumulatorName.resolve(expressionCompilerServices, errorHandler);
   }
 
   @Override

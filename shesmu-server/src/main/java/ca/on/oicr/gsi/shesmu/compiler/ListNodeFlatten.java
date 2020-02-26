@@ -126,7 +126,8 @@ public class ListNodeFlatten extends ListNode {
                 .stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
-            == transforms.size();
+            == transforms.size()
+        & childName.resolve(expressionCompilerServices, errorHandler);
   }
 
   @Override

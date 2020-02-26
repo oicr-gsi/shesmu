@@ -90,7 +90,8 @@ public class ExpressionNodeFor extends ExpressionNode {
                 .stream()
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
-            == transforms.size();
+            == transforms.size()
+        & name.resolve(expressionCompilerServices, errorHandler);
   }
 
   @Override

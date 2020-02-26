@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For {x = a, y As string = b} In [ { a = True, b = 1}, { a = False, b = 2} ]: Where y == "1" First x Default False);

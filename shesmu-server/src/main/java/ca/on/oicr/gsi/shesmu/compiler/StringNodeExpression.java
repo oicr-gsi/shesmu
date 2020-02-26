@@ -17,15 +17,21 @@ import org.objectweb.asm.commons.Method;
 
 public class StringNodeExpression extends StringNode {
 
-  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  public static boolean canBeConverted(Imyhat type) {
+    return Stream.of(
+            Imyhat.FLOAT, Imyhat.INTEGER, Imyhat.DATE, Imyhat.JSON, Imyhat.PATH, Imyhat.STRING)
+        .anyMatch(type::isSame);
+  }
+
   private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(ObjectMapper.class);
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_STRINGBUILDER_TYPE = Type.getType(StringBuilder.class);
   private static final Type A_STRING_TYPE = Type.getType(String.class);
-  private static final Method METHOD_OBJECT__TO_STRING =
-      new Method("toString", A_STRING_TYPE, new Type[] {});
   private static final Method METHOD_OBJECT_MAPPER__WRITE_VALUE_AS_STRING =
       new Method("writeValueAsString", A_STRING_TYPE, new Type[] {A_OBJECT_TYPE});
+  private static final Method METHOD_OBJECT__TO_STRING =
+      new Method("toString", A_STRING_TYPE, new Type[] {});
   private static final Method METHOD_STRINGBUILDER__APPEND__DOUBLE =
       new Method("append", A_STRINGBUILDER_TYPE, new Type[] {DOUBLE_TYPE});
   private static final Method METHOD_STRINGBUILDER__APPEND__LONG =
@@ -97,16 +103,14 @@ public class StringNodeExpression extends StringNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     if (expression.typeCheck(errorHandler)) {
       final Imyhat innerType = expression.type();
-      if (Stream.of(
-              Imyhat.FLOAT, Imyhat.INTEGER, Imyhat.DATE, Imyhat.JSON, Imyhat.PATH, Imyhat.STRING)
-          .noneMatch(innerType::isSame)) {
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Cannot convert type %s to string in interpolation.",
-                expression.line(), expression.column(), innerType.name()));
-        return false;
+      if (canBeConverted(innerType)) {
+        return true;
       }
-      return true;
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Cannot convert type %s to string in interpolation.",
+              expression.line(), expression.column(), innerType.name()));
+      return false;
     }
     return false;
   }

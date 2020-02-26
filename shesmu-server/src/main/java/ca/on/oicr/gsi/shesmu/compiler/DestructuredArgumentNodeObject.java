@@ -55,6 +55,16 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
+  public boolean resolve(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return fields
+            .stream()
+            .filter(f -> f.second().resolve(expressionCompilerServices, errorHandler))
+            .count()
+        == fields.size();
+  }
+
+  @Override
   public void setFlavour(Target.Flavour flavour) {
     for (final Pair<String, DestructuredArgumentNode> field : fields) {
       field.second().setFlavour(flavour);

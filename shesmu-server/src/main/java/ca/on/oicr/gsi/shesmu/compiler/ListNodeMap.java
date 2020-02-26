@@ -41,6 +41,12 @@ public class ListNodeMap extends ListNodeWithExpression {
   }
 
   @Override
+  protected boolean resolveExtraDefinitions(
+      ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
+    return nextName.resolve(expressionCompilerServices, errorHandler);
+  }
+
+  @Override
   protected Optional<Imyhat> typeCheckExtra(Imyhat incoming, Consumer<String> errorHandler) {
     return nextName.typeCheck(expression.type(), errorHandler)
         ? Optional.of(expression.type())

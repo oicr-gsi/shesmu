@@ -92,7 +92,8 @@ public final class MonitorArgumentNode {
   /** Resolve functions in this argument */
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler);
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+        & name.resolve(expressionCompilerServices, errorHandler);
   }
 
   public Stream<Target> target() {

@@ -177,7 +177,13 @@ public abstract class OliveArgumentNode {
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve functions in this argument */
-  public abstract boolean resolveFunctions(
+  public final boolean resolveFunctions(
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    return name.resolve(oliveCompilerServices, errorHandler)
+        & resolveExtraFunctions(oliveCompilerServices, errorHandler);
+  }
+
+  public abstract boolean resolveExtraFunctions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   protected void storeAll(Renderer renderer, int action, Consumer<Renderer> loadValue) {

@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For {x = a, y As json = b} In [ { a = True, b = 1}, { a = False, b = 2} ]: Where y == (1 As json) First x Default False);

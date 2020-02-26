@@ -87,7 +87,10 @@ public class ExpressionNodeBlock extends ExpressionNode {
     return definitions
                 .stream()
                 .filter(
-                    d -> !d.second().resolveDefinitions(expressionCompilerServices, errorHandler))
+                    d ->
+                        !d.first().resolve(expressionCompilerServices, errorHandler)
+                            | !d.second()
+                                .resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == 0
         & result.resolveDefinitions(expressionCompilerServices, errorHandler);
