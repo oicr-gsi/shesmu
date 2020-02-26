@@ -575,11 +575,18 @@ Specifies a date and time. If the time is not specified, it is assumed to be mid
 Creates a new tuple with the elements as specified. The type of the tuple is
 determined based on the elements.
 
+Instead of an expression to create a single element in a tuple, a `...`_expr_
+can be used to insert all the elements in a tuple inline into the new tuple.
+
 #### Named Tuple Literal
 - `{`_field_` = `_expr_`, `_field_` = `_expr_`, `...`}`
 
 Creates a new named tuple with the fields as specified. The type of the named
 tuple is determined based on the elements.
+
+Instead of _field_` = `_expr_, a `...`_expr_ can be used and this will copy all
+the elements in _expr_, which must be an object. If some fields are to be
+excluded, use the form: `...`_expr_ `Without` _field1_ _field2_ ... 
 
 #### Synthetic Tuple
 - `{@`_name_`}`

@@ -711,7 +711,7 @@ public abstract class Imyhat {
    *
    * @param types the element types, in order
    */
-  public static Imyhat tuple(Imyhat... types) {
+  public static TupleImyhat tuple(Imyhat... types) {
     return new TupleImyhat(types);
   }
 
