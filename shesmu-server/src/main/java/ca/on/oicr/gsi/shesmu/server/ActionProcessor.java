@@ -249,6 +249,9 @@ public final class ActionProcessor
     }
   }
 
+  public static final int ACTION_PERFORM_THREADS =
+      Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1);
+
   private static final BinMember<Instant> ADDED =
       new BinMember<Instant>() {
 
@@ -510,8 +513,7 @@ public final class ActionProcessor
   private final PluginManager manager;
   private final Set<SourceLocation> pausedOlives = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
-  private final ExecutorService workExecutor =
-      Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1));
+  private final ExecutorService workExecutor = Executors.newFixedThreadPool(ACTION_PERFORM_THREADS);
 
   public ActionProcessor(String baseUri, PluginManager manager, ActionServices actionServices) {
     super();
@@ -1147,7 +1149,7 @@ public final class ActionProcessor
                         && !entry.getValue().scheduled
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
-            .limit(200 - currentRunningActions.get())
+            .limit(1000 * ACTION_PERFORM_THREADS - currentRunningActions.get())
             .collect(Collectors.toList());
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
 
