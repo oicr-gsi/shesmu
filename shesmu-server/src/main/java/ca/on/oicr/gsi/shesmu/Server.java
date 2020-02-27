@@ -1540,8 +1540,10 @@ public final class Server implements ServerConfig, ActionServices {
         "/query",
         t -> {
           final Query query;
+          final ActionProcessor.Filter[] filters;
           try {
             query = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), Query.class);
+            filters = query.perform(processor);
           } catch (final Exception e) {
             e.printStackTrace();
             t.sendResponseHeaders(400, 0);
@@ -1550,7 +1552,27 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            query.perform(os, pluginManager, processor);
+            final JsonGenerator jsonOutput =
+                new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
+            jsonOutput.setCodec(RuntimeSupport.MAPPER);
+            jsonOutput.writeStartObject();
+            jsonOutput.writeNumberField("total", processor.size(filters));
+            jsonOutput.writeArrayFieldStart("results");
+            processor
+                .stream(pluginManager, filters)
+                .skip(Math.max(0, query.getSkip()))
+                .limit(query.getLimit())
+                .forEach(
+                    action -> {
+                      try {
+                        jsonOutput.writeTree(action);
+                      } catch (IOException e) {
+                        throw new RuntimeException(e);
+                      }
+                    });
+            jsonOutput.writeEndArray();
+            jsonOutput.writeEndObject();
+            jsonOutput.close();
           }
         });
     add(
@@ -1605,9 +1627,13 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/stats",
         t -> {
-          final ActionFilter[] filters;
+          final ActionProcessor.Filter[] filters;
           try {
-            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
+            filters =
+                Stream.of(RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class))
+                    .filter(Objects::nonNull)
+                    .map(filterJson -> filterJson.convert(processor))
+                    .toArray(ActionProcessor.Filter[]::new);
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
             try (OutputStream os = t.getResponseBody()) {}
@@ -1615,14 +1641,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            RuntimeSupport.MAPPER.writeValue(
-                os,
-                processor.stats(
-                    RuntimeSupport.MAPPER,
-                    Stream.of(filters)
-                        .filter(Objects::nonNull)
-                        .map(filterJson -> filterJson.convert(processor))
-                        .toArray(Filter[]::new)));
+            RuntimeSupport.MAPPER.writeValue(os, processor.stats(RuntimeSupport.MAPPER, filters));
           }
         });
 
