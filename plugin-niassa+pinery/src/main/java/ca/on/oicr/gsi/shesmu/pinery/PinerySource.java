@@ -131,6 +131,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     Optional.empty(),
                     "",
                     "",
+                    "",
+                    "",
                     lp.getSequencerRunPlatformModel(),
                     new Tuple(
                         lp.getSequencerRunName(),
@@ -199,6 +201,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         maybeGetRunField(run, RunDto::getContainerModel),
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
+                        limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
+                        limsAttr(sp, "geo_tube_id", badSetInRecord::add, false).orElse(""),
                         limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
                             .orElse(""),
                         limsAttr(sp, "geo_group_id", badSetInRecord::add, false).orElse(""),

@@ -15,6 +15,8 @@ public final class PineryIUSValue {
   private final Optional<String> container_model;
   private final String donor;
   private final Optional<Double> dv200;
+  private final String external_donor_id;
+  private final String external_tissue_id;
   private final String group_desc;
   private final String group_id;
   private final String instrumentModel;
@@ -26,7 +28,6 @@ public final class PineryIUSValue {
   private final long library_size;
   private final String library_type;
   private final Tuple lims;
-  private final String tissue_name;
   private final String organism;
   private final Path path;
   private final String project;
@@ -42,6 +43,7 @@ public final class PineryIUSValue {
   private final Optional<Double> target_cell_recovery;
   private final String targeted_resequencing;
   private final Instant timestamp;
+  private final String tissue_name;
   private final String tissue_origin;
   private final String tissue_prep;
   private final String tissue_region;
@@ -55,6 +57,8 @@ public final class PineryIUSValue {
       Optional<String> container_model,
       String donor,
       Optional<Double> dv200,
+      String external_donor_id,
+      String external_tissue_id,
       String group_desc,
       String group_id,
       String instrumentModel,
@@ -88,44 +92,46 @@ public final class PineryIUSValue {
       boolean umis,
       boolean is_sample) {
     super();
-    this.cell_viability = cell_viability;
-    this.path = path;
-    this.organism = organism;
     this.bases_mask = bases_mask;
+    this.cell_viability = cell_viability;
+    this.completed_date = completed_date;
+    this.container_model = container_model;
+    this.donor = donor;
+    this.dv200 = dv200;
+    this.external_donor_id = external_donor_id;
+    this.external_tissue_id = external_tissue_id;
+    this.group_desc = group_desc;
+    this.group_id = group_id;
     this.instrumentModel = instrumentModel;
+    this.is_sample = is_sample;
+    this.ius = ius;
+    this.kit = kit;
+    this.library_design = library_design;
+    this.library_name = library_name;
+    this.library_size = library_size;
+    this.library_type = library_type;
+    this.lims = lims;
+    this.organism = organism;
+    this.path = path;
+    this.project = project;
     this.reference_slide_id = reference_slide_id;
+    this.rin = rin;
+    this.run_status = run_status;
+    this.sequencing_kit = sequencing_kit;
     this.sex = sex;
     this.spike_in = spike_in;
     this.spike_in_dilution_factor = spike_in_dilution_factor;
     this.spike_in_volume_ul = spike_in_volume_ul;
     this.startDate = startDate;
     this.target_cell_recovery = target_cell_recovery;
+    this.targeted_resequencing = targeted_resequencing;
+    this.timestamp = timestamp;
     this.tissue_name = tissue_name;
-    this.is_sample = is_sample;
-    this.project = project;
-    this.library_name = library_name;
-    this.donor = donor;
-    this.ius = ius;
-    this.library_design = library_design;
-    this.tissue_type = tissue_type;
     this.tissue_origin = tissue_origin;
     this.tissue_prep = tissue_prep;
-    this.targeted_resequencing = targeted_resequencing;
     this.tissue_region = tissue_region;
-    this.group_id = group_id;
-    this.group_desc = group_desc;
-    this.library_size = library_size;
-    this.library_type = library_type;
-    this.kit = kit;
-    this.timestamp = timestamp;
-    this.lims = lims;
-    this.completed_date = completed_date;
-    this.dv200 = dv200;
-    this.rin = rin;
-    this.run_status = run_status;
+    this.tissue_type = tissue_type;
     this.umis = umis;
-    this.sequencing_kit = sequencing_kit;
-    this.container_model = container_model;
   }
 
   @ShesmuVariable(signable = true)
@@ -172,6 +178,8 @@ public final class PineryIUSValue {
         && container_model.equals(that.container_model)
         && donor.equals(that.donor)
         && dv200.equals(that.dv200)
+        && external_donor_id.equals(that.external_donor_id)
+        && external_tissue_id.equals(that.external_tissue_id)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
         && instrumentModel.equals(that.instrumentModel)
@@ -204,6 +212,16 @@ public final class PineryIUSValue {
   }
 
   @ShesmuVariable(signable = true)
+  public String external_donor_id() {
+    return external_donor_id;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String external_tissue_id() {
+    return external_tissue_id;
+  }
+
+  @ShesmuVariable(signable = true)
   public String group_desc() {
     return group_desc;
   }
@@ -222,6 +240,8 @@ public final class PineryIUSValue {
         container_model,
         donor,
         dv200,
+        external_donor_id,
+        external_tissue_id,
         group_desc,
         group_id,
         instrumentModel,
@@ -382,13 +402,13 @@ public final class PineryIUSValue {
   }
 
   @ShesmuVariable(signable = true)
-  public String tissue_origin() {
-    return tissue_origin;
+  public String tissue_name() {
+    return tissue_name;
   }
 
   @ShesmuVariable(signable = true)
-  public String tissue_name() {
-    return tissue_name;
+  public String tissue_origin() {
+    return tissue_origin;
   }
 
   @ShesmuVariable(signable = true)
