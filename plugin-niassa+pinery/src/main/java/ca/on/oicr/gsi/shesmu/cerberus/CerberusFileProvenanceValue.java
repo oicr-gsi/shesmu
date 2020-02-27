@@ -168,7 +168,10 @@ public final class CerberusFileProvenanceValue {
 
   @ShesmuVariable(
       signable = true,
-      gangs = {@Gang(name = "merged_library", order = 0)})
+      gangs = {
+        @Gang(name = "merged_library_legacy", order = 0),
+        @Gang(name = "merged_library", order = 0)
+      })
   public String donor() {
     return donor;
   }
@@ -245,7 +248,11 @@ public final class CerberusFileProvenanceValue {
 
   @ShesmuVariable(
       signable = true,
-      gangs = {@Gang(name = "merged_library", order = 4, dropIfDefault = true)})
+      gangs = {
+        @Gang(name = "merged_library", order = 4, dropIfDefault = true),
+        @Gang(name = "merged_library_legacy", order = 4, dropIfDefault = true),
+        @Gang(name = "merged_library_new", order = 3, dropIfDefault = true)
+      })
   public String group_id() {
     return group_id;
   }
@@ -320,7 +327,11 @@ public final class CerberusFileProvenanceValue {
 
   @ShesmuVariable(
       signable = true,
-      gangs = {@Gang(name = "merged_library", order = 3)})
+      gangs = {
+        @Gang(name = "merged_library_legacy", order = 3),
+        @Gang(name = "merged_library", order = 3),
+        @Gang(name = "merged_library_new", order = 2)
+      })
   public String library_design() {
     return library_design;
   }
@@ -365,7 +376,9 @@ public final class CerberusFileProvenanceValue {
     return path;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library_new", order = 0)})
   public String project() {
     return project;
   }
@@ -415,14 +428,19 @@ public final class CerberusFileProvenanceValue {
     return timestamp;
   }
 
-  @ShesmuVariable(signable = true)
+  @ShesmuVariable(
+      signable = true,
+      gangs = {@Gang(name = "merged_library_new", order = 1)})
   public String tissue_name() {
     return tissue_name;
   }
 
   @ShesmuVariable(
       signable = true,
-      gangs = {@Gang(name = "merged_library", order = 1)})
+      gangs = {
+        @Gang(name = "merged_library_legacy", order = 1),
+        @Gang(name = "merged_library", order = 1)
+      })
   public String tissue_origin() {
     return tissue_origin;
   }
@@ -439,7 +457,10 @@ public final class CerberusFileProvenanceValue {
 
   @ShesmuVariable(
       signable = true,
-      gangs = {@Gang(name = "merged_library", order = 2)})
+      gangs = {
+        @Gang(name = "merged_library_legacy", order = 2),
+        @Gang(name = "merged_library", order = 2)
+      })
   public String tissue_type() {
     return tissue_type;
   }
