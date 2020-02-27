@@ -3,7 +3,18 @@ export function blank() {
 }
 
 export function breakSlashes(text) {
-  return text.replace(/\//g, "/\u200B");
+  return text
+    .split(/\//g)
+    .flatMap(
+      (chunk, index) =>
+        index == 0
+          ? [document.createTextNode(chunk)]
+          : [
+              document.createTextNode("/"),
+              document.createElement("WBR"),
+              document.createTextNode(chunk)
+            ]
+    );
 }
 
 export function collapse(title, ...inner) {

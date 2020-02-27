@@ -1588,7 +1588,7 @@ export function initialiseOliveDash(
       deadTableBody.appendChild(tr);
 
       const file = document.createElement("td");
-      file.innerText = breakSlashes(deadPause.file);
+      breakSlashes(deadPause.file).forEach(x => file.appendChild(x));
       tr.appendChild(file);
 
       const line = document.createElement("td");
@@ -3430,7 +3430,9 @@ function getStats(
               title.innerText = prettyTitle(row.title);
               tr.appendChild(title);
               const value = document.createElement("TD");
-              value.innerText = breakSlashes(row.value.toString());
+              breakSlashes(row.value.toString()).forEach(x =>
+                value.appendChild(x)
+              );
               tr.appendChild(value);
               if (row.kind == "property") {
                 makeClick(tr, propertyFilterMaker(row.type)(row.json));
@@ -3456,7 +3458,7 @@ function getStats(
             }));
             for (let col of columns) {
               const currentHeader = document.createElement("TH");
-              currentHeader.innerText = breakSlashes(col.name);
+              breakSlashes(col.name).forEach(x => currentHeader.appendChild(x));
               header.appendChild(currentHeader);
               makeClick(currentHeader, col.filter);
             }
@@ -3475,7 +3477,7 @@ function getStats(
               table.appendChild(currentRow);
 
               const currentHeader = document.createElement("TH");
-              currentHeader.innerText = breakSlashes(rowKey);
+              breakSlashes(rowKey).forEach(x => currentHeader.appendChild(x));
               currentRow.appendChild(currentHeader);
               makeClick(currentRow, rowFilter);
 
