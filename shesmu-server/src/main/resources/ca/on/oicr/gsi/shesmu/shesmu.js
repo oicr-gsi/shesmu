@@ -2199,16 +2199,24 @@ function editText(original, callback) {
 function editRegex(original, callback) {
   const [dialog, close] = makePopup(true);
   dialog.appendChild(document.createTextNode("Search for regex: "));
+  const error = document.createElement("SPAN");
   const input = document.createElement("INPUT");
   input.type = "text";
   input.value = original;
   dialog.appendChild(input);
+  dialog.appendChild(error);
   dialog.appendChild(document.createElement("BR"));
   dialog.appendChild(
     button(
       "Save",
       "Update regular expression search in current filter.",
       () => {
+        try {
+          new RegExp(input.value);
+        } catch (e) {
+          error.innerText = " " + e.message;
+          return;
+        }
         close();
         callback(x =>
           (x || [])
