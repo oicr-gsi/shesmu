@@ -17,7 +17,8 @@ public final class CerberusFileProvenanceValue {
   private final Optional<Double> cell_viability;
   private final Instant completed_date;
   private final String donor;
-  private final String external_name;
+  private final String external_donor_id;
+  private final String external_tissue_id;
   private Set<Tuple> file_attributes;
   private final long file_size;
   private final String group_desc;
@@ -62,7 +63,8 @@ public final class CerberusFileProvenanceValue {
       Optional<Double> cell_viability,
       Instant completed_date,
       String donor,
-      String external_name,
+      String external_donor_id,
+      String external_tissue_id,
       SortedMap<String, SortedSet<String>> file_attributes,
       long file_size,
       String group_desc,
@@ -105,50 +107,51 @@ public final class CerberusFileProvenanceValue {
     super();
     this.accession = accession;
     this.cell_viability = cell_viability;
-    this.path = path;
-    this.metatype = metatype;
-    this.md5 = md5;
+    this.completed_date = completed_date;
+    this.donor = donor;
+    this.external_donor_id = external_donor_id;
+    this.external_tissue_id = external_tissue_id;
+    this.file_attributes = IUSUtils.attributes(file_attributes);
     this.file_size = file_size;
+    this.group_desc = group_desc;
+    this.group_id = group_id;
+    this.inputFiles = inputFiles;
+    this.instrument_model = instrument_model;
+    this.ius = ius;
+    this.kit = kit;
+    this.library_design = library_design;
+    this.library_name = library_name;
+    this.library_size = library_size;
+    this.library_type = library_type;
+    this.lims = lims;
+    this.md5 = md5;
+    this.metatype = metatype;
+    this.organism = organism;
+    this.path = path;
+    this.project = project;
+    this.reference_slide_id = reference_slide_id;
+    this.sex = sex;
+    this.spike_in = spike_in;
+    this.spike_in_dilution_factor = spike_in_dilution_factor;
+    this.spike_in_volume_ul = spike_in_volume_ul;
+    this.stale = stale;
+    this.target_cell_recovery = target_cell_recovery;
+    this.targeted_resequencing = targeted_resequencing;
+    this.timestamp = timestamp;
+    this.tissue_name = tissue_name;
+    this.tissue_origin = tissue_origin;
+    this.tissue_prep = tissue_prep;
+    this.tissue_region = tissue_region;
+    this.tissue_type = tissue_type;
     this.umis = umis;
     this.workflow = workflow;
     this.workflow_accession = workflow_accession;
     this.workflow_run_accession = workflow_run_accession;
     this.workflow_version = workflow_version;
-    this.project = project;
-    this.organism = organism;
-    this.library_name = library_name;
-    this.donor = donor;
-    this.external_name = external_name;
-    this.ius = ius;
-    this.library_design = library_design;
-    this.tissue_type = tissue_type;
-    this.tissue_name = tissue_name;
-    this.tissue_origin = tissue_origin;
-    this.tissue_prep = tissue_prep;
-    this.targeted_resequencing = targeted_resequencing;
-    this.tissue_region = tissue_region;
-    this.group_id = group_id;
-    this.group_desc = group_desc;
-    this.library_size = library_size;
-    this.library_type = library_type;
-    this.kit = kit;
-    this.timestamp = timestamp;
-    this.lims = lims;
-    this.completed_date = completed_date;
-    this.stale = stale;
-    this.file_attributes = IUSUtils.attributes(file_attributes);
-    this.reference_slide_id = reference_slide_id;
-    this.spike_in = spike_in;
-    this.spike_in_dilution_factor = spike_in_dilution_factor;
-    this.spike_in_volume_ul = spike_in_volume_ul;
-    this.target_cell_recovery = target_cell_recovery;
     final SortedMap<String, SortedSet<String>> mergedAttributes =
         new TreeMap<>(workflow_attributes);
     mergedAttributes.putAll(workflow_run_attributes);
     this.workflow_run_attributes = IUSUtils.attributes(mergedAttributes);
-    this.instrument_model = instrument_model;
-    this.inputFiles = inputFiles;
-    this.sex = sex;
   }
 
   @ShesmuVariable
@@ -185,7 +188,8 @@ public final class CerberusFileProvenanceValue {
         && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
-        && external_name.equals(that.external_name)
+        && external_donor_id.equals(that.external_donor_id)
+        && external_tissue_id.equals(that.external_tissue_id)
         && file_attributes.equals(that.file_attributes)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
@@ -223,11 +227,6 @@ public final class CerberusFileProvenanceValue {
         && workflow_version.equals(that.workflow_version);
   }
 
-  @ShesmuVariable(signable = true)
-  public String external_name() {
-    return external_name;
-  }
-
   @ShesmuVariable(type = "at2sas")
   public Set<Tuple> file_attributes() {
     return file_attributes;
@@ -257,7 +256,8 @@ public final class CerberusFileProvenanceValue {
         cell_viability,
         completed_date,
         donor,
-        external_name,
+        external_donor_id,
+        external_tissue_id,
         file_attributes,
         file_size,
         group_desc,
@@ -442,6 +442,16 @@ public final class CerberusFileProvenanceValue {
       gangs = {@Gang(name = "merged_library", order = 2)})
   public String tissue_type() {
     return tissue_type;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String external_donor_id() {
+    return external_donor_id;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String external_tissue_id() {
+    return external_tissue_id;
   }
 
   @ShesmuVariable(signable = true)

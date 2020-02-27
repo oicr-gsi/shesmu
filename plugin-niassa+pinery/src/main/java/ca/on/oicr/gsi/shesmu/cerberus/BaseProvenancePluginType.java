@@ -80,6 +80,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   false)
                               .orElse(""),
                           limsAttr(fp, "geo_external_name", badSetInRecord::add).orElse(""),
+                          limsAttr(fp, "geo_tube_id", badSetInRecord::add).orElse(""),
                           fp.getFileAttributes(),
                           IUSUtils.parseLong(fp.getFileSize()),
                           limsAttr(fp, "geo_group_id_description", badSetInRecord::add).orElse(""),
