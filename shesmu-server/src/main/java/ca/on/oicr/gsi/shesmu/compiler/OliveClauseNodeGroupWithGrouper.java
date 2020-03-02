@@ -443,7 +443,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       errorHandler.accept(
           String.format(
               "%d:%d: Grouper %s requires %d inputs, but %d are provided.",
-              line, column, grouperName, grouper.outputs(), outputNames.size()));
+              line, column, grouperName, grouper.inputs(), outputNames.size()));
       return false;
     }
     inputExpressions.addAll(Collections.nCopies(grouper.inputs(), null));
