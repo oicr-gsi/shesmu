@@ -15,6 +15,8 @@ public class BarcodeGrouperDefinition extends GrouperDefinition {
         "barcodes",
         GrouperParameter.fixed(
             "edit_distance", TypeGuarantee.LONG, "The minimum allowed edit distance."),
+        GrouperParameter.dynamic(
+            "run_name", TypeGuarantee.STRING, "The name of the run, for debugging purposes."),
         GrouperParameter.dynamic("bases_mask", TypeGuarantee.STRING, "The bases mask string."),
         GrouperParameter.dynamic(
             "barcodes",

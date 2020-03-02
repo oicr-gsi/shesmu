@@ -3,13 +3,19 @@ package ca.on.oicr.gsi.shesmu.pinery.barcodes;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Subgroup;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.TriGrouper;
+import io.prometheus.client.Gauge;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BarcodeGrouper<I, O> implements Grouper<I, O> {
+  private static final Gauge badGroups =
+      Gauge.build("shesmu_barcode_grouper_rejected", "Whether this particular run was rejected.")
+          .labelNames("run")
+          .register();
   private final Function<I, List<String>> barcodeReader;
+  private final Function<I, String> runNameReader;
   private final Function<I, String> basesMaskReader;
   private final TriGrouper<String, Function<I, Set<String>>, Function<I, String>, O, I>
       collectorFactory;
@@ -17,10 +23,12 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
 
   public <T, C> BarcodeGrouper(
       long minAllowedEditDistance,
+      Function<I, String> runNameReader,
       Function<I, String> basesMaskReader,
       Function<I, List<String>> barcodeReader,
       TriGrouper<String, Function<I, Set<String>>, Function<I, String>, O, I> collectorFactory) {
     this.minAllowedEditDistance = (int) minAllowedEditDistance;
+    this.runNameReader = runNameReader;
     this.basesMaskReader = basesMaskReader;
     this.barcodeReader = barcodeReader;
     this.collectorFactory = collectorFactory;
@@ -28,6 +36,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
 
   @Override
   public Stream<Subgroup<I, O>> group(List<I> inputs) {
+    final Gauge.Child gauge = badGroups.labels(basesMaskReader.apply(inputs.get(0)));
     final List<BasesMask> basesMasks =
         inputs
             .stream()
@@ -37,6 +46,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
             .collect(Collectors.toList());
     if (basesMasks.size() != 1 || basesMasks.get(0) == null) {
       // If we've got multiple bases masks, (╯°□°)╯︵ ┻━┻
+      gauge.set(1);
       return Stream.empty();
     }
     final List<Barcode> barcodes = new ArrayList<>();
@@ -50,6 +60,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
                 Barcode.fromString(barcodeString), basesMasks.get(0));
         if (barcode == null) {
           // If we've got an unparseable barcode, (╯°□°)╯︵ ┻━┻
+          gauge.set(1);
           return Stream.empty();
         }
         barcodes.add(barcode);
@@ -61,6 +72,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
             BarcodeAndBasesMask.calculateBasesMask(barcode, basesMasks.get(0));
         if (newMask == null) {
           // If we've got an mess of a mask, (╯°□°)╯︵ ┻━┻
+          gauge.set(1);
           return Stream.empty();
         }
         newMasks.put(input, newMask.toString());
@@ -70,9 +82,11 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
         BarcodeComparison.getTruncatedHammingDistanceCollisions(barcodes, minAllowedEditDistance);
     if (!collisions.isEmpty()) {
       // You know the drill, (╯°□°)╯︵ ┻━┻
+      gauge.set(1);
       return Stream.empty();
     }
 
+    gauge.set(0);
     return groups
         .entrySet()
         .stream()
