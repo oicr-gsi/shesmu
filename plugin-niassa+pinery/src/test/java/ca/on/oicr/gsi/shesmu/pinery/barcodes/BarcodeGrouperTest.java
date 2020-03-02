@@ -23,6 +23,7 @@ public class BarcodeGrouperTest {
     final Grouper<String, Result> grouper =
         new BarcodeGrouper<>(
             2,
+            i -> "run",
             i -> basesMask,
             Collections::singletonList,
             (len, barcodes, newMask) ->
@@ -40,6 +41,7 @@ public class BarcodeGrouperTest {
     final Grouper<String, Result> grouper =
         new BarcodeGrouper<>(
             2,
+            i -> "run",
             i -> basesMask,
             Collections::singletonList,
             (len, barcodes, newMask) ->
