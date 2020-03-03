@@ -4733,8 +4733,8 @@ export function initialiseAlertDashboard(initialFilterString, output) {
         }
         const updateFilters = showAlertNavigator(
           alerts,
-          output,
           userFilters,
+          output,
           makeHeader,
           userFilters =>
             window.history.pushState(
