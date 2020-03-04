@@ -1403,14 +1403,46 @@ export function initialiseOliveDash(
   if (oliveFiles.length) {
     const fileNameFormatter = commonPathPrefix(oliveFiles.map(f => f.filename));
     const oliveDropdown = document.createElement("SPAN");
-    oliveDropdown.className = "olivemenu dropdown";
+    oliveDropdown.className = "olivemenu";
     container.appendChild(oliveDropdown);
     activeOlive.innerText = "Select";
     oliveDropdown.appendChild(activeOlive);
     oliveDropdown.appendChild(document.createTextNode(" ▼"));
+    const olivePanel = document.createElement("DIV");
+    oliveDropdown.appendChild(olivePanel);
+    const oliveSearch = document.createElement("DIV");
+    olivePanel.appendChild(oliveSearch);
+
+    const visibilityUpdates = [];
+
+    oliveSearch.className = "olivesearch";
+    const oliveSearchInput = document.createElement("INPUT");
+    oliveSearchInput.type = "search";
+    oliveSearch.appendChild(document.createTextNode("Filter: "));
+    oliveSearch.appendChild(oliveSearchInput);
+    oliveSearchInput.addEventListener("input", e => {
+      const keywords = oliveSearchInput.value.trim().split(/\W+/);
+      if (keywords.length) {
+        for (const { texts, elements } of visibilityUpdates) {
+          const visible = keywords.every(keyword =>
+            texts.some(t => t.startsWith(keyword))
+          );
+          for (const element of elements) {
+            element.style.display = visible ? null : "none";
+          }
+        }
+      } else {
+        for (const { texts, elements } of visibilityUpdates) {
+          for (const element of elements) {
+            element.style.display = null;
+          }
+        }
+      }
+    });
+
     const oliveList = document.createElement("DIV");
-    oliveList.style.cursor = "default";
-    oliveDropdown.appendChild(oliveList);
+    oliveList.className = "olivelist";
+    olivePanel.appendChild(oliveList);
     let open = true;
     oliveDropdown.addEventListener("click", e => {
       if (e.target == activeOlive.parentNode || e.target == activeOlive) {
@@ -1421,23 +1453,23 @@ export function initialiseOliveDash(
         }
         closeActiveMenu(true);
         open = true;
-        oliveList.className = "forceOpen";
+        olivePanel.className = "forceOpen";
         activeMenu = activeOlive;
         closeActiveMenu = external => {
-          oliveList.className = external ? "ready" : "";
+          olivePanel.className = external ? "ready" : "";
           open = false;
           activeMenu = null;
         };
       }
     });
     activeOlive.parentNode.onmouseover = e => {
-      if (e.target == oliveList.parentNode && !open) {
+      if (e.target == olivePanel.parentNode && !open) {
         closeActiveMenu(true);
       }
     };
     activeOlive.parentNode.onmouseout = () => {
       if (!open) {
-        oliveList.className = "ready";
+        olivePanel.className = "ready";
       }
     };
 
@@ -1447,13 +1479,27 @@ export function initialiseOliveDash(
       title.innerText = prettyFileName;
       title.title = file.filename;
       oliveList.appendChild(title);
+      const elements = [title];
+      visibilityUpdates.push({
+        texts: file.filename
+          .split(/\//)
+          .filter(x => x)
+          .concat(
+            file.olives.flatMap(olive =>
+              [olive.syntax, olive.description]
+                .flatMap(t => t.trim().split(/\W+/))
+                .concat(olive.tags)
+            )
+          ),
+        elements: elements
+      });
       if (file.olives.length) {
         title.style.cursor = "pointer";
         title.addEventListener("click", () =>
           renderFile(file, prettyFileName, null, false)
         );
-
         const table = document.createElement("table");
+        elements.push(table);
         oliveList.appendChild(table);
         const header = document.createElement("tr");
         table.appendChild(header);
@@ -1544,14 +1590,15 @@ export function initialiseOliveDash(
       } else {
         const empty = document.createElement("P");
         empty.innerText = "No olives in this file.";
+        elements.push(empty);
         oliveList.appendChild(empty);
       }
     });
     if (open) {
-      oliveList.className = "forceOpen";
+      olivePanel.className = "forceOpen";
       activeMenu = activeOlive;
       closeActiveMenu = external => {
-        oliveList.className = external ? "ready" : "";
+        olivePanel.className = external ? "ready" : "";
         open = false;
         activeMenu = null;
       };
