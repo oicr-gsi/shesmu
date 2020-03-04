@@ -1,550 +1,634 @@
 h2 {
-    font-size: inherit;
+  font-size: inherit;
 }
 
-a:visited, a:link {
-    color: #077888;
+a:visited,
+a:link {
+  color: #077888;
 }
 
 a text {
-    fill: #077888;
+  fill: #077888;
 }
 
-a:hover, a:active {
-    color: #058FAF;
+a:hover,
+a:active {
+  color: #058faf;
 }
 
-a:hover text, a:active text {
-    fill: #058FAF;
+a:hover text,
+a:active text {
+  fill: #058faf;
 }
 
-.load, a.load:link, a.load:visited {
-    white-space: nowrap;
+.load,
+a.load:link,
+a.load:visited {
+  white-space: nowrap;
 }
 
-.load, a.load:link, a.load:visited, .dropdown {
-    font-weight: 700;
-    color: #fff;
-    background-color: #04AA9D;
-    margin: 0.5em;
-    padding: 0.2em;
-    border: 1px solid #78C3CD;
-    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
-    transition: all 0.3s ease 0s;
-    cursor: pointer;
-    display: inline-block;
-    border-radius: 0.1em;
+.load,
+a.load:link,
+a.load:visited,
+.dropdown,
+.olivemenu {
+  font-weight: 700;
+  color: #fff;
+  background-color: #04aa9d;
+  margin: 0.5em;
+  padding: 0.2em;
+  border: 1px solid #78c3cd;
+  box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease 0s;
+  cursor: pointer;
+  display: inline-block;
+  border-radius: 0.1em;
 }
 
 a.load {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 .load:hover {
-    background-color: #048C81;
-    border-color: #048C81;
+  background-color: #048c81;
+  border-color: #048c81;
 }
 
-.load:active, a.load:active {
-    transform: translate(0.1em, 0.1em);
-    box-shadow: 0em 0em 5px 0px rgba(0,0,0,0.1);
+.load:active,
+a.load:active {
+  transform: translate(0.1em, 0.1em);
+  box-shadow: 0em 0em 5px 0px rgba(0, 0, 0, 0.1);
 }
 
-.load.accessory, a.load.accessory:link, a.load.accessory:visited,  .dropdown {
-    background-color: #06AED5;
-    border-color: #06AED5;
+.load.accessory,
+a.load.accessory:link,
+a.load.accessory:visited,
+.dropdown,
+.olivemenu {
+  background-color: #06aed5;
+  border-color: #06aed5;
 }
 
-.load.accessory:hover, a.load.accessory:hover,  .dropdown:hover {
-    background-color: #058FAF;
-    border-color: #058FAF;
+.load.accessory:hover,
+a.load.accessory:hover,
+.dropdown:hover {
+  background-color: #058faf;
+  border-color: #058faf;
 }
 
-.load.danger, a.load.danger:link, a.load.danger:visited {
-    background-color: #E0493B;
-    border-color: #E0493B;
+.load.danger,
+a.load.danger:link,
+a.load.danger:visited {
+  background-color: #e0493b;
+  border-color: #e0493b;
 }
 
 .load.danger:hover {
-    background-color: #B83C31;
+  background-color: #b83c31;
 }
 
 .accessory > .load {
-    font-weight: 400;
-    font-size: 90%;
+  font-weight: 400;
+  font-size: 90%;
 }
 
-.dropdown > div {
-    position: absolute;
-    min-width: 200px;
-    background-color: #fff;
-    border: 1px solid #058FAF;
-    box-shadow: 0.2em 0.2em 5px 0px rgba(0,0,0,0.1);
-    z-index: 1000;
-    visibility: hidden;
-    opacity: 0;
-    border-radius: 0.1em;
-    font-weight: normal;
-    transition: visibility 0s linear 0s, opacity 0.3s linear;
+.dropdown > div,
+.olivemenu > div {
+  position: absolute;
+  min-width: 200px;
+  background-color: #fff;
+  border: 1px solid #058faf;
+  box-shadow: 0.2em 0.2em 5px 0px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  visibility: hidden;
+  opacity: 0;
+  border-radius: 0.1em;
+  font-weight: normal;
+  transition: visibility 0s linear 0s, opacity 0.3s linear;
 }
 
-.dropdown:hover > div.ready, .dropdown > div.forceOpen {
-    visibility: visible;
-    opacity: 1;
+.dropdown:hover > div.ready,
+.dropdown > div.forceOpen,
+.olivemenu:hover > div.ready,
+.olivemenu > div.forceOpen {
+  visibility: visible;
+  opacity: 1;
+}
+
+.dropdown > div > *,
+.olivemenu > div {
+  display: block;
+  max-width: 50vw;
+  color: #058faf;
+  background-color: #fff;
+  padding: 0.5em;
 }
 
 .dropdown > div > * {
-    display: block;
-    padding: 0.5em;
-    color: #058FAF;
-    background-color: #FFF;
-    max-width: 50vw;
-    overflow-wrap: break-word;
-    word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .dropdown > div > *:hover {
-    background-color: #058FAF;
-    color: #FFF;
+  background-color: #058faf;
+  color: #fff;
 }
 
-.dropdown > div > table {
-    width: auto;
+.olivemenu table {
+  width: auto;
+}
+
+.olivesearch input {
+  width: 100%;
 }
 
 .collapse {
-    margin: 0.2em;
-    padding: 0.5em;
-    cursor: pointer;
-    margin: 0px;
+  margin: 0.2em;
+  padding: 0.5em;
+  cursor: pointer;
+  margin: 0px;
 }
 
 .collapse:before {
-    float: left;
-    margin-right: 1em;
+  float: left;
+  margin-right: 1em;
 }
 
 .collapse.close:before {
-    content: "▶";
+  content: "▶";
 }
 
 .collapse.open:before {
-    content: "▼";
+  content: "▼";
 }
 
 .collapse + * {
-    clear: both;
-    overflow-x: auto;
-    transition: max-height 0.3s ease-in-out;
-    overflow: hidden;
+  clear: both;
+  overflow-x: auto;
+  transition: max-height 0.3s ease-in-out;
+  overflow: hidden;
 }
 
 .collapse.close + * {
-    max-height: 0px;
+  max-height: 0px;
 }
 
 .collapse + * :target {
-    max-height: auto;
+  max-height: auto;
 }
 
 .error {
-    font-weight: 700;
-    color: #E0493B;
+  font-weight: 700;
+  color: #e0493b;
 }
 
-.action, .alert {
-    padding: 0.2em;
-    margin-bottom: 0.5em;
+.action,
+.alert {
+  padding: 0.2em;
+  margin-bottom: 0.5em;
 }
 
 .action > :first-child {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .statecheck {
-    display: inline-block;
-    padding: 0.1em;
-    margin: 0.1em;
+  display: inline-block;
+  padding: 0.1em;
+  margin: 0.1em;
 }
 
-.state_failed, .filterlist .state_failed, .alert {
-    border: 1px solid #E0493B;
-    background-color: #F9DDDB;
+.state_failed,
+.filterlist .state_failed,
+.alert {
+  border: 1px solid #e0493b;
+  background-color: #f9dddb;
 }
 
-.state_halp, .filterlist .state_halp {
-    border: 1px solid #E0493B;
-    background-color: #B83C31;
-    color: #FFF;
+.state_halp,
+.filterlist .state_halp {
+  border: 1px solid #e0493b;
+  background-color: #b83c31;
+  color: #fff;
 }
 
-.state_inflight, .filterlist .state_inflight {
-    border: 1px solid #04AA9D;
-    background-color: #D1EFED;
+.state_inflight,
+.filterlist .state_inflight {
+  border: 1px solid #04aa9d;
+  background-color: #d1efed;
 }
 
-.state_queued, .filterlist .state_queued {
-    border: 1px dashed #04AA9D;
-    background-color: #D1EFED;
+.state_queued,
+.filterlist .state_queued {
+  border: 1px dashed #04aa9d;
+  background-color: #d1efed;
 }
 
-.state_succeeded, .filterlist .state_succeeded, .state_simulated {
-    border: 1px solid #06AED5;
-    background-color: #D1F0F7;
+.state_succeeded,
+.filterlist .state_succeeded,
+.state_simulated {
+  border: 1px solid #06aed5;
+  background-color: #d1f0f7;
 }
 
-.state_throttled, .filterlist .state_throttled {
-    border: 1px dashed #F0C808;
-    background-color: #FCF5D2;
+.state_throttled,
+.filterlist .state_throttled {
+  border: 1px dashed #f0c808;
+  background-color: #fcf5d2;
 }
 
-.state_unknown, .filterlist .state_unknown {
-    border: 1px dashed #E0493B;
-    background-color: #F9DDDB;
+.state_unknown,
+.filterlist .state_unknown {
+  border: 1px dashed #e0493b;
+  background-color: #f9dddb;
 }
 
-.state_waiting, .filterlist .state_waiting {
-    border: 1px solid #F0C808;
-    background-color: #FCF5D2;
+.state_waiting,
+.filterlist .state_waiting {
+  border: 1px solid #f0c808;
+  background-color: #fcf5d2;
 }
 
 .inset {
-    padding: 0.5em;
-    margin: 0.5em;
+  padding: 0.5em;
+  margin: 0.5em;
 }
 
-.action a, .alert a {
-    text-decoration: none;
+.action a,
+.alert a {
+  text-decoration: none;
 }
 
-.action.state_unknown a:link, .actionstate_failed a:link, .alert a:link {
-    color: #E0493B;
+.action.state_unknown a:link,
+.actionstate_failed a:link,
+.alert a:link {
+  color: #e0493b;
 }
 
-.action.state_unknown a:visited, .actionstate_failed a:visited, .alert a:visited {
-    color: #B83C31;
+.action.state_unknown a:visited,
+.actionstate_failed a:visited,
+.alert a:visited {
+  color: #b83c31;
 }
 
-.action.state_unknown a:hover, .actionstate_failed a:hover, .action.state_unknown a:active, .actionstate_failed a:active, .alert a:hover, .alert a:active {
-    color: #E56A5E;
+.action.state_unknown a:hover,
+.actionstate_failed a:hover,
+.action.state_unknown a:active,
+.actionstate_failed a:active,
+.alert a:hover,
+.alert a:active {
+  color: #e56a5e;
 }
 
 .action.state_halp a:link {
-    color: #F9DDDB;
+  color: #f9dddb;
 }
 
 .action.state_halp a:visited {
-    color: #FCEAE9;
+  color: #fceae9;
 }
 
-.action.state_halp a:hover, .actionstate_halp a:active {
-    color: #E56A5E;
+.action.state_halp a:hover,
+.actionstate_halp a:active {
+  color: #e56a5e;
 }
 
 .action.state_halp td {
-    color: #FFF;
+  color: #fff;
 }
 
 .action.state_halp th {
-    color: #F9DDDB;
+  color: #f9dddb;
 }
 
 .action.state_halp tr:hover {
-    background-color: #E0493B;
+  background-color: #e0493b;
 }
 
-.action.state_queued a:link, .action.state_inflight a:link {
-    color: #04AA9D;
+.action.state_queued a:link,
+.action.state_inflight a:link {
+  color: #04aa9d;
 }
 
-.action.state_queued a:visited, .action.state_inflight a:visited {
-    color: #048C81;
+.action.state_queued a:visited,
+.action.state_inflight a:visited {
+  color: #048c81;
 }
 
-.action.state_queued a:hover, .action.state_inflight a:hover, .action.state_queued a:active, .action.state_inflight a:active {
-    color: #31B9AE;
+.action.state_queued a:hover,
+.action.state_inflight a:hover,
+.action.state_queued a:active,
+.action.state_inflight a:active {
+  color: #31b9ae;
 }
 
-.action.state_throttled a:link, .action.state_waiting a:link {
-    color: #F0C808;
+.action.state_throttled a:link,
+.action.state_waiting a:link {
+  color: #f0c808;
 }
 
-.action.state_throttled a:visited, .action.state_waiting a:visited {
-    color: #C5A407;
+.action.state_throttled a:visited,
+.action.state_waiting a:visited {
+  color: #c5a407;
 }
 
-.action.state_throttled a:hover, .action.state_waiting a:hover, .action.state_throttled a:active, .action.state_waiting a:active {
-    color: #F2D234;
+.action.state_throttled a:hover,
+.action.state_waiting a:hover,
+.action.state_throttled a:active,
+.action.state_waiting a:active {
+  color: #f2d234;
 }
 
-.action.state_succeeded a:link, .action.state_simulated a:link {
-    color: #06AED5;
+.action.state_succeeded a:link,
+.action.state_simulated a:link {
+  color: #06aed5;
 }
 
-.action.state_succeeded a:visited, .action.state_simulated a:visited {
-    color: #058FAF;
+.action.state_succeeded a:visited,
+.action.state_simulated a:visited {
+  color: #058faf;
 }
 
-.action.state_succeeded a:hover, .action.state_succeeded a:active, .action.state_simulated a:hover, .action.state_simulated a:active {
-    color: #33BCDC;
+.action.state_succeeded a:hover,
+.action.state_succeeded a:active,
+.action.state_simulated a:hover,
+.action.state_simulated a:active {
+  color: #33bcdc;
 }
 
-.action> :first-child::before, .alert> :first-child::before {
-    opacity: 0.5;
-    font-size: 200%;
-    float: right;
+.action > :first-child::before,
+.alert > :first-child::before {
+  opacity: 0.5;
+  font-size: 200%;
+  float: right;
 }
 
-.action.state_unknown>  :first-child::before {
-    content: "Unknown 🤷";
-    color: #E0493B;
+.action.state_unknown > :first-child::before {
+  content: "Unknown 🤷";
+  color: #e0493b;
 }
 
-.action.state_failed>  :first-child::before {
-    content: "Failed 💔";
-    color: #E0493B;
+.action.state_failed > :first-child::before {
+  content: "Failed 💔";
+  color: #e0493b;
 }
 
-.action.state_halp>  :first-child::before {
-    content: "Halp 🚒";
-    color: #F9DDDB;
+.action.state_halp > :first-child::before {
+  content: "Halp 🚒";
+  color: #f9dddb;
 }
 
-.action.state_queued>  :first-child::before {
-    content: "Queued ⌛";
-    color: #04AA9D;
+.action.state_queued > :first-child::before {
+  content: "Queued ⌛";
+  color: #04aa9d;
 }
 
-.action.state_inflight>  :first-child::before {
-    content: "Inflight ✈";
-    color: #04AA9D;
+.action.state_inflight > :first-child::before {
+  content: "Inflight ✈";
+  color: #04aa9d;
 }
 
-.action.state_throttled>  :first-child::before {
-    content: "Throttled ✋";
-    color: #F0C808;
+.action.state_throttled > :first-child::before {
+  content: "Throttled ✋";
+  color: #f0c808;
 }
 
 .action.state_waiting > :first-child::before {
-    content: "Waiting ⌛";
-    color: #F0C808;
+  content: "Waiting ⌛";
+  color: #f0c808;
 }
 
 .action.state_succeeded > :first-child::before {
-    content: "Succeeded ✓";
-    color: #06AED5;
+  content: "Succeeded ✓";
+  color: #06aed5;
 }
 
 .action.state_simulated > :first-child::before {
-    content: "Simulated 🤖";
-    color: #06AED5;
+  content: "Simulated 🤖";
+  color: #06aed5;
 }
 
 .alert.expired > :first-child::before {
-    content: "Expired 😴";
-    color: #06AED5;
+  content: "Expired 😴";
+  color: #06aed5;
 }
 
-.action.live >  :first-child::before {
-    content: "Firing 🔔";
-    color: #E0493B;
-}
-
-.filterlist > span {
-    color: #fff;
-    background-color: #06AED5;
-}
-
-.filterlist .state_failed, .filterlist .state_inflight, .filterlist .state_queued, .filterlist .state_succeeded, .filterlist .state_throttled, .filterlist .state_unknown, .filterlist .state_waiting, .load.state_failed, .load.state_inflight, .load.state_queued, .load.state_succeeded, .load.state_throttled, .load.state_unknown, .load.state_waiting {
-    color: #000;
+.action.live > :first-child::before {
+  content: "Firing 🔔";
+  color: #e0493b;
 }
 
 .filterlist > span {
-    padding: 0.2em;
-    border: 1px solid #058FAF;
-    margin: 0.2em;
-    white-space: nowrap;
-    border-radius: 0.1em;
-    display: inline-block;
+  color: #fff;
+  background-color: #06aed5;
+}
+
+.filterlist .state_failed,
+.filterlist .state_inflight,
+.filterlist .state_queued,
+.filterlist .state_succeeded,
+.filterlist .state_throttled,
+.filterlist .state_unknown,
+.filterlist .state_waiting,
+.load.state_failed,
+.load.state_inflight,
+.load.state_queued,
+.load.state_succeeded,
+.load.state_throttled,
+.load.state_unknown,
+.load.state_waiting {
+  color: #000;
+}
+
+.filterlist > span {
+  padding: 0.2em;
+  border: 1px solid #058faf;
+  margin: 0.2em;
+  white-space: nowrap;
+  border-radius: 0.1em;
+  display: inline-block;
 }
 
 .filterlist > span.editable {
-    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
+  box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
 }
 
 .filters > div {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .filters {
-    border: 1px solid #058FAF;
-    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
-    display: inline-block;
-    min-width: 25vw;
+  border: 1px solid #058faf;
+  box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  min-width: 25vw;
 }
 
 .filters > div > span.close {
-    float: right;
+  float: right;
 }
 
-.filters > div > span.close, .filterlist > div > span.close {
-    margin: 0.3em;
+.filters > div > span.close,
+.filterlist > div > span.close {
+  margin: 0.3em;
 }
 
 .filters {
-    display: flex;
-    flex-flow: row wrap;
+  display: flex;
+  flex-flow: row wrap;
 }
 
 .filters > div {
-    padding: 0.5em;
+  padding: 0.5em;
 }
 
 .filters > div:nth-child(even) {
-    background-color: #EAF5F7;
+  background-color: #eaf5f7;
 }
 
 .tab {
-    display: inline-block;
-    margin: 0.5em;
-    padding: 1em;
-    border-bottom: 0.1em solid #06AED5;
-    color: #058FAF;
-    transition: background 0.3s ease-in-out;
+  display: inline-block;
+  margin: 0.5em;
+  padding: 1em;
+  border-bottom: 0.1em solid #06aed5;
+  color: #058faf;
+  transition: background 0.3s ease-in-out;
 }
 
 .tab.selected {
-    background-color: #D1F0F7;
-    border-bottom: 0.1em solid #058FAF;
+  background-color: #d1f0f7;
+  border-bottom: 0.1em solid #058faf;
 }
 
 .tab:hover {
-    background-color: #06AED5;
-    color: #fff;
-    border-bottom: 0.1em solid #06AED5;
+  background-color: #06aed5;
+  color: #fff;
+  border-bottom: 0.1em solid #06aed5;
 }
 
 .label {
-    display: inline-block;
-    margin: 0.2em;
-    padding: 0.2em;
-    box-shadow: 0.1em 0.1em 5px 0px rgba(0,0,0,0.1);
-    border: 1px solid #06AED5;
-    background-color: #D1F0F7;
+  display: inline-block;
+  margin: 0.2em;
+  padding: 0.2em;
+  box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
+  border: 1px solid #06aed5;
+  background-color: #d1f0f7;
 }
 
 .live {
-    background-color: #F9DDDB;
+  background-color: #f9dddb;
 }
 
 div.olive {
-    padding: 0.2em;
+  padding: 0.2em;
 }
 
 div.olive:target {
-    background-color: #D2EBEE;
+  background-color: #d2ebee;
 }
 
 div.olive:target feFlood {
-    flood-color: #D2EBEE;
+  flood-color: #d2ebee;
 }
 
 div.olive:hover {
-    background-color: #EAF5F7;
+  background-color: #eaf5f7;
 }
 
 div.olive:hover feFlood {
-    flood-color: #EAF5F7;
+  flood-color: #eaf5f7;
 }
 
 .modal {
-    position: fixed;
-    z-index: 10;
-    left: 0;
-    top: 0;
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: rgba(0,0,0,0.4);
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  top: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal.close > div {
-    background-color: #fefefe;
-    margin: 5vh auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-height: 90vh;
-    border-radius: 0.2em;
-    box-shadow: 0.2em 0.2em 5px 0px rgba(0,0,0,0.2);
+  background-color: #fefefe;
+  margin: 5vh auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-height: 90vh;
+  border-radius: 0.2em;
+  box-shadow: 0.2em 0.2em 5px 0px rgba(0, 0, 0, 0.2);
 }
 
 .modal.close > div > :first-child {
-    font-size: 150%;
-    top: 0px;
-    right: 0px;
-    text-align: right;
-    cursor: pointer;
+  font-size: 150%;
+  top: 0px;
+  right: 0px;
+  text-align: right;
+  cursor: pointer;
 }
 
 .modal.close > div > :first-child:hover {
-    color: #B83C31;
+  color: #b83c31;
 }
 
 .modal.close > div > :nth-child(2) {
-    overflow: auto;
-    max-height: 85vh;
+  overflow: auto;
+  max-height: 85vh;
 }
 
 th {
-    color: grey;
+  color: grey;
 }
 
 .userselected {
-    font-weight: bold;
-    font-style: italic;
+  font-weight: bold;
+  font-style: italic;
 }
 
 textarea {
-    width: 100%;
-    height: 50vh;
+  width: 100%;
+  height: 50vh;
 }
 
 .function input {
-    width: 50vw;
+  width: 50vw;
 }
 
 .function td:nth-child(2) {
-    text-align: right;
+  text-align: right;
 }
 
 .function td:last-child {
-    width: 51vw;
+  width: 51vw;
 }
 
 .function tr:last-child td:last-child {
-    text-align: right;
+  text-align: right;
 }
 
 .modal .throbber {
-    position: absolute;
-    transform: translateX(-50%) translateY(-50%);
-    display: block;
-    top: calc(50%);
-    left: calc(50%);
+  position: absolute;
+  transform: translateX(-50%) translateY(-50%);
+  display: block;
+  top: calc(50%);
+  left: calc(50%);
 }
 
 div.histogram {
-    padding-top: 1em;
+  padding-top: 1em;
 }
 
 div.editor {
-    width: 100%;
-    height: 70vh;
+  width: 100%;
+  height: 70vh;
 }
 
-.olivemenu div {
-    max-height: 80vh;
-    overflow-y: auto;
+.olivemenu div.olivelist {
+  margin-top: 1em;
+  max-height: 80vh;
+  overflow-y: auto;
+  cursor: default;
 }
