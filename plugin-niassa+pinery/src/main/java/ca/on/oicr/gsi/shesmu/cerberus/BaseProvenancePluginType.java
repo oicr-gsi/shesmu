@@ -138,7 +138,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                           IUSUtils.singleton(
                                   fp.getParentSampleNames(),
                                   reason -> badSetInRecord.add("parents:" + reason),
-                                  true)
+                                  false)
                               .map(IUSUtils::tissue)
                               .orElse(""),
                           limsAttr(fp, "geo_tissue_origin", badSetInRecord::add).orElse(""),
