@@ -35,6 +35,7 @@ public final class PineryIUSValue {
   private final Optional<Double> rin;
   private final String run_status;
   private final Optional<String> sequencing_kit;
+  private final String sequencing_workflow;
   private final Optional<String> sex;
   private final Optional<String> spike_in;
   private final Optional<String> spike_in_dilution_factor;
@@ -76,6 +77,7 @@ public final class PineryIUSValue {
       Optional<Double> rin,
       String run_status,
       Optional<String> sequencing_kit,
+      String sequencing_workflow,
       Optional<String> sex,
       Optional<String> spike_in,
       Optional<String> spike_in_dilution_factor,
@@ -118,6 +120,7 @@ public final class PineryIUSValue {
     this.rin = rin;
     this.run_status = run_status;
     this.sequencing_kit = sequencing_kit;
+    this.sequencing_workflow = sequencing_workflow;
     this.sex = sex;
     this.spike_in = spike_in;
     this.spike_in_dilution_factor = spike_in_dilution_factor;
@@ -196,6 +199,7 @@ public final class PineryIUSValue {
         && rin.equals(that.rin)
         && run_status.equals(that.run_status)
         && sequencing_kit.equals(that.sequencing_kit)
+        && sequencing_workflow.equals(that.sequencing_workflow)
         && sex.equals(that.sex)
         && spike_in.equals(that.spike_in)
         && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
@@ -260,6 +264,7 @@ public final class PineryIUSValue {
         rin,
         run_status,
         sequencing_kit,
+        sequencing_workflow,
         sex,
         spike_in,
         spike_in_dilution_factor,
@@ -359,6 +364,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public Optional<String> sequencing_kit() {
     return sequencing_kit;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String sequencing_workflow() {
+    return sequencing_workflow;
   }
 
   @ShesmuVariable(signable = true)
