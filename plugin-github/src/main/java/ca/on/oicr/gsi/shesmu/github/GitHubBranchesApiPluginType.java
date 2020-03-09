@@ -24,7 +24,8 @@ import org.kohsuke.MetaInfServices;
 public class GitHubBranchesApiPluginType
     extends PluginFileType<GitHubBranchesApiPluginType.GitHubRemote> {
   class GitHubRemote extends JsonPluginFile<Configuration> {
-    private class BranchCache extends ValueCache<Stream<GithubBranchValue>> {
+    private class BranchCache
+        extends ValueCache<Stream<GithubBranchValue>, Stream<GithubBranchValue>> {
 
       public BranchCache(Path fileName) {
         super("github-branches " + fileName.toString(), 10, ReplacingRecord::new);

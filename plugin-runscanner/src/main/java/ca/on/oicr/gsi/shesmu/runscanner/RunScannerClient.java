@@ -26,7 +26,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 public final class RunScannerClient extends JsonPluginFile<Configuration> {
-  private abstract class BaseRunCache<T> extends KeyValueCache<String, Optional<T>> {
+  private abstract class BaseRunCache<T> extends KeyValueCache<String, Optional<T>, Optional<T>> {
 
     public BaseRunCache(
         String name,

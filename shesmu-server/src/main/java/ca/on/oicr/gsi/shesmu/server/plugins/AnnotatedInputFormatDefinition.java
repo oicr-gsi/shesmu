@@ -85,12 +85,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     private final ConfigurationSection configuration;
     private volatile boolean dirty = true;
     private String fileName;
-    private final ValueCache<Optional<List<Object>>> values;
+    private final ValueCache<Optional<List<Object>>, Optional<List<Object>>> values;
 
     public LocalJsonFile(Path fileName) {
       this.fileName = fileName.toString();
       values =
-          new ValueCache<Optional<List<Object>>>(
+          new ValueCache<Optional<List<Object>>, Optional<List<Object>>>(
               format.name() + " " + fileName,
               Integer.MAX_VALUE,
               InvalidatableRecord.checking(l -> dirty, x -> {})) {
@@ -147,7 +147,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   }
 
   private class RemoteJsonSource implements WatchedFileListener {
-    private class RemoteReloader extends ValueCache<Stream<Object>> {
+    private class RemoteReloader extends ValueCache<Stream<Object>, Stream<Object>> {
       public RemoteReloader(Path fileName) {
         super("remotejson " + format.name() + " " + fileName.toString(), 10, ReplacingRecord::new);
       }
@@ -176,7 +176,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       }
     }
 
-    private final ValueCache<Stream<Object>> cache;
+    private final ValueCache<Stream<Object>, Stream<Object>> cache;
     private Optional<Configuration> config = Optional.empty();
     private final Path fileName;
 

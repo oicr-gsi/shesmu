@@ -2616,7 +2616,7 @@ public final class Server implements ServerConfig, ActionServices {
     master.start(executor);
   }
 
-  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<K, V> cache) {
+  private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<K, ?, V> cache) {
     for (final Map.Entry<K, Record<V>> record : cache) {
       final ObjectNode node = entries.putObject(record.getKey().toString());
       node.put("collectionSize", record.getValue().collectionSize());

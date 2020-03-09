@@ -52,7 +52,7 @@ public class PrometheusAlertManagerPluginType
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   class AlertManagerEndpoint extends JsonPluginFile<Configuration> {
-    private class AlertCache extends ValueCache<Stream<AlertDto>> {
+    private class AlertCache extends ValueCache<Stream<AlertDto>, Stream<AlertDto>> {
       public AlertCache(Path fileName) {
         super("alertmanager " + fileName.toString(), 5, ReplacingRecord::new);
       }

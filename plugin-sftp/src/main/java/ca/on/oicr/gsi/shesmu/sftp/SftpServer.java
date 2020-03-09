@@ -37,21 +37,25 @@ import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.sftp.*;
 
 public class SftpServer extends JsonPluginFile<Configuration> {
-  private class ConnectionCache extends ValueCache<Optional<Pair<SSHClient, SFTPClient>>> {
+  private class ConnectionCache
+      extends ValueCache<
+          Optional<Pair<SSHClient, SFTPClient>>,
+          ExclusiveRecord<Optional<Pair<SSHClient, SFTPClient>>>.Lifetime> {
 
     public ConnectionCache(Path fileName) {
       super(
           "sftp " + fileName.toString(),
-          10, //
-          InvalidatableRecord.checking( //
-              pair -> pair.first().isAuthenticated(), //
-              pair -> {
-                try {
-                  pair.first().close();
-                } catch (final Exception e) {
-                  e.printStackTrace();
-                }
-              }));
+          10,
+          ExclusiveRecord.wrap(
+              InvalidatableRecord.checking(
+                  pair -> pair.first().isAuthenticated(),
+                  pair -> {
+                    try {
+                      pair.first().close();
+                    } catch (final Exception e) {
+                      e.printStackTrace();
+                    }
+                  })));
     }
 
     @Override
@@ -67,7 +71,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class FileAttributeCache extends KeyValueCache<Path, Optional<FileAttributes>> {
+  private class FileAttributeCache
+      extends KeyValueCache<Path, Optional<FileAttributes>, Optional<FileAttributes>> {
     public FileAttributeCache(Path fileName) {
       super("sftp " + fileName.toString(), 10, SimpleRecord::new);
     }
@@ -75,17 +80,20 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     @Override
     protected Optional<FileAttributes> fetch(Path fileName, Instant lastUpdated)
         throws IOException {
-      final SFTPClient client = connection.get().map(Pair::second).orElse(null);
-      if (client == null) return Optional.empty();
-      try {
-        final FileAttributes attributes = client.statExistence(fileName.toString());
+      try (ExclusiveRecord<Optional<Pair<SSHClient, SFTPClient>>>.Lifetime lifetime =
+          connection.get()) {
+        final SFTPClient client = lifetime.get().map(Pair::second).orElse(null);
+        if (client == null) return Optional.empty();
+        try {
+          final FileAttributes attributes = client.statExistence(fileName.toString());
 
-        return Optional.of(attributes == null ? NXFILE : attributes);
-      } catch (SFTPException e) {
-        if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
-          return Optional.empty();
+          return Optional.of(attributes == null ? NXFILE : attributes);
+        } catch (SFTPException e) {
+          if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
+            return Optional.empty();
+          }
+          throw e;
         }
-        throw e;
       }
     }
   }
@@ -177,8 +185,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           renderer.line("Port", configuration.getPort());
           renderer.line("User", configuration.getUser());
         });
-    try {
-      renderer.line("Active", connection.get().isPresent() ? "Yes" : "No");
+    try (ExclusiveRecord<Optional<Pair<SSHClient, SFTPClient>>>.Lifetime lifetime =
+        connection.getStale()) {
+      renderer.line("Active", lifetime.get().isPresent() ? "Yes" : "No");
     } catch (InitialCachePopulationException e) {
       renderer.line("Active", "Error on startup");
     }
@@ -190,58 +199,63 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       boolean force,
       boolean fileInTheWay,
       Consumer<Instant> updateMtime) {
-    final Optional<SFTPClient> client = connection.get().map(Pair::second);
-    if (!client.isPresent()) {
-      return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
-    }
-    try {
-      final SFTPClient sftp = client.get();
-      // Because this library thinks that a file not existing is an error state worthy of exception,
-      // it throws whenever stat or lstat is called. There's a wrapper for stat that catches the
-      // exception and returns null, but there's no equivalent for lstat, so we reproduce that catch
-      // logic here.
-      final String linkStr = link.toString();
-      try {
-        final FileAttributes attributes = sftp.lstat(linkStr);
-        updateMtime.accept(Instant.ofEpochSecond(attributes.getMtime()));
-        // File exists and it is a symlink
-        if (attributes.getType() == FileMode.Type.SYMLINK
-            && sftp.readlink(linkStr).equals(target)) {
-          // It's what we want; done
-          return new Pair<>(ActionState.SUCCEEDED, false);
-        }
-        // We've been told to blow it away
-        if (force) {
-          sftp.rm(linkStr);
-          sftp.symlink(linkStr, target);
-          updateMtime.accept(Instant.now());
-          return new Pair<>(ActionState.SUCCEEDED, true);
-        }
-        // It exists and it's not already a symlink to what we want; bail
-        return new Pair<>(ActionState.FAILED, true);
-      } catch (SFTPException sftpe) {
-        if (sftpe.getStatusCode() == Response.StatusCode.NO_SUCH_FILE) {
-          // Create parent if necessary
-          final String dirStr = link.getParent().toString();
-          if (sftp.statExistence(dirStr) == null) {
-            sftp.mkdirs(dirStr);
-          }
-
-          // File does not exist, create it.
-          sftp.symlink(linkStr, target);
-          updateMtime.accept(Instant.now());
-          return new Pair<>(ActionState.SUCCEEDED, false);
-        } else {
-          // The SFTP connection might be in an error state, so reset it to be sure.
-          connection.invalidate();
-          throw sftpe;
-        }
+    try (ExclusiveRecord<Optional<Pair<SSHClient, SFTPClient>>>.Lifetime lifetime =
+        connection.get()) {
+      final Optional<SFTPClient> client = lifetime.get().map(Pair::second);
+      if (!client.isPresent()) {
+        return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
       }
+      try {
+        final SFTPClient sftp = client.get();
+        // Because this library thinks that a file not existing is an error state worthy of
+        // exception,
+        // it throws whenever stat or lstat is called. There's a wrapper for stat that catches the
+        // exception and returns null, but there's no equivalent for lstat, so we reproduce that
+        // catch
+        // logic here.
+        final String linkStr = link.toString();
+        try {
+          final FileAttributes attributes = sftp.lstat(linkStr);
+          updateMtime.accept(Instant.ofEpochSecond(attributes.getMtime()));
+          // File exists and it is a symlink
+          if (attributes.getType() == FileMode.Type.SYMLINK
+              && sftp.readlink(linkStr).equals(target)) {
+            // It's what we want; done
+            return new Pair<>(ActionState.SUCCEEDED, false);
+          }
+          // We've been told to blow it away
+          if (force) {
+            sftp.rm(linkStr);
+            sftp.symlink(linkStr, target);
+            updateMtime.accept(Instant.now());
+            return new Pair<>(ActionState.SUCCEEDED, true);
+          }
+          // It exists and it's not already a symlink to what we want; bail
+          return new Pair<>(ActionState.FAILED, true);
+        } catch (SFTPException sftpe) {
+          if (sftpe.getStatusCode() == Response.StatusCode.NO_SUCH_FILE) {
+            // Create parent if necessary
+            final String dirStr = link.getParent().toString();
+            if (sftp.statExistence(dirStr) == null) {
+              sftp.mkdirs(dirStr);
+            }
 
-    } catch (IOException e) {
-      e.printStackTrace();
-      symlinkErrors.labels(name()).inc();
-      return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
+            // File does not exist, create it.
+            sftp.symlink(linkStr, target);
+            updateMtime.accept(Instant.now());
+            return new Pair<>(ActionState.SUCCEEDED, false);
+          } else {
+            // The SFTP connection might be in an error state, so reset it to be sure.
+            connection.invalidate();
+            throw sftpe;
+          }
+        }
+
+      } catch (IOException e) {
+        e.printStackTrace();
+        symlinkErrors.labels(name()).inc();
+        return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
+      }
     }
   }
 
@@ -294,18 +308,21 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   synchronized boolean rm(String path) {
-    final Optional<SFTPClient> client = connection.get().map(Pair::second);
-    if (!client.isPresent()) {
-      return false;
-    }
-    try {
-      if (client.get().statExistence(path) != null) {
-        client.get().rm(path);
+    try (ExclusiveRecord<Optional<Pair<SSHClient, SFTPClient>>>.Lifetime lifetime =
+        connection.get()) {
+      final Optional<SFTPClient> client = lifetime.get().map(Pair::second);
+      if (!client.isPresent()) {
+        return false;
       }
-      return true;
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
+      try {
+        if (client.get().statExistence(path) != null) {
+          client.get().rm(path);
+        }
+        return true;
+      } catch (IOException e) {
+        e.printStackTrace();
+        return false;
+      }
     }
   }
 
@@ -362,6 +379,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
             }
           });
     }
-    return connection.get().isPresent() ? Optional.empty() : Optional.of(1);
+    try (ExclusiveRecord<Optional<Pair<SSHClient, SFTPClient>>>.Lifetime lifetime =
+        connection.get()) {
+      return lifetime.get().isPresent() ? Optional.empty() : Optional.of(1);
+    }
   }
 }

@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
-  private final class ItemCache extends ValueCache<Stream<PineryIUSValue>> {
+  private final class ItemCache extends ValueCache<Stream<PineryIUSValue>, Stream<PineryIUSValue>> {
     private ItemCache(Path fileName) {
       super("pinery " + fileName.toString(), 30, ReplacingRecord::new);
     }
@@ -265,7 +265,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
-  private final class PlatformCache extends ValueCache<Optional<Map<String, String>>> {
+  private final class PlatformCache
+      extends ValueCache<Optional<Map<String, String>>, Optional<Map<String, String>>> {
     private PlatformCache(Path fileName) {
       super("pinery-platform " + fileName.toString(), 30, SimpleRecord::new);
     }
@@ -289,7 +290,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
-  private class ProjectCache extends ValueCache<Stream<SampleProjectDto>> {
+  private class ProjectCache
+      extends ValueCache<Stream<SampleProjectDto>, Stream<SampleProjectDto>> {
 
     public ProjectCache(Path fileName) {
       super(

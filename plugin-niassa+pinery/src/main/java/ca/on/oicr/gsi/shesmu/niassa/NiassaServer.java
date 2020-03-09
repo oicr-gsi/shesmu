@@ -40,7 +40,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 class NiassaServer extends JsonPluginFile<Configuration> {
-  private class AnalysisCache extends KeyValueCache<Long, Stream<AnalysisState>> {
+  private class AnalysisCache
+      extends KeyValueCache<Long, Stream<AnalysisState>, Stream<AnalysisState>> {
     public AnalysisCache(Path fileName) {
       super("niassa-analysis " + fileName.toString(), 120, ReplacingRecord::new);
     }
@@ -93,7 +94,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class AnalysisDataCache extends ValueCache<Stream<CerberusAnalysisProvenanceValue>> {
+  private class AnalysisDataCache
+      extends ValueCache<
+          Stream<CerberusAnalysisProvenanceValue>, Stream<CerberusAnalysisProvenanceValue>> {
     public AnalysisDataCache(Path fileName) {
       super("niassa-data-analysis " + fileName.toString(), 20, ReplacingRecord::new);
     }
@@ -108,7 +111,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class DirectoryAndIniCache extends KeyValueCache<Long, Optional<WorkflowRunEssentials>> {
+  private class DirectoryAndIniCache
+      extends KeyValueCache<
+          Long, Optional<WorkflowRunEssentials>, Optional<WorkflowRunEssentials>> {
     public DirectoryAndIniCache(Path fileName) {
       super("niassa-dir+ini " + fileName.toString(), 60 * 24 * 365, SimpleRecord::new);
     }
@@ -160,7 +165,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class MaxInFlightCache extends KeyValueCache<Long, Optional<Integer>> {
+  private class MaxInFlightCache extends KeyValueCache<Long, Optional<Integer>, Optional<Integer>> {
     public MaxInFlightCache(Path fileName) {
       super("niassa-max-in-flight " + fileName.toString(), 5, SimpleRecord::new);
     }
@@ -196,7 +201,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class SkipLaneCache extends ValueCache<Stream<Pair<Tuple, Tuple>>> {
+  private class SkipLaneCache
+      extends ValueCache<Stream<Pair<Tuple, Tuple>>, Stream<Pair<Tuple, Tuple>>> {
     public SkipLaneCache(Path fileName) {
       super("niassa-skipped " + fileName.toString(), 20, ReplacingRecord::new);
     }
@@ -353,7 +359,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final MaxInFlightCache maxInFlightCache;
   private Metadata metadata;
   private Properties settings = new Properties();
-  private final ValueCache<Stream<Pair<Tuple, Tuple>>> skipCache;
+  private final ValueCache<Stream<Pair<Tuple, Tuple>>, Stream<Pair<Tuple, Tuple>>> skipCache;
   private final Runnable unsubscribe = WORKFLOWS.subscribe(this::updateWorkflows);
   private String url;
 
@@ -375,7 +381,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
   }
 
-  public KeyValueCache<Long, Stream<AnalysisState>> analysisCache() {
+  public KeyValueCache<Long, Stream<AnalysisState>, Stream<AnalysisState>> analysisCache() {
     return analysisCache;
   }
 

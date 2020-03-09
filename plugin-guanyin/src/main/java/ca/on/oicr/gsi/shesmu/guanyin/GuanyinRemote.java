@@ -23,7 +23,8 @@ import org.apache.http.client.methods.HttpGet;
 
 public class GuanyinRemote extends JsonPluginFile<Configuration> {
 
-  private class ReportsCache extends ValueCache<Stream<GuanyinReportValue>> {
+  private class ReportsCache
+      extends ValueCache<Stream<GuanyinReportValue>, Stream<GuanyinReportValue>> {
     public ReportsCache(Path fileName) {
       super("guanyin-reports " + fileName, 20, ReplacingRecord::new);
     }
