@@ -249,6 +249,87 @@ a.load.danger:visited {
   background-color: #fcf5d2;
 }
 
+.state_failed.updating,
+.state_unknown.updating {
+  background: linear-gradient(
+    -45deg,
+    #f9dddb 25%,
+    #fac7c3 25%,
+    #fac7c3 50%,
+    #f9dddb 50%,
+    #f9dddb 75%,
+    #fac7c3 75%
+  );
+  background-size: 200px 200px;
+}
+
+.state_halp.updating {
+  background: linear-gradient(
+    -45deg,
+    #b83c31 25%,
+    #b84e44 25%,
+    #b84e44 50%,
+    #b83c31 50%,
+    #b83c31 75%,
+    #b84e44 75%
+  );
+  background-size: 200px 200px;
+}
+
+.state_inflight.updating,
+.state_queued.updating {
+  background: linear-gradient(
+    -45deg,
+    #d1efed 25%,
+    #b9f0ec 25%,
+    #b9f0ec 50%,
+    #d1efed 50%,
+    #d1efed 75%,
+    #b9f0ec 75%
+  );
+  background-size: 200px 200px;
+}
+
+.state_succeeded.updating {
+  background: linear-gradient(
+    -45deg,
+    #d1f0f7 25%,
+    #baecf7 25%,
+    #baecf7 50%,
+    #d1f0f7 50%,
+    #d1f0f7 75%,
+    #baecf7 75%
+  );
+  background-size: 200px 200px;
+}
+
+.state_throttled.updating,
+.state_waiting.updating {
+  background: linear-gradient(
+    -45deg,
+    #fcf5d2 25%,
+    #fcf1b8 25%,
+    #fcf1b8 50%,
+    #fcf5d2 50%,
+    #fcf5d2 75%,
+    #fcf1b8 75%
+  );
+  background-size: 200px 200px;
+}
+
+.updating {
+  animation: barberpole 60s infinite linear;
+}
+
+@keyframes barberpole {
+  from {
+    background-position: 0%;
+  }
+  to {
+    background-position: 100%;
+  }
+}
+
 .inset {
   padding: 0.5em;
   margin: 0.5em;

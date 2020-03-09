@@ -189,9 +189,9 @@ public final class ActionProcessor
     ActionState lastState = ActionState.UNKNOWN;
     Instant lastStateTransition = Instant.now();
     final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
-    volatile boolean scheduled;
     final Set<String> tags = ConcurrentHashMap.newKeySet();
     String thrown;
+    volatile boolean updateInProgress;
 
     private Information(Action action) {
       String id;
@@ -1087,6 +1087,7 @@ public final class ActionProcessor
             entry -> {
               final ObjectNode node = entry.getKey().toJson(RuntimeSupport.MAPPER);
               node.put("actionId", entry.getValue().id);
+              node.put("updateInProgress ", entry.getValue().updateInProgress);
               node.put("state", entry.getValue().lastState.name());
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
@@ -1174,7 +1175,7 @@ public final class ActionProcessor
             .filter(
                 entry ->
                     entry.getValue().lastState != ActionState.SUCCEEDED
-                        && !entry.getValue().scheduled
+                        && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))
             .limit(1000 * ACTION_PERFORM_THREADS - currentRunningActions.get())
@@ -1182,7 +1183,7 @@ public final class ActionProcessor
     currentRunningActionsGauge.set(currentRunningActions.addAndGet(candidates.size()));
 
     for (final Entry<Action, Information> entry : candidates) {
-      entry.getValue().scheduled = true;
+      entry.getValue().updateInProgress = true;
       final String location =
           entry
               .getValue()
@@ -1225,7 +1226,7 @@ public final class ActionProcessor
               stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
             }
             actionThrows.inc((entry.getValue().thrown != null ? 0 : 1) - (oldThrown ? 0 : 1));
-            entry.getValue().scheduled = false;
+            entry.getValue().updateInProgress = false;
             currentRunningActionsGauge.set(currentRunningActions.decrementAndGet());
           });
     }
