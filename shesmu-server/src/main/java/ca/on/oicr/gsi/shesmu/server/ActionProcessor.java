@@ -1194,7 +1194,8 @@ public final class ActionProcessor
       final Runnable queuedInflight =
           Server.inflight(
               String.format(
-                  "Waiting to perform %s action from %s", entry.getKey().type(), location));
+                  "Waiting to perform %s action %s from %s",
+                  entry.getKey().type(), entry.getValue().id, location));
       workExecutor.submit(
           () -> {
             entry.getValue().lastChecked = Instant.now();
