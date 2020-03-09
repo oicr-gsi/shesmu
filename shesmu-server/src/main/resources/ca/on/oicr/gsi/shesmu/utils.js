@@ -174,7 +174,8 @@ export function timespan(title, time) {
 
 export function title(action, t) {
   const element = action.url ? link(action.url, t) : text(t);
-  element.title = action.state;
+  element.title =
+    action.state + (action.updateInProgress ? " Update in progress" : "");
   let tags;
   if (action.tags.length > 0) {
     tags = document.createElement("DIV");

@@ -1943,7 +1943,9 @@ function nextPage(query, targetElement, onActionPage) {
 
     data.results.forEach(action => {
       const tile = document.createElement("DIV");
-      tile.className = `action state_${action.state.toLowerCase()}`;
+      tile.className = `action state_${action.state.toLowerCase()}${
+        action.updateInProgress ? " updating" : ""
+      }`;
       const toolbar = document.createElement("P");
       toolbar.appendChild(
         link(
