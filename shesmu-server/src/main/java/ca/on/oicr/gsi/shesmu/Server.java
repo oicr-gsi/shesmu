@@ -30,22 +30,17 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
-import ca.on.oicr.gsi.shesmu.runtime.*;
+import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.OliveRunInfo;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.JarHashRepository;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
-import ca.on.oicr.gsi.status.BasePage;
-import ca.on.oicr.gsi.status.ConfigurationSection;
-import ca.on.oicr.gsi.status.Header;
-import ca.on.oicr.gsi.status.NavigationMenu;
-import ca.on.oicr.gsi.status.SectionRenderer;
-import ca.on.oicr.gsi.status.ServerConfig;
-import ca.on.oicr.gsi.status.StatusPage;
-import ca.on.oicr.gsi.status.TablePage;
-import ca.on.oicr.gsi.status.TableRowWriter;
+import ca.on.oicr.gsi.status.*;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -61,12 +56,7 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -338,7 +328,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
 
-    add(
+    server.createContext( // This uses createContext instead of add to bypass the fail-fast handler
         "/inflightdash",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
