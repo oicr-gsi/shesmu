@@ -175,10 +175,10 @@ public final class Server implements ServerConfig, ActionServices {
   private final Executor wwwExecutor =
       new ThreadPoolExecutor(
           Runtime.getRuntime().availableProcessors(),
-          2 * Runtime.getRuntime().availableProcessors(),
+          4 * Runtime.getRuntime().availableProcessors(),
           1,
           TimeUnit.HOURS,
-          new ArrayBlockingQueue<>(3 * Runtime.getRuntime().availableProcessors()),
+          new ArrayBlockingQueue<>(10 * Runtime.getRuntime().availableProcessors()),
           runnable -> {
             final Thread thread = new Thread(runnable);
             thread.setPriority(Thread.MAX_PRIORITY);
