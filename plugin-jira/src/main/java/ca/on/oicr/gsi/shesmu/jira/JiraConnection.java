@@ -39,7 +39,8 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
 public class JiraConnection extends JsonPluginFile<Configuration> {
-  private class FilterCache extends KeyValueCache<String, Stream<JiraActionFilter>> {
+  private class FilterCache
+      extends KeyValueCache<String, Stream<JiraActionFilter>, Stream<JiraActionFilter>> {
     public FilterCache(Path fileName) {
       super("jira-filters " + fileName.toString(), 15, ReplacingRecord::new);
     }
@@ -82,7 +83,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class IssueCache extends ValueCache<Stream<Issue>> {
+  private class IssueCache extends ValueCache<Stream<Issue>, Stream<Issue>> {
     public IssueCache(Path fileName) {
       super("jira-issues " + fileName.toString(), 15, MergingRecord.by(Issue::getId));
     }

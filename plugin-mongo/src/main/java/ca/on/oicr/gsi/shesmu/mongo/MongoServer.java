@@ -48,8 +48,8 @@ public class MongoServer extends JsonPluginFile<Configuration> {
           function.getSelector().type(function.getResultType().type()),
           new VariadicFunction() {
             private final Definer<MongoServer> definer = MongoServer.this.definer;
-            private final KeyValueCache<Tuple, Optional<Object>> cache =
-                new KeyValueCache<Tuple, Optional<Object>>(
+            private final KeyValueCache<Tuple, Optional<Object>, Optional<Object>> cache =
+                new KeyValueCache<Tuple, Optional<Object>, Optional<Object>>(
                     String.format("mongo %s %s", MongoServer.this.fileName(), entry.getKey()),
                     function.getTtl(),
                     SimpleRecord::new) {

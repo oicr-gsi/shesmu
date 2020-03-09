@@ -15,13 +15,14 @@ import java.util.stream.Stream;
  *
  * @param <V> the cached value
  */
-public abstract class ValueCache<V> implements Owner {
+public abstract class ValueCache<I, V> implements Owner {
 
-  public static Stream<? extends ValueCache<?>> caches() {
+  public static Stream<? extends ValueCache<?, ?>> caches() {
     return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
   }
 
-  private static final Map<String, SoftReference<ValueCache<?>>> CACHES = new ConcurrentHashMap<>();
+  private static final Map<String, SoftReference<ValueCache<?, ?>>> CACHES =
+      new ConcurrentHashMap<>();
   private static final Gauge innerCount =
       Gauge.build("shesmu_cache_v_max_inner_count", "The largest collection stored in a cache.")
           .labelNames("name")
@@ -42,7 +43,7 @@ public abstract class ValueCache<V> implements Owner {
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public ValueCache(String name, int ttl, BiFunction<Owner, Updater<V>, Record<V>> recordCtor) {
+  public ValueCache(String name, int ttl, BiFunction<Owner, Updater<I>, Record<V>> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
@@ -61,7 +62,7 @@ public abstract class ValueCache<V> implements Owner {
    * @param lastUpdated the last time this item was successfully updated
    * @return the cached value
    */
-  protected abstract V fetch(Instant lastUpdated) throws Exception;
+  protected abstract I fetch(Instant lastUpdated) throws Exception;
 
   /**
    * Get an item from cache

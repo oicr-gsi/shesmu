@@ -31,7 +31,9 @@ import javax.xml.stream.XMLStreamException;
 public abstract class BaseProvenancePluginType<C extends AutoCloseable>
     extends PluginFileType<BaseProvenancePluginType.FileConfiguration> {
   class FileConfiguration extends PluginFile {
-    private class ItemCache extends ValueCache<Stream<CerberusFileProvenanceValue>> {
+    private class ItemCache
+        extends ValueCache<
+            Stream<CerberusFileProvenanceValue>, Stream<CerberusFileProvenanceValue>> {
 
       public ItemCache() {
         super(name + " " + fileName().toString(), 60, ReplacingRecord::new);

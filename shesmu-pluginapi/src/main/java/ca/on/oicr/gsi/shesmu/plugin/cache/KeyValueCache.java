@@ -17,12 +17,12 @@ import java.util.stream.Stream;
  * @param <K> the keys to use to lookup data in the cache
  * @param <V> the cached values
  */
-public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K, Record<V>>> {
-  public static Stream<? extends KeyValueCache<?, ?>> caches() {
+public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entry<K, Record<V>>> {
+  public static Stream<? extends KeyValueCache<?, ?, ?>> caches() {
     return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
   }
 
-  private static final Map<String, SoftReference<KeyValueCache<?, ?>>> CACHES =
+  private static final Map<String, SoftReference<KeyValueCache<?, ?, ?>>> CACHES =
       new ConcurrentHashMap<>();
   private static final Gauge count =
       Gauge.build("shesmu_cache_kv_item_count", "Number of items in a cache.")
@@ -41,7 +41,7 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
 
   private final String name;
 
-  private final BiFunction<Owner, Updater<V>, Record<V>> recordCtor;
+  private final BiFunction<Owner, Updater<I>, Record<V>> recordCtor;
   private final Map<K, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -51,7 +51,7 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public KeyValueCache(String name, int ttl, BiFunction<Owner, Updater<V>, Record<V>> recordCtor) {
+  public KeyValueCache(String name, int ttl, BiFunction<Owner, Updater<I>, Record<V>> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
@@ -68,7 +68,7 @@ public abstract class KeyValueCache<K, V> implements Owner, Iterable<Map.Entry<K
    * @return the cached value
    * @throws Exception if an error occurs, the previous value will be retained
    */
-  protected abstract V fetch(K key, Instant lastUpdated) throws Exception;
+  protected abstract I fetch(K key, Instant lastUpdated) throws Exception;
 
   /**
    * Get an item from cache
