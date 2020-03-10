@@ -590,6 +590,11 @@ public final class ActionProcessor
       long time)
       throws Exception {
     final Map<String, String> labelMap = repack(labels, "Labels");
+    // Alert Manager doesn't officially require an instance, but it gets weird if not included, so
+    // add one unless the olive supplied it.
+    if (!labelMap.containsKey("instance")) {
+      labelMap.put("instance", baseUri);
+    }
     try (AutoCloseable lock = alertLock.acquire()) {
       Alert alert;
       final boolean duplicate = alerts.containsKey(labelMap);
