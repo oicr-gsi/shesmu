@@ -311,7 +311,8 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
         .flatMap(OliveArgumentNode::targets)
         .noneMatch(l -> l.name().equals("alertname"))) {
       errorHandler.accept(
-          String.format("%d:%d: Alert should have an “alertname” label.", line, column));
+          String.format("%d:%d: Alert needs to have an “alertname” label.", line, column));
+      return false;
     }
     return ok;
   }
