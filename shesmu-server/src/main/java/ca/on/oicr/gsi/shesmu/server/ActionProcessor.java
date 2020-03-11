@@ -685,7 +685,21 @@ public final class ActionProcessor
    * @return the number of actions that were able to execute the command
    */
   public long command(String command, Filter... filters) {
-    return startStream(filters).filter(e -> e.getKey().performCommand(command)).count();
+    return startStream(filters)
+        .filter(
+            e -> {
+              final boolean result = e.getKey().performCommand(command);
+              if (result) {
+                if (e.getValue().lastState != ActionState.UNKNOWN) {
+                  stateCount.labels(e.getValue().lastState.name(), e.getKey().type()).dec();
+                  stateCount.labels(ActionState.UNKNOWN.name(), e.getKey().type()).inc();
+                  e.getValue().lastStateTransition = Instant.now();
+                }
+                e.getValue().lastState = ActionState.UNKNOWN;
+              }
+              return result;
+            })
+        .count();
   }
 
   private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(
