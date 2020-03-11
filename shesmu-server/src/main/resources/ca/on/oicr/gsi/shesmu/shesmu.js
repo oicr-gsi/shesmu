@@ -1579,6 +1579,8 @@ export function initialiseOliveDash(
           }
         });
         if (saved && saved.file == file.filename && !saved.line) {
+          open = false;
+          saved = null;
           let initialCustomFilter = null;
           try {
             initialCustomFilter = JSON.parse(userFilters);
