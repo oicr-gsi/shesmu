@@ -9,7 +9,6 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -105,7 +104,7 @@ public abstract class PluginFileType<T extends PluginFile> {
    *
    * @return the URL to the source file or an empty stream if not possible
    */
-  public Stream<String> sourceUrl(String localFilePath, int line, int column, Instant time) {
+  public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
     return Stream.empty();
   }
 

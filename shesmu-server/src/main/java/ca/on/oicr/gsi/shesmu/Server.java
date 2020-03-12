@@ -210,8 +210,13 @@ public final class Server implements ServerConfig, ActionServices {
             new OliveServices() {
               @Override
               public boolean accept(
-                  Action action, String filename, int line, int column, long time, String[] tags) {
-                return processor.accept(action, filename, line, column, time, tags);
+                  Action action,
+                  String filename,
+                  int line,
+                  int column,
+                  String hash,
+                  String[] tags) {
+                return processor.accept(action, filename, line, column, hash, tags);
               }
 
               @Override
@@ -222,9 +227,9 @@ public final class Server implements ServerConfig, ActionServices {
                   String filename,
                   int line,
                   int column,
-                  long time)
+                  String hash)
                   throws Exception {
-                return processor.accept(labels, annotation, ttl, filename, line, column, time);
+                return processor.accept(labels, annotation, ttl, filename, line, column, hash);
               }
 
               @Override
@@ -379,19 +384,19 @@ public final class Server implements ServerConfig, ActionServices {
                   final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
                   oliveJson(olives);
                   olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
-                  final Map<String, Instant> currentOlives =
+                  final Map<String, String> currentOlives =
                       compiler
                           .dashboard()
                           .map(Pair::second)
-                          .collect(Collectors.toMap(FileTable::filename, FileTable::timestamp));
+                          .collect(Collectors.toMap(FileTable::filename, FileTable::hash));
                   final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
                   processor
                       .pauses()
                       .filter(
                           pause ->
                               !currentOlives
-                                  .getOrDefault(pause.fileName(), Instant.EPOCH)
-                                  .equals(pause.time()))
+                                  .getOrDefault(pause.fileName(), "")
+                                  .equals(pause.hash()))
                       .forEach(location -> location.toJson(deadPauses, pluginManager));
                   deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses);
 
@@ -1486,7 +1491,7 @@ public final class Server implements ServerConfig, ActionServices {
                                               ft.second().filename(),
                                               o.line(),
                                               o.column(),
-                                              ft.second().timestamp())))
+                                              ft.second().hash())))
                               .map(o -> new Pair<>(ft, o)))
                   .findFirst()
                   .orElse(null);
@@ -1504,7 +1509,7 @@ public final class Server implements ServerConfig, ActionServices {
                   writer,
                   pluginManager,
                   match.first().second().filename(),
-                  match.first().second().timestamp(),
+                  match.first().second().hash(),
                   match.second(),
                   match.first().first() == null ? null : match.first().first().inputCount(),
                   match.first().second().format(),
@@ -2049,9 +2054,9 @@ public final class Server implements ServerConfig, ActionServices {
                           writer.writeAttribute("style", "overflow-x:auto");
                           MetroDiagram.draw(
                               writer,
-                              (localFilePath, line, column, time) -> Stream.empty(),
+                              (localFilePath, line, column, hash) -> Stream.empty(),
                               "",
-                              description.get().timestamp(),
+                              description.get().hash(),
                               olive,
                               null,
                               description.get().format(),
@@ -2249,7 +2254,7 @@ public final class Server implements ServerConfig, ActionServices {
                   query.get("file").asText(""),
                   query.get("line").asInt(0),
                   query.get("column").asInt(0),
-                  Instant.ofEpochMilli(query.get("time").asLong(0)));
+                  query.get("hash").asText(""));
           if (query.get("pause").asBoolean(false)) {
             processor.pause(location);
           } else {
@@ -2509,7 +2514,7 @@ public final class Server implements ServerConfig, ActionServices {
             fileTable -> {
               final ObjectNode fileNode = array.addObject();
               fileNode.put("format", fileTable.second().format().name());
-              fileNode.put("lastCompiled", fileTable.second().timestamp().toEpochMilli());
+              fileNode.put("hash", fileTable.second().hash());
               fileNode.put("filename", fileTable.second().filename());
               fileNode.put("bytecode", fileTable.second().bytecode());
               fileNode.put(
@@ -2537,7 +2542,7 @@ public final class Server implements ServerConfig, ActionServices {
                                 fileTable.second().filename(),
                                 olive.line(),
                                 olive.column(),
-                                fileTable.second().timestamp());
+                                fileTable.second().hash());
                         final ObjectNode oliveNode = olivesNode.addObject();
                         location.toJson(oliveNode, pluginManager);
                         oliveNode.put("description", olive.description());
@@ -2564,7 +2569,7 @@ public final class Server implements ServerConfig, ActionServices {
   private void showSourceConfig(XMLStreamWriter writer, Path filename) {
     if (filename != null) {
       pluginManager
-          .sourceUrl(filename.toString(), 1, 1, Instant.EPOCH)
+          .sourceUrl(filename.toString(), 1, 1, "")
           .findFirst()
           .ifPresent(
               l -> {

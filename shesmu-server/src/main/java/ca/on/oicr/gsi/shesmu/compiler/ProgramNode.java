@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -88,11 +87,11 @@ public class ProgramNode {
     this.olives = olives;
   }
 
-  public FileTable dashboard(String filename, Instant timestamp, String bytecode) {
+  public FileTable dashboard(String filename, String hash, String bytecode) {
     return new FileTable(
         filename,
         inputFormatDefinition,
-        timestamp,
+        hash,
         bytecode,
         olives.stream().flatMap(OliveNode::dashboard));
   }

@@ -1,7 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.description;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -10,19 +9,19 @@ public final class FileTable {
   private final String bytecode;
   private final String filename;
   private final InputFormatDefinition format;
+  private final String hash;
   private final List<OliveTable> olives;
-  private final Instant timestamp;
 
   public FileTable(
       String filename,
       InputFormatDefinition format,
-      Instant timestamp,
+      String hash,
       String bytecode,
       Stream<OliveTable> olives) {
     super();
     this.filename = filename;
     this.format = format;
-    this.timestamp = timestamp;
+    this.hash = hash;
     this.bytecode = bytecode;
     this.olives = olives.collect(Collectors.toList());
   }
@@ -39,11 +38,11 @@ public final class FileTable {
     return format;
   }
 
-  public Stream<OliveTable> olives() {
-    return olives.stream();
+  public String hash() {
+    return hash;
   }
 
-  public Instant timestamp() {
-    return timestamp;
+  public Stream<OliveTable> olives() {
+    return olives.stream();
   }
 }

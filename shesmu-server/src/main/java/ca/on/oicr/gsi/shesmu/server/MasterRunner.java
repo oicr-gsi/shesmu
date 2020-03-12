@@ -54,10 +54,10 @@ public class MasterRunner {
 
             @Override
             public boolean accept(
-                Action action, String filename, int line, int column, long time, String[] tags) {
+                Action action, String filename, int line, int column, String hash, String[] tags) {
 
               final boolean isDuplicated =
-                  services.accept(action, filename, line, column, time, tags);
+                  services.accept(action, filename, line, column, hash, tags);
               if (isDuplicated) {
                 currentActionDuplicates.incrementAndGet();
               }
@@ -72,10 +72,10 @@ public class MasterRunner {
                 String filename,
                 int line,
                 int column,
-                long time)
+                String hash)
                 throws Exception {
               final boolean isDuplicated =
-                  services.accept(labels, annotation, ttl, filename, line, column, time);
+                  services.accept(labels, annotation, ttl, filename, line, column, hash);
               if (isDuplicated) {
                 currentAlertDuplicates.incrementAndGet();
               }

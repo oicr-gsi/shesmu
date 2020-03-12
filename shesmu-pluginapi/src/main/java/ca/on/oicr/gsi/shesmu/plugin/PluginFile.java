@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -72,7 +71,7 @@ public abstract class PluginFile implements RequiredServices {
    *
    * @return the URL to the source file or null if not possible
    */
-  public Stream<String> sourceUrl(String localFilePath, int line, int column, Instant time) {
+  public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
     return Stream.empty();
   }
 

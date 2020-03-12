@@ -198,13 +198,7 @@ export function title(action, t) {
       ["File", l => fileNameFormatter(l.file)],
       ["Line", l => l.line],
       ["Column", l => l.column],
-      [
-        "Time",
-        l => {
-          const [ago, absolute] = formatTimeBin(l.time);
-          return `${absolute} (${ago})`;
-        }
-      ],
+      ["Source Hash", l => l.hash],
       ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
     ),
     table(

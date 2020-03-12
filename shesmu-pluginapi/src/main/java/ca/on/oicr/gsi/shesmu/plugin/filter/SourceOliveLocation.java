@@ -6,8 +6,8 @@ import java.util.function.Predicate;
 public final class SourceOliveLocation implements Predicate<SourceLocation> {
   private Integer column;
   private String file;
+  private String hash;
   private Integer line;
-  private Long time;
 
   public SourceOliveLocation() {}
 
@@ -15,7 +15,7 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     this.column = original.column;
     this.file = original.file;
     this.line = original.line;
-    this.time = original.time;
+    this.hash = original.hash;
   }
 
   @Override
@@ -51,11 +51,11 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     } else if (!line.equals(other.line)) {
       return false;
     }
-    if (time == null) {
-      if (other.time != null) {
+    if (hash == null) {
+      if (other.hash != null) {
         return false;
       }
-    } else if (!time.equals(other.time)) {
+    } else if (!hash.equals(other.hash)) {
       return false;
     }
     return true;
@@ -69,12 +69,12 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     return file;
   }
 
-  public Integer getLine() {
-    return line;
+  public String getHash() {
+    return hash;
   }
 
-  public Long getTime() {
-    return time;
+  public Integer getLine() {
+    return line;
   }
 
   @Override
@@ -84,7 +84,7 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     result = prime * result + (column == null ? 0 : column.hashCode());
     result = prime * result + (file == null ? 0 : file.hashCode());
     result = prime * result + (line == null ? 0 : line.hashCode());
-    result = prime * result + (time == null ? 0 : time.hashCode());
+    result = prime * result + (hash == null ? 0 : hash.hashCode());
     return result;
   }
 
@@ -96,12 +96,12 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     this.file = file;
   }
 
-  public void setLine(Integer line) {
-    this.line = line;
+  public void setHash(String hash) {
+    this.hash = hash;
   }
 
-  public void setTime(Long time) {
-    this.time = time;
+  public void setLine(Integer line) {
+    this.line = line;
   }
 
   @Override
@@ -122,9 +122,9 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     if (location.column() != column) {
       return false;
     }
-    if (time == null) {
+    if (hash == null) {
       return true;
     }
-    return location.time().toEpochMilli() == time;
+    return location.hash().equals(hash);
   }
 }

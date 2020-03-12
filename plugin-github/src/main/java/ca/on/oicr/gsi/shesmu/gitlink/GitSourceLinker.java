@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -44,7 +43,7 @@ public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFil
     }
 
     @Override
-    public Stream<String> sourceUrl(String localFilePath, int line, int column, Instant time) {
+    public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
       return config
           .<Stream<String>>map(
               c -> {

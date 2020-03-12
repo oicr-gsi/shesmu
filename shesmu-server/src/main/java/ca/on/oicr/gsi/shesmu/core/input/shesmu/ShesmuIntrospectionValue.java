@@ -39,8 +39,8 @@ public class ShesmuIntrospectionValue {
                     new Tuple(
                         Long.valueOf(l.column()),
                         Paths.get(l.fileName()),
-                        Long.valueOf(l.line()),
-                        l.time()))
+                        l.hash(),
+                        Long.valueOf(l.line())))
             .collect(Collectors.toSet());
   }
 
@@ -59,7 +59,7 @@ public class ShesmuIntrospectionValue {
     return generated;
   }
 
-  @ShesmuVariable(type = "ao4column$ifile$pline$itime$d")
+  @ShesmuVariable(type = "ao4column$ifile$phash$sline$i")
   public Set<Tuple> locations() {
     return locations;
   }
