@@ -1028,16 +1028,14 @@ export function initialiseOliveDash(
     inputFormatLink.href = `inputdefs#${file.format}`;
     inputFormatCell.appendChild(inputFormatLink);
 
-    const compileTimeRow = document.createElement("TR");
-    infoTable.appendChild(compileTimeRow);
-    const compileTimeHeader = document.createElement("TD");
-    compileTimeHeader.innerText = "Last Compiled";
-    compileTimeRow.appendChild(compileTimeHeader);
-    const compileTimeCell = document.createElement("TD");
-    const [ago, exact] = formatTimeBin(file.lastCompiled);
-    compileTimeCell.innerText = ago;
-    compileTimeCell.title = exact;
-    compileTimeRow.appendChild(compileTimeCell);
+    const sourceHashRow = document.createElement("TR");
+    infoTable.appendChild(sourceHashRow);
+    const sourceHashHeader = document.createElement("TD");
+    sourceHashHeader.innerText = "Source Hash";
+    sourceHashRow.appendChild(sourceHashHeader);
+    const sourceHashCell = document.createElement("TD");
+    sourceHashCell.innerText = file.hash;
+    sourceHashRow.appendChild(sourceHashCell);
 
     return infoTable;
   };
@@ -1101,7 +1099,7 @@ export function initialiseOliveDash(
                 file: file.filename,
                 line: null,
                 column: null,
-                time: file.lastCompiled,
+                hash: file.hash,
                 filters: filters
               },
               file.filename,
@@ -1110,7 +1108,7 @@ export function initialiseOliveDash(
                   file: file.filename,
                   line: null,
                   column: null,
-                  time: null
+                  hash: null
                 })
               )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
             );
@@ -1138,7 +1136,7 @@ export function initialiseOliveDash(
       file: file.filename,
       line: olive.line,
       column: olive.column,
-      time: file.lastCompiled
+      hash: file.hash
     });
     const prepareInfo = (infoPane, metroPane, bytecodePane) => {
       const infoTable = prepareFileInfo(file, infoPane, bytecodePane);
@@ -1176,7 +1174,7 @@ export function initialiseOliveDash(
             file: file.filename,
             line: olive.line,
             column: olive.column,
-            time: file.lastCompiled
+            hash: file.hash
           }),
           method: "POST"
         })
@@ -1229,7 +1227,7 @@ export function initialiseOliveDash(
             file: file.filename,
             line: olive.line,
             column: olive.column,
-            time: file.lastCompiled,
+            hash: file.hash,
             filters: filters
           },
           olive.syntax + " ― " + olive.description,
@@ -1238,7 +1236,7 @@ export function initialiseOliveDash(
               file: file.filename,
               line: olive.line,
               column: olive.column,
-              time: file.lastCompiled
+              hash: file.hash
             })
           )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
         );
@@ -1267,7 +1265,7 @@ export function initialiseOliveDash(
                   file: file.filename,
                   line: olive.line,
                   column: olive.column,
-                  time: file.lastCompiled,
+                  hash: file.hash,
                   pause: !olive.paused
                 }),
                 method: "POST"
@@ -1288,7 +1286,7 @@ export function initialiseOliveDash(
                     file: file.filename,
                     line: olive.line,
                     column: olive.column,
-                    time: file.lastCompiled
+                    hash: file.hash
                   }
                 ]
               }
@@ -1353,7 +1351,7 @@ export function initialiseOliveDash(
                   file: file.filename,
                   line: olive.line,
                   column: olive.column,
-                  time: file.lastCompiled
+                  hash: file.hash
                 }
               ]
             }),
@@ -1384,7 +1382,7 @@ export function initialiseOliveDash(
               file: file.filename,
               line: olive.line,
               column: olive.column,
-              time: file.lastCompiled,
+              hash: file.hash,
               filters: null
             },
             olive.syntax + " ― " + olive.description,
@@ -1558,7 +1556,7 @@ export function initialiseOliveDash(
             saved.file == file.filename &&
             saved.line == olive.line &&
             saved.column == olive.column &&
-            saved.time == file.lastCompiled
+            saved.hash == file.hash
           ) {
             clearChildren(activeOlive);
             const oliveSyntax = document.createElement("I");
@@ -1622,7 +1620,7 @@ export function initialiseOliveDash(
     olives.appendChild(deadTable);
     const deadHeader = document.createElement("tr");
     deadTable.appendChild(deadHeader);
-    for (const name of ["File", "Line", "Column", "Compile Time"]) {
+    for (const name of ["File", "Line", "Column", "Source Hash"]) {
       const cell = document.createElement("th");
       cell.innerText = name;
       deadHeader.appendChild(cell);
@@ -1648,11 +1646,9 @@ export function initialiseOliveDash(
       column.innerText = deadPause.column;
       tr.appendChild(column);
 
-      const compileTime = document.createElement("td");
-      const [ago, exact] = formatTimeBin(deadPause.time);
-      compileTime.innerText = ago;
-      compileTime.title = exact;
-      tr.appendChild(compileTime);
+      const sourceHash = document.createElement("td");
+      sourceHash.innerText = deadPause.hash;
+      tr.appendChild(sourceHash);
 
       tr.style.cursor = "pointer";
       tr.addEventListener("click", e => {
@@ -1665,7 +1661,7 @@ export function initialiseOliveDash(
                   file: deadPause.file,
                   line: deadPause.line,
                   column: deadPause.column,
-                  time: deadPause.time
+                  hash: deadPause.hash
                 }
               ]
             }
@@ -1699,7 +1695,7 @@ export function initialiseOliveDash(
                       file: deadPause.file,
                       line: deadPause.line,
                       column: deadPause.column,
-                      time: deadPause.time
+                      hash: deadPause.hash
                     },
                     false,
                     cleanup
@@ -1716,7 +1712,7 @@ export function initialiseOliveDash(
                       file: deadPause.file,
                       line: deadPause.line,
                       column: deadPause.column,
-                      time: deadPause.time
+                      hash: deadPause.hash
                     },
                     true,
                     cleanup
@@ -1756,7 +1752,7 @@ export function initialiseOliveDash(
               olive =>
                 e.state.line == olive.line &&
                 e.state.column == olive.column &&
-                e.state.time == file.lastCompiled
+                e.state.hash == file.hash
             )
             .forEach(olive =>
               renderOlive(file, olive, olive.pauseSpan, e.state.filters, true)
@@ -2643,17 +2639,7 @@ function renderFilter(tile, filter, mutateCallback) {
           ["File", l => fileNameFormatter(l.file)],
           ["Line", l => l.line || "*"],
           ["Column", l => l.column || "*"],
-          [
-            "Time",
-            l => {
-              if (l.time) {
-                const [ago, absolute] = formatTimeBin(l.time);
-                return `${absolute} (${ago})`;
-              } else {
-                return "*";
-              }
-            }
-          ]
+          ["Source Hash", l => l.hash || "*"]
         ];
 
         if (mutateCallback) {
@@ -2671,7 +2657,7 @@ function renderFilter(tile, filter, mutateCallback) {
                       li.file != l.file ||
                       li.line != l.line ||
                       li.column != l.column ||
-                      li.time != l.time
+                      li.hash != l.hash
                   )
                 );
               });
@@ -3139,9 +3125,7 @@ function getStats(
               () => {
                 close();
                 const [sourceDialog, sourceClose] = makePopup(true);
-                const addButton = (file, line, column, time) => {
-                  const [ago, exact] = time ? formatTimeBin(time) : [null, ""];
-
+                const addButton = (file, line, column, hash) => {
                   sourceDialog.appendChild(
                     button(
                       file +
@@ -3149,7 +3133,7 @@ function getStats(
                           ? ":" +
                             line +
                             (column
-                              ? ":" + column + (ago ? "[" + ago + "]" : "")
+                              ? ":" + column + (hash ? "[" + hash + "]" : "")
                               : "")
                           : ""),
                       exact,
@@ -3163,7 +3147,7 @@ function getStats(
                                   file: file,
                                   line: line,
                                   column: column,
-                                  time: time
+                                  hash: hash
                                 }
                               ];
                             } else if (
@@ -3172,7 +3156,7 @@ function getStats(
                                   loc.file == file &&
                                   (!loc.line || loc.line == line) &&
                                   (!loc.column || loc.column == column) &&
-                                  (!loc.time || loc.time == time)
+                                  (!loc.hash || loc.hash == hash)
                               )
                             ) {
                               // If the item we are adding is already a subset of something in the list, discard it.
@@ -3184,13 +3168,13 @@ function getStats(
                                   loc.file != file ||
                                   (line && loc.line != line) ||
                                   (column && loc.column != column) ||
-                                  (time && loc.time != time)
+                                  (hash && loc.hash != hash)
                               );
                               result.push({
                                 file: file,
                                 line: line,
                                 column: column,
-                                time: time
+                                hash: hash
                               });
                               return result;
                             }
@@ -3211,7 +3195,7 @@ function getStats(
                       a.file.localeCompare(b.file) ||
                       a.line - b.line ||
                       a.column - b.column ||
-                      a.time - b.time
+                      a.hash.localeCompare(b.hash)
                   )
                   .forEach((source, index, array) => {
                     const previous = index == 0 ? null : array[index - 1];
@@ -3237,7 +3221,7 @@ function getStats(
                       source.file,
                       source.line,
                       source.column,
-                      source.time
+                      source.hash
                     );
                   });
 

@@ -555,7 +555,7 @@ public final class ActionProcessor
    */
   @Override
   public synchronized boolean accept(
-      Action action, String filename, int line, int column, long time, String[] tags) {
+      Action action, String filename, int line, int column, String hash, String[] tags) {
     Information information;
     boolean isDuplicate;
     knownActionTypes.add(action.type());
@@ -570,8 +570,7 @@ public final class ActionProcessor
       information.lastAdded = Instant.now();
       isDuplicate = true;
     }
-    final SourceLocation location =
-        new SourceLocation(filename, line, column, Instant.ofEpochMilli(time));
+    final SourceLocation location = new SourceLocation(filename, line, column, hash);
     information.locations.add(location);
     information.tags.addAll(Arrays.asList(tags));
     sourceLocations.add(location);
@@ -587,7 +586,7 @@ public final class ActionProcessor
       String filename,
       int line,
       int column,
-      long time)
+      String hash)
       throws Exception {
     final Map<String, String> labelMap = repack(labels, "Labels");
     // Alert Manager doesn't officially require an instance, but it gets weird if not included, so
@@ -618,7 +617,7 @@ public final class ActionProcessor
       }
       alert.setAnnotations(repack(annotations, "Annotations"));
       alert.expiresIn(ttl);
-      alert.locations.add(new SourceLocation(filename, line, column, Instant.ofEpochMilli(time)));
+      alert.locations.add(new SourceLocation(filename, line, column, hash));
     }
     return false;
   }

@@ -40,7 +40,7 @@ public final class StandardDefinitions implements DefinitionRepository {
   public static JsonNode jsonObject(Set<Tuple> fields) {
     final ObjectNode result = RuntimeSupport.MAPPER.createObjectNode();
     for (final Tuple field : fields) {
-      result.put((String) field.get(0), (JsonNode) field.get(1));
+      result.set((String) field.get(0), (JsonNode) field.get(1));
     }
     return result;
   }
@@ -58,10 +58,12 @@ public final class StandardDefinitions implements DefinitionRepository {
   }
 
   /** Truncate a time stamp to midnight */
+  @RuntimeInterop
   public static Instant start_of_day(Instant input) {
     return input.truncatedTo(ChronoUnit.DAYS);
   }
 
+  @RuntimeInterop
   public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
     if ((Long) version.get(0) < major) {
       return false;

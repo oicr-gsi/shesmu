@@ -56,7 +56,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -716,9 +715,8 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
         return Stream.concat(signatures.values().stream(), signaturesFromAnnotations.stream());
       }
 
-      public Stream<String> sourceUrl(
-          String localFilePath, int line, int column, Instant compileTime) {
-        return instance.sourceUrl(localFilePath, line, column, compileTime);
+      public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
+        return instance.sourceUrl(localFilePath, line, column, hash);
       }
 
       @Override
@@ -1349,10 +1347,10 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
           staticSignatures.stream(), configuration.stream().flatMap(FileWrapper::signatures));
     }
 
-    public Stream<String> sourceUrl(String localFilePath, int line, int column, Instant time) {
+    public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
       return Stream.concat(
-          fileFormat.sourceUrl(localFilePath, line, column, time),
-          configuration.stream().flatMap(f -> f.sourceUrl(localFilePath, line, column, time)));
+          fileFormat.sourceUrl(localFilePath, line, column, hash),
+          configuration.stream().flatMap(f -> f.sourceUrl(localFilePath, line, column, hash)));
     }
 
     public void writeJavaScriptRenderer(PrintStream writer) {
@@ -1696,8 +1694,8 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
    * @return the URL to the source file or null if not possible
    */
   @Override
-  public Stream<String> sourceUrl(String localFilePath, int line, int column, Instant time) {
-    return formatTypes.stream().flatMap(f -> f.sourceUrl(localFilePath, line, column, time));
+  public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
+    return formatTypes.stream().flatMap(f -> f.sourceUrl(localFilePath, line, column, hash));
   }
 
   private Imyhat unwrapAndConvert(String context, String descriptor, java.lang.reflect.Type type) {

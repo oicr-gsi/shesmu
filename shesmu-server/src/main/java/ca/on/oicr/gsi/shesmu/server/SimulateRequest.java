@@ -453,7 +453,7 @@ public class SimulateRequest {
                         String filename,
                         int line,
                         int column,
-                        long time,
+                        String hash,
                         String[] tags) {
                       return actions.add(action);
                     }
@@ -466,7 +466,7 @@ public class SimulateRequest {
                         String filename,
                         int line,
                         int column,
-                        long time)
+                        String hash)
                         throws Exception {
                       return alerts.add(
                           new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
@@ -541,9 +541,9 @@ public class SimulateRequest {
                         xmlWriter.writeStartDocument("utf-8", "1.0");
                         MetroDiagram.draw(
                             xmlWriter,
-                            (localFilePath, line, column, time) -> Stream.empty(),
+                            (localFilePath, line, column, hash) -> Stream.empty(),
                             fileTable.get().filename(),
-                            fileTable.get().timestamp(),
+                            fileTable.get().hash(),
                             olive,
                             counts.get(fileTable.get().format().name()),
                             fileTable.get().format(),

@@ -676,8 +676,8 @@
           "line": {
             "type": "integer"
           },
-          "time": {
-            "type": "integer"
+          "hash": {
+            "type": "string"
           }
         },
         "type": "object"

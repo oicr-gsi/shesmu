@@ -9,6 +9,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
+import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
@@ -18,6 +19,8 @@ import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -139,6 +142,13 @@ public abstract class Compiler {
       Consumer<FileTable> dashboardOutput) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
     final MaxParseError maxParseError = new MaxParseError();
+    final String hash;
+    try {
+      final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      hash = Utils.bytesToHex(digest.digest(input.getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
     final boolean parseOk = ProgramNode.parseFile(input, program::set, maxParseError);
     if (!parseOk) {
       maxParseError.write();
@@ -156,8 +166,7 @@ public abstract class Compiler {
                 signatures)) {
       final Instant compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       if (dashboardOutput != null && skipRender) {
-        dashboardOutput.accept(
-            program.get().dashboard(path, compileTime, "Bytecode not available."));
+        dashboardOutput.accept(program.get().dashboard(path, hash, "Bytecode not available."));
       }
       if (skipRender) {
         return true;
@@ -165,7 +174,7 @@ public abstract class Compiler {
       final List<Textifier> bytecode = new ArrayList<>();
       final RootBuilder builder =
           new RootBuilder(
-              compileTime,
+              hash,
               name,
               path,
               program.get().inputFormatDefinition(),
@@ -220,7 +229,7 @@ public abstract class Compiler {
                 .get()
                 .dashboard(
                     path,
-                    compileTime,
+                    hash,
                     bytecode
                         .stream()
                         .flatMap(t -> t.getText().stream())

@@ -32,15 +32,15 @@ public final class OliveBuilder extends BaseOliveBuilder {
       String filename,
       int column,
       int line,
-      long time) {
+      String hash) {
     methodGen.loadLocal(labelLocal);
     methodGen.loadLocal(annotationLocal);
     methodGen.loadLocal(ttlLocal);
     methodGen.push(filename);
     methodGen.push(column);
     methodGen.push(line);
-    methodGen.push(time);
-    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ALERT);
+    methodGen.push(hash);
+    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_OLIVE_SERVICES__ACCEPT_ALERT);
     methodGen.pop();
   }
 
@@ -56,14 +56,14 @@ public final class OliveBuilder extends BaseOliveBuilder {
           "metafactory",
           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
           false);
-  private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ACTION =
+  private static final Method METHOD_OLIVE_SERVICES__ACCEPT_ACTION =
       new Method(
           "accept",
           BOOLEAN_TYPE,
           new Type[] {
-            A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE, A_STRING_ARRAY_TYPE
+            A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE
           });
-  private static final Method METHOD_ACTION_CONSUMER__ACCEPT_ALERT =
+  private static final Method METHOD_OLIVE_SERVICES__ACCEPT_ALERT =
       new Method(
           "accept",
           BOOLEAN_TYPE,
@@ -74,7 +74,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
             A_STRING_TYPE,
             INT_TYPE,
             INT_TYPE,
-            LONG_TYPE
+            A_STRING_TYPE
           });
   private static final Method METHOD_OLIVE_SERVICES__OLIVE_RUNTIME =
       new Method(
@@ -120,9 +120,9 @@ public final class OliveBuilder extends BaseOliveBuilder {
     methodGen.push(owner.sourcePath());
     methodGen.push(line);
     methodGen.push(column);
-    methodGen.push(owner.compileTime);
+    methodGen.push(owner.hash);
     methodGen.loadLocal(tags);
-    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_ACTION_CONSUMER__ACCEPT_ACTION);
+    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_OLIVE_SERVICES__ACCEPT_ACTION);
     methodGen.pop();
   }
 

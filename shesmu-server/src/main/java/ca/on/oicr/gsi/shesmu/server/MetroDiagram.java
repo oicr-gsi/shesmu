@@ -12,7 +12,6 @@ import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLoctionLinker;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.awt.Canvas;
 import java.awt.Font;
-import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,15 +97,13 @@ public class MetroDiagram {
       XMLStreamWriter writer,
       SourceLoctionLinker linker,
       String filename,
-      Instant timestamp,
+      String hash,
       OliveTable olive,
       Long inputCount,
       InputFormatDefinition format,
       OliveFlowReader reader)
       throws XMLStreamException {
-    final String id =
-        String.format(
-            "%s:%d:%d:%d", filename, olive.column(), olive.line(), timestamp.toEpochMilli());
+    final String id = String.format("%s:%d:%d[%s]", filename, olive.column(), olive.line(), hash);
     final long metroStart =
         120
             + Stream.concat(
@@ -251,8 +248,7 @@ public class MetroDiagram {
               }
             });
 
-    final SourceLocation source =
-        new SourceLocation(filename, olive.line(), olive.column(), timestamp);
+    final SourceLocation source = new SourceLocation(filename, olive.line(), olive.column(), hash);
     writeClause(writer, linker, topPadding, 0, "Input", inputCount, source);
 
     final Map<String, MetroDiagram> terminalVariables =
@@ -277,7 +273,7 @@ public class MetroDiagram {
                                 olive.line(),
                                 olive.column())
                             : null,
-                        new SourceLocation(filename, clause.line(), clause.column(), timestamp));
+                        new SourceLocation(filename, clause.line(), clause.column(), hash));
                   } catch (XMLStreamException e) {
                     throw new RuntimeException(e);
                   }

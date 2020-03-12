@@ -212,7 +212,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
         renderer.root().sourcePath(),
         line,
         column,
-        renderer.root().compileTime);
+        renderer.root().hash);
   }
 
   @Override

@@ -54,7 +54,7 @@ public class RunTest {
 
     @Override
     public boolean accept(
-        Action action, String filename, int line, int column, long time, String[] tags) {
+        Action action, String filename, int line, int column, String hash, String[] tags) {
       if (action.perform(null) == ActionState.SUCCEEDED) {
         good++;
       } else {
@@ -71,7 +71,7 @@ public class RunTest {
         String filename,
         int line,
         int column,
-        long time) {
+        String hash) {
       if (IntStream.range(0, labels.length / 2)
           .anyMatch(i -> labels[i * 2].equals("value") && labels[i * 2 + 1].equals("true"))) {
         good++;

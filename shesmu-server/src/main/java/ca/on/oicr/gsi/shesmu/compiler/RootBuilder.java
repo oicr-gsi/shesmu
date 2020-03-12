@@ -16,7 +16,6 @@ import io.prometheus.client.Gauge;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -110,7 +109,7 @@ public abstract class RootBuilder {
 
   final GeneratorAdapter classInitMethod;
   final ClassVisitor classVisitor;
-  final long compileTime;
+  final String hash;
 
   private final Supplier<Stream<ConstantDefinition>> constants;
 
@@ -136,7 +135,7 @@ public abstract class RootBuilder {
   private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
 
   public RootBuilder(
-      Instant compileTime,
+      String hash,
       String name,
       String path,
       InputFormatDefinition inputFormatDefinition,
@@ -144,7 +143,7 @@ public abstract class RootBuilder {
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures) {
     this.signatures = signatures;
-    this.compileTime = compileTime.toEpochMilli();
+    this.hash = hash;
     this.path = path;
     this.inputFormatDefinition = inputFormatDefinition;
     this.constants = constants;
