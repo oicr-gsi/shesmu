@@ -334,6 +334,21 @@ public final class Server implements ServerConfig, ActionServices {
         });
 
     server.createContext( // This uses createContext instead of add to bypass the fail-fast handler
+        "/inflight",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            final JsonGenerator jsonOutput =
+                new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
+            jsonOutput.writeStartObject();
+            for (Entry<String, Instant> inflight : INFLIGHT.entrySet()) {
+              jsonOutput.writeNumberField(inflight.getKey(), inflight.getValue().toEpochMilli());
+            }
+            jsonOutput.writeEndObject();
+          }
+        });
+    server.createContext( // This uses createContext instead of add to bypass the fail-fast handler
         "/inflightdash",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -384,21 +399,7 @@ public final class Server implements ServerConfig, ActionServices {
                   final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
                   oliveJson(olives);
                   olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
-                  final Map<String, String> currentOlives =
-                      compiler
-                          .dashboard()
-                          .map(Pair::second)
-                          .collect(Collectors.toMap(FileTable::filename, FileTable::hash));
-                  final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
-                  processor
-                      .pauses()
-                      .filter(
-                          pause ->
-                              !currentOlives
-                                  .getOrDefault(pause.fileName(), "")
-                                  .equals(pause.hash()))
-                      .forEach(location -> location.toJson(deadPauses, pluginManager));
-                  deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses);
+                  deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses());
 
                   final String savedString = parameters.get("saved");
                   if (savedString != null) {
@@ -461,32 +462,15 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public Stream<Header> headers() {
-                final Instant now = Instant.now();
-                final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
-                pluginManager
-                    .searches(ActionFilterBuilder.JSON)
-                    .forEach(pair -> searchInfo.putArray(pair.first()).addPOJO(pair.second()));
-                savedSearches.stream().forEach(search -> search.write(searchInfo));
                 String savedSearches;
                 String savedSearch;
                 String tags;
                 String locations;
                 String userFilter;
                 try {
-                  savedSearches = RuntimeSupport.MAPPER.writeValueAsString(searchInfo);
-                  tags =
-                      RuntimeSupport.MAPPER.writeValueAsString(
-                          Stream.concat(
-                                  compiler
-                                      .dashboard()
-                                      .map(Pair::second)
-                                      .flatMap(FileTable::olives)
-                                      .flatMap(OliveTable::tags),
-                                  processor.tags())
-                              .collect(Collectors.toSet()));
-                  final ArrayNode locationArray = RuntimeSupport.MAPPER.createArrayNode();
-                  processor.locations().forEach(l -> l.toJson(locationArray, pluginManager));
-                  locations = RuntimeSupport.MAPPER.writeValueAsString(locationArray);
+                  savedSearches = RuntimeSupport.MAPPER.writeValueAsString(savedSearches());
+                  tags = RuntimeSupport.MAPPER.writeValueAsString(activeTags());
+                  locations = RuntimeSupport.MAPPER.writeValueAsString(activeLocations());
                   savedSearch =
                       RuntimeSupport.MAPPER.writeValueAsString(
                           parameters.getOrDefault("saved", "All Actions"));
@@ -1387,6 +1371,18 @@ public final class Server implements ServerConfig, ActionServices {
                   });
           return array;
         });
+    addJson(
+        "/tags",
+        (mapper, query) -> {
+          final ArrayNode array = mapper.createArrayNode();
+          for (final String tag : activeTags()) {
+            array.add(tag);
+          }
+          return array;
+        });
+    addJson("/locations", (mapper, query) -> activeLocations());
+    addJson("/deadpauses", (mapper, query) -> deadPauses());
+    addJson("/savedsearches", (mapper, query) -> savedSearches());
 
     addJson(
         "/refillers",
@@ -2336,6 +2332,23 @@ public final class Server implements ServerConfig, ActionServices {
     add("api-docs/swagger-ui.js", "text/javascript");
   }
 
+  private ArrayNode activeLocations() {
+    final ArrayNode locationArray = RuntimeSupport.MAPPER.createArrayNode();
+    processor.locations().forEach(l -> l.toJson(locationArray, pluginManager));
+    return locationArray;
+  }
+
+  public Set<String> activeTags() {
+    return Stream.concat(
+            compiler
+                .dashboard()
+                .map(Pair::second)
+                .flatMap(FileTable::olives)
+                .flatMap(OliveTable::tags),
+            processor.tags())
+        .collect(Collectors.toSet());
+  }
+
   /** Add a new service endpoint with Prometheus monitoring */
   private void add(String url, HttpHandler handler) {
     server.createContext(
@@ -2390,6 +2403,20 @@ public final class Server implements ServerConfig, ActionServices {
             RuntimeSupport.MAPPER.writeValue(os, node);
           }
         });
+  }
+
+  public ArrayNode deadPauses() {
+    final Map<String, String> currentOlives =
+        compiler
+            .dashboard()
+            .map(Pair::second)
+            .collect(Collectors.toMap(FileTable::filename, FileTable::hash));
+    final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
+    processor
+        .pauses()
+        .filter(pause -> !currentOlives.getOrDefault(pause.fileName(), "").equals(pause.hash()))
+        .forEach(location -> location.toJson(deadPauses, pluginManager));
+    return deadPauses;
   }
 
   public void downloadInputData(
@@ -2564,6 +2591,15 @@ public final class Server implements ServerConfig, ActionServices {
                                 });
                       });
             });
+  }
+
+  public ObjectNode savedSearches() {
+    final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
+    pluginManager
+        .searches(ActionFilterBuilder.JSON)
+        .forEach(pair -> searchInfo.putArray(pair.first()).addPOJO(pair.second()));
+    savedSearches.stream().forEach(search -> search.write(searchInfo));
+    return searchInfo;
   }
 
   private void showSourceConfig(XMLStreamWriter writer, Path filename) {
