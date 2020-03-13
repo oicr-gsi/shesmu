@@ -20,8 +20,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -490,6 +492,10 @@ public final class WorkflowAction extends Action {
         }
     }
     return false;
+  }
+
+  public Duration performTimeout() {
+    return Duration.of(8, ChronoUnit.HOURS);
   }
 
   @Override

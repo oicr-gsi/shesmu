@@ -539,6 +539,8 @@ public final class ActionProcessor
   private final PluginManager manager;
   private final Set<SourceLocation> pausedOlives = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
+  private final ScheduledExecutorService timeoutExecutor =
+      Executors.newSingleThreadScheduledExecutor();
   private final ExecutorService workExecutor = Executors.newFixedThreadPool(ACTION_PERFORM_THREADS);
 
   public ActionProcessor(String baseUri, PluginManager manager, ActionServices actionServices) {
@@ -1222,39 +1224,56 @@ public final class ActionProcessor
               String.format(
                   "Waiting to perform %s action %s from %s",
                   entry.getKey().type(), entry.getValue().id, location));
-      workExecutor.submit(
-          () -> {
-            entry.getValue().lastChecked = Instant.now();
-            final ActionState oldState = entry.getValue().lastState;
-            final boolean oldThrown = entry.getValue().thrown != null;
-            queuedInflight.run();
-            try (AutoCloseable timer = actionPerformTime.start(entry.getKey().type());
-                AutoCloseable inflight =
-                    Server.inflightCloseable(
-                        String.format(
-                            "Performing %s action from %s", entry.getKey().type(), location))) {
-              entry.getValue().lastState =
-                  entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
-                      ? ActionState.THROTTLED
-                      : entry.getKey().perform(actionServices);
-              entry.getValue().thrown = null;
-            } catch (final Throwable e) {
-              entry.getValue().lastState = ActionState.UNKNOWN;
-              entry.getValue().thrown = "Exception thrown during evaluation: " + e;
-              e.printStackTrace();
-              if (e instanceof Error) {
-                throw (Error) e;
-              }
-            }
-            if (oldState != entry.getValue().lastState) {
-              entry.getValue().lastStateTransition = Instant.now();
-              stateCount.labels(oldState.name(), entry.getKey().type()).dec();
-              stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
-            }
-            actionThrows.inc((entry.getValue().thrown != null ? 0 : 1) - (oldThrown ? 0 : 1));
-            entry.getValue().updateInProgress = false;
-            currentRunningActionsGauge.set(currentRunningActions.decrementAndGet());
-          });
+      final CompletableFuture<Boolean> timeoutFuture = new CompletableFuture<>();
+      final CompletableFuture<Boolean> workFuture =
+          CompletableFuture.supplyAsync(
+              () -> {
+                // We wait to schedule the timeout for when the action is actually
+                // starting
+                final Duration timeout = entry.getKey().performTimeout().abs();
+                timeoutExecutor.schedule(
+                    () -> timeoutFuture.complete(true),
+                    Math.max(timeout.getSeconds(), 60),
+                    TimeUnit.SECONDS);
+                entry.getValue().lastChecked = Instant.now();
+                final ActionState oldState = entry.getValue().lastState;
+                final boolean oldThrown = entry.getValue().thrown != null;
+                queuedInflight.run();
+                try (AutoCloseable timer = actionPerformTime.start(entry.getKey().type());
+                    AutoCloseable inflight =
+                        Server.inflightCloseable(
+                            String.format(
+                                "Performing %s action from %s", entry.getKey().type(), location))) {
+                  entry.getValue().lastState =
+                      entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
+                          ? ActionState.THROTTLED
+                          : entry.getKey().perform(actionServices);
+                  entry.getValue().thrown = null;
+                } catch (final Throwable e) {
+                  entry.getValue().lastState = ActionState.UNKNOWN;
+                  entry.getValue().thrown = "Exception thrown during evaluation: " + e;
+                  e.printStackTrace();
+                  if (e instanceof Error) {
+                    throw (Error) e;
+                  }
+                }
+                if (oldState != entry.getValue().lastState) {
+                  entry.getValue().lastStateTransition = Instant.now();
+                  stateCount.labels(oldState.name(), entry.getKey().type()).dec();
+                  stateCount.labels(entry.getValue().lastState.name(), entry.getKey().type()).inc();
+                }
+                actionThrows.inc((entry.getValue().thrown != null ? 0 : 1) - (oldThrown ? 0 : 1));
+                entry.getValue().updateInProgress = false;
+                currentRunningActionsGauge.set(currentRunningActions.decrementAndGet());
+                return false;
+              },
+              workExecutor);
+      CompletableFuture.anyOf(timeoutFuture, workFuture)
+          .thenAcceptAsync(
+              o -> {
+                if (((Boolean) o)) workFuture.cancel(true);
+              },
+              timeoutExecutor);
     }
     scheduledInRound.set(candidates.size());
     lastRun.setToCurrentTime();
