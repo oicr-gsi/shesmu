@@ -1103,7 +1103,14 @@ public final class ActionProcessor
     return startStream(filters)
         .map(
             entry -> {
-              final ObjectNode node = entry.getKey().toJson(RuntimeSupport.MAPPER);
+              ObjectNode actionNode;
+              try {
+                actionNode = entry.getKey().toJson(RuntimeSupport.MAPPER);
+              } catch (Exception e) {
+                e.printStackTrace();
+                actionNode = RuntimeSupport.MAPPER.createObjectNode();
+              }
+              final ObjectNode node = actionNode;
               node.put("actionId", entry.getValue().id);
               node.put("updateInProgress ", entry.getValue().updateInProgress);
               node.put("state", entry.getValue().lastState.name());
