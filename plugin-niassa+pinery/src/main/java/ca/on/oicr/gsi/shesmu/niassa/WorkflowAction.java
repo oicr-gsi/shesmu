@@ -570,27 +570,31 @@ public final class WorkflowAction extends Action {
     node.put("workflowName", workflowName);
     node.put("cromwellUrl", server.get().cromwellUrl().orElse(null));
     if (runAccession != 0) {
-      final WorkflowRunEssentials essentials = server.get().directoryAndIni(runAccession);
-      node.put("workflowRunAccession", runAccession);
-      node.put("workingDirectory", essentials.currentDirectory());
-      node.put("cromwellId", essentials.cromwellId());
-      node.put("cromwellRoot", essentials.cromwellRoot());
-      final ObjectNode discoveredIniNode = node.putObject("discoveredIni");
-      essentials.ini().forEach((k, v) -> discoveredIniNode.put(k.toString(), v.toString()));
-      final ArrayNode cromwellLogs = node.putArray("cromwellLogs");
-      essentials
-          .cromwellLogs()
-          .forEach(
-              (task, logs) ->
-                  logs.forEach(
-                      log -> {
-                        final ObjectNode logEntry = cromwellLogs.addObject();
-                        logEntry.put("task", task);
-                        logEntry.put("attempt", log.getAttempt());
-                        logEntry.put("shardIndex", log.getShardIndex());
-                        logEntry.put("stderr", log.getStderr());
-                        logEntry.put("stdout", log.getStdout());
-                      }));
+      try {
+        final WorkflowRunEssentials essentials = server.get().directoryAndIni(runAccession);
+        node.put("workflowRunAccession", runAccession);
+        node.put("workingDirectory", essentials.currentDirectory());
+        node.put("cromwellId", essentials.cromwellId());
+        node.put("cromwellRoot", essentials.cromwellRoot());
+        final ObjectNode discoveredIniNode = node.putObject("discoveredIni");
+        essentials.ini().forEach((k, v) -> discoveredIniNode.put(k.toString(), v.toString()));
+        final ArrayNode cromwellLogs = node.putArray("cromwellLogs");
+        essentials
+            .cromwellLogs()
+            .forEach(
+                (task, logs) ->
+                    logs.forEach(
+                        log -> {
+                          final ObjectNode logEntry = cromwellLogs.addObject();
+                          logEntry.put("task", task);
+                          logEntry.put("attempt", log.getAttempt());
+                          logEntry.put("shardIndex", log.getShardIndex());
+                          logEntry.put("stderr", log.getStderr());
+                          logEntry.put("stdout", log.getStdout());
+                        }));
+      } catch (InitialCachePopulationException e) {
+        // This data is nice to have, so just be kind of sad if it's not available.
+      }
     }
     final ObjectNode iniNode = node.putObject("ini");
     ini.forEach((k, v) -> iniNode.put(k.toString(), v.toString()));
