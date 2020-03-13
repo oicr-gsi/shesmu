@@ -3,7 +3,9 @@ package ca.on.oicr.gsi.shesmu.plugin.action;
 import ca.on.oicr.gsi.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -99,6 +101,14 @@ public abstract class Action {
    */
   public boolean performCommand(String commandName) {
     return false;
+  }
+
+  /**
+   * The amount of time the {@link #perform(ActionServices)} method should be allowed to run for
+   * before being interrupted
+   */
+  public Duration performTimeout() {
+    return Duration.of(1, ChronoUnit.HOURS);
   }
 
   /** Perform any preparation needed after parameters have been set. */
