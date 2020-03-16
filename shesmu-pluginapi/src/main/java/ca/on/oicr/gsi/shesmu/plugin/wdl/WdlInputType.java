@@ -7,9 +7,11 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser.ParseDispatch;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +35,27 @@ import java.util.stream.StreamSupport;
  * <p>All other types are errors.
  */
 public final class WdlInputType {
+  /**
+   * Take a JSON object of the <tt>WORKFLOW.TASK.VARIABLE</tt> format and transform it to a nestable
+   * one. This processes the values as requested.
+   *
+   * @param inputs the input JSON object
+   * @param process the method to transform the values
+   * @param <T> the result type of the values
+   */
+  public static <T> Stream<Pair<String[], T>> flatToNested(
+      ObjectNode inputs, BiFunction<String, JsonNode, Optional<T>> process) {
+    return StreamSupport.stream(
+            Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
+        .map(
+            entry ->
+                process
+                    .apply(entry.getKey(), entry.getValue())
+                    .map(value -> new Pair<>(PERIOD.split(entry.getKey()), value))
+                    .orElse(null))
+        .filter(Objects::nonNull);
+  }
+
   private static Rule<Imyhat> just(Imyhat type) {
     return (p, o) -> {
       o.accept(type);
@@ -48,30 +71,27 @@ public final class WdlInputType {
    * Shesmu, collecting all the input variables for a single task into an object.
    */
   public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errorHandler) {
-    return StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(inputs.fields(), Spliterator.ORDERED), false)
-        .map(
-            entry -> {
-              final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
-              final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
-              final Parser parser =
-                  Parser.start(
-                          entry.getValue().asText(),
-                          (line, column, errorMessage) -> {
-                            if (error.get() == null || error.get().first() < column) {
-                              error.set(new Pair<>(column, errorMessage));
-                            }
-                          })
-                      .then(WdlInputType::parse, type::set);
-              if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
-                return new Pair<>(
-                    PERIOD.split(entry.getKey()), type.get()); // Slice the WF.TASK.VAR = TYPE
-              } else {
-                errorHandler.raise(1, error.get().first(), error.get().second());
-                return null;
-              }
-            })
-        .filter(Objects::nonNull);
+    return flatToNested(
+        inputs,
+        (name, node) -> {
+          final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
+          final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
+          final Parser parser =
+              Parser.start(
+                      node.asText(),
+                      (line, column, errorMessage) -> {
+                        if (error.get() == null || error.get().first() < column) {
+                          error.set(new Pair<>(column, errorMessage));
+                        }
+                      })
+                  .then(WdlInputType::parse, type::set);
+          if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
+            return Optional.of(type.get());
+          } else {
+            errorHandler.raise(1, error.get().first(), error.get().second());
+            return Optional.empty();
+          }
+        });
   }
 
   public static Parser parse(Parser parser, Consumer<Imyhat> output) {
