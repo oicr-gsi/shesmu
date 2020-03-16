@@ -125,7 +125,10 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           "Gets the last modification timestamp of a file or directory living on the SFTP server described in {file}.")
   public synchronized Optional<Instant> $_mtime(
       @ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes.get(fileName).map(a -> Instant.ofEpochSecond(a.getMtime()));
+    return fileAttributes
+        .get(fileName)
+        .filter(a -> a.getSize() != -1)
+        .map(a -> Instant.ofEpochSecond(a.getMtime()));
   }
 
   @ShesmuAction(
@@ -139,7 +142,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           "Get the size of a file, in bytes, living on the SFTP server described in {file}.")
   public synchronized Optional<Long> $_size(
       @ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes.get(fileName).map(FileAttributes::getSize);
+    return fileAttributes.get(fileName).filter(a -> a.getSize() != -1).map(FileAttributes::getSize);
   }
 
   @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
@@ -168,7 +171,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     if (config == null) return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
 
     try (final SSHClient client = new SSHClient()) {
-      client.addHostKeyVerifier((s, i, publicKey) -> true);
+      client.addHostKeyVerifier(new PromiscuousVerifier());
 
       client.connect(config.getHost(), config.getPort());
       client.authPublickey(config.getUser());
