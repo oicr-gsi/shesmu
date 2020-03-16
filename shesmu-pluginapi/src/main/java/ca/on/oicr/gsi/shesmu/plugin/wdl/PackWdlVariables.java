@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,38 +17,46 @@ import java.util.stream.Stream;
 public class PackWdlVariables implements ImyhatConsumer {
   public static Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> create(
       Stream<Pair<String[], Imyhat>> input) {
-    return create(input, 0);
+    return create(
+        (propertyName, type) -> result -> new PackWdlJsonObject(result, propertyName, true),
+        handlers -> result -> new PackWdlVariables(result, handlers),
+        Function.identity(),
+        input,
+        0);
   }
   /**
    * Take a part a ragged x.y.z = type structure from a WDL file and turn it into nested Shesmu
    * objects with the knowledge to reconstruct the WDL structure.
    */
-  public static Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> create(
-      Stream<Pair<String[], Imyhat>> input, int index) {
-    final Map<String, List<Pair<String[], Imyhat>>> groups =
+  public static <T, I> Pair<T, Imyhat> create(
+      BiFunction<String, I, T> propertyCreator,
+      Function<Map<String, T>, T> aggregator,
+      Function<I, Imyhat> typeGetter,
+      Stream<Pair<String[], I>> input,
+      int index) {
+    final Map<String, List<Pair<String[], I>>> groups =
         input.collect(Collectors.groupingBy(p -> p.first()[index], Collectors.toList()));
     final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-    final Map<String, Function<ObjectNode, ImyhatConsumer>> handlers = new HashMap<>();
+    final Map<String, T> handlers = new HashMap<>();
 
-    for (final Map.Entry<String, List<Pair<String[], Imyhat>>> group : groups.entrySet()) {
+    for (final Map.Entry<String, List<Pair<String[], I>>> group : groups.entrySet()) {
       // If we've hit the end of this nested structure
       if (index + 1 == group.getValue().stream().mapToInt(x -> x.first().length).max().getAsInt()) {
-        for (final Pair<String[], Imyhat> field : group.getValue()) {
+        for (final Pair<String[], I> field : group.getValue()) {
           final String fieldName = field.first()[index];
           final String propertyName = String.join(".", field.first());
-          handlers.put(fieldName, result -> new PackWdlJsonObject(result, propertyName, true));
-          fields.add(new Pair<>(fieldName, field.second()));
+          handlers.put(fieldName, propertyCreator.apply(propertyName, field.second()));
+          fields.add(new Pair<>(fieldName, typeGetter.apply(field.second())));
         }
       } else {
-        final Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> inner =
-            create(group.getValue().stream(), index + 1);
+        final Pair<T, Imyhat> inner =
+            create(propertyCreator, aggregator, typeGetter, group.getValue().stream(), index + 1);
         handlers.put(group.getKey(), inner.first());
         fields.add(new Pair<>(group.getKey(), inner.second()));
       }
     }
 
-    return new Pair<>(
-        result -> new PackWdlVariables(result, handlers), new Imyhat.ObjectImyhat(fields.stream()));
+    return new Pair<>(aggregator.apply(handlers), new Imyhat.ObjectImyhat(fields.stream()));
   }
 
   private final Map<String, Function<ObjectNode, ImyhatConsumer>> handlers;

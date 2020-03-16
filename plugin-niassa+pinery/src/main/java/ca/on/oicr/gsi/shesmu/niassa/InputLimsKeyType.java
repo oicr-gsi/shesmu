@@ -12,7 +12,7 @@ import java.util.function.Function;
  * whether the types of the parameters in the INI are the same. Any workflows that take the same
  * parameters can share on entry here.
  */
-public enum InputLimsKeyType {
+public enum InputLimsKeyType implements InputLimsKeyProvider {
   BAM_MERGE(
       "inputs",
       BamMergeInputLimsCollection::new,

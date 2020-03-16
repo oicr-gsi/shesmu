@@ -71,6 +71,11 @@ public abstract class Parser {
     }
 
     @Override
+    public String toString() {
+      return "Broken parser";
+    }
+
+    @Override
     public Parser whitespace() {
       return this;
     }
@@ -173,6 +178,11 @@ public abstract class Parser {
     }
 
     @Override
+    public String toString() {
+      return "Parsing: " + input;
+    }
+
+    @Override
     public Parser whitespace() {
       CharSequence i = input;
       int l = line();
@@ -262,6 +272,10 @@ public abstract class Parser {
     }
   }
 
+  private static final Pattern COMMENT = Pattern.compile("#[^\\n]*");
+  public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-zA-Z0-9_]*");
+  private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
+
   private static CharSequence consume(CharSequence input, int offset) {
     return input.subSequence(offset, input.length());
   }
@@ -271,9 +285,6 @@ public abstract class Parser {
     return new Good(errorConsumer, input, 1, 1);
   }
 
-  private static final Pattern COMMENT = Pattern.compile("#[^\\n]*");
-  public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-zA-Z0-9_]*");
-  private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
   private final int column;
 
   private final ErrorConsumer errorConsumer;

@@ -23,7 +23,7 @@ public class WorkflowConfiguration {
   private IniParam<?>[] parameters;
   private long[] previousAccessions;
   private List<String> services = Collections.emptyList();
-  private InputLimsKeyType type;
+  private InputLimsKeyProvider type;
   private Map<String, String> userAnnotations = Collections.emptyMap();
 
   public void define(String name, Definer<NiassaServer> definer) {
@@ -175,7 +175,7 @@ public class WorkflowConfiguration {
     return services;
   }
 
-  public InputLimsKeyType getType() {
+  public InputLimsKeyProvider getType() {
     return type;
   }
 
@@ -211,7 +211,7 @@ public class WorkflowConfiguration {
     this.services = services;
   }
 
-  public void setType(InputLimsKeyType type) {
+  public void setType(InputLimsKeyProvider type) {
     this.type = type;
   }
 
