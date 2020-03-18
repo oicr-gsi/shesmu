@@ -209,6 +209,20 @@ public final class StandardDefinitions implements DefinitionRepository {
             "Convert a string containing digits and a decimal point into an float.",
             Imyhat.FLOAT.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            "url_decode",
+            RuntimeSupport.class,
+            "urlDecode",
+            "Convert a URL-encoded string back to a normal string.",
+            Imyhat.STRING.asOptional(),
+            new FunctionParameter("String to encode", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            "url_encode",
+            RuntimeSupport.class,
+            "urlEncode",
+            "Convert a string to a URL-encoded string (also escaping *, even though that is not standard).",
+            Imyhat.STRING,
+            new FunctionParameter("String to encode", Imyhat.STRING)),
         new FunctionDefinition() {
 
           @Override
