@@ -15,11 +15,14 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
+import java.io.UnsupportedEncodingException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +38,6 @@ import java.util.stream.Stream;
 
 /** Utilities for making bytecode generation easier */
 public final class RuntimeSupport {
-
   private static class Holder<T> {
 
     private final BiPredicate<T, T> equals;
@@ -401,6 +403,20 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <T> Optional<T> unnest(Optional<Optional<T>> input) {
     return input.orElse(Optional.empty());
+  }
+
+  @RuntimeInterop
+  public static Optional<String> urlDecode(String input) {
+    try {
+      return Optional.of(URLDecoder.decode(input, "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      return Optional.empty();
+    }
+  }
+
+  @RuntimeInterop
+  public static String urlEncode(String input) throws UnsupportedEncodingException {
+    return URLEncoder.encode(input, "UTF-8").replace("*", "%2A");
   }
 
   @RuntimeInterop
