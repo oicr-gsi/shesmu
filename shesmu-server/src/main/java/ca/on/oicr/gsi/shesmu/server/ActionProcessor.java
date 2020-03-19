@@ -1114,7 +1114,7 @@ public final class ActionProcessor
               }
               final ObjectNode node = actionNode;
               node.put("actionId", entry.getValue().id);
-              node.put("updateInProgress ", entry.getValue().updateInProgress);
+              node.put("updateInProgress", entry.getValue().updateInProgress);
               node.put("state", entry.getValue().lastState.name());
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
