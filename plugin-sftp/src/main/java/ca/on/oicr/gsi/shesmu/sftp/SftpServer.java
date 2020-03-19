@@ -198,7 +198,13 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         // We've been told to blow it away
         if (force) {
           sftp.rm(linkStr);
-          sftp.symlink(linkStr, target);
+          // Fun fact: OpenSSH has these parameters reversed compared to the spec.
+          // https://github.com/hierynomus/sshj/issues/144
+          if (client.getTransport().getServerVersion().contains("OpenSSH")) {
+            sftp.symlink(target, linkStr);
+          } else {
+            sftp.symlink(linkStr, target);
+          }
           updateMtime.accept(Instant.now());
           return new Pair<>(ActionState.SUCCEEDED, true);
         }
@@ -213,7 +219,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           }
 
           // File does not exist, create it.
-          sftp.symlink(linkStr, target);
+          if (client.getTransport().getServerVersion().contains("OpenSSH")) {
+            sftp.symlink(target, linkStr);
+          } else {
+            sftp.symlink(linkStr, target);
+          }
           updateMtime.accept(Instant.now());
           return new Pair<>(ActionState.SUCCEEDED, false);
         } else {
