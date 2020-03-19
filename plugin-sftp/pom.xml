@@ -63,12 +63,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.bouncycastle</pattern>
-                  <shadedPattern>com.hierynomus.org.bouncycastle</shadedPattern>
-                </relocation>
-              </relocations>
+              <!-- Ideally, we would replocate Bouncy Castle, but we can't https://github.com/hierynomus/sshj/issues/82 and it may conflict with other plugins, but there's nothing to be done  -->
               <filters>
                 <filter>
                   <artifact>*:*:*:*</artifact>
