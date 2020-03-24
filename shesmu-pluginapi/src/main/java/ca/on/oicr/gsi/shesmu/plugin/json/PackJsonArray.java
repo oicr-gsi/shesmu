@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -68,6 +69,23 @@ public class PackJsonArray implements ImyhatConsumer {
   @Override
   public void accept(boolean value) {
     node.add(value);
+  }
+
+  @Override
+  public void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+    if (key.isSame(Imyhat.STRING)) {
+      final ObjectNode inner = node.addObject();
+      for (final Map.Entry<?, ?> entry : map.entrySet()) {
+        value.accept(new PackJsonObject(inner, (String) entry.getKey()), entry.getValue());
+      }
+    } else {
+      final ArrayNode inner = node.addArray();
+      for (final Map.Entry<?, ?> entry : map.entrySet()) {
+        final PackJsonArray row = new PackJsonArray(inner.addArray());
+        key.accept(row, entry.getKey());
+        value.accept(row, entry.getValue());
+      }
+    }
   }
 
   @Override

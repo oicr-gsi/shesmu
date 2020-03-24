@@ -108,6 +108,16 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
+    public void addCollected(
+        Imyhat keyType,
+        Imyhat valueType,
+        String fieldName,
+        Consumer<Renderer> keyLoader,
+        Consumer<Renderer> valueLoader) {
+      elements.add(new Dictionary(keyType, valueType, fieldName, keyLoader, valueLoader));
+    }
+
+    @Override
     public void addCount(String fieldName) {
       elements.add(new Count(fieldName));
     }
@@ -268,6 +278,77 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
     @Override
     public void loadConstructorArgument() {
+      // No argument to constructor.
+    }
+  }
+
+  private class Dictionary extends Element {
+    private final String fieldName;
+    private final Consumer<Renderer> keyLoader;
+    private final Imyhat keyType;
+    private final Consumer<Renderer> valueLoader;
+    private final Imyhat valueType;
+
+    private Dictionary(
+        Imyhat keyType,
+        Imyhat valueType,
+        String fieldName,
+        Consumer<Renderer> keyLoader,
+        Consumer<Renderer> valueLoader) {
+      super();
+      this.keyType = keyType;
+      this.valueType = valueType;
+      this.fieldName = fieldName;
+      this.keyLoader = keyLoader;
+      this.valueLoader = valueLoader;
+      buildGetter(A_MAP_TYPE, fieldName);
+    }
+
+    @Override
+    public final void buildCollect() {
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer
+          .methodGen()
+          .invokeVirtual(self, new Method(fieldName, A_MAP_TYPE, new Type[] {}));
+      keyLoader.accept(collectRenderer);
+      collectRenderer.methodGen().box(keyType.apply(TO_ASM));
+      valueLoader.accept(collectRenderer);
+      collectRenderer.methodGen().box(valueType.apply(TO_ASM));
+      collectRenderer.methodGen().invokeInterface(A_MAP_TYPE, METHOD_MAP__PUT);
+      collectRenderer.methodGen().pop();
+    }
+
+    @Override
+    public final int buildConstructor(GeneratorAdapter ctor, int index) {
+      ctor.loadThis();
+      Renderer.loadImyhatInMethod(ctor, keyType.descriptor());
+      ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_MAP);
+      ctor.putField(self, fieldName, A_MAP_TYPE);
+      return index;
+    }
+
+    @Override
+    public final void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+      // Collections are not included in equality.
+    }
+
+    @Override
+    public final void buildHashCode(GeneratorAdapter hashMethod) {
+      // Collections are not included in the hash.
+    }
+
+    @Override
+    public final Stream<Type> constructorType() {
+      return Stream.empty();
+    }
+
+    @Override
+    public final void failIfBad(GeneratorAdapter okMethod) {
+      // Do nothing
+    }
+
+    @Override
+    public final void loadConstructorArgument() {
       // No argument to constructor.
     }
   }
@@ -1016,6 +1097,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
+  private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
@@ -1028,9 +1110,13 @@ public final class RegroupVariablesBuilder implements Regrouper {
   private static final Method METHOD_EQUALS =
       new Method("equals", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
   private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
+  private static final Method METHOD_IMYHAT__NEW_MAP =
+      new Method("newMap", A_MAP_TYPE, new Type[] {});
   private static final Method METHOD_IMYHAT__NEW_SET =
       new Method("newSet", A_SET_TYPE, new Type[] {});
   static final Method METHOD_IS_OK = new Method("is ok?", BOOLEAN_TYPE, new Type[] {});
+  private static final Method METHOD_MAP__PUT =
+      new Method("put", A_OBJECT_TYPE, new Type[] {A_OBJECT_TYPE, A_OBJECT_TYPE});
   private static final Method METHOD_PARTITION_COUNT__ACCUMULATE =
       new Method("accumulate", VOID_TYPE, new Type[] {BOOLEAN_TYPE});
   private static final Method METHOD_PARTITION_COUNT__TO_TUPLE =
@@ -1076,6 +1162,16 @@ public final class RegroupVariablesBuilder implements Regrouper {
   @Override
   public void addCollected(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
     elements.add(new Collected(valueType, fieldName, loader));
+  }
+
+  @Override
+  public void addCollected(
+      Imyhat keyType,
+      Imyhat valueType,
+      String fieldName,
+      Consumer<Renderer> keyLoader,
+      Consumer<Renderer> valueLoader) {
+    elements.add(new Dictionary(keyType, valueType, fieldName, keyLoader, valueLoader));
   }
 
   @Override

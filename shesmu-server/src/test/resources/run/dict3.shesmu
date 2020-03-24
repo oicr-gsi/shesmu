@@ -1,0 +1,15 @@
+Input test;
+
+
+Olive Run ok With ok =
+ (Begin
+		the_dict = Dict {
+			"x" = 3
+		};
+  Return
+		(For _ In the_dict: Count) == 1 &&
+		the_dict["x"] == `3` &&
+		the_dict["y"] == `` &&
+		`the_dict`["x"] == `3` &&
+		`the_dict`["y"] == ``;
+	End);

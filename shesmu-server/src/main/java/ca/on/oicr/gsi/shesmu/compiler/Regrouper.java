@@ -16,6 +16,20 @@ public interface Regrouper {
   void addCollected(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
 
   /**
+   * Add a new dictionary of values slurped during iteration
+   *
+   * @param keyType the type of the keys in the dictionary
+   * @param valueType
+   * @param fieldName the name of the variable for consumption by downstream uses
+   */
+  void addCollected(
+      Imyhat keyType,
+      Imyhat valueType,
+      String fieldName,
+      Consumer<Renderer> keyLoader,
+      Consumer<Renderer> valueLoader);
+
+  /**
    * Count the number of matching rows.
    *
    * @param fieldName the name of the variable for consumption by downstream uses

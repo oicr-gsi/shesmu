@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -90,6 +91,32 @@ public class PackStreaming implements ImyhatConsumer {
   public void accept(JsonNode value) {
     try {
       generator.writeTree(value);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+    try {
+      if (key.isSame(Imyhat.STRING)) {
+        generator.writeStartObject();
+        for (final Map.Entry<?, ?> entry : map.entrySet()) {
+          generator.writeFieldName((String) entry.getKey());
+          value.accept(this, value);
+        }
+        generator.writeEndObject();
+
+      } else {
+        generator.writeStartArray();
+        for (final Map.Entry<?, ?> entry : map.entrySet()) {
+          generator.writeStartArray();
+          key.accept(this, entry.getKey());
+          value.accept(this, entry.getValue());
+          generator.writeEndArray();
+        }
+        generator.writeEndArray();
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Group By workflow Into a = Dict path = library_size
+ Run ok With ok = (For _ In a: Count) == 2;

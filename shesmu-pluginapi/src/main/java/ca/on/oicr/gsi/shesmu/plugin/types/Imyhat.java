@@ -157,6 +157,104 @@ public abstract class Imyhat {
     }
   }
 
+  public static final class DictionaryImyhat extends Imyhat {
+    private final Imyhat key;
+    private final Imyhat value;
+
+    DictionaryImyhat(Imyhat key, Imyhat value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    @Override
+    public void accept(ImyhatConsumer dispatcher, Object map) {
+      dispatcher.acceptMap((Map<?, ?>) map, key, value);
+    }
+
+    @Override
+    public <R> R apply(ImyhatFunction<R> dispatcher, Object map) {
+      return dispatcher.applyMap((Map<?, ?>) map, key, value);
+    }
+
+    @Override
+    public <R> R apply(ImyhatTransformer<R> transformer) {
+      return transformer.map(key, value);
+    }
+
+    @Override
+    public Comparator<?> comparator() {
+      @SuppressWarnings("unchecked")
+      final Comparator<Object> keyComparator = (Comparator<Object>) key.comparator();
+      @SuppressWarnings("unchecked")
+      final Comparator<Object> valueComparator = (Comparator<Object>) value.comparator();
+      return (Map<?, ?> a, Map<?, ?> b) -> {
+        final Iterator<? extends Map.Entry<?, ?>> aIt = a.entrySet().iterator();
+        final Iterator<? extends Map.Entry<?, ?>> bIt = b.entrySet().iterator();
+        while (aIt.hasNext() && bIt.hasNext()) {
+          final Map.Entry<?, ?> aEntry = aIt.next();
+          final Map.Entry<?, ?> bEntry = bIt.next();
+          final int result = keyComparator.compare(aEntry.getKey(), bEntry.getKey());
+          if (result != 0) {
+            return result;
+          }
+          final int valueResult = valueComparator.compare(aEntry.getValue(), bEntry.getValue());
+          if (valueResult != 0) {
+            return valueResult;
+          }
+        }
+        return Boolean.compare(aIt.hasNext(), bIt.hasNext());
+      };
+    }
+
+    @Override
+    public String descriptor() {
+      return "m" + key.descriptor() + value.descriptor();
+    }
+
+    @Override
+    public boolean isBad() {
+      return key.isBad() || value.isBad();
+    }
+
+    @Override
+    public boolean isOrderable() {
+      return false;
+    }
+
+    @Override
+    public boolean isSame(Imyhat other) {
+      if (other instanceof DictionaryImyhat) {
+        final DictionaryImyhat otherMap = (DictionaryImyhat) other;
+        return key.isSame(otherMap.key) && value.isSame(otherMap.value);
+      }
+      return false;
+    }
+
+    @Override
+    public Class<?> javaType() {
+      return Map.class;
+    }
+
+    public Imyhat key() {
+      return key;
+    }
+
+    @Override
+    public String name() {
+      return "(" + key.name() + " -> " + value.name() + ")";
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      final DictionaryImyhat otherMap = (DictionaryImyhat) other;
+      return new DictionaryImyhat(key.unify(otherMap.key), value.unify(otherMap.value));
+    }
+
+    public Imyhat value() {
+      return value;
+    }
+  }
+
   public static final class ObjectImyhat extends Imyhat {
 
     private final Map<String, Pair<Imyhat, Integer>> fields = new TreeMap<>();
@@ -497,222 +595,6 @@ public abstract class Imyhat {
       }
       return new TupleImyhat(unifiedTypes);
     }
-  }
-
-  public static Stream<BaseImyhat> baseTypes() {
-    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, JSON, PATH, STRING);
-  }
-
-  /**
-   * A bootstrap method that returns the appropriate {@link Imyhat} from a descriptor.
-   *
-   * @param descriptor the method name, which is the type descriptor; descriptor are guaranteed to
-   *     be valid JVM identifiers
-   * @param type the type of this call site, which must take no arguments and return {@link Imyhat}
-   */
-  @SuppressWarnings("unused")
-  public static CallSite bootstrap(Lookup lookup, String descriptor, MethodType type) {
-    if (!type.returnType().equals(Imyhat.class)) {
-      throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
-    }
-    if (type.parameterCount() != 0) {
-      throw new IllegalArgumentException("Method cannot take parameters.");
-    }
-    if (callsites.containsKey(descriptor)) {
-      return callsites.get(descriptor);
-    }
-    final Imyhat imyhat = parse(descriptor, true);
-    if (imyhat.isBad()) {
-      throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
-    }
-    final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Imyhat.class, imyhat));
-    callsites.put(descriptor, callsite);
-    return callsite;
-  }
-
-  /**
-   * Convert a possibly annotated Java type into a Shesmu type
-   *
-   * @param context the location to be displayed in error messages
-   * @param descriptor the annotated Shesmu descriptor
-   * @param clazz the class of the type
-   */
-  public static Imyhat convert(String context, String descriptor, Type clazz) {
-    if (descriptor.isEmpty()) {
-      return Imyhat.of(clazz)
-          .orElseThrow(
-              () ->
-                  new IllegalArgumentException(
-                      String.format(
-                          "%s has no type annotation and %s type isn't a valid Shesmu type.",
-                          context, clazz.getTypeName())));
-    } else {
-      final Imyhat type = Imyhat.parse(descriptor);
-      if (type.isBad()) {
-        throw new IllegalArgumentException(
-            String.format("%s has invalid type descriptor %s", context, descriptor));
-      }
-      if (!type.javaType().equals(TypeFactory.rawClass(clazz))) {
-        throw new IllegalArgumentException(
-            String.format(
-                "%s has Java type %s but Shesmu type descriptor implies %s.",
-                context, clazz.getTypeName(), type.javaType()));
-      }
-      return type;
-    }
-  }
-
-  /** Parse a name which must be one of the base types (no lists or tuples) */
-  public static BaseImyhat forName(String s) {
-    return baseTypes()
-        .filter(t -> t.name().equals(s))
-        .findAny()
-        .orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
-  }
-
-  public static Optional<? extends Imyhat> of(Type c) {
-    return of(c, true);
-  }
-
-  private static Optional<? extends Imyhat> of(Type c, boolean allowOptional) {
-    final Optional<Imyhat> baseType =
-        baseTypes()
-            .filter(t -> t.javaType().equals(c) || t.javaWrapperType().equals(c))
-            .findAny()
-            .map(x -> x);
-    if (baseType.isPresent()) {
-      return baseType;
-    }
-    if (!(c instanceof ParameterizedType)) {
-      return Optional.empty();
-    }
-    final ParameterizedType p = (ParameterizedType) c;
-    if (p.getActualTypeArguments().length != 1 || !(p.getRawType() instanceof Class<?>)) {
-      return Optional.empty();
-    }
-    // We check for equals rather than isAssignableFrom because we don't know which way the
-    // assignment is going
-    if (Set.class.equals(p.getRawType())) {
-      return of(p.getActualTypeArguments()[0], true).map(Imyhat::asList);
-    }
-    if (allowOptional && Optional.class.equals(p.getRawType())) {
-      return of(p.getActualTypeArguments()[0], false).map(Imyhat::asOptional);
-    }
-    return Optional.empty();
-  }
-
-  /**
-   * Parse a string-representation of a type
-   *
-   * @param input the Shesmu string (as generated by {@link #descriptor()}
-   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
-   */
-  public static Imyhat parse(CharSequence input) {
-    return parse(input, false);
-  }
-
-  private static Imyhat parse(CharSequence input, boolean allowEmpty) {
-    final AtomicReference<CharSequence> output = new AtomicReference<>();
-    final Imyhat result = parse(input, output, allowEmpty);
-    return output.get().length() == 0 ? result : BAD;
-  }
-
-  /**
-   * Parse a descriptor and return the corresponding type
-   *
-   * @param input the Shesmu string (as generated by {@link #descriptor()}
-   * @param output the remaining subsequence of the input after parsing
-   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
-   */
-  public static Imyhat parse(CharSequence input, AtomicReference<CharSequence> output) {
-    return parse(input, output, false);
-  }
-
-  private static Imyhat parse(
-      CharSequence input, AtomicReference<CharSequence> output, boolean allowEmpty) {
-    if (input.length() == 0) {
-      output.set(input);
-      return BAD;
-    }
-    switch (input.charAt(0)) {
-      case 'A':
-        output.set(input.subSequence(1, input.length()));
-        return allowEmpty ? EMPTY : BAD;
-      case 'Q':
-        output.set(input.subSequence(1, input.length()));
-        return allowEmpty ? NOTHING : BAD;
-      case 'b':
-        output.set(input.subSequence(1, input.length()));
-        return BOOLEAN;
-      case 'd':
-        output.set(input.subSequence(1, input.length()));
-        return DATE;
-      case 'f':
-        output.set(input.subSequence(1, input.length()));
-        return FLOAT;
-      case 'i':
-        output.set(input.subSequence(1, input.length()));
-        return INTEGER;
-      case 'j':
-        output.set(input.subSequence(1, input.length()));
-        return JSON;
-      case '!':
-        output.set(input.subSequence(1, input.length()));
-        return NOTHING;
-      case 'p':
-        output.set(input.subSequence(1, input.length()));
-        return PATH;
-      case 's':
-        output.set(input.subSequence(1, input.length()));
-        return STRING;
-      case 'a':
-        return parse(input.subSequence(1, input.length()), output, allowEmpty).asList();
-      case 'q':
-        return parse(input.subSequence(1, input.length()), output, allowEmpty).asOptional();
-      case 't':
-      case 'o':
-        int count = 0;
-        int index;
-        for (index = 1; Character.isDigit(input.charAt(index)); index++) {
-          count = 10 * count + Character.digit(input.charAt(index), 10);
-        }
-        if (count == 0) {
-          return BAD;
-        }
-        output.set(input.subSequence(index, input.length()));
-        if (input.charAt(0) == 't') {
-          final Imyhat[] inner = new Imyhat[count];
-          for (int i = 0; i < count; i++) {
-            inner[i] = parse(output.get(), output, allowEmpty);
-          }
-          return tuple(inner);
-        } else {
-          final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-          for (int i = 0; i < count; i++) {
-            final StringBuilder name = new StringBuilder();
-            int dollar = 0;
-            while (output.get().charAt(dollar) != '$') {
-              name.append(output.get().charAt(dollar));
-              dollar++;
-            }
-            output.set(output.get().subSequence(dollar + 1, output.get().length()));
-            fields.add(new Pair<>(name.toString(), parse(output.get(), output, allowEmpty)));
-          }
-          return new ObjectImyhat(fields.stream());
-        }
-      default:
-        output.set(input);
-        return BAD;
-    }
-  }
-
-  /**
-   * Create a tuple type from the types of its elements.
-   *
-   * @param types the element types, in order
-   */
-  public static TupleImyhat tuple(Imyhat... types) {
-    return new TupleImyhat(types);
   }
 
   public static final Imyhat BAD =
@@ -1325,6 +1207,237 @@ public abstract class Imyhat {
       };
   private static final Map<String, CallSite> callsites = new HashMap<>();
 
+  public static Stream<BaseImyhat> baseTypes() {
+    return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, JSON, PATH, STRING);
+  }
+
+  /**
+   * A bootstrap method that returns the appropriate {@link Imyhat} from a descriptor.
+   *
+   * @param descriptor the method name, which is the type descriptor; descriptor are guaranteed to
+   *     be valid JVM identifiers
+   * @param type the type of this call site, which must take no arguments and return {@link Imyhat}
+   */
+  @SuppressWarnings("unused")
+  public static CallSite bootstrap(Lookup lookup, String descriptor, MethodType type) {
+    if (!type.returnType().equals(Imyhat.class)) {
+      throw new IllegalArgumentException("Method cannot return non-Imyhat type.");
+    }
+    if (type.parameterCount() != 0) {
+      throw new IllegalArgumentException("Method cannot take parameters.");
+    }
+    if (callsites.containsKey(descriptor)) {
+      return callsites.get(descriptor);
+    }
+    final Imyhat imyhat = parse(descriptor, true);
+    if (imyhat.isBad()) {
+      throw new IllegalArgumentException("Bad type descriptor: " + descriptor);
+    }
+    final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Imyhat.class, imyhat));
+    callsites.put(descriptor, callsite);
+    return callsite;
+  }
+
+  /**
+   * Convert a possibly annotated Java type into a Shesmu type
+   *
+   * @param context the location to be displayed in error messages
+   * @param descriptor the annotated Shesmu descriptor
+   * @param clazz the class of the type
+   */
+  public static Imyhat convert(String context, String descriptor, Type clazz) {
+    if (descriptor.isEmpty()) {
+      return Imyhat.of(clazz)
+          .orElseThrow(
+              () ->
+                  new IllegalArgumentException(
+                      String.format(
+                          "%s has no type annotation and %s type isn't a valid Shesmu type.",
+                          context, clazz.getTypeName())));
+    } else {
+      final Imyhat type = Imyhat.parse(descriptor);
+      if (type.isBad()) {
+        throw new IllegalArgumentException(
+            String.format("%s has invalid type descriptor %s", context, descriptor));
+      }
+      if (!type.javaType().equals(TypeFactory.rawClass(clazz))) {
+        throw new IllegalArgumentException(
+            String.format(
+                "%s has Java type %s but Shesmu type descriptor implies %s.",
+                context, clazz.getTypeName(), type.javaType()));
+      }
+      return type;
+    }
+  }
+
+  /** Parse a name which must be one of the base types (no lists or tuples) */
+  public static BaseImyhat forName(String s) {
+    return baseTypes()
+        .filter(t -> t.name().equals(s))
+        .findAny()
+        .orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
+  }
+
+  public static DictionaryImyhat dictionary(Imyhat key, Imyhat value) {
+    return new DictionaryImyhat(key, value);
+  }
+
+  public static Optional<? extends Imyhat> of(Type c) {
+    return of(c, true);
+  }
+
+  private static Optional<? extends Imyhat> of(Type c, boolean allowOptional) {
+    final Optional<Imyhat> baseType =
+        baseTypes()
+            .filter(t -> t.javaType().equals(c) || t.javaWrapperType().equals(c))
+            .findAny()
+            .map(x -> x);
+    if (baseType.isPresent()) {
+      return baseType;
+    }
+    if (!(c instanceof ParameterizedType)) {
+      return Optional.empty();
+    }
+    final ParameterizedType p = (ParameterizedType) c;
+    if (p.getActualTypeArguments().length != 1 || !(p.getRawType() instanceof Class<?>)) {
+      return Optional.empty();
+    }
+    // We check for equals rather than isAssignableFrom because we don't know which way the
+    // assignment is going
+    if (Set.class.equals(p.getRawType())) {
+      return of(p.getActualTypeArguments()[0], true).map(Imyhat::asList);
+    }
+    if (Map.class.equals(p.getRawType())) {
+      return of(p.getActualTypeArguments()[0], true)
+          .flatMap(
+              key ->
+                  of(p.getActualTypeArguments()[1], true)
+                      .map(value -> Imyhat.dictionary(key, value)));
+    }
+    if (allowOptional && Optional.class.equals(p.getRawType())) {
+      return of(p.getActualTypeArguments()[0], false).map(Imyhat::asOptional);
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Parse a string-representation of a type
+   *
+   * @param input the Shesmu string (as generated by {@link #descriptor()}
+   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
+   */
+  public static Imyhat parse(CharSequence input) {
+    return parse(input, false);
+  }
+
+  private static Imyhat parse(CharSequence input, boolean allowEmpty) {
+    final AtomicReference<CharSequence> output = new AtomicReference<>();
+    final Imyhat result = parse(input, output, allowEmpty);
+    return output.get().length() == 0 ? result : BAD;
+  }
+
+  /**
+   * Parse a descriptor and return the corresponding type
+   *
+   * @param input the Shesmu string (as generated by {@link #descriptor()}
+   * @param output the remaining subsequence of the input after parsing
+   * @return the parsed type; if the type is malformed, {@link #BAD} is returned
+   */
+  public static Imyhat parse(CharSequence input, AtomicReference<CharSequence> output) {
+    return parse(input, output, false);
+  }
+
+  private static Imyhat parse(
+      CharSequence input, AtomicReference<CharSequence> output, boolean allowEmpty) {
+    if (input.length() == 0) {
+      output.set(input);
+      return BAD;
+    }
+    switch (input.charAt(0)) {
+      case 'A':
+        output.set(input.subSequence(1, input.length()));
+        return allowEmpty ? EMPTY : BAD;
+      case 'Q':
+        output.set(input.subSequence(1, input.length()));
+        return allowEmpty ? NOTHING : BAD;
+      case 'b':
+        output.set(input.subSequence(1, input.length()));
+        return BOOLEAN;
+      case 'd':
+        output.set(input.subSequence(1, input.length()));
+        return DATE;
+      case 'f':
+        output.set(input.subSequence(1, input.length()));
+        return FLOAT;
+      case 'i':
+        output.set(input.subSequence(1, input.length()));
+        return INTEGER;
+      case 'j':
+        output.set(input.subSequence(1, input.length()));
+        return JSON;
+      case '!':
+        output.set(input.subSequence(1, input.length()));
+        return NOTHING;
+      case 'p':
+        output.set(input.subSequence(1, input.length()));
+        return PATH;
+      case 's':
+        output.set(input.subSequence(1, input.length()));
+        return STRING;
+      case 'a':
+        return parse(input.subSequence(1, input.length()), output, allowEmpty).asList();
+      case 'm':
+        return Imyhat.dictionary(
+            parse(input.subSequence(1, input.length()), output, allowEmpty),
+            parse(output.get(), output, allowEmpty));
+      case 'q':
+        return parse(input.subSequence(1, input.length()), output, allowEmpty).asOptional();
+      case 't':
+      case 'o':
+        int count = 0;
+        int index;
+        for (index = 1; Character.isDigit(input.charAt(index)); index++) {
+          count = 10 * count + Character.digit(input.charAt(index), 10);
+        }
+        if (count == 0) {
+          return BAD;
+        }
+        output.set(input.subSequence(index, input.length()));
+        if (input.charAt(0) == 't') {
+          final Imyhat[] inner = new Imyhat[count];
+          for (int i = 0; i < count; i++) {
+            inner[i] = parse(output.get(), output, allowEmpty);
+          }
+          return tuple(inner);
+        } else {
+          final List<Pair<String, Imyhat>> fields = new ArrayList<>();
+          for (int i = 0; i < count; i++) {
+            final StringBuilder name = new StringBuilder();
+            int dollar = 0;
+            while (output.get().charAt(dollar) != '$') {
+              name.append(output.get().charAt(dollar));
+              dollar++;
+            }
+            output.set(output.get().subSequence(dollar + 1, output.get().length()));
+            fields.add(new Pair<>(name.toString(), parse(output.get(), output, allowEmpty)));
+          }
+          return new ObjectImyhat(fields.stream());
+        }
+      default:
+        output.set(input);
+        return BAD;
+    }
+  }
+
+  /**
+   * Create a tuple type from the types of its elements.
+   *
+   * @param types the element types, in order
+   */
+  public static TupleImyhat tuple(Imyhat... types) {
+    return new TupleImyhat(types);
+  }
+
   /**
    * Unbox a value of this type
    *
@@ -1392,6 +1505,12 @@ public abstract class Imyhat {
 
   /** Create a human-friendly string describing this type. */
   public abstract String name();
+
+  public <K, V> Map<K, V> newMap() {
+    @SuppressWarnings("unchecked")
+    final Comparator<K> comparator = (Comparator<K>) comparator();
+    return new TreeMap<>(comparator);
+  }
 
   public <T> Set<T> newSet() {
     @SuppressWarnings("unchecked")

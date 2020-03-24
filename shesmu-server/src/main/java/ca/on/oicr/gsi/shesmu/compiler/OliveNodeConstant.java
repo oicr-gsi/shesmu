@@ -115,7 +115,7 @@ public final class OliveNodeConstant extends OliveNode implements Target {
   @Override
   public boolean resolveTypes(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    return body.typeCheck(errorHandler);
+    return true;
   }
 
   @Override

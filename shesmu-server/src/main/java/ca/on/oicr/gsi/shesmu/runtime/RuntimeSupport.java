@@ -156,10 +156,12 @@ public final class RuntimeSupport {
                     .flatMap(n -> e.getValue().stream().map(i -> joiner.apply(i, n))));
   }
 
+  @RuntimeInterop
   public static Stream<JsonNode> jsonElements(JsonNode node) {
     return Utils.stream(node.elements());
   }
 
+  @RuntimeInterop
   public static Stream<Tuple> jsonFields(JsonNode node) {
     return Utils.stream(node.fields()).map(e -> new Tuple(e.getKey(), e.getValue()));
   }
@@ -383,6 +385,11 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static <T> Stream<T> stream(Optional<T> optional) {
     return optional.map(Stream::of).orElseGet(Stream::empty);
+  }
+  /** Stream a map */
+  @RuntimeInterop
+  public static Stream<Tuple> stream(Map<?, ?> map) {
+    return map.entrySet().stream().map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
   @RuntimeInterop

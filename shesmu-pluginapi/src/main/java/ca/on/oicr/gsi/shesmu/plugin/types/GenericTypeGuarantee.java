@@ -49,6 +49,50 @@ public abstract class GenericTypeGuarantee<T> {
       }
     };
   }
+
+  /**
+   * Create a list containing a generic type
+   *
+   * @param key the type of the keys of the map
+   * @param value the type of the values of the map
+   */
+  public static <K, V> GenericTypeGuarantee<Map<K, V>> genericMap(
+      GenericTypeGuarantee<K> key, GenericTypeGuarantee<V> value) {
+    return new GenericTypeGuarantee<Map<K, V>>() {
+
+      @Override
+      public <R> R apply(GenericTransformer<R> transformer) {
+        return transformer.genericMap(key, value);
+      }
+
+      @Override
+      public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
+        return reference instanceof Imyhat.DictionaryImyhat
+            && key.check(variables, ((Imyhat.DictionaryImyhat) reference).key())
+            && value.check(variables, ((Imyhat.DictionaryImyhat) reference).value());
+      }
+
+      @Override
+      public Imyhat render(Map<String, Imyhat> variables) {
+        return Imyhat.dictionary(key.render(variables), value.render(variables));
+      }
+
+      @Override
+      public String toString(Map<String, Imyhat> typeVariables) {
+        return "<" + key.toString(typeVariables) + ":" + value.toString(typeVariables) + ">";
+      }
+
+      @Override
+      public Map<K, V> unpack(Object object) {
+        return ((Map<?, ?>) object)
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.toMap(e -> key.unpack(e.getKey()), e -> value.unpack(e.getValue())));
+      }
+    };
+  }
+
   /**
    * Create a list containing a generic type
    *

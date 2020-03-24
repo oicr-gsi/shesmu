@@ -66,6 +66,11 @@ class PackWdlOutputs implements ImyhatConsumer {
   }
 
   @Override
+  public void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void accept(Imyhat inner, Optional<?> value) {
     value.ifPresent(o -> inner.accept(this, o));
   }

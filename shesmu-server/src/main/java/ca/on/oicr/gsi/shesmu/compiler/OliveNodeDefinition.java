@@ -154,7 +154,6 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
   @Override
   protected boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    this.definedFunctions = definedFunctions;
     return true;
   }
 

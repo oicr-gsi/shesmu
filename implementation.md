@@ -121,6 +121,7 @@ olives cannot handle null values. If you need nullable values, use
 | Object     | `ca.on.oicr.gsi.shesmu.Tuple`              | `{`_f1_` = `_t1_`,`_f2_` = `_t2_`,` ...`}` | `o` _n_ _f1_`$`_t1_ _f2_`$`_t2_ Where _n_ is the number of elements in the object. Fields must be sorted alphabetically. |
 | Optional   | `java.util.Optional`                       | _inner_`?`               | `q`_inner_ |
 | Optional   | `java.util.Optional`                       | `nothing`                | `Q`        |
+| Dict       | `java.util.Map`                            | _k_` -> `_v_             | `m` _k_ _v_ |
 
 The ASM bytecode generation library has a class `Type` that describes JVM
 types. A `Type` object can be constructed either by knowing the JVM name for a
@@ -139,6 +140,7 @@ necessary to convert a JSON document back into an interpretable format.
 | List      | array                              |
 | Tuple     | array                              |
 | Object    | object                             |
+| Dict      | object (if key is a string) or array of arrays containing key-value pairs |
 
 ## Writing an Input Format Plugin
 Creating a new source format is meant to be easy, but convoluted in order to be

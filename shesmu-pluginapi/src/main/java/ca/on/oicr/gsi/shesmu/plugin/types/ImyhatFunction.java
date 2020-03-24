@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -48,6 +49,8 @@ public interface ImyhatFunction<R> {
 
   /** Convert a JSON value */
   R apply(JsonNode value);
+  /** Collect a map type */
+  R applyMap(Map<?, ?> map, Imyhat key, Imyhat value);
 
   /**
    * Convert a tuple

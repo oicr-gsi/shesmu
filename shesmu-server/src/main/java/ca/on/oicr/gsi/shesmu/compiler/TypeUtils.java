@@ -3,14 +3,12 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.types.GenericTransformer;
-import ca.on.oicr.gsi.shesmu.plugin.types.GenericTypeGuarantee;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
+import ca.on.oicr.gsi.shesmu.plugin.types.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,47 +22,12 @@ public class TypeUtils {
     T apply(Target input, Imyhat expectedType, boolean dropIfEmpty);
   }
 
-  public static <T> Optional<List<T>> matchGang(
-      int line,
-      int column,
-      NameDefinitions defs,
-      GangDefinition definition,
-      GangProcessor<? extends T> constructor,
-      Consumer<String> errorHandler) {
-    final AtomicBoolean ok = new AtomicBoolean(true);
-    final List<T> result =
-        definition
-            .elements()
-            .flatMap(
-                p -> {
-                  final Optional<Target> source = defs.get(p.name());
-                  if (!source.isPresent()) {
-                    ok.set(false);
-                    errorHandler.accept(
-                        String.format(
-                            "%d:%d: Cannot find variable ”%s” from gang “%s” as the stream has been manipulated.",
-                            line, column, p.name(), definition.name()));
-                    return Stream.empty();
-                  }
-                  if (!source.get().flavour().isStream()) {
-                    ok.set(false);
-                    errorHandler.accept(
-                        String.format(
-                            "%d:%d: Variable ”%s” from gang “%s” has been shadowed by a non-stream local.",
-                            line, column, p.name(), definition.name()));
-                    return Stream.empty();
-                  }
-                  return Stream.of(constructor.apply(source.get(), p.type(), p.dropIfDefault()));
-                })
-            .collect(Collectors.toList());
-    return ok.get() ? Optional.of(result) : Optional.empty();
-  }
-
   private static final Type A_BOOLEAN_TYPE = Type.getType(Boolean.class);
   private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
   private static final Type A_JSON_NODE_TYPE = Type.getType(JsonNode.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
+  private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PATH_TYPE = Type.getType(Path.class);
@@ -95,13 +58,18 @@ public class TypeUtils {
         }
 
         @Override
-        public Type genericOptional(GenericTypeGuarantee<?> inner) {
-          return A_OPTIONAL_TYPE;
+        public Type genericList(GenericTypeGuarantee<?> inner) {
+          return A_SET_TYPE;
         }
 
         @Override
-        public Type genericList(GenericTypeGuarantee<?> inner) {
-          return A_SET_TYPE;
+        public Type genericMap(GenericTypeGuarantee<?> key, GenericTypeGuarantee<?> value) {
+          return A_MAP_TYPE;
+        }
+
+        @Override
+        public Type genericOptional(GenericTypeGuarantee<?> inner) {
+          return A_OPTIONAL_TYPE;
         }
 
         @Override
@@ -122,6 +90,11 @@ public class TypeUtils {
         @Override
         public Type list(Imyhat inner) {
           return A_SET_TYPE;
+        }
+
+        @Override
+        public Type map(Imyhat key, Imyhat value) {
+          return A_MAP_TYPE;
         }
 
         @Override
@@ -181,6 +154,11 @@ public class TypeUtils {
         @Override
         public Type list(Imyhat inner) {
           return A_SET_TYPE;
+        }
+
+        @Override
+        public Type map(Imyhat key, Imyhat value) {
+          return A_MAP_TYPE;
         }
 
         @Override
@@ -247,6 +225,11 @@ public class TypeUtils {
         }
 
         @Override
+        public String map(Imyhat key, Imyhat value) {
+          return "parser.m(" + key.apply(this) + "," + value.apply(this) + ")";
+        }
+
+        @Override
         public String object(Stream<Pair<String, Imyhat>> fields) {
           return fields
               .map(e -> e.first() + ":" + e.second().apply(this))
@@ -273,4 +256,40 @@ public class TypeUtils {
           return types.map(t -> t.apply(this)).collect(Collectors.joining(",", "parser.t([", "])"));
         }
       };
+
+  public static <T> Optional<List<T>> matchGang(
+      int line,
+      int column,
+      NameDefinitions defs,
+      GangDefinition definition,
+      GangProcessor<? extends T> constructor,
+      Consumer<String> errorHandler) {
+    final AtomicBoolean ok = new AtomicBoolean(true);
+    final List<T> result =
+        definition
+            .elements()
+            .flatMap(
+                p -> {
+                  final Optional<Target> source = defs.get(p.name());
+                  if (!source.isPresent()) {
+                    ok.set(false);
+                    errorHandler.accept(
+                        String.format(
+                            "%d:%d: Cannot find variable ”%s” from gang “%s” as the stream has been manipulated.",
+                            line, column, p.name(), definition.name()));
+                    return Stream.empty();
+                  }
+                  if (!source.get().flavour().isStream()) {
+                    ok.set(false);
+                    errorHandler.accept(
+                        String.format(
+                            "%d:%d: Variable ”%s” from gang “%s” has been shadowed by a non-stream local.",
+                            line, column, p.name(), definition.name()));
+                    return Stream.empty();
+                  }
+                  return Stream.of(constructor.apply(source.get(), p.type(), p.dropIfDefault()));
+                })
+            .collect(Collectors.toList());
+    return ok.get() ? Optional.of(result) : Optional.empty();
+  }
 }

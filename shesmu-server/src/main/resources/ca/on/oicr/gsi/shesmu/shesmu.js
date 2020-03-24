@@ -436,6 +436,55 @@ export const parser = {
       return { good: false, input: input, error: "Expected integer." };
     }
   },
+  m: function(keyType, valueType) {
+    return input => {
+      const output = [];
+      for (;;) {
+        let match = input.match(
+          output.length == 0 ? /^\s*Dict\s*{/ : /^\s*([\},])/
+        );
+        if (!match) {
+          return {
+            good: false,
+            input: input,
+            error:
+              output.length == 0
+                ? "Expected Dict { in dictionary."
+                : "Expected } or , for dictionary."
+          };
+        }
+        if (match[1] == "}") {
+          return {
+            good: true,
+            input: input.substring(match[0].length),
+            output: output
+          };
+        }
+        const keyState = keyType(input.substring(match[0].length));
+        if (keyState.good) {
+          match = keyState.input.match(/\s*=\s*/);
+          if (!match) {
+            return {
+              good: false,
+              input: keyState.input,
+              error: "Expected = in dictionary."
+            };
+          }
+          const valueState = valueType(
+            keyState.input.substring(match[0].length)
+          );
+          if (valueState.good) {
+            output.push([keyState.output, valueState.output]);
+            input = valueState.input;
+          } else {
+            return valueState;
+          }
+        } else {
+          return keyState;
+        }
+      }
+    };
+  },
   o: function(fieldTypes) {
     return input => {
       const output = {};
@@ -2137,7 +2186,7 @@ function nameForBin(name) {
 
 function setColorIntensity(element, value, maximum) {
   element.style.backgroundColor = `hsl(191, 95%, ${Math.ceil(
-    97 - (value || 0) / maximum * 20
+    97 - ((value || 0) / maximum) * 20
   )}%)`;
 }
 
@@ -3581,7 +3630,7 @@ function getStats(
               const columnWidth =
                 (width - labelWidth) / (boundaryLabels.length - 1);
               const columnSkip = Math.ceil(
-                2 * fontHeight * Math.cos(headerAngle) / columnWidth
+                (2 * fontHeight * Math.cos(headerAngle)) / columnWidth
               );
 
               const repaint = selectionEnd => {
@@ -3666,7 +3715,7 @@ function getStats(
                     boundary: Math.max(
                       0,
                       Math.floor(
-                        x / (width - labelWidth) * (boundaryLabels.length - 1)
+                        (x / (width - labelWidth)) * (boundaryLabels.length - 1)
                       )
                     )
                   };
@@ -4389,8 +4438,7 @@ function showAlertNavigator(
           header.appendChild(document.createTextNode(label));
           const labelCount = document.createElement("TD");
           labelCount.innerText = `${total} (${(
-            total /
-            alerts.length *
+            (total / alerts.length) *
             100
           ).toFixed(2)}%)`;
           row.appendChild(labelCount);
@@ -4445,9 +4493,10 @@ function showAlertNavigator(
                 document.createTextNode(value ? value : "<blank>")
               );
               const countCell = document.createElement("TD");
-              countCell.innerText = `${count} (${(count / total * 100).toFixed(
-                2
-              )}%)`;
+              countCell.innerText = `${count} (${(
+                (count / total) *
+                100
+              ).toFixed(2)}%)`;
               row.appendChild(countCell);
               table.appendChild(row);
             }

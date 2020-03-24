@@ -166,6 +166,11 @@ public final class WdlInputType {
         }
 
         @Override
+        public String map(Imyhat key, Imyhat value) {
+          return "Map[" + key.apply(this) + "," + value.apply(this) + "]";
+        }
+
+        @Override
         public String object(Stream<Pair<String, Imyhat>> contents) {
           return contents
               .map(field -> field.first() + " -> " + field.second().apply(this))
@@ -219,6 +224,24 @@ public final class WdlInputType {
                   .whitespace();
           if (result.isGood()) {
             o.accept(inner.get().asList());
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
+        "Map",
+        (p, o) -> {
+          final AtomicReference<Imyhat> key = new AtomicReference<>();
+          final AtomicReference<Imyhat> value = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .symbol("[")
+                  .whitespace()
+                  .then(WdlInputType::parse, key::set)
+                  .symbol(",")
+                  .then(WdlInputType::parse, value::set)
+                  .symbol("]");
+          if (result.isGood()) {
+            o.accept(Imyhat.dictionary(key.get(), value.get()));
           }
           return result;
         });

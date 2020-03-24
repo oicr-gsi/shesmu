@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -68,11 +69,27 @@ public class JsonWrapper implements ImyhatFunction<JsonNode> {
   }
 
   @Override
+  public JsonNode applyMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+    if (key.isSame(Imyhat.STRING)) {
+      final ObjectNode objectNode = FACTORY.objectNode();
+      map.forEach((k, v) -> objectNode.put((String) k, value.apply(this, v)));
+      return objectNode;
+    }
+    final ArrayNode mapNode = FACTORY.arrayNode();
+    for (final Map.Entry<?, ?> entry : map.entrySet()) {
+      final ArrayNode pairNode = mapNode.addArray();
+      pairNode.add(key.apply(this, entry.getKey()));
+      pairNode.add(value.apply(this, entry.getValue()));
+    }
+    return mapNode;
+  }
+
+  @Override
   public JsonNode applyObject(Stream<Field<String>> contents) {
-    final ObjectNode ObjectNode = FACTORY.objectNode();
+    final ObjectNode objectNode = FACTORY.objectNode();
     contents.forEach(
-        field -> ObjectNode.put(field.index(), field.type().apply(this, field.value())));
-    return ObjectNode;
+        field -> objectNode.set(field.index(), field.type().apply(this, field.value())));
+    return objectNode;
   }
 
   @Override

@@ -7,8 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -61,6 +60,41 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
       }
     }
     return Optional.of(output);
+  }
+
+  @Override
+  public Optional<Object> map(Imyhat key, Imyhat value) {
+    @SuppressWarnings("unchecked")
+    final Comparator<Object> comparator = (Comparator<Object>) key.comparator();
+    final SortedMap<Object, Object> map = new TreeMap<>(comparator);
+    if (key.isSame(Imyhat.STRING) && input.isObject()) {
+      final Iterator<Map.Entry<String, JsonNode>> fields = input.fields();
+      while (fields.hasNext()) {
+        final Map.Entry<String, JsonNode> field = fields.next();
+        final Optional<Object> result = value.apply(new JsonConverter(field.getValue()));
+        if (!result.isPresent()) {
+          return Optional.empty();
+        }
+        map.put(field.getKey(), result.get());
+      }
+      return Optional.of(map);
+    }
+    if (!input.isArray()) {
+      return Optional.empty();
+    }
+    for (final JsonNode element : input) {
+      if (!element.isArray() || element.size() != 2) {
+        return Optional.empty();
+      }
+      final Optional<Object> keyResult = key.apply(new JsonConverter(element.get(0)));
+      final Optional<Object> valueResult = value.apply(new JsonConverter(element.get(1)));
+      if (keyResult.isPresent() && valueResult.isPresent()) {
+        map.put(keyResult.get(), valueResult.get());
+      } else {
+        return Optional.empty();
+      }
+    }
+    return Optional.of(map);
   }
 
   @Override

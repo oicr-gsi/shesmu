@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -22,10 +23,20 @@ public class SourceNodeContainer extends SourceNode {
         renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
       }
     },
+    MAP {
+      @Override
+      public void render(Renderer renderer) {
+        renderer
+            .methodGen()
+            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_MAP);
+      }
+    },
     OPTIONAL {
       @Override
       public void render(Renderer renderer) {
-        renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM);
+        renderer
+            .methodGen()
+            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL);
       }
     },
     JSON {
@@ -43,8 +54,10 @@ public class SourceNodeContainer extends SourceNode {
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
-  private static final Method METHOD_RUNTIME_SUPPORT__STREAM =
+  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL =
       new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Optional.class)});
+  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_MAP =
+      new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Map.class)});
   private static final Method METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS =
       new Method("jsonElements", A_STREAM_TYPE, new Type[] {Type.getType(JsonNode.class)});
 
@@ -119,12 +132,17 @@ public class SourceNodeContainer extends SourceNode {
       initialType = ((Imyhat.OptionalImyhat) type).inner();
       mode = Mode.OPTIONAL;
       return true;
+    } else if (type instanceof Imyhat.DictionaryImyhat) {
+      final Imyhat.DictionaryImyhat inner = ((Imyhat.DictionaryImyhat) type);
+      initialType = Imyhat.tuple(inner.key(), inner.value());
+      mode = Mode.MAP;
+      return true;
     } else if (type.isSame(Imyhat.JSON)) {
       initialType = Imyhat.JSON;
       mode = Mode.JSON;
       return true;
     } else {
-      expression.typeError("list or json or optional", type, errorHandler);
+      expression.typeError("list or json or map or optional", type, errorHandler);
       return false;
     }
   }
