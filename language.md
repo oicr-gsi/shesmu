@@ -267,6 +267,10 @@ Collect a value; if none are collected, the group is rejected. Since the order o
 
 Collect all values into a list from existing lists (duplicates are removed).
 
+- `Dict` _keyexpr_ `=` _valueexpr_
+
+Collects the results into a dictionary. Duplicate values are resolved arbitrarily.
+
 - `List` _expr_
 
 Collect all values into a list (duplicates are removed).
@@ -319,9 +323,16 @@ _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the sam
 
 - `For` _var_ `In` _expr_`:` _modifications..._ _collector_
 
-Takes the elements in a list, JSON blob, or optional and process them using the supplied
+Takes the elements in a dictionary, list, JSON blob, or optional and process them using the supplied
 modifications and then computes a result using the collector. The modifications
 and collectors are described below.
+
+|_expr_ Type | _x_ Type | Operation |
+|---         |---       |---        |
+| `[`_t_`]`  | _t_      | Processes each item in the list. |
+| `` ` `` _t_ `` ` `` | _t_ | If the optional contains a value, process it; otherwise act like the empty list has been provided. |
+| _k_ `->` _v_ | `{`_k_`, `_v_`}` | Process each pair of items in a dictionary. |
+| `json` | 	`json` | If the type is a JSON array, use the elements; if a JSON object use the values. Otherwise, acts as if the empty list. |
 
 Any scalar JSON value is treated as an empty collection.
 
@@ -535,16 +546,24 @@ by 2.
 Creates an optional that contains no value.
 
 ### Access Operators
-#### Tuple Access
+#### Tuple and Dictionary Access
 - _expr_ `[` _n_ `]`
 
-Extracts an element from a tuple. _n_ is an integer that specifies the
-zero-based index of the item in the tuple. The result type will be based on the
-type of that position in the tuple. If _n_ is beyond the number of items in the
-tuple, an error occurs.
+Extracts an element from a tuple (or integer-indexed map). _n_ is an integer
+that specifies the zero-based index of the item in the tuple. The result type
+will be based on the type of that position in the tuple. If _n_ is beyond the
+number of items in the tuple, an error occurs.
 
 The _expr_ can also be an optional of a tuple. If it is, the result will be an
 optional of the appropriate type.
+
+- _expr_ `[` _indexexpr_ `]`
+
+Extracts the value from a dictionary. The resulting value will always be
+optional in case the key specified by _indexexpr_ is missing.
+
+The _expr_ can also be an optional of a dictionary.
+
 
 #### Named Tuple Access
 - _expr_ `.` _field_
@@ -597,6 +616,13 @@ Creates a new tuple with the elements as specified in the gang _name_.
 - `[`_expr_`,` _expr_`,` ...`]`
 
 Creates a new list from the specified elements. All the expressions must be of the same type.
+
+#### Dictionary Literal
+- `Dict {` _keyexpr_ `=` _valueexpr_`,` ... `}`
+
+Creates a new dictionary from the specified elements. All keys must be the same
+type and all values must be the same type. If duplicate keys are present, one
+will be selected arbitrarily.
 
 #### Path Literals
 - `'`path`'`
@@ -679,25 +705,14 @@ will be named _x_ in the downstream operations.
 
 #### Flatten
 - `Flatten (` _x_ `In` _expr_ _modifications_ `)`
-
-For each item in the list, _expr_ computes a matching list and the items in this
-list are presented to the downstream operations. The variable name available in
-the downstream operations is _x_. Additional list modification can also be
-applied.
-
+- `Flatten (` _x_ `Fields` _expr_ _modifications_ `)`
 - `Flatten (` _x_ `From` _startexpr_` To `_endexpr_ _modifications..._`)`
-
-For each item in the list, iterates over the range of number from _startexpr_,
-inclusive, to _endexpr_, exclusive, are presented to the downstream operations.
-The variable name available in the downstream operations is _x_. Additional
-list modification can also be applied.
-
 - `Flatten (` _x_ `Splitting` _expr_ `By /`_regex_`/` _modifications_ `)`
 
-For each item in the list, _expr_ computes a string that is broken into chunks
-delimited by _regex_ and these chunks are presented to downstream operations.
-The variable name available in the downstream operations is _x_. Additional
-list modification can also be applied.
+Performs nested iteration in the same was as `For`.  The variable name
+available in the downstream operations is _x_. Additional list modification can
+also be applied. The additional operations inside the brackets can also see the
+outer variable.
 
 #### Filter
 - `Where` _expr_
@@ -777,6 +792,12 @@ list separated by the value of _delimexpr_, which must also be a string.
 - `List` _expr_
 
 Evaluates _expr_ for every item and collects all the unique into a list.
+
+#### Dictionary
+- `Dict` _keyexpr_ `=` _valueexpr_
+
+Evaluates _keyexpr_ and _valueexpr_ for every item and collects all the results
+into a dictionary. Duplicate values are resolved arbitrarily.
 
 #### Optima
 - `Max` _sortexpr_

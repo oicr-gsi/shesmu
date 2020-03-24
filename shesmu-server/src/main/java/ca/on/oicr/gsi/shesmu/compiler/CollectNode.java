@@ -27,6 +27,22 @@ public abstract class CollectNode {
 
   static {
     DISPATCH.addKeyword(
+        "Dict",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> key = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> value = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .then(ExpressionNode::parse0, key::set)
+                  .symbol("=")
+                  .whitespace()
+                  .then(ExpressionNode::parse0, value::set);
+          if (result.isGood()) {
+            o.accept(new CollectNodeDictionary(p.line(), p.column(), key.get(), value.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
         "List",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();

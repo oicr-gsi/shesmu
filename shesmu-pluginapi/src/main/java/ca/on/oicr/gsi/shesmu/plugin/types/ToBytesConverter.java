@@ -1,8 +1,5 @@
-package ca.on.oicr.gsi.shesmu.core.signers;
+package ca.on.oicr.gsi.shesmu.plugin.types;
 
-import ca.on.oicr.gsi.shesmu.plugin.types.Field;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -10,6 +7,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -77,6 +75,16 @@ public abstract class ToBytesConverter implements ImyhatConsumer {
       inner.accept(this, value.get());
     } else {
       add(new byte[] {(byte) 'Q'});
+    }
+  }
+
+  @Override
+  public final void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+    for (final Map.Entry<?, ?> entry : map.entrySet()) {
+      key.accept(this, entry.getKey());
+      add(new byte[] {(byte) 0});
+      value.accept(this, entry.getValue());
+      add(new byte[] {(byte) 0});
     }
   }
 

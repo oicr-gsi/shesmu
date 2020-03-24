@@ -690,10 +690,10 @@ public final class LambdaBuilder {
    * Create a lambda that calls a virtual method. The first type of the first parameter must be the
    * class in which the method is defined.
    */
-  public static void pushVirtual(Renderer renderer, String methodName, LambdaType lambda) {
+  public static void pushVirtual(
+      Renderer renderer, String methodName, LambdaType lambda, Type... captures) {
     Type selfType =
-        lambda
-            .parameterTypes(AccessMode.REAL)
+        Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
             .findFirst()
             .orElseThrow(IllegalArgumentException::new);
     assertNonPrimitive(selfType);
@@ -701,7 +701,7 @@ public final class LambdaBuilder {
         .methodGen()
         .invokeDynamic(
             lambda.methodName(),
-            Type.getMethodDescriptor(lambda.interfaceType()),
+            Type.getMethodDescriptor(lambda.interfaceType(), captures),
             LAMBDA_METAFACTORY_BSM,
             Type.getMethodType(
                 lambda.returnType(AccessMode.ERASED),
@@ -712,7 +712,9 @@ public final class LambdaBuilder {
                 methodName,
                 Type.getMethodDescriptor(
                     lambda.returnType(AccessMode.REAL),
-                    lambda.parameterTypes(AccessMode.REAL).skip(1).toArray(Type[]::new)),
+                    Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
+                        .skip(1)
+                        .toArray(Type[]::new)),
                 false),
             Type.getMethodType(
                 lambda.returnType(AccessMode.BOXED),

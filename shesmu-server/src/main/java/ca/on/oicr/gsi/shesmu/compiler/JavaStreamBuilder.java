@@ -2,15 +2,13 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.UnivaluedCollector;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Start;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -18,6 +16,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -30,10 +29,12 @@ public final class JavaStreamBuilder {
 
   private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
   private static final Type A_BINARY_OPERATOR_TYPE = Type.getType(BinaryOperator.class);
+  private static final Type A_COLLECTORS_TYPE = Type.getType(Collectors.class);
   private static final Type A_COLLECTOR_TYPE = Type.getType(Collector.class);
   private static final Type A_COMPARATOR_TYPE = Type.getType(Comparator.class);
   private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
+  private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
@@ -45,6 +46,11 @@ public final class JavaStreamBuilder {
   private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
   private static final Type A_UNIVALUED_COLLECTOR_TYPE = Type.getType(UnivaluedCollector.class);
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
+  private static final Method METHOD_COLLECTORS__TO_MAP =
+      new Method(
+          "toMap",
+          A_COLLECTOR_TYPE,
+          new Type[] {A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BINARY_OPERATOR_TYPE, A_SUPPLIER_TYPE});
 
   private static final Method METHOD_COLLECTORS__TO_SET =
       new Method("toSet", A_COLLECTOR_TYPE, new Type[] {});
@@ -141,6 +147,43 @@ public final class JavaStreamBuilder {
   public void count() {
     finish();
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COUNT);
+  }
+
+  public Pair<Renderer, Renderer> dictionary(
+      int line,
+      int column,
+      LoadableConstructor name,
+      Imyhat keyType,
+      Imyhat valueType,
+      LoadableValue[] capturedVariables) {
+    finish();
+    final LambdaBuilder keyBuilder =
+        new LambdaBuilder(
+            owner,
+            String.format("For ⋯ Dictionary %d:%d 🔑️", line, column),
+            LambdaBuilder.function(keyType, currentType),
+            renderer.streamType(),
+            capturedVariables);
+    final LambdaBuilder valueBuilder =
+        new LambdaBuilder(
+            owner,
+            String.format("For ⋯ Dictionary %d:%d️", line, column),
+            LambdaBuilder.function(valueType, currentType),
+            renderer.streamType(),
+            capturedVariables);
+    keyBuilder.push(renderer);
+    valueBuilder.push(renderer);
+    renderer
+        .methodGen()
+        .getStatic(A_RUNTIME_SUPPORT_TYPE, "USELESS_BINARY_OPERATOR", A_BINARY_OPERATOR_TYPE);
+    renderer.loadImyhat(currentType.descriptor());
+    LambdaBuilder.pushVirtual(
+        renderer, "newMap", LambdaBuilder.supplier(A_MAP_TYPE), A_IMYHAT_TYPE);
+    renderer.methodGen().invokeStatic(A_COLLECTORS_TYPE, METHOD_COLLECTORS__TO_MAP);
+    renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
+    renderer.methodGen().checkCast(A_MAP_TYPE);
+
+    return new Pair<>(makeRender(keyBuilder, name), makeRender(valueBuilder, name));
   }
 
   public void distinct() {

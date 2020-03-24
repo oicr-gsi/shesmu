@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.types;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -42,6 +43,8 @@ public interface ImyhatConsumer {
 
   /** Collect a JSON value */
   void accept(JsonNode value);
+  /** Collect a map type */
+  void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value);
 
   /**
    * Collect an object

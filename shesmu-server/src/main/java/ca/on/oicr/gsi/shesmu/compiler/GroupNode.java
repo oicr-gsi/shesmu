@@ -58,6 +58,26 @@ public abstract class GroupNode implements DefinedTarget {
                   new GroupNodeMatches(line, column, name, match, expression)));
     }
     GROUPERS.addKeyword(
+        "Dict",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> key = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> value = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .then(ExpressionNode::parse, key::set)
+                  .whitespace()
+                  .symbol("=")
+                  .whitespace()
+                  .then(ExpressionNode::parse, value::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (line, column, name) ->
+                    new GroupNodeDictionary(line, column, name, key.get(), value.get()));
+          }
+          return result;
+        });
+    GROUPERS.addKeyword(
         "Where",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();

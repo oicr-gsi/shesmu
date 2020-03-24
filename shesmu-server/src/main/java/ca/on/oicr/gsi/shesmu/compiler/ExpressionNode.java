@@ -584,8 +584,23 @@ public abstract class ExpressionNode implements Renderable {
           if (result.isGood()) {
             final int i = (int) index.get();
             o.accept(node -> new ExpressionNodeTupleGet(p.line(), p.column(), node, i));
+            return result;
+          } else {
+            final AtomicReference<ExpressionNode> indexExpression = new AtomicReference<>();
+            final Parser mapResult =
+                p.whitespace()
+                    .then(ExpressionNode::parse, indexExpression::set)
+                    .whitespace()
+                    .symbol("]")
+                    .whitespace();
+            if (mapResult.isGood()) {
+              o.accept(
+                  node ->
+                      new ExpressionNodeDictionaryGet(
+                          p.line(), p.column(), node, indexExpression.get()));
+            }
+            return mapResult;
           }
-          return result;
         });
     SUFFIX_TIGHT.addSymbol(
         ".",
@@ -673,6 +688,41 @@ public abstract class ExpressionNode implements Renderable {
                   .whitespace();
           if (p.isGood()) {
             o.accept(new ExpressionNodeTuple(p.line(), p.column(), items.get()));
+          }
+          return result;
+        });
+    TERMINAL.addKeyword(
+        "Dict",
+        (p, o) -> {
+          final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> fields =
+              new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .symbol("{")
+                  .list(
+                      fields::set,
+                      (fp, fo) -> {
+                        final AtomicReference<ExpressionNode> key = new AtomicReference<>();
+                        final AtomicReference<ExpressionNode> value = new AtomicReference<>();
+                        final Parser fieldResult =
+                            fp.whitespace()
+                                .then(ExpressionNode::parse, key::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .then(ExpressionNode::parse, value::set)
+                                .whitespace();
+                        if (fieldResult.isGood()) {
+                          fo.accept(new Pair<>(key.get(), value.get()));
+                        }
+                        return fieldResult;
+                      },
+                      ',')
+                  .whitespace()
+                  .symbol("}")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new ExpressionNodeDictionary(p.line(), p.column(), fields.get()));
           }
           return result;
         });

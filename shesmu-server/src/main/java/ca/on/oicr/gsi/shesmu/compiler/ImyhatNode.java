@@ -16,6 +16,22 @@ public abstract class ImyhatNode {
     final AtomicReference<ImyhatNode> type = new AtomicReference<>();
     final Parser result = parse0(input, type::set);
     if (result.isGood()) {
+      final AtomicReference<ImyhatNode> right = new AtomicReference<>();
+      final Parser rightResult =
+          result.symbol("->").whitespace().then(ImyhatNode::parse, right::set);
+      if (rightResult.isGood()) {
+        output.accept(new ImyhatNodeMap(type.get(), right.get()));
+        return rightResult;
+      }
+      output.accept(type.get());
+    }
+    return result;
+  }
+
+  private static Parser parse0(Parser input, Consumer<ImyhatNode> output) {
+    final AtomicReference<ImyhatNode> type = new AtomicReference<>();
+    final Parser result = parse1(input, type::set);
+    if (result.isGood()) {
       final Parser optionalResult = result.symbol("?").whitespace();
       if (optionalResult.isGood()) {
         output.accept(new ImyhatNodeOptional(type.get()));
@@ -26,9 +42,9 @@ public abstract class ImyhatNode {
     return result;
   }
 
-  public static Parser parse0(Parser input, Consumer<ImyhatNode> output) {
+  private static Parser parse1(Parser input, Consumer<ImyhatNode> output) {
     final AtomicReference<ImyhatNode> type = new AtomicReference<>();
-    Parser result = parse1(input, type::set);
+    Parser result = parse2(input, type::set);
     while (result.isGood()) {
       final AtomicLong index = new AtomicLong();
       final Parser nextTuple =
@@ -58,7 +74,7 @@ public abstract class ImyhatNode {
     return result;
   }
 
-  private static Parser parse1(Parser input, Consumer<ImyhatNode> output) {
+  private static Parser parse2(Parser input, Consumer<ImyhatNode> output) {
     final Parser listParser = input.symbol("[");
     if (listParser.isGood()) {
       final AtomicReference<ImyhatNode> inner = new AtomicReference<>();

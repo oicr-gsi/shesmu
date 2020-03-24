@@ -36,6 +36,14 @@ public interface ImyhatTransformer<R> {
   R list(Imyhat inner);
 
   /**
+   * Convert a map type
+   *
+   * @param key the type of the keys
+   * @param value the type of the values
+   */
+  R map(Imyhat key, Imyhat value);
+
+  /**
    * Convert an object type
    *
    * @param contents a list of fields in the object and their types

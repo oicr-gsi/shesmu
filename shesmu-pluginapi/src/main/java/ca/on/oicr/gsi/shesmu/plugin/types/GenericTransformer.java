@@ -7,6 +7,8 @@ public interface GenericTransformer<R> extends ImyhatTransformer<R> {
 
   R genericList(GenericTypeGuarantee<?> inner);
 
+  R genericMap(GenericTypeGuarantee<?> key, GenericTypeGuarantee<?> value);
+
   R genericOptional(GenericTypeGuarantee<?> inner);
 
   R genericTuple(Stream<GenericTypeGuarantee<?>> elements);

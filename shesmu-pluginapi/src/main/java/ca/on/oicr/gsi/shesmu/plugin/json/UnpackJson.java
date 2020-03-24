@@ -8,8 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -59,6 +58,31 @@ public class UnpackJson implements ImyhatTransformer<Object> {
     return IntStream.range(0, value.size())
         .mapToObj(i -> inner.apply(new UnpackJson(value.get(i))))
         .collect(inner.toSet());
+  }
+
+  @Override
+  public Object map(Imyhat key, Imyhat value) {
+    @SuppressWarnings("unchecked")
+    final Comparator<Object> comparator = (Comparator<Object>) key.comparator();
+    final SortedMap<Object, Object> map = new TreeMap<>(comparator);
+    if (key.isSame(Imyhat.STRING) && this.value.isObject()) {
+      final Iterator<Map.Entry<String, JsonNode>> fields = this.value.fields();
+      while (fields.hasNext()) {
+        final Map.Entry<String, JsonNode> field = fields.next();
+        map.put(field.getKey(), value.apply(new UnpackJson(field.getValue())));
+      }
+      return map;
+    }
+    if (!this.value.isArray()) {
+      throw new IllegalArgumentException("Invalid JSON for map");
+    }
+    for (final JsonNode element : this.value) {
+      if (!element.isArray() || element.size() != 2) {
+        throw new IllegalArgumentException("Invalid JSON for map");
+      }
+      map.put(key.apply(new UnpackJson(element.get(0))), new UnpackJson(element.get(1)));
+    }
+    return map;
   }
 
   @Override

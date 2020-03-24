@@ -124,6 +124,19 @@ public class WorkflowConfiguration {
                                               }
 
                                               @Override
+                                              public String applyMap(
+                                                  Map<?, ?> map, Imyhat key, Imyhat value) {
+                                                return map.entrySet()
+                                                    .stream()
+                                                    .map(
+                                                        e ->
+                                                            key.apply(this, e.getKey())
+                                                                + ":"
+                                                                + value.apply(this, e.getValue()))
+                                                    .collect(Collectors.joining(","));
+                                              }
+
+                                              @Override
                                               public String applyObject(
                                                   Stream<Field<String>> contents) {
                                                 return contents

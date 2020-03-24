@@ -3,12 +3,12 @@ package ca.on.oicr.gsi.shesmu.core.signers;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ToBytesConverter;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class SHA1DigestSigner extends ca.on.oicr.gsi.shesmu.core.signers.ToBytesConverter
-    implements DynamicSigner<String> {
+public class SHA1DigestSigner extends ToBytesConverter implements DynamicSigner<String> {
   private final MessageDigest digest;
 
   public SHA1DigestSigner() throws NoSuchAlgorithmException {

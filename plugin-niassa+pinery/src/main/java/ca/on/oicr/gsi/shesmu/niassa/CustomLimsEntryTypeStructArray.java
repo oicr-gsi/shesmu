@@ -2,10 +2,10 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
-import ca.on.oicr.gsi.shesmu.core.signers.ToBytesConverter;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ToBytesConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

@@ -26,6 +26,7 @@ syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
 syn keyword shesmuKeyword Define
 syn keyword shesmuKeyword Description
+syn keyword shesmuKeyword Dict
 syn keyword shesmuKeyword Distinct
 syn keyword shesmuKeyword Dump
 syn keyword shesmuKeyword Else
