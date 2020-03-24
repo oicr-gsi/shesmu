@@ -127,6 +127,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   false)
                               .orElse(""),
                           limsAttr(fp, "reference_slide_id", badSetInRecord::add),
+                          limsAttr(fp, "sequencing_control_type", badSetInRecord::add).orElse(""),
                           limsAttr(fp, "sex", badSetInRecord::add),
                           limsAttr(fp, "spike_in", badSetInRecord::add),
                           limsAttr(fp, "spike_in_dilution_factor", badSetInRecord::add),

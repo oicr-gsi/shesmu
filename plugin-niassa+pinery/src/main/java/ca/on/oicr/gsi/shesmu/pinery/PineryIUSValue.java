@@ -34,6 +34,7 @@ public final class PineryIUSValue {
   private final Optional<String> reference_slide_id;
   private final Optional<Double> rin;
   private final String run_status;
+  private final String sequencing_control_type;
   private final Optional<String> sequencing_kit;
   private final String sequencing_workflow;
   private final Optional<String> sex;
@@ -76,6 +77,7 @@ public final class PineryIUSValue {
       Optional<String> reference_slide_id,
       Optional<Double> rin,
       String run_status,
+      String sequencing_control_type,
       Optional<String> sequencing_kit,
       String sequencing_workflow,
       Optional<String> sex,
@@ -119,6 +121,7 @@ public final class PineryIUSValue {
     this.reference_slide_id = reference_slide_id;
     this.rin = rin;
     this.run_status = run_status;
+    this.sequencing_control_type = sequencing_control_type;
     this.sequencing_kit = sequencing_kit;
     this.sequencing_workflow = sequencing_workflow;
     this.sex = sex;
@@ -198,6 +201,7 @@ public final class PineryIUSValue {
         && reference_slide_id.equals(that.reference_slide_id)
         && rin.equals(that.rin)
         && run_status.equals(that.run_status)
+        && sequencing_control_type.equals(that.sequencing_control_type)
         && sequencing_kit.equals(that.sequencing_kit)
         && sequencing_workflow.equals(that.sequencing_workflow)
         && sex.equals(that.sex)
@@ -263,6 +267,7 @@ public final class PineryIUSValue {
         reference_slide_id,
         rin,
         run_status,
+        sequencing_control_type,
         sequencing_kit,
         sequencing_workflow,
         sex,
@@ -359,6 +364,11 @@ public final class PineryIUSValue {
   @ShesmuVariable
   public String run_status() {
     return run_status;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String sequencing_control_type() {
+    return sequencing_control_type;
   }
 
   @ShesmuVariable(signable = true)
