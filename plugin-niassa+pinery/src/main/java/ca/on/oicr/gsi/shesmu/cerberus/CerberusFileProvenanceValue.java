@@ -38,6 +38,7 @@ public final class CerberusFileProvenanceValue {
   private final Path path;
   private final String project;
   private final Optional<String> reference_slide_id;
+  private final String sequencing_control_type;
   private final Optional<String> sex;
   private final Optional<String> spike_in;
   private final Optional<String> spike_in_dilution_factor;
@@ -84,6 +85,7 @@ public final class CerberusFileProvenanceValue {
       Path path,
       String project,
       Optional<String> reference_slide_id,
+      String sequencing_control_type,
       Optional<String> sex,
       Optional<String> spike_in,
       Optional<String> spike_in_dilution_factor,
@@ -130,6 +132,7 @@ public final class CerberusFileProvenanceValue {
     this.path = path;
     this.project = project;
     this.reference_slide_id = reference_slide_id;
+    this.sequencing_control_type = sequencing_control_type;
     this.sex = sex;
     this.spike_in = spike_in;
     this.spike_in_dilution_factor = spike_in_dilution_factor;
@@ -210,6 +213,7 @@ public final class CerberusFileProvenanceValue {
         && path.equals(that.path)
         && project.equals(that.project)
         && reference_slide_id.equals(that.reference_slide_id)
+        && sequencing_control_type.equals(that.sequencing_control_type)
         && sex.equals(that.sex)
         && spike_in.equals(that.spike_in)
         && spike_in_dilution_factor.equals(that.spike_in_dilution_factor)
@@ -284,6 +288,7 @@ public final class CerberusFileProvenanceValue {
         path,
         project,
         reference_slide_id,
+        sequencing_control_type,
         sex,
         spike_in,
         spike_in_dilution_factor,
@@ -386,6 +391,11 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable(signable = true)
   public Optional<String> reference_slide_id() {
     return reference_slide_id;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String sequencing_control_type() {
+    return sequencing_control_type;
   }
 
   @ShesmuVariable(signable = true)

@@ -150,6 +150,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     Optional.empty(),
                     Optional.empty(),
                     getRunField(run, RunDto::getState),
+                    "",
                     maybeGetRunField(run, RunDto::getSequencingKit),
                     maybeGetRunField(run, RunDto::getWorkflowType).orElse(""),
                     Optional.empty(),
@@ -228,6 +229,8 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         limsAttr(sp, "reference_slide_id", badSetInRecord::add, false),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
                         getRunField(run, RunDto::getState),
+                        limsAttr(sp, "sequencing_control_type", badSetInRecord::add, false)
+                            .orElse(""),
                         maybeGetRunField(run, RunDto::getSequencingKit),
                         maybeGetRunField(run, RunDto::getWorkflowType).orElse(""),
                         limsAttr(sp, "sex", badSetInRecord::add, false),
