@@ -4,10 +4,15 @@ import java.util.Collections;
 import java.util.Map;
 
 public class Configuration {
+  private Map<String, FunctionConfig> functions = Collections.emptyMap();
   private String host;
   private int port;
   private Map<String, RefillerConfig> refillers = Collections.emptyMap();
   private String user;
+
+  public Map<String, FunctionConfig> getFunctions() {
+    return functions;
+  }
 
   public String getHost() {
     return host;
@@ -23,6 +28,10 @@ public class Configuration {
 
   public String getUser() {
     return user;
+  }
+
+  public void setFunctions(Map<String, FunctionConfig> functions) {
+    this.functions = functions;
   }
 
   public void setHost(String host) {

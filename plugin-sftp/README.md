@@ -8,6 +8,7 @@ To configure an SFTP server, create a file ending in `.sftp` as follows:
       "host": "myserver.local",
       "port": 22,
       "user": "myuser",
+      "functions": {},
       "refillers": {}
     }
 
@@ -20,6 +21,39 @@ This will provide several functions to access the existence, size, and
 modification time of remote files. It will also provide an action to create
 symlinks on the remote system.
 
+## Functions
+A remote program can be used to provide functions to olives. To create one add
+an entry to the `"functions"` section as follows:
+
+    "some_function": {
+      "command": "/usr/local/bin/some_function",
+      "parameters": [
+        "s",
+        "i"
+      ],
+      "returns": "b",
+      "ttl": 60
+    }
+
+This will provide `some_function(string, integer)` to olives. When this
+function is called, it will run `/usr/local/bin/some_function` and write a JSON
+array with the parameters to standard input. It will then wait to read standard
+output which should contain only a JSON value (a Boolean in this case); that
+is, it should write `true` or `false` to standard output.
+
+As a fun example, if `cat` is the command used, all the arguments are returned
+as a tuple:
+
+    "to_tuple": {
+      "command": "cat",
+      "parameters": [
+        "s",
+        "i"
+      ],
+      "returns": "t2si"
+    }
+
+## Refillers
 A remote server can provide programs that will ingest data from a `Refill`
 olive. To create one, add an entry in the `"refillers"` section as follows:
 

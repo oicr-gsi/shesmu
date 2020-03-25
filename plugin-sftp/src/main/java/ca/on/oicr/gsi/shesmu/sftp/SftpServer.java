@@ -3,17 +3,22 @@ package ca.on.oicr.gsi.shesmu.sftp;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.*;
+import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
+import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
@@ -360,6 +365,74 @@ public class SftpServer extends JsonPluginFile<Configuration> {
               };
             }
           });
+    }
+    definer.clearFunctions();
+    for (final Map.Entry<String, FunctionConfig> entry : configuration.getFunctions().entrySet()) {
+      final Imyhat returns = Imyhat.parse(entry.getValue().getReturns());
+      final Imyhat[] parameters =
+          entry.getValue().getParameters().stream().map(Imyhat::parse).toArray(Imyhat[]::new);
+      final KeyValueCache<Tuple, Optional<Object>, Optional<Object>> cache =
+          new KeyValueCache<Tuple, Optional<Object>, Optional<Object>>(
+              String.format("sftp-function %s %s", fileName(), entry.getKey()),
+              entry.getValue().getTtl(),
+              SimpleRecord::new) {
+            final String name = entry.getKey();
+            final String command = entry.getValue().getCommand();
+
+            @Override
+            protected Optional<Object> fetch(Tuple key, Instant lastUpdated) throws Exception {
+              try (final SSHClient client = new SSHClient()) {
+                client.addHostKeyVerifier(new PromiscuousVerifier());
+
+                client.connect(configuration.getHost(), configuration.getPort());
+                client.authPublickey(configuration.getUser());
+                try (final Session session = client.startSession()) {
+
+                  try (final Session.Command process = session.exec(command);
+                      final BufferedReader reader =
+                          new BufferedReader(new InputStreamReader(process.getInputStream()));
+                      final BufferedReader errorReader =
+                          new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    try (final OutputStream output =
+                        new PrometheusLoggingOutputStream(
+                            process.getOutputStream(), refillBytes, fileName().toString(), name)) {
+                      final ArrayNode array = MAPPER.createArrayNode();
+                      for (int i = 0; i < parameters.length; i++) {
+                        parameters[i].accept(new PackJsonArray(array), key.get(i));
+                      }
+                      MAPPER.writeValue(output, array);
+                      // Send EOF to the remote end since closing the stream doesn't do that:
+                      // https://github.com/hierynomus/sshj/issues/143
+                      client
+                          .getTransport()
+                          .write(
+                              new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
+                    }
+                    final JsonNode jsonResult = MAPPER.readTree(reader);
+                    System.out.println(String.format("=== SSH FUNCTION %s STDERR ===\n", name));
+                    errorReader.lines().forEach(System.out::println);
+                    System.out.println("=== END ===");
+                    process.join();
+                    if (process.getExitStatus() == null || process.getExitStatus() != 0) {
+                      return Optional.empty();
+                    }
+                    final Object result = returns.apply(new UnpackJson(jsonResult));
+                    return returns instanceof Imyhat.OptionalImyhat
+                        ? ((Optional<?>) result).map(x -> x)
+                        : Optional.of(result);
+                  }
+                }
+              }
+            }
+          };
+      definer.defineFunction(
+          entry.getKey(),
+          String.format("Function run via SSH defined in %s.", fileName()),
+          returns.asOptional(),
+          args -> cache.get(new Tuple(args)),
+          Stream.of(parameters)
+              .map(t -> new FunctionParameter("Parameter for SSH", t))
+              .toArray(FunctionParameter[]::new));
     }
     return Optional.empty();
   }
