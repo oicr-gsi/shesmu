@@ -113,7 +113,7 @@ public class ExpressionNodeDictionary extends ExpressionNode {
             ok = false;
           }
           if (entry.second().type().isSame(value)) {
-            value = value.unify(entry.first().type());
+            value = value.unify(entry.second().type());
           } else {
             entry.second().typeError(value, entry.second().type(), errorHandler);
             ok = false;
