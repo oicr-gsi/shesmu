@@ -316,270 +316,279 @@ public class SimulateRequest {
     final ObjectNode exports = response.putObject("exports");
     final ArrayNode errors = response.putArray("errors");
     final AtomicReference<FileTable> fileTable = new AtomicReference<>();
-    final HotloadingCompiler compiler =
-        new HotloadingCompiler(
-            CompiledGenerator.SOURCES::get,
-            new DefinitionRepository() {
-              @Override
-              public Stream<ActionDefinition> actions() {
-                return Stream.concat(
-                    definitionRepository
-                        .actions()
-                        .filter(a -> !fakeActions.containsKey(a.name()))
-                        .map(
-                            a ->
-                                new FakeActionDefinition(
-                                    a.name(),
-                                    a.description(),
-                                    null,
-                                    a.parameters().map(JsonActionParameterDefinition::new))),
-                    fakeActions
-                        .entrySet()
-                        .stream()
-                        .map(
-                            e ->
-                                new FakeActionDefinition(
-                                    e.getKey(),
-                                    "Provided in simulation request",
-                                    null,
-                                    e.getValue()
-                                        .entrySet()
-                                        .stream()
-                                        .map(
-                                            pe ->
-                                                new JsonActionParameterDefinition(
-                                                    pe.getKey(),
-                                                    pe.getValue().required,
-                                                    convertType(
-                                                        pe.getValue().getType(), errors::add))))));
+    try {
+      final HotloadingCompiler compiler =
+          new HotloadingCompiler(
+              CompiledGenerator.SOURCES::get,
+              new DefinitionRepository() {
+                @Override
+                public Stream<ActionDefinition> actions() {
+                  return Stream.concat(
+                      definitionRepository
+                          .actions()
+                          .filter(a -> !fakeActions.containsKey(a.name()))
+                          .map(
+                              a ->
+                                  new FakeActionDefinition(
+                                      a.name(),
+                                      a.description(),
+                                      null,
+                                      a.parameters().map(JsonActionParameterDefinition::new))),
+                      fakeActions
+                          .entrySet()
+                          .stream()
+                          .map(
+                              e ->
+                                  new FakeActionDefinition(
+                                      e.getKey(),
+                                      "Provided in simulation request",
+                                      null,
+                                      e.getValue()
+                                          .entrySet()
+                                          .stream()
+                                          .map(
+                                              pe ->
+                                                  new JsonActionParameterDefinition(
+                                                      pe.getKey(),
+                                                      pe.getValue().required,
+                                                      convertType(
+                                                          pe.getValue().getType(),
+                                                          errors::add))))));
+                }
+
+                @Override
+                public Stream<ConstantDefinition> constants() {
+                  return definitionRepository.constants();
+                }
+
+                @Override
+                public Stream<FunctionDefinition> functions() {
+                  return Stream.concat(definitionRepository.functions(), importableFunctions.get());
+                }
+
+                @Override
+                public Stream<ConfigurationSection> listConfiguration() {
+                  return definitionRepository.listConfiguration();
+                }
+
+                @Override
+                public Stream<RefillerDefinition> refillers() {
+                  return definitionRepository
+                      .refillers()
+                      .map(
+                          refiller ->
+                              new FakeRefillerDefinition(
+                                  refiller.name(),
+                                  refiller.description(),
+                                  null,
+                                  refiller.parameters().map(JsonRefillerParameterDefinition::new)));
+                }
+
+                @Override
+                public Stream<SignatureDefinition> signatures() {
+                  return definitionRepository.signatures();
+                }
+
+                @Override
+                public void writeJavaScriptRenderer(PrintStream writer) {
+                  definitionRepository.writeJavaScriptRenderer(writer);
+                }
+              });
+      final Optional<ActionGenerator> result =
+          compiler.compile(
+              "Uploaded Simulation Request.shesmu",
+              script,
+              (method, name, returnType, parameters) -> {
+                final ObjectNode info = exports.putObject(name);
+                info.put("returns", returnType.descriptor());
+                parameters
+                    .get()
+                    .map(FunctionParameter::type)
+                    .map(Imyhat::descriptor)
+                    .forEach(info.putArray("parameters")::add);
+              },
+              fileTable::set);
+      compiler.errors().forEach(errors::add);
+      if (fileTable.get() != null) {
+        response.put("bytecode", fileTable.get().bytecode());
+      }
+      if (!dryRun) {
+        result.ifPresent(
+            action -> {
+              if (action
+                      .inputs()
+                      .filter(actionServices::isOverloaded)
+                      .peek(response.putArray("overloadedInputs")::add)
+                      .count()
+                  > 0) {
+                return;
+              }
+              final CollectorRegistry registry = new CollectorRegistry();
+              action.register(registry);
+              final Set<Action> actions = new HashSet<>();
+              final Set<Pair<List<String>, List<String>>> alerts = new HashSet<>();
+              final ObjectNode dumpers = response.putObject("dumpers");
+              final ArrayNode olives = response.putArray("olives");
+              final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
+
+              final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
+              RESULTS.set(response.putObject("refillers"));
+              final Map<String, Long> counts = new HashMap<>();
+
+              try {
+                final Map<String, List<Object>> inputs =
+                    action
+                        .inputs()
+                        .collect(
+                            Collectors.toMap(
+                                Function.identity(),
+                                name ->
+                                    inputSource
+                                        .fetch(name, readStale)
+                                        .collect(Collectors.toList())));
+                for (final Map.Entry<String, List<Object>> input : inputs.entrySet()) {
+                  counts.put(input.getKey(), (long) input.getValue().size());
+                }
+                action.run(
+                    new OliveServices() {
+                      @Override
+                      public boolean accept(
+                          Action action,
+                          String filename,
+                          int line,
+                          int column,
+                          String hash,
+                          String[] tags) {
+                        return actions.add(action);
+                      }
+
+                      @Override
+                      public boolean accept(
+                          String[] labels,
+                          String[] annotation,
+                          long ttl,
+                          String filename,
+                          int line,
+                          int column,
+                          String hash)
+                          throws Exception {
+                        return alerts.add(
+                            new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
+                      }
+
+                      @Override
+                      public Dumper findDumper(String name, Imyhat... types) {
+                        return new Dumper() {
+                          private final ArrayNode dump = dumpers.putArray(name);
+
+                          @Override
+                          public void stop() {
+                            // Do nothing
+                          }
+
+                          @Override
+                          public void write(Object... values) {
+                            final ArrayNode row = dump.addArray();
+                            for (int i = 0; i < types.length; i++) {
+                              types[i].accept(new PackJsonArray(row), values[i]);
+                            }
+                          }
+                        };
+                      }
+
+                      @Override
+                      public boolean isOverloaded(String... services) {
+                        return actionServices.isOverloaded(services);
+                      }
+
+                      @Override
+                      public <T> Stream<T> measureFlow(
+                          Stream<T> input,
+                          String filename,
+                          int line,
+                          int column,
+                          int oliveLine,
+                          int oliveColumn) {
+                        final AtomicLong counter = new AtomicLong();
+                        flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
+                        return input.peek(i -> counter.incrementAndGet());
+                      }
+
+                      @Override
+                      public void oliveRuntime(
+                          String filename, int line, int column, long timeInNs) {
+                        durations.put(new Pair<>(line, column), timeInNs);
+                      }
+                    },
+                    format -> inputs.get(format).stream());
+              } catch (InitialCachePopulationException e) {
+                errors.add(String.format("Failed to populate %s cache", e.getMessage()));
               }
 
-              @Override
-              public Stream<ConstantDefinition> constants() {
-                return definitionRepository.constants();
+              final StringWriter writer = new StringWriter();
+              try {
+                TextFormat.write004(writer, registry.metricFamilySamples());
+              } catch (IOException e) {
+                e.printStackTrace();
               }
+              response.put("metrics", writer.toString());
+              action.unregister(registry);
 
-              @Override
-              public Stream<FunctionDefinition> functions() {
-                return Stream.concat(definitionRepository.functions(), importableFunctions.get());
+              fileTable
+                  .get()
+                  .olives()
+                  .forEach(
+                      olive -> {
+                        try {
+                          final StringWriter metroWriter = new StringWriter();
+                          final XMLStreamWriter xmlWriter =
+                              XMLOutputFactory.newFactory().createXMLStreamWriter(metroWriter);
+                          xmlWriter.writeStartDocument("utf-8", "1.0");
+                          MetroDiagram.draw(
+                              xmlWriter,
+                              (localFilePath, line, column, hash) -> Stream.empty(),
+                              fileTable.get().filename(),
+                              fileTable.get().hash(),
+                              olive,
+                              counts.get(fileTable.get().format().name()),
+                              fileTable.get().format(),
+                              (filename, line, column, oliveLine, oliveColumn) ->
+                                  flow.get(Arrays.asList(line, column, oliveLine, oliveColumn))
+                                      .get());
+                          xmlWriter.writeEndDocument();
+
+                          final ObjectNode diagram = olives.addObject();
+                          diagram.put("diagram", metroWriter.toString());
+                          diagram.put("line", olive.line());
+                          diagram.put("syntax", olive.syntax());
+                          diagram.put("description", olive.description());
+                          diagram.put("produces", olive.produces().name());
+                          diagram.put("column", olive.column());
+                          diagram.put(
+                              "duration", durations.get(new Pair<>(olive.line(), olive.column())));
+
+                        } catch (XMLStreamException e) {
+                          e.printStackTrace();
+                        }
+                      });
+
+              final ArrayNode actionsJson = response.putArray("actions");
+              for (final Action a : actions) {
+                final ObjectNode aj = a.toJson(RuntimeSupport.MAPPER);
+                aj.put("type", a.type());
+                actionsJson.add(aj);
               }
-
-              @Override
-              public Stream<ConfigurationSection> listConfiguration() {
-                return definitionRepository.listConfiguration();
-              }
-
-              @Override
-              public Stream<RefillerDefinition> refillers() {
-                return definitionRepository
-                    .refillers()
-                    .map(
-                        refiller ->
-                            new FakeRefillerDefinition(
-                                refiller.name(),
-                                refiller.description(),
-                                null,
-                                refiller.parameters().map(JsonRefillerParameterDefinition::new)));
-              }
-
-              @Override
-              public Stream<SignatureDefinition> signatures() {
-                return definitionRepository.signatures();
-              }
-
-              @Override
-              public void writeJavaScriptRenderer(PrintStream writer) {
-                definitionRepository.writeJavaScriptRenderer(writer);
+              final ArrayNode alertsJson = response.putArray("alerts");
+              for (final Pair<List<String>, List<String>> a : alerts) {
+                final ObjectNode alertJson = alertsJson.addObject();
+                writeLabels(alertJson.putObject("labels"), a.first());
+                writeLabels(alertJson.putObject("annotations"), a.second());
               }
             });
-    final Optional<ActionGenerator> result =
-        compiler.compile(
-            "Uploaded Simulation Request.shesmu",
-            script,
-            (method, name, returnType, parameters) -> {
-              final ObjectNode info = exports.putObject(name);
-              info.put("returns", returnType.descriptor());
-              parameters
-                  .get()
-                  .map(FunctionParameter::type)
-                  .map(Imyhat::descriptor)
-                  .forEach(info.putArray("parameters")::add);
-            },
-            fileTable::set);
-    compiler.errors().forEach(errors::add);
-    if (fileTable.get() != null) {
-      response.put("bytecode", fileTable.get().bytecode());
-    }
-    if (!dryRun) {
-      result.ifPresent(
-          action -> {
-            if (action
-                    .inputs()
-                    .filter(actionServices::isOverloaded)
-                    .peek(response.putArray("overloadedInputs")::add)
-                    .count()
-                > 0) {
-              return;
-            }
-            final CollectorRegistry registry = new CollectorRegistry();
-            action.register(registry);
-            final Set<Action> actions = new HashSet<>();
-            final Set<Pair<List<String>, List<String>>> alerts = new HashSet<>();
-            final ObjectNode dumpers = response.putObject("dumpers");
-            final ArrayNode olives = response.putArray("olives");
-            final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
-
-            final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
-            RESULTS.set(response.putObject("refillers"));
-            final Map<String, Long> counts = new HashMap<>();
-
-            try {
-              final Map<String, List<Object>> inputs =
-                  action
-                      .inputs()
-                      .collect(
-                          Collectors.toMap(
-                              Function.identity(),
-                              name ->
-                                  inputSource.fetch(name, readStale).collect(Collectors.toList())));
-              for (final Map.Entry<String, List<Object>> input : inputs.entrySet()) {
-                counts.put(input.getKey(), (long) input.getValue().size());
-              }
-              action.run(
-                  new OliveServices() {
-                    @Override
-                    public boolean accept(
-                        Action action,
-                        String filename,
-                        int line,
-                        int column,
-                        String hash,
-                        String[] tags) {
-                      return actions.add(action);
-                    }
-
-                    @Override
-                    public boolean accept(
-                        String[] labels,
-                        String[] annotation,
-                        long ttl,
-                        String filename,
-                        int line,
-                        int column,
-                        String hash)
-                        throws Exception {
-                      return alerts.add(
-                          new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
-                    }
-
-                    @Override
-                    public Dumper findDumper(String name, Imyhat... types) {
-                      return new Dumper() {
-                        private final ArrayNode dump = dumpers.putArray(name);
-
-                        @Override
-                        public void stop() {
-                          // Do nothing
-                        }
-
-                        @Override
-                        public void write(Object... values) {
-                          final ArrayNode row = dump.addArray();
-                          for (int i = 0; i < types.length; i++) {
-                            types[i].accept(new PackJsonArray(row), values[i]);
-                          }
-                        }
-                      };
-                    }
-
-                    @Override
-                    public boolean isOverloaded(String... services) {
-                      return actionServices.isOverloaded(services);
-                    }
-
-                    @Override
-                    public <T> Stream<T> measureFlow(
-                        Stream<T> input,
-                        String filename,
-                        int line,
-                        int column,
-                        int oliveLine,
-                        int oliveColumn) {
-                      final AtomicLong counter = new AtomicLong();
-                      flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
-                      return input.peek(i -> counter.incrementAndGet());
-                    }
-
-                    @Override
-                    public void oliveRuntime(String filename, int line, int column, long timeInNs) {
-                      durations.put(new Pair<>(line, column), timeInNs);
-                    }
-                  },
-                  format -> inputs.get(format).stream());
-            } catch (InitialCachePopulationException e) {
-              errors.add(String.format("Failed to populate %s cache", e.getMessage()));
-            }
-
-            final StringWriter writer = new StringWriter();
-            try {
-              TextFormat.write004(writer, registry.metricFamilySamples());
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            response.put("metrics", writer.toString());
-            action.unregister(registry);
-
-            fileTable
-                .get()
-                .olives()
-                .forEach(
-                    olive -> {
-                      try {
-                        final StringWriter metroWriter = new StringWriter();
-                        final XMLStreamWriter xmlWriter =
-                            XMLOutputFactory.newFactory().createXMLStreamWriter(metroWriter);
-                        xmlWriter.writeStartDocument("utf-8", "1.0");
-                        MetroDiagram.draw(
-                            xmlWriter,
-                            (localFilePath, line, column, hash) -> Stream.empty(),
-                            fileTable.get().filename(),
-                            fileTable.get().hash(),
-                            olive,
-                            counts.get(fileTable.get().format().name()),
-                            fileTable.get().format(),
-                            (filename, line, column, oliveLine, oliveColumn) ->
-                                flow.get(Arrays.asList(line, column, oliveLine, oliveColumn))
-                                    .get());
-                        xmlWriter.writeEndDocument();
-
-                        final ObjectNode diagram = olives.addObject();
-                        diagram.put("diagram", metroWriter.toString());
-                        diagram.put("line", olive.line());
-                        diagram.put("syntax", olive.syntax());
-                        diagram.put("description", olive.description());
-                        diagram.put("produces", olive.produces().name());
-                        diagram.put("column", olive.column());
-                        diagram.put(
-                            "duration", durations.get(new Pair<>(olive.line(), olive.column())));
-
-                      } catch (XMLStreamException e) {
-                        e.printStackTrace();
-                      }
-                    });
-
-            final ArrayNode actionsJson = response.putArray("actions");
-            for (final Action a : actions) {
-              final ObjectNode aj = a.toJson(RuntimeSupport.MAPPER);
-              aj.put("type", a.type());
-              actionsJson.add(aj);
-            }
-            final ArrayNode alertsJson = response.putArray("alerts");
-            for (final Pair<List<String>, List<String>> a : alerts) {
-              final ObjectNode alertJson = alertsJson.addObject();
-              writeLabels(alertJson.putObject("labels"), a.first());
-              writeLabels(alertJson.putObject("annotations"), a.second());
-            }
-          });
+      }
+    } catch (Exception e) {
+      errors.add(e.getMessage());
+      e.printStackTrace();
     }
     http.getResponseHeaders().set("Content-type", "application/json");
     http.sendResponseHeaders(200, 0);
