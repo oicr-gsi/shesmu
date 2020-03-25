@@ -996,6 +996,8 @@ function saveSearch(filters, updateSearchList) {
   );
 }
 
+let findOverride = null;
+
 function initialise() {
   document.addEventListener("click", e => {
     if (activeMenu != null) {
@@ -1009,6 +1011,15 @@ function initialise() {
         }
       }
       closeActiveMenu(true);
+    }
+  });
+  window.addEventListener("keydown", e => {
+    if (
+      findOverride &&
+      (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70))
+    ) {
+      e.preventDefault();
+      findOverride();
     }
   });
 }
@@ -1165,6 +1176,7 @@ export function initialiseOliveDash(
         }
       );
     } else {
+      findOverride = null;
       clearChildren(resultsContainer);
       const [infoPane, bytecodePane] = makeTabs(
         resultsContainer,
@@ -1416,6 +1428,7 @@ export function initialiseOliveDash(
         }
         break;
       default: {
+        findOverride = null;
         clearChildren(resultsContainer);
         const [infoPane, metroPane, bytecodePane] = makeTabs(
           resultsContainer,
@@ -2969,6 +2982,10 @@ function getStats(
     }
     refresh();
   };
+  findOverride = () =>
+    editText({ text: "", matchCase: false }, update =>
+      mutateFilters("text", update)
+    );
 
   toolBar.appendChild(
     button(
@@ -4640,6 +4657,32 @@ function showAlertNavigator(
     });
   };
 
+  findOverride = () => {
+    const dialog = makePopup();
+    dialog.appendChild(document.createTextNode("Label: "));
+    const label = document.createElement("INPUT");
+    label.type = "text";
+    dialog.appendChild(label);
+    dialog.appendChild(document.createElement("BR"));
+    dialog.appendChild(document.createTextNode("Value: "));
+    const value = document.createElement("INPUT");
+    value.type = "text";
+    dialog.appendChild(value);
+    dialog.appendChild(document.createElement("BR"));
+    dialog.appendChild(
+      button("Add", "Add alert filter.", () => {
+        if (label.value.trim() && value.value.trim()) {
+          close();
+          userFilters.push({
+            type: "eq",
+            value: value.value.trim(),
+            label: label.value.trim()
+          });
+          renderAlerts();
+        }
+      })
+    );
+  };
   toolbar.appendChild(
     button(
       "➕ Add Filter",
