@@ -4473,8 +4473,10 @@ function showAlertNavigator(
             if (activeBreakdown == row) {
               row.style.backgroundColor = "inherit";
               activeBreakdown = null;
+              table.style.width = null;
               return;
             }
+            table.style.width = "auto";
             if (activeBreakdown) {
               activeBreakdown.style.backgroundColor = "inherit";
             }
