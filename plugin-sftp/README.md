@@ -8,6 +8,7 @@ To configure an SFTP server, create a file ending in `.sftp` as follows:
       "host": "myserver.local",
       "port": 22,
       "user": "myuser",
+      "jsonSources": [],
       "functions": {},
       "refillers": {}
     }
@@ -95,3 +96,21 @@ same directory):
     echo UPDATE
     cat >current_data
     echo "${1}" >current_hash
+
+## JSON Sources
+It is possible to extract data over SSH by remotely executing a command that
+streams this data in JSON format to standard output. This data should be in the
+same format as `/input/`_format_.
+
+To create a source, add an object as follows in the `"jsonSources"` array:
+
+    {
+      "command": "command_to_produce_data",
+      "format": "cerberus_fp",
+      "ttl": 60
+    }
+
+This will run the command specified in `"command"` to generate the data. Data
+will be cached for the number of minutes specified by `"ttl"`. The `"format"`
+property gives the name of the format. If the name is unknown, this source will
+be ignored.
