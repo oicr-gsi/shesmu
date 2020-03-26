@@ -83,13 +83,46 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
                               .toArray();
                       return ok.get() ? Optional.of(new Tuple(convertedValues)) : Optional.empty();
                     }));
+    final Optional<Tuple> missingResult;
+    if (value.isMissingUsesDefaults()) {
+      final Set<String> missingFields = new HashSet<>();
+      final Object[] convertedValues =
+          type.fields()
+              .sorted(Comparator.comparing(field -> field.getValue().second()))
+              .map(
+                  field -> {
+                    try {
+                      return field
+                          .getValue()
+                          .first()
+                          .apply(
+                              new UnpackJson(
+                                  value
+                                      .getDefaults()
+                                      .getOrDefault(field.getKey(), NullNode.getInstance())));
+                    } catch (Exception ex) {
+                      ex.printStackTrace();
+                      missingFields.add(field.getKey());
+                      return null;
+                    }
+                  })
+              .toArray();
+      if (missingFields.isEmpty()) {
+        missingResult = Optional.of(new Tuple(convertedValues));
+      } else {
+        throw new IllegalArgumentException(
+            "Default requires all fields, but missing: " + String.join(", ", missingFields));
+      }
+    } else {
+      missingResult = Optional.empty();
+    }
     this.badRecords = badRecords;
     definer.clearFunctions();
     definer.defineFunction(
         this.name(),
         "JSON configuration from " + fileName(),
         type.asOptional(),
-        args -> values.getOrDefault(args[0], Optional.empty()),
+        args -> values.getOrDefault(args[0], missingResult),
         new FunctionParameter("Lookup key", Imyhat.STRING));
     return Optional.empty();
   }

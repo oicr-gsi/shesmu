@@ -119,6 +119,7 @@ ending in `.jsonconfig`, create a structure as follows:
           "quux" "i"
        },
        "defaults": { "quux": 9000 },
+       "missingUsesDefaults": false,
        "values": {
           "A": { "foo": "a thing", "bar": 3, "quux": 12 },
           "B": { "foo": "a diferent thing", "bar": null }
@@ -129,3 +130,8 @@ This will create a function that will take a single string as an argument and
 return the matching object in `"values"`, or the empty optional if none
 matches. The `"defaults"` object can provide values that are used if not
 provided in the individual `"values"` objects.
+
+Normally, if a key is not present in `"values"`, the function will return an
+empty optional. If `"missingUsesDefaults"` is true, then, the values in
+`"defaults"` will be provided instead. This requires that *all* values in the
+`"types"` have a default value (or are optional).
