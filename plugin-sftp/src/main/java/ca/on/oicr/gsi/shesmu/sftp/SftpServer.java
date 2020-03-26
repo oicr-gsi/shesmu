@@ -434,6 +434,17 @@ public class SftpServer extends JsonPluginFile<Configuration> {
               .map(t -> new FunctionParameter("Parameter for SSH", t))
               .toArray(FunctionParameter[]::new));
     }
+    definer.clearSource();
+    for (final JsonDataSource source : configuration.getJsonSources()) {
+      definer.defineSource(
+          source.getFormat(),
+          source.getTtl(),
+          new SshJsonInputSource(
+              configuration.getHost(),
+              configuration.getPort(),
+              configuration.getUser(),
+              source.getCommand()));
+    }
     return Optional.empty();
   }
 }

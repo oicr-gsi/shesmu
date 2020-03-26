@@ -1,11 +1,13 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class Configuration {
   private Map<String, FunctionConfig> functions = Collections.emptyMap();
   private String host;
+  private List<JsonDataSource> jsonSources = Collections.emptyList();
   private int port;
   private Map<String, RefillerConfig> refillers = Collections.emptyMap();
   private String user;
@@ -16,6 +18,10 @@ public class Configuration {
 
   public String getHost() {
     return host;
+  }
+
+  public List<JsonDataSource> getJsonSources() {
+    return jsonSources;
   }
 
   public int getPort() {
@@ -36,6 +42,10 @@ public class Configuration {
 
   public void setHost(String host) {
     this.host = host;
+  }
+
+  public void setJsonSources(List<JsonDataSource> jsonSources) {
+    this.jsonSources = jsonSources;
   }
 
   public void setPort(int port) {
