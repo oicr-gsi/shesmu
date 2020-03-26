@@ -429,7 +429,13 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           entry.getKey(),
           String.format("Function run via SSH defined in %s.", fileName()),
           returns.asOptional(),
-          args -> cache.get(new Tuple(args)),
+          args -> {
+            try {
+              return cache.get(new Tuple(args));
+            } catch (InitialCachePopulationException e) {
+              return Optional.empty();
+            }
+          },
           Stream.of(parameters)
               .map(t -> new FunctionParameter("Parameter for SSH", t))
               .toArray(FunctionParameter[]::new));
