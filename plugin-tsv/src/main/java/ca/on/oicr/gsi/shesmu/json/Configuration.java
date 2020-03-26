@@ -6,6 +6,7 @@ import java.util.Map;
 
 public class Configuration {
   private Map<String, JsonNode> defaults = Collections.emptyMap();
+  private boolean missingUsesDefaults;
   private Map<String, String> types;
   private Map<String, Map<String, JsonNode>> values;
 
@@ -21,8 +22,16 @@ public class Configuration {
     return values;
   }
 
+  public boolean isMissingUsesDefaults() {
+    return missingUsesDefaults;
+  }
+
   public void setDefaults(Map<String, JsonNode> defaults) {
     this.defaults = defaults;
+  }
+
+  public void setMissingUsesDefaults(boolean missingUsesDefaults) {
+    this.missingUsesDefaults = missingUsesDefaults;
   }
 
   public void setTypes(Map<String, String> types) {
