@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
+import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
@@ -62,6 +63,12 @@ public interface Definer<T> extends Supplier<T> {
 
   /** Remove all defined refillers */
   void clearRefillers();
+
+  /** Remove all defined sources */
+  void clearSource();
+
+  /** Remove providers of a particular format */
+  void clearSource(String formatName);
 
   /**
    * Define a new action
@@ -185,6 +192,18 @@ public interface Definer<T> extends Supplier<T> {
    */
   void defineRefiller(String name, String description, RefillDefiner definer);
 
+  /**
+   * Define a new dynamic input source
+   *
+   * <p>Registration of the same source multiple times all registrations will be concatenated.
+   *
+   * @param formatName the name of the format; if this format is unknown to the server, the
+   *     registration will be ignored
+   * @param ttl the number of minutes to cache the data before re-requesting it
+   * @param source a provider of the source data as a byte stream of JSON-encoded data in the same
+   *     format as the <tt>/input</tt> URLs
+   */
+  void defineSource(String formatName, int ttl, JsonInputSource source);
   /**
    * Define a new signature format that is the same for all input objects; it depends only on the
    * olive

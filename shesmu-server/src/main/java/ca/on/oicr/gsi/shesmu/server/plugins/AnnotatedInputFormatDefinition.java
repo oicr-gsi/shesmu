@@ -7,14 +7,14 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.GangElement;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
-import ca.on.oicr.gsi.shesmu.plugin.cache.InvalidatableRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
-import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
+import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackStreaming;
@@ -31,6 +31,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -78,6 +79,91 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
     public void setUrl(String url) {
       this.url = url;
+    }
+  }
+
+  private class DynamicInputDataSourceFromJsonStream implements DynamicInputDataSource {
+    private final LabelledKeyValueCache<Object, String, Stream<Object>, Stream<Object>> cache;
+
+    public DynamicInputDataSourceFromJsonStream(
+        String name, int ttl, DynamicInputJsonSource source) {
+      cache =
+          new LabelledKeyValueCache<Object, String, Stream<Object>, Stream<Object>>(
+              name() + " " + name, ttl, ReplacingRecord::new) {
+            @Override
+            protected Stream<Object> fetch(Object key, String label, Instant lastUpdated)
+                throws Exception {
+              try (final InputStream input = source.fetch(key);
+                  final JsonParser parser =
+                      RuntimeSupport.MAPPER.getFactory().createParser(input)) {
+                final List<Object> results = new ArrayList<>();
+                if (parser.nextToken() != JsonToken.START_ARRAY) {
+                  throw new IllegalStateException("Expected an array");
+                }
+                while (parser.nextToken() != JsonToken.END_ARRAY) {
+                  results.add(readJson(RuntimeSupport.MAPPER.readTree(parser)));
+                }
+                if (parser.nextToken() != null) {
+                  throw new IllegalStateException("Junk at end of JSON document");
+                }
+                return results.stream();
+              }
+            }
+
+            @Override
+            protected String label(Object key) {
+              return ((PluginFile) key).fileName().toString();
+            }
+          };
+    }
+
+    @Override
+    public Stream<Object> fetch(Object instance, boolean readStale) {
+      try {
+        return readStale ? cache.getStale(instance) : cache.get(instance);
+      } catch (InitialCachePopulationException e) {
+        e.printStackTrace();
+        return Stream.empty();
+      }
+    }
+  }
+
+  private class InputDataSourceFromJsonStream implements InputDataSource {
+    private final ValueCache<Stream<Object>, Stream<Object>> cache;
+
+    public InputDataSourceFromJsonStream(String name, int ttl, JsonInputSource source) {
+      cache =
+          new ValueCache<Stream<Object>, Stream<Object>>(
+              name() + " " + name, ttl, ReplacingRecord::new) {
+            @Override
+            protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
+              try (final InputStream input = source.fetch();
+                  final JsonParser parser =
+                      RuntimeSupport.MAPPER.getFactory().createParser(input)) {
+                final List<Object> results = new ArrayList<>();
+                if (parser.nextToken() != JsonToken.START_ARRAY) {
+                  throw new IllegalStateException("Expected an array");
+                }
+                while (parser.nextToken() != JsonToken.END_ARRAY) {
+                  results.add(readJson(RuntimeSupport.MAPPER.readTree(parser)));
+                }
+                if (parser.nextToken() != null) {
+                  throw new IllegalStateException("Junk at end of JSON document");
+                }
+                return results.stream();
+              }
+            }
+          };
+    }
+
+    @Override
+    public Stream<Object> fetch(boolean readStale) {
+      try {
+        return readStale ? cache.getStale() : cache.get();
+      } catch (InitialCachePopulationException e) {
+        e.printStackTrace();
+        return Stream.empty();
+      }
     }
   }
 
@@ -227,15 +313,6 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     }
   }
 
-  public static CallSite bootstrap(
-      Lookup lookup, String variableName, MethodType methodType, String inputFormatName) {
-    return INPUT_VARIABLES_REGISTRY.get(new Pair<>(inputFormatName, variableName));
-  }
-
-  public static Stream<AnnotatedInputFormatDefinition> formats() {
-    return FORMATS.stream();
-  }
-
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Handle BSM_INPUT_VARIABLE =
       new Handle(
@@ -300,11 +377,19 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     }
   }
 
-  private final List<Pair<String, JsonFieldWriter>> fieldWriters = new ArrayList<>();
+  public static CallSite bootstrap(
+      Lookup lookup, String variableName, MethodType methodType, String inputFormatName) {
+    return INPUT_VARIABLES_REGISTRY.get(new Pair<>(inputFormatName, variableName));
+  }
 
-  private final InputFormat format;;
+  public static Stream<AnnotatedInputFormatDefinition> formats() {
+    return FORMATS.stream();
+  }
+
+  private final List<Pair<String, JsonFieldWriter>> fieldWriters = new ArrayList<>();
+  private final InputFormat format;
   private final List<GangDefinition> gangs;
-  private final AutoUpdatingDirectory<LocalJsonFile> local;
+  private final AutoUpdatingDirectory<LocalJsonFile> local;;
   private final AutoUpdatingDirectory<RemoteJsonSource> remotes;
   private final List<InputVariable> variables = new ArrayList<>();
 
@@ -451,6 +536,15 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
     } else {
       return Stream.empty();
     }
+  }
+
+  public DynamicInputDataSource fromJsonStream(
+      String name, int ttl, DynamicInputJsonSource source) {
+    return new DynamicInputDataSourceFromJsonStream(name, ttl, source);
+  }
+
+  public InputDataSource fromJsonStream(String name, int ttl, JsonInputSource source) {
+    return new InputDataSourceFromJsonStream(name, ttl, source);
   }
 
   @Override

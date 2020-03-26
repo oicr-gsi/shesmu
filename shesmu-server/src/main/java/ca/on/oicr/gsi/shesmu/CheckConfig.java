@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
+import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -103,6 +104,17 @@ public class CheckConfig {
               }
 
               @Override
+              public void clearSource() {
+                // Dummy.
+              }
+
+              @Override
+              public void clearSource(String formatName) {
+                // Dummy.
+
+              }
+
+              @Override
               public <A extends Action> void defineAction(
                   String name,
                   String description,
@@ -137,6 +149,11 @@ public class CheckConfig {
               public void defineRefiller(String name, String description, RefillDefiner definer) {
                 RefillInfo<Object, ?> info = definer.info(Object.class);
                 System.out.printf("Refiller %s bound to %s.\n", name, info.type().getName());
+              }
+
+              @Override
+              public void defineSource(String formatName, int ttl, JsonInputSource source) {
+                System.out.printf("JSON data source for format %s.\n", formatName);
               }
 
               @Override
