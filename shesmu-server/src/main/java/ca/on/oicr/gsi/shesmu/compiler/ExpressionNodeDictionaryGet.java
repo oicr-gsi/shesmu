@@ -168,7 +168,7 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = expression.typeCheck(errorHandler);
+    boolean ok = expression.typeCheck(errorHandler) & index.typeCheck(errorHandler);
     if (ok) {
       Imyhat expressionType = expression.type();
       boolean lifted = false;
