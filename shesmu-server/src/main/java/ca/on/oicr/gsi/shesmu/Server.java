@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.LabelledKeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.Record;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
@@ -1584,6 +1585,9 @@ public final class Server implements ServerConfig, ActionServices {
           KeyValueCache.caches()
               .filter(cache -> names.contains(cache.name()))
               .forEach(KeyValueCache::invalidateAll);
+          LabelledKeyValueCache.caches()
+              .filter(cache -> names.contains(cache.name()))
+              .forEach(LabelledKeyValueCache::invalidateAll);
           ValueCache.caches()
               .filter(cache -> names.contains(cache.name()))
               .forEach(ValueCache::invalidate);
@@ -1594,6 +1598,16 @@ public final class Server implements ServerConfig, ActionServices {
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
           KeyValueCache.caches()
+              .forEach(
+                  cache -> {
+                    final ObjectNode node = array.addObject();
+                    node.put("name", cache.name());
+                    node.put("ttl", cache.ttl());
+                    node.put("type", "kv");
+                    final ObjectNode entries = node.putObject("entries");
+                    storeEntries(entries, cache);
+                  });
+          LabelledKeyValueCache.caches()
               .forEach(
                   cache -> {
                     final ObjectNode node = array.addObject();
@@ -2645,6 +2659,14 @@ public final class Server implements ServerConfig, ActionServices {
     processor.start(executor);
     System.out.println("Starting scheduler...");
     master.start(executor);
+  }
+
+  private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, L, ?, V> cache) {
+    for (final Map.Entry<L, Record<V>> record : cache) {
+      final ObjectNode node = entries.putObject(record.getKey().toString());
+      node.put("collectionSize", record.getValue().collectionSize());
+      node.put("lastUpdate", record.getValue().lastUpdate().toEpochMilli());
+    }
   }
 
   private <K, V> void storeEntries(ObjectNode entries, KeyValueCache<K, ?, V> cache) {

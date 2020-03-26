@@ -26,7 +26,9 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.VariadicFunction;
+import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuJsonInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.refill.ShesmuRefill;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
@@ -41,6 +43,7 @@ import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.status.ConfigurationSection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import ca.on.oicr.gsi.status.TableRowWriter;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -58,6 +61,7 @@ import java.lang.reflect.TypeVariable;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -333,6 +337,7 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
 
       private final Map<String, ConstantDefinition> constants = new ConcurrentHashMap<>();
       private final List<ConstantDefinition> constantsFromAnnotations;
+      private final Map<String, Deque<InputDataSource>> customSources = new ConcurrentHashMap<>();
       private final Map<String, FunctionDefinition> functions = new ConcurrentHashMap<>();
       private final List<FunctionDefinition> functionsFromAnnotations;
       private final T instance;
@@ -405,6 +410,16 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
       @Override
       public void clearRefillers() {
         refillers.clear();
+      }
+
+      @Override
+      public void clearSource() {
+        customSources.clear();
+      }
+
+      @Override
+      public void clearSource(String formatName) {
+        customSources.computeIfAbsent(formatName, k -> new ConcurrentLinkedDeque<>()).clear();
       }
 
       public ConfigurationSection configuration() {
@@ -636,6 +651,17 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
       }
 
       @Override
+      public void defineSource(String formatName, int ttl, JsonInputSource source) {
+        AnnotatedInputFormatDefinition.formats()
+            .filter(format -> format.name().equals(formatName))
+            .forEach(
+                format ->
+                    customSources
+                        .computeIfAbsent(format.name(), k -> new ConcurrentLinkedDeque<>())
+                        .add(format.fromJsonStream(instance.fileName().toString(), ttl, source)));
+      }
+
+      @Override
       public <R> void defineStaticSigner(
           String name,
           ReturnTypeGuarantee<R> returnType,
@@ -648,9 +674,14 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
 
       public Stream<Object> fetch(String format, boolean readStale) {
         final Queue<DynamicInputDataSource> sources = dynamicSources.get(format);
-        return sources == null
-            ? Stream.empty()
-            : sources.stream().flatMap(s -> s.fetch(instance, readStale));
+        final Deque<InputDataSource> customSource = this.customSources.get(format);
+        return Stream.concat(
+            sources == null
+                ? Stream.empty()
+                : sources.stream().flatMap(s -> s.fetch(instance, readStale)),
+            customSource == null
+                ? Stream.empty()
+                : customSource.stream().flatMap(s -> s.fetch(readStale)));
       }
 
       public Stream<Dumper> findDumper(String name, Imyhat... types) {
@@ -838,6 +869,17 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
         }
         processSourceMethod(method, true);
       }
+      final ShesmuJsonInputSource jsonAnnotation =
+          method.getAnnotation(ShesmuJsonInputSource.class);
+      if (jsonAnnotation != null) {
+        if (Modifier.isStatic(method.getModifiers())) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Method %s of %s has ShesmuJsonInputSource annotation but is not virtual.",
+                  method.getName(), method.getDeclaringClass().getName()));
+        }
+        processSourceMethod(method, jsonAnnotation, true);
+      }
     }
 
     private void checkRepositoryAction(final Method method) throws IllegalAccessException {
@@ -892,6 +934,17 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
                   method.getName(), method.getDeclaringClass().getName()));
         }
         processSourceMethod(method, false);
+      }
+      final ShesmuJsonInputSource jsonAnnotation =
+          method.getAnnotation(ShesmuJsonInputSource.class);
+      if (jsonAnnotation != null) {
+        if (!Modifier.isStatic(method.getModifiers())) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Method %s of %s has ShesmuJsonInputSource annotation but is not static.",
+                  method.getName(), method.getDeclaringClass().getName()));
+        }
+        processSourceMethod(method, jsonAnnotation, false);
       }
     }
 
@@ -1324,6 +1377,41 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
       AnnotatedInputFormatDefinition.formats()
           .filter(inputFormat -> inputFormat.isAssignableFrom(dataType))
           .map(AnnotatedInputFormatDefinition::name)
+          .forEach(writeSource);
+    }
+
+    private void processSourceMethod(
+        Method method, ShesmuJsonInputSource annotation, boolean isInstance)
+        throws IllegalAccessException {
+      if (!InputStream.class.isAssignableFrom(method.getReturnType())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Method %s of %s does not return InputStream (or a subclass).",
+                method.getName(), method.getDeclaringClass().getName()));
+      }
+      final Consumer<AnnotatedInputFormatDefinition> writeSource;
+      final MethodHandle handle = fileFormat.lookup().unreflect(method);
+      final String cacheName =
+          method.getDeclaringClass().getCanonicalName() + " " + method.getName();
+      if (isInstance) {
+        final DynamicInputJsonSource source =
+            MethodHandleProxies.asInterfaceInstance(DynamicInputJsonSource.class, handle);
+        writeSource =
+            format ->
+                dynamicSources
+                    .computeIfAbsent(format.name(), k -> new ConcurrentLinkedQueue<>())
+                    .add(format.fromJsonStream(cacheName, annotation.ttl(), source));
+      } else {
+        final JsonInputSource source =
+            MethodHandleProxies.asInterfaceInstance(JsonInputSource.class, handle);
+        writeSource =
+            format ->
+                staticSources
+                    .computeIfAbsent(format.name(), k -> new ConcurrentLinkedQueue<>())
+                    .add(format.fromJsonStream(cacheName, annotation.ttl(), source));
+      }
+      AnnotatedInputFormatDefinition.formats()
+          .filter(format -> format.name().equals(annotation.format()))
           .forEach(writeSource);
     }
 

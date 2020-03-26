@@ -536,7 +536,7 @@ method name or it can be provided using the `name` parameter of the annotation.
 If the method is attached to `PluginFile`, the name must contain a `$` which
 will be replaced by the instance name.
 
-### Input Sources
+### Input Sources (Direct)
 Plugins may provide data for each input format. A data format must already
 exist. Suppose the type of the format is _T_. To add a source of data:
 
@@ -551,3 +551,40 @@ The method may also return a subclass of _T_, but not a wildcard (_e.g._,
 The `boolean`, if desired, indicates whether the fetch should trigger a
 refresh. If false, the client is happy to read stale data and the input source
 is free to not make the effort to refresh it.
+
+### Input Sources (JSON)
+Shesmu will automatically create a JSON representation for every input format
+that can be accessed via `/input/`_format_. Since Shesmu already knows how to
+demarshall data in this format, it is possible to provide data as a stream of
+bytes and leave Shesmu to extract the data from the JSON representation.
+
+There are two ways to do this:
+
+- using a method on a `PluginFile` or `PluginFileType`
+- using `Definer.defineSource`
+
+Ensuring the stream contains correctly encoded data is left to the plugin.
+Corrupt data will be discarded.
+
+#### Streaming JSON Using a Method
+To provide a stream of JSON data:
+
+1. Create a static method in `PluginFileType` or a virtual method in
+	 `PluginFile`. It must take no arguments and it must return
+    `java.io.InputStream` or a subtype. It may throw any exceptions.
+1. Add the `@ShesmuJsonInputSource` to this method. Set `format` to the name of
+	 the format, and, optionally, `ttl` to adjust the cache time (in minutes).
+
+#### Stream JSON Using a Definer
+Using a definer will allow registering sources of JSON data dynamically. Many
+sources of the same data type can be sent and Shesmu will concatenate all of
+them.
+
+To add a source, call `Definer.defineSource(`_n_`, `_t_`, `_s_`)` where `_n_`
+is the name of the format, (_e.g._, `"cerberus_fp"`), and _t_ is the TTL for
+the cache in minutes and _s_ is a function which provides a
+`java.io.InputStream`. It is permitted to throw.
+
+Sources can be removed using `Definer.clearSources(`_n_`)` to remove any
+associated with a particular format or `Definer.clearSources()` to clear all
+formats.
