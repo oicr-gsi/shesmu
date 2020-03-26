@@ -4055,7 +4055,10 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
                     table.appendChild(tr);
                     for (const value of row) {
                       const td = document.createElement("TD");
-                      td.innerText = value;
+                      const dataDiv = document.createElement("pre");
+                      dataDiv.className = "json";
+                      dataDiv.innerText = JSON.stringify(value, null, 2);
+                      td.appendChild(dataDiv);
                       tr.appendChild(td);
                     }
                   }
