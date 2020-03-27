@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -15,12 +16,15 @@ import org.objectweb.asm.commons.Method;
 
 public class SourceNodeJsonObject extends SourceNode {
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
+  public static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   public static final Imyhat FIELD_TUPLE = Imyhat.tuple(Imyhat.STRING, Imyhat.JSON);
   private static final Method METHOD_RUNTIME_SUPPORT__JSON_FIELDS =
-      new Method(
-          "jsonFields", Type.getType(Stream.class), new Type[] {Type.getType(JsonNode.class)});
+      new Method("jsonFields", A_STREAM_TYPE, new Type[] {Type.getType(JsonNode.class)});
+  private static final Method METHOD_RUNTIME_SUPPORT__JSON_FIELDS_OPTIONAL =
+      new Method("jsonFields", A_STREAM_TYPE, new Type[] {Type.getType(Optional.class)});
 
   private final ExpressionNode expression;
+  private boolean lifted;
 
   public SourceNodeJsonObject(int line, int column, ExpressionNode expression) {
     super(line, column);
@@ -45,7 +49,13 @@ public class SourceNodeJsonObject extends SourceNode {
   @Override
   public JavaStreamBuilder render(Renderer renderer) {
     expression.render(renderer);
-    renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_FIELDS);
+    renderer
+        .methodGen()
+        .invokeStatic(
+            A_RUNTIME_SUPPORT_TYPE,
+            lifted
+                ? METHOD_RUNTIME_SUPPORT__JSON_FIELDS_OPTIONAL
+                : METHOD_RUNTIME_SUPPORT__JSON_FIELDS);
     final JavaStreamBuilder builder = renderer.buildStream(streamType());
     return builder;
   }
@@ -74,8 +84,11 @@ public class SourceNodeJsonObject extends SourceNode {
     final Imyhat type = expression.type();
     if (type.isSame(Imyhat.JSON)) {
       return true;
+    } else if (type.isSame(Imyhat.JSON.asOptional())) {
+      lifted = true;
+      return true;
     } else {
-      expression.typeError("list or json or optional", type, errorHandler);
+      expression.typeError("json or json?", type, errorHandler);
       return false;
     }
   }

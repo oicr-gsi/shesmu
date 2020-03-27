@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,12 +24,29 @@ public class SourceNodeContainer extends SourceNode {
         renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
       }
     },
+    LIFTED_LIST {
+      @Override
+      public void render(Renderer renderer) {
+        renderer.methodGen().invokeStatic(A_COLLECTIONS_TYPE, METHOD_COLLECTIONS__EMPTY_SET);
+        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OR_ELSE);
+        renderer.methodGen().unbox(A_SET_TYPE);
+        renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
+      }
+    },
     MAP {
       @Override
       public void render(Renderer renderer) {
         renderer
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_MAP);
+      }
+    },
+    LIFTED_MAP {
+      @Override
+      public void render(Renderer renderer) {
+        renderer
+            .methodGen()
+            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_MAP_OPTIONAL);
       }
     },
     OPTIONAL {
@@ -46,21 +64,39 @@ public class SourceNodeContainer extends SourceNode {
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS);
       }
+    },
+    LIFTED_JSON {
+      @Override
+      public void render(Renderer renderer) {
+        renderer
+            .methodGen()
+            .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS_OPTIONAL);
+      }
     };
 
     public abstract void render(Renderer renderer);
   }
 
+  private static final Type A_COLLECTIONS_TYPE = Type.getType(Collections.class);
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
-  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL =
-      new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Optional.class)});
-  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_MAP =
-      new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Map.class)});
+  private static final Method METHOD_COLLECTIONS__EMPTY_SET =
+      new Method("emptySet", A_SET_TYPE, new Type[] {});
+  private static final Method METHOD_OPTIONAL__OR_ELSE =
+      new Method("orElse", A_OBJECT_TYPE, new Type[] {A_OBJECT_TYPE});
   private static final Method METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS =
       new Method("jsonElements", A_STREAM_TYPE, new Type[] {Type.getType(JsonNode.class)});
-
+  private static final Method METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS_OPTIONAL =
+      new Method("jsonElements", A_STREAM_TYPE, new Type[] {A_OPTIONAL_TYPE});
+  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_MAP =
+      new Method("stream", A_STREAM_TYPE, new Type[] {Type.getType(Map.class)});
+  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_MAP_OPTIONAL =
+      new Method("streamMap", A_STREAM_TYPE, new Type[] {A_OPTIONAL_TYPE});
+  private static final Method METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL =
+      new Method("stream", A_STREAM_TYPE, new Type[] {A_OPTIONAL_TYPE});
   private static final Method METHOD_SET__STREAM =
       new Method("stream", A_STREAM_TYPE, new Type[] {});
   private final ExpressionNode expression;
@@ -116,7 +152,7 @@ public class SourceNodeContainer extends SourceNode {
     if (!expression.typeCheck(errorHandler)) {
       return false;
     }
-    final Imyhat type = expression.type();
+    Imyhat type = expression.type();
     if (type == Imyhat.EMPTY) {
       errorHandler.accept(
           String.format(
@@ -124,23 +160,45 @@ public class SourceNodeContainer extends SourceNode {
               line(), column()));
       return false;
     }
+    if (type == Imyhat.NOTHING) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Cannot iterate over empty optional. No type to check subsequent operations.",
+              line(), column()));
+      return false;
+    }
+    final boolean lifted;
+    if (type instanceof Imyhat.OptionalImyhat) {
+      type = ((Imyhat.OptionalImyhat) type).inner();
+      lifted = true;
+      if (type == Imyhat.EMPTY) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Cannot iterate over empty list. No type to check subsequent operations.",
+                line(), column()));
+        return false;
+      }
+    } else {
+      lifted = false;
+    }
     if (type instanceof Imyhat.ListImyhat) {
       initialType = ((Imyhat.ListImyhat) type).inner();
-      mode = Mode.LIST;
-      return true;
-    } else if (type instanceof Imyhat.OptionalImyhat) {
-      initialType = ((Imyhat.OptionalImyhat) type).inner();
-      mode = Mode.OPTIONAL;
+      mode = lifted ? Mode.LIFTED_LIST : Mode.LIST;
       return true;
     } else if (type instanceof Imyhat.DictionaryImyhat) {
       final Imyhat.DictionaryImyhat inner = ((Imyhat.DictionaryImyhat) type);
       initialType = Imyhat.tuple(inner.key(), inner.value());
-      mode = Mode.MAP;
+      mode = lifted ? Mode.LIFTED_MAP : Mode.MAP;
       return true;
     } else if (type.isSame(Imyhat.JSON)) {
       initialType = Imyhat.JSON;
-      mode = Mode.JSON;
+      mode = lifted ? Mode.LIFTED_JSON : Mode.JSON;
       return true;
+    } else if (lifted) {
+      initialType = type;
+      mode = Mode.OPTIONAL;
+      return true;
+
     } else {
       expression.typeError("list or json or map or optional", type, errorHandler);
       return false;

@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Run ok With ok =
+	(For x In `[ True ]`: Where x Count) == 1 &&
+	(For {_, x} In `Dict { "hi" = True, "bye" = True }`: Where x Count) == 2 &&
+	(For x In `[True] As json`: Where (x As boolean) Default False Count) == 1 &&
+	(For {_, x} Fields `json_object([{"a", True As json}])`: Where  (x As boolean) Default False Count) == 1;
