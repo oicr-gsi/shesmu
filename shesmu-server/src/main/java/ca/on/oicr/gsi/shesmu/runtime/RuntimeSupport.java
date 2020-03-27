@@ -166,6 +166,17 @@ public final class RuntimeSupport {
     return Utils.stream(node.fields()).map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
+  @RuntimeInterop
+  public static JsonNode jsonMap(Map<String, JsonNode> map) {
+    final ArrayNode array = MAPPER.createArrayNode();
+    for (final Map.Entry<String, JsonNode> entry : map.entrySet()) {
+      final ArrayNode row = array.addArray();
+      row.add(entry.getKey());
+      row.add(entry.getValue());
+    }
+    return array;
+  }
+
   /**
    * Left join a stream of input against another input format
    *

@@ -126,6 +126,13 @@ public final class StandardDefinitions implements DefinitionRepository {
             "Create a JSON object from fields.",
             Imyhat.JSON,
             new FunctionParameter("fields", Imyhat.tuple(Imyhat.STRING, Imyhat.JSON).asList())),
+        FunctionDefinition.staticMethod(
+            "json_array_from_dict",
+            RuntimeSupport.class,
+            "jsonMap",
+            "Convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.",
+            Imyhat.JSON,
+            new FunctionParameter("Map to encode", Imyhat.dictionary(Imyhat.STRING, Imyhat.JSON))),
         FunctionDefinition.virtualMethod(
             "path_file",
             "getFileName",
