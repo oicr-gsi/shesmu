@@ -439,17 +439,24 @@ export const parser = {
   m: function(keyType, valueType) {
     return input => {
       const output = [];
+      let match = input.match(/^\s*Dict/);
+      if (!match) {
+        return {
+          good: false,
+          input: input,
+          error: "Expected Dict { in dictionary."
+        };
+      }
+      input = input.substring(match[0].length);
       for (;;) {
-        let match = input.match(
-          output.length == 0 ? /^\s*Dict\s*{/ : /^\s*([\},])/
-        );
+        match = input.match(output.length == 0 ? /^\s*(\{)/ : /^\s*([\},])/);
         if (!match) {
           return {
             good: false,
             input: input,
             error:
               output.length == 0
-                ? "Expected Dict { in dictionary."
+                ? "Expected { in dictionary."
                 : "Expected } or , for dictionary."
           };
         }
