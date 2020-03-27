@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.server;
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.lang.invoke.MethodHandle;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -398,14 +400,27 @@ public class SimulateRequest {
           compiler.compile(
               "Uploaded Simulation Request.shesmu",
               script,
-              (method, name, returnType, parameters) -> {
-                final ObjectNode info = exports.putObject(name);
-                info.put("returns", returnType.descriptor());
-                parameters
-                    .get()
-                    .map(FunctionParameter::type)
-                    .map(Imyhat::descriptor)
-                    .forEach(info.putArray("parameters")::add);
+              new LiveExportConsumer() {
+                @Override
+                public void constant(MethodHandle method, String name, Imyhat type) {
+                  final ObjectNode info = exports.putObject(name);
+                  info.put("returns", type.descriptor());
+                }
+
+                @Override
+                public void function(
+                    MethodHandle method,
+                    String name,
+                    Imyhat returnType,
+                    Supplier<Stream<FunctionParameter>> parameters) {
+                  final ObjectNode info = exports.putObject(name);
+                  info.put("returns", returnType.descriptor());
+                  parameters
+                      .get()
+                      .map(FunctionParameter::type)
+                      .map(Imyhat::descriptor)
+                      .forEach(info.putArray("parameters")::add);
+                }
               },
               fileTable::set);
       compiler.errors().forEach(errors::add);

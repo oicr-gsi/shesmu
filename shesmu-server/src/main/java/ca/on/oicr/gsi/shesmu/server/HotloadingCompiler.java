@@ -113,6 +113,23 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           definitionRepository.signatures().collect(Collectors.toList())::stream,
           new ExportConsumer() {
             @Override
+            public void constant(String name, Imyhat type) {
+              exports.add(
+                  instance -> {
+                    try {
+                      exportConsumer.constant(
+                          lookup
+                              .unreflectGetter(instance.getClass().getField(name + "$constant"))
+                              .bindTo(instance),
+                          name,
+                          type);
+                    } catch (NoSuchFieldException | IllegalAccessException e) {
+                      e.printStackTrace();
+                    }
+                  });
+            }
+
+            @Override
             public void function(
                 String name, Imyhat returnType, Supplier<Stream<FunctionParameter>> parameters) {
               exports.add(

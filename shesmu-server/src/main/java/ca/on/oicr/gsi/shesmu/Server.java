@@ -941,8 +941,7 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                definitionRepository
-                    .constants()
+                Stream.concat(definitionRepository.constants(), compiler.constants())
                     .sorted(Comparator.comparing(Target::name))
                     .forEach(
                         constant -> {
@@ -1413,8 +1412,7 @@ public final class Server implements ServerConfig, ActionServices {
         "/constants",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          definitionRepository
-              .constants()
+          Stream.concat(definitionRepository.constants(), compiler.constants())
               .forEach(
                   constant -> {
                     final ObjectNode obj = array.addObject();
@@ -1770,8 +1768,7 @@ public final class Server implements ServerConfig, ActionServices {
             loader = constantLoaders.get(query);
           } else {
             loader =
-                definitionRepository
-                    .constants()
+                Stream.concat(definitionRepository.constants(), compiler.constants())
                     .filter(c -> c.name().equals(query))
                     .findFirst()
                     .map(ConstantDefinition::compile)
@@ -2007,6 +2004,25 @@ public final class Server implements ServerConfig, ActionServices {
                       definitionRepository::constants,
                       definitionRepository::signatures,
                       new ExportConsumer() {
+                        @Override
+                        public void constant(String name, Imyhat type) {
+                          exports.add(
+                              writer -> {
+                                try {
+                                  writer.writeStartElement("h1");
+                                  writer.writeCharacters("Export ");
+                                  writer.writeCharacters(name);
+                                  writer.writeEndElement();
+                                  final TableRowWriter row = new TableRowWriter(writer);
+                                  writer.writeStartElement("table");
+                                  row.write(false, "Constant", type.name());
+                                  writer.writeEndElement();
+                                } catch (XMLStreamException e) {
+                                  throw new RuntimeException(e);
+                                }
+                              });
+                        }
+
                         @Override
                         public void function(
                             String name,

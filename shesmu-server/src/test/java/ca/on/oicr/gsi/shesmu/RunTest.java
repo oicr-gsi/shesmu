@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu;
 
+import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -491,8 +494,20 @@ public class RunTest {
           compiler
               .compile(
                   file,
-                  (method, name, returnType, parameters) -> {
-                    // Do nothing
+                  new LiveExportConsumer() {
+                    @Override
+                    public void constant(MethodHandle method, String name, Imyhat type) {
+                      // Do nothing
+                    }
+
+                    @Override
+                    public void function(
+                        MethodHandle method,
+                        String name,
+                        Imyhat returnType,
+                        Supplier<Stream<FunctionParameter>> parameters) {
+                      // Do nothing
+                    }
                   },
                   dashboard::set)
               .orElse(ActionGenerator.NULL);

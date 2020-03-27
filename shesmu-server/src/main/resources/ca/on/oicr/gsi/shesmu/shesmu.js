@@ -4016,20 +4016,23 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
                   const header = document.createElement("H2");
                   header.innerText = name;
                   tab.appendChild(header);
-                  const table = document.createElement("TABLE");
-                  tab.appendChild(
-                    table(
-                      [["Return", returns]].concat(
-                        parameters.map((type, index) => [
-                          `Parameter ${i + 1}`,
-                          type
-                        ])
-                      ),
+                  if (parameters) {
+                    tab.appendChild(
+                      table(
+                        [["Return", returns]].concat(
+                          parameters.map((type, index) => [
+                            `Parameter ${i + 1}`,
+                            type
+                          ])
+                        ),
 
-                      ["Position", x => x[0]],
-                      ["Type", x => x[0]]
-                    )
-                  );
+                        ["Position", x => x[0]],
+                        ["Type", x => x[0]]
+                      )
+                    );
+                  } else {
+                    tab.appendChild(text(`Constant ${returns}`));
+                  }
                 }
               }
             });

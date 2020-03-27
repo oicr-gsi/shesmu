@@ -248,7 +248,7 @@ public abstract class RootBuilder {
   public void defineConstant(String name, Type type, Consumer<GeneratorAdapter> loader) {
     final String fieldName = name + "$constant";
     classVisitor
-        .visitField(Opcodes.ACC_PRIVATE, fieldName, type.getDescriptor(), null, null)
+        .visitField(Opcodes.ACC_PUBLIC, fieldName, type.getDescriptor(), null, null)
         .visitEnd();
 
     runMethod.loadThis();

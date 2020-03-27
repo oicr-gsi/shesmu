@@ -6,5 +6,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public interface ExportConsumer {
+  void constant(String name, Imyhat type);
+
   void function(String name, Imyhat returnType, Supplier<Stream<FunctionParameter>> parameters);
 }

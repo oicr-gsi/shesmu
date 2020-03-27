@@ -7,6 +7,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public interface LiveExportConsumer {
+  void constant(MethodHandle method, String name, Imyhat type);
+
   void function(
       MethodHandle method,
       String name,
