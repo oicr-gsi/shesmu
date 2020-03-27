@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.runtime;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
+import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
@@ -37,25 +38,30 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public class CompiledGenerator implements DefinitionRepository {
-  private static MethodHandle makeDeadMethodHandle(String name, MethodType methodType) {
-    // Create a method handle that instantiates a new exception
-    final MethodHandle createException =
-        CREATE_EXCEPTION.bindTo(String.format("Exported function %s is no longer valid.", name));
-
-    // Now, create a method handle that appears to return the same type as the callsite expects and
-    // throws the exception we just made
-    final MethodHandle throwException =
-        MethodHandles.foldArguments(
-            MethodHandles.throwException(
-                methodType.returnType(),
-                createException.type().returnType().asSubclass(Throwable.class)),
-            createException);
-    // Now, create a method handle that takes the same arguments as the one the call site needs (but
-    // just discards them) and throws the exception
-    return MethodHandles.dropArguments(throwException, 0, methodType.parameterArray());
-  }
-
   private final class Script implements WatchedFileListener {
+
+    class ExportedConstantDefinition extends ConstantDefinition {
+
+      @SuppressWarnings({"unused", "FieldCanBeLocal"})
+      private final MutableCallSite callsite;
+
+      private final String invokeName;
+
+      ExportedConstantDefinition(MethodHandle method, String name, Imyhat type) {
+        super(name, type, "Constant from " + fileName, null);
+        invokeName = String.format("%s %s", name, type.descriptor());
+        callsite = FUNCTION_REGISTRY.upsert(new Pair<>(fileName.toString(), invokeName), method);
+      }
+
+      @Override
+      protected void load(GeneratorAdapter methodGen) {
+        methodGen.invokeDynamic(
+            invokeName,
+            Type.getMethodDescriptor(type().apply(TypeUtils.TO_ASM)),
+            BSM,
+            fileName.toString());
+      }
+    }
 
     class ExportedFunctionDefinition implements FunctionDefinition {
 
@@ -131,6 +137,7 @@ public class CompiledGenerator implements DefinitionRepository {
 
     private FileTable dashboard;
     private List<String> errors = Collections.emptyList();
+    private List<ExportedConstantDefinition> exportedConstants = Collections.emptyList();
     private List<ExportedFunctionDefinition> exportedFunctions = Collections.emptyList();
     private final Path fileName;
     private ActionGenerator generator = ActionGenerator.NULL;
@@ -138,6 +145,10 @@ public class CompiledGenerator implements DefinitionRepository {
 
     private Script(Path fileName) {
       this.fileName = fileName;
+    }
+
+    public Stream<ConstantDefinition> constants() {
+      return exportedConstants.stream().map(x -> x);
     }
 
     public Stream<Pair<OliveRunInfo, FileTable>> dashboard() {
@@ -183,6 +194,7 @@ public class CompiledGenerator implements DefinitionRepository {
     @Override
     public synchronized Optional<Integer> update() {
       try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
+        final List<ExportedConstantDefinition> exportedConstants = new ArrayList<>();
         final List<ExportedFunctionDefinition> exportedFunctions = new ArrayList<>();
         final HotloadingCompiler compiler =
             new HotloadingCompiler(
@@ -199,15 +211,20 @@ public class CompiledGenerator implements DefinitionRepository {
                   }
 
                   @Override
-                  public Stream<RefillerDefinition> refillers() {
-                    return definitionRepository.refillers();
-                  }
-
-                  @Override
                   public Stream<FunctionDefinition> functions() {
                     return definitionRepository
                         .functions()
                         .filter(f -> f.filename() == null || !f.filename().equals(fileName));
+                  }
+
+                  @Override
+                  public Stream<ConfigurationSection> listConfiguration() {
+                    return definitionRepository.listConfiguration();
+                  }
+
+                  @Override
+                  public Stream<RefillerDefinition> refillers() {
+                    return definitionRepository.refillers();
                   }
 
                   @Override
@@ -219,28 +236,40 @@ public class CompiledGenerator implements DefinitionRepository {
                   public void writeJavaScriptRenderer(PrintStream writer) {
                     definitionRepository.writeJavaScriptRenderer(writer);
                   }
-
-                  @Override
-                  public Stream<ConfigurationSection> listConfiguration() {
-                    return definitionRepository.listConfiguration();
-                  }
                 });
         final Optional<ActionGenerator> result =
             compiler.compile(
                 fileName,
-                (method, name, returnType, parameters) ->
+                new LiveExportConsumer() {
+                  @Override
+                  public void constant(MethodHandle method, String name, Imyhat type) {
+                    exportedConstants.add(new ExportedConstantDefinition(method, name, type));
+                  }
+
+                  @Override
+                  public void function(
+                      MethodHandle method,
+                      String name,
+                      Imyhat returnType,
+                      Supplier<Stream<FunctionParameter>> parameters) {
                     exportedFunctions.add(
-                        new ExportedFunctionDefinition(method, name, returnType, parameters)),
+                        new ExportedFunctionDefinition(method, name, returnType, parameters));
+                  }
+                },
                 ft -> dashboard = ft);
         sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
         result.ifPresent(
             x -> {
               final Set<String> newNames =
-                  exportedFunctions.stream().map(e -> e.invokeName).collect(Collectors.toSet());
+                  Stream.concat(
+                          exportedFunctions.stream().map(e -> e.invokeName),
+                          exportedConstants.stream().map(e -> e.invokeName))
+                      .collect(Collectors.toSet());
               callsite =
                   SCRIPT_REGISTRY.upsert(
                       fileName.toString(), MethodHandles.constant(ActionGenerator.class, x));
               this.exportedFunctions = exportedFunctions;
+              this.exportedConstants = exportedConstants;
               // Find all callsites previously exported that no longer exists. Replace the method
               // handle in the call site with an exception.
               FUNCTION_REGISTRY
@@ -273,6 +302,59 @@ public class CompiledGenerator implements DefinitionRepository {
     }
   }
 
+  private static final Handle BSM =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(CompiledGenerator.class),
+          "bootstrap",
+          Type.getMethodDescriptor(
+              Type.getType(CallSite.class),
+              Type.getType(MethodHandles.Lookup.class),
+              Type.getType(String.class),
+              Type.getType(MethodType.class),
+              Type.getType(String.class)),
+          false);
+  private static final MethodHandle CREATE_EXCEPTION;
+  private static final CallSiteRegistry<Pair<String, String>> FUNCTION_REGISTRY =
+      new CallSiteRegistry<>();
+  public static final LatencyHistogram INPUT_FETCH_TIME =
+      new LatencyHistogram(
+          "shesmu_input_fetch_time", "The number of records for each input format.", "format");
+  public static final Gauge INPUT_RECORDS =
+      Gauge.build("shesmu_input_records", "The number of records for each input format.")
+          .labelNames("format")
+          .register();
+  public static final Gauge OLIVE_WATCHDOG =
+      Gauge.build(
+              "shesmu_run_overtime",
+              "Whether the input format or olive file failed to finish within deadline.")
+          .labelNames("name")
+          .register();
+  private static final CallSiteRegistry<String> SCRIPT_REGISTRY = new CallSiteRegistry<>();
+  public static final NameLoader<InputFormatDefinition> SOURCES =
+      new NameLoader<>(AnnotatedInputFormatDefinition.formats(), InputFormatDefinition::name);
+  private static final Gauge compileTime =
+      Gauge.build(
+              "shesmu_source_compile_time",
+              "The number of seconds the last compilation took to perform.")
+          .labelNames("filename")
+          .register();
+  private static final Gauge sourceValid =
+      Gauge.build("shesmu_source_valid", "Whether the source file has been successfully compiled.")
+          .labelNames("filename")
+          .register();
+
+  static {
+    try {
+      final MethodHandles.Lookup lookup = MethodHandles.lookup();
+      CREATE_EXCEPTION =
+          lookup.findConstructor(
+              IllegalStateException.class, MethodType.methodType(void.class, String.class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /** Bind to a exported function. */
   public static CallSite bootstrap(
       MethodHandles.Lookup lookup, String methodName, MethodType type, String fileName) {
@@ -289,63 +371,28 @@ public class CompiledGenerator implements DefinitionRepository {
     return OLIVE_WATCHDOG.labels(fileName).get() > 0;
   }
 
+  private static MethodHandle makeDeadMethodHandle(String name, MethodType methodType) {
+    // Create a method handle that instantiates a new exception
+    final MethodHandle createException =
+        CREATE_EXCEPTION.bindTo(String.format("Exported function %s is no longer valid.", name));
+
+    // Now, create a method handle that appears to return the same type as the callsite expects and
+    // throws the exception we just made
+    final MethodHandle throwException =
+        MethodHandles.foldArguments(
+            MethodHandles.throwException(
+                methodType.returnType(),
+                createException.type().returnType().asSubclass(Throwable.class)),
+            createException);
+    // Now, create a method handle that takes the same arguments as the one the call site needs (but
+    // just discards them) and throws the exception
+    return MethodHandles.dropArguments(throwException, 0, methodType.parameterArray());
+  }
+
   public static CallSite scriptCallsite(String fileName) {
     return SCRIPT_REGISTRY.get(fileName);
   }
 
-  private static final Handle BSM =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getInternalName(CompiledGenerator.class),
-          "bootstrap",
-          Type.getMethodDescriptor(
-              Type.getType(CallSite.class),
-              Type.getType(MethodHandles.Lookup.class),
-              Type.getType(String.class),
-              Type.getType(MethodType.class),
-              Type.getType(String.class)),
-          false);
-  private static final MethodHandle CREATE_EXCEPTION;
-  private static final CallSiteRegistry<String> SCRIPT_REGISTRY = new CallSiteRegistry<>();
-
-  static {
-    try {
-      final MethodHandles.Lookup lookup = MethodHandles.lookup();
-      CREATE_EXCEPTION =
-          lookup.findConstructor(
-              IllegalStateException.class, MethodType.methodType(void.class, String.class));
-    } catch (NoSuchMethodException | IllegalAccessException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static final LatencyHistogram INPUT_FETCH_TIME =
-      new LatencyHistogram(
-          "shesmu_input_fetch_time", "The number of records for each input format.", "format");
-  public static final Gauge INPUT_RECORDS =
-      Gauge.build("shesmu_input_records", "The number of records for each input format.")
-          .labelNames("format")
-          .register();
-  public static final Gauge OLIVE_WATCHDOG =
-      Gauge.build(
-              "shesmu_run_overtime",
-              "Whether the input format or olive file failed to finish within deadline.")
-          .labelNames("name")
-          .register();
-  private static final CallSiteRegistry<Pair<String, String>> FUNCTION_REGISTRY =
-      new CallSiteRegistry<>();
-  public static final NameLoader<InputFormatDefinition> SOURCES =
-      new NameLoader<>(AnnotatedInputFormatDefinition.formats(), InputFormatDefinition::name);
-  private static final Gauge compileTime =
-      Gauge.build(
-              "shesmu_source_compile_time",
-              "The number of seconds the last compilation took to perform.")
-          .labelNames("filename")
-          .register();
-  private static final Gauge sourceValid =
-      Gauge.build("shesmu_source_valid", "Whether the source file has been successfully compiled.")
-          .labelNames("filename")
-          .register();
   private final DefinitionRepository definitionRepository;
   private final ScheduledExecutorService executor;
   private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
@@ -365,12 +412,7 @@ public class CompiledGenerator implements DefinitionRepository {
 
   @Override
   public Stream<ConstantDefinition> constants() {
-    return Stream.empty();
-  }
-
-  @Override
-  public Stream<RefillerDefinition> refillers() {
-    return Stream.empty();
+    return scripts().flatMap(Script::constants);
   }
 
   public Stream<Pair<OliveRunInfo, FileTable>> dashboard() {
@@ -389,6 +431,11 @@ public class CompiledGenerator implements DefinitionRepository {
 
   @Override
   public Stream<ConfigurationSection> listConfiguration() {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<RefillerDefinition> refillers() {
     return Stream.empty();
   }
 

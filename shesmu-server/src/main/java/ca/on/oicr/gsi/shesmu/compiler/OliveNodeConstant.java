@@ -21,12 +21,16 @@ public final class OliveNodeConstant extends OliveNode implements Target {
 
   private final String name;
 
-  public OliveNodeConstant(int line, int column, String name, ExpressionNode body) {
+  public OliveNodeConstant(
+      int line, int column, boolean exported, String name, ExpressionNode body) {
     this.line = line;
     this.column = column;
+    this.exported = exported;
     this.name = name;
     this.body = body;
   }
+
+  private final boolean exported;
 
   @Override
   public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
@@ -85,13 +89,14 @@ public final class OliveNodeConstant extends OliveNode implements Target {
 
   @Override
   public void processExport(ExportConsumer exportConsumer) {
-    // Not exportable
+    if (exported) {
+      exportConsumer.constant(name, type());
+    }
   }
 
   @Override
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     // Nothing to do.
-
   }
 
   @Override

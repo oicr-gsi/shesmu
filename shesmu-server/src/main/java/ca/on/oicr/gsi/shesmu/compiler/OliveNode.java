@@ -64,6 +64,7 @@ public abstract class OliveNode {
   }
 
   private static final Parser.ParseDispatch<OliveNode> ROOTS = new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<OliveNode> EXPORTABLE = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<OliveConstructor> TERMINAL =
       new Parser.ParseDispatch<>();
 
@@ -223,30 +224,32 @@ public abstract class OliveNode {
           return result;
         });
     ROOTS.addKeyword("Function", (i, o) -> parseFunction(false, i, o));
-    ROOTS.addKeyword(
-        "Export", (i, o) -> parseFunction(true, i.whitespace().keyword("Function"), o));
-    ROOTS.addRaw(
-        "constant declaration",
-        (input, output) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> body = new AtomicReference<>();
-          final Parser result =
-              input
-                  .whitespace()
-                  .identifier(name::set)
-                  .whitespace()
-                  .symbol("=")
-                  .whitespace()
-                  .then(ExpressionNode::parse, body::set)
-                  .whitespace()
-                  .symbol(";")
-                  .whitespace();
-          if (result.isGood()) {
-            output.accept(
-                new OliveNodeConstant(input.line(), input.column(), name.get(), body.get()));
-          }
-          return result;
-        });
+    EXPORTABLE.addKeyword("Function", (i, o) -> parseFunction(true, i, o));
+    ROOTS.addKeyword("Export", (i, o) -> i.whitespace().dispatch(EXPORTABLE, o));
+    ROOTS.addRaw("constant declaration", (input, output) -> parseConstant(input, false, output));
+    EXPORTABLE.addRaw(
+        "constant declaration", (input, output) -> parseConstant(input, true, output));
+  }
+
+  private static Parser parseConstant(Parser input, boolean exported, Consumer<OliveNode> output) {
+    final AtomicReference<String> name = new AtomicReference<>();
+    final AtomicReference<ExpressionNode> body = new AtomicReference<>();
+    final Parser result =
+        input
+            .whitespace()
+            .identifier(name::set)
+            .whitespace()
+            .symbol("=")
+            .whitespace()
+            .then(ExpressionNode::parse, body::set)
+            .whitespace()
+            .symbol(";")
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(
+          new OliveNodeConstant(input.line(), input.column(), exported, name.get(), body.get()));
+    }
+    return result;
   }
 
   private static Parser parseFunction(boolean exported, Parser input, Consumer<OliveNode> output) {
