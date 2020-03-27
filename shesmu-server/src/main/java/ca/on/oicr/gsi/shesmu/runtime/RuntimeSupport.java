@@ -70,6 +70,26 @@ public final class RuntimeSupport {
     }
   }
 
+  @RuntimeInterop public static final String[] EMPTY = new String[0];
+  public static final ObjectMapper MAPPER = new ObjectMapper();
+
+  @RuntimeInterop
+  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
+      new BinaryOperator<Object>() {
+
+        @Override
+        public Object apply(Object t, Object u) {
+          throw new UnsupportedOperationException();
+        }
+      };
+
+  private static final Map<String, CallSite> callsites = new HashMap<>();
+
+  static {
+    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+    MAPPER.registerModule(new JavaTimeModule());
+  }
+
   /** Create a copy of a set with an additional item. */
   @RuntimeInterop
   public static <T> Set<T> addItem(Imyhat type, Set<T> left, T right) {
@@ -162,8 +182,18 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop
+  public static Stream<JsonNode> jsonElements(Optional<JsonNode> node) {
+    return node.map(RuntimeSupport::jsonElements).orElseGet(Stream::empty);
+  }
+
+  @RuntimeInterop
   public static Stream<Tuple> jsonFields(JsonNode node) {
     return Utils.stream(node.fields()).map(e -> new Tuple(e.getKey(), e.getValue()));
+  }
+
+  @RuntimeInterop
+  public static Stream<Tuple> jsonFields(Optional<JsonNode> node) {
+    return node.map(RuntimeSupport::jsonFields).orElseGet(Stream::empty);
   }
 
   @RuntimeInterop
@@ -397,10 +427,19 @@ public final class RuntimeSupport {
   public static <T> Stream<T> stream(Optional<T> optional) {
     return optional.map(Stream::of).orElseGet(Stream::empty);
   }
+
   /** Stream a map */
   @RuntimeInterop
   public static Stream<Tuple> stream(Map<?, ?> map) {
     return map.entrySet().stream().map(e -> new Tuple(e.getKey(), e.getValue()));
+  }
+
+  @RuntimeInterop
+  public static Stream<Tuple> streamMap(Optional<Map<?, ?>> map) {
+    return map.orElse(Collections.emptyMap())
+        .entrySet()
+        .stream()
+        .map(e -> new Tuple(e.getKey(), e.getValue()));
   }
 
   @RuntimeInterop
@@ -458,26 +497,6 @@ public final class RuntimeSupport {
               }
               return new Tuple(output);
             });
-  }
-
-  @RuntimeInterop public static final String[] EMPTY = new String[0];
-  public static final ObjectMapper MAPPER = new ObjectMapper();
-
-  @RuntimeInterop
-  public static final BinaryOperator<?> USELESS_BINARY_OPERATOR =
-      new BinaryOperator<Object>() {
-
-        @Override
-        public Object apply(Object t, Object u) {
-          throw new UnsupportedOperationException();
-        }
-      };
-
-  private static final Map<String, CallSite> callsites = new HashMap<>();
-
-  static {
-    MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-    MAPPER.registerModule(new JavaTimeModule());
   }
 
   private RuntimeSupport() {}
