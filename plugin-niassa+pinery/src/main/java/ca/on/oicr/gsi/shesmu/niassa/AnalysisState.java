@@ -30,7 +30,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
       int workflowRunAccession,
       Supplier<WorkflowRun> run,
       IntFunction<net.sourceforge.seqware.common.model.LimsKey> getLimsKey,
-      List<AnalysisProvenance> source,
+      List<? extends AnalysisProvenance> source,
       Runnable incrementSlowFetch) {
     fileSWIDSToRun =
         source
