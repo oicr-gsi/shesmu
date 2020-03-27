@@ -80,7 +80,8 @@ public class UnpackJson implements ImyhatTransformer<Object> {
       if (!element.isArray() || element.size() != 2) {
         throw new IllegalArgumentException("Invalid JSON for map");
       }
-      map.put(key.apply(new UnpackJson(element.get(0))), new UnpackJson(element.get(1)));
+      map.put(
+          key.apply(new UnpackJson(element.get(0))), value.apply(new UnpackJson(element.get(1))));
     }
     return map;
   }
