@@ -59,8 +59,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
       final AtomicLong badStatusCount = new AtomicLong();
       return metadata
-          .getAnalysisProvenance(filters)
-          .stream()
+          .streamAnalysisProvenance(filters)
           .filter(
               ap -> {
                 if (ap.getWorkflowRunStatus() == null) {
@@ -107,7 +106,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       if (metadata == null) {
         return Stream.empty();
       }
-      return metadata.getAnalysisProvenance().stream().map(CerberusAnalysisProvenanceValue::new);
+      return metadata
+          .streamAnalysisProvenance(Collections.emptyMap())
+          .map(CerberusAnalysisProvenanceValue::new);
     }
   }
 
@@ -213,8 +214,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         return Stream.empty();
       }
       return metadata
-          .getAnalysisProvenance()
-          .stream()
+          .streamAnalysisProvenance(Collections.emptyMap())
           .filter(ap -> ap.getSkip() != null && ap.getSkip() && ap.getWorkflowId() == null)
           .flatMap(ap -> ap.getIusLimsKeys().stream())
           .map(
@@ -357,7 +357,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private String host;
   private final Map<String, Integer> maxInFlight = new ConcurrentHashMap<>();
   private final MaxInFlightCache maxInFlightCache;
-  private Metadata metadata;
+  private MetadataWS metadata;
   private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>, Stream<Pair<Tuple, Tuple>>> skipCache;
   private final Runnable unsubscribe = WORKFLOWS.subscribe(this::updateWorkflows);
