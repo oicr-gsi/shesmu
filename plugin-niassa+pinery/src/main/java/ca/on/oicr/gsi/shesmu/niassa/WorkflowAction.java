@@ -487,7 +487,7 @@ public final class WorkflowAction extends Action {
           runAccession = 0;
           hasLaunched = false;
           lastState = ActionState.UNKNOWN;
-          server.get().analysisCache().invalidate(workflowAccession);
+          workflowAccessions().forEach(server.get().analysisCache()::invalidate);
           return true;
         }
     }
