@@ -19,7 +19,7 @@ public final class CerberusFileProvenanceValue {
   private final String donor;
   private final String external_donor_id;
   private final String external_tissue_id;
-  private Set<Tuple> file_attributes;
+  private final Map<String, Set<String>> file_attributes;
   private final long file_size;
   private final String group_desc;
   private final String group_id;
@@ -56,7 +56,7 @@ public final class CerberusFileProvenanceValue {
   private final String workflow;
   private final String workflow_accession;
   private final String workflow_run_accession;
-  private final Set<Tuple> workflow_run_attributes;
+  private final Map<String, Set<String>> workflow_run_attributes;
   private final Tuple workflow_version;
 
   public CerberusFileProvenanceValue(
@@ -151,10 +151,9 @@ public final class CerberusFileProvenanceValue {
     this.workflow_accession = workflow_accession;
     this.workflow_run_accession = workflow_run_accession;
     this.workflow_version = workflow_version;
-    final SortedMap<String, SortedSet<String>> mergedAttributes =
-        new TreeMap<>(workflow_attributes);
+    final SortedMap<String, Set<String>> mergedAttributes = new TreeMap<>(workflow_attributes);
     mergedAttributes.putAll(workflow_run_attributes);
-    this.workflow_run_attributes = IUSUtils.attributes(mergedAttributes);
+    this.workflow_run_attributes = mergedAttributes;
   }
 
   @ShesmuVariable
@@ -234,8 +233,8 @@ public final class CerberusFileProvenanceValue {
         && workflow_version.equals(that.workflow_version);
   }
 
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> file_attributes() {
+  @ShesmuVariable
+  public Map<String, Set<String>> file_attributes() {
     return file_attributes;
   }
 
@@ -505,8 +504,8 @@ public final class CerberusFileProvenanceValue {
     return workflow_run_accession;
   }
 
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> workflow_run_attributes() {
+  @ShesmuVariable
+  public Map<String, Set<String>> workflow_run_attributes() {
     return workflow_run_attributes;
   }
 

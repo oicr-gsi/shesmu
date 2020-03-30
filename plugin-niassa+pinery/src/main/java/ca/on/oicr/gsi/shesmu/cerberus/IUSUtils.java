@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.cerberus;
 
-import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.*;
 import java.util.function.Consumer;
@@ -10,15 +9,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class IUSUtils {
-  public static Set<Tuple> attributes(SortedMap<String, SortedSet<String>> attributes) {
+  public static Map<String, Set<String>> attributes(
+      SortedMap<String, SortedSet<String>> attributes) {
     if (attributes == null) {
-      return Collections.emptySet();
+      return Collections.emptyMap();
     }
     return attributes
         .entrySet()
         .stream()
-        .map(e -> new Tuple(e.getKey(), e.getValue()))
-        .collect(Collectors.toCollection(ATTR_TYPE::newSet));
+        .collect(
+            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, TreeMap::new));
   }
 
   public static long parseLaneNumber(String laneName) {

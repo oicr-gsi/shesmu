@@ -28,10 +28,10 @@ public final class CerberusAnalysisProvenanceValue {
               new Pair<>("time", Imyhat.DATE),
               new Pair<>("version", Imyhat.STRING)));
   private final Optional<Long> fileAccession;
-  private final Set<Tuple> fileAttributes;
+  private final Map<String, Set<String>> fileAttributes;
   private final Optional<Path> filePath;
   private final Set<Long> inputFiles;
-  private final Set<Tuple> iusAttributes;
+  private final Map<String, Set<String>> iusAttributes;
   private final Set<Tuple> lims;
   private final Optional<String> md5;
   private final Optional<String> metatype;
@@ -41,9 +41,9 @@ public final class CerberusAnalysisProvenanceValue {
   private final Optional<String> status;
   private final Optional<Instant> timestamp;
   private final Optional<Long> workflowAccession;
-  private final Set<Tuple> workflowAttributes;
+  private final Map<String, Set<String>> workflowAttributes;
   private final Optional<String> workflowName;
-  private final Set<Tuple> workflowRunAttributes;
+  private final Map<String, Set<String>> workflowRunAttributes;
   private final Optional<Tuple> workflowVersion;
 
   public CerberusAnalysisProvenanceValue(AnalysisProvenance provenance) {
@@ -104,8 +104,8 @@ public final class CerberusAnalysisProvenanceValue {
     return fileAccession;
   }
 
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> file_attributes() {
+  @ShesmuVariable
+  public Map<String, Set<String>> file_attributes() {
     return fileAttributes;
   }
 
@@ -114,8 +114,8 @@ public final class CerberusAnalysisProvenanceValue {
     return inputFiles;
   }
 
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> ius_attributes() {
+  @ShesmuVariable
+  public Map<String, Set<String>> ius_attributes() {
     return iusAttributes;
   }
 
@@ -174,13 +174,13 @@ public final class CerberusAnalysisProvenanceValue {
     return workflowAccession;
   }
 
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> workflow_attributes() {
+  @ShesmuVariable
+  public Map<String, Set<String>> workflow_attributes() {
     return workflowAttributes;
   }
 
-  @ShesmuVariable(type = "at2sas")
-  public Set<Tuple> workflow_run_attributes() {
+  @ShesmuVariable
+  public Map<String, Set<String>> workflow_run_attributes() {
     return workflowRunAttributes;
   }
 
