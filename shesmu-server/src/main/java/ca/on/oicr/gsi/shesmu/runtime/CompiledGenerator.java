@@ -134,6 +134,7 @@ public class CompiledGenerator implements DefinitionRepository {
     private List<ExportedFunctionDefinition> exportedFunctions = Collections.emptyList();
     private final Path fileName;
     private ActionGenerator generator = ActionGenerator.NULL;
+    private volatile boolean live = true;
     private OliveRunInfo runInfo;
 
     private Script(Path fileName) {
@@ -161,6 +162,9 @@ public class CompiledGenerator implements DefinitionRepository {
     }
 
     public synchronized String run(OliveServices consumer, InputProvider input) {
+      if (!live) {
+        return "Deleted while waiting to run.";
+      }
       try {
         generator.run(consumer, input);
         return "Completed normally";
@@ -178,10 +182,12 @@ public class CompiledGenerator implements DefinitionRepository {
     @Override
     public void stop() {
       generator.unregister();
+      live = false;
     }
 
     @Override
     public synchronized Optional<Integer> update() {
+      live = true;
       try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
         final List<ExportedFunctionDefinition> exportedFunctions = new ArrayList<>();
         final HotloadingCompiler compiler =
