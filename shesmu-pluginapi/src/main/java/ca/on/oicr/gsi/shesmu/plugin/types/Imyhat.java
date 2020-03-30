@@ -1299,15 +1299,15 @@ public abstract class Imyhat {
       return Optional.empty();
     }
     final ParameterizedType p = (ParameterizedType) c;
-    if (p.getActualTypeArguments().length != 1 || !(p.getRawType() instanceof Class<?>)) {
+    if (!(p.getRawType() instanceof Class<?>)) {
       return Optional.empty();
     }
     // We check for equals rather than isAssignableFrom because we don't know which way the
     // assignment is going
-    if (Set.class.equals(p.getRawType())) {
+    if (Set.class.equals(p.getRawType()) && p.getActualTypeArguments().length == 1) {
       return of(p.getActualTypeArguments()[0], true).map(Imyhat::asList);
     }
-    if (Map.class.equals(p.getRawType())) {
+    if (Map.class.equals(p.getRawType()) && p.getActualTypeArguments().length == 2) {
       return of(p.getActualTypeArguments()[0], true)
           .flatMap(
               key ->
