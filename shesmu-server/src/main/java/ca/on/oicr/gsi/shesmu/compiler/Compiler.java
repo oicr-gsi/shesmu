@@ -121,7 +121,8 @@ public abstract class Compiler {
         constants,
         signatures,
         exportConsumer,
-        dashboardOutput);
+        dashboardOutput,
+        false);
   }
   /**
    * Compile a program
@@ -130,6 +131,7 @@ public abstract class Compiler {
    * @param name the internal name of the class to generate; it will extend {@link ActionGenerator}
    * @param path the source file's path for debugging information
    * @param exportConsumer a callback to handle the exported functions from this program
+   * @param allowDuplicates
    * @return whether compilation was successful
    */
   public final boolean compile(
@@ -139,7 +141,8 @@ public abstract class Compiler {
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures,
       ExportConsumer exportConsumer,
-      Consumer<FileTable> dashboardOutput) {
+      Consumer<FileTable> dashboardOutput,
+      boolean allowDuplicates) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
     final MaxParseError maxParseError = new MaxParseError();
     final String hash;
@@ -163,7 +166,8 @@ public abstract class Compiler {
                 this::getRefiller,
                 this::errorHandler,
                 constants,
-                signatures)) {
+                signatures,
+                allowDuplicates)) {
       final Instant compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       if (dashboardOutput != null && skipRender) {
         dashboardOutput.accept(program.get().dashboard(path, hash, "Bytecode not available."));

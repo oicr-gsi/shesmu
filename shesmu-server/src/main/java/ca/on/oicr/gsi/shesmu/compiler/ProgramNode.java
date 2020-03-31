@@ -126,6 +126,7 @@ public class ProgramNode {
   /**
    * Check that a collection of olives, assumed to be a self-contained program, is well-formed.
    *
+   * @param allowDuplicates allow duplicate function names; only useful when checking
    * @param definedFunctions the functions available; if a function is not found, null should be
    *     returned
    * @param definedActions the actions available; if an action is not found, null should be returned
@@ -137,7 +138,8 @@ public class ProgramNode {
       Function<String, RefillerDefinition> definedRefillers,
       Consumer<String> errorHandler,
       Supplier<Stream<ConstantDefinition>> constants,
-      Supplier<Stream<SignatureDefinition>> signatures) {
+      Supplier<Stream<SignatureDefinition>> signatures,
+      boolean allowDuplicates) {
 
     inputFormatDefinition = inputFormatDefinitions.apply(input);
     if (inputFormatDefinition == null) {
@@ -245,7 +247,7 @@ public class ProgramNode {
                         olive.collectFunctions(
                             name ->
                                 userDefinedFunctions.containsKey(name)
-                                    || definedFunctions.apply(name) != null,
+                                    || !allowDuplicates && definedFunctions.apply(name) != null,
                             f -> userDefinedFunctions.put(f.name(), f),
                             errorHandler));
     ok =

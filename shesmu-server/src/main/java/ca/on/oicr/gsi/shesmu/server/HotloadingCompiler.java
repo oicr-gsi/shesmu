@@ -139,7 +139,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                   });
             }
           },
-          dashboardConsumer)) {
+          dashboardConsumer,
+          false)) {
         final ActionGenerator generator = load(ActionGenerator.class, "dyn.shesmu.Program");
         for (final Consumer<ActionGenerator> export : exports) {
           export.accept(generator);
