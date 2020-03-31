@@ -1931,7 +1931,8 @@ public final class Server implements ServerConfig, ActionServices {
                       definitionRepository::constants,
                       definitionRepository::signatures,
                       null,
-                      x -> {});
+                      x -> {},
+                      true);
           t.getResponseHeaders().set("Content-type", "text/plain; charset=utf-8");
           final byte[] errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
           t.sendResponseHeaders(success ? 200 : 400, errorBytes.length);
@@ -2044,7 +2045,8 @@ public final class Server implements ServerConfig, ActionServices {
                               });
                         }
                       },
-                      description::set);
+                      description::set,
+                      false);
           t.getResponseHeaders().set("Content-type", "text/xml");
           t.sendResponseHeaders(200, 0);
           try (OutputStream output = t.getResponseBody()) {
