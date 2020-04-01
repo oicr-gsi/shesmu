@@ -3209,7 +3209,7 @@ function getStats(
                               ? ":" + column + (hash ? "[" + hash + "]" : "")
                               : "")
                           : ""),
-                      exact,
+                      "",
                       e => {
                         addFilters([
                           "sourcelocation",
