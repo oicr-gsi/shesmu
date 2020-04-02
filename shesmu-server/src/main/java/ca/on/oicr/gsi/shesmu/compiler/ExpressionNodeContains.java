@@ -3,21 +3,47 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeContains extends ExpressionNode {
+  private enum Mode {
+    BAD {
+      @Override
+      void render(GeneratorAdapter methodGen) {
+        throw new IllegalStateException();
+      }
+    },
+    LIST {
+      @Override
+      void render(GeneratorAdapter methodGen) {
+        methodGen.invokeInterface(A_SET_TYPE, METHOD_SET__CONTAINS);
+      }
+    },
+    MAP {
+      @Override
+      void render(GeneratorAdapter methodGen) {
+        methodGen.invokeInterface(A_MAP_TYPE, METHOD_MAP__CONTAINS_KEY);
+      }
+    };
+
+    abstract void render(GeneratorAdapter methodGen);
+  }
+
+  private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
-
+  private static final Method METHOD_MAP__CONTAINS_KEY =
+      new Method("containsKey", Type.BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
   private static final Method METHOD_SET__CONTAINS =
       new Method("contains", Type.BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
-
   private final ExpressionNode haystack;
-
+  private Mode mode = Mode.BAD;
   private final ExpressionNode needle;
 
   public ExpressionNodeContains(
@@ -46,7 +72,7 @@ public class ExpressionNodeContains extends ExpressionNode {
     renderer.mark(line());
 
     renderer.methodGen().valueOf(needle.type().apply(TypeUtils.TO_ASM));
-    renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__CONTAINS);
+    mode.render(renderer.methodGen());
   }
 
   @Override
@@ -70,10 +96,25 @@ public class ExpressionNodeContains extends ExpressionNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     final boolean ok = needle.typeCheck(errorHandler) & haystack.typeCheck(errorHandler);
     if (ok) {
-      if (needle.type().asList().isSame(haystack.type())) {
-        return true;
+      if (haystack.type() instanceof Imyhat.ListImyhat) {
+        if (needle.type().asList().isSame(haystack.type())) {
+          mode = Mode.LIST;
+          return true;
+        }
+        typeError(needle.type().asList(), haystack.type(), errorHandler);
+        return false;
       }
-      typeError(needle.type().asList(), haystack.type(), errorHandler);
+      if (haystack.type() instanceof Imyhat.DictionaryImyhat) {
+        final Imyhat.DictionaryImyhat haystackType = (Imyhat.DictionaryImyhat) haystack.type();
+        if (needle.type().isSame(haystackType.key())) {
+          mode = Mode.MAP;
+          return true;
+        }
+        typeError(
+            Imyhat.dictionary(needle.type(), haystackType.value()), haystack.type(), errorHandler);
+        return false;
+      }
+      typeError("list or dictionary", haystack.type(), errorHandler);
       return false;
     }
     return ok;
