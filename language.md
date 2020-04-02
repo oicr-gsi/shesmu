@@ -501,9 +501,9 @@ must be integers.
 #### List Membership
 - _needle_ `In` _haystack_
 
-Determines if the expression _needle_ is present in the list _haystack_ and
-returns the result as a boolean. _needle_ may be any type, but _haystack_ must
-be a list of the same type.
+Determines if the expression _needle_ is present in the _haystack_ and returns
+the result as a boolean. _needle_ may be any type, but _haystack_ must be
+either a list of the same type or a dictionary with keys of the same type.
 
 #### Optional Use
 - _expr_ `?`

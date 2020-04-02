@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = project In Dict { "the_foo_study" = 3 };
