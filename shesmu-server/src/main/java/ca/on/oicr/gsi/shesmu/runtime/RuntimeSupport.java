@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
@@ -83,7 +84,7 @@ public final class RuntimeSupport {
         }
       };
 
-  private static final Map<String, CallSite> callsites = new HashMap<>();
+  private static final Map<Pair<String, Integer>, CallSite> callsites = new HashMap<>();
 
   static {
     MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
@@ -326,7 +327,7 @@ public final class RuntimeSupport {
    */
   @RuntimeInterop
   public static CallSite regexBootstrap(
-      Lookup lookup, String signature, MethodType type, String regex)
+      Lookup lookup, String signature, MethodType type, String regex, int flags)
       throws NoSuchMethodException, IllegalAccessException {
     if (!type.returnType().equals(Pattern.class)) {
       throw new IllegalArgumentException("Method cannot return non-Pattern type.");
@@ -334,12 +335,13 @@ public final class RuntimeSupport {
     if (type.parameterCount() != 0) {
       throw new IllegalArgumentException("Method must take exactly no arguments.");
     }
-    if (callsites.containsKey(regex)) {
-      return callsites.get(regex);
+    final Pair<String, Integer> id = new Pair<>(regex, flags);
+    if (callsites.containsKey(id)) {
+      return callsites.get(id);
     }
-    final Pattern pattern = Pattern.compile(regex);
+    final Pattern pattern = Pattern.compile(regex, flags);
     final CallSite callsite = new ConstantCallSite(MethodHandles.constant(Pattern.class, pattern));
-    callsites.put(regex, callsite);
+    callsites.put(id, callsite);
     return callsite;
   }
 

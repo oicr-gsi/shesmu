@@ -24,13 +24,15 @@ public class ExpressionNodeRegex extends ExpressionNode {
       new Method("matcher", A_MATCHER_TYPE, new Type[] {Type.getType(CharSequence.class)});
 
   private final ExpressionNode expression;
-
+  private final int flags;
   private final String regex;
 
-  public ExpressionNodeRegex(int line, int column, ExpressionNode expression, String regex) {
+  public ExpressionNodeRegex(
+      int line, int column, ExpressionNode expression, String regex, int flags) {
     super(line, column);
     this.expression = expression;
     this.regex = regex;
+    this.flags = flags;
   }
 
   @Override
@@ -45,7 +47,7 @@ public class ExpressionNodeRegex extends ExpressionNode {
 
   @Override
   public void render(Renderer renderer) {
-    renderer.regex(regex);
+    renderer.regex(regex, flags);
     expression.render(renderer);
     renderer.methodGen().invokeVirtual(A_PATTERN_TYPE, METHOD_PATTERN__MATCHER);
     renderer.methodGen().invokeVirtual(A_MATCHER_TYPE, METHOD_MATCHER__MATCHES);

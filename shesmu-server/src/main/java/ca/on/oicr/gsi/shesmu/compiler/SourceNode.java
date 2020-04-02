@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -42,17 +43,22 @@ public abstract class SourceNode {
         "Splitting",
         (p, o) -> {
           final AtomicReference<ExpressionNode> source = new AtomicReference<>();
-          final AtomicReference<String> regex = new AtomicReference<>();
+          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .then(ExpressionNode::parse, source::set)
                   .whitespace()
                   .keyword("By")
                   .whitespace()
-                  .regex(ExpressionNode.REGEX, m -> regex.set(m.group(1)), "Regular expression.")
+                  .regex(
+                      ExpressionNode.REGEX,
+                      ExpressionNode.regexParser(regex),
+                      "Regular expression.")
                   .whitespace();
           if (result.isGood()) {
-            o.accept(new SourceNodeSplit(p.line(), p.column(), regex.get(), source.get()));
+            o.accept(
+                new SourceNodeSplit(
+                    p.line(), p.column(), regex.get().first(), regex.get().second(), source.get()));
           }
           return result;
         });

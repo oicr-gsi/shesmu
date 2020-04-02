@@ -52,7 +52,8 @@ public class Renderer {
               Type.getType(MethodHandles.Lookup.class),
               Type.getType(String.class),
               Type.getType(MethodType.class),
-              Type.getType(String.class)),
+              Type.getType(String.class),
+              Type.INT_TYPE),
           false);
   private final Map<String, LoadableValue> loadables;
 
@@ -165,8 +166,8 @@ public class Renderer {
     return methodGen;
   }
 
-  public void regex(String regex) {
-    methodGen.invokeDynamic("regex", METHOD_REGEX, REGEX_BSM, regex);
+  public void regex(String regex, int flags) {
+    methodGen.invokeDynamic("regex", METHOD_REGEX, REGEX_BSM, regex, flags);
   }
 
   /** The the owner of this method */
