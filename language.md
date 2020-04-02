@@ -352,11 +352,14 @@ exclusive, and process them using the supplied modifications and then computes
 a result using the collector. The modifications and collectors are described
 below.
 
-- `For` _var_ `Splitting` _expr_` By /`_regex_`/:` _modifications..._ _collector_
+- `For` _var_ `Splitting` _expr_` By /`_regex_`/`_flags_`:` _modifications..._ _collector_
 
 Takes the string _expr_ and splits it into chunks delimited by _regex_ and then
 processes them using the supplied modifications and then computes a result
 using the collector. The modifications and collectors are described below.
+
+_flags_ sets the behaviour of the regular expression. For details, see [regular
+expression flags](#regexflags).
 
 - `For` _var_ `Zipping` _expr_` With` _expr_`:` _modifications..._ _collector_
 
@@ -440,15 +443,21 @@ Compare two values for order. This is only defined for integers and dates. For
 dates, the lesser value occurs temporally earlier.
 
 #### Regular Expression
-- _expr_` ~ /`_re_`/`
+- _expr_` ~ /`_re_`/`_flags_
 
 Check whether _expr_, which must be a string, matches the provided regular
 expression.
 
-- _expr_` !~ /`_re_`/`
+_flags_ sets the behaviour of the regular expression. For details, see [regular
+expression flags](#regexflags).
+
+- _expr_` !~ /`_re_`/`_flags_
 
 Check whether _expr_, which must be a string, does not match the provided
 regular expression.
+
+_flags_ sets the behaviour of the regular expression. For details, see [regular
+expression flags](#regexflags).
 
 ### Disjunction
 #### Addition
@@ -707,7 +716,7 @@ will be named _x_ in the downstream operations.
 - `Flatten (` _x_ `In` _expr_ _modifications_ `)`
 - `Flatten (` _x_ `Fields` _expr_ _modifications_ `)`
 - `Flatten (` _x_ `From` _startexpr_` To `_endexpr_ _modifications..._`)`
-- `Flatten (` _x_ `Splitting` _expr_ `By /`_regex_`/` _modifications_ `)`
+- `Flatten (` _x_ `Splitting` _expr_ `By /`_regex_`/`_flags_ _modifications_ `)`
 
 Performs nested iteration in the same was as `For`.  The variable name
 available in the downstream operations is _x_. Additional list modification can
@@ -883,3 +892,14 @@ Provides the type of an element in a tuple.
 - _type_`.`_field_
 
 Provides the type of a field in an object.
+
+<a name="regexflags">
+## Regular Expression Flags
+Regular expressions can have modified behaviour. Any combination of the following flags can be used after a regular expression:
+
+- `c`: make the character classes (_e.g._, `\p{Digit}`) use [Unicode character classes](http://www.unicode.org/reports/tr18/#Compatibility_Properties) instead of ASCII ones.
+- `e`: match on decomposed Unicode forms. This allow a decomposed form to match a composed one.
+- `i`: perform a case-insensitive match. This only works on ASCII characters unless `u` or `e` are also set.
+- `m`: perform a multi-line match. This makes `^` and `$` work on lines in the text rather than on the text as a whole.
+- `s`: perform a single-line match. This makes `.` match the end of line.
+- `u`: use Unicode case in matching instead of ASCII.

@@ -1,0 +1,5 @@
+Input test;
+Timeout 100;
+
+Olive
+ Run ok With ok = "x" ~ /X/i;

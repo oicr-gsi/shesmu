@@ -19,13 +19,14 @@ public class SourceNodeSplit extends SourceNode {
   private static final Method METHOD_PATTERN__SPLIT_AS_STREAM =
       new Method("splitAsStream", A_STREAM_TYPE, new Type[] {Type.getType(CharSequence.class)});
   private final ExpressionNode expression;
-
+  private final int flags;
   private final String regex;
 
-  public SourceNodeSplit(int line, int column, String regex, ExpressionNode expression) {
+  public SourceNodeSplit(int line, int column, String regex, int flags, ExpressionNode expression) {
     super(line, column);
     this.regex = regex;
     this.expression = expression;
+    this.flags = flags;
   }
 
   @Override
@@ -45,7 +46,7 @@ public class SourceNodeSplit extends SourceNode {
 
   @Override
   public JavaStreamBuilder render(Renderer renderer) {
-    renderer.regex(regex);
+    renderer.regex(regex, flags);
     expression.render(renderer);
     renderer.methodGen().invokeVirtual(A_PATTERN_TYPE, METHOD_PATTERN__SPLIT_AS_STREAM);
     return renderer.buildStream(Imyhat.STRING);

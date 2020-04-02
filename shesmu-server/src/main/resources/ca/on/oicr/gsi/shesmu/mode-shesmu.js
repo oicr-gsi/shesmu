@@ -84,7 +84,7 @@ ace.define(
               },
               {
                 token: "punctuation.definition.regex.end.shesmu",
-                regex: "/",
+                regex: "/[ceimsu]*",
                 next: "pop"
               },
               {

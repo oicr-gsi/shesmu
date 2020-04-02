@@ -20,6 +20,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -283,7 +284,7 @@ public abstract class ExpressionNode implements Renderable {
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<ExpressionNode> OUTER = new Parser.ParseDispatch<>();
   private static final Pattern PATH = Pattern.compile("^([^\\\\']|\\\\')+");
-  public static final Pattern REGEX = Pattern.compile("^/(([^\\\\/\n]|\\\\.)*)/");
+  public static final Pattern REGEX = Pattern.compile("^/((?:[^\\\\/\n]|\\\\.)*)/([ceimsu]*)");
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_TIGHT =
@@ -483,31 +484,35 @@ public abstract class ExpressionNode implements Renderable {
     COMPARISON.addSymbol(
         "~",
         (p, o) -> {
-          final AtomicReference<String> regex = new AtomicReference<>();
+          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
           final Parser result =
-              p.whitespace()
-                  .regex(REGEX, m -> regex.set(m.group(1)), "Regular expression.")
-                  .whitespace();
+              p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
           if (result.isGood()) {
-            o.accept(left -> new ExpressionNodeRegex(p.line(), p.column(), left, regex.get()));
+            o.accept(
+                left ->
+                    new ExpressionNodeRegex(
+                        p.line(), p.column(), left, regex.get().first(), regex.get().second()));
           }
           return result;
         });
     COMPARISON.addSymbol(
         "!~",
         (p, o) -> {
-          final AtomicReference<String> regex = new AtomicReference<>();
+          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
           final Parser result =
-              p.whitespace()
-                  .regex(REGEX, m -> regex.set(m.group(1)), "Regular expression.")
-                  .whitespace();
+              p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
           if (result.isGood()) {
             o.accept(
                 left ->
                     new ExpressionNodeLogicalNot(
                         p.line(),
                         p.column(),
-                        new ExpressionNodeRegex(p.line(), p.column(), left, regex.get())));
+                        new ExpressionNodeRegex(
+                            p.line(),
+                            p.column(),
+                            left,
+                            regex.get().first(),
+                            regex.get().second())));
           }
           return result;
         });
@@ -861,6 +866,31 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
+  }
+
+  public static Consumer<Matcher> regexParser(AtomicReference<Pair<String, Integer>> regex) {
+    return m -> {
+      int flags = 0;
+      if (m.group(2).contains("c")) {
+        flags |= Pattern.UNICODE_CHARACTER_CLASS;
+      }
+      if (m.group(2).contains("e")) {
+        flags |= Pattern.CANON_EQ;
+      }
+      if (m.group(2).contains("i")) {
+        flags |= Pattern.CASE_INSENSITIVE;
+      }
+      if (m.group(2).contains("m")) {
+        flags |= Pattern.MULTILINE;
+      }
+      if (m.group(2).contains("s")) {
+        flags |= Pattern.DOTALL;
+      }
+      if (m.group(2).contains("u")) {
+        flags |= Pattern.UNICODE_CASE;
+      }
+      regex.set(new Pair<>(m.group(1), flags));
+    };
   }
 
   private final int column;
