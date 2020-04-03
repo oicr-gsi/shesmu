@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Group By workflow Into a = OnlyIf `project`
+ Run ok With ok = a == "the_foo_study";

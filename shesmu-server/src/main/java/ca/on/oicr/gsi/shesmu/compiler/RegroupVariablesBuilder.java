@@ -144,6 +144,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
+    public void addOnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      elements.add(new OnlyIf(valueType, fieldName, loader));
+    }
+
+    @Override
     public void addOptima(
         Type fieldType, String fieldName, boolean max, Consumer<Renderer> loader) {
       elements.add(new Optima(fieldType, fieldName, max, loader));
@@ -918,6 +923,93 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
+  private class OnlyIf extends Element {
+    private final String fieldName;
+    private final Consumer<Renderer> loader;
+    private final Imyhat valueType;
+
+    private OnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      super();
+      this.valueType = valueType;
+      this.fieldName = fieldName;
+      this.loader = loader;
+      classVisitor
+          .visitField(Opcodes.ACC_PUBLIC, fieldName, A_SET_TYPE.getDescriptor(), null, null)
+          .visitEnd();
+      final GeneratorAdapter getMethod =
+          new GeneratorAdapter(
+              Opcodes.ACC_PUBLIC,
+              new Method(fieldName, valueType.apply(TO_ASM), new Type[] {}),
+              null,
+              null,
+              classVisitor);
+      getMethod.visitCode();
+      getMethod.loadThis();
+      getMethod.getField(self, fieldName, A_SET_TYPE);
+      getMethod.invokeInterface(A_SET_TYPE, SET__ITERATOR);
+      getMethod.invokeInterface(A_ITERATOR_TYPE, ITERATOR__NEXT);
+      getMethod.unbox(valueType.apply(TO_ASM));
+      getMethod.returnValue();
+      getMethod.visitMaxs(0, 0);
+      getMethod.visitEnd();
+    }
+
+    @Override
+    public void buildCollect() {
+      loader.accept(collectRenderer);
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer.methodGen().getField(self, fieldName, A_SET_TYPE);
+      LambdaBuilder.pushInterface(
+          collectRenderer,
+          "add",
+          LambdaBuilder.consumerErasingReturn(Type.BOOLEAN_TYPE, A_OBJECT_TYPE),
+          A_SET_TYPE);
+      collectRenderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IF_PRESENT);
+    }
+
+    @Override
+    public int buildConstructor(GeneratorAdapter ctor, int index) {
+      ctor.loadThis();
+      Renderer.loadImyhatInMethod(ctor, valueType.descriptor());
+      ctor.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
+      ctor.putField(self, fieldName, A_SET_TYPE);
+      return index;
+    }
+
+    @Override
+    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+      // OnlyIf are not included in equality.
+    }
+
+    @Override
+    public void buildHashCode(GeneratorAdapter hashMethod) {
+      // OnlyIf are not included in the hash.
+    }
+
+    @Override
+    public Stream<Type> constructorType() {
+      return Stream.empty();
+    }
+
+    @Override
+    public void failIfBad(GeneratorAdapter okMethod) {
+      okMethod.loadThis();
+      okMethod.getField(self, fieldName, A_SET_TYPE);
+      okMethod.invokeInterface(A_SET_TYPE, SET__SIZE);
+      okMethod.push(1);
+      final Label next = okMethod.newLabel();
+      okMethod.ifICmp(GeneratorAdapter.EQ, next);
+      okMethod.push(0);
+      okMethod.returnValue();
+      okMethod.mark(next);
+    }
+
+    @Override
+    public void loadConstructorArgument() {
+      // No argument to constructor.
+    }
+  }
+
   private class Univalued extends Element {
     private final String fieldName;
     private final Consumer<Renderer> loader;
@@ -1099,6 +1191,7 @@ public final class RegroupVariablesBuilder implements Regrouper {
   private static final Type A_ITERATOR_TYPE = Type.getType(Iterator.class);
   private static final Type A_MAP_TYPE = Type.getType(Map.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
@@ -1106,6 +1199,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
       Type.getType(UnivaluedGroupAccumulator.class);
   private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
   private static final Method ITERATOR__NEXT = new Method("next", A_OBJECT_TYPE, new Type[] {});
+  private static final Method METHOD_OPTIONAL__IF_PRESENT =
+      new Method("ifPresent", VOID_TYPE, new Type[] {Type.getType(Consumer.class)});
   private static final Method METHOD_DEFAULT_CTOR = new Method("<init>", VOID_TYPE, new Type[] {});
   private static final Method METHOD_EQUALS =
       new Method("equals", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
@@ -1202,6 +1297,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
   @Override
   public void addMatches(String name, Match matchType, Consumer<Renderer> condition) {
     elements.add(new Matches(name, matchType, condition));
+  }
+
+  @Override
+  public void addOnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    elements.add(new OnlyIf(valueType, fieldName, loader));
   }
 
   @Override

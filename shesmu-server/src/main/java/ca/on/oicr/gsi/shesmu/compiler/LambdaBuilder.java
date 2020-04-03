@@ -1,8 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static org.objectweb.asm.Type.BOOLEAN_TYPE;
-import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.VOID_TYPE;
+import static org.objectweb.asm.Type.*;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.TriGrouper;
@@ -39,6 +37,24 @@ public final class LambdaBuilder {
 
     Type returnType(AccessMode accessMode);
   }
+
+  private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
+  private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
+  private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
+  private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
+  private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
+  private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
+  private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
+  private static final Type A_TRIGROUPER_TYPE = Type.getType(TriGrouper.class);
+  private static final Handle LAMBDA_METAFACTORY_BSM =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getType(LambdaMetafactory.class).getInternalName(),
+          "metafactory",
+          "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+          false);
 
   private static void assertNonPrimitive(Type type) {
     if (type.getSort() != Type.OBJECT && type.getSort() != Type.ARRAY) {
@@ -357,6 +373,53 @@ public final class LambdaBuilder {
     };
   }
 
+  public static LambdaType consumerErasingReturn(Type originalReturn, Type parameterType) {
+    assertNonPrimitive(parameterType);
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_CONSUMER_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "accept";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+          case REAL:
+            return Stream.of(parameterType);
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 1;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        switch (accessMode) {
+          case REAL:
+            return originalReturn;
+          case BOXED:
+          case ERASED:
+            return VOID_TYPE;
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+    };
+  }
+
   public static LambdaType function(Imyhat returnType, Imyhat parameterType) {
     return new LambdaType() {
 
@@ -626,6 +689,51 @@ public final class LambdaBuilder {
     };
   }
 
+  private static void pushInstance(
+      Renderer renderer,
+      int opcode,
+      boolean isInterface,
+      String methodName,
+      LambdaType lambda,
+      Type... captures) {
+    Type selfType =
+        Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
+            .findFirst()
+            .orElseThrow(IllegalArgumentException::new);
+    assertNonPrimitive(selfType);
+    renderer
+        .methodGen()
+        .invokeDynamic(
+            lambda.methodName(),
+            Type.getMethodDescriptor(lambda.interfaceType(), captures),
+            LAMBDA_METAFACTORY_BSM,
+            Type.getMethodType(
+                lambda.returnType(AccessMode.ERASED),
+                lambda.parameterTypes(AccessMode.ERASED).toArray(Type[]::new)),
+            new Handle(
+                opcode,
+                selfType.getInternalName(),
+                methodName,
+                Type.getMethodDescriptor(
+                    lambda.returnType(AccessMode.REAL),
+                    Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
+                        .skip(1)
+                        .toArray(Type[]::new)),
+                isInterface),
+            Type.getMethodType(
+                lambda.returnType(AccessMode.BOXED),
+                lambda.parameterTypes(AccessMode.BOXED).toArray(Type[]::new)));
+  }
+
+  /**
+   * Create a lambda that calls an interface method. The first type of the first parameter must be
+   * the class in which the method is defined.
+   */
+  public static void pushInterface(
+      Renderer renderer, String methodName, LambdaType lambda, Type... captures) {
+    pushInstance(renderer, Opcodes.H_INVOKEINTERFACE, true, methodName, lambda, captures);
+  }
+
   /**
    * Creates a lambda that calls a constructor. The return type of the lambda must be the type being
    * constructed.
@@ -692,33 +800,7 @@ public final class LambdaBuilder {
    */
   public static void pushVirtual(
       Renderer renderer, String methodName, LambdaType lambda, Type... captures) {
-    Type selfType =
-        Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
-            .findFirst()
-            .orElseThrow(IllegalArgumentException::new);
-    assertNonPrimitive(selfType);
-    renderer
-        .methodGen()
-        .invokeDynamic(
-            lambda.methodName(),
-            Type.getMethodDescriptor(lambda.interfaceType(), captures),
-            LAMBDA_METAFACTORY_BSM,
-            Type.getMethodType(
-                lambda.returnType(AccessMode.ERASED),
-                lambda.parameterTypes(AccessMode.ERASED).toArray(Type[]::new)),
-            new Handle(
-                Opcodes.H_INVOKEVIRTUAL,
-                selfType.getInternalName(),
-                methodName,
-                Type.getMethodDescriptor(
-                    lambda.returnType(AccessMode.REAL),
-                    Stream.concat(Stream.of(captures), lambda.parameterTypes(AccessMode.REAL))
-                        .skip(1)
-                        .toArray(Type[]::new)),
-                false),
-            Type.getMethodType(
-                lambda.returnType(AccessMode.BOXED),
-                lambda.parameterTypes(AccessMode.BOXED).toArray(Type[]::new)));
+    pushInstance(renderer, Opcodes.H_INVOKEVIRTUAL, false, methodName, lambda, captures);
   }
 
   public static LambdaType supplier(Type returnType) {
@@ -869,23 +951,6 @@ public final class LambdaBuilder {
     };
   }
 
-  private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
-  private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
-  private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
-  private static final Type A_CONSUMER_TYPE = Type.getType(Consumer.class);
-  private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
-  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
-  private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
-  private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
-  private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
-  private static final Type A_TRIGROUPER_TYPE = Type.getType(TriGrouper.class);
-  private static final Handle LAMBDA_METAFACTORY_BSM =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getType(LambdaMetafactory.class).getInternalName(),
-          "metafactory",
-          "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-          false);
   private final Type[] captureTypes;
   private final LoadableValue[] capturedVariables;
   private final LambdaType lambda;
