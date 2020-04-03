@@ -63,6 +63,17 @@ public interface Regrouper {
   void addMatches(String name, Match matchType, Consumer<Renderer> condition);
 
   /**
+   * Effectively flatten for optionals
+   *
+   * <p>The row will be rejected if it has zero or 2 or more items.
+   *
+   * @param valueType the type of the values in the collection
+   * @param fieldName the name of the output variable
+   * @param loader a function to load the variable; this must return an optional
+   */
+  void addOnlyIf(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
+
+  /**
    * A single value which is the optima from all input values
    *
    * @param fieldType the type of the value being added
@@ -88,7 +99,7 @@ public interface Regrouper {
   /**
    * Create a collection that should only ever have one item in it
    *
-   * <p>The row will be rejected if it has zero or 2 or more itms.
+   * <p>The row will be rejected if it has zero or 2 or more items.
    *
    * @param valueType the type of the values in the collection
    * @param fieldName the name of the output variable

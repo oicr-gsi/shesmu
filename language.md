@@ -287,6 +287,12 @@ Collect the smallest; if none are collected, the group is rejected.
 
 Check if _expr_ is false for all rows. If none are collected, the result is true.
 
+- `OnlyIf` _expr_
+
+Take an optional value and extract it. Ignore any empty optionals. If multiple
+different values are found, reject the group. If only one unique value is
+found, use it as the result and use this value. 
+
 - `PartitionCount` _expr_
 
 Collect a counter of the number of times _expr_ was true and the number of
