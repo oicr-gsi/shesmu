@@ -1,0 +1,7 @@
+Input test;
+the_dict = Dict {
+	"the_foo_study" = 3
+};
+
+Olive Run ok With ok =
+	`the_dict`[project] == `3`;
