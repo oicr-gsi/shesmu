@@ -1,0 +1,9 @@
+Input test;
+
+Olive
+ Group
+  By project
+  Where project != "the_foo_study"
+  Into
+    x = Count
+ Run ok With ok = x == 0;
