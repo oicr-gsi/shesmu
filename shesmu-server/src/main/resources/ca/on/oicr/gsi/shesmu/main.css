@@ -704,7 +704,11 @@ div.histogram {
 
 div.editor {
   width: 100%;
-  height: 70vh;
+  height: 60vh;
+}
+
+table.errors {
+  width: 100%;
 }
 
 .olivemenu div.olivelist {
