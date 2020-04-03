@@ -75,6 +75,7 @@ Each workflow is configured in a separate file named
       "maxInFlight": 3,
       "parameters": [],
       "previousAccessions": [],
+      "relaunchFailedOnUpgrade": false,
       "services": [
         "sqws"
       ],
@@ -92,6 +93,10 @@ simultaneous workflow runs launched by this olive. The `services` list is the
 name of services presented to throttlers to block launching of this workflow.
 A workflow will use the union of the services in the `.niassa` file and the
 `.niassawf` file.
+
+When a new workflow is replacing a failing one setting
+`"relaunchFailedOnUpgrade"` to `true` will trigger Shesmu to automatically skip
+and re-run failed workflows from previous workflow accession.
 
 The `annotations` are workflow run attributes (as key-value pairs) that will be
 attached to the created run and will be used for matching existing workflow

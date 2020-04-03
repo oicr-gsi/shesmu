@@ -92,6 +92,7 @@ public final class WorkflowAction extends Action {
   public long priority;
 
   private boolean priorityBoost;
+  private final boolean relaunchFailedOnUpgrade;
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final List<String> services;
@@ -105,7 +106,8 @@ public final class WorkflowAction extends Action {
       long[] previousAccessions,
       FileMatchingPolicy fileMatchingPolicy,
       List<String> services,
-      Map<String, String> annotations) {
+      Map<String, String> annotations,
+      boolean relaunchFailedOnUpgrade) {
     super("niassa");
     this.server = server;
     this.workflowName = workflowName;
@@ -118,6 +120,7 @@ public final class WorkflowAction extends Action {
     // sequentially before analysis cache expires and needs reloading.
 
     priority = (workflowAccession % 10);
+    this.relaunchFailedOnUpgrade = relaunchFailedOnUpgrade;
   }
 
   @Override
@@ -278,6 +281,22 @@ public final class WorkflowAction extends Action {
         final WorkflowRunMatch match = matches.get(0);
         if (match.comparison() == AnalysisComparison.EXACT
             || match.comparison() == AnalysisComparison.FIXABLE) {
+          if (relaunchFailedOnUpgrade
+              && match.actionState() == ActionState.FAILED
+              && match.state().workflowAccession() != workflowAccession) {
+            // Our best match is failed but also not the same workflow. Let's be charitable and
+            // assume that we are upgrading the workflow and we should rerun the failed workflows.
+            final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+            attribute.setTag("skip");
+            attribute.setValue("shesmu-upgrade");
+            server
+                .get()
+                .metadata()
+                .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
+            server.get().analysisCache().invalidate(match.state().workflowAccession());
+            // Try again
+            return ActionState.UNKNOWN;
+          }
           // Don't associate with this workflow because we don't want to get ourselves to this state
           runAccession = match.state().workflowRunAccession();
           // We matched, but we might need to update the LIMS keys OR add missing signatures (if the
