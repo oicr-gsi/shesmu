@@ -59,6 +59,7 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
                 renderer.root(),
                 String.format("Dictionary Access %d:%d", line, column),
                 LambdaBuilder.function(A_OPTIONAL_TYPE, A_MAP_TYPE),
+                renderer.streamType(),
                 renderer
                     .allValues()
                     .filter(v -> captures.contains(v.name()))
@@ -68,7 +69,7 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
 
         final Renderer lambdaBody = builder.renderer(renderer.signerEmitter());
         lambdaBody.methodGen().visitCode();
-        lambdaBody.methodGen().loadArg(0);
+        lambdaBody.methodGen().loadArg(builder.trueArgument(0));
         index.render(lambdaBody);
         if (resultIsOptional) {
           lambdaBody.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);

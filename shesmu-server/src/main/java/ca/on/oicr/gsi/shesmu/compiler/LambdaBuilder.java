@@ -1023,4 +1023,15 @@ public final class LambdaBuilder {
         RootBuilder.proxyCaptured(0, capturedVariables),
         signerEmitter);
   }
+
+  /**
+   * Compute an argument's position correcting for any captures
+   *
+   * @param index the desired argument's position
+   * @return the real argument position that should be fed to {@link GeneratorAdapter#loadArg(int)}
+   */
+  public int trueArgument(int index) {
+    // The 1 is because `this` doesn't count to our argument position but is the captured types
+    return index + captureTypes.length - 1;
+  }
 }
