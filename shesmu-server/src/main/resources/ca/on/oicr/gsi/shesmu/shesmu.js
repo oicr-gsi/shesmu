@@ -1223,6 +1223,18 @@ export function initialiseOliveDash(
         sourceCell.appendChild(sourceLink);
       }
 
+      const simulateRow = document.createElement("TR");
+      infoTable.appendChild(simulateRow);
+      const simulateHeader = document.createElement("TD");
+      simulateHeader.innerText = "Simulation";
+      simulateRow.appendChild(simulateHeader);
+      const simulateCell = document.createElement("TD");
+      simulateRow.appendChild(simulateCell);
+      const simulateLink = document.createElement("A");
+      simulateLink.innerText = "Edit in Olive Simulator";
+      simulateLink.href = `simulatedash?script=${encodeURIComponent(file.filename)}`;
+      simulateCell.appendChild(simulateLink);
+
       olive.tags.forEach(tag => {
         const tagRow = document.createElement("TR");
         infoTable.appendChild(tagRow);
@@ -3866,10 +3878,16 @@ export function loadFile(callback) {
   input.click();
 }
 
-export function initialiseSimulationDashboard(ace, container, completeSound) {
+export function initialiseSimulationDashboard(
+  ace,
+  container,
+  completeSound,
+  scriptName,
+  scriptBody
+) {
   initialise();
   let fakeActions = {};
-  let fileName = "unknown.shesmu";
+  let fileName = scriptName || "unknown.shesmu";
   try {
     fakeActions = JSON.parse(
       localStorage.getItem("shesmu_fake_actions") || "{}"
@@ -3885,7 +3903,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   editor.session.setTabSize(2);
   editor.session.setUseSoftTabs(true);
   editor.setFontSize("14pt");
-  editor.setValue(localStorage.getItem("shesmu_script") || "", 0);
+  editor.setValue(scriptBody || localStorage.getItem("shesmu_script") || "", 0);
   const extra = document.createElement("DIV");
   const toolBar = document.createElement("P");
   container.appendChild(toolBar);

@@ -60,7 +60,9 @@ import io.prometheus.client.hotspot.DefaultExports;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -1301,18 +1303,7 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final String query =
-              Optional.ofNullable(t.getRequestURI().getQuery())
-                  .flatMap(
-                      r ->
-                          AMPERSAND
-                              .splitAsStream(r)
-                              .filter(i -> i.length() > 0)
-                              .map(q -> EQUAL.split(q, 2))
-                              .filter(q -> q[0].equals("filters"))
-                              .map(q -> q[1])
-                              .findFirst())
-                  .orElse("[]");
+          final String query = getParameters(t).getOrDefault("filters", "[]");
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -2101,6 +2092,24 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/simulatedash",
         t -> {
+          final String existingScript = getParameters(t).get("script");
+          final String scriptName;
+          final String scriptBody;
+          if (existingScript != null) {
+            if (compiler.dashboard().noneMatch(p -> p.second().filename().equals(existingScript))) {
+              t.sendResponseHeaders(403, -1);
+              return;
+            }
+            final Path scriptPath = Paths.get(existingScript);
+            scriptName =
+                RuntimeSupport.MAPPER.writeValueAsString(scriptPath.getFileName().toString());
+            scriptBody =
+                RuntimeSupport.MAPPER.writeValueAsString(
+                    new String(Files.readAllBytes(scriptPath), StandardCharsets.UTF_8));
+          } else {
+            scriptName = "null";
+            scriptBody = "null";
+          }
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
@@ -2119,12 +2128,14 @@ public final class Server implements ServerConfig, ActionServices {
                     Header.jsFile("theme-chrome.js"),
                     Header.jsFile("mode-shesmu.js"),
                     Header.jsModule(
-                        "import {"
-                            + "initialiseSimulationDashboard"
-                            + "} from \"./shesmu.js\";"
-                            + "const output = document.getElementById(\"outputContainer\");"
-                            + "const sound = document.getElementById(\"sound\");"
-                            + "initialiseSimulationDashboard(ace, output, sound);"));
+                        String.format(
+                            "import {"
+                                + "initialiseSimulationDashboard"
+                                + "} from \"./shesmu.js\";"
+                                + "const output = document.getElementById(\"outputContainer\");"
+                                + "const sound = document.getElementById(\"sound\");"
+                                + "initialiseSimulationDashboard(ace, output, sound, %s, %s);",
+                            scriptName, scriptBody)));
               }
 
               @Override
