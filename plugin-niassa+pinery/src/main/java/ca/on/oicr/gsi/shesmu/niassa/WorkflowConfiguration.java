@@ -19,6 +19,7 @@ public class WorkflowConfiguration {
   private long accession;
   private Map<String, String> annotations = Collections.emptyMap();
   private FileMatchingPolicy fileMatchingPolicy = FileMatchingPolicy.SUPERSET;
+  private int maxFailed = Integer.MAX_VALUE;
   private int maxInFlight;
   private IniParam<?>[] parameters;
   private long[] previousAccessions;
@@ -172,6 +173,10 @@ public class WorkflowConfiguration {
     return fileMatchingPolicy;
   }
 
+  public int getMaxFailed() {
+    return maxFailed;
+  }
+
   public int getMaxInFlight() {
     return maxInFlight;
   }
@@ -206,6 +211,10 @@ public class WorkflowConfiguration {
 
   public void setFileMatchingPolicy(FileMatchingPolicy fileMatchingPolicy) {
     this.fileMatchingPolicy = fileMatchingPolicy;
+  }
+
+  public void setMaxFailed(int maxFailed) {
+    this.maxFailed = maxFailed;
   }
 
   public void setMaxInFlight(int maxInFlight) {

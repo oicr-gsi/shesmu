@@ -425,19 +425,21 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     maxInFlightCache.invalidate(workflowRunSwid);
   }
 
-  public synchronized boolean maxInFlight(String workflowName, long workflowAccession) {
+  public synchronized MaxStatus maxInFlight(String workflowName, long workflowAccession) {
     // Ban all jobs with invalid accessions from running
     if (workflowAccession < 1) {
-      return true;
+      return MaxStatus.INVALID_SWID;
     }
     return maxInFlightCache
         .get(workflowAccession)
         .map(
             running -> {
               foundRunning.labels(url(), workflowName).set(running);
-              return running >= maxInFlight.getOrDefault(workflowName, 0);
+              return running >= maxInFlight.getOrDefault(workflowName, 0)
+                  ? MaxStatus.TOO_MANY_RUNNING
+                  : MaxStatus.RUN;
             })
-        .orElse(true);
+        .orElse(MaxStatus.RUN);
   }
 
   public Metadata metadata() {
