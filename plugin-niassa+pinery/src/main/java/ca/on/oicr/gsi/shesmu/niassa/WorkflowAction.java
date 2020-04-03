@@ -322,11 +322,25 @@ public final class WorkflowAction extends Action {
       try {
         // Check if there are already too many copies of this workflow running; if so, wait until
         // later.
-        if (!ignoreMaxInFlight && server.get().maxInFlight(workflowName, workflowAccession)) {
-          this.errors =
-              Collections.singletonList(
-                  "Too many workflows running. Sit tight or increase max-in-flight setting.");
-          return ActionState.WAITING;
+        if (!ignoreMaxInFlight) {
+          switch (server.get().maxInFlight(workflowName, workflowAccession)) {
+            case RUN:
+              break;
+            case TOO_MANY_RUNNING:
+              this.errors =
+                  Collections.singletonList(
+                      "Too many workflows running. Sit tight or increase max-in-flight setting.");
+              return ActionState.WAITING;
+            case INVALID_SWID:
+              this.errors =
+                  Collections.singletonList(
+                      "The workflow SWID supplied is obviously invalid, so let's pretend is launched and everything was amazing. 🌈");
+              return ActionState.SUCCEEDED;
+            default:
+              this.errors =
+                  Collections.singletonList("Unknown max status. This is an implementation bug.");
+              return ActionState.FAILED;
+          }
         }
       } catch (InitialCachePopulationException e) {
         this.errors = Collections.singletonList("Another workflow is fetching max-in-flight data.");
