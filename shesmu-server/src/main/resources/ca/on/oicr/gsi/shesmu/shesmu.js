@@ -3891,26 +3891,55 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
   container.appendChild(toolBar);
   const outputContainer = document.createElement("DIV");
   container.appendChild(outputContainer);
+  const errorTable = document.createElement("TABLE");
+  container.appendChild(errorTable);
+  errorTable.className = "errors";
+  errorTable.style.display = "none";
+  const errorTableHead = document.createElement("THEAD");
+  errorTable.appendChild(errorTableHead);
+  const errorHeader = document.createElement("TR");
+  errorTableHead.appendChild(errorHeader);
+  for (const name of ["Line", "Column", "Error"]) {
+    const cell = document.createElement("th");
+    cell.innerText = name;
+    errorHeader.appendChild(cell);
+  }
+  const errorTableBody = document.createElement("TBODY");
+  errorTable.appendChild(errorTableBody);
   const updateAnnotations = response => {
     const annotations = [];
-    const orphanedErrors = [];
+    clearChildren(errorTableBody);
     if (response.hasOwnProperty("errors") && response.errors.length) {
       for (const err of response.errors) {
         const match = err.match(/^(\d+):(\d+): *(.*$)/);
+        let rowContents;
         if (match) {
+          const line = parseInt(match[1]);
+          const column = parseInt(match[2]);
+          const errorText = match[3];
           annotations.push({
-            row: parseInt(match[1]) - 1,
-            column: parseInt(match[2]) - 1,
-            text: match[3],
+            row: line - 1,
+            column: column - 1,
+            text: errorText,
             type: "error"
           });
+          rowContents = [line, column, errorText];
         } else {
-          orphanedErrors.push(err);
+          rowContents = ["", "", err];
+        }
+        const errorRow = document.createElement("TR");
+        errorTableBody.appendChild(errorRow);
+        for (const value of rowContents) {
+          const cell = document.createElement("td");
+          cell.innerText = value;
+          errorRow.appendChild(cell);
         }
       }
     }
     editor.getSession().setAnnotations(annotations);
-    return orphanedErrors;
+    errorTable.style.display = errorTableBody.children.length
+      ? "table"
+      : "none";
   };
   const updateDataLabel = document.createElement("LABEL");
   const updateData = document.createElement("INPUT");
@@ -3994,15 +4023,7 @@ export function initialiseSimulationDashboard(ace, container, completeSound) {
               });
             }
           }
-          const orphanedErrors = updateAnnotations(response);
-          if (orphanedErrors.length) {
-            tabs.push({
-              name: "Errors",
-              render: tab =>
-                orphanedErrors.forEach(err => tab.appendChild(text(err)))
-            });
-          }
-
+          updateAnnotations(response);
           if (
             response.hasOwnProperty("exports") &&
             Object.keys(response.exports).length
