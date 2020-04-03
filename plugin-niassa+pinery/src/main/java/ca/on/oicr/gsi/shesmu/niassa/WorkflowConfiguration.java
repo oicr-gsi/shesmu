@@ -24,6 +24,7 @@ public class WorkflowConfiguration {
   private long[] previousAccessions;
   private List<String> services = Collections.emptyList();
   private InputLimsKeyProvider type;
+  private boolean relaunchFailedOnUpgrade;
   private Map<String, String> userAnnotations = Collections.emptyMap();
 
   public void define(String name, Definer<NiassaServer> definer) {
@@ -50,7 +51,8 @@ public class WorkflowConfiguration {
                 previousAccessions,
                 fileMatchingPolicy,
                 services,
-                annotations),
+                annotations,
+                relaunchFailedOnUpgrade),
         Stream.of(
                 Stream.of(getType().parameter()),
                 Stream.of(getParameters()).map(IniParam::parameter),
@@ -196,6 +198,10 @@ public class WorkflowConfiguration {
     return userAnnotations;
   }
 
+  public boolean isRelaunchFailedOnUpgrade() {
+    return relaunchFailedOnUpgrade;
+  }
+
   public void setAccession(long accession) {
     this.accession = accession;
   }
@@ -218,6 +224,10 @@ public class WorkflowConfiguration {
 
   public void setPreviousAccessions(long[] previousAccessions) {
     this.previousAccessions = previousAccessions;
+  }
+
+  public void setRelaunchFailedOnUpgrade(boolean relaunchFailedOnUpgrade) {
+    this.relaunchFailedOnUpgrade = relaunchFailedOnUpgrade;
   }
 
   public void setServices(List<String> services) {
