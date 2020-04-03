@@ -52,6 +52,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   private List<String> outputNames;
   private final List<Pair<String, ExpressionNode>> rawInputExpressions;
   private final Map<String, Imyhat> typeVariables = new HashMap<>();
+  private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeGroupWithGrouper(
       int line,
@@ -60,7 +61,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       List<Pair<String, ExpressionNode>> inputExpressions,
       List<String> outputNames,
       List<GroupNode> children,
-      List<DiscriminatorNode> discriminators) {
+      List<DiscriminatorNode> discriminators,
+      Optional<ExpressionNode> where) {
     this.line = line;
     this.column = column;
     this.grouperName = grouperName;
@@ -69,6 +71,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     this.rawInputExpressions = inputExpressions;
     this.children = children;
     this.discriminators = discriminators;
+    this.where = where;
   }
 
   @Override
@@ -76,6 +79,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     children.forEach(child -> child.collectPlugins(pluginFileNames));
     discriminators.forEach(discrminator -> discrminator.collectPlugins(pluginFileNames));
     inputExpressions.forEach(expression -> expression.collectPlugins(pluginFileNames));
+    where.ifPresent(w -> w.collectPlugins(pluginFileNames));
   }
 
   @Override
@@ -85,6 +89,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
   @Override
   public Stream<OliveClauseRow> dashboard() {
+    final Set<String> whereInputs = new TreeSet<>();
+    where.ifPresent(w -> w.collectFreeVariables(whereInputs, Flavour::isStream));
     final List<VariableInformation> inputVariables = new ArrayList<>();
     for (int i = 0; i < inputExpressions.size(); i++) {
       final Set<String> inputs = new TreeSet<>();
@@ -109,7 +115,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                         .stream()
                         .map(
                             child -> {
-                              final Set<String> inputs = new TreeSet<>();
+                              final Set<String> inputs = new TreeSet<>(whereInputs);
                               child.collectFreeVariables(inputs, Flavour::isStream);
                               return new VariableInformation(
                                   child.name(),
@@ -130,6 +136,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       inputExpressions.forEach(
           d -> d.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
       children.forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
+      where.ifPresent(w -> w.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
       return ClauseStreamOrder.TRANSFORMED;
     }
     return state;
@@ -270,7 +277,9 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                 .toArray(LoadableValue[]::new));
 
     discriminators.forEach(d -> d.render(regroup));
-    children.forEach(group -> group.render(regroup, builder));
+    final Regrouper regrouperForChildren =
+        where.map(w -> regroup.addWhere(w::render)).orElse(regroup);
+    children.forEach(group -> group.render(regrouperForChildren, builder));
     regroup.finish();
 
     oliveBuilder.measureFlow(builder.sourcePath(), line, column);
@@ -389,29 +398,30 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     ok =
         ok
             && Stream.concat(
-                        discriminators.stream().flatMap(DiscriminatorNode::targets),
-                        children.stream())
-                    .collect(Collectors.groupingBy(DefinedTarget::name))
-                    .entrySet()
-                    .stream()
-                    .filter(e -> e.getValue().size() > 1)
-                    .peek(
-                        e ->
-                            errorHandler.accept(
-                                String.format(
-                                    "%d:%d: “Group” has duplicate name %s: %s",
-                                    line,
-                                    column,
-                                    e.getKey(),
-                                    e.getValue()
-                                        .stream()
-                                        .sorted(
-                                            Comparator.comparingInt(DefinedTarget::line)
-                                                .thenComparingInt(DefinedTarget::column))
-                                        .map(l -> String.format("%d:%d", l.line(), l.column()))
-                                        .collect(Collectors.joining(", ")))))
-                    .count()
-                == 0;
+                            discriminators.stream().flatMap(DiscriminatorNode::targets),
+                            children.stream())
+                        .collect(Collectors.groupingBy(DefinedTarget::name))
+                        .entrySet()
+                        .stream()
+                        .filter(e -> e.getValue().size() > 1)
+                        .peek(
+                            e ->
+                                errorHandler.accept(
+                                    String.format(
+                                        "%d:%d: “Group” has duplicate name %s: %s",
+                                        line,
+                                        column,
+                                        e.getKey(),
+                                        e.getValue()
+                                            .stream()
+                                            .sorted(
+                                                Comparator.comparingInt(DefinedTarget::line)
+                                                    .thenComparingInt(DefinedTarget::column))
+                                            .map(l -> String.format("%d:%d", l.line(), l.column()))
+                                            .collect(Collectors.joining(", ")))))
+                        .count()
+                    == 0
+                & where.map(w -> w.resolve(defs, errorHandler)).orElse(true);
     return defs.replaceStream(
         Stream.concat(
             discriminators.stream().flatMap(DiscriminatorNode::targets), children.stream()),
@@ -491,7 +501,10 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                         .filter(
                             group -> group.resolveDefinitions(oliveCompilerServices, errorHandler))
                         .count()
-                    == discriminators.size();
+                    == discriminators.size()
+                & where
+                    .map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler))
+                    .orElse(true);
 
     return ok;
   }
@@ -527,7 +540,21 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
         ok
             && children.stream().filter(group -> group.typeCheck(errorHandler)).count()
                 == children.size();
-
+    ok =
+        ok
+            && where
+                .map(
+                    w -> {
+                      boolean whereOk = w.typeCheck(errorHandler);
+                      if (whereOk) {
+                        if (!w.type().isSame(Imyhat.BOOLEAN)) {
+                          w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);
+                          whereOk = false;
+                        }
+                      }
+                      return whereOk;
+                    })
+                .orElse(true);
     return ok;
   }
 

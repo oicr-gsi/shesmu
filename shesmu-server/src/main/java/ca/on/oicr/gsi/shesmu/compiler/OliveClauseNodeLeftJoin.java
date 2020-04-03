@@ -7,13 +7,9 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,6 +28,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   protected final int line;
   private final ExpressionNode outerKey;
   private final ExpressionNode innerKey;
+  private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeLeftJoin(
       int line,
@@ -39,13 +36,15 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
       String format,
       ExpressionNode outerKey,
       ExpressionNode innerKey,
-      List<GroupNode> children) {
+      List<GroupNode> children,
+      Optional<ExpressionNode> where) {
     this.line = line;
     this.column = column;
     this.format = format;
     this.outerKey = outerKey;
     this.innerKey = innerKey;
     this.children = children;
+    this.where = where;
   }
 
   @Override
@@ -53,6 +52,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     outerKey.collectPlugins(pluginFileNames);
     innerKey.collectPlugins(pluginFileNames);
     children.forEach(child -> child.collectPlugins(pluginFileNames));
+    where.ifPresent(w -> w.collectPlugins(pluginFileNames));
   }
 
   @Override
@@ -64,6 +64,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   public Stream<OliveClauseRow> dashboard() {
     final Set<String> joinedNames =
         inputFormat.baseStreamVariables().map(Target::name).collect(Collectors.toSet());
+    final Set<String> whereInputs = new TreeSet<>();
+    where.ifPresent(w -> w.collectFreeVariables(whereInputs, Flavour::isStream));
     return Stream.of(
         new OliveClauseRow(
             "LeftJoin",
@@ -76,7 +78,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
                     .stream()
                     .map(
                         child -> {
-                          final Set<String> inputs = new TreeSet<>();
+                          final Set<String> inputs = new TreeSet<>(whereInputs);
                           child.collectFreeVariables(inputs, Flavour::isStream);
                           inputs.removeAll(joinedNames);
                           return new VariableInformation(
@@ -119,6 +121,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
+    where.ifPresent(w -> w.collectFreeVariables(freeVariables, Flavour::needsCapture));
     final Set<String> innerSignatures = new HashSet<>();
     children.forEach(
         group -> group.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals));
@@ -189,7 +192,10 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
                                 new Type[] {}));
                   });
         });
-    children.forEach(group -> group.render(leftJoin.second(), builder));
+
+    final Regrouper regrouper =
+        where.map(w -> leftJoin.second().addWhere(w::render)).orElse(leftJoin.second());
+    children.forEach(group -> group.render(regrouper, builder));
 
     leftJoin.second().finish();
 
@@ -267,7 +273,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
             & outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
                 defs.replaceStream(inputFormat.baseStreamVariables().map(x -> x), true),
-                errorHandler);
+                errorHandler)
+            & where.map(w -> w.resolve(joinedDefs, errorHandler)).orElse(true);
 
     return defs.replaceStream(
         Stream.concat(discriminators.stream().map(Target::wrap), children.stream()), ok);
@@ -298,7 +305,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     }
     return ok
         & outerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
-        & innerKey.resolveDefinitions(oliveCompilerServices, errorHandler);
+        & innerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
+        & where.map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler)).orElse(true);
   }
 
   @Override
@@ -310,6 +318,19 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     }
     return ok
         & children.stream().filter(group -> group.typeCheck(errorHandler)).count()
-            == children.size();
+            == children.size()
+        & where
+            .map(
+                w -> {
+                  boolean whereOk = w.typeCheck(errorHandler);
+                  if (whereOk) {
+                    if (!w.type().isSame(Imyhat.BOOLEAN)) {
+                      w.typeError(Imyhat.BOOLEAN, w.type(), errorHandler);
+                      whereOk = false;
+                    }
+                  }
+                  return whereOk;
+                })
+            .orElse(true);
   }
 }

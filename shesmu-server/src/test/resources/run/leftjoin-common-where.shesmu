@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Let p = project
+ LeftJoin True To inner_test True
+    Where p == "the_foo_study"
+    ls = List l
+ Run ok With ok = (For l In ls: Count) == 2;

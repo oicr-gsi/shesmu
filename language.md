@@ -138,8 +138,8 @@ dropped.
 
 This reshapes the data.
 
- - `Group` `By` _discriminator1_[`,` ...] _collectionname1_ `=` _collector1_[`,` ...]
- - `Group` `By` _discriminator1_[`,` ...] `Using` _grouper_ _param_ `=` _expr1_[`,` ...]  [`With` _output_[`,` ...]] _collectionname1_ `=` _collector1_[`,` ...]
+ - `Group` `By` _discriminator1_[`,` ...]  [`Where` _condition_] _collectionname1_ `=` _collector1_[`,` ...]
+ - `Group` `By` _discriminator1_[`,` ...] `Using` _grouper_ _param_ `=` _expr1_[`,` ...]  [`With` _output_[`,` ...]]  [`Where` _condition_] _collectionname1_ `=` _collector1_[`,` ...]
 
 Performs a grouping of the data. First, rows are collected in subgroups by
 their _discriminators_. If `Using` is provided, those subgroups are modified by
@@ -162,7 +162,10 @@ available in the collectors. They have default names; if those names are a
 problem, `With` can be used to rename them.
 
 The collectors aggregate from the values in a group. They are described in
-another section.
+another section. Each collector can have `Where` filters that limit the
+collected data. Optionally, a `Where` filter can be applied to all the
+collectors by providing _condition_.
+
 
 This reshapes the data.
 
@@ -174,7 +177,7 @@ sources must not overlap.
 
 This reshapes the data.
 
- - `LeftJoin` _outerkey_ `To` _input_ _innerkey_ _collectionname1_ `=` _collector1_ [`,` ...]
+ - `LeftJoin` _outerkey_ `To` _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
 
 Does a left-join operation between the current data and the data from the
 _input_ data format. This is done using a merge join where keys are computed
@@ -184,7 +187,9 @@ against. A tuple can be used if joining on multiple keys is required. Each row
 in the outer data is treated as a kind of group and the matching inner keys are
 processed through the _collectors_. This means that outer data is used only
 once but inner data maybe reused multiple times if multiple outer rows have the
-same key.
+same key. Each collector can have `Where` filters that limit the collected
+data. Optionally, a `Where` filter can be applied to all the collectors by
+providing _condition_.
 
 This reshapes the data.
 

@@ -71,6 +71,8 @@ public abstract class OliveClauseNode {
   }
 
   private static final Parser.ParseDispatch<OliveClauseNode> CLAUSES = new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<Optional<ExpressionNode>> GROUP_WHERE =
+      new Parser.ParseDispatch<>();
   private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
   private static final Pattern OPTIMA = Pattern.compile("^(Min|Max)");
   private static final Parser.ParseDispatch<RejectNode> REJECT_CLAUSES =
@@ -115,6 +117,7 @@ public abstract class OliveClauseNode {
           final AtomicReference<List<Pair<String, ExpressionNode>>> inputs =
               new AtomicReference<>();
           final AtomicReference<List<String>> outputs = new AtomicReference<>();
+          final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
 
           Parser result =
               parser
@@ -160,6 +163,7 @@ public abstract class OliveClauseNode {
                                               (p, o) -> p.whitespace().identifier(o).whitespace(),
                                               ',')
                                           .whitespace()))
+                  .dispatch(GROUP_WHERE, where::set)
                   .keyword(
                       "Into",
                       ip ->
@@ -170,7 +174,11 @@ public abstract class OliveClauseNode {
             if (name.get() == null) {
               output.accept(
                   new OliveClauseNodeGroup(
-                      parser.line(), parser.column(), collectors.get(), discriminators.get()));
+                      parser.line(),
+                      parser.column(),
+                      collectors.get(),
+                      discriminators.get(),
+                      where.get()));
             } else {
               output.accept(
                   new OliveClauseNodeGroupWithGrouper(
@@ -180,7 +188,8 @@ public abstract class OliveClauseNode {
                       inputs.get(),
                       outputs.get(),
                       collectors.get(),
-                      discriminators.get()));
+                      discriminators.get(),
+                      where.get()));
             }
           }
           return result;
@@ -192,6 +201,7 @@ public abstract class OliveClauseNode {
           final AtomicReference<String> format = new AtomicReference<>();
           final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
           final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
+          final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
           final Parser result =
               leftJoinParser
                   .whitespace()
@@ -203,6 +213,7 @@ public abstract class OliveClauseNode {
                   .whitespace()
                   .then(ExpressionNode::parse, innerKey::set)
                   .whitespace()
+                  .dispatch(GROUP_WHERE, where::set)
                   .list(groups::set, GroupNode::parse, ',')
                   .whitespace();
           if (result.isGood()) {
@@ -213,7 +224,8 @@ public abstract class OliveClauseNode {
                     format.get(),
                     outerKey.get(),
                     innerKey.get(),
-                    groups.get()));
+                    groups.get(),
+                    where.get()));
           }
           return result;
         });
@@ -361,6 +373,24 @@ public abstract class OliveClauseNode {
             return result;
           }
           return callParser;
+        });
+
+    GROUP_WHERE.addKeyword(
+        "Where",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> condition = new AtomicReference<>();
+          final Parser result =
+              p.whitespace().then(ExpressionNode::parse, condition::set).whitespace();
+          if (result.isGood()) {
+            o.accept(Optional.of(condition.get()));
+          }
+          return result;
+        });
+    GROUP_WHERE.addRaw(
+        "nothing",
+        (p, o) -> {
+          o.accept(Optional.empty());
+          return p.whitespace();
         });
   }
 
