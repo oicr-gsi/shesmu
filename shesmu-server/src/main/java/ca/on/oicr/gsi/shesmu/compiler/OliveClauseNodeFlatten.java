@@ -122,24 +122,27 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
     final Set<String> existingNames =
         incoming.stream().map(Target::name).collect(Collectors.toSet());
     boolean ok =
-        name.targets()
-                .filter(
-                    target -> {
-                      if (existingNames.contains(target.name())) {
-                        errorHandler.accept(
-                            String.format(
-                                "%d:%d: Variable “%s” already exists. Maybe use “Let” to reshape the data before “Flatten” or choose a different name.",
-                                line, column, target.name()));
-                        return true;
-                      }
-                      return false;
-                    })
-                .count()
-            == 0;
+        name.checkWildcard(errorHandler) != WildcardCheck.BAD
+            & name.targets()
+                    .filter(
+                        target -> {
+                          if (existingNames.contains(target.name())) {
+                            errorHandler.accept(
+                                String.format(
+                                    "%d:%d: Variable “%s” already exists. Maybe use “Let” to reshape the data before “Flatten” or choose a different name.",
+                                    line, column, target.name()));
+                            return true;
+                          }
+                          return false;
+                        })
+                    .count()
+                == 0;
     return defs.replaceStream(
-        Stream.concat(incoming.stream().map(Target::wrap), name.targets()),
-        expression.resolve(defs, errorHandler) & name.resolve(oliveCompilerServices, errorHandler)
-            && ok);
+            Stream.concat(incoming.stream().map(Target::wrap), name.targets()),
+            expression.resolve(defs, errorHandler)
+                    & name.resolve(oliveCompilerServices, errorHandler)
+                && ok)
+        .withProvider(name);
   }
 
   @Override

@@ -39,17 +39,22 @@ public class NameDefinitions {
 
   private final boolean isGood;
   private final Optional<NameDefinitions> shadowContext;
+  private final UndefinedVariableProvider undefinedVariableProvider;
   private final Map<String, Target> variables;
 
   public NameDefinitions(Map<String, Target> variables, boolean isGood) {
-    this(variables, isGood, Optional.empty());
+    this(variables, isGood, Optional.empty(), UndefinedVariableProvider.NONE);
   }
 
   private NameDefinitions(
-      Map<String, Target> variables, boolean isGood, Optional<NameDefinitions> shadowContext) {
+      Map<String, Target> variables,
+      boolean isGood,
+      Optional<NameDefinitions> shadowContext,
+      UndefinedVariableProvider undefinedVariableProvider) {
     this.variables = variables;
     this.isGood = isGood;
     this.shadowContext = shadowContext;
+    this.undefinedVariableProvider = undefinedVariableProvider;
   }
 
   /**
@@ -92,6 +97,11 @@ public class NameDefinitions {
         isGood);
   }
 
+  public NameDefinitions bind(DestructuredArgumentNode name) {
+    return bind(name.targets().collect(Collectors.toList()))
+        .withProvider(UndefinedVariableProvider.combine(name, undefinedVariableProvider));
+  }
+
   /** Create a new set of defined variables that is identical, but mark it as a failure. */
   public NameDefinitions fail(boolean ok) {
     return new NameDefinitions(variables, ok && isGood);
@@ -99,7 +109,11 @@ public class NameDefinitions {
 
   /** Get a variable from the collection. */
   public Optional<Target> get(String name) {
-    return Optional.ofNullable(variables.get(name));
+    Optional<Target> result = Optional.ofNullable(variables.get(name));
+    if (!result.isPresent()) {
+      result = undefinedVariableProvider.handleUndefinedVariable(name);
+    }
+    return result;
   }
 
   public boolean hasShadowName(String name) {
@@ -130,7 +144,17 @@ public class NameDefinitions {
     return variables.values().stream();
   }
 
+  public NameDefinitions withProvider(UndefinedVariableProvider undefinedVariableProvider) {
+    return new NameDefinitions(
+        variables,
+        isGood,
+        shadowContext,
+        UndefinedVariableProvider.combine(
+            undefinedVariableProvider, this.undefinedVariableProvider));
+  }
+
   public NameDefinitions withShadowContext(NameDefinitions shadowContext) {
-    return new NameDefinitions(variables, isGood, Optional.of(shadowContext));
+    return new NameDefinitions(
+        variables, isGood, Optional.of(shadowContext), undefinedVariableProvider);
   }
 }

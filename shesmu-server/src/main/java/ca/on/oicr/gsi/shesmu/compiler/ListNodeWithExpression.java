@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -44,7 +43,7 @@ public abstract class ListNodeWithExpression extends ListNode {
   protected abstract Pair<Renderer, LoadableConstructor> makeMethod(
       JavaStreamBuilder builder, LoadableConstructor name, LoadableValue[] loadables);
 
-  public abstract List<Target> nextName(List<Target> inputs);
+  public abstract DestructuredArgumentNode nextName(DestructuredArgumentNode inputs);
 
   @Override
   public abstract Ordering order(Ordering previous, Consumer<String> errorHandler);
@@ -75,11 +74,11 @@ public abstract class ListNodeWithExpression extends ListNode {
   private Set<String> definedNames;
   /** Resolve all variable plugins in this expression and its children. */
   @Override
-  public final Optional<List<Target>> resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public final Optional<DestructuredArgumentNode> resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     if (expression.resolve(defs.bind(name), errorHandler)) {
-      final List<Target> nextNames = nextName(name);
-      definedNames = nextNames.stream().map(Target::name).collect(Collectors.toSet());
+      final DestructuredArgumentNode nextNames = nextName(name);
+      definedNames = nextNames.targets().map(Target::name).collect(Collectors.toSet());
       return Optional.of(nextNames);
 
     } else {

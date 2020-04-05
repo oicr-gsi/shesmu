@@ -47,8 +47,8 @@ public class ListNodeSubsample extends ListNode {
   }
 
   @Override
-  public final Optional<List<Target>> resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public final Optional<DestructuredArgumentNode> resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok =
         samplers.stream().filter(sampler -> sampler.resolve(name, defs, errorHandler)).count()
             == samplers.size();

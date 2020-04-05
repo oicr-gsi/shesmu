@@ -19,7 +19,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /** The arguments defined in the “With” section of a “Run” olive. */
-public abstract class OliveArgumentNode {
+public abstract class OliveArgumentNode implements UndefinedVariableProvider {
   private interface ArgumentStorer {
 
     void store(Renderer renderer, int action, LoadableValue value);
@@ -76,6 +76,12 @@ public abstract class OliveArgumentNode {
     }
   }
 
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
+  private static final Method METHOD_OPTIONAL__GET =
+      new Method("get", Type.getType(Object.class), new Type[0]);
+  private static final Method METHOD_OPTIONAL__IS_PRESENT =
+      new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
+
   public static Parser parse(Parser input, Consumer<OliveArgumentNode> output) {
     final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
     final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
@@ -106,11 +112,6 @@ public abstract class OliveArgumentNode {
     return result;
   }
 
-  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
-  private static final Method METHOD_OPTIONAL__GET =
-      new Method("get", Type.getType(Object.class), new Type[0]);
-  private static final Method METHOD_OPTIONAL__IS_PRESENT =
-      new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
   protected final int column;
   private final Map<String, ArgumentStorer> definitions = new HashMap<>();
   protected final int line;
@@ -163,8 +164,17 @@ public abstract class OliveArgumentNode {
     return name.typeCheck(type(), errorHandler);
   }
 
+  public final WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    return name.checkWildcard(errorHandler);
+  }
+
   public abstract void collectFreeVariables(
       Set<String> freeVariables, Predicate<Flavour> predicate);
+
+  @Override
+  public Optional<Target> handleUndefinedVariable(String name) {
+    return this.name.handleUndefinedVariable(name);
+  }
 
   public abstract void collectPlugins(Set<Path> pluginFileNames);
 
@@ -176,15 +186,15 @@ public abstract class OliveArgumentNode {
   /** Resolve variables in the expression of this argument */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
+  public abstract boolean resolveExtraFunctions(
+      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
+
   /** Resolve functions in this argument */
   public final boolean resolveFunctions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return name.resolve(oliveCompilerServices, errorHandler)
         & resolveExtraFunctions(oliveCompilerServices, errorHandler);
   }
-
-  public abstract boolean resolveExtraFunctions(
-      OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
 
   protected void storeAll(Renderer renderer, int action, Consumer<Renderer> loadValue) {
     loadValue.accept(renderer);

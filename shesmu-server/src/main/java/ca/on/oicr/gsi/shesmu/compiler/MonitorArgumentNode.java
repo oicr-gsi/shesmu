@@ -92,7 +92,26 @@ public final class MonitorArgumentNode {
   /** Resolve functions in this argument */
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+    boolean ok;
+    switch (name.checkWildcard(errorHandler)) {
+      case NONE:
+        ok = true;
+        break;
+      case HAS_WILDCARD:
+        errorHandler.accept(
+            String.format(
+                "%d:%d: “Monitor” cannot use * in assignment. Please copy names explicitly.",
+                line, column));
+        ok = false;
+        break;
+      case BAD:
+        ok = false;
+        break;
+      default:
+        throw new UnsupportedOperationException("Unknown wildcard result in monitor.");
+    }
+    return ok
+        & expression.resolveDefinitions(expressionCompilerServices, errorHandler)
         & name.resolve(expressionCompilerServices, errorHandler);
   }
 

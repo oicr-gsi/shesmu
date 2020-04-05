@@ -5,7 +5,6 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Squish;
 import ca.on.oicr.gsi.shesmu.runtime.subsample.Subsampler;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -65,7 +64,8 @@ public class SampleNodeSquish extends SampleNode {
   }
 
   @Override
-  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public boolean resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }
 

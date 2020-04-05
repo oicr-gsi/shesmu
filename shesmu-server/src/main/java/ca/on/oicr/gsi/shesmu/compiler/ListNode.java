@@ -149,8 +149,8 @@ public abstract class ListNode {
   public abstract LoadableConstructor render(JavaStreamBuilder builder, LoadableConstructor name);
 
   /** Resolve all variable plugins in this expression and its children. */
-  public abstract Optional<List<Target>> resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler);
+  public abstract Optional<DestructuredArgumentNode> resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all functions plugins in this expression */
   public abstract boolean resolveDefinitions(

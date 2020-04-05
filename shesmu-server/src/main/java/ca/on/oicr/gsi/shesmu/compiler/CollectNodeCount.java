@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -30,7 +29,8 @@ public class CollectNodeCount extends CollectNode {
   }
 
   @Override
-  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public boolean resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return true;
   }
 

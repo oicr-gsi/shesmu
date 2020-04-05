@@ -660,6 +660,12 @@ Destructuring can also be nested:
 
     For {{x, _} = n} In [{n = {1, True}, l = "a"}, {n = {2, True}, l = "b"}]: Where x > 5 Count
 
+For objects, fields can be automatically inferred from the fields:
+
+    For * In [{n = 1, l = "a"}, {n = 2, l = "b"}]: Where n > 5 List l
+
+The `*` can be nested, but only one may be used in at a time.
+
 And it can be used in the `Reduce` accumulator:
 
     For x In [1, 2, 3]: Reduce ({a, b} = {0, False}) {a + x, b || x == 2}
@@ -681,6 +687,22 @@ It can also be used in `Let`, `Monitor`, `Run`, and `Alert` clauses in olives:
         input = path;
 
 It is currently disallowed in assignments in `Group` and `LeftJoin`.
+
+Note that the wildcard object destructuring, `*`, cannot be used in `Alert` or
+`Monitor`. If it is used in `Let` or `Require`, it will be lost after reshaping
+the data. It can be used in multiple contexts (_e.g._, `For * In x: Reduce (* =
+{foo = 0}) func(foo, bar)`), but this is strongly discouraged as Shesmu will
+assign all variables it has not seen to the closest `*` (_i.e._, `foo` *and*
+`bar` are assumed to come from the `Reduce` argument). This can be especially
+fraught given the order of evaluation matters:
+
+    For * In x: Reduce (* = {foo = 0}) func(foo, bar) # foo and bar come from the second *
+    For * In x: Where bar > 3 Reduce (* = {foo = 0}) func(foo, bar) # foo comes from the second *, bar from the *
+
+    Let * = x Where y == 4 || (For * In a: All aa && y == 3) # y will come from Let *, aa from For *
+    Let * = x Where (For * In a: All aa && y == 3)  || y == 4 # aa and first y will come from For *, second from Let *
+
+Since this is very confusing, as a general rule: one star a time.
 
 ## Variables Gangs
 When grouping, it can be useful for have predefined sets of variables to use in

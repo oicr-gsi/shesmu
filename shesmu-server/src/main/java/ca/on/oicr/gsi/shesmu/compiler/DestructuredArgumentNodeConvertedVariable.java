@@ -171,6 +171,11 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   }
 
   @Override
+  public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    return WildcardCheck.NONE;
+  }
+
+  @Override
   public Stream<LoadableValue> render(Consumer<Renderer> loader) {
     if (convertedType.isSame(Imyhat.JSON)) {
       return Stream.of(new JsonConvertedValue(loader));

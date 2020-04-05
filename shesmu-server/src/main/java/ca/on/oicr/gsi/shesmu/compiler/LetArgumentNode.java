@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public abstract class LetArgumentNode {
+public abstract class LetArgumentNode implements UndefinedVariableProvider {
   public static Parser parse(Parser input, Consumer<LetArgumentNode> output) {
     final Parser gangParser = input.whitespace().symbol("@");
     if (gangParser.isGood()) {
@@ -72,6 +72,8 @@ public abstract class LetArgumentNode {
   private static final Pattern UNWRAP = Pattern.compile("(OnlyIf|Univalued|)");
 
   public abstract boolean blankCheck(Consumer<String> errorHandler);
+
+  public abstract WildcardCheck checkWildcard(Consumer<String> errorHandler);
 
   public abstract void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate);
 

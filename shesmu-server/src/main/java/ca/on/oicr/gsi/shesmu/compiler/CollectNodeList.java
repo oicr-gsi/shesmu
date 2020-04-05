@@ -57,9 +57,11 @@ public class CollectNodeList extends CollectNode {
   }
 
   @Override
-  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
-    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
-    return expression.resolve(defs.bind(name), errorHandler);
+  public boolean resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
+    final boolean ok = expression.resolve(defs.bind(name), errorHandler);
+    definedNames = name.targets().map(Target::name).collect(Collectors.toList());
+    return ok;
   }
 
   @Override

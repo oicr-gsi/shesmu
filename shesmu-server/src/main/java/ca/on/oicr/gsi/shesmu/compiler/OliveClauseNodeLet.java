@@ -129,7 +129,20 @@ public class OliveClauseNodeLet extends OliveClauseNode {
     for (final LetArgumentNode arg : arguments) {
       good &= arg.blankCheck(errorHandler);
     }
-    return defs.replaceStream(arguments.stream().flatMap(LetArgumentNode::targets), good);
+    if (arguments
+            .stream()
+            .map(a -> a.checkWildcard(errorHandler))
+            .reduce(WildcardCheck.NONE, WildcardCheck::combine)
+        == WildcardCheck.BAD) {
+      errorHandler.accept(
+          String.format("%d:%d: Only one wildcard allowed in “Let” clause", line, column));
+    }
+    return defs.replaceStream(arguments.stream().flatMap(LetArgumentNode::targets), good)
+        .withProvider(
+            arguments
+                .stream()
+                .map(x -> (UndefinedVariableProvider) x)
+                .reduce(UndefinedVariableProvider.NONE, UndefinedVariableProvider::combine));
   }
 
   @Override

@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -48,8 +47,8 @@ public abstract class ListNodeBaseRange extends ListNode {
   protected abstract void render(JavaStreamBuilder builder, Consumer<Renderer> expression);
 
   @Override
-  public final Optional<List<Target>> resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public final Optional<DestructuredArgumentNode> resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler) ? Optional.of(name) : Optional.empty();
   }
 
