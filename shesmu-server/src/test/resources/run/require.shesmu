@@ -1,0 +1,10 @@
+Input test;
+
+Olive
+ Description "something, something"
+ Tag foo
+ Tag bar
+ Require x = If path == '/foo1' Then `"hi"` Else `` {
+   Dump workflow To somefile
+ }
+ Run ok With ok = x == "hi";

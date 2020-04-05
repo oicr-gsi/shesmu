@@ -281,6 +281,40 @@ public abstract class OliveClauseNode {
           return result;
         });
     CLAUSES.addKeyword(
+        "Require",
+        (rejectParser, output) -> {
+          final AtomicReference<List<RejectNode>> handlers = new AtomicReference<>();
+          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+          final Parser result =
+              rejectParser
+                  .whitespace()
+                  .then(DestructuredArgumentNode::parse, name::set)
+                  .whitespace()
+                  .symbol("=")
+                  .whitespace()
+                  .then(ExpressionNode::parse, expression::set)
+                  .whitespace()
+                  .symbol("{")
+                  .whitespace()
+                  .listEmpty(
+                      handlers::set, (rp, ro) -> rp.whitespace().dispatch(REJECT_CLAUSES, ro), ',')
+                  .whitespace()
+                  .symbol("}")
+                  .whitespace();
+
+          if (result.isGood()) {
+            output.accept(
+                new OliveClauseNodeRequire(
+                    rejectParser.line(),
+                    rejectParser.column(),
+                    name.get(),
+                    expression.get(),
+                    handlers.get()));
+          }
+          return result;
+        });
+    CLAUSES.addKeyword(
         "Join",
         (joinParser, output) -> {
           final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();

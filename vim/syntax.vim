@@ -66,6 +66,7 @@ syn keyword shesmuKeyword Pick
 syn keyword shesmuKeyword Reduce
 syn keyword shesmuKeyword Refill
 syn keyword shesmuKeyword Reject
+syn keyword shesmuKeyword Require
 syn keyword shesmuKeyword Return
 syn keyword shesmuKeyword Reverse
 syn keyword shesmuKeyword RequiredServices

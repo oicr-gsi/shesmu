@@ -8,8 +8,13 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
 public class OliveClauseNodeFlatten extends OliveClauseNode {
+  private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Method METHOD_SET__STREAM =
+      new Method("stream", Type.getType(Stream.class), new Type[] {});
   private final int column;
   private final ExpressionNode expression;
   private List<Target> incoming;
@@ -99,6 +104,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
 
     flattenBuilder.explodeMethod().methodGen().visitCode();
     expression.render(flattenBuilder.explodeMethod());
+    flattenBuilder.explodeMethod().methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
     flattenBuilder.explodeMethod().methodGen().returnValue();
     flattenBuilder.explodeMethod().methodGen().endMethod();
 

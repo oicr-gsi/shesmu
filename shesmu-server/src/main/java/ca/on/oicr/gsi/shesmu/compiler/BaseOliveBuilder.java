@@ -252,13 +252,7 @@ public abstract class BaseOliveBuilder {
         new LambdaBuilder(
             owner,
             String.format("Flatten %d:%d 🧨", line, column),
-            LambdaBuilder.function(A_SET_TYPE, oldType),
-            capturedVariables);
-    final LambdaBuilder constructorLambda =
-        new LambdaBuilder(
-            owner,
-            String.format("Join %d:%d ✨", line, column),
-            LambdaBuilder.function(newType, unrollType),
+            LambdaBuilder.function(A_STREAM_TYPE, oldType),
             capturedVariables);
 
     steps.add(

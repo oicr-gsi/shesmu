@@ -111,7 +111,7 @@ finite duration, after which it will expire unless refreshed. _timeexpr_
 defines the number of seconds an alert should fire for. Every time the olive is
 re-run the alert will be refreshed.
 
-This may be used in `Reject` clauses.
+This may be used in `Reject` and `Require` clauses.
 
 - `Refill` _refiller_ `With` `With` _param1_ `=` _expr1_[`,` _param2_ `=` _expr2_[`,` ...]]`;`
 
@@ -128,7 +128,7 @@ An olive can have many clauses that filter and reshape the data.
 Exports data to a dumper for debugging analysis. The expressions can be of any
 time. If `All` is used, all variables are dumped in alphabetical order.
 
-This may be used in `Reject` clauses. This does not reshape the data.
+This may be used in `Reject` and `Require` clauses. This does not reshape the data.
 
  - `Flatten` _name_ `In` _expr_
 
@@ -209,7 +209,7 @@ and `shesmu_user_`_metric_ will be the Prometheus variable name. This variable
 will have _help_ associated with it as the help text and the names define the
 keys used. The expressions must return strings.
 
-This may be used in `Reject` clauses. This does not reshape the data.
+This may be used in `Reject` and `Require` clauses. This does not reshape the data.
 
  - `Pick` `Max` _expr_ `By` _expr1_[`,` _expr2_[`,` ...]]
  - `Pick` `Min` _expr_ `By` _expr1_[`,` _expr2_[`,` ...]]
@@ -221,12 +221,21 @@ This does not reshape the data.
 
 - `Reject` _cond_ `{` _reject1_[`,` _reject2_[`,` ...]] `}`
 
-Filter rows from the input. If _expr_ is false, the row will be kept; if true,
+Filter rows from the input. If _cond_ is false, the row will be kept; if true,
 it will be discarded. This is the opposite of `Where`. Rows which are rejected
 are passed to the rejection handlers. These are `Monitor` or `Dump` clauses or
 an `Alert` terminal.
 
 This does not reshape the data.
+
+- `Require` _name_ `=` _expr_ `{` _reject1_[`,` _reject2_[`,` ...]] `}`
+
+Evaluate _expr_, which must return an optional. If the result is empty, the row
+will be discarded; if the optional has a value, this value will be assigned to
+_name_. The name can use destructuring. Discarded rows are given to the reject
+clauses which are `Monitor` or `Dump` clauses or an `Alert` terminal.
+
+This reshapes the data.
 
 - `Where` _expr_
 
