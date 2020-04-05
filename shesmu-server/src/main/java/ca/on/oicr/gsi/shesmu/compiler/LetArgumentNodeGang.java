@@ -33,6 +33,11 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
   }
 
   @Override
+  public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    return WildcardCheck.NONE;
+  }
+
+  @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
     for (final Pair<Target, Target> target : targets) {
       if (predicate.test(target.first().flavour())) {
@@ -44,6 +49,11 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     // Do nothing
+  }
+
+  @Override
+  public Optional<Target> handleUndefinedVariable(String name) {
+    return Optional.empty();
   }
 
   @Override

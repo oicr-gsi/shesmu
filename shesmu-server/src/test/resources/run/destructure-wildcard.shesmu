@@ -1,0 +1,4 @@
+Input test;
+
+Olive
+ Run ok With ok = (For * In [ { a = True, b = 1}, { a = False, b = 2} ]: Where b == 1 First a Default False);

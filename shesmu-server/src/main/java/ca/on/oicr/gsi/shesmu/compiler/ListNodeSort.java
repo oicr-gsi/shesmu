@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -23,7 +22,7 @@ public class ListNodeSort extends ListNodeWithExpression {
   }
 
   @Override
-  public List<Target> nextName(List<Target> inputs) {
+  public DestructuredArgumentNode nextName(DestructuredArgumentNode inputs) {
     return inputs;
   }
 

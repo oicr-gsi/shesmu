@@ -60,9 +60,10 @@ public final class CollectNodeMatches extends CollectNode {
 
   @Override
   public final boolean resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
-    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
-    return selector.resolve(defs.bind(name), errorHandler);
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
+    final boolean ok = selector.resolve(defs.bind(name), errorHandler);
+    definedNames = name.targets().map(Target::name).collect(Collectors.toList());
+    return ok;
   }
 
   @Override

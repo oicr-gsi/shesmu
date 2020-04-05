@@ -174,75 +174,97 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    return defs.isGood()
-        & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
-            == arguments.size()
-        & variableTags.stream().filter(tag -> tag.resolve(defs, errorHandler)).count()
-            == variableTags.size();
+    boolean ok =
+        defs.isGood()
+            & arguments.stream().filter(argument -> argument.resolve(defs, errorHandler)).count()
+                == arguments.size()
+            & variableTags.stream().filter(tag -> tag.resolve(defs, errorHandler)).count()
+                == variableTags.size();
+
+    final Map<String, Long> argumentNames =
+        arguments
+            .stream()
+            .flatMap(OliveArgumentNode::targets)
+            .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
+    for (final Map.Entry<String, Long> entry : argumentNames.entrySet()) {
+      if (entry.getValue() > 1) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Duplicate argument “%s” to action.", line, column, entry.getKey()));
+        ok = false;
+      }
+    }
+
+    final Set<String> definedArgumentNames =
+        definition.parameters().map(ActionParameterDefinition::name).collect(Collectors.toSet());
+    final Set<String> requiredArgumentNames =
+        definition
+            .parameters()
+            .filter(ActionParameterDefinition::required)
+            .map(ActionParameterDefinition::name)
+            .collect(Collectors.toSet());
+    if (!definedArgumentNames.containsAll(argumentNames.keySet())) {
+      ok = false;
+      final Set<String> badTerms = new HashSet<>(argumentNames.keySet());
+      badTerms.removeAll(definedArgumentNames);
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Extra arguments for action %s: %s",
+              line, column, actionName, String.join(", ", badTerms)));
+    }
+    switch (arguments
+        .stream()
+        .map(argument -> argument.checkWildcard(errorHandler))
+        .reduce(WildcardCheck.NONE, WildcardCheck::combine)) {
+      case NONE:
+        if (!argumentNames.keySet().containsAll(requiredArgumentNames)) {
+          ok = false;
+          final Set<String> badTerms = new HashSet<>(requiredArgumentNames);
+          badTerms.removeAll(argumentNames.keySet());
+          errorHandler.accept(
+              String.format(
+                  "%d:%d: Missing arguments for action %s: %s",
+                  line, column, actionName, String.join(", ", badTerms)));
+        }
+        break;
+      case HAS_WILDCARD:
+        final UndefinedVariableProvider provider =
+            arguments
+                .stream()
+                .map(x -> (UndefinedVariableProvider) x)
+                .reduce(UndefinedVariableProvider.NONE, UndefinedVariableProvider::combine);
+        for (final String requiredName : requiredArgumentNames) {
+          if (!definedArgumentNames.contains(requiredName)) {
+            provider.handleUndefinedVariable(requiredName);
+          }
+        }
+        break;
+      case BAD:
+        ok = false;
+        break;
+    }
+    return ok;
   }
 
   @Override
   protected boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
-    boolean ok =
-        arguments
+    definition = oliveCompilerServices.action(actionName);
+    if (definition == null) {
+      errorHandler.accept(
+          String.format("%d:%d: Unknown action for “%s”.", line, column, actionName));
+    }
+    return definition != null
+        & arguments
                 .stream()
                 .filter(arg -> arg.resolveFunctions(oliveCompilerServices, errorHandler))
                 .count()
-            == arguments.size();
-
-    final Set<String> argumentNames =
-        arguments
-            .stream()
-            .flatMap(OliveArgumentNode::targets)
-            .map(Target::name)
-            .collect(Collectors.toSet());
-    if (argumentNames.size() != arguments.size()) {
-      errorHandler.accept(String.format("%d:%d: Duplicate arguments to action.", line, column));
-      ok = false;
-    }
-
-    ok &=
-        variableTags
+            == arguments.size()
+        & variableTags
                 .stream()
                 .filter(tag -> tag.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == variableTags.size();
-    definition = oliveCompilerServices.action(actionName);
-    if (definition != null) {
-
-      final Set<String> definedArgumentNames =
-          definition.parameters().map(ActionParameterDefinition::name).collect(Collectors.toSet());
-      final Set<String> requiredArgumentNames =
-          definition
-              .parameters()
-              .filter(ActionParameterDefinition::required)
-              .map(ActionParameterDefinition::name)
-              .collect(Collectors.toSet());
-      if (!definedArgumentNames.containsAll(argumentNames)) {
-        ok = false;
-        final Set<String> badTerms = new HashSet<>(argumentNames);
-        badTerms.removeAll(definedArgumentNames);
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Extra arguments for action %s: %s",
-                line, column, actionName, String.join(", ", badTerms)));
-      }
-      if (!argumentNames.containsAll(requiredArgumentNames)) {
-        ok = false;
-        final Set<String> badTerms = new HashSet<>(requiredArgumentNames);
-        badTerms.removeAll(argumentNames);
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Missing arguments for action %s: %s",
-                line, column, actionName, String.join(", ", badTerms)));
-      }
-    } else {
-      errorHandler.accept(
-          String.format("%d:%d: Unknown action for “%s”.", line, column, actionName));
-      ok = false;
-    }
-    return ok;
   }
 
   @Override

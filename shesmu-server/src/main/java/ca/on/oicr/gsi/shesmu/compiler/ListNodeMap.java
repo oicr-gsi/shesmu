@@ -2,10 +2,8 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class ListNodeMap extends ListNodeWithExpression {
 
@@ -31,8 +29,8 @@ public class ListNodeMap extends ListNodeWithExpression {
   }
 
   @Override
-  public List<Target> nextName(List<Target> inputs) {
-    return nextName.targets().collect(Collectors.toList());
+  public DestructuredArgumentNode nextName(DestructuredArgumentNode inputs) {
+    return nextName;
   }
 
   @Override

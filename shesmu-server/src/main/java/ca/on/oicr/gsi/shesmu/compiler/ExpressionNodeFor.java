@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class ExpressionNodeFor extends ExpressionNode {
 
@@ -67,11 +66,11 @@ public class ExpressionNodeFor extends ExpressionNode {
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     boolean ok = source.resolve(defs, errorHandler);
 
-    final Optional<List<Target>> nextName =
+    final Optional<DestructuredArgumentNode> nextName =
         transforms
             .stream()
             .reduce(
-                Optional.of(name.targets().collect(Collectors.toList())),
+                Optional.of(name),
                 (n, t) -> n.flatMap(name -> t.resolve(name, defs, errorHandler)),
                 (a, b) -> {
                   throw new UnsupportedOperationException();
@@ -91,7 +90,8 @@ public class ExpressionNodeFor extends ExpressionNode {
                 .filter(t -> t.resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()
             == transforms.size()
-        & name.resolve(expressionCompilerServices, errorHandler);
+        & name.resolve(expressionCompilerServices, errorHandler)
+        & name.checkWildcard(errorHandler) != WildcardCheck.BAD;
   }
 
   @Override

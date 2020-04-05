@@ -178,7 +178,69 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
+    boolean ok = true;
+    final Map<String, Long> argumentNames =
+        arguments
+            .stream()
+            .flatMap(p -> p.first().targets())
+            .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
+    for (final Map.Entry<String, Long> argumentName : argumentNames.entrySet()) {
+      if (argumentName.getValue() > 1) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Duplicate argument %s to refill %s.",
+                line, column, argumentName.getKey(), refillerName));
+        ok = false;
+      }
+    }
+
+    final Set<String> definedArgumentNames =
+        definition.parameters().map(RefillerParameterDefinition::name).collect(Collectors.toSet());
+    final Set<String> requiredArgumentNames =
+        definition.parameters().map(RefillerParameterDefinition::name).collect(Collectors.toSet());
+    if (!definedArgumentNames.containsAll(argumentNames.keySet())) {
+      ok = false;
+      final Set<String> badTerms = new HashSet<>(argumentNames.keySet());
+      badTerms.removeAll(definedArgumentNames);
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Extra arguments for refill %s: %s",
+              line, column, refillerName, String.join(", ", badTerms)));
+    }
+    switch (arguments
+        .stream()
+        .map(p -> p.first().checkWildcard(errorHandler))
+        .reduce(WildcardCheck.NONE, WildcardCheck::combine)) {
+      case NONE:
+        if (!argumentNames.keySet().containsAll(requiredArgumentNames)) {
+          ok = false;
+          final Set<String> badTerms = new HashSet<>(requiredArgumentNames);
+          badTerms.removeAll(argumentNames.keySet());
+          errorHandler.accept(
+              String.format(
+                  "%d:%d: Missing arguments for refill %s: %s",
+                  line, column, refillerName, String.join(", ", badTerms)));
+        }
+        break;
+      case HAS_WILDCARD:
+        final UndefinedVariableProvider provider =
+            arguments
+                .stream()
+                .map(p -> (UndefinedVariableProvider) p.first())
+                .reduce(UndefinedVariableProvider.NONE, UndefinedVariableProvider::combine);
+        for (final String requiredName : requiredArgumentNames) {
+          if (!definedArgumentNames.contains(requiredName)) {
+            provider.handleUndefinedVariable(requiredName);
+          }
+        }
+        break;
+      case BAD:
+        ok = false;
+      default:
+        throw new UnsupportedOperationException("Unknown wildcard result in refill.");
+    }
     return defs.isGood()
+        & ok
         & arguments
                 .stream()
                 .filter(argument -> argument.second().resolve(defs, errorHandler))
@@ -195,57 +257,13 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
                 .filter(
                     arg ->
                         arg.first().resolve(oliveCompilerServices, errorHandler)
+                            & arg.first().checkWildcard(errorHandler) != WildcardCheck.BAD
                             & arg.second().resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == arguments.size();
 
-    final Map<String, Long> argumentNames =
-        arguments
-            .stream()
-            .flatMap(p -> p.first().targets())
-            .collect(Collectors.groupingBy(Target::name, Collectors.counting()));
-    for (final Map.Entry<String, Long> argumentName : argumentNames.entrySet()) {
-      if (argumentName.getValue() > 1) {
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Duplicate argument %s to refill %s.",
-                line, column, argumentName.getKey(), refillerName));
-        ok = false;
-      }
-    }
-
     definition = oliveCompilerServices.refiller(refillerName);
-    if (definition != null) {
-
-      final Set<String> definedArgumentNames =
-          definition
-              .parameters()
-              .map(RefillerParameterDefinition::name)
-              .collect(Collectors.toSet());
-      final Set<String> requiredArgumentNames =
-          definition
-              .parameters()
-              .map(RefillerParameterDefinition::name)
-              .collect(Collectors.toSet());
-      if (!definedArgumentNames.containsAll(argumentNames.keySet())) {
-        ok = false;
-        final Set<String> badTerms = new HashSet<>(argumentNames.keySet());
-        badTerms.removeAll(definedArgumentNames);
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Extra arguments for refill %s: %s",
-                line, column, refillerName, String.join(", ", badTerms)));
-      }
-      if (!argumentNames.keySet().containsAll(requiredArgumentNames)) {
-        ok = false;
-        final Set<String> badTerms = new HashSet<>(requiredArgumentNames);
-        badTerms.removeAll(argumentNames.keySet());
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Missing arguments for refill %s: %s",
-                line, column, refillerName, String.join(", ", badTerms)));
-      }
-    } else {
+    if (definition == null) {
       errorHandler.accept(
           String.format("%d:%d: Unknown refiller for “%s”.", line, column, refillerName));
       ok = false;

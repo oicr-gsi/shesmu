@@ -1,0 +1,12 @@
+Input test;
+
+
+Define standard_fastq(string s)
+  Where workflow == {"BamQC 2.7+", 3 }[0];
+
+Olive
+  standard_fastq("a")
+  Group By accession Into files = List "{path}"
+  Run fastqc With
+    * = {memory = 4Gi},
+    input = files;

@@ -68,10 +68,13 @@ public class CollectNodeDictionary extends CollectNode {
   }
 
   @Override
-  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
-    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
+  public boolean resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final NameDefinitions innerDefs = defs.bind(name);
-    return key.resolve(innerDefs, errorHandler) & value.resolve(innerDefs, errorHandler);
+    final boolean ok =
+        key.resolve(innerDefs, errorHandler) & value.resolve(innerDefs, errorHandler);
+    definedNames = name.targets().map(Target::name).collect(Collectors.toList());
+    return ok;
   }
 
   @Override

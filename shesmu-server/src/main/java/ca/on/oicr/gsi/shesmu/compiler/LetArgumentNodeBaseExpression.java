@@ -4,6 +4,7 @@ import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -32,6 +33,11 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   }
 
   @Override
+  public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    return name.checkWildcard(errorHandler);
+  }
+
+  @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
     expression.collectFreeVariables(names, predicate);
   }
@@ -39,6 +45,11 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   @Override
   public final void collectPlugins(Set<Path> pluginFileNames) {
     expression.collectPlugins(pluginFileNames);
+  }
+
+  @Override
+  public Optional<Target> handleUndefinedVariable(String name) {
+    return this.name.handleUndefinedVariable(name);
   }
 
   protected abstract Consumer<Renderer> render(
@@ -60,7 +71,26 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   @Override
   public final boolean resolveFunctions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+    boolean ok;
+    switch (name.checkWildcard(errorHandler)) {
+      case NONE:
+        ok = true;
+        break;
+      case HAS_WILDCARD:
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Let argument has wildcard, but this is not allowed.",
+                expression.line(), expression.column()));
+        ok = false;
+        break;
+      case BAD:
+        ok = false;
+        break;
+      default:
+        throw new IllegalStateException("Unknown wildcard result.");
+    }
+    return ok
+        & expression.resolveDefinitions(expressionCompilerServices, errorHandler)
         & name.resolve(expressionCompilerServices, errorHandler);
   }
 

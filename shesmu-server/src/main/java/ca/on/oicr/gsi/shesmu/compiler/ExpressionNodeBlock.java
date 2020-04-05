@@ -76,7 +76,10 @@ public class ExpressionNodeBlock extends ExpressionNode {
       if (!definition.second().resolve(current, errorHandler)) {
         return false;
       }
-      current = current.bind(definition.first().targets().collect(Collectors.toList()));
+      current =
+          current
+              .bind(definition.first().targets().collect(Collectors.toList()))
+              .withProvider(definition.first());
     }
     return result.resolve(current, errorHandler);
   }
@@ -89,6 +92,7 @@ public class ExpressionNodeBlock extends ExpressionNode {
                 .filter(
                     d ->
                         !d.first().resolve(expressionCompilerServices, errorHandler)
+                            | d.first().checkWildcard(errorHandler) == WildcardCheck.BAD
                             | !d.second()
                                 .resolveDefinitions(expressionCompilerServices, errorHandler))
                 .count()

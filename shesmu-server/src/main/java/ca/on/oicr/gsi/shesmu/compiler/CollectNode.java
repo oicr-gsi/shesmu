@@ -7,7 +7,6 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -190,7 +189,7 @@ public abstract class CollectNode {
 
   /** Resolve all variable plugins in this expression and its children. */
   public abstract boolean resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler);
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler);
 
   /** Resolve all functions plugins in this expression */
   public abstract boolean resolveDefinitions(

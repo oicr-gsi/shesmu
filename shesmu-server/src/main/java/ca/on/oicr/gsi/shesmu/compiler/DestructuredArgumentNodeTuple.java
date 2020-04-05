@@ -33,6 +33,20 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   }
 
   @Override
+  public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    final WildcardCheck result =
+        elements
+            .stream()
+            .map(element -> element.checkWildcard(errorHandler))
+            .reduce(WildcardCheck.NONE, WildcardCheck::combine);
+    if (result == WildcardCheck.BAD) {
+      errorHandler.accept(
+          String.format("%d:%d: Multiple wildcards are not allowed in tuple.", line, column));
+    }
+    return result;
+  }
+
+  @Override
   public Stream<LoadableValue> render(Consumer<Renderer> loader) {
     return IntStream.range(0, elements.size())
         .boxed()

@@ -34,6 +34,11 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
   }
 
   @Override
+  public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    return WildcardCheck.NONE;
+  }
+
+  @Override
   public boolean isBlank() {
     return false;
   }

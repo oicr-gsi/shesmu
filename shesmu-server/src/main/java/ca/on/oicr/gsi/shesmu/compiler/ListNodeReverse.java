@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -42,8 +41,8 @@ public class ListNodeReverse extends ListNode {
   }
 
   @Override
-  public Optional<List<Target>> resolve(
-      List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
+  public Optional<DestructuredArgumentNode> resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return Optional.of(name);
   }
 

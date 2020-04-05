@@ -65,7 +65,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
     expression.collectFreeVariables(inputs, Flavour::isStream);
     return Stream.of(
         new OliveClauseRow(
-            "Required",
+            "Require",
             line,
             column,
             true,
@@ -184,16 +184,17 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
     }
     incoming = defs.stream().filter(t -> t.flavour().isStream()).collect(Collectors.toList());
     return defs.replaceStream(
-        Stream.concat(name.targets(), defs.stream().filter(t -> t.flavour().isStream())),
-        duplicates.isEmpty()
-            & expression.resolve(defs, errorHandler)
-            & handlers
-                    .stream()
-                    .filter(
-                        handler ->
-                            handler.resolve(oliveCompilerServices, defs, errorHandler).isGood())
-                    .count()
-                == handlers.size());
+            Stream.concat(name.targets(), defs.stream().filter(t -> t.flavour().isStream())),
+            duplicates.isEmpty()
+                & expression.resolve(defs, errorHandler)
+                & handlers
+                        .stream()
+                        .filter(
+                            handler ->
+                                handler.resolve(oliveCompilerServices, defs, errorHandler).isGood())
+                        .count()
+                    == handlers.size())
+        .withProvider(name);
   }
 
   @Override
@@ -204,7 +205,8 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
                 .stream()
                 .filter(handler -> handler.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
-            == handlers.size();
+            == handlers.size()
+        & name.checkWildcard(errorHandler) != WildcardCheck.BAD;
   }
 
   private Imyhat type = Imyhat.BAD;

@@ -314,6 +314,22 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
           String.format("%d:%d: Alert needs to have an “alertname” label.", line, column));
       return false;
     }
+    switch (Stream.concat(labels.stream(), annotations.stream())
+        .map(l -> l.checkWildcard(errorHandler))
+        .reduce(WildcardCheck.NONE, WildcardCheck::combine)) {
+      case NONE:
+        break;
+      case HAS_WILDCARD:
+        errorHandler.accept(
+            String.format(
+                "%d:%d: “Alert” cannot use * in assignment. Please copy names explicitly.",
+                line, column));
+        ok = false;
+        break;
+      case BAD:
+        ok = false;
+        break;
+    }
     return ok;
   }
 

@@ -78,12 +78,16 @@ public class CollectNodeReduce extends CollectNode {
   }
 
   @Override
-  public boolean resolve(List<Target> name, NameDefinitions defs, Consumer<String> errorHandler) {
-    definedNames = name.stream().map(Target::name).collect(Collectors.toList());
-    return initial.resolve(defs, errorHandler)
-        & reducer.resolve(
-            defs.bind(name).bind(accumulatorName.targets().collect(Collectors.toList())),
-            errorHandler);
+  public boolean resolve(
+      DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
+    final boolean ok =
+        initial.resolve(defs, errorHandler)
+            & reducer.resolve(defs.bind(name).bind(accumulatorName), errorHandler);
+    definedNames =
+        Stream.concat(name.targets(), accumulatorName.targets())
+            .map(Target::name)
+            .collect(Collectors.toList());
+    return ok;
   }
 
   @Override
@@ -91,7 +95,8 @@ public class CollectNodeReduce extends CollectNode {
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return initial.resolveDefinitions(expressionCompilerServices, errorHandler)
         & reducer.resolveDefinitions(expressionCompilerServices, errorHandler)
-        & accumulatorName.resolve(expressionCompilerServices, errorHandler);
+        & accumulatorName.resolve(expressionCompilerServices, errorHandler)
+        & accumulatorName.checkWildcard(errorHandler) != WildcardCheck.BAD;
   }
 
   @Override

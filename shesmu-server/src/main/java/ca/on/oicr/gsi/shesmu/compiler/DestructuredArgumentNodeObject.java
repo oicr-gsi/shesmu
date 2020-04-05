@@ -32,6 +32,20 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
+  public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
+    final WildcardCheck result =
+        fields
+            .stream()
+            .map(p -> p.second().checkWildcard(errorHandler))
+            .reduce(WildcardCheck.NONE, WildcardCheck::combine);
+    if (result == WildcardCheck.BAD) {
+      errorHandler.accept(
+          String.format("%d:%d: Multiple wildcards are not allowed in object.", line, column));
+    }
+    return result;
+  }
+
+  @Override
   public boolean isBlank() {
     return fields.stream().allMatch(f -> f.second().isBlank());
   }
