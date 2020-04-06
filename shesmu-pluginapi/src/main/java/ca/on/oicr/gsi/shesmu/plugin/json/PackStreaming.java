@@ -103,7 +103,7 @@ public class PackStreaming implements ImyhatConsumer {
         generator.writeStartObject();
         for (final Map.Entry<?, ?> entry : map.entrySet()) {
           generator.writeFieldName((String) entry.getKey());
-          value.accept(this, value);
+          value.accept(this, entry.getValue());
         }
         generator.writeEndObject();
 
