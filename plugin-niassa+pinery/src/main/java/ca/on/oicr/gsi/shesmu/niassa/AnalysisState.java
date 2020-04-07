@@ -130,9 +130,8 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .stream()
             .flatMap(
                 s ->
-                    s.getWorkflowRunAttributes()
-                        .entrySet()
-                        .stream()
+                    Stream.of(s.getWorkflowRunAttributes(), s.getWorkflowAttributes())
+                        .flatMap(m -> m.entrySet().stream())
                         .filter(e -> !e.getKey().equals(WorkflowAction.MAJOR_OLIVE_VERSION))
                         .flatMap(e -> e.getValue().stream().map(v -> new Pair<>(e.getKey(), v))))
             .collect(
