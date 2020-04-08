@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Gauge;
 import io.seqware.Engines;
+import io.seqware.common.model.WorkflowRunStatus;
 import io.seqware.pipeline.SqwKeys;
 import io.seqware.pipeline.api.Scheduler;
 import java.io.File;
@@ -137,7 +138,8 @@ public final class WorkflowAction extends Action {
                         "🚧 Skip All Partially Matched Workflow Runs", "NIASSA-SKIP-CANDIDATES")))
             : Stream.of(
                 new Pair<>("💔 Reset Workflow Run Connection", "NIASSA-RESET-WFR"),
-                new Pair<>("🚧 Skip and Re-run", "NIASSA-SKIP-RERUN")));
+                new Pair<>("🚧 Skip and Re-run", "NIASSA-SKIP-RERUN"),
+                new Pair<>("🚧 Retry", "NIASSA-RETRY")));
   }
 
   @Override
@@ -489,6 +491,24 @@ public final class WorkflowAction extends Action {
           lastState = ActionState.UNKNOWN;
           workflowAccessions().forEach(server.get().analysisCache()::invalidate);
           return true;
+        }
+      case "NIASSA-RETRY":
+        if (runAccession == 0) {
+          return false;
+        } else {
+          try {
+            final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+            if (run.getStatus() == WorkflowRunStatus.failed
+                || run.getStatus() == WorkflowRunStatus.cancelled) {
+              run.setStatus(WorkflowRunStatus.submitted_retry);
+              server.get().metadata().updateWorkflowRun(run);
+              lastState = ActionState.UNKNOWN;
+              return true;
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+          return false;
         }
     }
     return false;
