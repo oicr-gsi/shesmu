@@ -67,7 +67,7 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
   private GangDefinition definition;
   private final String gangName;
   private final int line;
-  private List<GroupElement> outputTargets;
+  private List<GroupElement> outputTargets = Collections.emptyList();
 
   public DiscriminatorNodeGang(int line, int column, String gangName) {
     this.line = line;
