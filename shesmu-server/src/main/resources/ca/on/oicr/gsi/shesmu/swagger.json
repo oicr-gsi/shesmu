@@ -673,11 +673,11 @@
           "file": {
             "type": "string"
           },
-          "line": {
-            "type": "integer"
-          },
           "hash": {
             "type": "string"
+          },
+          "line": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -1312,6 +1312,97 @@
           }
         },
         "summary": "Extract ASCII-encoded filters from text",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
+    "/pausefile": {
+      "post": {
+        "description": "",
+        "operationId": "pauseOlive",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "pause": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Stops any actions from olive in a file from running. This does not stop the olives from running and has no affect on Alert or Refill olives.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "description": "Whether the file is currently paused"
+          }
+        },
+        "summary": "Throttle a file's actions.",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
+    "/pauseolive": {
+      "post": {
+        "description": "",
+        "operationId": "pauseOlive",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "column": {
+                    "type": "int"
+                  },
+                  "file": {
+                    "type": "string"
+                  },
+                  "hash": {
+                    "type": "string"
+                  },
+                  "line": {
+                    "type": "int"
+                  },
+                  "pause": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Stops an olive's actions from running. This does not stop the olive from running and has no affect on Alert or Refill olives.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "description": "Whether the olive is currently paused"
+          }
+        },
+        "summary": "Throttle an olive's actions.",
         "tags": [
           "misc"
         ]
