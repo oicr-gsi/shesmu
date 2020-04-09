@@ -537,6 +537,7 @@ public final class ActionProcessor
   private final AtomicInteger currentRunningActions = new AtomicInteger();
   private final Set<String> knownActionTypes = ConcurrentHashMap.newKeySet();
   private final PluginManager manager;
+  private final Set<String> pausedFiles = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> pausedOlives = ConcurrentHashMap.newKeySet();
   private final Set<SourceLocation> sourceLocations = ConcurrentHashMap.newKeySet();
   private final ScheduledExecutorService timeoutExecutor =
@@ -913,6 +914,10 @@ public final class ActionProcessor
     return pausedOlives.contains(location);
   }
 
+  public boolean isPaused(String file) {
+    return pausedFiles.contains(file);
+  }
+
   /**
    * Checks that an action is in one of the specified actions states
    *
@@ -975,8 +980,16 @@ public final class ActionProcessor
     pausedOlives.add(location);
   }
 
+  public void pause(String file) {
+    pausedFiles.add(file);
+  }
+
   public Stream<SourceLocation> pauses() {
     return pausedOlives.stream();
+  }
+
+  public Stream<String> pausedFiles() {
+    return pausedFiles.stream();
   }
 
   public long purge(Filter... filters) {
@@ -1018,6 +1031,10 @@ public final class ActionProcessor
 
   public void resume(SourceLocation location) {
     pausedOlives.remove(location);
+  }
+
+  public void resume(String file) {
+    pausedFiles.remove(file);
   }
 
   public long size(Filter... filters) {
@@ -1245,7 +1262,14 @@ public final class ActionProcessor
                             String.format(
                                 "Performing %s action from %s", entry.getKey().type(), location))) {
                   entry.getValue().lastState =
-                      entry.getValue().locations.stream().anyMatch(pausedOlives::contains)
+                      entry
+                              .getValue()
+                              .locations
+                              .stream()
+                              .anyMatch(
+                                  l ->
+                                      pausedOlives.contains(l)
+                                          || pausedFiles.contains(l.fileName()))
                           ? ActionState.THROTTLED
                           : entry.getKey().perform(actionServices);
                   entry.getValue().thrown = null;

@@ -396,6 +396,7 @@ public final class Server implements ServerConfig, ActionServices {
               public Stream<Header> headers() {
                 String olivesJson = "[]";
                 String deadPausesJson = "[]";
+                String deadPausedFilesJson = "[]";
                 String savedJson = "null";
                 String userFilters = "'null'";
                 try {
@@ -403,6 +404,7 @@ public final class Server implements ServerConfig, ActionServices {
                   oliveJson(olives);
                   olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
                   deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses());
+                  deadPausedFilesJson = RuntimeSupport.MAPPER.writeValueAsString(deadFilePauses());
 
                   final String savedString = parameters.get("saved");
                   if (savedString != null) {
@@ -427,6 +429,8 @@ public final class Server implements ServerConfig, ActionServices {
                             + olivesJson
                             + ", "
                             + deadPausesJson
+                            + ", "
+                            + deadPausedFilesJson
                             + ", "
                             + savedJson
                             + ", "
@@ -1373,6 +1377,7 @@ public final class Server implements ServerConfig, ActionServices {
         });
     addJson("/locations", (mapper, query) -> activeLocations());
     addJson("/deadpauses", (mapper, query) -> deadPauses());
+    addJson("/deadfilepauses", (mapper, query) -> deadFilePauses());
     addJson("/savedsearches", (mapper, query) -> savedSearches());
 
     addJson(
@@ -2307,6 +2312,23 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/pausefile",
+        t -> {
+          final ObjectNode query =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
+          final String file = query.get("file").asText("");
+          if (query.get("pause").asBoolean(false)) {
+            processor.pause(file);
+          } else {
+            processor.resume(file);
+          }
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            os.write(Boolean.toString(processor.isPaused(file)).getBytes(StandardCharsets.UTF_8));
+          }
+        });
+    add(
         "/jsondumper",
         t -> {
           final String name = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
@@ -2462,6 +2484,14 @@ public final class Server implements ServerConfig, ActionServices {
     return deadPauses;
   }
 
+  public ArrayNode deadFilePauses() {
+    final Set<String> currentFiles =
+        compiler.dashboard().map(p -> p.second().filename()).collect(Collectors.toSet());
+    final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
+    processor.pausedFiles().filter(file -> !currentFiles.contains(file)).forEach(deadPauses::add);
+    return deadPauses;
+  }
+
   public void downloadInputData(
       HttpExchange t,
       InputSource inputSource,
@@ -2587,6 +2617,7 @@ public final class Server implements ServerConfig, ActionServices {
               fileNode.put("hash", fileTable.second().hash());
               fileNode.put("filename", fileTable.second().filename());
               fileNode.put("bytecode", fileTable.second().bytecode());
+              fileNode.put("isPaused", processor.isPaused(fileTable.second().filename()));
               fileNode.put(
                   "status", fileTable.first() == null ? "Not yet run" : fileTable.first().status());
               fileNode.put(
