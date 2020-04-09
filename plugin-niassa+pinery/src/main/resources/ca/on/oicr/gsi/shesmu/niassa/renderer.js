@@ -121,6 +121,13 @@ actionRender.set("niassa", a => [
     table(
       a.matches,
       ["Workflow Run", m => m.workflowRunAccession],
+      [
+        "Workflow",
+        m =>
+          m.workflowAccession == a.workflowAccession
+            ? "Current"
+            : m.workflowAccession
+      ],
       ["Status", m => m.state],
       ["Stale", m => (m.stale ? "🍞 Stale" : "🍅 Fresh")],
       [

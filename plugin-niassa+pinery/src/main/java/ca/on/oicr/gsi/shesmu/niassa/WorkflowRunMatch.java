@@ -187,6 +187,7 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
   public ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode obj = mapper.createObjectNode();
     obj.put("workflowRunAccession", state.workflowRunAccession());
+    obj.put("workflowAccession", state.workflowAccession());
     obj.put("state", state.state().name());
     obj.put("match", comparison.name());
     obj.put("extraLimsKeys", extraLimsKeys);
