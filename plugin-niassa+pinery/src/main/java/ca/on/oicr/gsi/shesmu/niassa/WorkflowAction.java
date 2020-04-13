@@ -259,11 +259,17 @@ public final class WorkflowAction extends Action {
                 .sorted()
                 .collect(Collectors.toList());
       } catch (InitialCachePopulationException e) {
+        if (server.get().metadata().getWorkflow((int) workflowAccession) == null) {
+          this.errors =
+              Collections.singletonList("Niassa doesn't seem to recognise this workflow SWID.");
+          cacheCollision = false;
+          return ActionState.FAILED;
+        }
         this.errors =
             Collections.singletonList(
-                "Failed to pull previous workflow runs from Niassa. This can either be a temporary error if another action is fetching that data or a permanent one caused by an incorrect workflow SWID.");
+                "Another workflow is fetching the previous workflow runs from Niassa.");
         cacheCollision = true;
-        return ActionState.FAILED;
+        return ActionState.WAITING;
       }
       if (!matches.isEmpty()) {
         // We found a matching workflow run in analysis provenance; the least stale, most complete,
@@ -304,11 +310,9 @@ public final class WorkflowAction extends Action {
           return ActionState.WAITING;
         }
       } catch (InitialCachePopulationException e) {
-        this.errors =
-            Collections.singletonList(
-                "Failed to pull active workflow run count from Niassa. This can either be a temporary error if another action is fetching that data or a permanent one caused by an incorrect workflow SWID.");
+        this.errors = Collections.singletonList("Another workflow is fetching max-in-flight data.");
         cacheCollision = true;
-        return ActionState.FAILED;
+        return ActionState.WAITING;
       }
 
       // Tell the input LIMS collection to register all the LIMS keys and prepare the INI file as
