@@ -283,6 +283,17 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop
+  public static Optional<Boolean> parseBool(String input) {
+    if (input.equalsIgnoreCase("true")) {
+      return Optional.of(true);
+    }
+    if (input.equalsIgnoreCase("false")) {
+      return Optional.of(false);
+    }
+    return Optional.empty();
+  }
+
+  @RuntimeInterop
   public static Optional<Double> parseDouble(String input) {
     try {
       return Optional.of(Double.parseDouble(input));

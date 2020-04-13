@@ -210,6 +210,13 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.INTEGER.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
+            "parse_bool",
+            RuntimeSupport.class,
+            "parseBool",
+            "Convert a string containing into a Boolean.",
+            Imyhat.BOOLEAN.asOptional(),
+            new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
             "parse_float",
             RuntimeSupport.class,
             "parseDouble",
