@@ -143,6 +143,7 @@ public class CompiledGenerator implements DefinitionRepository {
     private ActionGenerator generator = ActionGenerator.NULL;
     private volatile boolean live = true;
     private OliveRunInfo runInfo;
+    private CompletableFuture<?> running = CompletableFuture.completedFuture(null);
 
     private Script(Path fileName) {
       this.fileName = fileName;
@@ -449,7 +450,10 @@ public class CompiledGenerator implements DefinitionRepository {
     // Load all the input data in an attempt to cache it before any olives try to
     // use it. This avoids making the first olive seem really slow.
     final Set<String> usedFormats =
-        scripts().flatMap(s -> s.generator.inputs()).collect(Collectors.toSet());
+        scripts()
+            .filter(s -> s.running.isDone())
+            .flatMap(s -> s.generator.inputs())
+            .collect(Collectors.toSet());
     // Allow inhibitions to be set on a per-input format format and skip fetching this data.
     final Set<String> inhibitedFormats =
         usedFormats
@@ -491,53 +495,58 @@ public class CompiledGenerator implements DefinitionRepository {
           }
         };
 
-    final List<CompletableFuture<?>> futures =
-        scripts()
-            .filter(
-                script ->
-                    script
-                        .generator
-                        .inputs()
-                        .noneMatch(
-                            inhibitedFormats
-                                ::contains)) // Don't run any olives that require data we don't
-            // have.
-            .map(
-                script -> {
-                  final AtomicReference<Runnable> inflight =
-                      new AtomicReference<>(
-                          Server.inflight("Queued " + script.fileName.toString()));
-                  // For each script, create two futures: one that runs the olive script and
-                  // return true and one that will wait for the timeout and return false
-                  final CompletableFuture<OliveRunInfo> timeoutFuture = new CompletableFuture<>();
-                  final CompletableFuture<OliveRunInfo> processFuture =
-                      CompletableFuture.supplyAsync(
-                          () -> {
-                            final Instant startTime = Instant.now();
-                            inflight.get().run();
-                            inflight.set(Server.inflight("Running " + script.fileName.toString()));
-                            script.runInfo = new OliveRunInfo(true, "Running now", null, startTime);
-                            final long inputCount =
-                                script.dashboard == null
-                                    ? 0
-                                    : cache.fetch(script.dashboard.format().name()).count();
-                            // We wait to schedule the timeout for when the script is actually
-                            // starting
-                            executor.schedule(
-                                () ->
-                                    timeoutFuture.complete(
-                                        new OliveRunInfo(
-                                            false, "Deadline exceeded", inputCount, startTime)),
-                                script.generator.timeout(),
-                                TimeUnit.SECONDS);
-                            return new OliveRunInfo(
-                                true, script.run(consumer, cache), inputCount, startTime);
-                          },
-                          workExecutor);
+    scripts()
+        .filter(
+            script ->
+                script.running
+                    .isDone()) // This is a potential race condition: an olive finished while we
+        // were collecting the input. Since we check for the data the olive requires being
+        // present, it's safe to run the olive even if it wasn't done when when previously checked.
+        .filter(
+            script ->
+                script
+                    .generator
+                    .inputs()
+                    .noneMatch(
+                        inhibitedFormats
+                            ::contains)) // Don't run any olives that require data we don't
+        // have.
+        .forEach(
+            script -> {
+              final AtomicReference<Runnable> inflight =
+                  new AtomicReference<>(Server.inflight("Queued " + script.fileName.toString()));
+              // For each script, create two futures: one that runs the olive script and
+              // return true and one that will wait for the timeout and return false
+              final CompletableFuture<OliveRunInfo> timeoutFuture = new CompletableFuture<>();
+              final CompletableFuture<OliveRunInfo> processFuture =
+                  CompletableFuture.supplyAsync(
+                      () -> {
+                        final Instant startTime = Instant.now();
+                        inflight.get().run();
+                        inflight.set(Server.inflight("Running " + script.fileName.toString()));
+                        script.runInfo = new OliveRunInfo(true, "Running now", null, startTime);
+                        final long inputCount =
+                            script.dashboard == null
+                                ? 0
+                                : cache.fetch(script.dashboard.format().name()).count();
+                        // We wait to schedule the timeout for when the script is actually
+                        // starting
+                        executor.schedule(
+                            () ->
+                                timeoutFuture.complete(
+                                    new OliveRunInfo(
+                                        false, "Deadline exceeded", inputCount, startTime)),
+                            script.generator.timeout(),
+                            TimeUnit.SECONDS);
+                        return new OliveRunInfo(
+                            true, script.run(consumer, cache), inputCount, startTime);
+                      },
+                      workExecutor);
 
-                  // Then create another future that waits for either of the above to finish and
-                  // nukes the other
-                  return CompletableFuture.anyOf(timeoutFuture, processFuture)
+              // Then create another future that waits for either of the above to finish and
+              // nukes the other
+              script.running =
+                  CompletableFuture.anyOf(timeoutFuture, processFuture)
                       .thenAccept(
                           obj -> {
                             final OliveRunInfo runInfo = (OliveRunInfo) obj;
@@ -549,12 +558,7 @@ public class CompiledGenerator implements DefinitionRepository {
                             processFuture.cancel(true);
                             inflight.get().run();
                           });
-                })
-            .collect(Collectors.toList());
-    // Now wait for all of those tasks to finish
-    for (CompletableFuture<?> future : futures) {
-      future.join();
-    }
+            });
   }
 
   private Stream<Script> scripts() {
