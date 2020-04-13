@@ -120,16 +120,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Returns true if the file or directory exists on the SFTP server described in {file}.")
-  public synchronized Optional<Boolean> $_exists(
-      @ShesmuParameter(description = "path to file") Path fileName) {
+  public Optional<Boolean> $_exists(@ShesmuParameter(description = "path to file") Path fileName) {
     return fileAttributes.get(fileName).map(a -> a.getSize() != -1);
   }
 
   @ShesmuMethod(
       description =
           "Gets the last modification timestamp of a file or directory living on the SFTP server described in {file}.")
-  public synchronized Optional<Instant> $_mtime(
-      @ShesmuParameter(description = "path to file") Path fileName) {
+  public Optional<Instant> $_mtime(@ShesmuParameter(description = "path to file") Path fileName) {
     return fileAttributes
         .get(fileName)
         .filter(a -> a.getSize() != -1)
@@ -145,8 +143,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Get the size of a file, in bytes, living on the SFTP server described in {file}.")
-  public synchronized Optional<Long> $_size(
-      @ShesmuParameter(description = "path to file") Path fileName) {
+  public Optional<Long> $_size(@ShesmuParameter(description = "path to file") Path fileName) {
     return fileAttributes.get(fileName).filter(a -> a.getSize() != -1).map(FileAttributes::getSize);
   }
 
@@ -156,7 +153,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public synchronized void configuration(SectionRenderer renderer) throws XMLStreamException {
+  public void configuration(SectionRenderer renderer) throws XMLStreamException {
     renderer.line("Filename", fileName().toString());
     configuration.ifPresent(
         configuration -> {
@@ -166,7 +163,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         });
   }
 
-  synchronized Pair<ActionState, Boolean> makeSymlink(
+  Pair<ActionState, Boolean> makeSymlink(
       Path link,
       String target,
       boolean force,
@@ -244,7 +241,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  public synchronized boolean refill(String name, String command, ArrayNode data) {
+  public boolean refill(String name, String command, ArrayNode data) {
     final Configuration config = configuration.orElse(null);
     if (config == null) return false;
     int exitStatus;
@@ -292,7 +289,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     return exitStatus == 0;
   }
 
-  synchronized boolean rm(String path) {
+  boolean rm(String path) {
     final Configuration config = configuration.orElse(null);
     if (config == null) return false;
     try (final SSHClient client = new SSHClient()) {
