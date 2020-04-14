@@ -200,7 +200,7 @@ a.load.danger:visited {
 
 .state_failed,
 .filterlist .state_failed,
-.alert {
+.alert.live {
   border: 1px solid #e0493b;
   background-color: #f9dddb;
 }
@@ -226,7 +226,8 @@ a.load.danger:visited {
 
 .state_succeeded,
 .filterlist .state_succeeded,
-.state_simulated {
+.state_simulated,
+.alert.expired {
   border: 1px solid #06aed5;
   background-color: #d1f0f7;
 }
@@ -342,13 +343,13 @@ a.load.danger:visited {
 
 .action.state_unknown a:link,
 .actionstate_failed a:link,
-.alert a:link {
+.alert.live a:link {
   color: #e0493b;
 }
 
 .action.state_unknown a:visited,
 .actionstate_failed a:visited,
-.alert a:visited {
+.alert.live a:visited {
   color: #b83c31;
 }
 
@@ -356,8 +357,8 @@ a.load.danger:visited {
 .actionstate_failed a:hover,
 .action.state_unknown a:active,
 .actionstate_failed a:active,
-.alert a:hover,
-.alert a:active {
+.alert.live a:hover,
+.alert.live a:active {
   color: #e56a5e;
 }
 
@@ -421,19 +422,23 @@ a.load.danger:visited {
 }
 
 .action.state_succeeded a:link,
-.action.state_simulated a:link {
+.action.state_simulated a:link,
+.alert.expired a:link {
   color: #06aed5;
 }
 
 .action.state_succeeded a:visited,
-.action.state_simulated a:visited {
+.action.state_simulated a:visited,
+.alert.expired a:visited {
   color: #058faf;
 }
 
 .action.state_succeeded a:hover,
 .action.state_succeeded a:active,
 .action.state_simulated a:hover,
-.action.state_simulated a:active {
+.action.state_succeeded a:active,
+.alert.expired a:hover,
+.alert.expired a:active {
   color: #33bcdc;
 }
 
