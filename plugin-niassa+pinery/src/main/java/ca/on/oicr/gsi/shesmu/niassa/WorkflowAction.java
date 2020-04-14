@@ -494,6 +494,11 @@ public final class WorkflowAction extends Action {
               .metadata()
               .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
         }
+        matches
+            .stream()
+            .mapToLong(m -> m.state().workflowAccession())
+            .distinct()
+            .forEach(server.get().analysisCache()::invalidate);
         return true;
       case "NIASSA-SKIP-RERUN":
         if (runAccession == 0) {
@@ -503,6 +508,7 @@ public final class WorkflowAction extends Action {
           attribute.setTag("skip");
           attribute.setValue("shesmu-ui");
           server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+          workflowAccessions().forEach(server.get().analysisCache()::invalidate);
         }
         // Intentional fall through
       case "NIASSA-RESET-WFR":
