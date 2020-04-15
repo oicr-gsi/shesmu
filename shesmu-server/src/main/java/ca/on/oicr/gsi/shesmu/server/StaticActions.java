@@ -67,7 +67,7 @@ public class StaticActions implements LoadedConfiguration {
             final Action result = runners.get(action.getAction()).run(action.getParameters());
             if (result != null) {
               result.prepare();
-              sink.accept(result, fileName().toString(), 0, 0, hash, new String[0]);
+              sink.accept(result, fileName().toString(), 1, 1, hash, new String[0]);
               success++;
             } else {
               retry = true;
