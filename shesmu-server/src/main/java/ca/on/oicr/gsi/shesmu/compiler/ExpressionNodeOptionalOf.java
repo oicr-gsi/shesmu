@@ -7,10 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.objectweb.asm.Label;
@@ -20,21 +17,76 @@ import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeOptionalOf extends ExpressionNode {
 
+  /**
+   * For each question mark we encounter, we need to track the question marks inside of it. To do
+   * this, we divide the operations into layers of nesting. Each layer is defined by an integer
+   * number that starts at zero and decreases for every inner layer. Processing is done in layer
+   * order.
+   *
+   * <p>Given <tt>foo(x?)? + y?</tt>, this will be divided into two layers (plus the base
+   * expression):
+   *
+   * <ul>
+   *   <li>Base expression: <tt>$0 + $1</tt>
+   *   <li>Layer 0: <tt>$0 = foo($2)</tt> and <tt>$1 = y</tt>
+   *   <li>Layer -1: <tt>$2 = x</tt>
+   * </ul>
+   *
+   * The order of the expressions in each layer is arbitrary, but there is no way for them to
+   * interfere, so it doesn't matter.
+   */
+  private class OptionalCaptureCompilerServices implements ExpressionCompilerServices {
+    private final Consumer<String> errorHandler;
+    private final ExpressionCompilerServices expressionCompilerServices;
+    private final int layer;
+
+    public OptionalCaptureCompilerServices(
+        ExpressionCompilerServices expressionCompilerServices,
+        Consumer<String> errorHandler,
+        int layer) {
+      this.expressionCompilerServices = expressionCompilerServices;
+      this.errorHandler = errorHandler;
+      this.layer = layer;
+    }
+
+    @Override
+    public Optional<TargetWithContext> captureOptional(ExpressionNode expression) {
+      if (expression.resolveDefinitions(
+          new OptionalCaptureCompilerServices(expressionCompilerServices, errorHandler, layer - 1),
+          errorHandler)) {
+        final UnboxableExpression target = new UnboxableExpression(expression);
+        captures.computeIfAbsent(layer, k -> new ArrayList<>()).add(target);
+        return Optional.of(target);
+      } else {
+        return Optional.empty();
+      }
+    }
+
+    @Override
+    public FunctionDefinition function(String name) {
+      return expressionCompilerServices.function(name);
+    }
+
+    @Override
+    public Imyhat imyhat(String name) {
+      return expressionCompilerServices.imyhat(name);
+    }
+
+    @Override
+    public InputFormatDefinition inputFormat() {
+      return expressionCompilerServices.inputFormat();
+    }
+  }
+
   private static class UnboxableExpression implements TargetWithContext {
     private Optional<NameDefinitions> defs = Optional.empty();
     private final ExpressionNode expression;
+    private final String name;
 
     public UnboxableExpression(ExpressionNode expression) {
       this.expression = expression;
       name = String.format("Lift of %d:%d", expression.line(), expression.column());
     }
-
-    @Override
-    public void setContext(NameDefinitions defs) {
-      this.defs = Optional.of(defs);
-    }
-
-    private final String name;
 
     @Override
     public Flavour flavour() {
@@ -44,6 +96,11 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     @Override
     public String name() {
       return name;
+    }
+
+    @Override
+    public void setContext(NameDefinitions defs) {
+      this.defs = Optional.of(defs);
     }
 
     @Override
@@ -64,7 +121,7 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       new Method("isPresent", Type.BOOLEAN_TYPE, new Type[0]);
   private static final Method METHOD_OPTIONAL__OF =
       new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
-  private final List<UnboxableExpression> captures = new ArrayList<>();
+  private final Map<Integer, List<UnboxableExpression>> captures = new TreeMap<>();
   private final ExpressionNode item;
   private Imyhat type = Imyhat.BAD;
 
@@ -75,16 +132,20 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
-    for (final UnboxableExpression capture : captures) {
-      capture.expression.collectFreeVariables(names, predicate);
+    for (final List<UnboxableExpression> layer : captures.values()) {
+      for (final UnboxableExpression capture : layer) {
+        capture.expression.collectFreeVariables(names, predicate);
+      }
     }
     item.collectFreeVariables(names, predicate);
   }
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
-    for (final UnboxableExpression capture : captures) {
-      capture.expression.collectPlugins(pluginFileNames);
+    for (final List<UnboxableExpression> layer : captures.values()) {
+      for (final UnboxableExpression capture : layer) {
+        capture.expression.collectPlugins(pluginFileNames);
+      }
     }
     item.collectPlugins(pluginFileNames);
   }
@@ -103,34 +164,36 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       // and then wrap it all back up in an optional (if the inner result isn't already)
       final Label end = renderer.methodGen().newLabel();
       final Label empty = renderer.methodGen().newLabel();
-      for (final UnboxableExpression capture : captures) {
-        capture.expression.render(renderer);
-        renderer.methodGen().dup();
-        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
-        renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
-        renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
-        final Type type = capture.type().apply(TO_ASM);
-        renderer.methodGen().unbox(type);
-        final int local = renderer.methodGen().newLocal(type);
-        renderer.methodGen().storeLocal(local);
-        renderer.define(
-            capture.name(),
-            new LoadableValue() {
-              @Override
-              public void accept(Renderer renderer) {
-                renderer.methodGen().loadLocal(local);
-              }
+      for (final List<UnboxableExpression> layer : captures.values()) {
+        for (final UnboxableExpression capture : layer) {
+          capture.expression.render(renderer);
+          renderer.methodGen().dup();
+          renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__IS_PRESENT);
+          renderer.methodGen().ifZCmp(GeneratorAdapter.EQ, empty);
+          renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, METHOD_OPTIONAL__GET);
+          final Type type = capture.type().apply(TO_ASM);
+          renderer.methodGen().unbox(type);
+          final int local = renderer.methodGen().newLocal(type);
+          renderer.methodGen().storeLocal(local);
+          renderer.define(
+              capture.name(),
+              new LoadableValue() {
+                @Override
+                public void accept(Renderer renderer) {
+                  renderer.methodGen().loadLocal(local);
+                }
 
-              @Override
-              public String name() {
-                return capture.name();
-              }
+                @Override
+                public String name() {
+                  return capture.name();
+                }
 
-              @Override
-              public Type type() {
-                return type;
-              }
-            });
+                @Override
+                public Type type() {
+                  return type;
+                }
+              });
+        }
       }
       item.render(renderer);
       // The value might already be wrapped in an optional; if it ins't do that now.
@@ -161,46 +224,26 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     // the current scope where the evaluation actually happens. See TargetWithContext for examples.
     return item.resolve(defs, errorHandler)
         && captures
-                .stream()
-                .filter(
-                    capture ->
-                        capture.expression.resolve(
-                            capture.defs.map(defs::withShadowContext).orElse(defs), errorHandler))
-                .count()
-            == captures.size();
+            .values()
+            .stream()
+            .allMatch(
+                layer ->
+                    layer
+                            .stream()
+                            .filter(
+                                capture ->
+                                    capture.expression.resolve(
+                                        capture.defs.map(defs::withShadowContext).orElse(defs),
+                                        errorHandler))
+                            .count()
+                        == layer.size());
   }
 
   @Override
   public boolean resolveDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return item.resolveDefinitions(
-        new ExpressionCompilerServices() {
-          @Override
-          public Optional<TargetWithContext> captureOptional(ExpressionNode expression) {
-            if (expression.resolveDefinitions(expressionCompilerServices, errorHandler)) {
-              final UnboxableExpression target = new UnboxableExpression(expression);
-              captures.add(target);
-              return Optional.of(target);
-            } else {
-              return Optional.empty();
-            }
-          }
-
-          @Override
-          public FunctionDefinition function(String name) {
-            return expressionCompilerServices.function(name);
-          }
-
-          @Override
-          public Imyhat imyhat(String name) {
-            return expressionCompilerServices.imyhat(name);
-          }
-
-          @Override
-          public InputFormatDefinition inputFormat() {
-            return expressionCompilerServices.inputFormat();
-          }
-        },
+        new OptionalCaptureCompilerServices(expressionCompilerServices, errorHandler, 0),
         errorHandler);
   }
 
@@ -222,22 +265,28 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     } else {
       boolean ok =
           captures
-                      .stream()
-                      .filter(
-                          capture -> {
-                            boolean captureOk = capture.expression.typeCheck(errorHandler);
-                            if (!capture
-                                .expression
-                                .type()
-                                .isSame(capture.expression.type().asOptional())) {
-                              capture.expression.typeError(
-                                  "optional", capture.expression.type(), errorHandler);
-                              captureOk = false;
-                            }
-                            return captureOk;
-                          })
-                      .count()
-                  == captures.size()
+                  .values()
+                  .stream()
+                  .allMatch(
+                      layer ->
+                          layer
+                                  .stream()
+                                  .filter(
+                                      capture -> {
+                                        boolean captureOk =
+                                            capture.expression.typeCheck(errorHandler);
+                                        if (!capture
+                                            .expression
+                                            .type()
+                                            .isSame(capture.expression.type().asOptional())) {
+                                          capture.expression.typeError(
+                                              "optional", capture.expression.type(), errorHandler);
+                                          captureOk = false;
+                                        }
+                                        return captureOk;
+                                      })
+                                  .count()
+                              == layer.size())
               && item.typeCheck(errorHandler);
       type = item.type();
       return ok;
