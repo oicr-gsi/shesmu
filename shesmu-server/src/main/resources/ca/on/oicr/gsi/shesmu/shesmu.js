@@ -1003,6 +1003,57 @@ function saveSearch(filters, updateSearchList) {
   );
 }
 
+function filterableDialog(items, addItem, render, predicate, breakLines) {
+  const [dialog, close] = makePopup(true);
+  const list = document.createElement("DIV");
+  const showItems = p => {
+    clearChildren(list);
+    items.filter(p).forEach(item => {
+      const [name, title] = render(item);
+      list.appendChild(
+        button(name, title, e => {
+          addItem(item);
+          if (!e.ctrlKey) {
+            e.stopPropagation();
+            close();
+          }
+        })
+      );
+      if (breakLines) {
+        list.appendChild(document.createElement("BR"));
+      }
+    });
+    if (list.childElementCount == 0) {
+      list.innerText = "No matches";
+    }
+  };
+  const search = document.createElement("DIV");
+  const searchInput = document.createElement("INPUT");
+  searchInput.type = "search";
+  search.appendChild(document.createTextNode("Filter: "));
+  search.appendChild(searchInput);
+  dialog.appendChild(search);
+
+  dialog.appendChild(list);
+  const help = document.createElement("P");
+  help.innerText = "Control-click to select multiple.";
+  dialog.appendChild(help);
+
+  searchInput.addEventListener("input", e => {
+    const keywords = searchInput.value
+      .trim()
+      .toLowerCase()
+      .split(/\W+/);
+    if (keywords.length) {
+      showItems(x => predicate(x, keywords));
+    } else {
+      showItems(x => true);
+    }
+  });
+
+  showItems(x => true);
+}
+
 let findOverride = null;
 
 function initialise() {
@@ -3205,24 +3256,14 @@ function getStats(
               "Add a filter that searches for actions of a particular type.",
               () => {
                 close();
-                const [typeDialog, closeType] = makePopup(true);
-                Array.from(actionRender.keys())
-                  .sort()
-                  .forEach(type =>
-                    typeDialog.appendChild(
-                      button(type, "", e => {
-                        addFilters(["type", addToSet(type)]);
-                        if (!e.ctrlKey) {
-                          e.stopPropagation();
-                          closeType();
-                        }
-                      })
-                    )
-                  );
-
-                const help = document.createElement("P");
-                help.innerText = "Control-click to select multiple.";
-                typeDialog.appendChild(help);
+                filterableDialog(
+                  Array.from(actionRender.keys()).sort(),
+                  type => addFilters(["type", addToSet(type)]),
+                  type => [type, ""],
+                  (type, keywords) =>
+                    keywords.every(k => type.toLowerCase().indexOf(k) != -1),
+                  false
+                );
               }
             )
           );
@@ -3234,22 +3275,14 @@ function getStats(
               "Add a filter that searches for actions marked with a particular tag by an olive.",
               () => {
                 close();
-                const [tagDialog, closeTag] = makePopup(true);
-                tags.sort().forEach(tag =>
-                  tagDialog.appendChild(
-                    button(tag, "", e => {
-                      addFilters(["tag", addToSet(tag)]);
-                      if (!e.ctrlKey) {
-                        e.stopPropagation();
-                        closeTag();
-                      }
-                    })
-                  )
+                filterableDialog(
+                  tags.sort(),
+                  tag => addFilters(["tag", addToSet(tag)]),
+                  tag => [tag, ""],
+                  (tag, keywords) =>
+                    keywords.every(k => tag.toLowerCase().indexOf(k) != -1),
+                  false
                 );
-
-                const help = document.createElement("P");
-                help.innerText = "Control-click to select multiple.";
-                tagDialog.appendChild(help);
               }
             )
           );
@@ -3261,110 +3294,110 @@ function getStats(
               "Add a filter that searches for actions that came from a particular olive (even if that olive has been replaced or deleted).",
               () => {
                 close();
-                const [sourceDialog, sourceClose] = makePopup(true);
-                const addButton = (file, line, column, hash) => {
-                  sourceDialog.appendChild(
-                    button(
-                      file +
-                        (line
-                          ? ":" +
-                            line +
-                            (column
-                              ? ":" + column + (hash ? "[" + hash + "]" : "")
-                              : "")
-                          : ""),
-                      "",
-                      e => {
-                        addFilters([
-                          "sourcelocation",
-                          list => {
-                            if (!list) {
-                              return [
-                                {
-                                  file: file,
-                                  line: line,
-                                  column: column,
-                                  hash: hash
-                                }
-                              ];
-                            } else if (
-                              list.some(
-                                loc =>
-                                  loc.file == file &&
-                                  (!loc.line || loc.line == line) &&
-                                  (!loc.column || loc.column == column) &&
-                                  (!loc.hash || loc.hash == hash)
-                              )
-                            ) {
-                              // If the item we are adding is already a subset of something in the list, discard it.
-                              return list;
-                            } else {
-                              // Discard anything which is a subset of what we have
-                              const result = list.filter(
-                                loc =>
-                                  loc.file != file ||
-                                  (line && loc.line != line) ||
-                                  (column && loc.column != column) ||
-                                  (hash && loc.hash != hash)
-                              );
-                              result.push({
-                                file: file,
-                                line: line,
-                                column: column,
-                                hash: hash
-                              });
-                              return result;
-                            }
-                          }
-                        ]);
-                        if (!e.ctrlKey) {
-                          e.stopPropagation();
-                          sourceClose();
+                const fileNameFormatter = commonPathPrefix(
+                  sources.map(s => s.file)
+                );
+                filterableDialog(
+                  sources
+                    .sort(
+                      (a, b) =>
+                        a.file.localeCompare(b.file) ||
+                        a.line - b.line ||
+                        a.column - b.column ||
+                        a.hash.localeCompare(b.hash)
+                    )
+                    .flatMap((source, index, array) => {
+                      const previous = index == 0 ? null : array[index - 1];
+                      const result = [];
+                      if (index == 0 || source.file != previous.file) {
+                        result.push({
+                          file: source.file,
+                          line: null,
+                          column: null,
+                          hash: null
+                        });
+                      }
+                      if (
+                        index == 0 ||
+                        source.file != previous.file ||
+                        source.line != previous.line
+                      ) {
+                        result.push({
+                          file: source.file,
+                          line: source.line,
+                          column: null,
+                          hash: null
+                        });
+                      }
+                      if (
+                        index == 0 ||
+                        source.file != previous.file ||
+                        source.line != previous.line ||
+                        source.column != previous.column
+                      ) {
+                        result.push({
+                          file: source.file,
+                          line: source.line,
+                          column: source.column,
+                          hash: null
+                        });
+                      }
+                      result.push(source);
+                      return result;
+                    }),
+                  sourceLocation =>
+                    addFilters([
+                      "sourcelocation",
+                      list => {
+                        if (!list) {
+                          return [sourceLocation];
+                        } else if (
+                          list.some(
+                            loc =>
+                              loc.file == sourceLocation.file &&
+                              (!loc.line || loc.line == sourceLocation.line) &&
+                              (!loc.column ||
+                                loc.column == sourceLocation.column) &&
+                              (!loc.hash || loc.hash == sourceLocation.hash)
+                          )
+                        ) {
+                          // If the item we are adding is already a subset of something in the list, discard it.
+                          return list;
+                        } else {
+                          // Discard anything which is a subset of what we have
+                          const result = list.filter(
+                            loc =>
+                              loc.file != sourceLocation.file ||
+                              (line && loc.line != sourceLocation.line) ||
+                              (column && loc.column != sourceLocation.column) ||
+                              (hash && loc.hash != sourceLocation.hash)
+                          );
+                          result.push(sourceLocation);
+                          return result;
                         }
                       }
-                    )
-                  );
-                  sourceDialog.appendChild(document.createElement("BR"));
-                };
-                sources
-                  .sort(
-                    (a, b) =>
-                      a.file.localeCompare(b.file) ||
-                      a.line - b.line ||
-                      a.column - b.column ||
-                      a.hash.localeCompare(b.hash)
-                  )
-                  .forEach((source, index, array) => {
-                    const previous = index == 0 ? null : array[index - 1];
-                    if (index == 0 || source.file != previous.file) {
-                      addButton(source.file, null, null, null);
-                    }
-                    if (
-                      index == 0 ||
-                      source.file != previous.file ||
-                      source.line != previous.line
-                    ) {
-                      addButton(source.file, source.line, null, null);
-                    }
-                    if (
-                      index == 0 ||
-                      source.file != previous.file ||
-                      source.line != previous.line ||
-                      source.column != previous.column
-                    ) {
-                      addButton(source.file, source.line, source.column, null);
-                    }
-                    addButton(
-                      source.file,
-                      source.line,
-                      source.column,
-                      source.hash
-                    );
-                  });
-
-                const help = document.createElement("P");
-                help.innerText = "Control-click to select multiple.";
-                sourceDialog.appendChild(help);
+                    ]),
+                  sourceLocation => [
+                    fileNameFormatter(sourceLocation.file) +
+                      (sourceLocation.line
+                        ? ":" +
+                          sourceLocation.line +
+                          (sourceLocation.column
+                            ? ":" +
+                              sourceLocation.column +
+                              (sourceLocation.hash
+                                ? "[" + sourceLocation.hash + "]"
+                                : "")
+                            : "")
+                        : ""),
+                    sourceLocation.file
+                  ],
+                  (sourceLocation, keywords) =>
+                    keywords.every(
+                      k => sourceLocation.file.toLowerCase().indexOf(k) != -1
+                    ),
+                  true
+                );
               }
             )
           );
