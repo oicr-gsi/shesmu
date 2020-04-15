@@ -22,6 +22,7 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
@@ -953,6 +954,12 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
           staticConstants.stream(), configuration.stream().flatMap(FileWrapper::constants));
     }
 
+    public <T> Stream<T> exportSearches(ExportSearch<T> builder) {
+      return Stream.concat(
+          fileFormat.exportSearches(builder),
+          configuration.stream().flatMap(f -> f.instance.exportSearches(builder)));
+    }
+
     public Stream<Object> fetch(String format, boolean readStale) {
       Queue<InputDataSource> sources = staticSources.get(format);
       return Stream.concat(
@@ -1718,6 +1725,10 @@ public final class PluginManager implements DefinitionRepository, InputSource, S
                       type.dynamicSources.keySet().stream(),
                       c.signatures()));
     }
+  }
+
+  public <T> Stream<T> exportSearches(ExportSearch<T> builder) {
+    return formatTypes.stream().flatMap(formatType -> formatType.exportSearches(builder));
   }
 
   @Override

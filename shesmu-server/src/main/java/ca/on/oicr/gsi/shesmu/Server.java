@@ -22,10 +22,7 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
-import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
-import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
-import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilter;
-import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
+import ca.on.oicr.gsi.shesmu.plugin.filter.*;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
@@ -492,9 +489,45 @@ public final class Server implements ServerConfig, ActionServices {
                   locations = "[]";
                   userFilter = "'{}'";
                 }
+                final String exportedSearch =
+                    pluginManager
+                        .exportSearches(
+                            new ExportSearch<String>() {
+                              @Override
+                              public String linkWithJson(
+                                  String name, String urlStart, String urlEnd, String description) {
+                                try {
+                                  return String.format(
+                                      "[%s, %s, filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s]",
+                                      RuntimeSupport.MAPPER.writeValueAsString(name),
+                                      RuntimeSupport.MAPPER.writeValueAsString(description),
+                                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
+                                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
+                                } catch (JsonProcessingException e) {
+                                  throw new RuntimeException(e);
+                                }
+                              }
+
+                              @Override
+                              public String linkWithUrlSearch(
+                                  String name, String urlStart, String urlEnd, String description) {
+                                try {
+                                  return String.format(
+                                      "[%s, %s, filters => window.location.href = %s + encodeSearch(filters) + %s]",
+                                      RuntimeSupport.MAPPER.writeValueAsString(name),
+                                      RuntimeSupport.MAPPER.writeValueAsString(description),
+                                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
+                                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
+                                } catch (JsonProcessingException e) {
+                                  throw new RuntimeException(e);
+                                }
+                              }
+                            })
+                        .collect(Collectors.joining(",", "[", "]"));
                 return Stream.of(
                     Header.jsModule(
                         "import {"
+                            + "encodeSearch,"
                             + "initialiseActionDash"
                             + "} from \"./shesmu.js\";"
                             + "initialiseActionDash("
@@ -507,6 +540,8 @@ public final class Server implements ServerConfig, ActionServices {
                             + savedSearch
                             + ", "
                             + userFilter
+                            + ", "
+                            + exportedSearch
                             + ");"));
               }
 
