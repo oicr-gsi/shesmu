@@ -131,8 +131,9 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
             String.format(
                 "%d:%d: Wrong number of arguments to function “%s”. Expected %d, got %d.",
                 line(), column(), function.name(), argumentTypes.size(), arguments.size()));
+        ok = false;
       }
-      ok =
+      ok &=
           IntStream.range(0, argumentTypes.size())
                   .filter(
                       index -> {
