@@ -6,6 +6,7 @@ import java.util.List;
 public final class Configuration {
   private List<String> closeActions;
   private List<String> closedStatuses;
+  private String issueType;
   private String passwordFile;
   private String projectKey;
   private List<String> reopenActions;
@@ -19,6 +20,10 @@ public final class Configuration {
 
   public List<String> getClosedStatuses() {
     return closedStatuses;
+  }
+
+  public String getIssueType() {
+    return issueType;
   }
 
   public String getPasswordFile() {
@@ -51,6 +56,10 @@ public final class Configuration {
 
   public void setClosedStatuses(List<String> closedStatuses) {
     this.closedStatuses = closedStatuses;
+  }
+
+  public void setIssueType(String issueType) {
+    this.issueType = issueType;
   }
 
   public void setPasswordFile(String passwordFile) {

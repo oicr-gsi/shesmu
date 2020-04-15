@@ -10,14 +10,13 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.ReplacingRecord;
 import ca.on.oicr.gsi.shesmu.plugin.cache.ValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
-import com.atlassian.jira.rest.client.api.domain.SearchResult;
+import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -26,12 +25,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -188,11 +182,12 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   private List<String> closedStatuses = Collections.emptyList();
   private final Supplier<JiraConnection> definer;
   private final FilterCache filters;
+  private long issueTypeId;
+  private String issueTypeName;
   private final IssueCache issues;
   private String passwordFile;
-
+  private long projectId = 0;
   private String projectKey = "FAKE";
-
   private List<String> reopenActions = Collections.emptyList();
   private List<Search> searches = Collections.emptyList();
   private String url;
@@ -230,9 +225,9 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     if (passwordFile != null) {
       renderer.line("Password File", passwordFile);
     }
-    renderer.line("Reopen Actions", reopenActions.stream().collect(Collectors.joining(" | ")));
-    renderer.line("Close Actions", closeActions.stream().collect(Collectors.joining(" | ")));
-    renderer.line("Closed Statuses", closedStatuses.stream().collect(Collectors.joining(" | ")));
+    renderer.line("Reopen Actions", String.join(" | ", reopenActions));
+    renderer.line("Close Actions", String.join(" | ", closeActions));
+    renderer.line("Closed Statuses", String.join(" | ", closedStatuses));
   }
 
   @ShesmuMethod(
@@ -242,6 +237,21 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       @ShesmuParameter(description = "keyword") String keyword,
       @ShesmuParameter(description = "is ticket open") boolean open) {
     return issues().filter(new IssueFilter(keyword, open)).count();
+  }
+
+  @Override
+  public <T> Stream<T> exportSearches(ExportSearch<T> builder) {
+    return projectId == 0 || issueTypeName == null
+        ? Stream.empty()
+        : Stream.of(
+            builder.linkWithUrlSearch(
+                String.format("File %s in %s", issueTypeName, projectKey),
+                String.format(
+                    "%s/secure/CreateIssueDetails!init.jspa?pid=%d&issuetype=%d&summary=&description=%%0A%%0A",
+                    url, projectId, issueTypeId),
+                "",
+                String.format(
+                    "Create a new “%s” issue in JIRA project “%s”.", issueTypeName, projectKey)));
   }
 
   public void invalidate() {
@@ -326,6 +336,18 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       searches = config.getSearches();
       issues.invalidate();
       filters.invalidateAll();
+      final Project project = client.getProjectClient().getProject(projectKey).claim();
+      projectId = Objects.requireNonNull(project.getId());
+      issueTypeId = 0;
+      issueTypeName = null;
+      if (config.getIssueType() != null) {
+        for (final IssueType issueType : project.getIssueTypes()) {
+          if (issueType.getName().equals(config.getIssueType())) {
+            issueTypeId = issueType.getId();
+            issueTypeName = issueType.getName();
+          }
+        }
+      }
     } catch (final Exception e) {
       e.printStackTrace();
     }
