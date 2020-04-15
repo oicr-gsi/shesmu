@@ -1,0 +1,10 @@
+Input test;
+
+Function foo(string x) `x`;
+
+Olive
+ Run ok With ok =
+  (Begin
+    x = `project`;
+    Return `foo(x?)? == "the_foo_study"`;
+  End) Default False;

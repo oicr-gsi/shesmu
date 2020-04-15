@@ -542,6 +542,10 @@ an optional type, and provides the inner (non-optional) value inside. If the
 expression has an empty optional, the entire optional creation will be the
 empty optional.
 
+These may be nested for function calls on optional values. For example:
+
+    x = `foo(x?)? + 3`
+
 ### Unary Operators
 #### Boolean Not
 - `!` _expr_
