@@ -1591,11 +1591,14 @@ export function initialiseOliveDash(
     oliveSearch.appendChild(document.createTextNode("Filter: "));
     oliveSearch.appendChild(oliveSearchInput);
     oliveSearchInput.addEventListener("input", e => {
-      const keywords = oliveSearchInput.value.trim().split(/\W+/);
+      const keywords = oliveSearchInput.value
+        .trim()
+        .toLowerCase()
+        .split(/\W+/);
       if (keywords.length) {
         for (const { texts, elements } of visibilityUpdates) {
           const visible = keywords.every(keyword =>
-            texts.some(t => t.startsWith(keyword))
+            texts.some(t => t.indexOf(keyword) != -1)
           );
           for (const element of elements) {
             element.style.display = visible ? null : "none";
@@ -1660,7 +1663,8 @@ export function initialiseOliveDash(
                 .flatMap(t => t.trim().split(/\W+/))
                 .concat(olive.tags)
             )
-          ),
+          )
+          .map(x => x.toLowerCase()),
         elements: elements
       });
       title.appendChild(pauseBadge(file));
