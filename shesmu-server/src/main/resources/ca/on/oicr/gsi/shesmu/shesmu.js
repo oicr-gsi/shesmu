@@ -733,7 +733,8 @@ export function initialiseActionDash(
   tags,
   sources,
   savedQueryName,
-  userFilters
+  userFilters,
+  exportSearches
 ) {
   initialise();
   let localSearches = {};
@@ -788,7 +789,8 @@ export function initialiseActionDash(
                 )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
               );
             }
-          }
+          },
+          exportSearches
         );
       },
       ([name, query]) => name,
@@ -1078,7 +1080,8 @@ export function initialiseOliveDash(
   deadPauses,
   deadFilePauses,
   saved,
-  userFilters
+  userFilters,
+  exportSearches
 ) {
   initialise();
   const container = document.getElementById("olives");
@@ -1224,6 +1227,7 @@ export function initialiseOliveDash(
             );
           }
         },
+        exportSearches,
         pauseButton("/pausefile", "in script", file, {
           file: file.filename
         })
@@ -1440,6 +1444,7 @@ export function initialiseOliveDash(
             },
             initialCustomFilter,
             updateOliveFilter,
+            exportSearches,
             throttleButton,
             throttleFileButton
           );
@@ -1827,7 +1832,8 @@ export function initialiseOliveDash(
             }
           },
           null,
-          filters => {}
+          filters => {},
+          exportSearches
         );
       });
     };
@@ -2963,6 +2969,18 @@ function getDelayLock(targetElement) {
   }
 }
 
+export function encodeSearch(filters) {
+  return (
+    "shesmusearch:" +
+    btoa(
+      JSON.stringify(filters).replace(
+        /[\u007F-\uFFFF]/g,
+        chr => "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).substr(-4)
+      )
+    )
+  );
+}
+
 function getStats(
   filters,
   tags,
@@ -2973,6 +2991,7 @@ function getStats(
   updateSearchList,
   userSuppliedFilter,
   updateURL,
+  exportSearches,
   ...toolbarExtras
 ) {
   let additionalFilters = [];
@@ -3421,17 +3440,7 @@ function getStats(
               "⎘ To Clipboard for Ticket",
               "Export search to the clipboard in a way that can be pasted in a text document.",
               () => {
-                copyText(
-                  "shesmusearch:" +
-                    btoa(
-                      JSON.stringify(customFilters).replace(
-                        /[\u007F-\uFFFF]/g,
-                        chr =>
-                          "\\u" +
-                          ("0000" + chr.charCodeAt(0).toString(16)).substr(-4)
-                      )
-                    )
-                );
+                copyText(encodeSearch(customFilters));
                 close();
               }
             )
@@ -3506,6 +3515,14 @@ function getStats(
               }
             )
           );
+          for (const [name, description, callback] of exportSearches) {
+            dialog.appendChild(
+              button(name, description, () => {
+                callback(customFilters);
+                close();
+              })
+            );
+          }
         } else {
           makePopup().innerText = "No search to save.";
         }

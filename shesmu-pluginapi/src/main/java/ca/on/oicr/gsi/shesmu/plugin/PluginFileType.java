@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
@@ -61,6 +62,11 @@ public abstract class PluginFileType<T extends PluginFile> {
    */
   public abstract T create(Path filePath, String instanceName, Definer<T> definer);
 
+  /** Generate a list of export buttons to provide to the UI */
+  public <T> Stream<T> exportSearches(ExportSearch<T> builder) {
+    return Stream.empty();
+  }
+
   /** The file extension to monitor for */
   public final String extension() {
     return extension;
@@ -91,12 +97,18 @@ public abstract class PluginFileType<T extends PluginFile> {
   public boolean isOverloaded(Set<String> services) {
     return false;
   }
-  /** Receive JSON data describing Prometheus alerts that are firing for the olives */
-  public void pushAlerts(String alertJson) {}
 
   /** Get the method lookup for this class. */
   public final Lookup lookup() {
     return lookup;
+  }
+
+  /** Receive JSON data describing Prometheus alerts that are firing for the olives */
+  public void pushAlerts(String alertJson) {}
+
+  /** Create a list of searches */
+  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+    return Stream.empty();
   }
 
   /**
@@ -110,9 +122,4 @@ public abstract class PluginFileType<T extends PluginFile> {
 
   /** Create some JavaScript code to render this item in dashboards */
   public void writeJavaScriptRenderer(PrintStream writer) {}
-
-  /** Create a list of searches */
-  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
-    return Stream.empty();
-  }
 }

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import java.nio.file.Path;
@@ -29,12 +30,25 @@ public abstract class PluginFile implements RequiredServices {
   /** Generate a configuration block to be shown on the status page */
   public abstract void configuration(SectionRenderer renderer) throws XMLStreamException;
 
+  /** Generate a list of export buttons to provide to the UI */
+  public <T> Stream<T> exportSearches(ExportSearch<T> builder) {
+    return Stream.empty();
+  }
+
   /** The configuration file that was read */
   public final Path fileName() {
     return fileName;
   }
-  /** Receive JSON data describing Prometheus alerts that are firing for the olives */
-  public void pushAlerts(String alertJson) {}
+
+  /**
+   * Find a dumper
+   *
+   * @param name the dumper to find
+   * @return the dumper if found, or an empty stream if none is available
+   */
+  public Stream<Dumper> findDumper(String name, Imyhat... types) {
+    return Stream.empty();
+  }
 
   /**
    * Check throttling should be applied
@@ -45,6 +59,32 @@ public abstract class PluginFile implements RequiredServices {
    */
   public boolean isOverloaded(Set<String> services) {
     return false;
+  }
+
+  /**
+   * The instance name for this plugin
+   *
+   * <p>This is the file name less the extension
+   */
+  public String name() {
+    return instanceName;
+  }
+
+  /** Receive JSON data describing Prometheus alerts that are firing for the olives */
+  public void pushAlerts(String alertJson) {}
+
+  /** Create a list of searches */
+  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+    return Stream.empty();
+  }
+
+  /**
+   * Create a URL for a source file
+   *
+   * @return the URL to the source file or null if not possible
+   */
+  public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
+    return Stream.empty();
   }
 
   /**
@@ -65,37 +105,4 @@ public abstract class PluginFile implements RequiredServices {
    *     configuration talks to an external service which is failed.
    */
   public abstract Optional<Integer> update();
-
-  /**
-   * Create a URL for a source file
-   *
-   * @return the URL to the source file or null if not possible
-   */
-  public Stream<String> sourceUrl(String localFilePath, int line, int column, String hash) {
-    return Stream.empty();
-  }
-
-  /**
-   * Find a dumper
-   *
-   * @param name the dumper to find
-   * @return the dumper if found, or an empty stream if none is available
-   */
-  public Stream<Dumper> findDumper(String name, Imyhat... types) {
-    return Stream.empty();
-  }
-
-  /**
-   * The instance name for this plugin
-   *
-   * <p>This is the file name less the extension
-   */
-  public String name() {
-    return instanceName;
-  }
-
-  /** Create a list of searches */
-  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
-    return Stream.empty();
-  }
 }
