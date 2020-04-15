@@ -18,6 +18,7 @@ To set up a JIRA integration, create a file ending in `.jira` as follows:
           "CLOSED",
           "RESOLVED"
         ],
+        "issueType": "Bug",
         "passwordFile": "/path/to/jira/password",
         "projectKey": "PK",
         "reopenActions": [
@@ -113,3 +114,9 @@ These collected searches are combined with the base search `filter` using the
 - `BY_ASSIGNEE` creates one search that matches the base filter and any of the
 	ticket filters that are assigned to a particular person. The name can contain
   `{assignee}` for the full name of the person for the ticket group.
+
+Searches can also be export back to JIRA from Shesmu. By setting the
+`"issueType"` property to the name of an issue type for this project, the
+_Export Search_ button will have an entry to create a new issue with the
+current search already in the description.  If the `"issueType"` is null or not
+an issue type present in the project, the button will not appear.
