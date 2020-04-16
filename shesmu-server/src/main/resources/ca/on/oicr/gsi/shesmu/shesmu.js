@@ -5103,7 +5103,7 @@ function showAlertNavigator(
               dialog.appendChild(document.createElement("BR"));
               dialog.appendChild(
                 button("Add", "Add alert filter.", () => {
-                  if (label.value.trim() && value.value.trim()) {
+                  if (label.value.trim()) {
                     close();
                     userFilters.push({
                       type: type,
