@@ -1147,6 +1147,20 @@ export function initialiseOliveDash(
     sourceHashCell.innerText = file.hash;
     sourceHashRow.appendChild(sourceHashCell);
 
+    const simulateRow = document.createElement("TR");
+    infoTable.appendChild(simulateRow);
+    const simulateHeader = document.createElement("TD");
+    simulateHeader.innerText = "Simulation";
+    simulateRow.appendChild(simulateHeader);
+    const simulateCell = document.createElement("TD");
+    simulateRow.appendChild(simulateCell);
+    const simulateLink = document.createElement("A");
+    simulateLink.innerText = "Edit in Simulator";
+    simulateLink.href = `simulatedash?script=${encodeURIComponent(
+      file.filename
+    )}`;
+    simulateCell.appendChild(simulateLink);
+
     return infoTable;
   };
   const activeOlive = document.createElement("SPAN");
@@ -1268,20 +1282,6 @@ export function initialiseOliveDash(
         sourceLink.href = olive.url;
         sourceCell.appendChild(sourceLink);
       }
-
-      const simulateRow = document.createElement("TR");
-      infoTable.appendChild(simulateRow);
-      const simulateHeader = document.createElement("TD");
-      simulateHeader.innerText = "Simulation";
-      simulateRow.appendChild(simulateHeader);
-      const simulateCell = document.createElement("TD");
-      simulateRow.appendChild(simulateCell);
-      const simulateLink = document.createElement("A");
-      simulateLink.innerText = "Edit in Olive Simulator";
-      simulateLink.href = `simulatedash?script=${encodeURIComponent(
-        file.filename
-      )}`;
-      simulateCell.appendChild(simulateLink);
 
       olive.tags.forEach(tag => {
         const tagRow = document.createElement("TR");
