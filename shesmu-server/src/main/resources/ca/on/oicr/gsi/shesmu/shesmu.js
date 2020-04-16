@@ -4640,10 +4640,10 @@ function showAlertNavigator(
             }
             row.style.backgroundColor = "#D1EFED";
             activeBreakdown = row;
-            const table = document.createElement("TABLE");
-            flex.appendChild(table);
+            const breakdownTable = document.createElement("TABLE");
+            flex.appendChild(breakdownTable);
             const header = document.createElement("TR");
-            table.appendChild(header);
+            breakdownTable.appendChild(header);
             const labelCell = document.createElement("TH");
             labelCell.colSpan = 2;
             header.appendChild(labelCell);
@@ -4678,7 +4678,7 @@ function showAlertNavigator(
                 100
               ).toFixed(2)}%)`;
               row.appendChild(countCell);
-              table.appendChild(row);
+              breakdownTable.appendChild(row);
             }
           });
         }
