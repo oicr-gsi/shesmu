@@ -73,7 +73,9 @@ public class NameDefinitions {
                     .stream()
                     .filter(variable -> !variable.name().equals(parameter.name())))
             .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
-        isGood);
+        isGood,
+        shadowContext,
+        undefinedVariableProvider);
   }
 
   /**
@@ -94,7 +96,9 @@ public class NameDefinitions {
                     .stream()
                     .filter(variable -> !shadowedNames.contains(variable.name())))
             .collect(Collectors.toMap(Target::name, Function.identity(), (a, b) -> a)),
-        isGood);
+        isGood,
+        shadowContext,
+        undefinedVariableProvider);
   }
 
   public NameDefinitions bind(DestructuredArgumentNode name) {
@@ -104,7 +108,8 @@ public class NameDefinitions {
 
   /** Create a new set of defined variables that is identical, but mark it as a failure. */
   public NameDefinitions fail(boolean ok) {
-    return new NameDefinitions(variables, ok && isGood);
+    return new NameDefinitions(
+        variables, ok && isGood, Optional.empty(), undefinedVariableProvider);
   }
 
   /** Get a variable from the collection. */
