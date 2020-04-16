@@ -253,18 +253,22 @@ public final class ActionProcessor
 
   private static <T extends Comparable<T>> void propertySummary(
       ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
-    final TreeMap<T, Long> states =
+    final TreeMap<T, Set<Action>> states =
         actions
             .stream()
             .flatMap(
                 action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
-            .collect(Collectors.groupingBy(Pair::first, TreeMap::new, Collectors.counting()));
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first,
+                    TreeMap::new,
+                    Collectors.mapping(Pair::second, Collectors.toSet())));
 
     final Function<T, String> namer = property.name(states.keySet().stream());
-    for (final Entry<T, Long> state : states.entrySet()) {
+    for (final Entry<T, Set<Action>> state : states.entrySet()) {
       final ObjectNode row = table.addObject();
       row.put("title", "Total");
-      row.put("value", state.getValue());
+      row.put("value", state.getValue().size());
       row.put("kind", "property");
       row.put("type", property.name());
       row.put("property", namer.apply(state.getKey()));
