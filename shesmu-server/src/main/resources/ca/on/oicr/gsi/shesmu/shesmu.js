@@ -4657,26 +4657,28 @@ function showAlertNavigator(
       pageList.appendChild(alertList);
 
       let rendering = true;
-      for (let i = 0; i < numButtons; i++) {
-        if (
-          i <= 2 ||
-          i >= numButtons - 2 ||
-          (i >= current - 2 && i <= current + 2)
-        ) {
-          rendering = true;
-          const page = document.createElement("SPAN");
-          const index = i;
-          page.innerText = `${index + 1}`;
-          if (index != current) {
-            page.className = "load accessory";
-            page.addEventListener("click", () => drawPager(index));
+      if (numButtons > 1) {
+        for (let i = 0; i < numButtons; i++) {
+          if (
+            i <= 2 ||
+            i >= numButtons - 2 ||
+            (i >= current - 2 && i <= current + 2)
+          ) {
+            rendering = true;
+            const page = document.createElement("SPAN");
+            const index = i;
+            page.innerText = `${index + 1}`;
+            if (index != current) {
+              page.className = "load accessory";
+              page.addEventListener("click", () => drawPager(index));
+            }
+            pager.appendChild(page);
+          } else if (rendering) {
+            const ellipsis = document.createElement("SPAN");
+            ellipsis.innerText = "...";
+            pager.appendChild(ellipsis);
+            rendering = false;
           }
-          pager.appendChild(page);
-        } else if (rendering) {
-          const ellipsis = document.createElement("SPAN");
-          ellipsis.innerText = "...";
-          pager.appendChild(ellipsis);
-          rendering = false;
         }
       }
       clearChildren(alertList);
