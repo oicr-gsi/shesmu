@@ -1175,13 +1175,10 @@ export function initialiseOliveDash(
         resultsContainer,
         false,
         targetElement => {
-          const [infoPane, listPane, bytecodePane] = makeTabs(
-            targetElement,
-            0,
-            "Overview",
-            "Actions",
-            "Bytecode"
-          );
+          const {
+            panes: [infoPane, listPane, bytecodePane],
+            find
+          } = makeTabs(targetElement, 0, "Overview", "Actions", "Bytecode");
           prepareFileInfo(file, infoPane, bytecodePane);
 
           const statsHeader = document.createElement("H2");
@@ -1190,7 +1187,7 @@ export function initialiseOliveDash(
           const stats = document.createElement("DIV");
           infoPane.appendChild(stats);
 
-          return [stats, listPane];
+          return { panes: [stats, listPane], find: find };
         },
         (reset, updateLocalSearches) => {
           if (updateLocalSearches) {
@@ -1231,12 +1228,9 @@ export function initialiseOliveDash(
     } else {
       findOverride = null;
       clearChildren(resultsContainer);
-      const [infoPane, bytecodePane] = makeTabs(
-        resultsContainer,
-        0,
-        "Overview",
-        "Bytecode"
-      );
+      const {
+        panes: [infoPane, bytecodePane]
+      } = makeTabs(resultsContainer, 0, "Overview", "Bytecode");
       prepareFileInfo(file, infoPane, bytecodePane);
     }
   };
@@ -1411,7 +1405,10 @@ export function initialiseOliveDash(
             resultsContainer,
             false,
             targetElement => {
-              const [infoPane, metroPane, listPane, bytecodePane] = makeTabs(
+              const {
+                panes: [infoPane, metroPane, listPane, bytecodePane],
+                find
+              } = makeTabs(
                 targetElement,
                 0,
                 "Overview",
@@ -1427,7 +1424,16 @@ export function initialiseOliveDash(
               const stats = document.createElement("DIV");
               infoPane.appendChild(stats);
 
-              return [stats, listPane];
+              return {
+                panes: [stats, listPane],
+                find: (i, f) => {
+                  if (i == 0) {
+                    find(0, f);
+                  } else if (i == 1) {
+                    find(2, f);
+                  }
+                }
+              };
             },
             (reset, updateLocalSearches) => {
               if (updateLocalSearches) {
@@ -1448,7 +1454,10 @@ export function initialiseOliveDash(
       case "ALERTS":
         {
           clearChildren(resultsContainer);
-          const [infoPane, alertsPane, metroPane, bytecodePane] = makeTabs(
+          const {
+            panes: [infoPane, alertsPane, metroPane, bytecodePane],
+            find
+          } = makeTabs(
             resultsContainer,
             0,
             "Overview",
@@ -1478,6 +1487,7 @@ export function initialiseOliveDash(
                 container,
                 a => link(a.generatorURL, "Permalink"),
                 updateOliveFilter,
+                f => find(1, f),
                 throttleFileButton
               )
           );
@@ -1486,13 +1496,9 @@ export function initialiseOliveDash(
       default: {
         findOverride = null;
         clearChildren(resultsContainer);
-        const [infoPane, metroPane, bytecodePane] = makeTabs(
-          resultsContainer,
-          0,
-          "Overview",
-          "Dataflow",
-          "Bytecode"
-        );
+        const {
+          panes: [infoPane, metroPane, bytecodePane]
+        } = makeTabs(resultsContainer, 0, "Overview", "Dataflow", "Bytecode");
         prepareInfo(infoPane, metroPane, bytecodePane);
         if (throttleFileButton) {
           infoPane.appendChild(throttleFileButton);
@@ -1780,12 +1786,10 @@ export function initialiseOliveDash(
           resultsContainer,
           false,
           targetElement => {
-            const [infoPane, listPane] = makeTabs(
-              targetElement,
-              0,
-              "Overview",
-              "Actions"
-            );
+            const {
+              panes: [infoPane, listPane],
+              find
+            } = makeTabs(targetElement, 0, "Overview", "Actions");
 
             const cleanup = () => {
               deadTableBody.removeChild(tr);
@@ -1815,7 +1819,7 @@ export function initialiseOliveDash(
             const stats = document.createElement("DIV");
             infoPane.appendChild(stats);
 
-            return [stats, listPane];
+            return { panes: [stats, listPane], find: find };
           },
           (reset, updateLocalSearches) => {
             if (updateLocalSearches) {
@@ -2009,7 +2013,9 @@ function makePopup(returnClose, afterClose) {
 }
 
 function makeTabs(container, selectedTab, ...tabs) {
+  let original = true;
   const panes = tabs.map(t => document.createElement("DIV"));
+  const finds = new Array(tabs.length);
   const buttons = tabs.map((t, index) => {
     const button = document.createElement("SPAN");
     button.innerText = t;
@@ -2020,6 +2026,8 @@ function makeTabs(container, selectedTab, ...tabs) {
       buttons.forEach((button, i) => {
         button.className = i == index ? "tab selected" : "tab";
       });
+      findOverride = finds[index];
+      original = false;
     });
     return button;
   });
@@ -2036,7 +2044,15 @@ function makeTabs(container, selectedTab, ...tabs) {
     buttons[i].className = i == selectedTab ? "tab selected" : "tab";
     panes[i].style.display = i == selectedTab ? "block" : "none";
   }
-  return panes;
+  return {
+    panes: panes,
+    find: (i, f) => {
+      finds[i] = f;
+      if (original && i == selectedTab) {
+        findOverride = f;
+      }
+    }
+  };
 }
 
 function makeBusyDialog() {
@@ -2986,7 +3002,10 @@ function getStats(
   const queryBuilder = document.createElement("DIV");
   queryBuilder.className = "filters";
   targetElement.appendChild(queryBuilder);
-  const [statsPane, listPane] = prepareTabs(targetElement);
+  const {
+    panes: [statsPane, listPane],
+    find
+  } = prepareTabs(targetElement);
   function mutateFilters(type, update) {
     additionalFilters.push({
       ...additionalFilters[additionalFilters.length - 1]
@@ -3053,10 +3072,13 @@ function getStats(
     }
     refresh();
   };
-  findOverride = () =>
-    editText({ text: "", matchCase: false }, update =>
-      mutateFilters("text", update)
+  for (let i = 0; i < 2; i++) {
+    find(i, () =>
+      editText({ text: "", matchCase: false }, update =>
+        mutateFilters("text", update)
+      )
     );
+  }
 
   toolBar.appendChild(
     button(
@@ -4039,13 +4061,14 @@ export function initialiseSimulationDashboard(
           if (response.hasOwnProperty("alerts") && response.alerts.length) {
             tabs.push({
               name: "Alerts",
-              render: tab =>
+              render: (tab, find) =>
                 showAlertNavigator(
                   response.alerts,
                   [],
                   tab,
                   a => [],
-                  filters => {}
+                  filters => {},
+                  find
                 )
             });
           }
@@ -4215,7 +4238,10 @@ export function initialiseSimulationDashboard(
             });
           }
           clearChildren(outputContainer);
-          const [scriptPane, extraPane, ...tabPanes] = makeTabs(
+          const {
+            panes: [scriptPane, extraPane, ...tabPanes],
+            find
+          } = makeTabs(
             outputContainer,
             tabs.length > 0 ? 2 : 0,
             ...["Script", "Extra Definitions"].concat(
@@ -4225,7 +4251,7 @@ export function initialiseSimulationDashboard(
           scriptPane.appendChild(script);
           extraPane.appendChild(extra);
           for (let i = 0; i < tabPanes.length; i++) {
-            tabs[i].render(tabPanes[i]);
+            tabs[i].render(tabPanes[i], f => find(i + 2, f));
           }
           if (document.visibilityState == "hidden") {
             completeSound.play();
@@ -4281,12 +4307,9 @@ export function initialiseSimulationDashboard(
     )
   );
 
-  const [scriptPane, extraPane] = makeTabs(
-    outputContainer,
-    0,
-    "Script",
-    "Extra Definitions"
-  );
+  const {
+    panes: [scriptPane, extraPane]
+  } = makeTabs(outputContainer, 0, "Script", "Extra Definitions");
   scriptPane.appendChild(script);
   extraPane.appendChild(extra);
   const fakeActionList = document.createElement("TABLE");
@@ -4487,6 +4510,7 @@ function showAlertNavigator(
   output,
   makeHeader,
   pushFilters,
+  find,
   ...toolbarExtras
 ) {
   clearChildren(output);
@@ -4766,7 +4790,7 @@ function showAlertNavigator(
     });
   };
 
-  findOverride = () => {
+  find(() => {
     const dialog = makePopup();
     dialog.appendChild(document.createTextNode("Label: "));
     const label = document.createElement("INPUT");
@@ -4791,7 +4815,7 @@ function showAlertNavigator(
         }
       })
     );
-  };
+  });
   toolbar.appendChild(
     button(
       "➕ Add Filter",
@@ -4984,7 +5008,8 @@ export function initialiseAlertDashboard(initialFilterString, output) {
               `alerts?filters=${encodeURIComponent(
                 JSON.stringify(userFilters)
               )}`
-            )
+            ),
+          f => (findOverride = f)
         );
         window.addEventListener("popstate", e => {
           if (e.state) {
