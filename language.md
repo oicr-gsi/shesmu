@@ -705,6 +705,13 @@ An integer literal. Integer may be suffixed by one of the following multipliers:
 
 The boolean true and false values, respectively.
 
+#### Source Location String
+- `Location`
+
+This creates a string containing the scripts source path, line, column, and
+hash. This is meant to help locate the originating olive in alerts and other
+output.
+
 #### Function Call
 - _function_`(`_expr_`,` _expr_`,` ...`)`
 

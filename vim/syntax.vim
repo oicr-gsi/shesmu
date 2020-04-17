@@ -55,6 +55,7 @@ syn keyword shesmuKeyword Let
 syn keyword shesmuKeyword LexicalConcat
 syn keyword shesmuKeyword Limit
 syn keyword shesmuKeyword List
+syn keyword shesmuKeyword Location
 syn keyword shesmuKeyword Max
 syn keyword shesmuKeyword Min
 syn keyword shesmuKeyword Monitor
