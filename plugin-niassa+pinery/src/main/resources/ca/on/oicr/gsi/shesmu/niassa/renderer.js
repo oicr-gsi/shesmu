@@ -95,6 +95,10 @@ actionRender.set("niassa", a => [
     )
   ),
   collapse(
+    "Input File SWIDs from Olive",
+    table(a.inputFiles, ["File SWID", k => k])
+  ),
+  collapse(
     "Signatures from Olive",
     table(
       a.signatures,
