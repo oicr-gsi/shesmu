@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Let Prefix workflow, project With x_
+ Run ok With ok = x_workflow == "SlowA" && x_project == "the_foo_study";

@@ -197,13 +197,14 @@ This reshapes the data.
 
 Reshapes the data by creating new variables from existing expressions. There are several assignments available:
 
-|Syntax                       | Behaviour                                                                                                      |
-|---                          |---                                                                                                             |
-| _name_ `=` _expr_           | Compute the value from _expr_ and assign it to _name_.                                                         |
-| _name_                      | Copy an existing variable _name_ without modification.                                                         |
-| `@`_gang_                   | Copy all variables in a gang without modification.                                                             | 
-| _name_ `= OnlyIf` _expr_    | Compute an optional value from _expr_; if it contains a value, assign it to _name_; if empty, discard the row. |
-| _name_ `= Univalued` _expr_ | Compute a list from _expr_; if it contains exactly one value, assign it to _name_; otherwise discard the row.  |
+|Syntax                                  | Behaviour                                                                                                      |
+|---                                     |---                                                                                                             |
+| _name_ `=` _expr_                      | Compute the value from _expr_ and assign it to _name_.                                                         |
+| _name_                                 | Copy an existing variable _name_ without modification.                                                         |
+| `@`_gang_                              | Copy all variables in a gang without modification.                                                             | 
+| _name_ `= OnlyIf` _expr_               | Compute an optional value from _expr_; if it contains a value, assign it to _name_; if empty, discard the row. |
+| _name_ `= Univalued` _expr_            | Compute a list from _expr_; if it contains exactly one value, assign it to _name_; otherwise discard the row.  |
+| `Prefix` _name_`,` ... `With` _prefix_ | Copy all the variables, but renaming them by adding the supplied prefix. This is useful for self-joins.        |
 
 This reshapes the data.
 
