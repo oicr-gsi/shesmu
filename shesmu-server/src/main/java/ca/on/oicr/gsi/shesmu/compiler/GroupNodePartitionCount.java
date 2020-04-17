@@ -11,6 +11,7 @@ public class GroupNodePartitionCount extends GroupNode {
 
   private final ExpressionNode condition;
   private final String name;
+  private boolean read;
 
   public GroupNodePartitionCount(int line, int column, String name, ExpressionNode condition) {
     super(line, column);
@@ -29,8 +30,18 @@ public class GroupNodePartitionCount extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

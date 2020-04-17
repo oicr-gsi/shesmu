@@ -32,8 +32,18 @@ public class GroupNodeWithDefault extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return inner.isRead();
+  }
+
+  @Override
   public String name() {
     return inner.name();
+  }
+
+  @Override
+  public void read() {
+    inner.read();
   }
 
   @Override

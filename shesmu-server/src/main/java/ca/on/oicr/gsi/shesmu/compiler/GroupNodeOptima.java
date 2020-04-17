@@ -11,6 +11,7 @@ public class GroupNodeOptima extends GroupNodeDefaultable {
   private final ExpressionNode expression;
   private final boolean max;
   private final String name;
+  private boolean read;
 
   public GroupNodeOptima(
       int line, int column, String name, ExpressionNode expression, boolean max) {
@@ -31,8 +32,18 @@ public class GroupNodeOptima extends GroupNodeDefaultable {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

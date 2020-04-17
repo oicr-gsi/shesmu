@@ -3,7 +3,7 @@ Input test;
 # this a comment
 Define standard_fastq(string s)
   Where workflow == { "BamQC 2.7+" ,3} [ 0 ] 
-  Where project == "foo"
+  Where project == "foo" && project != s
   Where str_len ( "{path}" )==file_size
   Group By accession, project Into files = List "{path}";
 

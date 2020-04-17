@@ -97,6 +97,11 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   }
 
   @Override
+  public boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   protected void collectArgumentSignableVariables() {
     arguments.forEach(
         arg -> arg.second().collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));

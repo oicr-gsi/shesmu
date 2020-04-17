@@ -12,9 +12,9 @@ import java.util.function.Predicate;
  * <p>Also usable as the variable definition for the result
  */
 public final class GroupNodeFirst extends GroupNodeDefaultable {
-
   private final ExpressionNode expression;
   private final String name;
+  private boolean read;
 
   public GroupNodeFirst(int line, int column, String name, ExpressionNode expression) {
     super(line, column);
@@ -33,8 +33,18 @@ public final class GroupNodeFirst extends GroupNodeDefaultable {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

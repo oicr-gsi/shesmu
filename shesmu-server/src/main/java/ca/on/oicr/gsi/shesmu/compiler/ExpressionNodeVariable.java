@@ -32,6 +32,11 @@ public class ExpressionNodeVariable extends ExpressionNode {
           }
 
           @Override
+          public void read() {
+            // Gaze into the bad value and ignore that you read it.
+          }
+
+          @Override
           public Imyhat type() {
             return Imyhat.BAD;
           }
@@ -79,6 +84,7 @@ public class ExpressionNodeVariable extends ExpressionNode {
     } else {
       errorHandler.accept(String.format("%d:%d: Undefined variable “%s”.", line(), column(), name));
     }
+    target.read();
     return result.isPresent();
   }
 

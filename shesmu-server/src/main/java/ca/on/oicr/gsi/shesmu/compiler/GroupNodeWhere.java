@@ -29,8 +29,18 @@ public class GroupNodeWhere extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return sink.isRead();
+  }
+
+  @Override
   public String name() {
     return sink.name();
+  }
+
+  @Override
+  public void read() {
+    sink.read();
   }
 
   @Override

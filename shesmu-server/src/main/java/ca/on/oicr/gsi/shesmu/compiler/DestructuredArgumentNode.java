@@ -18,6 +18,13 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
   private static final DestructuredArgumentNode MISSING =
       new DestructuredArgumentNode() {
         @Override
+        public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+          // Pretend like we are read because we don't want to generate errors that something was
+          // unread
+          return true;
+        }
+
+        @Override
         public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
           return WildcardCheck.NONE;
         }
@@ -118,7 +125,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
               }
               return converted;
             }
-            o.accept(new DestructuredArgumentNodeVariable(name.get()));
+            o.accept(new DestructuredArgumentNodeVariable(p.line(), p.column(), name.get()));
           }
           return result;
         });
@@ -146,6 +153,8 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
       return childResult;
     }
   }
+
+  public abstract boolean checkUnusedDeclarations(Consumer<String> errorHandler);
 
   public abstract WildcardCheck checkWildcard(Consumer<String> errorHandler);
 

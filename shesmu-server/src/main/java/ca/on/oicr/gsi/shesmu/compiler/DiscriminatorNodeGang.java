@@ -58,6 +58,11 @@ public class DiscriminatorNodeGang extends DiscriminatorNode {
     }
 
     @Override
+    public void read() {
+      // We don't care if discriminators are read because they are implicitly read by grouping.
+    }
+
+    @Override
     public Imyhat type() {
       return source.type();
     }

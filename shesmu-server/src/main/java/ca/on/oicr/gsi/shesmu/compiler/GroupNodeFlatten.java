@@ -12,10 +12,10 @@ import java.util.function.Predicate;
  * <p>Also usable as the variable definition for the result
  */
 public final class GroupNodeFlatten extends GroupNode {
-
   private final ExpressionNode expression;
-  private final String name;
   private Imyhat innerType = Imyhat.BAD;
+  private final String name;
+  private boolean read;
 
   public GroupNodeFlatten(int line, int column, String name, ExpressionNode expression) {
     super(line, column);
@@ -34,8 +34,18 @@ public final class GroupNodeFlatten extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

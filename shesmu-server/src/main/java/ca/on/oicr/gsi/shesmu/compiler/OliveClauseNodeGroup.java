@@ -50,6 +50,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
                             "%d:%d: Non-stream variable “%s” in “By”.", line, column, name));
                     return null;
                   }
+                  target.ifPresent(Target::read);
                   return target.orElse(null);
                 })
             .filter(Objects::nonNull)
@@ -78,6 +79,21 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
     this.children = children;
     this.discriminators = discriminators;
     this.where = where;
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    boolean ok = true;
+    for (final GroupNode child : children) {
+      if (!child.isRead()) {
+        ok = false;
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Collected result “%s” is never used.",
+                child.line(), child.column(), child.name()));
+      }
+    }
+    return ok;
   }
 
   @Override

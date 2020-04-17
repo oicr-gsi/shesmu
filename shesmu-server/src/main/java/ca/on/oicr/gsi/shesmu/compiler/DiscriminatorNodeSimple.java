@@ -43,6 +43,12 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
           }
 
           @Override
+          public void read() {
+            // We don't care if discriminators are read because they are implicitly read by
+            // grouping.
+          }
+
+          @Override
           public Imyhat type() {
             return inputTarget.type();
           }
@@ -110,6 +116,7 @@ public class DiscriminatorNodeSimple extends DiscriminatorNode {
       return false;
     }
     this.inputTarget = target.get();
+    this.inputTarget.read();
     return true;
   }
 

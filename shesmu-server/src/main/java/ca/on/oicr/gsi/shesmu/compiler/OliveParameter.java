@@ -20,7 +20,7 @@ public class OliveParameter implements Target {
   }
 
   private final String name;
-
+  private boolean read;
   private Imyhat realType;
   private final ImyhatNode type;
 
@@ -34,9 +34,18 @@ public class OliveParameter implements Target {
     return Flavour.PARAMETER;
   }
 
+  public boolean isRead() {
+    return read;
+  }
+
   @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   public boolean resolveTypes(

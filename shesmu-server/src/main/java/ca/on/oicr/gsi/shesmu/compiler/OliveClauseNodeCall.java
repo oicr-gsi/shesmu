@@ -27,6 +27,11 @@ public class OliveClauseNodeCall extends OliveClauseNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
   }

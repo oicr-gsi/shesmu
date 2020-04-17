@@ -16,10 +16,10 @@ public final class OliveNodeConstant extends OliveNode implements Target {
   private final ExpressionNode body;
 
   private final int column;
-
+  private final boolean exported;
   private final int line;
-
   private final String name;
+  private boolean read;
 
   public OliveNodeConstant(
       int line, int column, boolean exported, String name, ExpressionNode body) {
@@ -30,14 +30,23 @@ public final class OliveNodeConstant extends OliveNode implements Target {
     this.body = body;
   }
 
-  private final boolean exported;
-
   @Override
   public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     builder.defineConstant(
         name,
         body.type().apply(TypeUtils.TO_ASM),
         method -> body.render(builder.rootRenderer(false)));
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    if (read || exported) {
+      return true;
+    } else {
+      errorHandler.accept(
+          String.format("%d:%d: Constant “%s” is neither used nor exported.", line, column, name));
+      return false;
+    }
   }
 
   @Override
@@ -92,6 +101,11 @@ public final class OliveNodeConstant extends OliveNode implements Target {
     if (exported) {
       exportConsumer.constant(name, type());
     }
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

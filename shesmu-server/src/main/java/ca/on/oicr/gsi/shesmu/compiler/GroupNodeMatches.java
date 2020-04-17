@@ -7,10 +7,10 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class GroupNodeMatches extends GroupNode {
-
   private final ExpressionNode condition;
   private final Match matchType;
   private final String name;
+  private boolean read;
 
   public GroupNodeMatches(
       int line, int column, String name, Match matchType, ExpressionNode condition) {
@@ -31,8 +31,18 @@ public class GroupNodeMatches extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

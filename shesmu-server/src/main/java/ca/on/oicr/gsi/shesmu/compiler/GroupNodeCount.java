@@ -14,6 +14,7 @@ import java.util.function.Predicate;
 public final class GroupNodeCount extends GroupNode {
 
   private final String name;
+  private boolean read;
 
   public GroupNodeCount(int line, int column, String name) {
     super(line, column);
@@ -31,8 +32,18 @@ public final class GroupNodeCount extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

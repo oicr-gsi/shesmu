@@ -144,6 +144,9 @@ public interface FunctionDefinition {
   /** The parameters of the function, in order */
   Stream<FunctionParameter> parameters();
 
+  /** The function was actually used in a program. */
+  default void read() {}
+
   /** Create bytecode for this function. */
   void render(GeneratorAdapter methodGen);
 

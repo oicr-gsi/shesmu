@@ -36,6 +36,11 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   protected abstract Predicate<String> captureVariable();
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   public final int column() {
     return column;
   }

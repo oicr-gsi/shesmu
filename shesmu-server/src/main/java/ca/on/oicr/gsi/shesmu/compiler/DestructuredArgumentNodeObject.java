@@ -32,6 +32,17 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    boolean ok = true;
+    for (final Pair<String, DestructuredArgumentNode> field : fields) {
+      if (!field.second().checkUnusedDeclarations(errorHandler)) {
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
+  @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
     final WildcardCheck result =
         fields

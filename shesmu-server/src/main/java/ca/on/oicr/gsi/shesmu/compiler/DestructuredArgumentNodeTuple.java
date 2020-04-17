@@ -33,6 +33,17 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    boolean ok = true;
+    for (final DestructuredArgumentNode element : elements) {
+      if (!element.checkUnusedDeclarations(errorHandler)) {
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
+  @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
     final WildcardCheck result =
         elements

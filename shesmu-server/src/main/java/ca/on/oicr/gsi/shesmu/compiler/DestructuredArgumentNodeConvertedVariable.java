@@ -137,6 +137,7 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   private Target.Flavour flavour;
   private final int line;
   private final String name;
+  private boolean read;
   private final Target target =
       new Target() {
         @Override
@@ -147,6 +148,11 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
         @Override
         public String name() {
           return name;
+        }
+
+        @Override
+        public void read() {
+          read = true;
         }
 
         @Override
@@ -166,13 +172,23 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   }
 
   @Override
-  public boolean isBlank() {
-    return false;
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    if (read) {
+      return true;
+    } else {
+      errorHandler.accept(String.format("%d:%d: Variable “%s” is never used.", line, column, name));
+      return false;
+    }
   }
 
   @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
     return WildcardCheck.NONE;
+  }
+
+  @Override
+  public boolean isBlank() {
+    return false;
   }
 
   @Override

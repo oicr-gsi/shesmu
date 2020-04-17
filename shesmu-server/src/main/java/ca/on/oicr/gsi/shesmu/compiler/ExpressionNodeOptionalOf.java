@@ -99,6 +99,11 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     }
 
     @Override
+    public void read() {
+      // Super. Don't care.
+    }
+
+    @Override
     public void setContext(NameDefinitions defs) {
       this.defs = Optional.of(defs);
     }

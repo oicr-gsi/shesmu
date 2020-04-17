@@ -3,5 +3,5 @@ Input test;
 Olive
   Let x = path, y = workflow
   Run optional With
-    junk = True;
+    junk = x != '/' && y != "";
   

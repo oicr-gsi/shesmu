@@ -276,6 +276,11 @@ public class ProgramNode {
         ok
             && olives.stream().filter(olive -> olive.typeCheck(errorHandler)).count()
                 == olives.size();
+    // Check for unused definitions
+    ok =
+        ok
+            && olives.stream().filter(olive -> olive.checkUnusedDeclarations(errorHandler)).count()
+                == olives.size();
     return ok;
   }
 }

@@ -32,6 +32,11 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    return name.checkUnusedDeclarations(errorHandler);
+  }
+
+  @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     expression.collectPlugins(pluginFileNames);
   }
