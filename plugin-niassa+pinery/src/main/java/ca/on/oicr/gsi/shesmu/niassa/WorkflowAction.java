@@ -597,6 +597,7 @@ public final class WorkflowAction extends Action {
               key.put("lastModified", DateTimeFormatter.ISO_INSTANT.format(k.getLastModified()));
               return key;
             })
+        .distinct()
         .forEach(node.putArray("limsKeys")::add);
     limsKeysCollection
         .signatures()
@@ -612,7 +613,9 @@ public final class WorkflowAction extends Action {
               obj.put("signature", signature.second());
               return obj;
             })
+        .distinct()
         .forEach(node.putArray("signatures")::add);
+    limsKeysCollection.fileSwids().distinct().sorted().forEach(node.putArray("inputFiles")::add);
     final ObjectNode iniJson = node.putObject("ini");
     ini.forEach((key, value) -> iniJson.put(key.toString(), value.toString()));
     node.put("workflowAccession", workflowAccession);
