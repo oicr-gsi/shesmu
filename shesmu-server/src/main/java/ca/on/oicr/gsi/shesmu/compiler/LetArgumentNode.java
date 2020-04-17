@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -20,6 +21,26 @@ public abstract class LetArgumentNode implements UndefinedVariableProvider {
         output.accept(new LetArgumentNodeGang(input.line(), input.column(), name.get()));
       }
       return gangResult;
+    }
+    final Parser prefixParser = input.whitespace().keyword("Prefix");
+    if (prefixParser.isGood()) {
+      final AtomicReference<String> prefix = new AtomicReference<>();
+      final AtomicReference<List<String>> names = new AtomicReference<>();
+      final Parser prefixResult =
+          prefixParser
+              .whitespace()
+              .list(names::set, (p, o) -> p.whitespace().identifier(o).whitespace(), ',')
+              .whitespace()
+              .keyword("With")
+              .whitespace()
+              .identifier(prefix::set)
+              .whitespace();
+      if (prefixResult.isGood()) {
+        output.accept(
+            new LetArgumentNodePrefix(
+                prefixParser.line(), prefixParser.column(), prefix.get(), names.get()));
+      }
+      return prefixResult;
     }
 
     final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();

@@ -64,6 +64,7 @@ syn keyword shesmuKeyword Olive
 syn keyword shesmuKeyword OnlyIf
 syn keyword shesmuKeyword PartitionCount
 syn keyword shesmuKeyword Pick
+syn keyword shesmuKeyword Prefix
 syn keyword shesmuKeyword Reduce
 syn keyword shesmuKeyword Refill
 syn keyword shesmuKeyword Reject
