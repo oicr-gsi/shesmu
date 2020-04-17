@@ -287,6 +287,7 @@ public class TypeUtils {
                             line, column, p.name(), definition.name()));
                     return Stream.empty();
                   }
+                  source.get().read();
                   return Stream.of(constructor.apply(source.get(), p.type(), p.dropIfDefault()));
                 })
             .collect(Collectors.toList());

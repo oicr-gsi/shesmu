@@ -9,7 +9,10 @@ import org.objectweb.asm.Type;
 
 public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
   private Target.Flavour flavour;
+  private final int line;
+  private final int column;
   private final String name;
+  private boolean read;
   private Imyhat type = Imyhat.BAD;
   private final Target target =
       new Target() {
@@ -24,13 +27,30 @@ public class DestructuredArgumentNodeVariable extends DestructuredArgumentNode {
         }
 
         @Override
+        public void read() {
+          read = true;
+        }
+
+        @Override
         public Imyhat type() {
           return type;
         }
       };
 
-  public DestructuredArgumentNodeVariable(String name) {
+  public DestructuredArgumentNodeVariable(int line, int column, String name) {
+    this.line = line;
+    this.column = column;
     this.name = name;
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    if (read) {
+      return true;
+    } else {
+      errorHandler.accept(String.format("%d:%d: Variable “%s” is never used.", line, column, name));
+      return false;
+    }
   }
 
   @Override

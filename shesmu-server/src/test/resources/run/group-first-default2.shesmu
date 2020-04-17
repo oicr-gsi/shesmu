@@ -6,4 +6,4 @@ Olive
   Into
      x = Where library_size == 999 First path Default '.',
      y = Where library_size == 300 First path
- Run ok With ok = x == '.';
+ Run ok With ok = x == '.' && x != y;

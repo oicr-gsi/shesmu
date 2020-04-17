@@ -103,6 +103,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
       errorHandler.accept(String.format("%d:%d: Undefined function “%s”.", line(), column(), name));
       ok = false;
     }
+    function.read();
     return ok
         & arguments
                 .stream()

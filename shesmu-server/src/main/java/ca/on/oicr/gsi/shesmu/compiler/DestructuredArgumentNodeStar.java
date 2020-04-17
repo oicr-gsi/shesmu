@@ -57,6 +57,11 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
     }
 
     @Override
+    public void read() {
+      read = true;
+    }
+
+    @Override
     public Imyhat type() {
       return type;
     }
@@ -68,6 +73,7 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
   private final int column;
   private final Map<String, StarTarget> fields = new TreeMap<>();
   private final int line;
+  private boolean read;
   private Imyhat.ObjectImyhat objectType;
   private Target.Flavour flavour;
 
@@ -79,6 +85,18 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
   @Override
   public boolean isBlank() {
     return false;
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    if (read) {
+      return true;
+    } else {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: No variables map back to this wildcard. It is unused", line, column));
+      return false;
+    }
   }
 
   @Override

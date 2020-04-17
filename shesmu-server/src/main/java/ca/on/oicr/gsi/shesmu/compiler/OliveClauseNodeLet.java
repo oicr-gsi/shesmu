@@ -29,6 +29,17 @@ public class OliveClauseNodeLet extends OliveClauseNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    boolean ok = true;
+    for (final LetArgumentNode argument : arguments) {
+      if (!argument.checkUnusedDeclarations(errorHandler)) {
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
+  @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
   }

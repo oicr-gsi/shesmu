@@ -57,6 +57,35 @@ public interface Target {
     }
   }
 
+  public static final TargetWithContext BAD =
+      new TargetWithContext() {
+
+        @Override
+        public Flavour flavour() {
+          return Flavour.CONSTANT;
+        }
+
+        @Override
+        public String name() {
+          return "<BAD>";
+        }
+
+        @Override
+        public void read() {
+          // Ignore it
+        }
+
+        @Override
+        public void setContext(NameDefinitions defs) {
+          // Ignore it
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.BAD;
+        }
+      };
+
   static Target softWrap(Target target) {
     if (!target.flavour().isStream) {
       throw new IllegalArgumentException(
@@ -72,6 +101,11 @@ public interface Target {
       @Override
       public String name() {
         return target.name();
+      }
+
+      @Override
+      public void read() {
+        target.read();
       }
 
       @Override
@@ -99,40 +133,25 @@ public interface Target {
       }
 
       @Override
+      public void read() {
+        target.read();
+      }
+
+      @Override
       public Imyhat type() {
         return target.type();
       }
     };
   }
-  public static final TargetWithContext BAD =
-      new TargetWithContext() {
-
-        @Override
-        public Flavour flavour() {
-          return Flavour.CONSTANT;
-        }
-
-        @Override
-        public String name() {
-          return "<BAD>";
-        }
-
-        @Override
-        public void setContext(NameDefinitions defs) {
-          // Ignore it
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.BAD;
-        }
-      };
 
   /** What category of variables this one belongs to */
   Flavour flavour();
 
   /** The Shemsu name for this variable */
   String name();
+
+  /** Indicate that this variable is read */
+  void read();
 
   /** The Shesmu type for this variable */
   Imyhat type();

@@ -61,7 +61,7 @@ public abstract class LetArgumentNode implements UndefinedVariableProvider {
       if (justName.isGood()) {
         output.accept(
             new LetArgumentNodeSimple(
-                new DestructuredArgumentNodeVariable(loneName.get()),
+                new DestructuredArgumentNodeVariable(input.line(), input.column(), loneName.get()),
                 new ExpressionNodeVariable(input.line(), input.column(), loneName.get())));
         return justName;
       }
@@ -72,6 +72,8 @@ public abstract class LetArgumentNode implements UndefinedVariableProvider {
   private static final Pattern UNWRAP = Pattern.compile("(OnlyIf|Univalued|)");
 
   public abstract boolean blankCheck(Consumer<String> errorHandler);
+
+  public abstract boolean checkUnusedDeclarations(Consumer<String> errorHandler);
 
   public abstract WildcardCheck checkWildcard(Consumer<String> errorHandler);
 

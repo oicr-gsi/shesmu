@@ -11,6 +11,7 @@ public final class GroupNodeUnivalued extends GroupNodeDefaultable {
 
   private final ExpressionNode expression;
   private final String name;
+  private boolean read;
 
   public GroupNodeUnivalued(int line, int column, String name, ExpressionNode expression) {
     super(line, column);
@@ -29,8 +30,18 @@ public final class GroupNodeUnivalued extends GroupNodeDefaultable {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

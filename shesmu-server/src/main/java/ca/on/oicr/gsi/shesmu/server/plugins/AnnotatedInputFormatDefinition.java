@@ -437,6 +437,11 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
             }
 
             @Override
+            public void read() {
+              // Exciting! Don't care.
+            }
+
+            @Override
             public Imyhat type() {
               return type;
             }

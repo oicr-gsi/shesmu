@@ -252,6 +252,11 @@ public final class Check extends Compiler {
                               }
 
                               @Override
+                              public void read() {
+                                // Interesting. Don't care.
+                              }
+
+                              @Override
                               public Imyhat type() {
                                 return type;
                               }

@@ -14,8 +14,9 @@ import java.util.function.Predicate;
 public final class GroupNodeOnlyIf extends GroupNode {
 
   private final ExpressionNode expression;
-  private final String name;
   private Imyhat innerType = Imyhat.BAD;
+  private final String name;
+  private boolean read;
 
   public GroupNodeOnlyIf(int line, int column, String name, ExpressionNode expression) {
     super(line, column);
@@ -34,8 +35,18 @@ public final class GroupNodeOnlyIf extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

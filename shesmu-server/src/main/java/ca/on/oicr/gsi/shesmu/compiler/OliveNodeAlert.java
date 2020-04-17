@@ -105,6 +105,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   protected void collectArgumentSignableVariables() {
     labels.forEach(arg -> arg.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
     annotations.forEach(

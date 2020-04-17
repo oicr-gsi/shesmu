@@ -290,6 +290,9 @@ public abstract class OliveNode {
    */
   public abstract void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
 
+  /** Check that every variable that is declare is used somewhere in the program */
+  public abstract boolean checkUnusedDeclarations(Consumer<String> errorHandler);
+
   /** Check the rules that “Call” clauses must only precede “Group” clauses */
   public abstract boolean checkVariableStream(Consumer<String> errorHandler);
 

@@ -13,4 +13,4 @@ Define foo()
 
 Olive
  foo()
- Run ok With ok = a == 2 && b == 1;
+ Run ok With ok = a == 2 && b == 1 && c.matched_count > 0 && c.not_matched_count > 0;

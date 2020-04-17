@@ -9,8 +9,9 @@ import java.util.function.Predicate;
 public final class GroupNodeDictionary extends GroupNode {
 
   private final ExpressionNode key;
-  private final ExpressionNode value;
   private final String name;
+  private boolean read;
+  private final ExpressionNode value;
 
   public GroupNodeDictionary(
       int line, int column, String name, ExpressionNode key, ExpressionNode value) {
@@ -33,8 +34,18 @@ public final class GroupNodeDictionary extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+    read = true;
   }
 
   @Override

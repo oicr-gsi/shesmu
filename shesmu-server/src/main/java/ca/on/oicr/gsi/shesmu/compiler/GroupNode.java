@@ -177,6 +177,8 @@ public abstract class GroupNode implements DefinedTarget {
     return Flavour.STREAM;
   }
 
+  public abstract boolean isRead();
+
   @Override
   public final int line() {
     return line;

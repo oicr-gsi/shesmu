@@ -122,9 +122,9 @@ public abstract class ConstantDefinition implements Target {
   }
 
   private static final Type A_CONSTANT_LOADER_TYPE = Type.getType(ConstantLoader.class);
-  private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_JSON_OBJECT_TYPE = Type.getType(ObjectNode.class);
+  private static final Type A_OBJECT_NODE_TYPE = Type.getType(ObjectNode.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_PACK_JSON_OBJECT_TYPE = Type.getType(PackJsonObject.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
@@ -155,83 +155,6 @@ public abstract class ConstantDefinition implements Target {
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
   private static final Method SET__ADD =
       new Method("add", Type.BOOLEAN_TYPE, new Type[] {Type.getType(Object.class)});
-  private final String description;
-  private final String name;
-  private final Path path;
-  private final Imyhat type;
-  private final LoadableValue loadable =
-      new LoadableValue() {
-
-        @Override
-        public void accept(Renderer renderer) {
-          load(renderer.methodGen());
-        }
-
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public Type type() {
-          return type.apply(TypeUtils.TO_ASM);
-        }
-      };
-
-  /**
-   * Create a new constant
-   *
-   * @param name the name of the constant, which must be valid Shesmu identifier
-   * @param type the Shemsu type of the constant
-   */
-  public ConstantDefinition(String name, Imyhat type, String description, Path path) {
-    super();
-    this.name = name;
-    this.type = type;
-    this.description = description;
-    this.path = path;
-  }
-
-  /** Convert the constant into a form that can be used during bytecode generation */
-  public final LoadableValue asLoadable() {
-    return loadable;
-  }
-
-  /** Generate a class that write the constant to JSON when called. */
-  public final ConstantLoader compile() {
-    return new ConstantCompiler().compile();
-  }
-
-  /** The documentation text for a constant. */
-  public final String description() {
-    return description;
-  }
-
-  @Override
-  public final Flavour flavour() {
-    return Flavour.CONSTANT;
-  }
-
-  /**
-   * Generate bytecode in the supplied method to load this constant on the operand stack.
-   *
-   * @param methodGen the method to load the value in
-   */
-  protected abstract void load(GeneratorAdapter methodGen);
-
-  public final Path filename() {
-    return path;
-  }
-
-  /**
-   * The name of the constant.
-   *
-   * <p>This must be a valid identifier.
-   */
-  @Override
-  public final String name() {
-    return name;
-  }
 
   /**
    * Define a boolean constant
@@ -292,6 +215,89 @@ public abstract class ConstantDefinition implements Target {
         methodGen.push(value);
       }
     };
+  }
+
+  private final String description;
+  private final String name;
+  private final Path path;
+  private final Imyhat type;
+  private final LoadableValue loadable =
+      new LoadableValue() {
+
+        @Override
+        public void accept(Renderer renderer) {
+          load(renderer.methodGen());
+        }
+
+        @Override
+        public String name() {
+          return name;
+        }
+
+        @Override
+        public Type type() {
+          return type.apply(TypeUtils.TO_ASM);
+        }
+      };
+
+  /**
+   * Create a new constant
+   *
+   * @param name the name of the constant, which must be valid Shesmu identifier
+   * @param type the Shemsu type of the constant
+   */
+  public ConstantDefinition(String name, Imyhat type, String description, Path path) {
+    super();
+    this.name = name;
+    this.type = type;
+    this.description = description;
+    this.path = path;
+  }
+
+  /** Convert the constant into a form that can be used during bytecode generation */
+  public final LoadableValue asLoadable() {
+    return loadable;
+  }
+
+  /** Generate a class that write the constant to JSON when called. */
+  public final ConstantLoader compile() {
+    return new ConstantCompiler().compile();
+  }
+
+  /** The documentation text for a constant. */
+  public final String description() {
+    return description;
+  }
+
+  public final Path filename() {
+    return path;
+  }
+
+  @Override
+  public final Flavour flavour() {
+    return Flavour.CONSTANT;
+  }
+
+  /**
+   * Generate bytecode in the supplied method to load this constant on the operand stack.
+   *
+   * @param methodGen the method to load the value in
+   */
+  protected abstract void load(GeneratorAdapter methodGen);
+
+  /**
+   * The name of the constant.
+   *
+   * <p>This must be a valid identifier.
+   */
+  @Override
+  public final String name() {
+    return name;
+  }
+
+  @Override
+  public final void read() {
+    // Grand. No one cares.
   }
 
   /**

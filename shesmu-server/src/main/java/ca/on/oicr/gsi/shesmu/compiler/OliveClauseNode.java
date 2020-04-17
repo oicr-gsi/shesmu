@@ -428,6 +428,8 @@ public abstract class OliveClauseNode {
         });
   }
 
+  public abstract boolean checkUnusedDeclarations(Consumer<String> errorHandler);
+
   public abstract void collectPlugins(Set<Path> pluginFileNames);
 
   public abstract int column();

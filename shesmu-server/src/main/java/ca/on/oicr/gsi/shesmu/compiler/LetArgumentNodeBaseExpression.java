@@ -33,6 +33,11 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   }
 
   @Override
+  public final boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    return name.checkUnusedDeclarations(errorHandler);
+  }
+
+  @Override
   public WildcardCheck checkWildcard(Consumer<String> errorHandler) {
     return name.checkWildcard(errorHandler);
   }

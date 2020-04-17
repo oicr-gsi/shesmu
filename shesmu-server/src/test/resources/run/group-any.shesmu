@@ -7,4 +7,4 @@ Olive
     x = Where library_size == 307 First path,
     y = Where library_size == 300 First path,
     z = Any library_size > 305
- Run ok With ok = z;
+ Run ok With ok = z && x != y;

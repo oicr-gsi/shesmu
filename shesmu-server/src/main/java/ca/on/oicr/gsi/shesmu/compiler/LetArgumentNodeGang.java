@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,6 +31,17 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
   @Override
   public boolean blankCheck(Consumer<String> errorHandler) {
     return true;
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    for (final String name : unusedNames) {
+      errorHandler.accept(
+          String.format(
+              "%d:%d: Gang “@%s” contains “%s”, but this is never used.",
+              line, column, gangName, name));
+    }
+    return unusedNames.isEmpty();
   }
 
   @Override
@@ -71,6 +83,8 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
     }
   }
 
+  private final Set<String> unusedNames = new TreeSet<>();
+
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     final Optional<List<Pair<Target, Target>>> results =
@@ -79,25 +93,32 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
             column,
             defs,
             definition,
-            (inputTarget, expectedType, dropIfDefault) ->
-                new Pair<>(
-                    inputTarget,
-                    new Target() {
-                      @Override
-                      public Flavour flavour() {
-                        return Flavour.STREAM;
-                      }
+            (inputTarget, expectedType, dropIfDefault) -> {
+              unusedNames.add(inputTarget.name());
+              return new Pair<>(
+                  inputTarget,
+                  new Target() {
+                    @Override
+                    public Flavour flavour() {
+                      return Flavour.STREAM;
+                    }
 
-                      @Override
-                      public String name() {
-                        return inputTarget.name();
-                      }
+                    @Override
+                    public String name() {
+                      return inputTarget.name();
+                    }
 
-                      @Override
-                      public Imyhat type() {
-                        return expectedType;
-                      }
-                    }),
+                    @Override
+                    public void read() {
+                      unusedNames.remove(inputTarget.name());
+                    }
+
+                    @Override
+                    public Imyhat type() {
+                      return expectedType;
+                    }
+                  });
+            },
             errorHandler);
     results.ifPresent(l -> targets = l);
     return results.isPresent();

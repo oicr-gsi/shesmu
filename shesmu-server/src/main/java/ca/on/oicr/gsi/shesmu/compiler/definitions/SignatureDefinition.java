@@ -57,6 +57,11 @@ public abstract class SignatureDefinition implements Target {
     return name;
   }
 
+  @Override
+  public void read() {
+    // Stellar. Don't care.
+  }
+
   public final SignatureStorage storage() {
     return storage;
   }

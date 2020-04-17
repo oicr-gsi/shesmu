@@ -10,4 +10,4 @@ Olive
     a = Count,
     b = Where is_always Count,
     c = PartitionCount is_always
- Run ok With ok = a == 2 && b == 1;
+ Run ok With ok = a == 2 && b == 1 && c.matched_count > 0 && c.not_matched_count > 0;

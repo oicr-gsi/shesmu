@@ -21,6 +21,15 @@ public abstract class OliveNodeWithClauses extends OliveNode {
     this.clauses = clauses;
   }
 
+  @Override
+  public final boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    return clauses.stream().filter(c -> c.checkUnusedDeclarations(errorHandler)).count()
+            == clauses.size()
+        & checkUnusedDeclarationsExtra(errorHandler);
+  }
+
+  public abstract boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler);
+
   /** Check the rules that call clauses must only precede “Group” clauses */
   @Override
   public final boolean checkVariableStream(Consumer<String> errorHandler) {

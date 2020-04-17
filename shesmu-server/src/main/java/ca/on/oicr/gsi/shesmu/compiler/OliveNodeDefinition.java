@@ -45,6 +45,19 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
   }
 
   @Override
+  public boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler) {
+    boolean ok = true;
+    for (final OliveParameter parameter : parameters) {
+      if (!parameter.isRead()) {
+        ok = false;
+        errorHandler.accept(
+            String.format("%d:%d: Parameter “%s” is never used.", line, column, parameter.name()));
+      }
+    }
+    return ok;
+  }
+
+  @Override
   protected void collectArgumentSignableVariables() {
     // Do nothing.
   }

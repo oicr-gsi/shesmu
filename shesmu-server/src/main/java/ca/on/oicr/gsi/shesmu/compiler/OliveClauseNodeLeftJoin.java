@@ -48,6 +48,21 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    boolean ok = true;
+    for (final GroupNode child : children) {
+      if (!child.isRead()) {
+        ok = false;
+        errorHandler.accept(
+            String.format(
+                "%d:%d: Collected result “%s” is never used.",
+                child.line(), child.column(), child.name()));
+      }
+    }
+    return ok;
+  }
+
+  @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     outerKey.collectPlugins(pluginFileNames);
     innerKey.collectPlugins(pluginFileNames);

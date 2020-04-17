@@ -27,7 +27,14 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   private Method method;
   private final String name;
   private Type ownerType;
+  private boolean read;
   private final List<OliveParameter> parameters;
+
+  @Override
+  public void read() {
+
+    read = true;
+  }
 
   public OliveNodeFunction(
       int line,
@@ -53,6 +60,17 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
             name,
             body.type().apply(TypeUtils.TO_ASM),
             parameters.stream().map(p -> p.type().apply(TypeUtils.TO_ASM)).toArray(Type[]::new));
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    if (read || exported) {
+      return true;
+    } else {
+      errorHandler.accept(
+          String.format("%d:%d: Function “%s” is neither used nor exported.", line, column, name));
+      return false;
+    }
   }
 
   @Override

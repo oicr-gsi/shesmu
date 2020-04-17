@@ -47,6 +47,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   }
 
   @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    return true;
+  }
+
+  @Override
   public void collectFreeVariables(Set<String> freeVariables) {
     labels.forEach(arg -> arg.collectFreeVariables(freeVariables, Flavour::needsCapture));
   }
