@@ -237,230 +237,244 @@ public final class WorkflowAction extends Action {
                   Collectors.groupingBy(
                       p -> new SimpleLimsKey(p.first()),
                       Collectors.mapping(Pair::second, Collectors.toSet())));
-      try (AutoCloseable timer = matchTime.start(Long.toString(workflowAccession))) {
-        matches =
-            workflowAccessions()
-                .distinct()
-                .boxed()
-                .flatMap(
-                    accession ->
-                        server
-                            .get()
-                            .analysisCache()
-                            .get(accession)
-                            .map(
-                                as ->
-                                    as.compare(
-                                        workflowAccessions(),
-                                        Long.toString(majorOliveVersion),
-                                        fileMatchingPolicy,
-                                        inputFileSWIDs,
-                                        limsKeys,
-                                        signatures,
-                                        annotations)))
-                .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
-                .sorted()
-                .collect(Collectors.toList());
-      } catch (InitialCachePopulationException e) {
-        if (server.get().metadata().getWorkflow((int) workflowAccession) == null) {
+      try (NiassaServer.LaunchLock launchLock =
+          server.get().acquireLock(workflowAccession, annotations)) {
+        if (!launchLock.isLive()) {
+          this.cacheCollision = true;
           this.errors =
-              Collections.singletonList("Niassa doesn't seem to recognise this workflow SWID.");
-          cacheCollision = false;
+              Collections.singletonList("Another action is scheduling a workflow for this SWID.");
+          return ActionState.WAITING;
+        }
+        try (AutoCloseable timer = matchTime.start(Long.toString(workflowAccession))) {
+          matches =
+              workflowAccessions()
+                  .distinct()
+                  .boxed()
+                  .flatMap(
+                      accession ->
+                          server
+                              .get()
+                              .analysisCache()
+                              .get(accession)
+                              .map(
+                                  as ->
+                                      as.compare(
+                                          workflowAccessions(),
+                                          Long.toString(majorOliveVersion),
+                                          fileMatchingPolicy,
+                                          inputFileSWIDs,
+                                          limsKeys,
+                                          signatures,
+                                          annotations)))
+                  .filter(pair -> pair.comparison() != AnalysisComparison.DIFFERENT)
+                  .sorted()
+                  .collect(Collectors.toList());
+        } catch (InitialCachePopulationException e) {
+          if (server.get().metadata().getWorkflow((int) workflowAccession) == null) {
+            this.errors =
+                Collections.singletonList("Niassa doesn't seem to recognise this workflow SWID.");
+            cacheCollision = false;
+            return ActionState.FAILED;
+          }
+          this.errors =
+              Collections.singletonList(
+                  "Another workflow is fetching the previous workflow runs from Niassa.");
+          cacheCollision = true;
+          return ActionState.WAITING;
+        }
+        if (!matches.isEmpty()) {
+          // We found a matching workflow run in analysis provenance; the least stale, most
+          // complete,
+          // newest workflow is selected; if that workflow run is stale, we know there are no better
+          // candidates and we should ignore the workflow run's state and complain.
+          final WorkflowRunMatch match = matches.get(0);
+          if (match.comparison() == AnalysisComparison.EXACT
+              || match.comparison() == AnalysisComparison.FIXABLE) {
+            if (relaunchFailedOnUpgrade
+                && match.actionState() == ActionState.FAILED
+                && match.state().workflowAccession() != workflowAccession) {
+              // Our best match is failed but also not the same workflow. Let's be charitable and
+              // assume that we are upgrading the workflow and we should rerun the failed workflows.
+              final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+              attribute.setTag("skip");
+              attribute.setValue("shesmu-upgrade");
+              server
+                  .get()
+                  .metadata()
+                  .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
+              server.get().analysisCache().invalidate(match.state().workflowAccession());
+              // Try again
+              return ActionState.UNKNOWN;
+            }
+            // Don't associate with this workflow because we don't want to get ourselves to this
+            // state
+            runAccession = match.state().workflowRunAccession();
+            // We matched, but we might need to update the LIMS keys OR add
+            // missing signatures (if the LIMS keys match exactly but
+            // signatures are absent)
+            if (match.comparison() == AnalysisComparison.FIXABLE) {
+              match.fixVersions(match.state().workflowAccession(), server.get().metadata());
+            } else {
+              match.fixSignatures(match.state().workflowAccession(), server.get().metadata());
+            }
+          }
+          externalTimestamp = Optional.ofNullable(match.state().lastModified());
+          this.errors = Collections.emptyList();
+          return match.actionState();
+        }
+
+        // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
+        // human needs to rescue us.
+        if (hasLaunched) {
+          this.errors =
+              Collections.singletonList("Workflow has already been attempted. Purge to try again.");
           return ActionState.FAILED;
         }
-        this.errors =
-            Collections.singletonList(
-                "Another workflow is fetching the previous workflow runs from Niassa.");
-        cacheCollision = true;
-        return ActionState.WAITING;
-      }
-      if (!matches.isEmpty()) {
-        // We found a matching workflow run in analysis provenance; the least stale, most complete,
-        // newest workflow is selected; if that workflow run is stale, we know there are no better
-        // candidates and we should ignore the workflow run's state and complain.
-        final WorkflowRunMatch match = matches.get(0);
-        if (match.comparison() == AnalysisComparison.EXACT
-            || match.comparison() == AnalysisComparison.FIXABLE) {
-          if (relaunchFailedOnUpgrade
-              && match.actionState() == ActionState.FAILED
-              && match.state().workflowAccession() != workflowAccession) {
-            // Our best match is failed but also not the same workflow. Let's be charitable and
-            // assume that we are upgrading the workflow and we should rerun the failed workflows.
-            final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
-            attribute.setTag("skip");
-            attribute.setValue("shesmu-upgrade");
-            server
-                .get()
-                .metadata()
-                .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
-            server.get().analysisCache().invalidate(match.state().workflowAccession());
-            // Try again
-            return ActionState.UNKNOWN;
+        try {
+          // Check if there are already too many copies of this workflow running; if so, wait until
+          // later.
+          if (!ignoreMaxInFlight) {
+            switch (server.get().maxInFlight(workflowName, workflowAccession)) {
+              case RUN:
+                break;
+              case TOO_MANY_RUNNING:
+                this.errors =
+                    Collections.singletonList(
+                        "Too many workflows running. Sit tight or increase max-in-flight setting.");
+                return ActionState.WAITING;
+              case INVALID_SWID:
+                this.errors =
+                    Collections.singletonList(
+                        "The workflow SWID supplied is obviously invalid, so let's pretend is launched and everything was amazing. 🌈");
+                return ActionState.SUCCEEDED;
+              default:
+                this.errors =
+                    Collections.singletonList("Unknown max status. This is an implementation bug.");
+                return ActionState.FAILED;
+            }
           }
-          // Don't associate with this workflow because we don't want to get ourselves to this state
-          runAccession = match.state().workflowRunAccession();
-          // We matched, but we might need to update the LIMS keys OR add missing signatures (if the
-          // LIMS keys match exactly but signatures are absent)
-          if (match.comparison() == AnalysisComparison.FIXABLE) {
-            match.fixVersions(match.state().workflowAccession(), server.get().metadata());
-          } else {
-            match.fixSignatures(match.state().workflowAccession(), server.get().metadata());
-          }
+        } catch (InitialCachePopulationException e) {
+          this.errors =
+              Collections.singletonList("Another workflow is fetching max-in-flight data.");
+          cacheCollision = true;
+          return ActionState.WAITING;
         }
-        externalTimestamp = Optional.ofNullable(match.state().lastModified());
-        this.errors = Collections.emptyList();
-        return match.actionState();
-      }
 
-      // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
-      // human needs to rescue us.
-      if (hasLaunched) {
-        this.errors =
-            Collections.singletonList("Workflow has already been attempted. Purge to try again.");
-        return ActionState.FAILED;
-      }
-      try {
-        // Check if there are already too many copies of this workflow running; if so, wait until
-        // later.
-        if (!ignoreMaxInFlight) {
-          switch (server.get().maxInFlight(workflowName, workflowAccession)) {
-            case RUN:
-              break;
-            case TOO_MANY_RUNNING:
-              this.errors =
-                  Collections.singletonList(
-                      "Too many workflows running. Sit tight or increase max-in-flight setting.");
-              return ActionState.WAITING;
-            case INVALID_SWID:
-              this.errors =
-                  Collections.singletonList(
-                      "The workflow SWID supplied is obviously invalid, so let's pretend is launched and everything was amazing. 🌈");
-              return ActionState.SUCCEEDED;
-            default:
-              this.errors =
-                  Collections.singletonList("Unknown max status. This is an implementation bug.");
-              return ActionState.FAILED;
-          }
+        // Tell the input LIMS collection to register all the LIMS keys and prepare the INI file as
+        // appropriate. We provide a callback to do the registration, keep track of all registered
+        // IUS accessions to automatically associate them with the workflow
+        // run, deduplicate them.
+        final Map<SimpleLimsKey, Integer> iusAccessions = new HashMap<>();
+        limsKeysCollection.prepare(
+            key ->
+                iusAccessions.computeIfAbsent(
+                    new SimpleLimsKey(key),
+                    k ->
+                        server
+                            .get()
+                            .metadata()
+                            .addIUS(
+                                server
+                                    .get()
+                                    .metadata()
+                                    .addLimsKey(
+                                        k.getProvider(),
+                                        k.getId(),
+                                        k.getVersion(),
+                                        k.getLastModified()),
+                                false)),
+            ini);
+        for (final Map.Entry<? extends LimsKey, Set<String>> signature : signatures.entrySet()) {
+          final int iusAccession = iusAccessions.get(new SimpleLimsKey(signature.getKey()));
+          server
+              .get()
+              .metadata()
+              .annotateIUS(
+                  iusAccession,
+                  signature
+                      .getValue()
+                      .stream()
+                      .map(
+                          s -> {
+                            final IUSAttribute attribute = new IUSAttribute();
+                            attribute.setTag("signature");
+                            attribute.setValue(s);
+                            return attribute;
+                          })
+                      .collect(Collectors.toSet()));
         }
-      } catch (InitialCachePopulationException e) {
-        this.errors = Collections.singletonList("Another workflow is fetching max-in-flight data.");
-        cacheCollision = true;
-        return ActionState.WAITING;
-      }
 
-      // Tell the input LIMS collection to register all the LIMS keys and prepare the INI file as
-      // appropriate. We provide a callback to do the registration, keep track of all registered IUS
-      // accessions to automatically associate them with the workflow run, deduplicate them.
-      final Map<SimpleLimsKey, Integer> iusAccessions = new HashMap<>();
-      limsKeysCollection.prepare(
-          key ->
-              iusAccessions.computeIfAbsent(
-                  new SimpleLimsKey(key),
-                  k ->
+        final File iniFile = File.createTempFile("niassa", ".ini");
+        iniFile.deleteOnExit();
+        try (OutputStream out = new FileOutputStream(iniFile)) {
+          ini.store(out, String.format("Generated by Shesmu for workflow %d", workflowAccession));
+        }
+
+        boolean success;
+        try (AutoCloseable timer = launchTime.start(Long.toString(workflowAccession))) {
+          final Scheduler scheduler =
+              new Scheduler(
+                  server.get().metadata(),
+                  server
+                      .get()
+                      .settings()
+                      .entrySet()
+                      .stream()
+                      .collect(Collectors.toMap(Object::toString, Object::toString)));
+          runAccession =
+              scheduler
+                  .scheduleInstalledBundle(
+                      Long.toString(workflowAccession),
+                      Collections.singletonList(iniFile.getAbsolutePath()),
+                      true,
+                      Collections.emptyList(),
+                      iusAccessions
+                          .values()
+                          .stream()
+                          .map(Object::toString)
+                          .collect(Collectors.toList()),
+                      Collections.emptyList(),
+                      server.get().host(),
                       server
                           .get()
-                          .metadata()
-                          .addIUS(
-                              server
-                                  .get()
-                                  .metadata()
-                                  .addLimsKey(
-                                      k.getProvider(),
-                                      k.getId(),
-                                      k.getVersion(),
-                                      k.getLastModified()),
-                              false)),
-          ini);
-      for (final Map.Entry<? extends LimsKey, Set<String>> signature : signatures.entrySet()) {
-        final int iusAccession = iusAccessions.get(new SimpleLimsKey(signature.getKey()));
-        server
-            .get()
-            .metadata()
-            .annotateIUS(
-                iusAccession,
-                signature
-                    .getValue()
-                    .stream()
-                    .map(
-                        s -> {
-                          final IUSAttribute attribute = new IUSAttribute();
-                          attribute.setTag("signature");
-                          attribute.setValue(s);
-                          return attribute;
-                        })
-                    .collect(Collectors.toSet()));
-      }
-
-      final File iniFile = File.createTempFile("niassa", ".ini");
-      iniFile.deleteOnExit();
-      try (OutputStream out = new FileOutputStream(iniFile)) {
-        ini.store(out, String.format("Generated by Shesmu for workflow %d", workflowAccession));
-      }
-
-      boolean success;
-      try (AutoCloseable timer = launchTime.start(Long.toString(workflowAccession))) {
-        final Scheduler scheduler =
-            new Scheduler(
-                server.get().metadata(),
-                server
-                    .get()
-                    .settings()
-                    .entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(Object::toString, Object::toString)));
-        runAccession =
-            scheduler
-                .scheduleInstalledBundle(
-                    Long.toString(workflowAccession),
-                    Collections.singletonList(iniFile.getAbsolutePath()),
-                    true,
-                    Collections.emptyList(),
-                    iusAccessions
-                        .values()
-                        .stream()
-                        .map(Object::toString)
-                        .collect(Collectors.toList()),
-                    Collections.emptyList(),
-                    server.get().host(),
-                    server
-                        .get()
-                        .settings()
-                        .getProperty(
-                            SqwKeys.SW_DEFAULT_WORKFLOW_ENGINE.getSettingKey(),
-                            Engines.DEFAULT_ENGINE),
-                    limsKeysCollection.fileSwids().collect(Collectors.toSet()))
-                .getReturnValue();
-        hasLaunched = true;
-        // Zap the cache so any other workflows will see this workflow running and won't exceed our
-        // budget
-        server.get().invalidateMaxInFlight(workflowAccession);
-        final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
-        attribute.setTag(MAJOR_OLIVE_VERSION);
-        attribute.setValue(Long.toString(majorOliveVersion));
-        server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
-        for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
-          WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
-          userAttribute.setTag(annotation.getKey());
-          userAttribute.setValue(annotation.getValue());
-          server.get().metadata().annotateWorkflowRun(runAccession, userAttribute, null);
+                          .settings()
+                          .getProperty(
+                              SqwKeys.SW_DEFAULT_WORKFLOW_ENGINE.getSettingKey(),
+                              Engines.DEFAULT_ENGINE),
+                      limsKeysCollection.fileSwids().collect(Collectors.toSet()))
+                  .getReturnValue();
+          hasLaunched = true;
+          // Zap the cache so any other workflows will see this workflow running and won't exceed
+          // our budget
+          server.get().invalidateMaxInFlight(workflowAccession);
+          final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+          attribute.setTag(MAJOR_OLIVE_VERSION);
+          attribute.setValue(Long.toString(majorOliveVersion));
+          server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+          for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
+            WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
+            userAttribute.setTag(annotation.getKey());
+            userAttribute.setValue(annotation.getValue());
+            server.get().metadata().annotateWorkflowRun(runAccession, userAttribute, null);
+          }
+          success = runAccession != 0;
+          externalTimestamp = Optional.of(Instant.now());
+        } catch (Exception e) {
+          // Suppress all the batshit crazy errors this thing can throw
+          e.printStackTrace();
+          this.errors = Collections.singletonList(e.toString());
+          success = false;
         }
-        success = runAccession != 0;
-        externalTimestamp = Optional.of(Instant.now());
-      } catch (Exception e) {
-        // Suppress all the batshit crazy errors this thing can throw
-        e.printStackTrace();
-        this.errors = Collections.singletonList(e.toString());
-        success = false;
-      }
 
-      // Indicate if we managed to schedule the workflow; if we did, mark ourselves
-      // dirty so there is a delay before our next query.
-      (success ? runCreated : runFailed)
-          .labels(server.get().url(), Long.toString(workflowAccession))
-          .inc();
-      lastState = success ? ActionState.QUEUED : ActionState.FAILED;
-      this.errors = Collections.emptyList();
-      return lastState;
+        // Indicate if we managed to schedule the workflow; if we did, mark ourselves
+        // dirty so there is a delay before our next query.
+        (success ? runCreated : runFailed)
+            .labels(server.get().url(), Long.toString(workflowAccession))
+            .inc();
+        lastState = success ? ActionState.QUEUED : ActionState.FAILED;
+        this.errors = Collections.emptyList();
+        return lastState;
+      }
     } catch (final Exception e) {
       e.printStackTrace();
       this.errors = Collections.singletonList(e.toString());
