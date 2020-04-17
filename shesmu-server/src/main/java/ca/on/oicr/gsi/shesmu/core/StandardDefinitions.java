@@ -224,6 +224,13 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.FLOAT.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
+            "parse_json",
+            RuntimeSupport.class,
+            "parseJson",
+            "Convert a string containing JSON data into a JSON value.",
+            Imyhat.JSON.asOptional(),
+            new FunctionParameter("String to parse", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
             "url_decode",
             RuntimeSupport.class,
             "urlDecode",

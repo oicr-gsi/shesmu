@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.prometheus.client.Gauge;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -298,6 +299,15 @@ public final class RuntimeSupport {
     try {
       return Optional.of(Double.parseDouble(input));
     } catch (NumberFormatException e) {
+      return Optional.empty();
+    }
+  }
+
+  @RuntimeInterop
+  public static Optional<JsonNode> parseJson(String input) {
+    try {
+      return Optional.of(MAPPER.readTree(input));
+    } catch (IOException e) {
       return Optional.empty();
     }
   }
