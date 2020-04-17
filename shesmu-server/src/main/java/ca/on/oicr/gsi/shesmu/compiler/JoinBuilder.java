@@ -72,9 +72,13 @@ public class JoinBuilder {
   }
 
   public void add(Target target, boolean outer) {
+    add(target, target.name(), outer);
+  }
+
+  public void add(Target target, String alias, boolean outer) {
     final Type targetType = outer ? outerType : innerType;
     final Method getMethod =
-        new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {});
+        new Method(alias, target.type().apply(TypeUtils.TO_ASM), new Type[] {});
     final GeneratorAdapter getter =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
     getter.visitCode();

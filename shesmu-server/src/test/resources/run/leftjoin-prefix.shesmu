@@ -1,0 +1,6 @@
+Input test;
+
+Olive
+ LeftJoin library_size To Prefix foo_ inner_test foo_l
+    ls = List foo_l
+ Run ok With ok = (For l In ls: Count) == 1;

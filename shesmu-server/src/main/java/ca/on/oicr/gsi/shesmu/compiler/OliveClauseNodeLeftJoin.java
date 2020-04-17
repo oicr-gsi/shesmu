@@ -15,6 +15,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
@@ -28,6 +29,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   protected final int line;
   private final ExpressionNode outerKey;
   private final ExpressionNode innerKey;
+  private final String variablePrefix;
   private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeLeftJoin(
@@ -35,6 +37,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
       int column,
       String format,
       ExpressionNode outerKey,
+      String variablePrefix,
       ExpressionNode innerKey,
       List<GroupNode> children,
       Optional<ExpressionNode> where) {
@@ -42,6 +45,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     this.column = column;
     this.format = format;
     this.outerKey = outerKey;
+    this.variablePrefix = variablePrefix;
     this.innerKey = innerKey;
     this.children = children;
     this.where = where;
@@ -78,7 +82,11 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   @Override
   public Stream<OliveClauseRow> dashboard() {
     final Set<String> joinedNames =
-        inputFormat.baseStreamVariables().map(Target::name).collect(Collectors.toSet());
+        inputFormat
+            .baseStreamVariables()
+            .map(Target::name)
+            .map(variablePrefix::concat)
+            .collect(Collectors.toSet());
     final Set<String> whereInputs = new TreeSet<>();
     where.ifPresent(w -> w.collectFreeVariables(whereInputs, Flavour::isStream));
     return Stream.of(
@@ -114,9 +122,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
   public final ClauseStreamOrder ensureRoot(
       ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE) {
-      // This should be impossible since a pure stream would have duplicate signatures from both
-      // sides and fail.
-      return ClauseStreamOrder.TRANSFORMED;
+      outerKey.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
     }
     return state;
   }
@@ -148,12 +154,12 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     final List<Target> signables =
         inputFormat
             .baseStreamVariables()
-            .filter(input -> innerSignables.contains(input.name()))
+            .filter(input -> innerSignables.contains(variablePrefix + input.name()))
             .collect(Collectors.toList());
 
     builder
         .signatureVariables()
-        .filter(signature -> innerSignatures.contains(signature.name()))
+        .filter(signature -> innerSignatures.contains(variablePrefix + signature.name()))
         .forEach(
             signatureDefinition ->
                 oliveBuilder.createSignature(prefix, inputFormat, signables, signatureDefinition));
@@ -217,6 +223,86 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     oliveBuilder.measureFlow(builder.sourcePath(), line, column);
   }
 
+  private class PrefixedTarget implements Target {
+    private final Target backing;
+
+    private PrefixedTarget(Target backing) {
+      this.backing = backing;
+    }
+
+    @Override
+    public Flavour flavour() {
+      return backing.flavour();
+    }
+
+    @Override
+    public String name() {
+      return variablePrefix + backing.name();
+    }
+
+    @Override
+    public void read() {
+      // Whatever. Don't care.
+    }
+
+    @Override
+    public Imyhat type() {
+      return backing.type();
+    }
+  }
+
+  private class PrefixedVariable implements InputVariable {
+    private final InputVariable backing;
+
+    private PrefixedVariable(InputVariable backing) {
+      this.backing = backing;
+    }
+
+    @Override
+    public void extract(GeneratorAdapter method) {
+      backing.extract(method);
+    }
+
+    @Override
+    public Flavour flavour() {
+      return backing.flavour();
+    }
+
+    @Override
+    public String name() {
+      return variablePrefix + backing.name();
+    }
+
+    @Override
+    public void read() {
+      // Whatever. Don't care.
+    }
+
+    @Override
+    public Imyhat type() {
+      return backing.type();
+    }
+  }
+
+  private class PrefixedSignatureDefinition extends SignatureDefinition {
+    private final SignatureDefinition backing;
+
+    private PrefixedSignatureDefinition(SignatureDefinition backing) {
+      super(variablePrefix + backing.name(), backing.storage(), backing.type());
+      this.backing = backing;
+    }
+
+    @Override
+    public void build(GeneratorAdapter method, Type streamType, Stream<Target> variables) {
+      backing.build(method, streamType, variables);
+    }
+
+    @Override
+    public Path filename() {
+      return backing.filename();
+    }
+  }
+
   @Override
   public final NameDefinitions resolve(
       OliveCompilerServices oliveCompilerServices,
@@ -232,6 +318,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
     final Set<String> newNames =
         Stream.concat(inputFormat.baseStreamVariables(), oliveCompilerServices.signatures())
             .map(Target::name)
+            .map(variablePrefix::concat)
             .collect(Collectors.toSet());
 
     final List<String> duplicates =
@@ -245,7 +332,9 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
       defs.stream()
           .filter(n -> n.flavour().isStream())
           .forEach(n -> joins.add(jb -> jb.add(n, true)));
-      inputFormat.baseStreamVariables().forEach(n -> joins.add(jb -> jb.add(n, false)));
+      inputFormat
+          .baseStreamVariables()
+          .forEach(n -> joins.add(jb -> jb.add(n, variablePrefix + n.name(), false)));
     } else {
       errorHandler.accept(
           String.format(
@@ -254,6 +343,16 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
       return defs.fail(false);
     }
 
+    /*
+     * This code uses PrefixedTarget, PrefixedSignatureDefinition, and PrefixedInputVariable and you might wonder why
+     * three given they all just slap a prefix on the name and why are they where they are. The answer is that when
+     * reading a variable, the code behaves differently for three cases. If the variable is coming from the outside
+     * world, it will be of type Object and we need to do a little dance to load it since it might be from a
+     * user-defined class or a tuple generated from JSON importation. Similarly, signatures know how to render
+     * themselves, so we need to wrap them. Contextually, the inner key deals with the raw input data while the where
+     * and collectors deal with a new class that contains the outer and inner data merged. Therefore, in that context,
+     * we need a non-self loading version of the input variables.
+     */
     discriminators =
         defs.stream()
             .filter(t -> t.flavour().isStream() && t.flavour() != Flavour.STREAM_SIGNATURE)
@@ -263,8 +362,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
         defs.replaceStream(
             Stream.of(
                     discriminators.stream(),
-                    inputFormat.baseStreamVariables().map(Target::softWrap),
-                    oliveCompilerServices.signatures())
+                    inputFormat.baseStreamVariables().map(PrefixedTarget::new),
+                    oliveCompilerServices.signatures().map(PrefixedSignatureDefinition::new))
                 .flatMap(Function.identity()),
             true);
 
@@ -287,7 +386,8 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNode {
                 == children.size()
             & outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
-                defs.replaceStream(inputFormat.baseStreamVariables().map(x -> x), true),
+                defs.replaceStream(
+                    inputFormat.baseStreamVariables().map(PrefixedVariable::new), true),
                 errorHandler)
             & where.map(w -> w.resolve(joinedDefs, errorHandler)).orElse(true);
 
