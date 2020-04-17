@@ -1,0 +1,3 @@
+Input test;
+
+Olive Run ok With ok = Location ~ /.*\.shesmu:3:\d+\[.*\]/;

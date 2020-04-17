@@ -832,13 +832,19 @@ public abstract class ExpressionNode implements Renderable {
         "True",
         (p, o) -> {
           o.accept(new ExpressionNodeBoolean(p.line(), p.column(), true));
-          return p;
+          return p.whitespace();
         });
     TERMINAL.addKeyword(
         "False",
         (p, o) -> {
           o.accept(new ExpressionNodeBoolean(p.line(), p.column(), false));
-          return p;
+          return p.whitespace();
+        });
+    TERMINAL.addKeyword(
+        "Location",
+        (p, o) -> {
+          o.accept(new ExpressionNodeLocation(p.line(), p.column()));
+          return p.whitespace();
         });
     TERMINAL.addRaw(
         "function call, variable",
