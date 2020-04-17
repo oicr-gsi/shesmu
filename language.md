@@ -177,7 +177,7 @@ sources must not overlap.
 
 This reshapes the data.
 
- - `LeftJoin` _outerkey_ `To` _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
+ - `LeftJoin` _outerkey_ `To` [`Prefix` _prefix_]  _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
 
 Does a left-join operation between the current data and the data from the
 _input_ data format. This is done using a merge join where keys are computed
@@ -190,6 +190,11 @@ once but inner data maybe reused multiple times if multiple outer rows have the
 same key. Each collector can have `Where` filters that limit the collected
 data. Optionally, a `Where` filter can be applied to all the collectors by
 providing _condition_.
+
+When doing left join, there will likely be collisions between many variables,
+including all the signatures. While it is possible to reshape the data to avoid
+this conflict, the `Prefix` option allows renaming the joined data rather than
+the source data.
 
 This reshapes the data.
 

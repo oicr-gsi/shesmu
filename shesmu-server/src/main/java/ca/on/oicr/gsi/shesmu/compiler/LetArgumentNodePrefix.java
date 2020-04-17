@@ -28,6 +28,11 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
     }
 
     @Override
+    public void read() {
+      unused.remove(backing.name());
+    }
+
+    @Override
     public Imyhat type() {
       return backing.type();
     }
@@ -38,6 +43,7 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
   private final List<String> names;
   private final String prefix;
   private final List<PrefixTarget> targets = new ArrayList<>();
+  private final Set<String> unused = new TreeSet<>();
 
   public LetArgumentNodePrefix(int line, int column, String prefix, List<String> names) {
     this.line = line;
@@ -49,6 +55,15 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
   @Override
   public boolean blankCheck(Consumer<String> errorHandler) {
     return true;
+  }
+
+  @Override
+  public boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
+    for (final String variable : unused) {
+      errorHandler.accept(
+          String.format("%d:%d: Variable %s%s is never used.", line, column, prefix, variable));
+    }
+    return unused.isEmpty();
   }
 
   @Override
@@ -104,7 +119,8 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
         continue;
       }
       targets.add(new PrefixTarget(target.get()));
-      // TODO(amasella): merge conflict target.get().read();
+      unused.add(name);
+      target.get().read();
     }
     return ok;
   }

@@ -71,6 +71,7 @@ public abstract class OliveClauseNode {
   }
 
   private static final Parser.ParseDispatch<OliveClauseNode> CLAUSES = new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<String> PREFIX = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Optional<ExpressionNode>> GROUP_WHERE =
       new Parser.ParseDispatch<>();
   private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
@@ -199,6 +200,7 @@ public abstract class OliveClauseNode {
         (leftJoinParser, output) -> {
           final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
           final AtomicReference<String> format = new AtomicReference<>();
+          final AtomicReference<String> prefix = new AtomicReference<>();
           final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
           final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
           final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
@@ -209,6 +211,7 @@ public abstract class OliveClauseNode {
                   .whitespace()
                   .keyword("To")
                   .whitespace()
+                  .dispatch(PREFIX, prefix::set)
                   .identifier(format::set)
                   .whitespace()
                   .then(ExpressionNode::parse, innerKey::set)
@@ -223,6 +226,7 @@ public abstract class OliveClauseNode {
                     leftJoinParser.column(),
                     format.get(),
                     outerKey.get(),
+                    prefix.get(),
                     innerKey.get(),
                     groups.get(),
                     where.get()));
@@ -425,6 +429,13 @@ public abstract class OliveClauseNode {
         (p, o) -> {
           o.accept(Optional.empty());
           return p.whitespace();
+        });
+    PREFIX.addKeyword("Prefix", (p, o) -> p.whitespace().identifier(o).whitespace());
+    PREFIX.addRaw(
+        "nothing",
+        (p, o) -> {
+          o.accept("");
+          return p;
         });
   }
 

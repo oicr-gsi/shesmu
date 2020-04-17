@@ -233,13 +233,18 @@ public final class Check extends Compiler {
     return Utils.stream(node.fields())
         .map(
             pair -> {
-              final List<Target> variables =
+              final List<InputVariable> variables =
                   Utils.stream(pair.getValue().get("variables").fields())
                       .map(
                           field -> {
                             final String name = field.getKey();
                             final Imyhat type = Imyhat.parse(field.getValue().asText());
-                            return new Target() {
+                            return new InputVariable() {
+
+                              @Override
+                              public void extract(GeneratorAdapter method) {
+                                throw new UnsupportedOperationException("Checker cannot render");
+                              }
 
                               @Override
                               public Flavour flavour() {
@@ -294,7 +299,7 @@ public final class Check extends Compiler {
               return new InputFormatDefinition() {
 
                 @Override
-                public Stream<Target> baseStreamVariables() {
+                public Stream<InputVariable> baseStreamVariables() {
                   return variables.stream();
                 }
 

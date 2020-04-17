@@ -30,7 +30,7 @@ public interface InputFormatDefinition {
   InputFormatDefinition DUMMY =
       new InputFormatDefinition() {
         @Override
-        public Stream<? extends Target> baseStreamVariables() {
+        public Stream<InputVariable> baseStreamVariables() {
           return Stream.empty();
         }
 
@@ -51,7 +51,7 @@ public interface InputFormatDefinition {
       };
 
   /** Get all the variables available for this format */
-  Stream<? extends Target> baseStreamVariables();
+  Stream<InputVariable> baseStreamVariables();
 
   /** All the variable gangs this format has */
   Stream<? extends GangDefinition> gangs();
