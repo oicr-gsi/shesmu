@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -163,6 +164,27 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               cromwellCalls.first(),
               ini,
               cromwellCalls.second()));
+    }
+  }
+
+  public final class LaunchLock implements AutoCloseable {
+    private final boolean isLive;
+    private final Semaphore semaphore;
+
+    public LaunchLock(Semaphore semaphore) {
+      this.semaphore = semaphore;
+      isLive = semaphore.tryAcquire();
+    }
+
+    @Override
+    public void close() throws Exception {
+      if (isLive) {
+        semaphore.release();
+      }
+    }
+
+    public boolean isLive() {
+      return isLive;
     }
   }
 
@@ -355,6 +377,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final Definer<NiassaServer> definer;
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
+  private final Map<Integer, Semaphore> launchLocks = new ConcurrentHashMap<>();
   private final Map<String, Integer> maxInFlight = new ConcurrentHashMap<>();
   private final MaxInFlightCache maxInFlightCache;
   private MetadataWS metadata;
@@ -379,6 +402,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
       @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
     return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
+  }
+
+  public LaunchLock acquireLock(long workflowAccession, Map<String, String> annotations) {
+    return new LaunchLock(
+        launchLocks.computeIfAbsent(
+            Objects.hash(workflowAccession, annotations), k -> new Semaphore(1)));
   }
 
   public KeyValueCache<Long, Stream<AnalysisState>, Stream<AnalysisState>> analysisCache() {
