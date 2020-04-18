@@ -426,6 +426,9 @@ the defined names and its result is used. The names can use destructuring.
 Computes an optional value using _expr_; if this value is empty, returns
 _default_. _expr_ must be the optional version of _expr_.
 
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
+
 ### Logical Disjunction and Optional Merging
 - _expr_ `||` _expr_
 
@@ -546,6 +549,9 @@ These may be nested for function calls on optional values. For example:
 
     x = `foo(x?)? + 3`
 
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
+
 ### Unary Operators
 #### Boolean Not
 - `!` _expr_
@@ -577,6 +583,9 @@ by 2.
 - `` ` ` ``
 
 Creates an optional that contains no value.
+
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
 
 ### Access Operators
 #### Tuple and Dictionary Access
@@ -810,6 +819,9 @@ Returns the first _expr_ in the list or an empty optional if no items are presen
 
 Since this returns optional, it maybe useful to chain with `Default`.
 
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
+
 #### Concatenate Strings
 - `LexicalConcat` _expr_ `With` _delimexpr_
 - `FixedConcat` _expr_ `With` _delimexpr_
@@ -842,6 +854,9 @@ returned.
 
 Since this returns optional, it maybe useful to chain with `Default`.
 
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
+
 #### Item Matches
 - `None` _expr_
 - `All` _expr_
@@ -873,6 +888,9 @@ Evaluates all _expr_ for each item in the list and returns it if all are the sam
 If they are different or there are no items, an empty optional is returned.
 
 Since this returns optional, it maybe useful to chain with `Default`.
+
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
 
 
 ## Types
