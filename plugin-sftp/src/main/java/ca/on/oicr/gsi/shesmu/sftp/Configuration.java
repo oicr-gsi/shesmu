@@ -5,12 +5,17 @@ import java.util.List;
 import java.util.Map;
 
 public class Configuration {
+  private List<String> fileRoots = Collections.emptyList();
   private Map<String, FunctionConfig> functions = Collections.emptyMap();
   private String host;
   private List<JsonDataSource> jsonSources = Collections.emptyList();
   private int port;
   private Map<String, RefillerConfig> refillers = Collections.emptyMap();
   private String user;
+
+  public List<String> getFileRoots() {
+    return fileRoots;
+  }
 
   public Map<String, FunctionConfig> getFunctions() {
     return functions;
@@ -34,6 +39,10 @@ public class Configuration {
 
   public String getUser() {
     return user;
+  }
+
+  public void setFileRoots(List<String> fileRoots) {
+    this.fileRoots = fileRoots;
   }
 
   public void setFunctions(Map<String, FunctionConfig> functions) {
