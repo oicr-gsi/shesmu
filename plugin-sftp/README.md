@@ -9,6 +9,7 @@ To configure an SFTP server, create a file ending in `.sftp` as follows:
       "port": 22,
       "user": "myuser",
       "jsonSources": [],
+      "fileRoots": [],
       "functions": {},
       "refillers": {}
     }
@@ -117,3 +118,8 @@ This will run the command specified in `"command"` to generate the data. Data
 will be cached for the number of minutes specified by `"ttl"`. The `"format"`
 property gives the name of the format. If the name is unknown, this source will
 be ignored.
+
+## File Roots
+It is possible to gather file information in the `unix_file` format from a
+remote file system via SSH. GNU findutils must be installed on the remote
+system; this is standard with Linux. `"fileRoots"` list the paths to scan.

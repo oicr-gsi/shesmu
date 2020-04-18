@@ -10,6 +10,8 @@ import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
+import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
+import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuJsonInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
@@ -18,21 +20,20 @@ import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import net.schmizz.sshj.SSHClient;
@@ -161,6 +162,34 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           renderer.line("Port", configuration.getPort());
           renderer.line("User", configuration.getUser());
         });
+  }
+
+  @ShesmuJsonInputSource(format = "unix_file")
+  public InputStream fileSystemData() throws Exception {
+
+    return this.configuration
+        .filter(c -> !c.getFileRoots().isEmpty())
+        .<JsonInputSource>map(
+            c ->
+                new SshJsonInputSource(
+                    c.getHost(),
+                    c.getPort(),
+                    c.getUser(),
+                    String.format(
+                        "echo '['; find %s -not -type d -printf ',\\n{\"file\":\"%%p\",\"size\":%%s,\"atime\":%%A@,\"ctime\":%%C@,\"mtime\":%%T@,\"user\":\"%%u\",\"group\":\"%%g\",\"perms\":%%m,\"host\":\"'$(hostname -f)'\"}'| tail -n +2; echo ']'",
+                        c.getFileRoots()
+                            .stream()
+                            .map(
+                                p -> {
+                                  try {
+                                    return MAPPER.writeValueAsString(p);
+                                  } catch (JsonProcessingException e) {
+                                    throw new RuntimeException(e);
+                                  }
+                                })
+                            .collect(Collectors.joining(" ")))))
+        .orElse(JsonInputSource.EMPTY)
+        .fetch();
   }
 
   Pair<ActionState, Boolean> makeSymlink(
@@ -373,8 +402,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
               String.format("sftp-function %s %s", fileName(), entry.getKey()),
               entry.getValue().getTtl(),
               SimpleRecord::new) {
-            final String name = entry.getKey();
             final String command = entry.getValue().getCommand();
+            final String name = entry.getKey();
 
             @Override
             protected Optional<Object> fetch(Tuple key, Instant lastUpdated) throws Exception {

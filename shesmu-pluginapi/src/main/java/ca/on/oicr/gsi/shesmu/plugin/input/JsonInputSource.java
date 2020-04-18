@@ -1,14 +1,18 @@
 package ca.on.oicr.gsi.shesmu.plugin.input;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Provide data as a stream of JSON data
  *
- * <p>Shesmu will automatically use the standard streaming JSON demarhsalling protocol to simplify
+ * <p>Shesmu will automatically use the standard streaming JSON unmarhsalling protocol to simplify
  * data extraction
  */
 public interface JsonInputSource {
+  /** An input source that contains no values (while being valid JSON) */
+  JsonInputSource EMPTY = () -> new ByteArrayInputStream("[]".getBytes(StandardCharsets.UTF_8));
   /**
    * Get the stream.
    *
