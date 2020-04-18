@@ -440,7 +440,7 @@ public class SimulateRequest {
               }
               final CollectorRegistry registry = new CollectorRegistry();
               action.register(registry);
-              final Set<Action> actions = new HashSet<>();
+              final Map<Action, Set<String>> actions = new HashMap<>();
               final Set<Pair<List<String>, List<String>>> alerts = new HashSet<>();
               final ObjectNode dumpers = response.putObject("dumpers");
               final ArrayNode olives = response.putArray("olives");
@@ -474,7 +474,9 @@ public class SimulateRequest {
                           int column,
                           String hash,
                           String[] tags) {
-                        return actions.add(action);
+                        return actions
+                            .computeIfAbsent(action, k -> new TreeSet<>())
+                            .addAll(Arrays.asList(tags));
                       }
 
                       @Override
@@ -591,9 +593,10 @@ public class SimulateRequest {
                       });
 
               final ArrayNode actionsJson = response.putArray("actions");
-              for (final Action a : actions) {
-                final ObjectNode aj = a.toJson(RuntimeSupport.MAPPER);
-                aj.put("type", a.type());
+              for (final Map.Entry<Action, Set<String>> a : actions.entrySet()) {
+                final ObjectNode aj = a.getKey().toJson(RuntimeSupport.MAPPER);
+                aj.put("type", a.getKey().type());
+                a.getValue().forEach(aj.putArray("tags")::add);
                 actionsJson.add(aj);
               }
               final ArrayNode alertsJson = response.putArray("alerts");
