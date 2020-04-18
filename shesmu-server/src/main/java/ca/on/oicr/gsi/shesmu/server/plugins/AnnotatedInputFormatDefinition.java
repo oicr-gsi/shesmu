@@ -189,6 +189,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
               name() + " " + name, ttl, ReplacingRecord::new) {
             @Override
             protected Stream<Object> fetch(Instant lastUpdated) throws Exception {
+              source.ttl().ifPresent(cache::ttl);
               try (final InputStream input = source.fetch();
                   final JsonParser parser =
                       RuntimeSupport.MAPPER.getFactory().createParser(input)) {

@@ -6,6 +6,7 @@ import java.util.Map;
 
 public class Configuration {
   private List<String> fileRoots = Collections.emptyList();
+  private Integer fileRootsTtl;
   private Map<String, FunctionConfig> functions = Collections.emptyMap();
   private String host;
   private List<JsonDataSource> jsonSources = Collections.emptyList();
@@ -15,6 +16,10 @@ public class Configuration {
 
   public List<String> getFileRoots() {
     return fileRoots;
+  }
+
+  public Integer getFileRootsTtl() {
+    return fileRootsTtl;
   }
 
   public Map<String, FunctionConfig> getFunctions() {
@@ -43,6 +48,10 @@ public class Configuration {
 
   public void setFileRoots(List<String> fileRoots) {
     this.fileRoots = fileRoots;
+  }
+
+  public void setFileRootsTtl(Integer fileRootsTtl) {
+    this.fileRootsTtl = fileRootsTtl;
   }
 
   public void setFunctions(Map<String, FunctionConfig> functions) {

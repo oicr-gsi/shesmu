@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.plugin.input;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * Provide data as a stream of JSON data
@@ -24,4 +25,15 @@ public interface JsonInputSource {
    *     exception is thrown
    */
   InputStream fetch() throws Exception;
+
+  /**
+   * Allow dynamically changing the TTL for this cache.
+   *
+   * <p>This is only read when the cache has already expired and will be in effect until it expires.
+   *
+   * @return the new TTL, in minutes, or an empty optional to keep using the existing time
+   */
+  default Optional<Integer> ttl() {
+    return Optional.empty();
+  }
 }

@@ -10,6 +10,7 @@ To configure an SFTP server, create a file ending in `.sftp` as follows:
       "user": "myuser",
       "jsonSources": [],
       "fileRoots": [],
+      "fileRootsTtl": null,
       "functions": {},
       "refillers": {}
     }
@@ -123,3 +124,6 @@ be ignored.
 It is possible to gather file information in the `unix_file` format from a
 remote file system via SSH. GNU findutils must be installed on the remote
 system; this is standard with Linux. `"fileRoots"` list the paths to scan.
+
+`"fileRootsTtl"` sets the number of minutes to cache the results. If null, a
+default value of 60 minutes is used.
