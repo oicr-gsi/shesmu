@@ -175,6 +175,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                     c.getHost(),
                     c.getPort(),
                     c.getUser(),
+                    Optional.ofNullable(c.getFileRootsTtl()).filter(x -> x > 0),
                     String.format(
                         "echo '['; find %s -not -type d -printf ',\\n{\"file\":\"%%p\",\"size\":%%s,\"atime\":%%A@,\"ctime\":%%C@,\"mtime\":%%T@,\"user\":\"%%u\",\"group\":\"%%g\",\"perms\":%%m,\"host\":\"'$(hostname -f)'\"}'| tail -n +2; echo ']'",
                         c.getFileRoots()
@@ -475,6 +476,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
               configuration.getHost(),
               configuration.getPort(),
               configuration.getUser(),
+              Optional.empty(),
               source.getCommand()));
     }
     return Optional.empty();
