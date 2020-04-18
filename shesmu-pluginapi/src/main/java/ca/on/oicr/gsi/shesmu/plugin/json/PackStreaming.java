@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.json;
 
+import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
@@ -16,10 +17,12 @@ import java.util.stream.Stream;
 /** Convert a value to JSON using the streaming interface */
 public class PackStreaming implements ImyhatConsumer {
   private final JsonGenerator generator;
+  private final TimeFormat timeFormat;
 
-  public PackStreaming(JsonGenerator generator) {
+  public PackStreaming(JsonGenerator generator, TimeFormat timeFormat) {
     super();
     this.generator = generator;
+    this.timeFormat = timeFormat;
   }
 
   @Override
@@ -43,7 +46,7 @@ public class PackStreaming implements ImyhatConsumer {
   @Override
   public void accept(Instant value) {
     try {
-      generator.writeNumber(value.toEpochMilli());
+      timeFormat.write(generator, value);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

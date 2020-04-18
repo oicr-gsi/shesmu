@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.json;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,9 +18,15 @@ import java.util.stream.Stream;
 public class UnpackJson implements ImyhatTransformer<Object> {
 
   private final JsonNode value;
+  private final TimeFormat format;
 
   public UnpackJson(JsonNode value) {
+    this(value, TimeFormat.MILLIS_NUMERIC);
+  }
+
+  public UnpackJson(JsonNode value, TimeFormat format) {
     this.value = value;
+    this.format = format;
   }
 
   @Override
@@ -31,8 +38,10 @@ public class UnpackJson implements ImyhatTransformer<Object> {
   public Object date() {
     if (value == null || value.isNull()) {
       return Instant.EPOCH;
-    } else if (value.isNumber()) {
+    } else if (value.isNumber() && format == TimeFormat.MILLIS_NUMERIC) {
       return Instant.ofEpochMilli(value.asLong());
+    } else if (value.isNumber() && format == TimeFormat.SECONDS_NUMERIC) {
+      return Instant.ofEpochMilli((long) (1000 * value.asDouble()));
     } else {
       return DateTimeFormatter.ISO_INSTANT.parse(value.asText(), Instant::from);
     }

@@ -19,6 +19,9 @@ public @interface ShesmuVariable {
   /** Whether the value should be included in the automatic signature generation */
   boolean signable() default false;
 
+  /** How times should be represented in JSON. */
+  TimeFormat timeFormat() default TimeFormat.MILLIS_NUMERIC;
+
   /** A string containing the {@link Imyhat} type descriptor of the return type of the method */
   String type() default "";
 

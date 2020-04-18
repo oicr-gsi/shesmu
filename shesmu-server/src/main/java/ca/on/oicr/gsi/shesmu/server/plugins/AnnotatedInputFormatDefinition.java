@@ -12,10 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.cache.*;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
-import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
-import ca.on.oicr.gsi.shesmu.plugin.input.InputFormat;
-import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
-import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.plugin.input.*;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackStreaming;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
@@ -59,6 +56,61 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
 
   public interface JsonFieldWriter {
     void write(JsonGenerator generator, Object value);
+  }
+
+  private static class AnnotatedInputVariable implements InputVariable {
+
+    private final Flavour flavour;
+    private final InputFormat format;
+    private final MethodType methodType;
+    private final String name;
+    private final Imyhat type;
+    private final TimeFormat timeFormat;
+
+    public AnnotatedInputVariable(
+        String name,
+        MethodType methodType,
+        InputFormat format,
+        Flavour flavour,
+        Imyhat type,
+        TimeFormat timeFormat) {
+      this.name = name;
+      this.methodType = methodType;
+      this.format = format;
+      this.flavour = flavour;
+      this.type = type;
+      this.timeFormat = timeFormat;
+    }
+
+    @Override
+    public void extract(GeneratorAdapter method) {
+      method.invokeDynamic(
+          name, methodType.toMethodDescriptorString(), BSM_INPUT_VARIABLE, format.name());
+    }
+
+    @Override
+    public Flavour flavour() {
+      return flavour;
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public void read() {
+      // Exciting! Don't care.
+    }
+
+    public Object read(ObjectNode node) {
+      return type.apply(new UnpackJson(node.get(name), timeFormat));
+    }
+
+    @Override
+    public Imyhat type() {
+      return type;
+    }
   }
 
   public static final class Configuration {
@@ -353,8 +405,11 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       mh_pack_streaming__ctor =
           LOOKUP
               .findConstructor(
-                  PackStreaming.class, MethodType.methodType(void.class, JsonGenerator.class))
-              .asType(MethodType.methodType(ImyhatConsumer.class, JsonGenerator.class));
+                  PackStreaming.class,
+                  MethodType.methodType(void.class, JsonGenerator.class, TimeFormat.class))
+              .asType(
+                  MethodType.methodType(
+                      ImyhatConsumer.class, JsonGenerator.class, TimeFormat.class));
       mh_imyhat__accept =
           LOOKUP.findVirtual(
               Imyhat.class,
@@ -391,7 +446,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   private final List<GangDefinition> gangs;
   private final AutoUpdatingDirectory<LocalJsonFile> local;;
   private final AutoUpdatingDirectory<RemoteJsonSource> remotes;
-  private final List<InputVariable> variables = new ArrayList<>();
+  private final List<AnnotatedInputVariable> variables = new ArrayList<>();
 
   public AnnotatedInputFormatDefinition(InputFormat format) throws IllegalAccessException {
     this.format = format;
@@ -417,35 +472,9 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
       final Flavour flavour = entry.first().signable() ? Flavour.STREAM_SIGNABLE : Flavour.STREAM;
       final MethodType methodType = MethodType.methodType(type.javaType(), Object.class);
       // Register this variable with the compiler
-      final InputVariable variable =
-          new InputVariable() {
-
-            @Override
-            public void extract(GeneratorAdapter method) {
-              method.invokeDynamic(
-                  name, methodType.toMethodDescriptorString(), BSM_INPUT_VARIABLE, format.name());
-            }
-
-            @Override
-            public Flavour flavour() {
-              return flavour;
-            }
-
-            @Override
-            public String name() {
-              return name;
-            }
-
-            @Override
-            public void read() {
-              // Exciting! Don't care.
-            }
-
-            @Override
-            public Imyhat type() {
-              return type;
-            }
-          };
+      final AnnotatedInputVariable variable =
+          new AnnotatedInputVariable(
+              name, methodType, format, flavour, type, entry.first().timeFormat());
       variables.add(variable);
       // Now we need to make a call site for this variable. It will happen in two
       // cases: either we have an instance of the real type and we should call the
@@ -468,7 +497,10 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
                   JsonFieldWriter.class,
                   MethodHandles.collectArguments(
                       MethodHandles.collectArguments(
-                          MH_IMYHAT__ACCEPT.bindTo(type), 0, MH_PACK_STREAMING__CTOR),
+                          MH_IMYHAT__ACCEPT.bindTo(type),
+                          0,
+                          MethodHandles.insertArguments(
+                              MH_PACK_STREAMING__CTOR, 1, entry.first().timeFormat())),
                       1,
                       handle.asType(MethodType.methodType(Object.class, Object.class))))));
 
@@ -518,7 +550,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   /** Get all the variables available for this format */
   @Override
   public Stream<InputVariable> baseStreamVariables() {
-    return variables.stream();
+    return variables.stream().map(x -> x);
   }
 
   public Stream<? extends ConfigurationSection> configuration() {
@@ -570,7 +602,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   private Tuple readJson(ObjectNode node) {
     final Object[] values = new Object[variables.size()];
     for (int i = 0; i < values.length; i++) {
-      values[i] = variables.get(i).type().apply(new UnpackJson(node.get(variables.get(i).name())));
+      values[i] = variables.get(i).read(node);
     }
     return new Tuple(values);
   }
