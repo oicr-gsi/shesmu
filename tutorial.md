@@ -274,6 +274,10 @@ The `Let` clause can also be used to unpack optional types and single-entry list
          lane = lane,
          path = path;
 
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).
+
+
 To make reusable logic, the _Define_ olive can be used:
 
     Define standard_fastq()
