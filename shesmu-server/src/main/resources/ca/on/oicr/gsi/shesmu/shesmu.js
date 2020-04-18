@@ -728,6 +728,154 @@ function dropDown(setter, labelMaker, isDefault, items) {
   return container;
 }
 
+function simulationPagination(container, filename, data, render, predicate) {
+  let condition = x => true;
+  const toolbar = document.createElement("DIV");
+  container.appendChild(toolbar);
+  toolbar.appendChild(
+    button("📁 Download", "Download data as a file.", () => {
+      downloadData(JSON.stringify(data), "application/json", filename);
+    })
+  );
+  toolbar.appendChild(
+    button("📁 Download Selected", "Download filetered as a file.", () => {
+      downloadData(
+        JSON.stringify(data.filter(condition)),
+        "application/json",
+        filename
+      );
+    })
+  );
+  toolbar.appendChild(document.createTextNode(" Filter: "));
+  const searchInput = document.createElement("INPUT");
+  searchInput.type = "search";
+  toolbar.appendChild(searchInput);
+
+  const pageList = document.createElement("DIV");
+  container.appendChild(pageList);
+
+  const showData = () => {
+    const selectedData = data.filter(condition);
+    const numPerPage = 10;
+    const numButtons = Math.ceil(selectedData.length / numPerPage);
+    const drawPager = current => {
+      clearChildren(pageList);
+      const pager = document.createElement("DIV");
+      pageList.appendChild(pager);
+
+      let rendering = true;
+      if (numButtons > 1) {
+        for (let i = 0; i < numButtons; i++) {
+          if (
+            i <= 2 ||
+            i >= numButtons - 2 ||
+            (i >= current - 2 && i <= current + 2)
+          ) {
+            rendering = true;
+            const page = document.createElement("SPAN");
+            const index = i;
+            page.innerText = `${index + 1}`;
+            if (index != current) {
+              page.className = "load accessory";
+              page.addEventListener("click", () => drawPager(index));
+            }
+            pager.appendChild(page);
+          } else if (rendering) {
+            const ellipsis = document.createElement("SPAN");
+            ellipsis.innerText = "...";
+            pager.appendChild(ellipsis);
+            rendering = false;
+          }
+        }
+      }
+      pageList.appendChild(
+        render(
+          selectedData.slice(current * numPerPage, (current + 1) * numPerPage)
+        )
+      );
+    };
+    drawPager(0);
+  };
+  showData(data);
+  searchInput.addEventListener("input", e => {
+    const keywords = searchInput.value
+      .trim()
+      .toLowerCase()
+      .split(/\W+/);
+    if (keywords.length) {
+      condition = x => predicate(x, keywords);
+    } else {
+      condition = x => true;
+    }
+    showData();
+  });
+}
+
+function matchKeywordInArbitraryData(keyword, value) {
+  switch (typeof value) {
+    case "function":
+    case "undefined":
+      return false;
+
+    case "boolean":
+    case "number":
+    case "bigint":
+    case "string":
+    case "symbol":
+      return `${value}`.toLowerCase().indexOf(keyword) != -1;
+    default:
+      if (Array.isArray(value)) {
+        return value.some(v => matchKeywordInArbitraryData(keyword, v));
+      }
+      if (value === null) {
+        return false;
+      }
+      return Object.entries(value).some(
+        ([property, propertyValue]) =>
+          property.toLowerCase().indexOf(keyword) != -1 ||
+          matchKeywordInArbitraryData(keyword, propertyValue)
+      );
+  }
+}
+
+function simulationTable(container, filename, data, ...columns) {
+  simulationPagination(
+    container,
+    filename,
+    data,
+    selected => {
+      const table = document.createElement("TABLE");
+      container.appendChild(table);
+      const header = document.createElement("TR");
+      table.appendChild(header);
+      for (const [name, extractor] of columns) {
+        const td = document.createElement("TD");
+        td.innerText = name;
+        header.appendChild(td);
+      }
+      for (const row of selected) {
+        const tr = document.createElement("TR");
+        table.appendChild(tr);
+        for (const [name, extractor] of columns) {
+          const td = document.createElement("TD");
+          const dataDiv = document.createElement("pre");
+          dataDiv.className = "json";
+          dataDiv.innerText = JSON.stringify(extractor(row), null, 2);
+          td.appendChild(dataDiv);
+          tr.appendChild(td);
+        }
+      }
+      return table;
+    },
+    (item, keywords) =>
+      keywords.every(k =>
+        columns.some(([name, extractor]) =>
+          matchKeywordInArbitraryData(k, extractor(item))
+        )
+      )
+  );
+}
+
 export function initialiseActionDash(
   serverSearches,
   tags,
@@ -4130,21 +4278,36 @@ export function initialiseSimulationDashboard(
             tabs.push({
               name: "Actions",
               render: tab =>
-                response.actions.forEach(a => {
-                  const div = document.createElement("DIV");
-                  tab.appendChild(div);
-                  div.className = "action state_simulated";
-                  div.appendChild(text(a.name));
-                  div.appendChild(
-                    table(
-                      Object.entries(a.parameters).sort((a, b) =>
-                        a[0].localeCompare(b[0])
-                      ),
-                      ["Name", x => x[0]],
-                      ["Value", x => JSON.stringify(x[1], null, 2)]
+                simulationPagination(
+                  tab,
+                  "simulation.actnow",
+                  response.actions,
+                  selected => {
+                    const list = document.createElement("DIV");
+                    selected.forEach(a => {
+                      const div = document.createElement("DIV");
+                      list.appendChild(div);
+                      div.className = "action state_simulated";
+                      div.appendChild(text(a.name));
+                      div.appendChild(
+                        table(
+                          Object.entries(a.parameters).sort((a, b) =>
+                            a[0].localeCompare(b[0])
+                          ),
+                          ["Name", x => x[0]],
+                          ["Value", x => JSON.stringify(x[1], null, 2)]
+                        )
+                      );
+                    });
+                    return list;
+                  },
+                  (a, keywords) =>
+                    keywords.every(
+                      k =>
+                        a.name.toLowerCase().indexOf(k) != -1 ||
+                        matchKeywordInArbitraryData(k, a.parameters)
                     )
-                  );
-                })
+                )
             });
           }
           if (response.hasOwnProperty("olives") && response.olives.length) {
@@ -4207,35 +4370,20 @@ export function initialiseSimulationDashboard(
               }
             });
           }
-          if (response.hasOwnProperty("refills")) {
-            for (const [name, entries] of Object.entries(response.refills)) {
+          if (response.hasOwnProperty("refillers")) {
+            for (const [name, entries] of Object.entries(response.refillers)) {
               if (entries.length > 0) {
                 tabs.push({
                   name: "Refill ― " + name,
-                  render: tab => {
-                    const table = document.createElement("TABLE");
-                    tab.appendChild(table);
-                    const columns = Object.keys(entries[0]).sort((a, b) =>
-                      a.localeCompare(b)
-                    );
-
-                    const header = document.createElement("TR");
-                    table.appendChild(header);
-                    for (const column of columns) {
-                      const td = document.createElement("TD");
-                      td.innerText = column;
-                      header.appendChild(td);
-                    }
-                    for (const row of entries) {
-                      const tr = document.createElement("TR");
-                      table.appendChild(tr);
-                      for (const column of columns) {
-                        const td = document.createElement("TD");
-                        td.innerText = JSON.stringify(row[column], null, 2);
-                        tr.appendChild(td);
-                      }
-                    }
-                  }
+                  render: tab =>
+                    simulationTable(
+                      tab,
+                      name + ".refiller.json",
+                      entries,
+                      ...Object.keys(entries[0])
+                        .sort((a, b) => a.localeCompare(b))
+                        .map(name => [name, row => row[name]])
+                    )
                 });
               }
             }
@@ -4244,22 +4392,16 @@ export function initialiseSimulationDashboard(
             for (const [name, entries] of Object.entries(response.dumpers)) {
               tabs.push({
                 name: "Dump ― " + name,
-                render: tab => {
-                  const table = document.createElement("TABLE");
-                  tab.appendChild(table);
-                  for (const row of entries) {
-                    const tr = document.createElement("TR");
-                    table.appendChild(tr);
-                    for (const value of row) {
-                      const td = document.createElement("TD");
-                      const dataDiv = document.createElement("pre");
-                      dataDiv.className = "json";
-                      dataDiv.innerText = JSON.stringify(value, null, 2);
-                      td.appendChild(dataDiv);
-                      tr.appendChild(td);
-                    }
-                  }
-                }
+                render: tab =>
+                  simulationTable(
+                    tab,
+                    name + ".dump.json",
+                    entries,
+                    ...Array.from(entries[0].keys()).map(i => [
+                      "Column " + i,
+                      row => row[i]
+                    ])
+                  )
               });
             }
           }
