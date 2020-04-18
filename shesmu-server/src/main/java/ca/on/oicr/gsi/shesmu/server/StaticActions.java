@@ -47,27 +47,33 @@ public class StaticActions implements LoadedConfiguration {
         boolean retry = false;
         final String hash = Integer.toHexString(Arrays.hashCode(actions));
         for (final StaticAction action : actions) {
-          if (!runners.containsKey(action.getAction())) {
+          if (!runners.containsKey(action.getName())) {
             final Optional<ActionRunner> runner =
                 repository
                     .actions()
-                    .filter(definition -> definition.name().equals(action.getAction()))
+                    .filter(definition -> definition.name().equals(action.getName()))
                     .findFirst()
                     .map(ActionRunnerCompiler::new)
                     .map(ActionRunnerCompiler::compile)
                     .filter(Objects::nonNull);
 
-            runner.ifPresent(d -> runners.put(action.getAction(), d));
+            runner.ifPresent(d -> runners.put(action.getName(), d));
             if (!runner.isPresent()) {
               retry = true;
               continue;
             }
           }
           try {
-            final Action result = runners.get(action.getAction()).run(action.getParameters());
+            final Action result = runners.get(action.getName()).run(action.getParameters());
             if (result != null) {
               result.prepare();
-              sink.accept(result, fileName().toString(), 1, 1, hash, new String[0]);
+              sink.accept(
+                  result,
+                  fileName().toString(),
+                  1,
+                  1,
+                  hash,
+                  action.getTags().stream().toArray(String[]::new));
               success++;
             } else {
               retry = true;

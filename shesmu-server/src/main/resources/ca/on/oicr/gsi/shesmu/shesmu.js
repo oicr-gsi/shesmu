@@ -4266,6 +4266,18 @@ export function initialiseSimulationDashboard(
                       list.appendChild(div);
                       div.className = "action state_simulated";
                       div.appendChild(text(a.name));
+                      if (a.tags.length > 0) {
+                        const tags = document.createElement("DIV");
+                        tags.className = "filterlist";
+                        tags.innerText = "Tags: ";
+                        a.tags.forEach(tag => {
+                          const button = document.createElement("SPAN");
+                          button.innerText = tag;
+                          tags.appendChild(button);
+                          tags.appendChild(document.createTextNode(" "));
+                        });
+                        div.appendChild(tags);
+                      }
                       div.appendChild(
                         table(
                           Object.entries(a.parameters).sort((a, b) =>
@@ -4282,6 +4294,9 @@ export function initialiseSimulationDashboard(
                     keywords.every(
                       k =>
                         a.name.toLowerCase().indexOf(k) != -1 ||
+                        a.tags.some(
+                          tag => tag.toLowerCase().indexOf(k) != -1
+                        ) ||
                         matchKeywordInArbitraryData(k, a.parameters)
                     )
                 )
