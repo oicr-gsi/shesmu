@@ -791,11 +791,14 @@ public final class ActionProcessor
                 entry ->
                     new ShesmuIntrospectionValue(
                         entry.getKey(),
+                        entry.getValue().id,
                         entry.getValue().lastStateTransition,
                         entry.getValue().lastChecked,
                         entry.getValue().lastAdded,
+                        entry.getValue().lastStateTransition,
                         entry.getValue().lastState,
-                        entry.getValue().locations))
+                        entry.getValue().locations,
+                        new TreeSet<>(entry.getValue().tags)))
         : Stream.empty();
   }
 
