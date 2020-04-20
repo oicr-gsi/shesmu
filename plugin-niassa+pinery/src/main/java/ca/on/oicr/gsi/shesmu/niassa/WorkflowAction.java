@@ -193,6 +193,23 @@ public final class WorkflowAction extends Action {
     this.majorOliveVersion = majorOliveVersion;
   }
 
+  @Override
+  public Stream<String> tags() {
+    final String priorRuns;
+    switch (matches.size()) {
+      case 0:
+        priorRuns = "prior-runs:none";
+        break;
+      case 1:
+        priorRuns = "prior-runs:one";
+        break;
+      default:
+        priorRuns = "prior-runs:many";
+        break;
+    }
+    return Stream.of("workflow-name:" + workflowName, priorRuns);
+  }
+
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
   @Override
   public final ActionState perform(ActionServices actionServices) {

@@ -145,6 +145,20 @@ public abstract class Action {
    */
   public abstract ObjectNode toJson(ObjectMapper mapper);
 
+  /**
+   * Self-determined tags that should be attached to this action
+   *
+   * <p>An olive may attach tags to an action and an action may also self-determine tags it wants
+   * associated with itself. The tags from olives accumulate, but the self-determined tags are
+   * refresed every time, so an action can choose to drop self-determined tags. This method will be
+   * used frequently, so it must be fast.
+   *
+   * @return A stream of tags
+   */
+  public Stream<String> tags() {
+    return Stream.empty();
+  }
+
   /** The action's name as it will appear in the JSON. */
   public final String type() {
     return type;
