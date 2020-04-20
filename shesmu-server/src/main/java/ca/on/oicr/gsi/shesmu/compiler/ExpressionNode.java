@@ -283,7 +283,8 @@ public abstract class ExpressionNode implements Renderable {
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> LOGICAL_DISJUNCTION =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<ExpressionNode> OUTER = new Parser.ParseDispatch<>();
-  private static final Pattern PATH = Pattern.compile("^([^\\\\']|\\\\')+");
+  private static final Parser.ParseDispatch<String> PATH = new Parser.ParseDispatch<>();
+  private static final Pattern PATH_CHUNK = Pattern.compile("^[^\\\\'\n]+");
   public static final Pattern REGEX = Pattern.compile("^/((?:[^\\\\/\n]|\\\\.)*)/([ceimsu]*)");
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE =
       new Parser.ParseDispatch<>();
@@ -759,13 +760,19 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addSymbol(
         "'",
         (p, o) -> {
-          final AtomicReference<String> path = new AtomicReference<>();
+          final AtomicReference<List<String>> path = new AtomicReference<>();
           final Parser result =
-              p.regex(PATH, m -> path.set(m.group(0).replace("\\'", "'")), "Expected path.")
+              p.list(
+                      path::set,
+                      (ip, io) -> {
+                        System.err.println(ip);
+                        return ip.dispatch(PATH, io);
+                      })
                   .symbol("'")
                   .whitespace();
           if (p.isGood()) {
-            o.accept(new ExpressionNodePathLiteral(p.line(), p.column(), path.get()));
+            o.accept(
+                new ExpressionNodePathLiteral(p.line(), p.column(), String.join("", path.get())));
           }
           return result;
         });
@@ -866,6 +873,14 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
+
+    PATH.addSymbol("\\'", just("'"));
+    PATH.addSymbol("\\\\", just("\\"));
+    PATH.addSymbol("\\n", just("\n"));
+    PATH.addRaw(
+        "valid characters",
+        (p, o) ->
+            p.regex(PATH_CHUNK, m -> o.accept(m.group(0)), "Valid path characters required."));
   }
 
   public static Consumer<Matcher> regexParser(AtomicReference<Pair<String, Integer>> regex) {

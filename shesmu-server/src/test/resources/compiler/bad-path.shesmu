@@ -1,0 +1,37 @@
+Input test;
+
+Olive
+  Where `Switch reference?
+      When "hg38" Then '{
+            template_metadata = "$HG38_MAVIS_ROOT/cytoBand.txt"
+        }`
+      Else `` `
+  Run ok
+    With
+    wdl_inputs = {
+      mavis = {
+        inputBAMs = [{libraryDesign = bam_library_design, bam = bam, bamIndex = bam_index}],
+        runMavis = {
+          dvgAnnotations = `reference_info.dvg_annotations`,
+          mavisTransValidationMemory = `32000`,
+          mavisMemoryLimit = `32000`,
+          templateMetadata = `reference_info.template_metadata`,
+          minClusterPerFile = `5`,
+          mavisAnnotationMemory = `32000`,
+          mavisUninformativeFilter = `"True"`,
+          drawNonSynonymousCdnaOnly = `"False"`,
+          sleepInterval = `20`,
+          modules = `"mavis/2.2.6 {reference_info.modules}"`,
+          outputCONFIG = `"mavis_config.cfg"`,
+          annotations = `reference_info.annotations`,
+          masking = `reference_info.masking`,
+          referenceGenome = `reference_info.fasta`,
+          alignerReference = `reference_info.aligner_reference`,
+          mavisAligner = `"blat"`,
+          mavisScheduler = `"SGE"`,
+          scriptName = `"mavis_config.sh"`,
+          mavisDrawFusionOnly = `"False"`,
+          jobMemory = `12`
+        }
+     }
+   };

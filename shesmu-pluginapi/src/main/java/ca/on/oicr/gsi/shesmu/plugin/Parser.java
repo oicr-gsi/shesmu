@@ -164,13 +164,21 @@ public abstract class Parser {
       }
       for (int i = 0; i < symbol.length(); i++) {
         if (symbol.charAt(i) != input.charAt(i)) {
+          final CharSequence got;
+          if (input.charAt(i) == '\n') {
+            got = "\\n";
+          } else if (Character.isISOControl(input.charAt(i))) {
+            got = String.format("\\U%06X", (int) input.charAt(i));
+          } else {
+            got = input.subSequence(i, i + 1);
+          }
+
           return new Broken(
               errorConsumer(),
               line(),
               column(),
               String.format(
-                  "Expected “%s”, but got %c instead of %c.",
-                  symbol, input.charAt(i), symbol.charAt(i)));
+                  "Expected “%s”, but got %s instead of %c.", symbol, got, symbol.charAt(i)));
         }
       }
       return new Good(
