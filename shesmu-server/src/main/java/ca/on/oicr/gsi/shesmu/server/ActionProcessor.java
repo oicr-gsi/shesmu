@@ -1140,7 +1140,8 @@ public final class ActionProcessor
               node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
               node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
               node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
-              entry.getValue().tags.forEach(node.putArray("tags")::add);
+              Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags())
+                  .forEach(node.putArray("tags")::add);
               entry
                   .getKey()
                   .externalTimestamp()
@@ -1177,13 +1178,16 @@ public final class ActionProcessor
     return new Filter() {
       @Override
       protected boolean check(Action action, Information info) {
-        return tagSet.stream().anyMatch(info.tags::contains);
+        return Stream.concat(info.tags.stream(), action.tags()).anyMatch(tagSet::contains);
       }
     };
   }
 
   public Stream<String> tags() {
-    return actions.values().stream().flatMap(info -> info.tags.stream());
+    return actions
+        .entrySet()
+        .stream()
+        .flatMap(entry -> Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags()));
   }
 
   /**
