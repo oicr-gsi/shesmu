@@ -5,8 +5,11 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,21 +18,30 @@ public class ShesmuIntrospectionValue {
   private final Instant changed;
   private final Instant checked;
   private final Instant generated;
+  private final String id;
+  private JsonNode json;
+  private final Instant lastStateTransition;
   private final Set<Tuple> locations;
   private final ActionState state;
+  private final Set<String> tags;
 
   public ShesmuIntrospectionValue(
       Action action,
+      String id,
       Instant changed,
       Instant checked,
       Instant generated,
+      Instant lastStateTransition,
       ActionState state,
-      Set<SourceLocation> locations) {
+      Set<SourceLocation> locations,
+      Set<String> tags) {
     super();
     this.action = action;
+    this.id = id;
     this.changed = changed;
     this.checked = checked;
     this.generated = generated;
+    this.lastStateTransition = lastStateTransition;
     this.state = state;
     this.locations =
         locations
@@ -42,6 +54,7 @@ public class ShesmuIntrospectionValue {
                         l.hash(),
                         Long.valueOf(l.line())))
             .collect(Collectors.toSet());
+    this.tags = tags;
   }
 
   @ShesmuVariable
@@ -55,8 +68,31 @@ public class ShesmuIntrospectionValue {
   }
 
   @ShesmuVariable
+  public Optional<Instant> external_timestamp() {
+    return action.externalTimestamp();
+  }
+
+  @ShesmuVariable
   public Instant generated() {
     return generated;
+  }
+
+  @ShesmuVariable
+  public String id() {
+    return id;
+  }
+
+  @ShesmuVariable
+  public JsonNode info() {
+    if (json == null) {
+      json = action.toJson(RuntimeSupport.MAPPER);
+    }
+    return json;
+  }
+
+  @ShesmuVariable
+  public Instant last_state_transition() {
+    return lastStateTransition;
   }
 
   @ShesmuVariable(type = "ao4column$ifile$phash$sline$i")
@@ -77,6 +113,11 @@ public class ShesmuIntrospectionValue {
   @ShesmuVariable
   public String state() {
     return state.name();
+  }
+
+  @ShesmuVariable
+  public Set<String> tags() {
+    return tags;
   }
 
   @ShesmuVariable
