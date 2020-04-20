@@ -139,10 +139,15 @@ public final class WorkflowAction extends Action {
                 : Stream.of(
                     new Pair<>(
                         "🚧 Skip All Partially Matched Workflow Runs", "NIASSA-SKIP-CANDIDATES")))
-            : Stream.of(
-                new Pair<>("💔 Reset Workflow Run Connection", "NIASSA-RESET-WFR"),
-                new Pair<>("🚧 Skip and Re-run", "NIASSA-SKIP-RERUN"),
-                new Pair<>("🚧 Retry", "NIASSA-RETRY")));
+            : Stream.concat(
+                Stream.of(
+                    new Pair<>("💔 Reset Workflow Run Connection", "NIASSA-RESET-WFR"),
+                    new Pair<>("🚧 Skip and Re-run", "NIASSA-SKIP-RERUN"),
+                    new Pair<>("🚧 Retry", "NIASSA-RETRY")),
+                matches.size() > 1
+                    ? Stream.of(
+                        new Pair<>("🚧 Skip Historic Workflow Runs", "NIASSA-SKIP-HISTORIC"))
+                    : Stream.empty()));
   }
 
   @Override
@@ -509,24 +514,16 @@ public final class WorkflowAction extends Action {
           return true;
         }
         return false;
+      case "NIASSA-SKIP-HISTORIC":
+        if (matches.size() < 2 || runAccession != 0) {
+          return false;
+        }
+        skipWorkflowRunMatches(matches.subList(1, matches.size()));
       case "NIASSA-SKIP-CANDIDATES":
         if (matches.isEmpty() || runAccession != 0) {
           return false;
         }
-        for (final WorkflowRunMatch match : matches) {
-          final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
-          attribute.setTag("skip");
-          attribute.setValue("shesmu-ui");
-          server
-              .get()
-              .metadata()
-              .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
-        }
-        matches
-            .stream()
-            .mapToLong(m -> m.state().workflowAccession())
-            .distinct()
-            .forEach(server.get().analysisCache()::invalidate);
+        skipWorkflowRunMatches(matches);
         return true;
       case "NIASSA-SKIP-RERUN":
         if (runAccession == 0) {
@@ -569,6 +566,22 @@ public final class WorkflowAction extends Action {
         }
     }
     return false;
+  }
+
+  private void skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
+    for (final WorkflowRunMatch run : runs) {
+      final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+      attribute.setTag("skip");
+      attribute.setValue("shesmu-ui");
+      server
+          .get()
+          .metadata()
+          .annotateWorkflowRun(run.state().workflowRunAccession(), attribute, null);
+    }
+    runs.stream()
+        .mapToLong(m -> m.state().workflowAccession())
+        .distinct()
+        .forEach(server.get().analysisCache()::invalidate);
   }
 
   public Duration performTimeout() {
