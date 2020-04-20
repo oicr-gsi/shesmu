@@ -97,6 +97,9 @@ same directory):
     cat >current_data
     echo "${1}" >current_hash
 
+A more sophisticated version of this script is provided as
+`shesmu-json-refiller` if it suits your needs.
+
 ## JSON Sources
 It is possible to extract data over SSH by remotely executing a command that
 streams this data in JSON format to standard output. This data should be in the
