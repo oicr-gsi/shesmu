@@ -117,6 +117,7 @@ public class NameDefinitions {
     Optional<Target> result = Optional.ofNullable(variables.get(name));
     if (!result.isPresent()) {
       result = undefinedVariableProvider.handleUndefinedVariable(name);
+      result.ifPresent(t -> variables.put(t.name(), t));
     }
     return result;
   }
@@ -147,6 +148,10 @@ public class NameDefinitions {
 
   public Stream<Target> stream() {
     return variables.values().stream();
+  }
+
+  public UndefinedVariableProvider undefinedVariableProvider() {
+    return undefinedVariableProvider;
   }
 
   public NameDefinitions withProvider(UndefinedVariableProvider undefinedVariableProvider) {

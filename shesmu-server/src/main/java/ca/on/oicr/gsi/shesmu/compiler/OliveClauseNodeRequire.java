@@ -183,18 +183,22 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
           String.format("%d:%d: Name %s duplicates existing name.", line, column, duplicate));
     }
     incoming = defs.stream().filter(t -> t.flavour().isStream()).collect(Collectors.toList());
+    final boolean good =
+        duplicates.isEmpty()
+            & expression.resolve(defs, errorHandler)
+            & handlers
+                    .stream()
+                    .filter(
+                        handler ->
+                            handler.resolve(oliveCompilerServices, defs, errorHandler).isGood())
+                    .count()
+                == handlers.size();
     return defs.replaceStream(
-            Stream.concat(name.targets(), defs.stream().filter(t -> t.flavour().isStream())),
-            duplicates.isEmpty()
-                & expression.resolve(defs, errorHandler)
-                & handlers
-                        .stream()
-                        .filter(
-                            handler ->
-                                handler.resolve(oliveCompilerServices, defs, errorHandler).isGood())
-                        .count()
-                    == handlers.size())
-        .withProvider(name);
+            Stream.concat(name.targets(), defs.stream().filter(t -> t.flavour().isStream())), good)
+        .withProvider(
+            UndefinedVariableProvider.combine(
+                name,
+                UndefinedVariableProvider.listen(defs.undefinedVariableProvider(), incoming::add)));
   }
 
   @Override
