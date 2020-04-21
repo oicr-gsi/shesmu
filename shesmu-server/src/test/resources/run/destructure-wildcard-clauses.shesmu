@@ -1,0 +1,6 @@
+Input test;
+
+Olive
+ Flatten * In [{ a = `True`, b = 3 }]
+ Require x = a {}
+ Run ok With ok = x && b == 3;

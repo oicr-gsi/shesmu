@@ -136,13 +136,15 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
                           return false;
                         })
                     .count()
-                == 0;
+                == 0
+            & expression.resolve(defs, errorHandler)
+            & name.resolve(oliveCompilerServices, errorHandler);
     return defs.replaceStream(
-            Stream.concat(incoming.stream().map(Target::wrap), name.targets()),
-            expression.resolve(defs, errorHandler)
-                    & name.resolve(oliveCompilerServices, errorHandler)
-                && ok)
-        .withProvider(name);
+            Stream.concat(incoming.stream().map(Target::wrap), name.targets()), ok)
+        .withProvider(
+            UndefinedVariableProvider.combine(
+                name,
+                UndefinedVariableProvider.listen(defs.undefinedVariableProvider(), incoming::add)));
   }
 
   @Override
