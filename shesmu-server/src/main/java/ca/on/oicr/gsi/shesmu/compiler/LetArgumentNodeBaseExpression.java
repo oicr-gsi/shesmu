@@ -71,26 +71,7 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   @Override
   public final boolean resolveFunctions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
-    boolean ok;
-    switch (name.checkWildcard(errorHandler)) {
-      case NONE:
-        ok = true;
-        break;
-      case HAS_WILDCARD:
-        errorHandler.accept(
-            String.format(
-                "%d:%d: Let argument has wildcard, but this is not allowed.",
-                expression.line(), expression.column()));
-        ok = false;
-        break;
-      case BAD:
-        ok = false;
-        break;
-      default:
-        throw new IllegalStateException("Unknown wildcard result.");
-    }
-    return ok
-        & expression.resolveDefinitions(expressionCompilerServices, errorHandler)
+    return expression.resolveDefinitions(expressionCompilerServices, errorHandler)
         & name.resolve(expressionCompilerServices, errorHandler);
   }
 
