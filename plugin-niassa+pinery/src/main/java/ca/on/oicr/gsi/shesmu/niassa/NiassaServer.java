@@ -180,7 +180,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
      */
     public LaunchLock(List<SimpleLimsKey> limsKeys, Set<Pair<String, String>> activeLimsKeys) {
       this.activeLimsKeys = activeLimsKeys;
-      // We're going to place all of our LIMS keys into the active LIMS key set and, if any our
+      // We're going to place all of our LIMS keys into the active LIMS key set and, if any are
       // already present, someone else holds the lock, so we will back out.
       synchronized (this.activeLimsKeys) {
         boolean isLive = true;
