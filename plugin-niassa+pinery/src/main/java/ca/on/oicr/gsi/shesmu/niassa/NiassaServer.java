@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -167,24 +166,73 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  public final class LaunchLock implements AutoCloseable {
+  public static final class LaunchLock implements AutoCloseable {
+    private final Set<Pair<String, String>> activeLimsKeys;
     private final boolean isLive;
-    private final Semaphore semaphore;
+    private final Set<Pair<String, String>> lockedLimsKeys = new HashSet<>();
 
-    public LaunchLock(Semaphore semaphore) {
-      this.semaphore = semaphore;
-      isLive = semaphore.tryAcquire();
+    /**
+     * Create a lock on a chunk of LIMS key space
+     *
+     * @param limsKeys the LIMS keys that we as a workflow own
+     * @param activeLimsKeys the total set of locked LIMS keys for this workflow SWID+annotation
+     *     combination
+     */
+    public LaunchLock(List<SimpleLimsKey> limsKeys, Set<Pair<String, String>> activeLimsKeys) {
+      this.activeLimsKeys = activeLimsKeys;
+      // We're going to place all of our LIMS keys into the active LIMS key set and, if any are
+      // already present, someone else holds the lock, so we will back out.
+      synchronized (this.activeLimsKeys) {
+        boolean isLive = true;
+        for (final SimpleLimsKey limsKey : limsKeys) {
+          // We don't want to use the full LIMS key because if there are different versions, they
+          // should block each other, so just provider + ID
+          final Pair<String, String> limsKeyId = new Pair<>(limsKey.getProvider(), limsKey.getId());
+          if (lockedLimsKeys.contains(limsKeyId)) {
+            // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
+            // can lock it successfully.
+            System.err.printf(
+                "There's an olive that has produced multiple LIMS keys with multiple %s/%s and that's a bug.\n",
+                limsKey.getProvider(), limsKey.getId());
+            continue;
+          }
+          // Add this lims key to the set of active locks. Add returns true if it was newly added
+          if (this.activeLimsKeys.add(limsKeyId)) {
+            // Track that we added this LIMS key and therefore own it
+            lockedLimsKeys.add(limsKeyId);
+          } else {
+            // Backout any LIMS keys we already locked
+            this.activeLimsKeys.removeAll(lockedLimsKeys);
+            isLive = false;
+          }
+        }
+        this.isLive = isLive;
+        if (isLive) {
+          logLimsKeys("Acquired lock on LIMS keys: ");
+        }
+      }
     }
 
     @Override
     public void close() throws Exception {
       if (isLive) {
-        semaphore.release();
+        synchronized (activeLimsKeys) {
+          activeLimsKeys.removeAll(lockedLimsKeys);
+        }
+        logLimsKeys("Releasing lock on LIMS keys: ");
       }
     }
 
     public boolean isLive() {
       return isLive;
+    }
+
+    private void logLimsKeys(String prefix) {
+      System.err.println(
+          lockedLimsKeys
+              .stream()
+              .map(p -> p.first() + "/" + p.second())
+              .collect(Collectors.joining(" ", prefix, "")));
     }
   }
 
@@ -377,7 +425,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final Definer<NiassaServer> definer;
   private final DirectoryAndIniCache directoryAndIniCache;
   private String host;
-  private final Map<Integer, Semaphore> launchLocks = new ConcurrentHashMap<>();
+  private final Map<Integer, Set<Pair<String, String>>> launchLocks = new ConcurrentHashMap<>();
   private final Map<String, Integer> maxInFlight = new ConcurrentHashMap<>();
   private final MaxInFlightCache maxInFlightCache;
   private MetadataWS metadata;
@@ -386,8 +434,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final Runnable unsubscribe = WORKFLOWS.subscribe(this::updateWorkflows);
   private String url;
 
-  public NiassaServer(Path fileName, String instanceNane, Definer<NiassaServer> definer) {
-    super(fileName, instanceNane, MAPPER, Configuration.class);
+  public NiassaServer(Path fileName, String instanceName, Definer<NiassaServer> definer) {
+    super(fileName, instanceName, MAPPER, Configuration.class);
     this.definer = definer;
     analysisCache = new AnalysisCache(fileName);
     analysisDataCache = new AnalysisDataCache(fileName);
@@ -404,10 +452,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
   }
 
-  public LaunchLock acquireLock(long workflowAccession, Map<String, String> annotations) {
+  public LaunchLock acquireLock(
+      long workflowAccession, Map<String, String> annotations, List<SimpleLimsKey> limsKeys) {
     return new LaunchLock(
+        limsKeys,
         launchLocks.computeIfAbsent(
-            Objects.hash(workflowAccession, annotations), k -> new Semaphore(1)));
+            Objects.hash(workflowAccession, annotations), k -> new HashSet<>()));
   }
 
   public KeyValueCache<Long, Stream<AnalysisState>, Stream<AnalysisState>> analysisCache() {

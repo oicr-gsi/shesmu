@@ -238,7 +238,7 @@ public final class WorkflowAction extends Action {
                       p -> new SimpleLimsKey(p.first()),
                       Collectors.mapping(Pair::second, Collectors.toSet())));
       try (NiassaServer.LaunchLock launchLock =
-          server.get().acquireLock(workflowAccession, annotations)) {
+          server.get().acquireLock(workflowAccession, annotations, limsKeys)) {
         if (!launchLock.isLive()) {
           this.cacheCollision = true;
           this.errors =
