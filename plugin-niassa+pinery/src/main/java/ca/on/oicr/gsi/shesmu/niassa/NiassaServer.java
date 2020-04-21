@@ -191,6 +191,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           if (lockedLimsKeys.contains(limsKeyId)) {
             // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
             // can lock it successfully.
+            System.err.printf(
+                "There's an olive that has produced multiple LIMS keys with multiple %s/%s and that's a bug.\n",
+                limsKey.getProvider(), limsKey.getId());
             continue;
           }
           // Add this lims key to the set of active locks. Add returns true if it was newly added
@@ -204,6 +207,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           }
         }
         this.isLive = isLive;
+        if (isLive) {
+          logLimsKeys("Acquired lock on LIMS keys: ");
+        }
       }
     }
 
@@ -213,11 +219,20 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         synchronized (activeLimsKeys) {
           activeLimsKeys.removeAll(lockedLimsKeys);
         }
+        logLimsKeys("Releasing lock on LIMS keys: ");
       }
     }
 
     public boolean isLive() {
       return isLive;
+    }
+
+    private void logLimsKeys(String prefix) {
+      System.err.println(
+          lockedLimsKeys
+              .stream()
+              .map(p -> p.first() + "/" + p.second())
+              .collect(Collectors.joining(" ", prefix, "")));
     }
   }
 
