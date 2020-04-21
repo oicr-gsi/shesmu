@@ -1,0 +1,5 @@
+Input test;
+
+Olive
+ Let * = {a = True, b = 1}
+ Run ok With ok = a && b == 1;
