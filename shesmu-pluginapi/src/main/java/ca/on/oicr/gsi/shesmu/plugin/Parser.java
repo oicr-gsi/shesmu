@@ -5,10 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Consumer;
-import java.util.function.LongConsumer;
-import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +23,7 @@ public abstract class Parser {
 
   private static class Broken extends Parser {
 
-    public Broken(ErrorConsumer consumer, int line, int column, String message) {
+    public Broken(MaxParseError consumer, int line, int column, String message) {
       super(consumer, line, column);
       consumer.raise(line(), column(), message);
     }
@@ -84,7 +82,7 @@ public abstract class Parser {
   private static class Good extends Parser {
     private final CharSequence input;
 
-    public Good(ErrorConsumer errorConsumer, CharSequence input, int line, int column) {
+    public Good(MaxParseError errorConsumer, CharSequence input, int line, int column) {
       super(errorConsumer, line, column);
       this.input = input;
     }
@@ -222,12 +220,35 @@ public abstract class Parser {
     }
   }
 
+  private static class MaxParseError {
+    private final ErrorConsumer backing;
+    private int column;
+    private int line;
+    private String message = "No error.";
+
+    private MaxParseError(ErrorConsumer backing) {
+      this.backing = backing;
+    }
+
+    public void raise(int line, int column, String errorMessage) {
+      if (this.line < line || this.line == line && this.column <= column) {
+        this.line = line;
+        this.column = column;
+        message = errorMessage;
+      }
+    }
+
+    public void write() {
+      backing.raise(line, column, message);
+    }
+  }
+
   /**
    * Allow the parser to try several possible branches and return the first one that matches
    *
    * @param <T> the output type of the parsing proccess
    */
-  public static final class ParseDispatch<T> {
+  public static final class ParseDispatch<T> implements Rule<T> {
     private final List<Rule<T>> dispatches = new ArrayList<>();
     private final Set<String> identifiers = new TreeSet<>();
 
@@ -278,6 +299,11 @@ public abstract class Parser {
     public String error() {
       return "Could not match any of: " + String.join(", ", identifiers);
     }
+
+    @Override
+    public Parser parse(Parser parser, Consumer<T> output) {
+      return parser.whitespace().dispatch(this, output).whitespace();
+    }
   }
 
   private static final Pattern COMMENT = Pattern.compile("#[^\\n]*");
@@ -288,18 +314,106 @@ public abstract class Parser {
     return input.subSequence(offset, input.length());
   }
 
+  public static <T> Rule<T> just(T value) {
+    return (p, o) -> {
+      o.accept(value);
+      return p;
+    };
+  }
+
+  public static <T> Rule<T> justWhiteSpace(T value) {
+    return (p, o) -> {
+      o.accept(value);
+      return p.whitespace();
+    };
+  }
+
+  /**
+   * Scan a series of binary operators (e.g., +/-)
+   *
+   * @param child the parser for the terms
+   * @param condensers the rules to coalesce terms
+   * @param input the input parser
+   * @param output the output term handler
+   * @param <T> the type of the nodes
+   */
+  public static <T> Parser scanBinary(
+      Rule<T> child,
+      ParseDispatch<BinaryOperator<T>> condensers,
+      Parser input,
+      Consumer<T> output) {
+    final AtomicReference<T> node = new AtomicReference<>();
+    Parser parser = child.parse(input, node::set);
+    while (parser.isGood()) {
+      final AtomicReference<T> right = new AtomicReference<>();
+      final AtomicReference<BinaryOperator<T>> condenser = new AtomicReference<>();
+      final Parser next =
+          child.parse(parser.dispatch(condensers, condenser::set).whitespace(), right::set);
+      if (next.isGood()) {
+        node.set(condenser.get().apply(node.get(), right.get()));
+        parser = next;
+      } else {
+        output.accept(node.get());
+        return parser;
+      }
+    }
+    return parser;
+  }
+
+  public static <T> Parser scanPrefixed(
+      Rule<T> child, ParseDispatch<UnaryOperator<T>> condensers, Parser input, Consumer<T> output) {
+    final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
+    Parser next = input.dispatch(condensers, modifier::set).whitespace();
+    if (!next.isGood()) {
+      next = input;
+      modifier.set(UnaryOperator.identity());
+    }
+    final AtomicReference<T> node = new AtomicReference<>();
+    final Parser result = child.parse(next, node::set).whitespace();
+    if (result.isGood()) {
+      output.accept(modifier.get().apply(node.get()));
+    }
+    return result;
+  }
+
+  public static <T> Parser scanSuffixed(
+      Rule<T> child,
+      ParseDispatch<UnaryOperator<T>> condensers,
+      boolean repeated,
+      Parser input,
+      Consumer<T> output) {
+    final AtomicReference<T> node = new AtomicReference<>();
+    Parser result = child.parse(input, node::set).whitespace();
+    boolean again = true;
+    while (result.isGood() && again) {
+      final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
+      final Parser next = result.dispatch(condensers, modifier::set).whitespace();
+      if (next.isGood()) {
+        result = next;
+        node.updateAndGet(modifier.get());
+        again = repeated;
+      } else {
+        again = false;
+      }
+    }
+    if (result.isGood()) {
+      output.accept(node.get());
+    }
+    return result;
+  }
+
   /** Create a new parser for some input */
   public static Parser start(CharSequence input, ErrorConsumer errorConsumer) {
-    return new Good(errorConsumer, input, 1, 1);
+    return new Good(new MaxParseError(errorConsumer), input, 1, 1);
   }
 
   private final int column;
 
-  private final ErrorConsumer errorConsumer;
+  private final MaxParseError errorConsumer;
 
   private final int line;
 
-  private Parser(ErrorConsumer errorConsumer, int line, int column) {
+  private Parser(MaxParseError errorConsumer, int line, int column) {
     this.line = line;
     this.column = column;
     this.errorConsumer = errorConsumer;
@@ -313,8 +427,21 @@ public abstract class Parser {
   /** Parse using a dispatch table and return the first successful branch. */
   public abstract <T> Parser dispatch(ParseDispatch<T> dispatch, Consumer<T> consumer);
 
-  protected ErrorConsumer errorConsumer() {
+  protected MaxParseError errorConsumer() {
     return errorConsumer;
+  }
+
+  /** Checks if the parser is good and there is no more input and emits any errors. */
+  public final boolean finished() {
+    if (isGood()) {
+      if (isEmpty()) {
+        return true;
+      } else {
+        errorConsumer.raise(line(), column(), "Junk at end of file.");
+      }
+    }
+    errorConsumer.write();
+    return false;
   }
 
   /** Parse an identifier */
