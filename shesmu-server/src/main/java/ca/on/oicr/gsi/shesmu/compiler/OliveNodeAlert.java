@@ -45,7 +45,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
                     @Override
                     public boolean required() {
-                      return false;
+                      return true;
                     }
 
                     @Override
