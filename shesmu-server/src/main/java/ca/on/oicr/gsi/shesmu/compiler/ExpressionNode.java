@@ -140,13 +140,6 @@ public abstract class ExpressionNode implements Renderable {
     }
   }
 
-  private static <T> Parser.Rule<T> just(T value) {
-    return (p, o) -> {
-      o.accept(value);
-      return p;
-    };
-  }
-
   private static Parser.Rule<UnaryOperator<ExpressionNode>> just(UnaryExpression creator) {
     return (p, o) -> {
       o.accept(n -> creator.create(p.line(), p.column(), n));
@@ -155,7 +148,7 @@ public abstract class ExpressionNode implements Renderable {
   }
 
   public static Parser parse(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse0, COALESCING, input, output);
+    return Parser.scanBinary(ExpressionNode::parse0, COALESCING, input, output);
   }
 
   public static Parser parse0(Parser input, Consumer<ExpressionNode> output) {
@@ -163,107 +156,39 @@ public abstract class ExpressionNode implements Renderable {
   }
 
   private static Parser parse1(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse2, LOGICAL_DISJUNCTION, input, output);
+    return Parser.scanBinary(ExpressionNode::parse2, LOGICAL_DISJUNCTION, input, output);
   }
 
   private static Parser parse2(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse3, LOGICAL_CONJUNCTION, input, output);
+    return Parser.scanBinary(ExpressionNode::parse3, LOGICAL_CONJUNCTION, input, output);
   }
 
   private static Parser parse3(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse4, COMPARISON, false, input, output);
+    return Parser.scanSuffixed(ExpressionNode::parse4, COMPARISON, false, input, output);
   }
 
   private static Parser parse4(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse5, DISJUNCTION, input, output);
+    return Parser.scanBinary(ExpressionNode::parse5, DISJUNCTION, input, output);
   }
 
   private static Parser parse5(Parser input, Consumer<ExpressionNode> output) {
-    return scanBinary(ExpressionNode::parse6, CONJUNCTION, input, output);
+    return Parser.scanBinary(ExpressionNode::parse6, CONJUNCTION, input, output);
   }
 
   private static Parser parse6(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, false, input, output);
+    return Parser.scanSuffixed(ExpressionNode::parse7, SUFFIX_LOOSE, false, input, output);
   }
 
   private static Parser parse7(Parser input, Consumer<ExpressionNode> output) {
-    return scanPrefixed(ExpressionNode::parse8, UNARY, input, output);
+    return Parser.scanPrefixed(ExpressionNode::parse8, UNARY, input, output);
   }
 
   private static Parser parse8(Parser input, Consumer<ExpressionNode> output) {
-    return scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, true, input, output);
+    return Parser.scanSuffixed(ExpressionNode::parse9, SUFFIX_TIGHT, true, input, output);
   }
 
   private static Parser parse9(Parser input, Consumer<ExpressionNode> output) {
     return input.dispatch(TERMINAL, output);
-  }
-
-  private static <T> Parser scanBinary(
-      Parser.Rule<T> child,
-      Parser.ParseDispatch<BinaryOperator<T>> condensers,
-      Parser input,
-      Consumer<T> output) {
-    final AtomicReference<T> node = new AtomicReference<>();
-    Parser parser = child.parse(input, node::set);
-    while (parser.isGood()) {
-      final AtomicReference<T> right = new AtomicReference<>();
-      final AtomicReference<BinaryOperator<T>> condenser = new AtomicReference<>();
-      final Parser next =
-          child.parse(parser.dispatch(condensers, condenser::set).whitespace(), right::set);
-      if (next.isGood()) {
-        node.set(condenser.get().apply(node.get(), right.get()));
-        parser = next;
-      } else {
-        output.accept(node.get());
-        return parser;
-      }
-    }
-    return parser;
-  }
-
-  private static <T> Parser scanPrefixed(
-      Parser.Rule<T> child,
-      Parser.ParseDispatch<UnaryOperator<T>> condensers,
-      Parser input,
-      Consumer<T> output) {
-    final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-    Parser next = input.dispatch(condensers, modifier::set).whitespace();
-    if (!next.isGood()) {
-      next = input;
-      modifier.set(UnaryOperator.identity());
-    }
-    final AtomicReference<T> node = new AtomicReference<>();
-    final Parser result = child.parse(next, node::set).whitespace();
-    if (result.isGood()) {
-      output.accept(modifier.get().apply(node.get()));
-    }
-    return result;
-  }
-
-  private static <T> Parser scanSuffixed(
-      Parser.Rule<T> child,
-      Parser.ParseDispatch<UnaryOperator<T>> condensers,
-      boolean repeated,
-      Parser input,
-      Consumer<T> output) {
-    final AtomicReference<T> node = new AtomicReference<>();
-    Parser result = child.parse(input, node::set).whitespace();
-    boolean again = true;
-    while (result.isGood() && again) {
-      final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-      final Parser next = result.dispatch(condensers, modifier::set).whitespace();
-      if (next.isGood()) {
-        result = next;
-        node.updateAndGet(modifier.get());
-        again = repeated;
-      } else {
-        again = false;
-      }
-    }
-    if (result.isGood()) {
-      output.accept(node.get());
-    }
-    return result;
   }
 
   private static final Parser.ParseDispatch<BinaryOperator<ExpressionNode>> COALESCING =
@@ -297,17 +222,17 @@ public abstract class ExpressionNode implements Renderable {
   static {
     final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
 
-    INT_SUFFIX.addKeyword("Gi", just(1024 * 1024 * 1024));
-    INT_SUFFIX.addKeyword("Mi", just(1024 * 1024));
-    INT_SUFFIX.addKeyword("ki", just(1024));
-    INT_SUFFIX.addKeyword("G", just(1000 * 1000 * 1000));
-    INT_SUFFIX.addKeyword("M", just(1000 * 1000));
-    INT_SUFFIX.addKeyword("k", just(1000));
-    INT_SUFFIX.addKeyword("weeks", just(3600 * 24 * 7));
-    INT_SUFFIX.addKeyword("days", just(3600 * 24));
-    INT_SUFFIX.addKeyword("hours", just(3600));
-    INT_SUFFIX.addKeyword("mins", just(60));
-    INT_SUFFIX.addKeyword("", just(1));
+    INT_SUFFIX.addKeyword("Gi", Parser.just(1024 * 1024 * 1024));
+    INT_SUFFIX.addKeyword("Mi", Parser.just(1024 * 1024));
+    INT_SUFFIX.addKeyword("ki", Parser.just(1024));
+    INT_SUFFIX.addKeyword("G", Parser.just(1000 * 1000 * 1000));
+    INT_SUFFIX.addKeyword("M", Parser.just(1000 * 1000));
+    INT_SUFFIX.addKeyword("k", Parser.just(1000));
+    INT_SUFFIX.addKeyword("weeks", Parser.just(3600 * 24 * 7));
+    INT_SUFFIX.addKeyword("days", Parser.just(3600 * 24));
+    INT_SUFFIX.addKeyword("hours", Parser.just(3600));
+    INT_SUFFIX.addKeyword("mins", Parser.just(60));
+    INT_SUFFIX.addKeyword("", Parser.just(1));
     COALESCING.addKeyword("Default", binaryOperators("Default", BinaryOperation::optionalCoalesce));
     OUTER.addKeyword(
         "If",
@@ -853,9 +778,9 @@ public abstract class ExpressionNode implements Renderable {
           return result;
         });
 
-    PATH.addSymbol("\\'", just("'"));
-    PATH.addSymbol("\\\\", just("\\"));
-    PATH.addSymbol("\\n", just("\n"));
+    PATH.addSymbol("\\'", Parser.just("'"));
+    PATH.addSymbol("\\\\", Parser.just("\\"));
+    PATH.addSymbol("\\n", Parser.just("\n"));
     PATH.addRaw(
         "valid characters",
         (p, o) ->

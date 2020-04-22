@@ -39,20 +39,16 @@ public class ProgramNode {
             .list(typeAliases::set, TypeAliasNode::parse)
             .list(olives::set, OliveNode::parse)
             .whitespace();
-    if (result.isGood()) {
-      if (result.isEmpty()) {
-        output.accept(
-            new ProgramNode(
-                start.get().first(),
-                start.get().second(),
-                inputFormat.get(),
-                pragmas.get(),
-                typeAliases.get(),
-                olives.get()));
-        return true;
-      } else {
-        errorHandler.raise(result.line(), result.column(), "Junk at end of file.");
-      }
+    if (result.finished()) {
+      output.accept(
+          new ProgramNode(
+              start.get().first(),
+              start.get().second(),
+              inputFormat.get(),
+              pragmas.get(),
+              typeAliases.get(),
+              olives.get()));
+      return true;
     }
     return false;
   }

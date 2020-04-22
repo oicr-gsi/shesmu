@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
-import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
@@ -41,25 +40,6 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 /** A shell of a compiler that can output bytecode */
 public abstract class Compiler {
-
-  private class MaxParseError implements ErrorConsumer {
-    private int column;
-    private int line;
-    private String message = "No error.";
-
-    @Override
-    public void raise(int line, int column, String errorMessage) {
-      if (this.line < line || this.line == line && this.column <= column) {
-        this.line = line;
-        this.column = column;
-        message = errorMessage;
-      }
-    }
-
-    public void write() {
-      errorHandler(String.format("%d:%d: %s", line, column, message));
-    }
-  }
 
   private static final Type A_ARRAYS_TYPE = Type.getType(Arrays.class);
 
@@ -144,7 +124,6 @@ public abstract class Compiler {
       Consumer<FileTable> dashboardOutput,
       boolean allowDuplicates) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
-    final MaxParseError maxParseError = new MaxParseError();
     final String hash;
     try {
       final MessageDigest digest = MessageDigest.getInstance("SHA-1");
@@ -152,10 +131,12 @@ public abstract class Compiler {
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
-    final boolean parseOk = ProgramNode.parseFile(input, program::set, maxParseError);
-    if (!parseOk) {
-      maxParseError.write();
-    }
+    final boolean parseOk =
+        ProgramNode.parseFile(
+            input,
+            program::set,
+            (line, column, message) ->
+                errorHandler(String.format("%d:%d: %s", line, column, message)));
     if (parseOk
         && program
             .get()

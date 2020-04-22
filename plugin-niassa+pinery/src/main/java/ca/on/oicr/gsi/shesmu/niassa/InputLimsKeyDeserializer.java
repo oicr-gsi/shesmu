@@ -190,22 +190,15 @@ public class InputLimsKeyDeserializer extends JsonDeserializer<InputLimsKeyProvi
               (ObjectNode) node,
               (name, outputType) -> {
                 final AtomicReference<CustomLimsEntryType> output = new AtomicReference<>();
-                final AtomicReference<String> error = new AtomicReference<>();
                 final Parser parser =
                     Parser.start(
                             outputType.asText(),
                             (line, column, message) ->
-                                error.set(
-                                    String.format("%s:%d:%d: %s", name, line, column, message)))
+                                System.err.printf("%s:%d:%d: %s\n", name, line, column, message))
                         .whitespace()
                         .dispatch(DISPATCH, output::set)
                         .whitespace();
-                if (parser.isGood() && parser.isEmpty()) {
-                  return Optional.of(output.get());
-                } else {
-                  System.err.println(error.get());
-                  return Optional.empty();
-                }
+                return parser.finished() ? Optional.of(output.get()) : Optional.empty();
               }));
     }
     throw new IllegalArgumentException("Unknown output type: " + node);
