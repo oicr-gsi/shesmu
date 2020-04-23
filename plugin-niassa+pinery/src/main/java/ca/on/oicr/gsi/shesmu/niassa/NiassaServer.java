@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.CerberusAnalysisProvenanceValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.*;
@@ -519,21 +520,27 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     maxInFlightCache.invalidate(workflowRunSwid);
   }
 
-  public synchronized MaxStatus maxInFlight(String workflowName, long workflowAccession) {
+  public MaxStatus maxInFlight(
+      ActionServices services, String workflowName, long workflowAccession) {
     // Ban all jobs with invalid accessions from running
     if (workflowAccession < 1) {
       return MaxStatus.INVALID_SWID;
     }
-    return maxInFlightCache
-        .get(workflowAccession)
-        .map(
-            running -> {
-              foundRunning.labels(url(), workflowName).set(running);
-              return running >= maxInFlight.getOrDefault(workflowName, 0)
-                  ? MaxStatus.TOO_MANY_RUNNING
-                  : MaxStatus.RUN;
-            })
-        .orElse(MaxStatus.RUN);
+    if (services.isOverloaded("niassa-launch", workflowName)) {
+      return MaxStatus.EXTERNAL_THROTTLE;
+    }
+    synchronized (this) {
+      return maxInFlightCache
+          .get(workflowAccession)
+          .map(
+              running -> {
+                foundRunning.labels(url(), workflowName).set(running);
+                return running >= maxInFlight.getOrDefault(workflowName, 0)
+                    ? MaxStatus.TOO_MANY_RUNNING
+                    : MaxStatus.RUN;
+              })
+          .orElse(MaxStatus.RUN);
+    }
   }
 
   public Metadata metadata() {
