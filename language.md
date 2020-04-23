@@ -330,6 +330,12 @@ value is collected multiple times.
 
 Performs filtering before _collector_.
 
+- `{` _name1_ `=` _collector1_`,` _name2_ `=` _collector2_`,` ... `}`
+
+Performs multiple collections at once and converts the results into an object.
+This can be very useful to share a `Where` condition while collecting multiple
+pieces of information.
+
 ## Expressions
 Shesmu has the following expressions, for lowest precedence to highest precedence.
 

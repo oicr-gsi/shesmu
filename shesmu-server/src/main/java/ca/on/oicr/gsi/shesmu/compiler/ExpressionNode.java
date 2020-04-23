@@ -761,14 +761,7 @@ public abstract class ExpressionNode implements Renderable {
         (p, o) -> {
           final AtomicReference<List<String>> path = new AtomicReference<>();
           final Parser result =
-              p.list(
-                      path::set,
-                      (ip, io) -> {
-                        System.err.println(ip);
-                        return ip.dispatch(PATH, io);
-                      })
-                  .symbol("'")
-                  .whitespace();
+              p.list(path::set, (ip, io) -> ip.dispatch(PATH, io)).symbol("'").whitespace();
           if (p.isGood()) {
             o.accept(
                 new ExpressionNodePathLiteral(p.line(), p.column(), String.join("", path.get())));

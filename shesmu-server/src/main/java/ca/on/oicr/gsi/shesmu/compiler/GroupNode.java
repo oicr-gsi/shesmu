@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -94,6 +95,40 @@ public abstract class GroupNode implements DefinedTarget {
                         column,
                         expression.get(),
                         sink.get().make(intermediate.line(), intermediate.column(), name)));
+          }
+          return result;
+        });
+    GROUPERS.addSymbol(
+        "{",
+        (p, o) -> {
+          final AtomicReference<List<GroupNode>> children = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .list(
+                      children::set,
+                      (cp, co) -> {
+                        final AtomicReference<String> name = new AtomicReference<>();
+                        final AtomicReference<ParseGroup> child = new AtomicReference<>();
+                        final Parser childResult =
+                            cp.whitespace()
+                                .identifier(name::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .dispatch(GROUPERS, child::set)
+                                .whitespace();
+                        if (childResult.isGood()) {
+                          co.accept(child.get().make(cp.line(), cp.column(), name.get()));
+                        }
+                        return childResult;
+                      },
+                      ',')
+                  .whitespace()
+                  .symbol("}")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (line, column, name) -> new GroupNodeObject(line, column, name, children.get()));
           }
           return result;
         });
