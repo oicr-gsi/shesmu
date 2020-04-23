@@ -114,15 +114,12 @@ public final class WdlInputType {
   }
 
   public static Imyhat parseString(String input) {
-    final Pattern optional = Pattern.compile("(\\([^)]*\\))?");
-    final AtomicReference<Imyhat> type = new AtomicReference<>();
-    final Parser result =
-        parse(Parser.start(input, (line, column, errorMessage) -> {}), type::set)
-            .regex(optional, m -> {}, "Shouldn't reach here");
-    if (result.isGood()) {
-      return type.get();
-    }
-    return Imyhat.BAD;
+    final Pattern optional = Pattern.compile("\\(.*");
+    final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
+    parse(Parser.start(input, (line, column, errorMessage) -> {}), type::set)
+        .whitespace()
+        .regex(optional, m -> type.updateAndGet(Imyhat::asOptional), "Shouldn't reach here");
+    return type.get();
   }
 
   private static final ParseDispatch<Imyhat> DISPATCH = new ParseDispatch<>();
