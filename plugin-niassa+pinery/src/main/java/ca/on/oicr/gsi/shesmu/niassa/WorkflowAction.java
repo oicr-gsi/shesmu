@@ -334,7 +334,7 @@ public final class WorkflowAction extends Action {
           // Check if there are already too many copies of this workflow running; if so, wait until
           // later.
           if (!ignoreMaxInFlight) {
-            switch (server.get().maxInFlight(workflowName, workflowAccession)) {
+            switch (server.get().maxInFlight(actionServices, workflowName, workflowAccession)) {
               case RUN:
                 break;
               case TOO_MANY_RUNNING:
@@ -342,6 +342,9 @@ public final class WorkflowAction extends Action {
                     Collections.singletonList(
                         "Too many workflows running. Sit tight or increase max-in-flight setting.");
                 return ActionState.WAITING;
+              case EXTERNAL_THROTTLE:
+                this.errors = Collections.singletonList("Launching workflows has been inhibited.");
+                return ActionState.THROTTLED;
               case INVALID_SWID:
                 this.errors =
                     Collections.singletonList(
