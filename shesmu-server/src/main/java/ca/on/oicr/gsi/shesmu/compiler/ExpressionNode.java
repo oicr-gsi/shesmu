@@ -549,12 +549,6 @@ public abstract class ExpressionNode implements Renderable {
         "%",
         binaryOperators("%", BinaryOperation.primitiveMath(Imyhat.INTEGER, GeneratorAdapter.REM)));
 
-    SUFFIX_LOOSE.addSymbol(
-        "?",
-        (p, o) -> {
-          o.accept(node -> new ExpressionNodeOptionalUnbox(p.line(), p.column(), node));
-          return p;
-        });
     SUFFIX_LOOSE.addKeyword(
         "In",
         (p, o) -> {
@@ -618,7 +612,12 @@ public abstract class ExpressionNode implements Renderable {
           }
           return result;
         });
-
+    SUFFIX_TIGHT.addSymbol(
+        "?",
+        (p, o) -> {
+          o.accept(node -> new ExpressionNodeOptionalUnbox(p.line(), p.column(), node));
+          return p;
+        });
     TERMINAL.addKeyword(
         "Date",
         (p, o) ->
