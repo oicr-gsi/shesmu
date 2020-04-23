@@ -1,7 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 
 /** Build a grouping operation */
@@ -61,6 +63,13 @@ public interface Regrouper {
    * @param condition the condition that must be satisfied
    */
   void addMatches(String name, Match matchType, Consumer<Renderer> condition);
+
+  /**
+   * Create a composite object value
+   *
+   * @param fieldName the name of the object
+   */
+  Regrouper addObject(String fieldName, Stream<Pair<String, Imyhat>> fields);
 
   /**
    * Effectively flatten for optionals
