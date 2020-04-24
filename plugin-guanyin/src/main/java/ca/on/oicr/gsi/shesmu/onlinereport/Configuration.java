@@ -6,9 +6,10 @@ public class Configuration {
   private String cromwell;
   private String description;
   private String labelKey;
+  private boolean pairsAsObjects;
   private Map<String, String> parameters;
-  private String workflowName;
   private String wdl;
+  private String workflowName;
 
   public String getCromwell() {
     return cromwell;
@@ -26,12 +27,16 @@ public class Configuration {
     return parameters;
   }
 
+  public String getWdl() {
+    return wdl;
+  }
+
   public String getWorkflowName() {
     return workflowName;
   }
 
-  public String getWdl() {
-    return wdl;
+  public boolean isPairsAsObjects() {
+    return pairsAsObjects;
   }
 
   public void setCromwell(String cromwell) {
@@ -46,15 +51,19 @@ public class Configuration {
     this.labelKey = labelKey;
   }
 
+  public void setPairsAsObjects(boolean pairsAsObjects) {
+    this.pairsAsObjects = pairsAsObjects;
+  }
+
   public void setParameters(Map<String, String> parameters) {
     this.parameters = parameters;
   }
 
-  public void setWorkflowName(String workflowName) {
-    this.workflowName = workflowName;
-  }
-
   public void setWdl(String wdl) {
     this.wdl = wdl;
+  }
+
+  public void setWorkflowName(String workflowName) {
+    this.workflowName = workflowName;
   }
 }

@@ -1259,7 +1259,11 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeEndElement();
                 writer.writeStartElement("option");
                 writer.writeAttribute("value", "1");
-                writer.writeCharacters("WDL Type");
+                writer.writeCharacters("WDL Type (Pairs as tuples)");
+                writer.writeEndElement();
+                writer.writeStartElement("option");
+                writer.writeAttribute("value", "2");
+                writer.writeCharacters("WDL Type (Pairs as objects)");
                 writer.writeEndElement();
                 writer.writeStartElement("option");
                 writer.writeAttribute("value", "");
@@ -2250,7 +2254,9 @@ public final class Server implements ServerConfig, ActionServices {
           if (request.getFormat() == null || request.getFormat().equals("0")) {
             type = Imyhat.parse(request.getValue());
           } else if (request.getFormat().equals("1")) {
-            type = WdlInputType.parseString(request.getValue());
+            type = WdlInputType.parseString(request.getValue(), false);
+          } else if (request.getFormat().equals("2")) {
+            type = WdlInputType.parseString(request.getValue(), true);
           } else {
             Optional<Function<String, Imyhat>> existingTypes =
                 request.getFormat().isEmpty()

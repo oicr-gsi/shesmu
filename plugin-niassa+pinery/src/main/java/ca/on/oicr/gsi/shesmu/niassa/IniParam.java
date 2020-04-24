@@ -76,7 +76,9 @@ public final class IniParam<T> {
                 node.get("delimiter").asText(),
                 Utils.stream(node.get("of")).map(this::deserialize));
           case "wdl":
-            return wdl((ObjectNode) node.get("parameters"));
+            return wdl(
+                (ObjectNode) node.get("parameters"),
+                node.has("pairsAsObjects") && node.get("pairsAsObjects").asBoolean(false));
           default:
             throw new IllegalArgumentException("Unknown INI type: " + type);
         }
@@ -92,11 +94,12 @@ public final class IniParam<T> {
       return deserialize(node);
     }
 
-    private Stringifier wdl(ObjectNode inputs) {
+    private Stringifier wdl(ObjectNode inputs, boolean pairsAsObjects) {
       final Pair<Function<ObjectNode, ImyhatConsumer>, Imyhat> handler =
           PackWdlVariables.create(
               WdlInputType.of(
                   inputs,
+                  pairsAsObjects,
                   (line, column, errorMessage) ->
                       System.err.printf("%d:%d: %s\n", line, column, errorMessage)));
       return new Stringifier() {
