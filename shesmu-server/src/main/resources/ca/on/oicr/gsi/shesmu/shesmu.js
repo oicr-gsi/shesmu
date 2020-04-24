@@ -4688,7 +4688,7 @@ export function initialiseSimulationDashboard(
     localStorage.setItem("shesmu_script", editor.getValue());
   });
 }
-function drawAlert(a, container, makeHeader) {
+function drawAlert(a, fileNameFormatter, container, makeHeader) {
   container.classList.add(a.live ? "live" : "expired");
   [
     makeHeader(a),
@@ -4709,7 +4709,31 @@ function drawAlert(a, container, makeHeader) {
         return blank();
       }
     }),
-    objectTable(a.annotations, "Annotations", x => x)
+    objectTable(a.annotations, "Annotations", x => x),
+    table(
+      a.locations,
+      ["File", l => fileNameFormatter(l.file)],
+      ["Line", l => l.line],
+      ["Column", l => l.column],
+      ["Source Hash", l => l.hash],
+      [
+        "Olive",
+        l =>
+          link(
+            "/olivedash?saved=" +
+              encodeURIComponent(
+                JSON.stringify({
+                  file: l.file,
+                  line: l.line,
+                  column: l.column,
+                  hash: l.hash
+                })
+              ),
+            "View in Dashboard"
+          )
+      ],
+      ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
+    )
   ]
     .flat(Number.MAX_VALUE)
     .forEach(element => container.appendChild(element));
@@ -4725,6 +4749,9 @@ function showAlertNavigator(
   ...toolbarExtras
 ) {
   clearChildren(output);
+  const fileNameFormatter = commonPathPrefix(
+    allAlerts.flatMap(a => a.locations).map(l => l.file)
+  );
   const showAlertGroup = (container, alerts, usedLabels, addFilter) => {
     clearChildren(container);
     const count = document.createElement("P");
@@ -4922,7 +4949,7 @@ function showAlertNavigator(
         .forEach(a => {
           const alertTile = document.createElement("DIV");
           alertTile.className = "alert";
-          drawAlert(a, alertTile, makeHeader);
+          drawAlert(a, fileNameFormatter, alertTile, makeHeader);
           alertList.appendChild(alertTile);
         });
     };

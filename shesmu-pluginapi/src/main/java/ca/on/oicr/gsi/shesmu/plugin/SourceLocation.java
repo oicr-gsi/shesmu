@@ -1,15 +1,45 @@
 package ca.on.oicr.gsi.shesmu.plugin;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 public final class SourceLocation implements Comparable<SourceLocation> {
 
-  public interface SourceLoctionLinker {
+  public interface SourceLocationLinker {
     Stream<String> sourceUrl(String localFilePath, int line, int column, String hash);
+  }
+
+  public static final class SourceLocationSerializer extends JsonSerializer<SourceLocation> {
+    private final SourceLocationLinker linker;
+
+    public SourceLocationSerializer(SourceLocationLinker linker) {
+      this.linker = linker;
+    }
+
+    @Override
+    public void serialize(
+        SourceLocation sourceLocation,
+        JsonGenerator jsonGenerator,
+        SerializerProvider serializerProvider)
+        throws IOException {
+      jsonGenerator.writeStartObject();
+      jsonGenerator.writeStringField("file", sourceLocation.fileName);
+      jsonGenerator.writeNumberField("line", sourceLocation.line);
+      jsonGenerator.writeNumberField("column", sourceLocation.column);
+      jsonGenerator.writeStringField("hash", sourceLocation.hash);
+      final Optional<String> url = sourceLocation.url(linker);
+      if (url.isPresent()) {
+        jsonGenerator.writeStringField("url", url.get());
+      }
+      jsonGenerator.writeEndObject();
+    }
   }
 
   private final int column;
@@ -102,12 +132,12 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     return line;
   }
 
-  public void toJson(ArrayNode array, SourceLoctionLinker linker) {
+  public void toJson(ArrayNode array, SourceLocationLinker linker) {
     final ObjectNode node = array.addObject();
     toJson(node, linker);
   }
 
-  public void toJson(ObjectNode node, SourceLoctionLinker linker) {
+  public void toJson(ObjectNode node, SourceLocationLinker linker) {
     node.put("file", fileName);
     node.put("line", line);
     node.put("column", column);
@@ -120,7 +150,7 @@ public final class SourceLocation implements Comparable<SourceLocation> {
     return String.format("%s:%d:%d[%s]", fileName, line, column, hash);
   }
 
-  public Optional<String> url(SourceLoctionLinker linker) {
+  public Optional<String> url(SourceLocationLinker linker) {
     return linker.sourceUrl(fileName, line, column, hash).filter(Objects::nonNull).findAny();
   }
 }

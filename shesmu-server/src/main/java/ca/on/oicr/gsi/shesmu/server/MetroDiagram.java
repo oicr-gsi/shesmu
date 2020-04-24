@@ -8,7 +8,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
-import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLoctionLinker;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.awt.Canvas;
 import java.awt.Font;
@@ -95,7 +95,7 @@ public class MetroDiagram {
 
   public static void draw(
       XMLStreamWriter writer,
-      SourceLoctionLinker linker,
+      SourceLocationLinker linker,
       String filename,
       String hash,
       OliveTable olive,
@@ -430,7 +430,7 @@ public class MetroDiagram {
 
   private static void writeClause(
       XMLStreamWriter writer,
-      SourceLoctionLinker linker,
+      SourceLocationLinker linker,
       long topPadding,
       int row,
       String title,

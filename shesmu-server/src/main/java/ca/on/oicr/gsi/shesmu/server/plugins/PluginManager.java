@@ -14,7 +14,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForDynamicSigner;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForStaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.*;
-import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLoctionLinker;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
@@ -80,7 +80,8 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  * A source of actions, constants, and functions based on configuration files where every
  * configuration file can create plugins using annotations on methods.
  */
-public final class PluginManager implements DefinitionRepository, InputSource, SourceLoctionLinker {
+public final class PluginManager
+    implements DefinitionRepository, InputSource, SourceLocationLinker {
   private interface Binder<D> {
     D bind(String name, Path path);
   }
