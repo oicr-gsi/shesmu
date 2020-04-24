@@ -45,6 +45,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
@@ -193,6 +194,10 @@ public final class Server implements ServerConfig, ActionServices {
               .parse(prop.getProperty("buildtime"))
               .toInstant();
     }
+    final SimpleModule module = new SimpleModule("shesmu");
+    module.addSerializer(
+        SourceLocation.class, new SourceLocation.SourceLocationSerializer(pluginManager));
+    RuntimeSupport.MAPPER.registerModule(module);
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);

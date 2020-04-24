@@ -199,6 +199,22 @@ export function title(action, t) {
       ["Line", l => l.line],
       ["Column", l => l.column],
       ["Source Hash", l => l.hash],
+      [
+        "Olive",
+        l =>
+          link(
+            "/olivedash?saved=" +
+              encodeURIComponent(
+                JSON.stringify({
+                  file: l.file,
+                  line: l.line,
+                  column: l.column,
+                  hash: l.hash
+                })
+              ),
+            "View in Dashboard"
+          )
+      ],
       ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
     ),
     table(

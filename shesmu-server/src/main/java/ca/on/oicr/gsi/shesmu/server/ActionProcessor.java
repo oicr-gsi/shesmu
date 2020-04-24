@@ -5,7 +5,7 @@ import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.core.input.shesmu.ShesmuIntrospectionValue;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
-import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLoctionLinker;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -93,7 +93,8 @@ public final class ActionProcessor
     private String generatorURL;
     private final String id;
     private Map<String, String> labels = new TreeMap<>();
-    @JsonIgnore private final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
+
+    private final Set<SourceLocation> locations = ConcurrentHashMap.newKeySet();
     private String startsAt;
 
     public Alert(String id) {
@@ -122,6 +123,10 @@ public final class ActionProcessor
 
     public Map<String, String> getLabels() {
       return labels;
+    }
+
+    public Set<SourceLocation> getLocations() {
+      return locations;
     }
 
     public String getStartsAt() {
@@ -1122,7 +1127,7 @@ public final class ActionProcessor
    *
    * @param filters the filters to match
    */
-  public Stream<ObjectNode> stream(SourceLoctionLinker linker, Filter... filters) {
+  public Stream<ObjectNode> stream(SourceLocationLinker linker, Filter... filters) {
     return startStream(filters)
         .map(
             entry -> {
