@@ -177,9 +177,14 @@ For WDL-inside-Niassa workflows, there is a special `wdl` type:
 
     {
       "is": "wdl",
+      "pairsAsObjects": false,
       "parameters": {
          "foo.bar.baz": "Int"
        }
     }
 
 There `parameters` section is in the same format as `womtool inputs`.
+
+Normally, Shesmu will convert `Pair[` _x_`,` _y_ `]` into a tuple `{` _x_`,`
+_y_ `}`. If `"pairsAsObjects"` is set to true, then it will be converted to an
+object `{ left =` _x_`, right =` _y_ `}`.

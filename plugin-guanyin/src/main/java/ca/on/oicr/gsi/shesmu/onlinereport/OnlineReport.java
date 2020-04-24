@@ -162,7 +162,8 @@ public class OnlineReport extends JsonPluginFile<Configuration> {
                         parameter ->
                             new CustomRefillerParameter<OnlineReportRefiller<I>, I>(
                                 parameter.getKey().replace(".", "_"),
-                                WdlInputType.parseString(parameter.getValue())) {
+                                WdlInputType.parseString(
+                                    parameter.getValue(), configuration.isPairsAsObjects())) {
                               private final String wdlName = parameter.getKey();
 
                               @Override

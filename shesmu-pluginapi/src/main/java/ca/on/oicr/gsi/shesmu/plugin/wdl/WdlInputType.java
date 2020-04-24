@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,9 +57,9 @@ public final class WdlInputType {
         .filter(Objects::nonNull);
   }
 
-  private static Rule<Imyhat> just(Imyhat type) {
+  private static Rule<Function<Boolean, Imyhat>> just(Imyhat type) {
     return (p, o) -> {
-      o.accept(type);
+      o.accept(x -> type);
       return p.whitespace();
     };
   }
@@ -70,11 +71,13 @@ public final class WdlInputType {
    * transform it into something that would be <tt>workflow = { task = {variable = type}}</tt> in
    * Shesmu, collecting all the input variables for a single task into an object.
    */
-  public static Stream<Pair<String[], Imyhat>> of(ObjectNode inputs, ErrorConsumer errorHandler) {
+  public static Stream<Pair<String[], Imyhat>> of(
+      ObjectNode inputs, boolean pairsAsObjects, ErrorConsumer errorHandler) {
     return flatToNested(
         inputs,
         (name, node) -> {
-          final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
+          final AtomicReference<Function<Boolean, Imyhat>> type =
+              new AtomicReference<>(x -> Imyhat.BAD);
           final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
           final Parser parser =
               Parser.start(
@@ -85,8 +88,9 @@ public final class WdlInputType {
                         }
                       })
                   .then(WdlInputType::parse, type::set);
-          if (parser.isGood() && parser.isEmpty() && !type.get().isBad()) {
-            return Optional.of(type.get());
+          final Imyhat imyhat = type.get().apply(pairsAsObjects);
+          if (parser.isGood() && parser.isEmpty() && !imyhat.isBad()) {
+            return Optional.of(imyhat);
           } else {
             errorHandler.raise(1, error.get().first(), error.get().second());
             return Optional.empty();
@@ -94,8 +98,8 @@ public final class WdlInputType {
         });
   }
 
-  public static Parser parse(Parser parser, Consumer<Imyhat> output) {
-    final AtomicReference<Imyhat> value = new AtomicReference<>();
+  public static Parser parse(Parser parser, Consumer<Function<Boolean, Imyhat>> output) {
+    final AtomicReference<Function<Boolean, Imyhat>> value = new AtomicReference<>();
     final Parser result =
         parser
             .whitespace()
@@ -103,7 +107,7 @@ public final class WdlInputType {
             .regex(
                 OPTIONAL,
                 q -> {
-                  if (q.group(0).equals("?")) value.updateAndGet(Imyhat::asOptional);
+                  if (q.group(0).equals("?")) value.updateAndGet(o -> x -> o.apply(x).asOptional());
                 },
                 "Optional or nothing.")
             .whitespace();
@@ -114,15 +118,22 @@ public final class WdlInputType {
   }
 
   public static Imyhat parseString(String input) {
-    final Pattern optional = Pattern.compile("\\(.*");
-    final AtomicReference<Imyhat> type = new AtomicReference<>(Imyhat.BAD);
-    parse(Parser.start(input, (line, column, errorMessage) -> {}), type::set)
-        .whitespace()
-        .regex(optional, m -> type.updateAndGet(Imyhat::asOptional), "Shouldn't reach here");
-    return type.get();
+    return parseString(input, false);
   }
 
-  private static final ParseDispatch<Imyhat> DISPATCH = new ParseDispatch<>();
+  private static final Pattern DEFAULT_PROVIDED = Pattern.compile("(\\([^)]*\\))?");
+  public static Imyhat parseString(String input, boolean pairsAsObjects) {
+    final AtomicReference<Function<Boolean, Imyhat>> type = new AtomicReference<>();
+    final Parser result =
+        parse(Parser.start(input, (line, column, errorMessage) -> {}), type::set)
+            .regex(DEFAULT_PROVIDED, m -> type.updateAndGet(t -> x -> t.apply(x).asOptional()), "Shouldn't reach here");
+    if (result.isGood()) {
+      return type.get().apply(pairsAsObjects);
+    }
+    return Imyhat.BAD;
+  }
+
+  private static final ParseDispatch<Function<Boolean, Imyhat>> DISPATCH = new ParseDispatch<>();
   private static final Consumer<Matcher> IGNORE = m -> {};
   private static final Pattern OPTIONAL = Pattern.compile("\\??");
   private static final Pattern OPTIONAL_PLUS = Pattern.compile("\\+?");
@@ -169,7 +180,18 @@ public final class WdlInputType {
 
         @Override
         public String object(Stream<Pair<String, Imyhat>> contents) {
-          return contents
+          final List<Pair<String, Imyhat>> fields = contents.collect(Collectors.toList());
+          if (fields.size() == 2
+              && fields
+                  .stream()
+                  .allMatch(p -> p.first().equals("left") || p.first().equals("right"))) {
+            return fields
+                .stream()
+                .map(p -> p.second().apply(this))
+                .collect(Collectors.joining(", ", "Pair[", "]"));
+          }
+          return fields
+              .stream()
               .map(field -> field.first() + " -> " + field.second().apply(this))
               .collect(Collectors.joining("\n", "WomCompositeType {\n", "}"));
         }
@@ -210,7 +232,7 @@ public final class WdlInputType {
     DISPATCH.addKeyword(
         "Array",
         (p, o) -> {
-          final AtomicReference<Imyhat> inner = new AtomicReference<>();
+          final AtomicReference<Function<Boolean, Imyhat>> inner = new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .symbol("[")
@@ -220,15 +242,15 @@ public final class WdlInputType {
                   .regex(OPTIONAL_PLUS, IGNORE, "Plus or nothing.")
                   .whitespace();
           if (result.isGood()) {
-            o.accept(inner.get().asList());
+            o.accept(x -> inner.get().apply(x).asList());
           }
           return result;
         });
     DISPATCH.addKeyword(
         "Map",
         (p, o) -> {
-          final AtomicReference<Imyhat> key = new AtomicReference<>();
-          final AtomicReference<Imyhat> value = new AtomicReference<>();
+          final AtomicReference<Function<Boolean, Imyhat>> key = new AtomicReference<>();
+          final AtomicReference<Function<Boolean, Imyhat>> value = new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .symbol("[")
@@ -238,14 +260,14 @@ public final class WdlInputType {
                   .then(WdlInputType::parse, value::set)
                   .symbol("]");
           if (result.isGood()) {
-            o.accept(Imyhat.dictionary(key.get(), value.get()));
+            o.accept(x -> Imyhat.dictionary(key.get().apply(x), value.get().apply(x)));
           }
           return result;
         });
     DISPATCH.addKeyword(
         "Pair",
         (p, o) -> {
-          final List<Imyhat> inner = new ArrayList<>();
+          final List<Function<Boolean, Imyhat>> inner = new ArrayList<>();
           final Parser result =
               p.whitespace()
                   .symbol("[")
@@ -255,14 +277,26 @@ public final class WdlInputType {
                   .then(WdlInputType::parse, inner::add)
                   .symbol("]");
           if (result.isGood()) {
-            o.accept(Imyhat.tuple(inner.stream().toArray(Imyhat[]::new)));
+            o.accept(
+                pairsAsObjects ->
+                    pairsAsObjects
+                        ? new Imyhat.ObjectImyhat(
+                            Stream.of(
+                                new Pair<>("left", inner.get(0).apply(pairsAsObjects)),
+                                new Pair<>("right", inner.get(1).apply(pairsAsObjects))))
+                        : Imyhat.tuple(
+                            inner
+                                .stream()
+                                .map(e -> e.apply(pairsAsObjects))
+                                .toArray(Imyhat[]::new)));
           }
           return result;
         });
     DISPATCH.addKeyword(
         "WomCompositeType",
         (p, o) -> {
-          final AtomicReference<List<Pair<String, Imyhat>>> fields = new AtomicReference<>();
+          final AtomicReference<List<Pair<String, Function<Boolean, Imyhat>>>> fields =
+              new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .symbol("{")
@@ -271,7 +305,8 @@ public final class WdlInputType {
                       fields::set,
                       (fp, fo) -> {
                         final AtomicReference<String> name = new AtomicReference<>();
-                        final AtomicReference<Imyhat> type = new AtomicReference<>();
+                        final AtomicReference<Function<Boolean, Imyhat>> type =
+                            new AtomicReference<>();
                         final Parser fieldResult =
                             fp.whitespace()
                                 .identifier(name::set)
@@ -287,7 +322,13 @@ public final class WdlInputType {
                       })
                   .symbol("}");
           if (result.isGood()) {
-            o.accept(new Imyhat.ObjectImyhat(fields.get().stream()));
+            o.accept(
+                x ->
+                    new Imyhat.ObjectImyhat(
+                        fields
+                            .get()
+                            .stream()
+                            .map(f -> new Pair<>(f.first(), f.second().apply(x)))));
           }
           return result;
         });

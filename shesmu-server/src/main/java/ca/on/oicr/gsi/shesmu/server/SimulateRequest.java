@@ -254,6 +254,7 @@ public class SimulateRequest {
         return PackWdlVariables.create(
                 WdlInputType.of(
                     (ObjectNode) type,
+                    false,
                     (line, column, errorMessage) ->
                         errorHandler.accept(
                             String.format("%d:%d: %s", line, column, errorMessage))))

@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class GroupNodeObject extends GroupNode {
   private final List<GroupNode> children;
   private final String name;
-
+  private boolean read;
   public GroupNodeObject(int line, int column, String name, List<GroupNode> children) {
     super(line, column);
     this.name = name;
@@ -35,8 +35,18 @@ public class GroupNodeObject extends GroupNode {
   }
 
   @Override
+  public boolean isRead() {
+    return read;
+  }
+
+  @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public void read() {
+read = true;
   }
 
   @Override
