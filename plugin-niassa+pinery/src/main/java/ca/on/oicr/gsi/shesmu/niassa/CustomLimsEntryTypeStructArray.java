@@ -222,7 +222,9 @@ public final class CustomLimsEntryTypeStructArray extends CustomLimsEntryType {
                   final Comparator<Object> innerComparator =
                       (Comparator<Object>) identifierType.comparator();
                   comparator.set(
-                      comparator.get().thenComparing(x -> x.keys.get(key), innerComparator));
+                      comparator
+                          .get()
+                          .thenComparing(x -> x.keys.get(key).second(), innerComparator));
                 },
                 child -> {
                   // We don't sort on these because they keys define uniqueness
