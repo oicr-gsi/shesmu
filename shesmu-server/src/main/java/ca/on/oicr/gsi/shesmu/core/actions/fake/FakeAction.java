@@ -81,7 +81,7 @@ public class FakeAction extends JsonParameterisedAction {
 
   @Override
   public ActionState perform(ActionServices services) {
-    return ActionState.UNKNOWN;
+    return ActionState.ZOMBIE;
   }
 
   @Override
