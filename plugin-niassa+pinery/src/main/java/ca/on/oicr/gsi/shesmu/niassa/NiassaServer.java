@@ -43,7 +43,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private class AnalysisCache
       extends KeyValueCache<Long, Stream<AnalysisState>, Stream<AnalysisState>> {
     public AnalysisCache(Path fileName) {
-      super("niassa-analysis " + fileName.toString(), 120, ReplacingRecord::new);
+      super(
+          "niassa-analysis " + fileName.toString(),
+          120,
+          TimeoutRecord.limit(45, ReplacingRecord::new));
     }
 
     @Override
@@ -97,7 +100,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       extends ValueCache<
           Stream<CerberusAnalysisProvenanceValue>, Stream<CerberusAnalysisProvenanceValue>> {
     public AnalysisDataCache(Path fileName) {
-      super("niassa-data-analysis " + fileName.toString(), 20, ReplacingRecord::new);
+      super(
+          "niassa-data-analysis " + fileName.toString(),
+          20,
+          TimeoutRecord.limit(45, ReplacingRecord::new));
     }
 
     @Override
@@ -116,7 +122,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       extends KeyValueCache<
           Long, Optional<WorkflowRunEssentials>, Optional<WorkflowRunEssentials>> {
     public DirectoryAndIniCache(Path fileName) {
-      super("niassa-dir+ini " + fileName.toString(), 60 * 24 * 365, SimpleRecord::new);
+      super(
+          "niassa-dir+ini " + fileName.toString(),
+          60 * 24 * 365,
+          TimeoutRecord.limit(5, SimpleRecord::new));
     }
 
     @Override
@@ -238,7 +247,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   private class MaxInFlightCache extends KeyValueCache<Long, Optional<Integer>, Optional<Integer>> {
     public MaxInFlightCache(Path fileName) {
-      super("niassa-max-in-flight " + fileName.toString(), 5, SimpleRecord::new);
+      super(
+          "niassa-max-in-flight " + fileName.toString(),
+          5,
+          TimeoutRecord.limit(5, SimpleRecord::new));
     }
 
     private int countRecords(String report) {
@@ -275,7 +287,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private class SkipLaneCache
       extends ValueCache<Stream<Pair<Tuple, Tuple>>, Stream<Pair<Tuple, Tuple>>> {
     public SkipLaneCache(Path fileName) {
-      super("niassa-skipped " + fileName.toString(), 20, ReplacingRecord::new);
+      super(
+          "niassa-skipped " + fileName.toString(),
+          20,
+          TimeoutRecord.limit(45, ReplacingRecord::new));
     }
 
     @Override
