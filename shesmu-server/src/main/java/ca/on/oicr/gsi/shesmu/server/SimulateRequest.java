@@ -568,8 +568,11 @@ public class SimulateRequest {
                               counts.get(fileTable.get().format().name()),
                               fileTable.get().format(),
                               (filename, line, column, oliveLine, oliveColumn) ->
-                                  flow.get(Arrays.asList(line, column, oliveLine, oliveColumn))
-                                      .get());
+                                  Optional.of(
+                                          flow.get(
+                                              Arrays.asList(line, column, oliveLine, oliveColumn)))
+                                      .map(AtomicLong::get)
+                                      .orElse(null));
                           xmlWriter.writeEndDocument();
 
                           final ObjectNode diagram = olives.addObject();
