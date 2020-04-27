@@ -1317,6 +1317,61 @@
         ]
       }
     },
+    "/parsequery": {
+      "post": {
+        "description": "",
+        "operationId": "parseActionQuery",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Parses a human-friendly-ish text query into an action filter",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "errors": {
+                      "items": {
+                        "properties": {
+                          "column": {
+                            "type": "integer"
+                          },
+                          "line": {
+                            "type": "integer"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "filter": {
+                      "$ref": "#/components/schemas/ActionFilter"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A filter equivalent to the query or a collection of parse errors"
+          }
+        },
+        "summary": "Create a filter JSON from a text query",
+        "tags": [
+          "actions"
+        ]
+      }
+    },
     "/pausefile": {
       "post": {
         "description": "",
@@ -1405,6 +1460,39 @@
         "summary": "Throttle an olive's actions.",
         "tags": [
           "misc"
+        ]
+      }
+    },
+    "/printquery": {
+      "post": {
+        "description": "",
+        "operationId": "printActionQuery",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionFilter"
+              }
+            }
+          },
+          "description": "Converts an action filter into a human-friendly-ish query string",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A query equivalent to the filter"
+          }
+        },
+        "summary": "Create text query from a filter",
+        "tags": [
+          "actions"
         ]
       }
     },

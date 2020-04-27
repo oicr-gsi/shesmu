@@ -1,10 +1,14 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
+import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface ActionFilterBuilder<F> {
@@ -38,7 +42,7 @@ public interface ActionFilterBuilder<F> {
           final ActionFilterChecked result = new ActionFilterChecked();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
-          return null;
+          return result;
         }
 
         @Override
@@ -115,7 +119,7 @@ public interface ActionFilterBuilder<F> {
           final ActionFilterStatusChanged result = new ActionFilterStatusChanged();
           result.setStart(start.map(Instant::getEpochSecond).orElse(null));
           result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
-          return null;
+          return result;
         }
 
         @Override
@@ -144,6 +148,181 @@ public interface ActionFilterBuilder<F> {
           final ActionFilterType result = new ActionFilterType();
           result.setTypes(types);
           return result;
+        }
+      };
+  /**
+   * Converts an action filter to a query string
+   *
+   * <p>The results include a precedence of the result. This can be discarded if used directly. If
+   * more concatenation is required, it can be used to determine if parentheses are necessary.
+   * Terminal expressions are 0, unary prefixes are 1, logical conjunction is 2, logical disjuncion
+   * is 3.
+   */
+  ActionFilterBuilder<Pair<String, Integer>> QUERY =
+      new ActionFilterBuilder<Pair<String, Integer>>() {
+        @Override
+        public Pair<String, Integer> added(Optional<Instant> start, Optional<Instant> end) {
+          return new Pair<>(String.format("added between %s to %s", start, end), 0);
+        }
+
+        @Override
+        public Pair<String, Integer> addedAgo(long offset) {
+          return formatAgo("added", offset);
+        }
+
+        @Override
+        public Pair<String, Integer> and(Stream<Pair<String, Integer>> filters) {
+          return new Pair<>(
+              filters
+                  .map(p -> p.second() > 2 ? "(" + p.first() + ")" : p.first())
+                  .collect(Collectors.joining(" and ")),
+              2);
+        }
+
+        @Override
+        public Pair<String, Integer> checked(Optional<Instant> start, Optional<Instant> end) {
+          return new Pair<>(String.format("checked between %s to %s", start, end), 0);
+        }
+
+        @Override
+        public Pair<String, Integer> checkedAgo(long offset) {
+          return formatAgo("checked", offset);
+        }
+
+        @Override
+        public Pair<String, Integer> external(Optional<Instant> start, Optional<Instant> end) {
+          return new Pair<>(String.format("external between %s to %s", start, end), 0);
+        }
+
+        @Override
+        public Pair<String, Integer> externalAgo(long offset) {
+          return formatAgo("external", offset);
+        }
+
+        private Pair<String, Integer> formatAgo(String name, long offset) {
+          final long reduced;
+          final String units;
+          if (offset % 86_400_000 == 0) {
+            reduced = offset / 86_400_000;
+            units = "days";
+          } else if (offset % 3_600_000 == 0) {
+            reduced = offset / 3_600_000;
+            units = "hours";
+          } else if (offset % 60_000 == 0) {
+            reduced = offset / 60_000;
+            units = "mins";
+          } else if (offset % 10_000 == 0) {
+            reduced = offset / 86400;
+            units = "secs";
+          } else {
+            reduced = offset;
+            units = "millis";
+          }
+          return new Pair<>(String.format("%s after %d%s", name, reduced, units), 1);
+        }
+
+        private Pair<String, Integer> formatSet(String name, String... items) {
+          if (items.length == 1) {
+            return new Pair<>(String.format("%s = %s", name, quote(items[0])), 1);
+          } else {
+            return new Pair<>(
+                Stream.of(items)
+                    .map(this::quote)
+                    .collect(Collectors.joining(", ", name + " in (", ")")),
+                1);
+          }
+        }
+
+        @Override
+        public Pair<String, Integer> fromFile(String... files) {
+          return formatSet("file", files);
+        }
+
+        @Override
+        public Pair<String, Integer> fromSourceLocation(Stream<SourceOliveLocation> locations) {
+          final List<SourceOliveLocation> locationList = locations.collect(Collectors.toList());
+          if (locationList.size() == 1) {
+            return new Pair<>("source = " + locationList.get(0), 0);
+          }
+          return new Pair<>(
+              locationList
+                  .stream()
+                  .map(Object::toString)
+                  .collect(Collectors.joining(", ", "source in (", ")")),
+              0);
+        }
+
+        @Override
+        public Pair<String, Integer> ids(List<String> ids) {
+          return ids.size() == 1
+              ? new Pair<>(ids.get(0), 0)
+              : new Pair<>(String.join(" or ", ids), 3);
+        }
+
+        @Override
+        public Pair<String, Integer> isState(ActionState... states) {
+          final String[] stateNames = new String[states.length];
+          for (int i = 0; i < stateNames.length; i++) {
+            stateNames[i] = states[i].name().toLowerCase();
+          }
+          Arrays.sort(stateNames);
+          return formatSet("status", stateNames);
+        }
+
+        @Override
+        public Pair<String, Integer> negate(Pair<String, Integer> filter) {
+          return new Pair<>(
+              "!" + (filter.second() > 1 ? "(" + filter.first() + ")" : filter.first()), 1);
+        }
+
+        @Override
+        public Pair<String, Integer> or(Stream<Pair<String, Integer>> filters) {
+          return new Pair<>(
+              filters
+                  .map(p -> p.second() > 3 ? "(" + p.first() + ")" : p.first())
+                  .collect(Collectors.joining(" and ")),
+              3);
+        }
+
+        private String quote(String item) {
+          if (Parser.IDENTIFIER.matcher(item).matches()) {
+            return item;
+          } else {
+            return "\"" + item.replace("\"", "\\\"") + "\"";
+          }
+        }
+
+        @Override
+        public Pair<String, Integer> statusChanged(Optional<Instant> start, Optional<Instant> end) {
+          final ActionFilterStatusChanged result = new ActionFilterStatusChanged();
+          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
+          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
+          return new Pair<>(String.format("status_changed between %s to %s", start, end), 0);
+        }
+
+        @Override
+        public Pair<String, Integer> statusChangedAgo(long offset) {
+          return formatAgo("status_changed", offset);
+        }
+
+        @Override
+        public Pair<String, Integer> tags(Stream<String> tags) {
+          return formatSet("tag", tags.toArray(String[]::new));
+        }
+
+        @Override
+        public Pair<String, Integer> textSearch(Pattern pattern) {
+
+          return new Pair<>(
+              String.format(
+                  "text ~ /%s/%s",
+                  pattern.pattern(), (pattern.flags() & Pattern.CASE_INSENSITIVE) == 0 ? "" : "i"),
+              0);
+        }
+
+        @Override
+        public Pair<String, Integer> type(String... types) {
+          return formatSet("type", types);
         }
       };
   /**

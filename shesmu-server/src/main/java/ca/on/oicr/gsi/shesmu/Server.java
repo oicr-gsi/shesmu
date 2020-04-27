@@ -2440,6 +2440,39 @@ public final class Server implements ServerConfig, ActionServices {
               }
           }
         });
+    add(
+        "/parsequery",
+        t -> {
+          final String input = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), String.class);
+          final ObjectNode response = RuntimeSupport.MAPPER.createObjectNode();
+          final ArrayNode errors = response.putArray("errors");
+          ActionFilter.parseQuery(
+                  input,
+                  ((line, column, errorMessage) -> {
+                    final ObjectNode error = errors.addObject();
+                    error.put("line", line);
+                    error.put("column", column);
+                    error.put("message", errorMessage);
+                  }))
+              .ifPresent(f -> response.putPOJO("filter", f));
+          t.getResponseHeaders().set("Content-type", "application/json");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            RuntimeSupport.MAPPER.writeValue(os, response);
+          }
+        });
+    add(
+        "/printquery",
+        t -> {
+          final ActionFilter input =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter.class);
+          t.getResponseHeaders().set("Content-type", "text/plain");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            os.write(
+                input.convert(ActionFilterBuilder.QUERY).first().getBytes(StandardCharsets.UTF_8));
+          }
+        });
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
