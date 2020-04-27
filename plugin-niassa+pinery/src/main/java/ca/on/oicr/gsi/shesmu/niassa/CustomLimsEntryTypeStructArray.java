@@ -36,6 +36,14 @@ public final class CustomLimsEntryTypeStructArray extends CustomLimsEntryType {
     }
 
     @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      StructArray that = (StructArray) o;
+      return entries.equals(that.entries);
+    }
+
+    @Override
     Stream<Integer> fileSwids() {
       return entries.stream().flatMap(StructEntry::fileSwids);
     }
@@ -45,6 +53,11 @@ public final class CustomLimsEntryTypeStructArray extends CustomLimsEntryType {
       for (final StructEntry entry : entries) {
         entry.generateUUID(digest);
       }
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(entries);
     }
 
     @Override
