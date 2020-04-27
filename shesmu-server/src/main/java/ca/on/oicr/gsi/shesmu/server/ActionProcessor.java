@@ -1235,6 +1235,7 @@ public final class ActionProcessor
             .filter(
                 entry ->
                     entry.getValue().lastState != ActionState.SUCCEEDED
+                        && entry.getValue().lastState != ActionState.ZOMBIE
                         && !entry.getValue().updateInProgress
                         && Duration.between(entry.getValue().lastChecked, now).toMinutes()
                             >= Math.max(10, entry.getKey().retryMinutes()))

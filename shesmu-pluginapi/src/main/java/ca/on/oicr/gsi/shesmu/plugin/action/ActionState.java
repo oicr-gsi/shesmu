@@ -34,7 +34,15 @@ public enum ActionState {
    * capacity is available. This might be due to needing another action to complete or requiring
    * user intervention.
    */
-  WAITING(2);
+  WAITING(2),
+  /**
+   * The action is never going to complete. This is not necessarily a failed state; testing or
+   * debugging actions should be in this state.
+   *
+   * <p>This is similar to {@link #SUCCEEDED} in that the action will never be checked again, but it
+   * didn't really succeed. More reached a state of terminal stuckness.
+   */
+  ZOMBIE(1);
 
   private final int sortPriority;
 

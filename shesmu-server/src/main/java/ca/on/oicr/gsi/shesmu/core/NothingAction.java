@@ -62,7 +62,7 @@ public class NothingAction extends Action {
 
   @Override
   public ActionState perform(ActionServices services) {
-    return ActionState.SUCCEEDED;
+    return ActionState.ZOMBIE;
   }
 
   @Override

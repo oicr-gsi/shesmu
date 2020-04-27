@@ -631,7 +631,9 @@ const actionStates = {
     "The action is being rate limited by a Shesmu throttler or by an over-capacity signal.",
   UNKNOWN:
     "The actions state is not currently known either due to an exception or not having been attempted.",
-  WAITING: "The action cannot be started due to a resource being unavailable."
+  WAITING: "The action cannot be started due to a resource being unavailable.",
+  ZOMBIE:
+    "The action is never going to complete. This is not necessarily a failed state; testing or debugging actions should be in this state."
 };
 
 const timeUnits = {

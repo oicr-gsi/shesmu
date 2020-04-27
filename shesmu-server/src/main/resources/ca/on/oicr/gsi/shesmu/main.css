@@ -250,6 +250,13 @@ a.load.danger:visited {
   background-color: #fcf5d2;
 }
 
+.state_zombie,
+.filterlist .state_zombie {
+  border: 1px solid #000;
+  background-color: #dfdfdf;
+}
+
+
 .state_failed.updating,
 .state_unknown.updating {
   background: linear-gradient(
@@ -314,6 +321,19 @@ a.load.danger:visited {
     #fcf5d2 50%,
     #fcf5d2 75%,
     #fcf1b8 75%
+  );
+  background-size: 200px 200px;
+}
+
+.state_zombie.updating {
+  background: linear-gradient(
+    -45deg,
+    #dfdfdf 25%,
+    #efefef 25%,
+    #efefef 50%,
+    #dfdfdf 50%,
+    #dfdfdf 75%,
+    #efefef 75%
   );
   background-size: 200px 200px;
 }
@@ -442,6 +462,21 @@ a.load.danger:visited {
   color: #33bcdc;
 }
 
+.action.state_zombie a:link {
+  color: #444;
+}
+
+.action.state_zombie a:visited {
+  color: #666;
+}
+
+.action.state_zombie a:hover,
+.action.state_zombie a:active
+{
+  color: #888;
+}
+
+
 .action > :first-child::before,
 .alert > :first-child::before {
   opacity: 0.5;
@@ -494,6 +529,12 @@ a.load.danger:visited {
   color: #06aed5;
 }
 
+.action.state_zombie > :first-child::before {
+  content: "Zombie 🧟";
+  color: #aaa;
+}
+
+
 .alert.expired > :first-child::before {
   content: "Expired 😴";
   color: #06aed5;
@@ -516,13 +557,16 @@ a.load.danger:visited {
 .filterlist .state_throttled,
 .filterlist .state_unknown,
 .filterlist .state_waiting,
+.filterlist .state_zombie,
 .load.state_failed,
 .load.state_inflight,
 .load.state_queued,
 .load.state_succeeded,
 .load.state_throttled,
 .load.state_unknown,
-.load.state_waiting {
+.load.state_waiting,
+.load.state_zombie
+ {
   color: #000;
 }
 

@@ -372,7 +372,7 @@ public final class WorkflowAction extends Action {
                 this.errors =
                     Collections.singletonList(
                         "The workflow SWID supplied is obviously invalid, so let's pretend is launched and everything was amazing. 🌈");
-                return ActionState.SUCCEEDED;
+                return ActionState.ZOMBIE;
               default:
                 this.errors =
                     Collections.singletonList("Unknown max status. This is an implementation bug.");
