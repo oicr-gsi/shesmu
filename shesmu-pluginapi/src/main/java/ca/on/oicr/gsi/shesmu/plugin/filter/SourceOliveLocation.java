@@ -127,4 +127,20 @@ public final class SourceOliveLocation implements Predicate<SourceLocation> {
     }
     return location.hash().equals(hash);
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder buffer = new StringBuilder();
+    buffer.append("\"").append(file).append("\"");
+    if (line != null && line != 0) {
+      buffer.append(":").append(line);
+      if (column != null && column != 0) {
+        buffer.append(":").append(column);
+        if (hash != null) {
+          buffer.append("[").append(hash).append("]");
+        }
+      }
+    }
+    return buffer.toString();
+  }
 }
