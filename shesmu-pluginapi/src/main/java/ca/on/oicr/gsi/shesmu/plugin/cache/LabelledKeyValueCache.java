@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
+import ca.on.oicr.gsi.Pair;
 import io.prometheus.client.Gauge;
 import java.lang.ref.SoftReference;
 import java.time.Instant;
@@ -7,7 +8,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -21,8 +21,29 @@ import java.util.stream.Stream;
  */
 public abstract class LabelledKeyValueCache<K, L, I, V>
     implements Owner, Iterable<Map.Entry<L, Record<V>>> {
-  public static Stream<? extends LabelledKeyValueCache<?, ?, ?, ?>> caches() {
-    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  private class LabelledKeyValueUpdater implements Updater<I> {
+    private final K key;
+    private final L label;
+
+    private LabelledKeyValueUpdater(K key, L label) {
+      this.key = key;
+      this.label = label;
+    }
+
+    @Override
+    public Stream<Pair<String, String>> identifiers() {
+      return Stream.of(new Pair<>("key", key.toString()), new Pair<>("label", label.toString()));
+    }
+
+    @Override
+    public Owner owner() {
+      return LabelledKeyValueCache.this;
+    }
+
+    @Override
+    public I update(Instant lastModified) throws Exception {
+      return fetch(key, label, lastModified);
+    }
   }
 
   private static final Map<String, SoftReference<LabelledKeyValueCache<?, ?, ?, ?>>> CACHES =
@@ -31,7 +52,6 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
       Gauge.build("shesmu_cache_lkv_item_count", "Number of items in a cache.")
           .labelNames("name")
           .register();
-
   private static final Gauge innerCount =
       Gauge.build("shesmu_cache_lkv_max_inner_count", "The largest collection stored in a cache.")
           .labelNames("name")
@@ -40,11 +60,16 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
       Gauge.build("shesmu_cache_lkv_ttl", "The time-to-live of a cache, in minutes.")
           .labelNames("name")
           .register();
+
+  public static Stream<? extends LabelledKeyValueCache<?, ?, ?, ?>> caches() {
+    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  }
+
   private long maxCount = 0;
 
   private final String name;
 
-  private final BiFunction<Owner, Updater<I>, Record<V>> recordCtor;
+  private final RecordFactory<I, V> recordCtor;
   private final Map<L, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -54,8 +79,7 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public LabelledKeyValueCache(
-      String name, int ttl, BiFunction<Owner, Updater<I>, Record<V>> recordCtor) {
+  public LabelledKeyValueCache(String name, int ttl, RecordFactory<I, V> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
@@ -84,8 +108,7 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
   public final V get(K key) {
     final Record<V> record =
         records.computeIfAbsent(
-            label(key),
-            label -> recordCtor.apply(this, lastModified -> fetch(key, label, lastModified)));
+            label(key), label -> recordCtor.create(new LabelledKeyValueUpdater(key, label)));
     maxCount = Math.max(maxCount, record.collectionSize());
     innerCount.labels(name).set(maxCount);
     count.labels(name).set(records.size());
@@ -100,7 +123,7 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
   public final V getStale(K key) {
     final Record<V> record =
         records.computeIfAbsent(
-            label(key), k -> recordCtor.apply(this, lastModified -> fetch(key, k, lastModified)));
+            label(key), label -> recordCtor.create(new LabelledKeyValueUpdater(key, label)));
     return record.readStale();
   }
 

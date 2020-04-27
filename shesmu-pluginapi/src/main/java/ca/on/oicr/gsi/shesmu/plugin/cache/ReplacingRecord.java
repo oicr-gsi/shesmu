@@ -11,11 +11,9 @@ import java.util.stream.Stream;
  * replaces them all
  */
 public final class ReplacingRecord<V> extends BaseRecord<Stream<V>, List<V>> {
-  private final Updater<Stream<V>> fetcher;
 
-  public ReplacingRecord(Owner owner, Updater<Stream<V>> fetcher) {
-    super(owner, Collections.emptyList());
-    this.fetcher = fetcher;
+  public ReplacingRecord(Updater<Stream<V>> fetcher) {
+    super(fetcher, Collections.emptyList());
   }
 
   @Override
@@ -38,5 +36,10 @@ public final class ReplacingRecord<V> extends BaseRecord<Stream<V>, List<V>> {
     } else {
       return null;
     }
+  }
+
+  @Override
+  public Updater<?> updater() {
+    return fetcher;
   }
 }

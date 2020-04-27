@@ -9,13 +9,13 @@ import java.time.Instant;
  */
 public abstract class BaseRecord<R, S> implements Record<R> {
   private Instant fetchTime = Instant.EPOCH;
+  protected final Updater<R> fetcher;
   private boolean initialState = true;
-  private final Owner owner;
   private boolean regenerating;
   private S value;
 
-  public BaseRecord(Owner owner, S initialState) {
-    this.owner = owner;
+  public BaseRecord(Updater<R> fetcher, S initialState) {
+    this.fetcher = fetcher;
     this.value = initialState;
   }
 
@@ -39,7 +39,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
   @Override
   public synchronized R readStale() {
     if (initialState) {
-      throw new InitialCachePopulationException(owner.name());
+      throw new InitialCachePopulationException(fetcher.owner().name());
     }
     return unpack(value);
   }
@@ -50,14 +50,15 @@ public abstract class BaseRecord<R, S> implements Record<R> {
     boolean shouldThrow;
     synchronized (this) {
       final Instant now = Instant.now();
-      doRefresh = Duration.between(fetchTime, now).toMinutes() > owner.ttl() && !regenerating;
+      doRefresh =
+          Duration.between(fetchTime, now).toMinutes() > fetcher.owner().ttl() && !regenerating;
       shouldThrow = initialState;
       if (doRefresh) {
         regenerating = true;
       }
     }
     if (doRefresh) {
-      try (AutoCloseable timer = refreshLatency.start(owner.name())) {
+      try (AutoCloseable timer = refreshLatency.start(fetcher.owner().name())) {
         S result = update(value, fetchTime);
         if (result != null) {
           synchronized (this) {
@@ -69,7 +70,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
         }
       } catch (final Exception e) {
         e.printStackTrace();
-        staleRefreshError.labels(owner.name()).inc();
+        staleRefreshError.labels(fetcher.owner().name()).inc();
       } finally {
         synchronized (this) {
           regenerating = false;
@@ -77,7 +78,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
       }
     }
     if (shouldThrow) {
-      throw new InitialCachePopulationException(owner.name());
+      throw new InitialCachePopulationException(fetcher.owner().name());
     }
     return unpack(value);
   }
