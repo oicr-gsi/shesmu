@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import javax.xml.stream.XMLStreamException;
@@ -28,10 +27,7 @@ import org.apache.http.impl.client.HttpClients;
 public final class RunScannerClient extends JsonPluginFile<Configuration> {
   private abstract class BaseRunCache<T> extends KeyValueCache<String, Optional<T>, Optional<T>> {
 
-    public BaseRunCache(
-        String name,
-        int ttl,
-        BiFunction<Owner, Updater<Optional<T>>, Record<Optional<T>>> recordCtor) {
+    public BaseRunCache(String name, int ttl, RecordFactory<Optional<T>, Optional<T>> recordCtor) {
       super(name, ttl, recordCtor);
     }
 

@@ -1,12 +1,12 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
+import ca.on.oicr.gsi.Pair;
 import io.prometheus.client.Gauge;
 import java.lang.ref.SoftReference;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -16,11 +16,6 @@ import java.util.stream.Stream;
  * @param <V> the cached value
  */
 public abstract class ValueCache<I, V> implements Owner {
-
-  public static Stream<? extends ValueCache<?, ?>> caches() {
-    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
-  }
-
   private static final Map<String, SoftReference<ValueCache<?, ?>>> CACHES =
       new ConcurrentHashMap<>();
   private static final Gauge innerCount =
@@ -31,6 +26,11 @@ public abstract class ValueCache<I, V> implements Owner {
       Gauge.build("shesmu_cache_v_ttl", "The time-to-live of a cache, in minutes.")
           .labelNames("name")
           .register();
+
+  public static Stream<? extends ValueCache<?, ?>> caches() {
+    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  }
+
   private final String name;
 
   private int ttl;
@@ -43,11 +43,29 @@ public abstract class ValueCache<I, V> implements Owner {
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public ValueCache(String name, int ttl, BiFunction<Owner, Updater<I>, Record<V>> recordCtor) {
+  public ValueCache(String name, int ttl, RecordFactory<I, V> recordCtor) {
     super();
     this.name = name;
     this.ttl = ttl;
-    this.value = recordCtor.apply(this, this::fetch);
+    this.value =
+        recordCtor.create(
+            new Updater<I>() {
+
+              @Override
+              public Stream<Pair<String, String>> identifiers() {
+                return Stream.empty();
+              }
+
+              @Override
+              public Owner owner() {
+                return ValueCache.this;
+              }
+
+              @Override
+              public I update(Instant lastModifed) throws Exception {
+                return fetch(lastModifed);
+              }
+            });
     ttlValue.labels(name).set(ttl);
     CACHES.put(name, new SoftReference<>(this));
   }

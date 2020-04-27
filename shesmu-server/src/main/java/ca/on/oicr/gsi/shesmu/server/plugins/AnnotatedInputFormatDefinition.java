@@ -445,7 +445,7 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
   private final List<Pair<String, JsonFieldWriter>> fieldWriters = new ArrayList<>();
   private final InputFormat format;
   private final List<GangDefinition> gangs;
-  private final AutoUpdatingDirectory<LocalJsonFile> local;;
+  private final AutoUpdatingDirectory<LocalJsonFile> local;
   private final AutoUpdatingDirectory<RemoteJsonSource> remotes;
   private final List<AnnotatedInputVariable> variables = new ArrayList<>();
 

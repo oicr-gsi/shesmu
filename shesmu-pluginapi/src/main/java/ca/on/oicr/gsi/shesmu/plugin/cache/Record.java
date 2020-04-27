@@ -36,4 +36,7 @@ public interface Record<V> {
 
   /** Get the current item value, fetching if necessary */
   V refresh();
+
+  /** The callback used by this record to fetch data */
+  Updater<?> updater();
 }

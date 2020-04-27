@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.Semaphore;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -17,7 +16,7 @@ import java.util.stream.Collectors;
 public class TimeoutRecord<V> implements Record<V> {
   private static final Thread CLEANUP;
   private static final Semaphore LOCK = new Semaphore(1);
-  private static final Map<Thread, Pair<Instant, String>> TIMEOUTS = new HashMap<>();
+  private static final Map<Thread, Pair<Instant, TimeoutRecord<?>>> TIMEOUTS = new HashMap<>();
   private static final Gauge currentTimeout =
       Gauge.build("shesmu_cache_timeout_limit", "The timeout of this cache, in minutes.")
           .labelNames("cache")
@@ -42,7 +41,19 @@ public class TimeoutRecord<V> implements Record<V> {
                       .entrySet()
                       .stream()
                       .filter(e -> e.getValue().first().isBefore(now))
-                      .peek(e -> deadlineExceeded.labels(e.getValue().second()).inc())
+                      .peek(
+                          e -> {
+                            final Updater<?> updater = e.getValue().second().inner.updater();
+                            deadlineExceeded.labels(updater.owner().name()).inc();
+                            System.err.println(
+                                String.format(
+                                    "Cache deadline exceeded in cache %s for record identified by [%s]",
+                                    updater.owner().name(),
+                                    updater
+                                        .identifiers()
+                                        .map(p -> p.first() + " = " + p.second())
+                                        .collect(Collectors.joining(", "))));
+                          })
                       .map(Map.Entry::getKey)
                       .collect(Collectors.toList())) {
                 TIMEOUTS.remove(deadThread);
@@ -67,21 +78,17 @@ public class TimeoutRecord<V> implements Record<V> {
    * @param timeout the maximum number of minutes the fetch may take
    * @param constructor the record type to limit
    */
-  public static <I, V> BiFunction<Owner, Updater<I>, Record<V>> limit(
-      int timeout, BiFunction<Owner, Updater<I>, Record<V>> constructor) {
-    return (owner, fetcher) ->
-        new TimeoutRecord<>(owner.name(), constructor.apply(owner, fetcher), timeout);
+  public static <I, V> RecordFactory<I, V> limit(int timeout, RecordFactory<I, V> constructor) {
+    return fetcher -> new TimeoutRecord<>(constructor.create(fetcher), timeout);
   }
 
   private final Record<V> inner;
   private final int maxRuntime;
-  private final String name;
 
-  public TimeoutRecord(String name, Record<V> inner, int maxRuntime) {
-    this.name = name;
+  public TimeoutRecord(Record<V> inner, int maxRuntime) {
     this.inner = inner;
     this.maxRuntime = maxRuntime;
-    currentTimeout.labels(name).set(maxRuntime);
+    currentTimeout.labels(inner.updater().owner().name()).set(maxRuntime);
   }
 
   @Override
@@ -110,7 +117,7 @@ public class TimeoutRecord<V> implements Record<V> {
       LOCK.acquire();
       TIMEOUTS.put(
           Thread.currentThread(),
-          new Pair<>(Instant.now().plus(maxRuntime, ChronoUnit.MINUTES), name));
+          new Pair<>(Instant.now().plus(maxRuntime, ChronoUnit.MINUTES), this));
       LOCK.release();
       final V result = inner.refresh();
       LOCK.acquire();
@@ -120,5 +127,10 @@ public class TimeoutRecord<V> implements Record<V> {
     } catch (InterruptedException e) {
       return null;
     }
+  }
+
+  @Override
+  public Updater<?> updater() {
+    return inner.updater();
   }
 }

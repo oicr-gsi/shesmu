@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
+import ca.on.oicr.gsi.shesmu.plugin.cache.ExclusiveRecord.Lifetime;
 import java.io.Closeable;
 import java.time.Instant;
 import java.util.concurrent.Semaphore;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class ExclusiveRecord<T> implements Record<ExclusiveRecord<T>.Lifetime> {
@@ -33,9 +33,9 @@ public class ExclusiveRecord<T> implements Record<ExclusiveRecord<T>.Lifetime> {
     }
   }
 
-  public static <V> BiFunction<Owner, Updater<V>, Record<ExclusiveRecord<V>.Lifetime>> wrap(
-      BiFunction<Owner, Updater<V>, Record<V>> recordCtor) {
-    return (o, u) -> new ExclusiveRecord<V>(recordCtor.apply(o, u));
+  public static <V> RecordFactory<V, ExclusiveRecord<V>.Lifetime> wrap(
+      RecordFactory<V, V> recordCtor) {
+    return updater -> new ExclusiveRecord<V>(recordCtor.create(updater));
   }
 
   private final Record<T> inner;
@@ -72,5 +72,10 @@ public class ExclusiveRecord<T> implements Record<ExclusiveRecord<T>.Lifetime> {
     final T value = inner.refresh();
     lock.acquireUninterruptibly();
     return new Lifetime(value);
+  }
+
+  @Override
+  public Updater<?> updater() {
+    return inner.updater();
   }
 }

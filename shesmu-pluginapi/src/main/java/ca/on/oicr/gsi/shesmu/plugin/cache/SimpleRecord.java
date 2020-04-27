@@ -10,11 +10,8 @@ import java.util.Optional;
  */
 public final class SimpleRecord<V> extends BaseRecord<Optional<V>, Optional<V>> {
 
-  private final Updater<Optional<V>> fetcher;
-
-  public SimpleRecord(Owner owner, Updater<Optional<V>> fetcher) {
-    super(owner, Optional.empty());
-    this.fetcher = fetcher;
+  public SimpleRecord(Updater<Optional<V>> fetcher) {
+    super(fetcher, Optional.empty());
   }
 
   @Override
@@ -31,5 +28,10 @@ public final class SimpleRecord<V> extends BaseRecord<Optional<V>, Optional<V>> 
   protected Optional<V> update(Optional<V> oldstate, Instant fetchTime) throws Exception {
     final Optional<V> buffer = fetcher.update(fetchTime);
     return buffer.isPresent() ? buffer : null;
+  }
+
+  @Override
+  public Updater<?> updater() {
+    return fetcher;
   }
 }

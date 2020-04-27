@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
+import ca.on.oicr.gsi.Pair;
 import io.prometheus.client.Gauge;
 import java.lang.ref.SoftReference;
 import java.time.Instant;
@@ -7,7 +8,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -18,8 +18,27 @@ import java.util.stream.Stream;
  * @param <V> the cached values
  */
 public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entry<K, Record<V>>> {
-  public static Stream<? extends KeyValueCache<?, ?, ?>> caches() {
-    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  private class KeyValueUpdater implements Updater<I> {
+    private final K key;
+
+    private KeyValueUpdater(K key) {
+      this.key = key;
+    }
+
+    @Override
+    public Stream<Pair<String, String>> identifiers() {
+      return Stream.of(new Pair<>("key", key.toString()));
+    }
+
+    @Override
+    public Owner owner() {
+      return KeyValueCache.this;
+    }
+
+    @Override
+    public I update(Instant lastModifed) throws Exception {
+      return fetch(key, lastModifed);
+    }
   }
 
   private static final Map<String, SoftReference<KeyValueCache<?, ?, ?>>> CACHES =
@@ -37,11 +56,14 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
       Gauge.build("shesmu_cache_kv_ttl", "The time-to-live of a cache, in minutes.")
           .labelNames("name")
           .register();
+
+  public static Stream<? extends KeyValueCache<?, ?, ?>> caches() {
+    return CACHES.values().stream().map(SoftReference::get).filter(Objects::nonNull);
+  }
+
   private long maxCount = 0;
-
   private final String name;
-
-  private final BiFunction<Owner, Updater<I>, Record<V>> recordCtor;
+  private final RecordFactory<I, V> recordFactory;
   private final Map<K, Record<V>> records = new ConcurrentHashMap<>();
   private int ttl;
 
@@ -51,11 +73,11 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    * @param name the name, as presented to Prometheus
    * @param ttl the number of minutes an item will remain in cache
    */
-  public KeyValueCache(String name, int ttl, BiFunction<Owner, Updater<I>, Record<V>> recordCtor) {
+  public KeyValueCache(String name, int ttl, RecordFactory<I, V> recordFactory) {
     super();
     this.name = name;
     this.ttl = ttl;
-    this.recordCtor = recordCtor;
+    this.recordFactory = recordFactory;
     ttlValue.labels(name).set(ttl);
     CACHES.put(name, new SoftReference<>(this));
   }
@@ -79,13 +101,13 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    */
   public final V get(K key) {
     final Record<V> record =
-        records.computeIfAbsent(
-            key, k -> recordCtor.apply(this, lastModified -> fetch(k, lastModified)));
+        records.computeIfAbsent(key, k -> recordFactory.create(new KeyValueUpdater(k)));
     maxCount = Math.max(maxCount, record.collectionSize());
     innerCount.labels(name).set(maxCount);
     count.labels(name).set(records.size());
     return record.refresh();
   }
+
   /**
    * Get an item from cache without updating it
    *
@@ -94,8 +116,7 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
    */
   public final V getStale(K key) {
     final Record<V> record =
-        records.computeIfAbsent(
-            key, k -> recordCtor.apply(this, lastModified -> fetch(k, lastModified)));
+        records.computeIfAbsent(key, k -> recordFactory.create(new KeyValueUpdater(k)));
     return record.readStale();
   }
 
