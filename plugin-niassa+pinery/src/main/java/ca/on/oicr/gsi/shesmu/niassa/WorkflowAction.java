@@ -96,6 +96,7 @@ public final class WorkflowAction extends Action {
   private int runAccession;
   private final Supplier<NiassaServer> server;
   private final Set<String> services;
+  private final Map<String, String> supplementalAnnotations = new TreeMap<>();
   private final long workflowAccession;
   private final String workflowName;
 
@@ -473,11 +474,18 @@ public final class WorkflowAction extends Action {
           attribute.setTag(MAJOR_OLIVE_VERSION);
           attribute.setValue(Long.toString(majorOliveVersion));
           server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
-          for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
-            WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
-            userAttribute.setTag(annotation.getKey());
-            userAttribute.setValue(annotation.getValue());
-            server.get().metadata().annotateWorkflowRun(runAccession, userAttribute, null);
+          annotations.keySet().forEach(supplementalAnnotations::remove);
+          supplementalAnnotations.remove(MAJOR_OLIVE_VERSION);
+          supplementalAnnotations.remove("skip");
+          supplementalAnnotations.remove("deleted");
+          for (final Map<String, String> annotations :
+              Arrays.asList(this.annotations, supplementalAnnotations)) {
+            for (final Map.Entry<String, String> annotation : annotations.entrySet()) {
+              WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
+              userAttribute.setTag(annotation.getKey());
+              userAttribute.setValue(annotation.getValue());
+              server.get().metadata().annotateWorkflowRun(runAccession, userAttribute, null);
+            }
           }
           success = runAccession != 0;
           externalTimestamp = Optional.of(Instant.now());
@@ -650,6 +658,11 @@ public final class WorkflowAction extends Action {
     annotations.putIfAbsent(tag, value);
   }
 
+  @ActionParameter(required = false)
+  public void supplemental_annotations(Map<String, String> annotations) {
+    supplementalAnnotations.putAll(annotations);
+  }
+
   @Override
   public final ObjectNode toJson(ObjectMapper mapper) {
     final ObjectNode node = mapper.createObjectNode();
@@ -722,6 +735,7 @@ public final class WorkflowAction extends Action {
     final ArrayNode matches = node.putArray("matches");
     this.matches.forEach(match -> matches.add(match.toJson(mapper)));
     this.annotations.forEach(node.putObject("annotations")::put);
+    this.supplementalAnnotations.forEach(node.putObject("supplementalAnnotations")::put);
     this.errors.forEach(node.putArray("errors")::add);
 
     return node;

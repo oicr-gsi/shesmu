@@ -47,6 +47,7 @@ actionRender.set("niassa", a => [
     ["Value", x => x[1]]
   ),
   objectTable(a.annotations, "Annotations", x => x),
+  objectTable(a.supplementalAnnotations, "Supplemental Annotations", x => x),
   objectTable(a.ini, "INI from Olive", maybeJsonVisibleText),
   objectTable(
     a.discoveredIni || {},
