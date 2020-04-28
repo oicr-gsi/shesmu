@@ -662,7 +662,7 @@ Type conversion to JSON and strings is also supported:
 
 Destructuring can also be nested:
 
-    For {{x, _} = n} In [{n = {1, True}, l = "a"}, {n = {2, True}, l = "b"}]: Where x > 5 Count
+    For { {x, _} = n} In [{n = {1, True}, l = "a"}, {n = {2, True}, l = "b"}]: Where x > 5 Count
 
 For objects, fields can be automatically inferred from the fields:
 
@@ -679,7 +679,7 @@ It can be used in `Begin` expressions and in `Let` and `Flatten` in `For` expres
 It can also be used in `Let`, `Monitor`, `Run`, and `Alert` clauses in olives:
 
     Olive
-      Monitor instrument_record_count "The number of records per instrument" {{instrument, _} = instrument_and_version},
+      Monitor instrument_record_count "The number of records per instrument" { {instrument, _} = instrument_and_version},
       Let
          {run_name, lane, _} = ius,
          path = path
