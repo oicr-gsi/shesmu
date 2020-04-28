@@ -116,8 +116,8 @@ actionRender.set("niassa", a => [
       ["Task", x => x.task],
       ["Attempt", x => x.attempt],
       ["Scatter", x => (x.shardIndex < 0 ? "N/A" : x.shardIndex)],
-      ["Standard Error", x => breakSlashes(x.stderr)],
-      ["Standard Output", x => breakSlashes(x.stdout)]
+      ["Standard Error", x => (x.stderr ? breakSlashes(x.stderr) : "N/A")],
+      ["Standard Output", x => (x.stdout ? breakSlashes(x.stdout) : "N/A")]
     )
   ),
   collapse(
