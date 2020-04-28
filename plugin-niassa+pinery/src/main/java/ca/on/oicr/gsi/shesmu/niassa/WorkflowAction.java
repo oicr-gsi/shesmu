@@ -588,6 +588,14 @@ public final class WorkflowAction extends Action {
           attribute.setTag("skip");
           attribute.setValue("shesmu-ui");
           server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+          final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+          switch (run.getStatus()) {
+            case running:
+            case pending:
+            case submitted:
+              run.setStatus(WorkflowRunStatus.submitted_cancel);
+              server.get().metadata().updateWorkflowRun(run);
+          }
           workflowAccessions().forEach(server.get().analysisCache()::invalidate);
         }
         // Intentional fall through
