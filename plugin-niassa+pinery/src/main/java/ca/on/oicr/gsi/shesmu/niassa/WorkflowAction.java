@@ -95,7 +95,7 @@ public final class WorkflowAction extends Action {
   private final boolean relaunchFailedOnUpgrade;
   private int runAccession;
   private final Supplier<NiassaServer> server;
-  private final List<String> services;
+  private final Set<String> services;
   private final long workflowAccession;
   private final String workflowName;
 
@@ -114,7 +114,7 @@ public final class WorkflowAction extends Action {
     this.workflowAccession = workflowAccession;
     this.previousAccessions = previousAccessions;
     this.fileMatchingPolicy = fileMatchingPolicy;
-    this.services = services;
+    this.services = new TreeSet<>(services);
     this.annotations = new TreeMap<>(annotations);
     // This sort will group workflows together by SWID so that as many as possible will performed
     // sequentially before analysis cache expires and needs reloading.
@@ -609,6 +609,11 @@ public final class WorkflowAction extends Action {
                     query
                         .matcher(Integer.toString(match.state().workflowRunAccession()))
                         .matches());
+  }
+
+  @ActionParameter(required = false)
+  public final void services(Set<String> newServices) {
+    services.addAll(newServices);
   }
 
   void setAnnotation(String tag, String value) {
