@@ -2473,6 +2473,8 @@ function propertyFilterMaker(name) {
       return f => ["sourcefile", addToSet(f)];
     case "status":
       return s => ["status", addToSet(s)];
+    case "tag":
+      return t => ["tag", addToSet(t)];
     case "type":
       return t => ["type", addToSet(t)];
     default:
@@ -3844,6 +3846,7 @@ function getStats(
               tr.appendChild(value);
               if (row.kind == "property") {
                 makeClick(tr, propertyFilterMaker(row.type)(row.json));
+                A;
               }
             });
           }
@@ -3891,15 +3894,17 @@ function getStats(
 
               for (let col of columns) {
                 const currentValue = document.createElement("TD");
-                if (stat.data[rowKey][col.name]) {
+                // The matrix might be ragged if doing a tag-tag crosstab
+                const value =
+                  stat.hasOwnProperty(rowKey) &&
+                  stat[rowKey].hasOwnProperty(col.name)
+                    ? stat.data[rowKey][col.name]
+                    : 0;
+                if (value) {
                   currentValue.innerText = stat.data[rowKey][col.name];
                 }
                 currentRow.appendChild(currentValue);
-                setColorIntensity(
-                  currentValue,
-                  stat.data[rowKey][col.name],
-                  maximum
-                );
+                setColorIntensity(currentValue, value, maximum);
                 makeClick(currentValue, col.filter, rowFilter);
               }
             }

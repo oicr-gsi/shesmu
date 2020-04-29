@@ -236,54 +236,8 @@ public final class ActionProcessor
     protected abstract Optional<Instant> get(Action action, Information info);
   }
 
-  static Function<String, String> commonPathPrefix(Stream<String> input) {
-    final List<String> items = input.collect(Collectors.toList());
-    if (items.isEmpty()) {
-      return Function.identity();
-    }
-
-    final List<String> commonPrefix =
-        SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
-    commonPrefix.remove(commonPrefix.size() - 1);
-    for (int i = 1; i < items.size(); i++) {
-      final List<String> parts = Arrays.asList(SLASH.split(items.get(i)));
-      int x = 0;
-      while (x < parts.size() - 1
-          && x < commonPrefix.size()
-          && parts.get(x).equals(commonPrefix.get(x))) x++;
-      commonPrefix.subList(x, commonPrefix.size()).clear();
-    }
-    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
-  }
-
-  private static <T extends Comparable<T>> void propertySummary(
-      ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
-    final TreeMap<T, Set<Action>> states =
-        actions
-            .stream()
-            .flatMap(
-                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
-            .collect(
-                Collectors.groupingBy(
-                    Pair::first,
-                    TreeMap::new,
-                    Collectors.mapping(Pair::second, Collectors.toSet())));
-
-    final Function<T, String> namer = property.name(states.keySet().stream());
-    for (final Entry<T, Set<Action>> state : states.entrySet()) {
-      final ObjectNode row = table.addObject();
-      row.put("title", "Total");
-      row.put("value", state.getValue().size());
-      row.put("kind", "property");
-      row.put("type", property.name());
-      row.put("property", namer.apply(state.getKey()));
-      row.set("json", property.json(state.getKey()));
-    }
-  }
-
   public static final int ACTION_PERFORM_THREADS =
       Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1);
-
   private static final BinMember<Instant> ADDED =
       new BinMember<Instant>() {
 
@@ -480,6 +434,30 @@ public final class ActionProcessor
           return "statuschanged";
         }
       };
+  private static final Property<String> TAG =
+      new Property<String>() {
+
+        @Override
+        public Stream<String> extract(Entry<Action, Information> input) {
+          return input.getValue().tags.stream();
+        }
+
+        @Override
+        public JsonNode json(String input) {
+          return JSON_FACTORY.textNode(input);
+        }
+
+        @Override
+        public String name() {
+          return "tag";
+        }
+
+        @Override
+        public Function<String, String> name(Stream<String> input) {
+          input.close();
+          return Function.identity();
+        }
+      };
   private static final Property<String> TYPE =
       new Property<String>() {
 
@@ -537,6 +515,52 @@ public final class ActionProcessor
       Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
           .labelNames("state", "type")
           .register();
+
+  static Function<String, String> commonPathPrefix(Stream<String> input) {
+    final List<String> items = input.collect(Collectors.toList());
+    if (items.isEmpty()) {
+      return Function.identity();
+    }
+
+    final List<String> commonPrefix =
+        SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
+    commonPrefix.remove(commonPrefix.size() - 1);
+    for (int i = 1; i < items.size(); i++) {
+      final List<String> parts = Arrays.asList(SLASH.split(items.get(i)));
+      int x = 0;
+      while (x < parts.size() - 1
+          && x < commonPrefix.size()
+          && parts.get(x).equals(commonPrefix.get(x))) x++;
+      commonPrefix.subList(x, commonPrefix.size()).clear();
+    }
+    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
+  }
+
+  private static <T extends Comparable<T>> void propertySummary(
+      ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
+    final TreeMap<T, Set<Action>> states =
+        actions
+            .stream()
+            .flatMap(
+                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first,
+                    TreeMap::new,
+                    Collectors.mapping(Pair::second, Collectors.toSet())));
+
+    final Function<T, String> namer = property.name(states.keySet().stream());
+    for (final Entry<T, Set<Action>> state : states.entrySet()) {
+      final ObjectNode row = table.addObject();
+      row.put("title", "Total");
+      row.put("value", state.getValue().size());
+      row.put("kind", "property");
+      row.put("type", property.name());
+      row.put("property", namer.apply(state.getKey()));
+      row.set("json", property.json(state.getKey()));
+    }
+  }
+
   private final ActionServices actionServices;
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
   private final AutoLock alertLock = new AutoLock();
@@ -720,9 +744,32 @@ public final class ActionProcessor
       Property<U> column) {
     final Set<T> rows = input.stream().flatMap(row::extract).collect(Collectors.toSet());
     final Set<U> columns = input.stream().flatMap(column::extract).collect(Collectors.toSet());
-    if (rows.size() < 2 || columns.size() < 2) {
+    // Rows and columns which are always present aren't interesting
+    rows.removeIf(value -> input.stream().allMatch(e -> row.extract(e).anyMatch(value::equals)));
+    columns.removeIf(value -> input.stream().allMatch(e -> row.extract(e).anyMatch(value::equals)));
+
+    // If there's too little or too much data, just bail.
+    if (rows.size() < 2
+        || columns.size() < 2
+        || Math.max(rows.size(), columns.size()) > 40
+        || Math.min(rows.size(), columns.size()) > 20) {
       return;
     }
+    // Transpose this thing to have more rows that columns
+    if (rows.size() >= columns.size()) {
+      crosstabHelper(output, input, row, column, rows, columns);
+    } else {
+      crosstabHelper(output, input, column, row, columns, rows);
+    }
+  }
+
+  private <T extends Comparable<T>, U extends Comparable<U>> void crosstabHelper(
+      ArrayNode output,
+      List<Entry<Action, Information>> input,
+      Property<T> row,
+      Property<U> column,
+      Set<T> rows,
+      Set<U> columns) {
     final ObjectNode node = output.addObject();
     node.put("type", "crosstab");
     node.put("column", column.name());
@@ -758,6 +805,12 @@ public final class ActionProcessor
           entry
               .getValue()
               .stream()
+              .filter(
+                  c ->
+                      !c.equals(
+                          entry.getKey())) // Normally, we don't expect the row to equal the columns
+              // because they are different types, but when generating a
+              // tag×tag matrix, we want to erase the diagonal
               .flatMap(e -> column.extract(e).map(u -> new Pair<>(u, e)))
               .collect(Collectors.groupingBy(Pair::first, Collectors.counting()))
               .entrySet()) {
@@ -996,12 +1049,12 @@ public final class ActionProcessor
     pausedFiles.add(file);
   }
 
-  public Stream<SourceLocation> pauses() {
-    return pausedOlives.stream();
-  }
-
   public Stream<String> pausedFiles() {
     return pausedFiles.stream();
+  }
+
+  public Stream<SourceLocation> pauses() {
+    return pausedOlives.stream();
   }
 
   public long purge(Filter... filters) {
@@ -1095,6 +1148,11 @@ public final class ActionProcessor
     crosstab(array, actions, ACTION_STATE, TYPE);
     crosstab(array, actions, ACTION_STATE, SOURCE_FILE);
     crosstab(array, actions, TYPE, SOURCE_FILE);
+
+    crosstab(array, actions, ACTION_STATE, TAG);
+    crosstab(array, actions, SOURCE_FILE, TAG);
+    crosstab(array, actions, TYPE, TAG);
+    crosstab(array, actions, TAG, TAG);
     histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
     histogram(array, 100, actions, INSTANT_BIN, EXTERNAL);
     return array;
