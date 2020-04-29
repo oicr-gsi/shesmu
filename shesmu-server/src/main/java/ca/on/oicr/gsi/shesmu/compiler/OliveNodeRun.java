@@ -8,14 +8,15 @@ import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
@@ -34,7 +35,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   private final String description;
   private final int line;
   private final Set<String> tags;
-  private final List<ExpressionNode> variableTags;
+  private final List<VariableTagNode> variableTags;
 
   public OliveNodeRun(
       int line,
@@ -44,7 +45,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       List<OliveClauseNode> clauses,
       Set<String> tags,
       String description,
-      List<ExpressionNode> variableTags) {
+      List<VariableTagNode> variableTags) {
     super(clauses);
     this.line = line;
     this.column = column;
@@ -121,6 +122,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
     final Set<String> captures = new HashSet<>();
     arguments.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
+    variableTags.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
     final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
@@ -141,7 +143,13 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     action.methodGen().visitLineNumber(line, action.methodGen().mark());
     action.methodGen().loadLocal(local);
     action.methodGen().invokeVirtual(A_ACTION_TYPE, METHOD_ACTION__PREPARE);
-    action.methodGen().push(variableTags.size() + tags.size());
+    action
+        .methodGen()
+        .push(variableTags.stream().mapToInt(VariableTagNode::staticSize).sum() + tags.size());
+    final List<IntConsumer> dynamicTagLocal = new ArrayList<>();
+    for (final VariableTagNode tag : variableTags) {
+      tag.renderDynamicSize(action).ifPresent(dynamicTagLocal::add);
+    }
     action.methodGen().newArray(A_STRING_TYPE);
     int tagIndex = 0;
     for (final String tag : tags) {
@@ -150,11 +158,14 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
       action.methodGen().push(tag);
       action.methodGen().arrayStore(A_STRING_TYPE);
     }
-    for (final ExpressionNode tag : variableTags) {
-      action.methodGen().dup();
-      action.methodGen().push(tagIndex++);
-      tag.render(action);
-      action.methodGen().arrayStore(A_STRING_TYPE);
+    for (final VariableTagNode tag : variableTags) {
+      tagIndex += tag.renderStaticTag(action, tagIndex);
+    }
+    final int dynamicTagIndex = action.methodGen().newLocal(Type.INT_TYPE);
+    action.methodGen().push(tagIndex);
+    action.methodGen().storeLocal(dynamicTagIndex);
+    for (final IntConsumer consumer : dynamicTagLocal) {
+      consumer.accept(dynamicTagIndex);
     }
     int tagArray = action.methodGen().newLocal(A_STRING_TYPE);
     action.methodGen().storeLocal(tagArray);
@@ -300,13 +311,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                   .count()
               == arguments.size();
     }
-    for (final ExpressionNode tag : variableTags) {
-      if (tag.typeCheck(errorHandler)) {
-        if (!tag.type().isSame(Imyhat.STRING)) {
-          tag.typeError(Imyhat.STRING, tag.type(), errorHandler);
-          ok = false;
-        }
-      } else {
+    for (final VariableTagNode tag : variableTags) {
+      if (!tag.typeCheck(errorHandler)) {
         ok = false;
       }
     }

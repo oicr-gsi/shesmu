@@ -366,6 +366,14 @@ public final class RuntimeSupport {
     return groups.values().stream().map(list -> list.stream().min(comparator).get());
   }
 
+  @RuntimeInterop
+  public static int populateArray(String[] array, Set<String> items, int index) {
+    for (final String item : items) {
+      array[index++] = item;
+    }
+    return index;
+  }
+
   /**
    * This is a boot-strap method for <tt>INVOKE DYNAMIC</tt> to match a regular expression (which is
    * the method name). s
