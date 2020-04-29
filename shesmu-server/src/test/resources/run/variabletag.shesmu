@@ -1,3 +1,7 @@
 Input test;
 
-Olive Run ok Tag project With ok = True;
+Olive Run ok
+	Tag project
+	Tag project_constant # check that captures used by tags get hoisted
+	Tags [project]
+	With ok = True;

@@ -90,7 +90,7 @@ action and can be used for filtering.
 ## Olive Terminals
 Terminals determine what an olive will do.
 
-- `Run` _action_ [`Tag` _tagexpr1_ [`Tag` _tagexpr2_]] `With` _param1_ `=` _expr1_[`,` _param2_ `=` _expr2_[`,` ...]]`;`
+- `Run` _action_ _tags_ `With` _param1_ `=` _expr1_[`,` _param2_ `=` _expr2_[`,` ...]]`;`
 
 Creates action to be scheduled and run. _action_ determines which action will
 be run what what parameters are available. Optional parameters can be
@@ -100,7 +100,8 @@ _param_ `=` _expr_ `If` _condition_
 
 Tags can also be attached to the action. These tags, unlike the ones at the
 start of the olive, are dynamically generated. This makes it possible to create
-tags based on the data. For instance, to tag action by project/customer.
+tags based on the data. For instance, to tag action by project/customer. See
+[Dynamic Tags](#dynamictags).
 
 - `Alert` _label1_ `=` _expr1_[`,` _label2_ `=` _expr2_[`,` ...]] [`Annotations` _ann2_ `=` _aexpr1_[`,` ...]] For _timeexpr_`;`
 
@@ -118,6 +119,21 @@ This may be used in `Reject` and `Require` clauses.
 Replace the contents of a database with the output from the olive. Each record
 the olive emits is another "row" sent to the database. How the refiller
 interprets the data and its behaviour is defined by the refiller.
+
+<a name="dynamictags">
+## Dynamic Tags
+Tags can be attached to an action based on the data in the olive. They can be
+any string. Duplicate tags are removed.
+
+- `Tag` _expr_
+
+Adds the result of _expr_, which must be a string, to the tags associated with
+this action.
+
+- `Tags` _expr_
+
+Adds the elements in the result of _expr_, which must be a list of strings, to
+the tags associated with this actions.
 
 ## Clauses
 An olive can have many clauses that filter and reshape the data.
