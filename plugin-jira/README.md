@@ -53,47 +53,47 @@ if there is a person responsible for fixing failing actions from Shesmu, how
 should they delegate those issues? Using searches per the following:
 
 
-  "searches": [
-    {
-      "filter": {
-        "states": [
-          "FAILED",
-          "UNKNOWN",
-          "HALP"
-        ],
-        "type": "status"
+    "searches": [
+      {
+        "filter": {
+          "states": [
+            "FAILED",
+            "UNKNOWN",
+            "HALP"
+          ],
+          "type": "status"
+        },
+        "jql": "project IN (\"GC\", \"GDI\") AND resolution = Unresolved",
+        "name": "Problems from {key} - {summary} ({assignee})",
+        "type": "EACH_AND"
       },
-      "jql": "project IN (\"GC\", \"GDI\") AND resolution = Unresolved",
-      "name": "Problems from {key} - {summary} ({assignee})",
-      "type": "EACH_AND"
-    },
-    {
-      "filter": {
-        "states": [
-          "FAILED",
-          "UNKNOWN",
-          "HALP"
-        ],
-        "type": "status"
+      {
+        "filter": {
+          "states": [
+            "FAILED",
+            "UNKNOWN",
+            "HALP"
+          ],
+          "type": "status"
+        },
+        "jql": "project IN (\"GC\", \"GDI\") AND resolution = Unresolved",
+        "name": "Pipeline Lead Dashboard",
+        "type": "ALL_EXCEPT"
       },
-      "jql": "project IN (\"GC\", \"GDI\") AND resolution = Unresolved",
-      "name": "Pipeline Lead Dashboard",
-      "type": "ALL_EXCEPT"
-    },
-    {
-      "filter": {
-        "states": [
-          "FAILED",
-          "UNKNOWN",
-          "HALP"
-        ],
-        "type": "status"
-      },
-      "jql": "project IN (\"GC\", \"GDI\") AND resolution = Unresolved",
-      "name": "Problems Currently Handed-Off",
-      "type": "ALL_AND"
-    }
-  ],
+      {
+        "filter": {
+          "states": [
+            "FAILED",
+            "UNKNOWN",
+            "HALP"
+          ],
+          "type": "status"
+        },
+        "jql": "project IN (\"GC\", \"GDI\") AND resolution = Unresolved",
+        "name": "Problems Currently Handed-Off",
+        "type": "ALL_AND"
+      }
+    ],
 
 Each search has a `jql` expression which is used to extract tickets from JIRA.
 Any matching tickets have their _descriptions_ scanned for action identifiers

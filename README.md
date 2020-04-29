@@ -126,6 +126,7 @@ information about how to extend the system. The plugins available are:
 - [Git and GitHub](plugin-github/README.md)
 - [Guanyin reporting](plugin-guanyin/README.md)
 - [JIRA ticket management](plugin-jira/README.md)
+- [MongoDB](plugin-mongo/README.md)
 - [Nabu file QC](plugin-nabu/README.md)
 - [Niassa and Pinery](plugin-niassa+pinery/README.md)
 - [Prometheus Alert Manager](plugin-prometheus/README.md)

@@ -27,18 +27,17 @@ The JSON file defines what parameters the script will expect to receive from the
 olive. Each parameter has a `type` (a [Shesmu
 type signature](https://github.com/oicr-gsi/shesmu/blob/master/language.md#types))
 and a `required` value:
-```
-{
-  "environment": {
-    "required": true,
-    "type": "s"
-  },
-  "input files": {
-    "required": true,
-    "type": "as"
-  }
-}
-```
+
+    {
+      "environment": {
+        "required": true,
+        "type": "s"
+      },
+      "input files": {
+        "required": true,
+        "type": "as"
+      }
+    }
 
 ### Guanyin report action script
 The Guanyin report action script is written in Python and details what should 
@@ -50,47 +49,46 @@ to keep in mind when writing this script:
     parameters are the `With` arguments from the `Run <action-name> With ...`
 clause, and they are sent to the Python script via standard in. So, for an olive
 with the following Run clause:
-  ```
-  Run test-olive With
-    project = "TEST",
-    input_files = records;
-  ```
-  The `test-olive` Python file could access these parameters like so:
-  ```
-  import json
-  import sys
 
-  config = json.load(sys.stdin)
-  # All key-value pairs from the olive `With` clause are now in `config`
-  ```
-  * Generate the report and save it on disk:
-  ```
-  # generate the report
-  output_path = os.path.join(environment["fsroot"], "myreport.txt")
-  ```
-  * Add emails for report recipients
-  ```
-  recipients = ["you@example.com"] # can be left blank
-  ```
-  * Generate an output URL for the report
-  ```
-  output_url = "http://example.com/myreport.txt"
-  ```
-  * Send the report details to Guanyin. This Guanyin writeback step is critical!
-  This is what keeps Shesmu from launching the same report every 15 minutes even
-  when the parameters have not changed. This should be the final line of the
-  script.
-  ```
-  report.write_back(
-    "user-friendly identifier for the specific report generated",
-    ["/array/of", "files/used/to", "/generate/this/report"],
-    output_path,
-    output_url,
-    "extra information that should go in the email but can be left empty",
-    recipients,
-    "brief description of this report"
-  )
-  ```
+    Run test-olive With
+      project = "TEST",
+      input_files = records;
+
+The `test-olive` Python file could access these parameters like so:
+
+    import json
+    import sys
+
+    config = json.load(sys.stdin)
+    # All key-value pairs from the olive `With` clause are now in `config`
+
+Generate the report and save it on disk:
+
+     # generate the report
+     output_path = os.path.join(environment["fsroot"], "myreport.txt")
+
+Add emails for report recipients:
+
+    recipients = ["you@example.com"] # can be left blank
+
+Generate an output URL for the report:
+
+    output_url = "http://example.com/myreport.txt"
+
+Send the report details to Guanyin. This Guanyin writeback step is critical!
+This is what keeps Shesmu from launching the same report every 15 minutes even
+when the parameters have not changed. This should be the final line of the
+script.
+
+    report.write_back(
+      "user-friendly identifier for the specific report generated",
+      ["/array/of", "files/used/to", "/generate/this/report"],
+      output_path,
+      output_url,
+      "extra information that should go in the email but can be left empty",
+      recipients,
+      "brief description of this report"
+    )
 
 ### Guanyin report olives
 The olive specifies how files should be selected for running the given report.
