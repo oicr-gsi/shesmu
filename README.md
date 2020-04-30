@@ -19,6 +19,18 @@ work--Shesmu is an empty vessel that requires plugins to find data and take
 action. The olives are supplied by a script that is compiled and run over all
 the provenance data.
 
+## Documentation Quick Reference
+
+- [Olive Tutorial](tutorial.md)
+- [Olive Language Reference](language.md)
+- [Complex Olive Cookbook](olive-complex-cookbook.md)
+- [The Mandatory Guide to Optional Values](optionalguide.md)
+- [Shesmu Glossary](glossary.md)
+- [Shesmu FAQ](faq.md)
+- [Ask your doctor if Shesmu is right for you](ask-your-doctor.md)
+- [Plugin Implementation Guide](implementation.md)
+- [Compiler Hacking](compiler-hacking.md)
+
 ## Dependencies
 What Shesmu requires will depend on which plugins you enable. Plugins can be
 disabled by passing `-pl "!plugin-foo"` to disable a plugin when calling `mvn`
@@ -58,7 +70,9 @@ You can build and run the container with:
 
 Which will build all of the plugins available. Then run with:
 
-    docker run -p 8081:8081 --mount type=bind,source=/srv/shesmu,target=/srv/shesmu shesmu:latest
+    docker run -p 8081:8081 \
+      --mount type=bind,source=/srv/shesmu,target=/srv/shesmu \
+      shesmu:latest
 
 ### Local Setup
 Now, compile the main server using Maven 3.5 with Java 8:
@@ -163,18 +177,57 @@ Note that the plugin JAR files must be on the class path.
 ### Built-In
 Shesmu provides only a small handful of built-in services.
 
+#### Actions
+These actions are available on any instance:
+
+- `nothing` action: an action that collects a string parameter and does nothing. This can be useful for debugging.
+
+#### Constants
+These constants are available on any instance:
+
 - `epoch` constant: date at the zero UNIX time
-- `json_signature` signer: all used signable variables and their values as a JSON object
-- `nothing` action: an action that collects a string parameter and does nothing. This can be useful for debugging
 - `now` constant: the current timestamp
-- `path_dir`, `path_file`, `path_normalize`, `path_relativize` functions: manipulate paths in various ways; note that paths can be joined with the `+` operator
-- `sha1_signature` signer: a SHA1 hash of all the used signable variables and their values
+
+#### Functions
+These functions are available on any instance:
+
+- `date_to_millis`: get the number of milliseconds since the UNIX epoch for this date.
+- `date_to_seconds`: get the number of seconds since the UNIX epoch for this date.
+- `is_infinite`: check if a floating-point number is infinite.
+- `is_nan`: check if a floating-point number is not-a-number.
+- `json_array_from_dict`: convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.
+- `json_object`: create a JSON object from fields.
+- `parse_bool`: Convert a string containing into a Boolean.
+- `parse_float`: Convert a string containing digits and a decimal point into an float.
+- `parse_int`: Convert a string containing digits into an integer.
+- `parse_json`: Convert a string containing JSON data into a JSON value.
+- `path_dir`: Extracts all but the last elements in a path (_i.e._, the containing directory).
+- `path_file`: extracts the last element in a path.
+- `path_normalize`: Normalize a path (_i.e._, remove any `./` and `../` in the path).
+- `path_relativize`: Creates a new path of relativize one path as if in the directory of the other.
+- `path_replace_home`: Replace any path that starts with $HOME or ~ with the provided home directory.
+- `str_eq`: Compares two strings ignoring case.
+- `str_lower`: Convert a string to lower case.
+- `str_trim`: Remove white space from a string.
+- `str_upper`: Convert a string to upper case.
+- `url_decode`: Convert a URL-encoded string back to a normal string.
+- `url_encode`: Convert a string to a URL-encoded string (also escaping `*`, even though that is not standard).
+- `version_at_least`: Checks whether the supplied version tuple is the same or greater than version numbers provided.
+
+Note that paths can be joined with the `+` operator and strings can be joined using interpolation (_e.g._, `"{x}{y}"`).
+
+#### Input Formats
+These input formats are available on any instance:
+
 - `shesmu` input format: information about the actions current running inside Shesmu
+
+#### Signatures
+These signatures are available on any instance:
+
+- `json_signature` signer: all used signable variables and their values as a JSON object
+- `sha1_signature` signer: a SHA1 hash of all the used signable variables and their values
 - `signature_count` signer: the number of all the used signable variables
 - `signature_names` signer: the names of all the used signable variables
-- `start_of_day` function: truncate a date to midnight UTC
-- `str_eq`, `str_len`, `str_lower`, `str_trim`, `str_upper` functions: manipulate strings in various ways; note that strings can be joined using interpolation (_e.g._, `"{x}{y}"`)
-- `version_at_least` function: compare semantic versions stored in tuples
 
 ### Constants from JSON
 Simple boolean, integer, strings, and sets of the former can be stored as
@@ -244,8 +297,8 @@ either clicking the _Show Search_ button, can be saved to a file ending in
 used as the name of the search.
 
 It is not recommended to save searches that reference a particular olive source
-location. Every time the file is updated or Shesmu is restarted, the olive's
-timestamp will be updated and the filter will no longer match. The `time`
-property in the filter can be changed to `null` to avoid this issue. Even if
-this were not the case, it is possible that the olive will move around in the
-script and the line and column that mark the start of each olive will change.
+location. Every time the file is updated, the olive's hash will be updated and
+the filter will no longer match. The `hash` property in the filter can be
+changed to `null` to avoid this issue. Even if this were not the case, it is
+possible that the olive will move around in the script and the line and column
+that mark the start of each olive will change.

@@ -51,20 +51,6 @@ Shesmu provides all monitoring output via
 is wired in, so simply building instruments and using `.register()` will add
 them to the monitoring output.
 
-## The Compiler: JVM and ASM
-Shesmu is a compiler: it takes olives and compiles them to JVM bytecode. The
-plugin interfaces avoid as much of the JVM internals as possible, but some is
-required.
-
-There are plenty of tutorials on JVM internals, but the [DZone bytecode
-tutorial](https://dzone.com/articles/introduction-to-java-bytecode) is one of
-the better ones.
-
-Bytecode is written using [ASM's
-`GeneratorAdapter`](https://static.javadoc.io/org.ow2.asm/asm/5.2/org/objectweb/asm/commons/GeneratorAdapter.html)
-which provides methods for writing bytecode that is slightly more high-level
-than regular bytecode.
-
 ## General Principles
 For all types of plugins in Shesmu:
 
@@ -159,9 +145,9 @@ the `Input` instruction. This class must be annotated with
 `@MetaInfServices(InputFormatDefinition)`.
 
 For each variable, Shesmu can try to infer the type from the return type of the
-method. If the type is not `boolean`, `Instant`, `long`, or `String`, it must
-be specified in the `type` property of the `@ShesmuVariable` annotation in the
-type descriptor format.
+method. If the type is `Tuple` or an erased `Optional`, `Map`, or `Set`, it
+must be specified in the `type` property of the `@ShesmuVariable` annotation in
+the type descriptor format.
 
 By default, it will be possible to create files names with `.`_name_`-input`
 that contains a JSON representation of the input format or `.`_name_`-remote`
@@ -184,7 +170,10 @@ determines the order for this variable. For example:
 
     @ShesmuVariable(gangs = { @Gang(name = "group_a", order = 0) }))
     public String foo();
-    @ShesmuVariable(gangs = { @Gang(name = "group_a", order = 1), @Gang(name = "group_b", order = 0) }))
+    @ShesmuVariable(gangs = {
+        @Gang(name = "group_a", order = 1),
+        @Gang(name = "group_b", order = 0)
+      }))
     public String bar();
     @ShesmuVariable(gangs = { @Gang(name = "group_b", order = 1) }))
     public String baz();

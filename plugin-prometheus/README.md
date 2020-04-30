@@ -20,3 +20,62 @@ allows dynamic throttling of Shesmu workload based on the services required.
 
 Additionally, an `Alert` olives' output is pushed to Alert Manager with the
 additional label `environment="production"`.
+
+Here are recommended rules for monitoring Shesmu's state:
+
+    groups:
+    - name: shesmu.rules
+      rules:
+      - record: shesmu_incomplete_action_count
+        expr: sum(shesmu_action_state_count{state!~"SUCCEEDED|ZOMBIE"}) by (state)
+      - record: shesmu_action_perform_time:rate30m
+        expr: rate(shesmu_action_perform_time_bucket[30m])
+      - alert: BadSource
+        expr: max_over_time(shesmu_source_valid[5m]) == 0 and on(instance) up > 600
+        annotations:
+          description: Shesmu {{$labels.instance}} has failed to compile {{$labels.filename}}.
+            The source file is probably wrong.
+          summary: Unable to compile {{$labels.filename}}
+      - alert: BadSource
+        expr: max_over_time(shesmu_niassa_worflow_bad[5m]) > 0
+        annotations:
+          description: Shesmu {{$labels.instance}} has failed to parse {{$labels.filename}}.
+          summary: Unable to parse {{$labels.filename}}
+
+To check for actions being in a state for too long, use these rules, adjusting the timeouts as desired:
+
+      - alert: StuckActions
+        expr: time() - shesmu_action_oldest_time{state=~"QUEUED|THROTTLED|WAITING"} > 2 * 86400
+        labels:
+          severity: pipeline
+        annotations:
+          description: "A {{$labels.type}} action has been {{$labels.state}} on {{$labels.instance}} for a while now."
+          summary: "{{$labels.type}} actions {{$labels.state}} too long on {{$labels.instance}}"
+      - alert: StuckActions
+        expr: time() - shesmu_action_oldest_time{state="INFLIGHT"} > 5 * 86400
+        labels:
+          severity: pipeline
+        annotations:
+          description: "A {{$labels.type}} action has been {{$labels.state}} on {{$labels.instance}} for a while now."
+          summary: "{{$labels.type}} actions {{$labels.state}} too long on {{$labels.instance}}"
+
+To check for olives not running frequently enough or hitting their timeouts, try:
+
+      - alert: StuckOlive
+        expr: time() - shesmu_run_last_run > 7200 and up > 600
+        annotations:
+          description: All the olives are taking much too long to run on {{$labels.instance}}.
+          summary: All olives stuck on {{$labels.instance}}
+      - alert: StuckOlive
+        expr: shesmu_run_overtime > 0
+        annotations:
+          description: The olives from {{$labels.name}} are taking much too long to run on {{$labels.instance}}.
+          summary: Olives in {{$labels.name}} stuck on {{$labels.instance}}
+
+If using the SSH refiller, it can be useful to watch for failures:
+
+      - alert: RefillFailure
+        expr: min_over_time(shesmu_sftp_refill_exit_status[1h]) > 0
+        annotations:
+          description: SSH refill processor {{$labels.name}} on {{$labels.instance}} is exiting non-zero.
+          summary: Failed to refill {{$labels.name}} on {{$labels.instance}}.

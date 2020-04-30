@@ -6,11 +6,9 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureStorage;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
-@MetaInfServices
 public final class SignableCount extends SignatureDefinition {
 
   public SignableCount() {

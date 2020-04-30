@@ -102,14 +102,14 @@ public final class StandardDefinitions implements DefinitionRepository {
             "is_infinite",
             Double.class,
             "isInfinite",
-            "Check is the number is infininte.",
+            "Check if the number is infinite.",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
         FunctionDefinition.staticMethod(
             "is_nan",
             Double.class,
             "isNaN",
-            "Check is the number is not-a-number.",
+            "Check if the number is not-a-number.",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
         FunctionDefinition.staticMethod(

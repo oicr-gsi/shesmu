@@ -91,7 +91,9 @@ The `Group` operation can also be used to “widen” a table in this way:
         Into
           qc = Where workflow == "BamQC 2.7+" First path,
             # Use the output file from BamQC as `qc`
-          fingerprint = Where workflow == "Fingerprinting" First path,
+          fingerprint =
+            Where workflow == "Fingerprinting"
+            First path,
             # Use the output file from fingerprinting as `fingerprint`
           timestamp = Max timestamp
             # All scoped over project + library_name pairs
@@ -141,9 +143,13 @@ from being rejected:
         By project, library_name
             # All scoped over project + library_name pairs
         Into
-          qc = Where workflow == "BamQC 2.7+" First path Default "/dev/null",
+          qc =
+            Where workflow == "BamQC 2.7+"
+            First path Default "/dev/null",
             # Use the output file from BamQC as `qc`
-          fingerprint = Where workflow == "Fingerprinting" First path Default "/dev/null",
+          fingerprint =
+            Where workflow == "Fingerprinting"
+            First path Default "/dev/null",
             # Use the output file from fingerprinting as `fingerprint`
           timestamp = Max timestamp
       Group
@@ -189,16 +195,18 @@ workflow.
      Group
       By workflow
       Using always_include # This will be the grouper name
-				# These are grouper-specific parameters that control how the grouping
-				# works
+        # These are grouper-specific parameters that control
+        # how the grouping works
         key = metatype,
         include_when = "inode/directory"
-			# The grouper will not only create groups but can provide additional
-			# information about the groups. This additional information will be
-			# available with the names `current_metatype` and `is_directory`.
-      # If the `With` clause is omitted, the grouper will use default names
-      # for these pieces of additional information. For the `always_include`
-      # grouper, they are `group_key` and `is_always`.
+      # The grouper will not only create groups but can
+      # provide additional information about the groups.
+      # This additional information will be available with
+      # the names `current_metatype` and `is_directory`. If
+      # the `With` clause is omitted, the grouper will use
+      # default names for these pieces of additional information.
+      # For the `always_include` grouper, they are `group_key`
+      # and `is_always`.
       With current_metatype, is_directory
       Into
         files = Where !is_directory List path,
@@ -232,7 +240,8 @@ things. The `Let` clause provides this:
 
     Olive
       # Get all the sample provenance and workflows that have produced FASTQs
-      Where source == "sample_provenance" || metatype == "chemical/seq-na-fastq-gzip"
+      Where source == "sample_provenance"
+        || metatype == "chemical/seq-na-fastq-gzip"
       Group
         By ius
         Into
@@ -241,8 +250,11 @@ things. The `Let` clause provides this:
           sources = source,
           timestamps = timestamps
       Let
-        # A lane is processed if there was a LIMS record and at least one FASTQ produced
-        lane_was_processed = "sample_provenance" In sources && (For x In workflows: Count) > 1,
+        # A lane is processed if there was a LIMS record and
+        # at least one FASTQ produced
+        lane_was_processed =
+          "sample_provenance" In sources
+          && (For x In workflows: Count) > 1,
         sequencer_run = ius[0],
         lane_number = ius[1],
         path = For x In paths: Where x[0] First x Default "",
@@ -262,12 +274,18 @@ The `Let` clause can also be used to unpack optional types and single-entry list
 
      Olive
        Let
-          {run_name, lane, _} = ius, # Take the IUS tuple and extract the first element as run_name
-                                     # and the second as lane
-          project,              # assume project is an existing variable and copy it; shorthand for project=project
-          path = OnlyIf path,   # path is an optional type; if present, it will be available as path;
-                                # if absent, the row is dropped
-          tag = Univalued tags  # tag is a set; if exactly one item is present, it will be available
+          {run_name, lane, _} = ius, # Take the IUS tuple and
+                                     # extract the first element
+                                     # as run_name and the
+                                     # second as lane
+          project,              # assume project is an existing
+                                # variable and copy it; shorthand
+                                # for project=project
+          path = OnlyIf path,   # path is an optional type; if
+                                # present, it will be available as
+                                # path; if absent, the row is dropped
+          tag = Univalued tags  # tag is a set; if exactly one item
+                                # is present, it will be available
                                 # as tag; if absent, the row is dropped
        Run pickup_data
          run = run_name,
@@ -336,7 +354,9 @@ monitoring is built into the language using the `Monitor` clause:
 
     Olive
       Where workflow == "BamQC 2.7+"
-      Monitor fastqc "The number of records for FastQC execution." { metatype = metatype }
+      Monitor fastqc "The number of records for FastQC execution." {
+        metatype = metatype
+      }
       Run fastqc With
         memory = 4Gi,
         input = path;
@@ -380,7 +400,9 @@ monitoring or dumping. The `Reject` clause does this:
     Olive
       Where workflow == "BamQC 2.7+"
       Reject file_size == 0 {
-         Monitor bad_bam_qc_results "The number of bad BamQC results in production" {},
+         Monitor bad_bam_qc_results
+                 "The number of bad BamQC results in production"
+                 {},
          Dump ius, path To junk_bamqc_results,
          Alert alertname = "BadFile", path = "{path}" For 30mins
       }
@@ -480,7 +502,8 @@ the following might be useful:
 
      for SCRIPT_FILE in path/to/*.shesmu
      do
-             if [ $(curl -s --data-binary @"$SCRIPT_FILE" -o /dev/stderr -w "%{http_code}" -X POST http://${SERVER}:8081/check) = "200" ]
+             if [ $(curl -s --data-binary @"$SCRIPT_FILE" -o /dev/stderr \
+               -w "%{http_code}" -X POST http://${SERVER}:8081/check) = "200" ]
              then
                      echo "\033[1;36mOK\033[0m\t$SCRIPT_FILE"
              else
@@ -490,7 +513,8 @@ the following might be useful:
 
 For the final method, using a local copy, build the Shesmu server, then run:
 
-     java -cp shesmu/shesmu-server/target/shesmu.jar ca.on.oicr.gsi.shesmu.Check -r http://${SERVER}:8081 ${SCRIPT_FILE}
+     java -cp shesmu/shesmu-server/target/shesmu.jar ca.on.oicr.gsi.shesmu.Check \
+       -r http://${SERVER}:8081 ${SCRIPT_FILE}
 
 ## Types
 There are a small number of types in the language, listed below. Each has
@@ -560,7 +584,13 @@ These are helpful when dealing with other functions with unwieldy types:
 In this example, `parse_bases_mask` parses an Illumina bases mask string and
 produces a very large object:
 
-     [ { group = integer, length = integer, ordinal = integer, position = integer, type = string }	]
+     [ {
+         group = integer,
+         length = integer,
+          ordinal = integer,
+          position = integer,
+          type = string
+       }  ]
 
 Rather than repeat this type at every function that uses it, it gets assigned
 to a `TypeAlias` and rather than specify the type at all, `Return
@@ -662,9 +692,10 @@ Type conversion to JSON and strings is also supported:
 
 Destructuring can also be nested:
 
-    For { {x, _} = n} In [{n = {1, True}, l = "a"}, {n = {2, True}, l = "b"}]: Where x > 5 Count
+    For { {x, _} = n} In [{n = {1, True}, l = "a"}, {n = {2, True}, l = "b"}]:
+      Where x > 5 Count
 
-For objects, fields can be automatically inferred from the fields:
+For objects, variables can be automatically inferred from the fields:
 
     For * In [{n = 1, l = "a"}, {n = 2, l = "b"}]: Where n > 5 List l
 
@@ -679,7 +710,9 @@ It can be used in `Begin` expressions and in `Let` and `Flatten` in `For` expres
 It can also be used in `Let`, `Monitor`, `Run`, and `Alert` clauses in olives:
 
     Olive
-      Monitor instrument_record_count "The number of records per instrument" { {instrument, _} = instrument_and_version},
+      Monitor instrument_record_count "The number of records per instrument" {
+        {instrument, _} = instrument_and_version
+      }
       Let
          {run_name, lane, _} = ius,
          path = path
@@ -700,11 +733,16 @@ assign all variables it has not seen to the closest `*` (_i.e._, `foo` *and*
 `bar` are assumed to come from the `Reduce` argument). This can be especially
 fraught given the order of evaluation matters:
 
-    For * In x: Reduce (* = {foo = 0}) func(foo, bar) # foo and bar come from the second *
-    For * In x: Where bar > 3 Reduce (* = {foo = 0}) func(foo, bar) # foo comes from the second *, bar from the *
+    For * In x: Reduce (* = {foo = 0})
+      func(foo, bar) # foo and bar come from the second *
+    For * In x: Where bar > 3 Reduce (* = {foo = 0})
+      func(foo, bar) # foo comes from the second *, bar from the *
 
-    Let * = x Where y == 4 || (For * In a: All aa && y == 3) # y will come from Let *, aa from For *
-    Let * = x Where (For * In a: All aa && y == 3)  || y == 4 # aa and first y will come from For *, second from Let *
+    Let * = x Where y == 4
+      || (For * In a: All aa && y == 3)
+      # y will come from Let *, aa from For *
+    Let * = x Where (For * In a: All aa && y == 3)
+      || y == 4 # aa and first y will come from For *, second from Let *
 
 Since this is very confusing, as a general rule: one star a time.
 

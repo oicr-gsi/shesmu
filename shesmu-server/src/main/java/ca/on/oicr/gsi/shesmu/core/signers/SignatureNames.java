@@ -7,12 +7,10 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.TreeSet;
 import java.util.stream.Stream;
-import org.kohsuke.MetaInfServices;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-@MetaInfServices
 public final class SignatureNames extends SignatureDefinition {
   private static final Type A_TREE_SET_TYPE = Type.getType(TreeSet.class);
 

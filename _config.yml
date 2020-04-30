@@ -1,1 +1,9 @@
 theme: jekyll-theme-slate
+plugins:
+  - jekyll-relative-links
+markdown: kramdown
+kramdown:
+  parse_block_html: true
+relative_links:
+  enabled:     true
+  collections: false

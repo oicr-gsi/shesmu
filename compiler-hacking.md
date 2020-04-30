@@ -23,7 +23,9 @@ To start off, compiling a simple script:
      Input shesmu;
 
 <details>
-<summary>is compiled to:</summary>
+<summary>
+is compiled to:
+</summary>
 
     public class dyn/shesmu/Program extends ca/on/oicr/gsi/shesmu/ActionGenerator {
     
@@ -81,7 +83,9 @@ The output bytecode is more complicated. It is laid out below in chunks with
 commentary.
 
 <details>
-<summary>The initialisation is much the same:</summary>
+<summary>
+The initialisation is much the same:
+</summary>
     
     public class dyn/shesmu/Program extends ca/on/oicr/gsi/shesmu/ActionGenerator {
     
@@ -136,9 +140,11 @@ implementation guide](implementation.md), this will call effectively do
         INVOKEINTERFACE ca/on/oicr/gsi/shesmu/InputProvider.fetch (Ljava/lang/Class;)Ljava/util/stream/Stream; (itf)
 
 <details>
-<summary>This particular olive has no filters, so, a method reference/lambda is
+<summary>
+This particular olive has no filters, so, a method reference/lambda is
 generated and then <tt>forEach</tt> is called on the stream and the stream is
-closed:</summary>
+closed:
+</summary>
 
 
        L1
@@ -161,7 +167,9 @@ closed:</summary>
 </details>
 
 <details>
-<summary>Finally, the olive's run time is recorded using the time stored earlier:</summary>
+<summary>
+Finally, the olive's run time is recorded using the time stored earlier:
+</summary>
 
         GETSTATIC ca/on/oicr/gsi/shesmu/ActionGenerator.OLIVE_RUN_TIME : Lio/prometheus/client/Gauge;
         ICONST_2
@@ -187,7 +195,9 @@ closed:</summary>
 </details>
 
 <details>
-<summary>And the <tt>run</tt> method is finished:</summary>
+<summary>
+And the <tt>run</tt> method is finished:
+</summary>
 
        L2
         RETURN
@@ -201,8 +211,10 @@ are the same for any input and ones that are computed from the input data. The
 first are stored as constants and the second are method.
 
 <details>
-<summary>Therefore, the class constructor, <tt>&lt;clinit&gt;</tt>, prepares the ones that
-are constants:</summary>
+<summary>
+Therefore, the class constructor, <tt>&lt;clinit&gt;</tt>, prepares the ones that
+are constants:
+</summary>
 
       static J Olive 2:6 signable_count
     
@@ -232,7 +244,9 @@ are constants:</summary>
 </details>
 
 <details>
-<summary>and the signatures based on data are created as methods:</summary>
+<summary>
+and the signatures based on data are created as methods:
+</summary>
     
       private static Olive 2:6 json_signature(Lca/on/oicr/gsi/shesmu/core/input/shesmu/ShesmuIntrospectionValue;)Ljava/lang/String;
         NEW ca/on/oicr/gsi/shesmu/core/signers/JsonSigner
@@ -265,7 +279,9 @@ produce an action (or alert if an `Alert` olive):
         LINENUMBER 2 L0
 
 <details>
-<summary>It constructs a new action:</summary>
+<summary>
+It constructs a new action:
+</summary>
 
         NEW ca/on/oicr/gsi/shesmu/core/NothingAction
         DUP
@@ -275,7 +291,9 @@ produce an action (or alert if an `Alert` olive):
 </details>
 
 <details>
-<summary>The loads in all the arguments:</summary>
+<summary>
+The loads in all the arguments:
+</summary>
 
        L1
         LINENUMBER 3 L1
@@ -289,7 +307,9 @@ produce an action (or alert if an `Alert` olive):
 </details>
 
 <details>
-<summary>Then sends the action in to the consumer with data about the olive that generated it:</summary>
+<summary>
+Then sends the action in to the consumer with data about the olive that generated it:
+</summary>
 
         ALOAD 3
         INVOKEVIRTUAL ca/on/oicr/gsi/shesmu/core/NothingAction.prepare ()V

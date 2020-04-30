@@ -12,7 +12,8 @@ best format for newest run of this workflow.
     Input cerberus_fp;
     Olive
       Where workflow == "The Workflow Of Interest"
-        && (metatype == "application/json" || metatype == "application/zip-report-bundle")
+        && (metatype == "application/json"
+            || metatype == "application/zip-report-bundle")
       Group
         By ius, workflow_accession
         Into
@@ -35,7 +36,8 @@ Here is the clause-by-clause breakdown. First, we select only the workflows and
 file types of interest:
 
       Where workflow == "The Workflow Of Interest"
-        && (metatype == "application/json" || metatype == "application/zip-report-bundle")
+        && (metatype == "application/json"
+            || metatype == "application/zip-report-bundle")
 
 Then, we group based on each IUS (library that was sequenced) and workflow run:
 
@@ -60,9 +62,10 @@ This is the most complex step which select the best file and throws away the oth
 
       Let
         ius = ius,
-        {accession, path, metatype} = OnlyIf For {accession, path, metatype} In outputs:
-          Sort (If metatype == "the good format" Then 0 Else 1)
-          First {accession, path, metatype}
+        {accession, path, metatype} = OnlyIf
+          For {accession, path, metatype} In outputs:
+            Sort (If metatype == "the good format" Then 0 Else 1)
+            First {accession, path, metatype}
 
 Let's break this down further. The first part simply reshapes the data preserving the IUS:
 
@@ -172,7 +175,8 @@ expression and refactor it into the above:
                                                   || "application/bam-index") ||
           metatype == "text/vcf" && (workflow == "Manta"  ||
                                      workflow == "StructuralVariation") ||
-          worfklow == "StarFusion" && metatype == "text/plain" && "{path}" ~ /\.abridged\.tsv$/)
+          worfklow == "StarFusion" && metatype == "text/plain"
+            && "{path}" ~ /\.abridged\.tsv$/)
 
 This check is very ragged: in the case of `BamMergePreprocessing`, we care
 about different metatypes while for the metatype `text/vcf`, we care about
@@ -188,7 +192,8 @@ redundant checks, but it will be clearer what the combinations are:
           workflow == "BamMergePreprocessing" && metatype == "application/bam-index" ||
           workflow == "Manta" && metatype == "text/vcf" ||
           workflow == "StructuralVariation" && metatype ==  "text/vcf" ||
-          worfklow == "StarFusion" && metatype == "text/plain" && "{path}" ~ /\.abridged\.tsv$/)
+          worfklow == "StarFusion" && metatype == "text/plain"
+            && "{path}" ~ /\.abridged\.tsv$/)
 
 Now, all of our conditions have a check for `workflow` and `metatype` where the
 last one has an extra check. Rather than compare two things, lets put them into
@@ -203,7 +208,8 @@ tuples and compare the tuples:
           {workflow, metatype} == {"BamMergePreprocessing", "application/bam-index"} ||
           {workflow, metatype} == {"Manta", "text/vcf"} ||
           {workflow, metatype} == {"StructuralVariation", "text/vcf"} ||
-          {worfklow, metatype} == {"StarFusion", "text/plain"} && "{path}" ~ /\.abridged\.tsv$/)
+          {worfklow, metatype} == {"StarFusion", "text/plain"}
+            && "{path}" ~ /\.abridged\.tsv$/)
 
 Since `{workflow, metatype}` is now in every condition, we can factor it out into the `Switch`:
 

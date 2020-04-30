@@ -91,7 +91,7 @@ The name of the file will be the service name that will be inhibited. If called
 The times must be formatted in a way that can be parsed by
 [`DateTimeFormatter.ISO_DATE_TIME`](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_DATE_TIME).
 If that sounds unappealing, there's a graphical [maintenance schedule
-editor](../maintenance-editor/README.md).
+editor](../maintenance-editor).
 
 ## Ranges
 Ranges return a particular string value for a time range.
