@@ -3,37 +3,49 @@ package ca.on.oicr.gsi.shesmu.nabu;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Optional;
 
 public class NabuValue {
-  private final String comment;
+  private final Optional<String> comment;
+  private final boolean deleted;
   private final Path filepath;
-  private final long fileswid;
+  private final long fileqcid;
+  private final String fileswid;
   private final String project;
   private final Instant qcdate;
-  private final String qcstatus;
+  private final Optional<Boolean> qcpassed;
   private final String username;
 
   public NabuValue(
-      long fileswid,
+      long fileqcid,
+      Optional<String> comment,
+      boolean deleted,
       Path filepath,
-      String qcstatus,
-      String username,
-      String comment,
+      String fileswid,
       String project,
-      Instant qcdate) {
+      Instant qcdate,
+      Optional<Boolean> qcpassed,
+      String username) {
     super();
-    this.fileswid = fileswid;
-    this.filepath = filepath;
-    this.qcstatus = qcstatus;
-    this.username = username;
+    this.fileqcid = fileqcid;
     this.comment = comment;
+    this.deleted = deleted;
+    this.filepath = filepath;
+    this.fileswid = fileswid;
     this.project = project;
     this.qcdate = qcdate;
+    this.qcpassed = qcpassed;
+    this.username = username;
   }
 
   @ShesmuVariable
-  public String comment() {
+  public Optional<String> comment() {
     return comment;
+  }
+
+  @ShesmuVariable
+  public boolean deleted() {
+    return deleted;
   }
 
   @ShesmuVariable
@@ -42,7 +54,12 @@ public class NabuValue {
   }
 
   @ShesmuVariable
-  public long fileswid() {
+  public long fileqcid() {
+    return fileqcid;
+  }
+
+  @ShesmuVariable
+  public String fileswid() {
     return fileswid;
   }
 
@@ -57,8 +74,8 @@ public class NabuValue {
   }
 
   @ShesmuVariable
-  public String qcstatus() {
-    return qcstatus;
+  public Optional<Boolean> qcpassed() {
+    return qcpassed;
   }
 
   @ShesmuVariable
