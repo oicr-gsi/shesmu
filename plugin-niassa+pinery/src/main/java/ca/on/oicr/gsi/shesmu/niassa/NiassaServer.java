@@ -169,9 +169,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public static final class LaunchLock implements AutoCloseable {
+
+    private final LockLogger logger;
     private final Set<Pair<String, String>> activeLimsKeys;
     private final boolean isLive;
-    private final Set<Pair<String, String>> lockedLimsKeys = new HashSet<>();
+    private final Map<Pair<String, String>, ca.on.oicr.gsi.provenance.model.LimsKey>
+        lockedLimsKeys = new HashMap<>();
 
     /**
      * Create a lock on a chunk of LIMS key space
@@ -180,7 +183,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
      * @param activeLimsKeys the total set of locked LIMS keys for this workflow SWID+annotation
      *     combination
      */
-    public LaunchLock(List<SimpleLimsKey> limsKeys, Set<Pair<String, String>> activeLimsKeys) {
+    public LaunchLock(
+        LockLogger logger, List<SimpleLimsKey> limsKeys, Set<Pair<String, String>> activeLimsKeys) {
+      this.logger = logger;
       this.activeLimsKeys = activeLimsKeys;
       // We're going to place all of our LIMS keys into the active LIMS key set and, if any are
       // already present, someone else holds the lock, so we will back out.
@@ -190,28 +195,28 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           // We don't want to use the full LIMS key because if there are different versions, they
           // should block each other, so just provider + ID
           final Pair<String, String> limsKeyId = new Pair<>(limsKey.getProvider(), limsKey.getId());
-          if (lockedLimsKeys.contains(limsKeyId)) {
+          if (lockedLimsKeys.containsKey(limsKeyId)) {
             // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
             // can lock it successfully.
-            System.err.printf(
-                "There's an olive that has produced multiple LIMS keys with multiple %s/%s and that's a bug.\n",
-                limsKey.getProvider(), limsKey.getId());
+            logger.log(
+                limsKey,
+                "There's an olive that has produced multiple LIMS keys with multiple %s/%s and that's a bug.");
             continue;
           }
           // Add this lims key to the set of active locks. Add returns true if it was newly added
           if (this.activeLimsKeys.add(limsKeyId)) {
             // Track that we added this LIMS key and therefore own it
-            lockedLimsKeys.add(limsKeyId);
+            lockedLimsKeys.put(limsKeyId, limsKey);
           } else {
             // Backout any LIMS keys we already locked
-            this.activeLimsKeys.removeAll(lockedLimsKeys);
+            this.activeLimsKeys.removeAll(lockedLimsKeys.keySet());
             isLive = false;
           }
         }
         this.isLive = isLive;
-        if (isLive) {
-          logLimsKeys("Acquired lock on LIMS keys: ");
-        }
+      }
+      if (isLive) {
+        limsKeys.forEach(k -> logger.log(k, "Acquired lock"));
       }
     }
 
@@ -219,22 +224,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     public void close() throws Exception {
       if (isLive) {
         synchronized (activeLimsKeys) {
-          activeLimsKeys.removeAll(lockedLimsKeys);
+          activeLimsKeys.removeAll(lockedLimsKeys.keySet());
         }
-        logLimsKeys("Releasing lock on LIMS keys: ");
+        lockedLimsKeys.values().forEach(k -> logger.log(k, "Released lock"));
       }
     }
 
     public boolean isLive() {
       return isLive;
-    }
-
-    private void logLimsKeys(String prefix) {
-      System.err.println(
-          lockedLimsKeys
-              .stream()
-              .map(p -> p.first() + "/" + p.second())
-              .collect(Collectors.joining(" ", prefix, "")));
     }
   }
 
@@ -461,8 +458,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public LaunchLock acquireLock(
-      long workflowAccession, Map<String, String> annotations, List<SimpleLimsKey> limsKeys) {
+      long workflowAccession,
+      Map<String, String> annotations,
+      List<SimpleLimsKey> limsKeys,
+      LockLogger logger) {
     return new LaunchLock(
+        logger,
         limsKeys,
         launchLocks.computeIfAbsent(
             Objects.hash(workflowAccession, annotations), k -> new HashSet<>()));

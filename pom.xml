@@ -134,6 +134,7 @@
     <module>plugin-github</module>
     <module>plugin-guanyin</module>
     <module>plugin-jira</module>
+    <module>plugin-loki</module>
     <module>plugin-mongo</module>
     <module>plugin-nabu</module>
     <module>plugin-niassa+pinery</module>

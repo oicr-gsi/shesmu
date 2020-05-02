@@ -13,11 +13,11 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.WorkflowIdAndStatus;
 import java.io.IOException;
+import java.net.URI;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -76,14 +76,14 @@ public class RunReport extends JsonParameterisedAction {
   private List<String> errors = Collections.emptyList();
   private Optional<Instant> externalTimestamp = Optional.empty();
   private boolean forceRelaunch;
-  private final Supplier<GuanyinRemote> owner;
+  private final Definer<GuanyinRemote> owner;
   private final ObjectNode parameters;
   private final long reportId;
   private final String reportName;
   private OptionalLong reportRecordId = OptionalLong.empty();
   private final ObjectNode rootParameters = MAPPER.createObjectNode();
 
-  public RunReport(Supplier<GuanyinRemote> owner, long reportId, String reportName) {
+  public RunReport(Definer<GuanyinRemote> owner, long reportId, String reportName) {
     super("guanyin-report");
     this.owner = owner;
     this.reportId = reportId;
@@ -204,7 +204,7 @@ public class RunReport extends JsonParameterisedAction {
     try (AutoCloseable timer = 观音RequestTime.start(owner.get().观音Url());
         CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
       if (response.getStatusLine().getStatusCode() / 100 != 2) {
-        showError(response, "Error from Guanyin: ");
+        showError(response, request.getURI());
         观音RequestErrors.labels(owner.get().观音Url()).inc();
         return ActionState.FAILED;
       }
@@ -238,7 +238,7 @@ public class RunReport extends JsonParameterisedAction {
       try (AutoCloseable timer = 观音RequestTime.start(owner.get().观音Url());
           CloseableHttpResponse response = HTTP_CLIENT.execute(createRequest)) {
         if (response.getStatusLine().getStatusCode() / 100 != 2) {
-          showError(response, "Error from Guanyin: ");
+          showError(response, request.getURI());
           观音RequestErrors.labels(owner.get().观音Url()).inc();
           return ActionState.FAILED;
         }
@@ -324,15 +324,16 @@ public class RunReport extends JsonParameterisedAction {
     return 10;
   }
 
-  private void showError(CloseableHttpResponse response, String prefix)
+  private void showError(CloseableHttpResponse response, URI url)
       throws UnsupportedOperationException, IOException {
     final List<String> errors = new ArrayList<>();
     try (Scanner s = new Scanner(response.getEntity().getContent())) {
       s.useDelimiter("\\A");
       if (s.hasNext()) {
         final String message = s.next();
-        System.err.print(prefix);
-        System.err.println(message);
+        final Map<String, String> labels = new TreeMap<>();
+        labels.put("url", url.toASCIIString());
+        owner.log(message, labels);
         errors.add(message);
       }
     }

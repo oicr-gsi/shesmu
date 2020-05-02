@@ -674,6 +674,13 @@ public final class PluginManager
                 name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
       }
 
+      @Override
+      public void log(String message, Map<String, String> attributes) {
+        final Map<String, String> amendedAttributes = new TreeMap<>(attributes);
+        amendedAttributes.put("plugin", instance.fileName().toString());
+        PluginManager.this.log(message, amendedAttributes);
+      }
+
       public Stream<Object> fetch(String format, boolean readStale) {
         final Queue<DynamicInputDataSource> sources = dynamicSources.get(format);
         final Deque<InputDataSource> customSource = this.customSources.get(format);
@@ -1008,6 +1015,16 @@ public final class PluginManager
 
     public final Stream<ConfigurationSection> listConfiguration() {
       return configuration.stream().map(FileWrapper::configuration);
+    }
+
+    public void log(String message, Map<String, String> attributes) {
+      fileFormat.writeLog(message, attributes);
+      for (final WeakReference<FileWrapper> reference : this.wrappers.values()) {
+        final FileWrapper wrapper = reference.get();
+        if (wrapper != null) {
+          wrapper.instance.writeLog(message, attributes);
+        }
+      }
     }
 
     private void processActionMethod(ShesmuAction annotation, Method method, boolean isInstance)
@@ -1451,6 +1468,22 @@ public final class PluginManager
 
     public void writeJavaScriptRenderer(PrintStream writer) {
       fileFormat.writeJavaScriptRenderer(writer);
+    }
+  }
+
+  private final ThreadLocal<Boolean> LOG_REENTRANT_CHECK = ThreadLocal.withInitial(() -> false);
+
+  public void log(String message, Map<String, String> attributes) {
+    if (LOG_REENTRANT_CHECK.get()) {
+      throw new IllegalStateException("Trying to log while logging.");
+    }
+    LOG_REENTRANT_CHECK.set(true);
+    try {
+      for (final FormatTypeWrapper<?, ?> format : this.formatTypes) {
+        format.log(message, attributes);
+      }
+    } finally {
+      LOG_REENTRANT_CHECK.set(false);
     }
   }
 
