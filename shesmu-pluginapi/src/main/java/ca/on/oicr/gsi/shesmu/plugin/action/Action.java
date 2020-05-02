@@ -38,8 +38,10 @@ public abstract class Action {
    * die quickly. This method will be called to indicate that this instance of the object will
    * actually be used. It is called after {@link #prepare()} and before {@link
    * #perform(ActionServices)}.
+   *
+   * @param actionId the action ID recorded for this action
    */
-  public void accepted() {}
+  public void accepted(String actionId) {}
 
   /**
    * Get the actions that are appropriate for this action

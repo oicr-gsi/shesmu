@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -219,6 +220,18 @@ public class CheckConfig {
                   ReturnTypeGuarantee<R> returnType,
                   Supplier<? extends StaticSigner<R>> signer) {
                 System.out.printf("Signer %s of type %s.\n", name, returnType.type().name());
+              }
+
+              @Override
+              public void log(String message, Map<String, String> attributes) {
+                System.err.printf(
+                    "PLUGIN LOG: %s [%s]\n",
+                    message,
+                    attributes
+                        .entrySet()
+                        .stream()
+                        .map(e -> e.getKey() + "=" + e.getValue())
+                        .collect(Collectors.joining()));
               }
 
               @Override

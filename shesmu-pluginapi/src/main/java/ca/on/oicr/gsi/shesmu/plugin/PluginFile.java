@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -105,4 +106,17 @@ public abstract class PluginFile implements RequiredServices {
    *     configuration talks to an external service which is failed.
    */
   public abstract Optional<Integer> update();
+  /**
+   * Write out a logging message to this service
+   *
+   * <p>Do not use this message for logging! Shesmu will invoke this message when it wants to send
+   * logging information to this service and this service should write those logs out to an external
+   * service. To write logs, use {@link Definer#log(String, Map)}
+   *
+   * @param message the log message to write
+   * @param attributes the labels associated with this message
+   */
+  public void writeLog(String message, Map<String, String> attributes) {
+    // Do nothing
+  }
 }

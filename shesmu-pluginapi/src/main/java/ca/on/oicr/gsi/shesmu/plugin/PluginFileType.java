@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -122,4 +123,17 @@ public abstract class PluginFileType<T extends PluginFile> {
 
   /** Create some JavaScript code to render this item in dashboards */
   public void writeJavaScriptRenderer(PrintStream writer) {}
+  /**
+   * Write out a logging message to this service
+   *
+   * <p>Do not use this message for logging! Shesmu will invoke this message when it wants to send
+   * logging information to this service and this service should write those logs out to an external
+   * service. To write logs, use {@link Definer#log(String, Map)}
+   *
+   * @param message the log message to write
+   * @param attributes the labels associated with this message
+   */
+  public void writeLog(String message, Map<String, String> attributes) {
+    // Do nothing
+  }
 }

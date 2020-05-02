@@ -1,8 +1,8 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.prometheus.client.Counter;
@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.model.IUSAttribute;
@@ -105,7 +106,8 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
    *
    * @param metadata the Niassa database
    */
-  public void fixSignatures(long workflowAccession, Metadata metadata) {
+  public void fixSignatures(
+      Definer<?> definer, String actionId, long workflowAccession, Metadata metadata) {
     final Counter.Child counter = updateSignatures.labels(Long.toString(workflowAccession));
     for (final Map.Entry<Integer, Set<String>> signature : missingSignature.entrySet()) {
       // Write each signature that should be attached to the IUS LIMS key. There should always be
@@ -130,12 +132,11 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
                     logMessage.put("type", "signature");
                     logMessage.put("iusSWID", signature.getKey());
                     logMessage.put("signature", s);
-                    try {
-                      System.err.printf(
-                          "LIMS KEY:%s\n", NiassaServer.MAPPER.writeValueAsString(logMessage));
-                    } catch (JsonProcessingException e) {
-                      // Ignore
-                    }
+                    final Map<String, String> labels = new TreeMap<>();
+                    labels.put("ius-swid", Integer.toString(signature.getKey()));
+                    labels.put("signature", s);
+                    labels.put("action", actionId);
+                    definer.log("Setting signature for LIMS key", labels);
                     return attribute;
                   })
               .collect(Collectors.toSet()));
@@ -148,7 +149,8 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
    *
    * @param metadata the Niassa database
    */
-  public void fixVersions(long workflowAccession, Metadata metadata) {
+  public void fixVersions(
+      Definer<?> definer, String actionId, long workflowAccession, Metadata metadata) {
     final Counter.Child counter = updateVersions.labels(Long.toString(workflowAccession));
     final Counter.Child alreadyNewerCounter =
         updateVersionAlreadyNewer.labels(Long.toString(workflowAccession));
@@ -166,17 +168,13 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
       limsKey.setLastModified(version.getValue().second());
       metadata.updateLimsKey(limsKey);
       counter.inc();
-      final ObjectNode logMessage = NiassaServer.MAPPER.createObjectNode();
-      logMessage.put("type", "signature");
-      logMessage.put("iusSWID", version.getKey());
-      logMessage.put("oldVersion", oldValue);
-      logMessage.put("newVersion", version.getValue().first());
-      logMessage.put("newTimestamp", version.getValue().second().toInstant().toEpochMilli());
-      try {
-        System.err.printf("LIMS KEY:%s\n", NiassaServer.MAPPER.writeValueAsString(logMessage));
-      } catch (JsonProcessingException e) {
-        // Ignore
-      }
+      final Map<String, String> labels = new TreeMap<>();
+      labels.put("ius-swid", Integer.toString(version.getKey()));
+      labels.put("old-version", oldValue);
+      labels.put("new-version", version.getValue().first());
+      labels.put("new-timestamp", version.getValue().second().toInstant().toString());
+      labels.put("action", actionId);
+      definer.log("Rewriting LIMS key version", labels);
     }
   }
 

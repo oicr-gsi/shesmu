@@ -572,8 +572,8 @@ public final class ActionProcessor
     boolean isDuplicate;
     knownActionTypes.add(action.type());
     if (!actions.containsKey(action)) {
-      action.accepted();
       information = new Information(action);
+      action.accepted(information.id);
       actions.put(action, information);
       stateCount.labels(ActionState.UNKNOWN.name(), action.type()).inc();
       isDuplicate = false;

@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -301,12 +302,14 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                   .write(new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
             }
           }
-          System.out.println(String.format("=== SSH REFILL %s STDERR ===\n", name));
-          errorReader.lines().forEach(System.out::println);
-          System.out.println("=== END ===");
-          System.out.println(String.format("=== SSH REFILL %s STDOUT ===\n", name));
-          reader.lines().forEach(System.out::println);
-          System.out.println("=== END ===");
+          final Map<String, String> labels = new TreeMap<>();
+          labels.put("command", command);
+          labels.put("name", name);
+          labels.put("type", "refiller");
+          labels.put("stream", "stderr");
+          errorReader.lines().forEach(l -> definer.log(l, labels));
+          labels.put("stream", "stdout");
+          reader.lines().forEach(l -> definer.log(l, labels));
           process.join();
           exitStatus = process.getExitStatus() == null ? 255 : process.getExitStatus();
         }
@@ -436,9 +439,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                               new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
                     }
                     final JsonNode jsonResult = MAPPER.readTree(reader);
-                    System.out.println(String.format("=== SSH FUNCTION %s STDERR ===\n", name));
-                    errorReader.lines().forEach(System.out::println);
-                    System.out.println("=== END ===");
+                    final Map<String, String> labels = new TreeMap<>();
+                    labels.put("command", command);
+                    labels.put("name", name);
+                    labels.put("type", "function");
+                    errorReader.lines().forEach(l -> definer.log(l, labels));
                     process.join();
                     if (process.getExitStatus() == null || process.getExitStatus() != 0) {
                       return Optional.empty();

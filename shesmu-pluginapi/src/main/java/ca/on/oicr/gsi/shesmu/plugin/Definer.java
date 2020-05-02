@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -214,4 +215,14 @@ public interface Definer<T> extends Supplier<T> {
    */
   <R> void defineStaticSigner(
       String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends StaticSigner<R>> signer);
+
+  /**
+   * Write out a logging message
+   *
+   * <p>This writes a log message to external services (e.g., Loki)
+   *
+   * @param message the log message to write
+   * @param attributes the labels associated with this message
+   */
+  void log(String message, Map<String, String> attributes);
 }

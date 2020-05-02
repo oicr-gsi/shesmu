@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
+import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
@@ -27,7 +28,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -74,6 +74,7 @@ public final class WorkflowAction extends Action {
           "shesmu_niassa_wr_update_time",
           "The time to pull the status of a workflow run.",
           "workflow");
+  private String actionId = "Unknown";
   private final Map<String, String> annotations;
   private boolean cacheCollision;
   private List<String> errors = Collections.emptyList();
@@ -94,14 +95,14 @@ public final class WorkflowAction extends Action {
   private boolean priorityBoost;
   private final boolean relaunchFailedOnUpgrade;
   private int runAccession;
-  private final Supplier<NiassaServer> server;
+  private final Definer<NiassaServer> server;
   private final Set<String> services;
   private final Map<String, String> supplementalAnnotations = new TreeMap<>();
   private final long workflowAccession;
   private final String workflowName;
 
   public WorkflowAction(
-      Supplier<NiassaServer> server,
+      Definer<NiassaServer> server,
       String workflowName,
       long workflowAccession,
       long[] previousAccessions,
@@ -122,6 +123,11 @@ public final class WorkflowAction extends Action {
 
     priority = (workflowAccession % 10);
     this.relaunchFailedOnUpgrade = relaunchFailedOnUpgrade;
+  }
+
+  @Override
+  public void accepted(String actionId) {
+    this.actionId = actionId;
   }
 
   @Override
@@ -261,7 +267,21 @@ public final class WorkflowAction extends Action {
                       p -> new SimpleLimsKey(p.first()),
                       Collectors.mapping(Pair::second, Collectors.toSet())));
       try (NiassaServer.LaunchLock launchLock =
-          server.get().acquireLock(workflowAccession, annotations, limsKeys)) {
+          server
+              .get()
+              .acquireLock(
+                  workflowAccession,
+                  annotations,
+                  limsKeys,
+                  (key, message) -> {
+                    final Map<String, String> labels = new TreeMap<>();
+                    labels.put("lims-provider", key.getProvider());
+                    labels.put("lims-id", key.getId());
+                    labels.put("lims-version", key.getVersion());
+                    labels.put("lims-modified", key.getLastModified().toString());
+                    labels.put("action", actionId);
+                    server.log(message, labels);
+                  })) {
         if (!launchLock.isLive()) {
           this.cacheCollision = true;
           this.errors =
@@ -327,6 +347,11 @@ public final class WorkflowAction extends Action {
                   .get()
                   .metadata()
                   .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
+              final Map<String, String> labels = new TreeMap<>();
+              labels.put("workflow-run", Long.toString(match.state().workflowRunAccession()));
+              labels.put("workflow", Long.toString(match.state().workflowAccession()));
+              labels.put("action", actionId);
+              this.server.log("Skipping workflow run due to upgrade", labels);
               server.get().analysisCache().invalidate(match.state().workflowAccession());
               // Try again
               return ActionState.UNKNOWN;
@@ -338,9 +363,11 @@ public final class WorkflowAction extends Action {
             // missing signatures (if the LIMS keys match exactly but
             // signatures are absent)
             if (match.comparison() == AnalysisComparison.FIXABLE) {
-              match.fixVersions(match.state().workflowAccession(), server.get().metadata());
+              match.fixVersions(
+                  server, actionId, match.state().workflowAccession(), server.get().metadata());
             } else {
-              match.fixSignatures(match.state().workflowAccession(), server.get().metadata());
+              match.fixSignatures(
+                  server, actionId, match.state().workflowAccession(), server.get().metadata());
             }
           }
           externalTimestamp = Optional.ofNullable(match.state().lastModified());
@@ -605,6 +632,11 @@ public final class WorkflowAction extends Action {
           .metadata()
           .annotateWorkflowRun(run.state().workflowRunAccession(), attribute, null);
       dirtyAccession.add(run.state().workflowAccession());
+      final Map<String, String> labels = new TreeMap<>();
+      labels.put("workflow-run", Long.toString(run.state().workflowRunAccession()));
+      labels.put("workflow", Long.toString(run.state().workflowAccession()));
+      labels.put("action", actionId);
+      this.server.log("Skipping workflow run", labels);
     }
     for (final long accession : dirtyAccession) {
       server.get().analysisCache().invalidate(accession);
