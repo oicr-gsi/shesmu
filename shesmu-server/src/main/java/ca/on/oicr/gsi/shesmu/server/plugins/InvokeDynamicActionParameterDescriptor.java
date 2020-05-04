@@ -139,7 +139,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                               "Setter %s in %s",
                               setter.getName(), setter.getDeclaringClass().getName()),
                           setterAnnotation.type(),
-                          setter.getParameterTypes()[0]);
+                          setter.getGenericParameterTypes()[0]);
                   parameters.add(
                       new InvokeDynamicActionParameterDescriptor(
                           actionName,
