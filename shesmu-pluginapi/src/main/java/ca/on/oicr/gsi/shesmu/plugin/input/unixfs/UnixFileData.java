@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin.input.unixfs;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
 import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
+import java.nio.file.Path;
 import java.time.Instant;
 
 public interface UnixFileData {
@@ -12,7 +13,7 @@ public interface UnixFileData {
   Instant ctime();
 
   @ShesmuVariable
-  String file();
+  Path file();
 
   @ShesmuVariable
   String group();
