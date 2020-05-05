@@ -125,32 +125,38 @@ actionRender.set("niassa", a => [
     "Prior Workflow Runs",
     table(
       a.matches,
-      ["Workflow Run", m => m.workflowRunAccession],
+      ["Workflow Run", m => strikeout(m.skipped, m.workflowRunAccession)],
       [
         "Workflow",
         m =>
-          m.workflowAccession == a.workflowAccession
-            ? "Current"
-            : m.workflowAccession
+          strikeout(
+            m.skipped,
+            m.workflowAccession == a.workflowAccession
+              ? "Current"
+              : m.workflowAccession
+          )
       ],
-      ["Status", m => m.state],
-      ["Stale", m => (m.stale ? "🍞 Stale" : "🍅 Fresh")],
+      ["Status", m => strikeout(m.skipped, m.state)],
+      ["Stale", m => strikeout(m.skipped, m.stale ? "🍞 Stale" : "🍅 Fresh")],
       [
         "LIMS Keys",
         m => {
           if (m.missingLimsKeys && m.extraLimsKeys) {
-            return "⬍ Messy Overlap";
+            return strikeout(m.skipped, "⬍ Messy Overlap");
           }
           if (m.extraLimsKeys) {
-            return "⬆️ Extra";
+            return strikeout(m.skipped, "⬆️ Extra");
           }
           if (m.missingLimsKeys) {
-            return "⬇️ Missing";
+            return strikeout(m.skipped, "⬇️ Missing");
           }
-          return "✓ Same";
+          return strikeout(m.skipped, "✓ Same");
         }
       ],
-      ["Input Files", m => (m.fileSubset ? "📂️️ Missing" : "✓ Same")]
+      [
+        "Input Files",
+        m => strikeout(m.skipped, m.fileSubset ? "📂️️ Missing" : "✓ Same")
+      ]
     )
   )
 ]);

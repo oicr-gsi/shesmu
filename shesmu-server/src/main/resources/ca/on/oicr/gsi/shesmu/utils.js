@@ -166,6 +166,15 @@ export function text(t) {
   return element;
 }
 
+export function strikeout(strike, t) {
+  const element = document.createElement("P");
+  element.innerText = t.replace(/\n/g, "⏎");
+  if (strike) {
+    element.style.textDecoration = "line-through";
+  }
+  return element;
+}
+
 export function timespan(title, time) {
   if (!time) return [];
   const [ago, absolute] = formatTimeBin(time);

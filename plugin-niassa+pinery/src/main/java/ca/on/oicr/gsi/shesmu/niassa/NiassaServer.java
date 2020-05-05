@@ -73,15 +73,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                 return true;
               })
           .onClose(() -> badStatus.labels(url, Long.toString(key)).set(badStatusCount.get()))
-          .filter(
-              ap ->
-                  ap.getWorkflowId() != null
-                      && (ap.getSkip() == null || !ap.getSkip())
-                      && Stream.of(
-                              ap.getFileAttributes(),
-                              ap.getIusAttributes(),
-                              ap.getWorkflowRunAttributes())
-                          .noneMatch(a -> a.containsKey("skip")))
+          .filter(ap -> ap.getWorkflowId() != null)
           .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
           .entrySet()
           .stream()
