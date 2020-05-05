@@ -130,6 +130,30 @@ public final class RuntimeSupport {
     return builder.append(result);
   }
 
+  /**
+   * Replace the first part of a path with an alternate
+   *
+   * <p>This is to undo our mountains of symlink garbage
+   *
+   * @param target the path to adjust
+   * @param prefixes the prefix replacements
+   */
+  @RuntimeInterop
+  public static Path changePrefix(Path target, Map<Path, Path> prefixes) {
+    int length = 0;
+    Path result = target;
+    for (final Entry<Path, Path> prefix : prefixes.entrySet()) {
+      if (target.startsWith(prefix.getKey()) && length < prefix.getKey().getNameCount()) {
+        length = prefix.getKey().getNameCount();
+        result =
+            prefix
+                .getValue()
+                .resolve(target.subpath(prefix.getKey().getNameCount(), target.getNameCount()));
+      }
+    }
+    return result;
+  }
+
   /** Determine the difference between two instants, in seconds. */
   @RuntimeInterop
   public static long difference(Instant left, Instant right) {
