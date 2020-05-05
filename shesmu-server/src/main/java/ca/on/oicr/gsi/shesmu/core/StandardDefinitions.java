@@ -244,6 +244,16 @@ public final class StandardDefinitions implements DefinitionRepository {
             "Convert a string to a URL-encoded string (also escaping *, even though that is not standard).",
             Imyhat.STRING,
             new FunctionParameter("String to encode", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            "path_change_prefix",
+            RuntimeSupport.class,
+            "changePrefix",
+            "Replaces the prefix of a path with a replacement. A number of prefixes are provided and the longest match is the one that is selected. If no match is found, the path is returned unchanged. This is mean to reconcile different mounts or symlink trees of the same file tree.",
+            Imyhat.PATH,
+            new FunctionParameter("The path to adjust", Imyhat.PATH),
+            new FunctionParameter(
+                "A dictionary of prefix paths and the replacement that should be used.",
+                Imyhat.dictionary(Imyhat.PATH, Imyhat.PATH))),
         new FunctionDefinition() {
 
           @Override
