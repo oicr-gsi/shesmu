@@ -305,12 +305,14 @@ public final class WorkflowAction extends Action {
           cacheCollision = true;
           return ActionState.WAITING;
         }
-        if (!matches.isEmpty()) {
+        final List<WorkflowRunMatch> liveMatches =
+            matches.stream().filter(m -> !m.state().skipped()).collect(Collectors.toList());
+        if (!liveMatches.isEmpty()) {
           // We found a matching workflow run in analysis provenance; the least stale, most
           // complete,
           // newest workflow is selected; if that workflow run is stale, we know there are no better
           // candidates and we should ignore the workflow run's state and complain.
-          final WorkflowRunMatch match = matches.get(0);
+          final WorkflowRunMatch match = liveMatches.get(0);
           if (match.comparison() == AnalysisComparison.EXACT
               || match.comparison() == AnalysisComparison.FIXABLE) {
             if (relaunchFailedOnUpgrade
@@ -543,16 +545,9 @@ public final class WorkflowAction extends Action {
         }
         return false;
       case "NIASSA-SKIP-HISTORIC":
-        if (matches.size() < 2 || runAccession != 0) {
-          return false;
-        }
-        skipWorkflowRunMatches(matches.subList(1, matches.size()));
+        return skipWorkflowRunMatches(matches.subList(1, matches.size()));
       case "NIASSA-SKIP-CANDIDATES":
-        if (matches.isEmpty() || runAccession != 0) {
-          return false;
-        }
-        skipWorkflowRunMatches(matches);
-        return true;
+        return skipWorkflowRunMatches(matches);
       case "NIASSA-SKIP-RERUN":
         if (runAccession == 0) {
           return false;
@@ -596,8 +591,12 @@ public final class WorkflowAction extends Action {
     return false;
   }
 
-  private void skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
+  private boolean skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
+    final Set<Long> dirtyAccession = new TreeSet<>();
     for (final WorkflowRunMatch run : runs) {
+      if (run.state().skipped()) {
+        continue;
+      }
       final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
       attribute.setTag("skip");
       attribute.setValue("shesmu-ui");
@@ -605,11 +604,12 @@ public final class WorkflowAction extends Action {
           .get()
           .metadata()
           .annotateWorkflowRun(run.state().workflowRunAccession(), attribute, null);
+      dirtyAccession.add(run.state().workflowAccession());
     }
-    runs.stream()
-        .mapToLong(m -> m.state().workflowAccession())
-        .distinct()
-        .forEach(server.get().analysisCache()::invalidate);
+    for (final long accession : dirtyAccession) {
+      server.get().analysisCache().invalidate(accession);
+    }
+    return !dirtyAccession.isEmpty();
   }
 
   public Duration performTimeout() {

@@ -22,6 +22,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
   private final Instant lastModified;
   private final List<Pair<? extends LimsKey, Integer>> limsKeys;
   private final SortedSet<String> majorOliveVersion;
+  private final boolean skipped;
   private final ActionState state;
   private final long workflowAccession;
   private final int workflowRunAccession;
@@ -44,7 +45,17 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .map(NiassaServer::processingStateToActionState)
             .min(Comparator.comparing(ActionState::sortPriority))
             .get();
-
+    skipped =
+        source
+            .stream()
+            .anyMatch(
+                ap ->
+                    (ap.getSkip() != null && ap.getSkip())
+                        || Stream.of(
+                                ap.getFileAttributes(),
+                                ap.getIusAttributes(),
+                                ap.getWorkflowRunAttributes())
+                            .anyMatch(a -> a.containsKey("skip")));
     // Get the LIMS keys; if the workflow has succeeded, then we know provisioning is complete and
     // we can gather all the LIMS keys from the output. If it has failed or is still running, then
     // LIMS keys may have been partially provisioned, which will be very confusing; in which case,
@@ -276,6 +287,10 @@ public class AnalysisState implements Comparable<AnalysisState> {
 
   public Instant lastModified() {
     return lastModified;
+  }
+
+  public boolean skipped() {
+    return skipped;
   }
 
   public ActionState state() {

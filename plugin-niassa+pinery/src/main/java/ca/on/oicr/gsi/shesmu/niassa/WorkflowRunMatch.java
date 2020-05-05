@@ -192,6 +192,7 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
     obj.put("match", comparison.name());
     obj.put("extraLimsKeys", extraLimsKeys);
     obj.put("missingLimsKeys", missingLimsKeys);
+    obj.put("skipped", state.skipped());
     obj.put("stale", stale);
     obj.put("fileSubset", fileSubset);
     return obj;
