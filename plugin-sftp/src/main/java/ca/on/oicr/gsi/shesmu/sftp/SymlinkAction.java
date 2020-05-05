@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class SymlinkAction extends Action {
   private static final Gauge filesInTheWay =
@@ -30,6 +31,23 @@ public class SymlinkAction extends Action {
   private Path link;
   private Optional<Instant> mtime = Optional.empty();
   private Path target;
+
+  @ActionParameter(required = false)
+  public boolean automatic = true;
+
+  @Override
+  public boolean performCommand(String commandName) {
+    if (commandName.equals("SFTP-HUMAN-APPROVE") && !automatic) {
+      automatic = true;
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public Stream<Pair<String, String>> commands() {
+    return Stream.of(new Pair<>("🚀 Allow to run", "SFTP-HUMAN-APPROVE"));
+  }
 
   public SymlinkAction(Supplier<SftpServer> connection) {
     super("sftp-symlink");
@@ -78,7 +96,13 @@ public class SymlinkAction extends Action {
     final Pair<ActionState, Boolean> result =
         connection
             .get()
-            .makeSymlink(link, target.toString(), force, fileInTheWay, t -> mtime = Optional.of(t));
+            .makeSymlink(
+                link,
+                target.toString(),
+                force,
+                fileInTheWay,
+                t -> mtime = Optional.of(t),
+                automatic);
     if (result.second() != fileInTheWay) {
       filesInTheWay
           .labels(connection.get().name())

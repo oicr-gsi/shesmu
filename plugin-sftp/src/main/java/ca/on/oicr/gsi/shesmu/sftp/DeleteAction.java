@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -14,14 +15,23 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class DeleteAction extends Action {
+  @ActionParameter(required = false)
+  public boolean automatic = true;
+
   private final Supplier<SftpServer> connection;
   private Path target;
 
   public DeleteAction(Supplier<SftpServer> connection) {
     super("sftp-rm");
     this.connection = connection;
+  }
+
+  @Override
+  public Stream<Pair<String, String>> commands() {
+    return Stream.of(new Pair<>("🚀 Allow to run", "SFTP-HUMAN-APPROVE"));
   }
 
   @Override
@@ -51,7 +61,16 @@ public class DeleteAction extends Action {
   public ActionState perform(ActionServices services) {
     // The logic for removing happens in the other class so that it can make
     // serialised requests to the remote end
-    return connection.get().rm(target.toString()) ? ActionState.SUCCEEDED : ActionState.FAILED;
+    return connection.get().rm(target.toString(), automatic);
+  }
+
+  @Override
+  public boolean performCommand(String commandName) {
+    if (commandName.equals("SFTP-HUMAN-APPROVE") && !automatic) {
+      automatic = true;
+      return true;
+    }
+    return false;
   }
 
   @Override

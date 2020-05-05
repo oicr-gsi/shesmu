@@ -199,7 +199,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       String target,
       boolean force,
       boolean fileInTheWay,
-      Consumer<Instant> updateMtime) {
+      Consumer<Instant> updateMtime,
+      boolean automatic) {
     final Configuration config = configuration.orElse(null);
     if (config == null) return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
 
@@ -228,6 +229,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           // It's what we want; done
           return new Pair<>(ActionState.SUCCEEDED, false);
         }
+        if (!automatic) {
+          return new Pair<>(ActionState.HALP, true);
+        }
         // We've been told to blow it away
         if (force) {
           sftp.rm(linkStr);
@@ -245,6 +249,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         return new Pair<>(ActionState.FAILED, true);
       } catch (SFTPException sftpe) {
         if (sftpe.getStatusCode() == Response.StatusCode.NO_SUCH_FILE) {
+          if (!automatic) {
+            return new Pair<>(ActionState.HALP, true);
+          }
           // Create parent if necessary
           final String dirStr = link.getParent().toString();
           if (sftp.statExistence(dirStr) == null) {
@@ -322,9 +329,9 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     return exitStatus == 0;
   }
 
-  boolean rm(String path) {
+  ActionState rm(String path, boolean automatic) {
     final Configuration config = configuration.orElse(null);
-    if (config == null) return false;
+    if (config == null) return ActionState.UNKNOWN;
     try (final SSHClient client = new SSHClient()) {
       client.addHostKeyVerifier(new PromiscuousVerifier());
 
@@ -332,15 +339,21 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       client.authPublickey(config.getUser());
       final SFTPClient sftp = client.newSFTPClient();
       if (sftp == null) {
-        return false;
+        return ActionState.UNKNOWN;
       }
       if (sftp.statExistence(path) != null) {
-        sftp.rm(path);
+        if (automatic) {
+          sftp.rm(path);
+          return ActionState.SUCCEEDED;
+        } else {
+          return ActionState.HALP;
+        }
+      } else {
+        return ActionState.SUCCEEDED;
       }
-      return true;
     } catch (IOException e) {
       e.printStackTrace();
-      return false;
+      return ActionState.FAILED;
     }
   }
 
