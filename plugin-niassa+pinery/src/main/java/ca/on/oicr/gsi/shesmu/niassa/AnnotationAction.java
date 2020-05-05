@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import net.sourceforge.seqware.common.model.Annotatable;
 import net.sourceforge.seqware.common.model.Attribute;
 
@@ -20,6 +22,10 @@ import net.sourceforge.seqware.common.model.Attribute;
 public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
 
   @ActionParameter public String accession;
+
+  @ActionParameter(required = false)
+  public boolean automatic = true;
+
   @ActionParameter public String key;
   private final Supplier<NiassaServer> server;
   private final AnnotationType<A> type;
@@ -29,6 +35,11 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
     super("niassa-annotation");
     this.server = server;
     this.type = type;
+  }
+
+  @Override
+  public Stream<Pair<String, String>> commands() {
+    return Stream.of(new Pair<>("🚀 Allow to run", "NIASSA-HUMAN-APPROVE"));
   }
 
   @Override
@@ -71,6 +82,9 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
           .anyMatch(a -> a.getTag().equals(key) && a.getValue().equals(value))) {
         return ActionState.SUCCEEDED;
       }
+      if (!automatic) {
+        return ActionState.HALP;
+      }
 
       final A attribute = type.create();
       attribute.setTag(key);
@@ -81,6 +95,15 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
       e.printStackTrace();
       return ActionState.FAILED;
     }
+  }
+
+  @Override
+  public boolean performCommand(String commandName) {
+    if (commandName.equals("NIASSA-HUMAN-APPROVE") && !automatic) {
+      automatic = true;
+      return true;
+    }
+    return false;
   }
 
   @Override
