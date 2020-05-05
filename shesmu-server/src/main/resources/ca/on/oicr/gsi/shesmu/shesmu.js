@@ -549,7 +549,7 @@ export const parser = {
     };
   },
   p: function(input) {
-    let match = input.match(/^\s*'(([^"\\]|\\")*)'/);
+    let match = input.match(/^\s*'(([^'\\]|\\')*)'/);
     if (match) {
       return {
         good: true,
