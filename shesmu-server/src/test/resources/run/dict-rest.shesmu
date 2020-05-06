@@ -1,0 +1,10 @@
+Input test;
+the_dict = Dict {
+	"the_foo_study" = 3
+};
+
+Olive Run ok With ok =
+	(Begin
+		d = Dict { ...the_dict, "x" = 4 };
+    Return d[project] == `3` && d["x"] == `4`;
+   End);
