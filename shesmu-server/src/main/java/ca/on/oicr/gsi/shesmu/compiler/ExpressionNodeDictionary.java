@@ -1,7 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
-
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -21,29 +19,26 @@ public class ExpressionNodeDictionary extends ExpressionNode {
       new Method("newMap", A_MAP_TYPE, new Type[0]);
   private static final Method METHOD_MAP__PUT =
       new Method("put", A_OBJECT_TYPE, new Type[] {A_OBJECT_TYPE, A_OBJECT_TYPE});
-  private final List<Pair<ExpressionNode, ExpressionNode>> entries;
+  private final List<DictionaryElementNode> entries;
   private Imyhat key = Imyhat.BAD;
   private Imyhat value = Imyhat.BAD;
 
-  public ExpressionNodeDictionary(
-      int line, int column, List<Pair<ExpressionNode, ExpressionNode>> entries) {
+  public ExpressionNodeDictionary(int line, int column, List<DictionaryElementNode> entries) {
     super(line, column);
     this.entries = entries;
   }
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final Pair<ExpressionNode, ExpressionNode> entry : entries) {
-      entry.first().collectFreeVariables(names, predicate);
-      entry.second().collectFreeVariables(names, predicate);
+    for (final DictionaryElementNode entry : entries) {
+      entry.collectFreeVariables(names, predicate);
     }
   }
 
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
-    for (final Pair<ExpressionNode, ExpressionNode> entry : entries) {
-      entry.first().collectPlugins(pluginFileNames);
-      entry.second().collectPlugins(pluginFileNames);
+    for (final DictionaryElementNode entry : entries) {
+      entry.collectPlugins(pluginFileNames);
     }
   }
 
@@ -51,25 +46,15 @@ public class ExpressionNodeDictionary extends ExpressionNode {
   public void render(Renderer renderer) {
     renderer.loadImyhat(key.descriptor());
     renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_MAP);
-    for (final Pair<ExpressionNode, ExpressionNode> entry : entries) {
+    for (final DictionaryElementNode entry : entries) {
       renderer.methodGen().dup();
-      entry.first().render(renderer);
-      renderer.methodGen().box(key.apply(TO_ASM));
-      entry.second().render(renderer);
-      renderer.methodGen().box(value.apply(TO_ASM));
-      renderer.methodGen().invokeInterface(A_MAP_TYPE, METHOD_MAP__PUT);
-      renderer.methodGen().pop();
+      entry.render(renderer);
     }
   }
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    return entries
-            .stream()
-            .filter(
-                e -> e.first().resolve(defs, errorHandler) & e.second().resolve(defs, errorHandler))
-            .count()
-        == entries.size();
+    return entries.stream().filter(e -> e.resolve(defs, errorHandler)).count() == entries.size();
   }
 
   @Override
@@ -77,10 +62,7 @@ public class ExpressionNodeDictionary extends ExpressionNode {
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return entries
             .stream()
-            .filter(
-                e ->
-                    e.first().resolveDefinitions(expressionCompilerServices, errorHandler)
-                        & e.second().resolveDefinitions(expressionCompilerServices, errorHandler))
+            .filter(e -> e.resolveDefinitions(expressionCompilerServices, errorHandler))
             .count()
         == entries.size();
   }
@@ -93,29 +75,30 @@ public class ExpressionNodeDictionary extends ExpressionNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = true;
-    for (final Pair<ExpressionNode, ExpressionNode> entry : entries) {
-      if (!entry.first().typeCheck(errorHandler) | !entry.second().typeCheck(errorHandler)) {
+    for (final DictionaryElementNode entry : entries) {
+      if (!entry.typeCheck(errorHandler)) {
         ok = false;
       }
     }
     if (ok) {
       boolean first = true;
-      for (final Pair<ExpressionNode, ExpressionNode> entry : entries) {
+      for (final DictionaryElementNode entry : entries) {
+        final Pair<Imyhat, Imyhat> type = entry.type();
         if (first) {
-          key = entry.first().type();
-          value = entry.second().type();
+          key = type.first();
+          value = type.second();
           first = false;
         } else {
-          if (entry.first().type().isSame(key)) {
-            key = key.unify(entry.first().type());
+          if (type.first().isSame(key)) {
+            key = key.unify(type.first());
           } else {
-            entry.first().typeError(key, entry.first().type(), errorHandler);
+            entry.typeKeyError(key, errorHandler);
             ok = false;
           }
-          if (entry.second().type().isSame(value)) {
-            value = value.unify(entry.second().type());
+          if (type.second().isSame(value)) {
+            value = value.unify(type.second());
           } else {
-            entry.second().typeError(value, entry.second().type(), errorHandler);
+            entry.typeValueError(value, errorHandler);
             ok = false;
           }
         }

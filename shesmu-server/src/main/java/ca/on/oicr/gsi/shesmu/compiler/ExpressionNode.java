@@ -699,30 +699,11 @@ public abstract class ExpressionNode implements Renderable {
     TERMINAL.addKeyword(
         "Dict",
         (p, o) -> {
-          final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> fields =
-              new AtomicReference<>();
+          final AtomicReference<List<DictionaryElementNode>> fields = new AtomicReference<>();
           final Parser result =
               p.whitespace()
                   .symbol("{")
-                  .list(
-                      fields::set,
-                      (fp, fo) -> {
-                        final AtomicReference<ExpressionNode> key = new AtomicReference<>();
-                        final AtomicReference<ExpressionNode> value = new AtomicReference<>();
-                        final Parser fieldResult =
-                            fp.whitespace()
-                                .then(ExpressionNode::parse, key::set)
-                                .whitespace()
-                                .symbol("=")
-                                .whitespace()
-                                .then(ExpressionNode::parse, value::set)
-                                .whitespace();
-                        if (fieldResult.isGood()) {
-                          fo.accept(new Pair<>(key.get(), value.get()));
-                        }
-                        return fieldResult;
-                      },
-                      ',')
+                  .list(fields::set, DictionaryElementNode::parse, ',')
                   .whitespace()
                   .symbol("}")
                   .whitespace();

@@ -678,6 +678,11 @@ Creates a new dictionary from the specified elements. All keys must be the same
 type and all values must be the same type. If duplicate keys are present, one
 will be selected arbitrarily.
 
+Instead of _keyexpr_` = `_valueexpr_, a `...`_expr_ can be used and this will
+copy all the elements in _expr_, which must be a dictionary. If some entries
+are to be excluded or transformed, use a `For ... Dict` to preprocess the
+dictionary.
+
 #### Path Literals
 - `'`path`'`
 
