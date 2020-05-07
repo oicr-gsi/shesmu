@@ -247,7 +247,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
             builder.linkWithUrlSearch(
                 String.format("File %s in %s", issueTypeName, projectKey),
                 String.format(
-                    "%s/secure/CreateIssueDetails!init.jspa?pid=%d&issuetype=%d&summary=&description=%%0A%%0A",
+                    "%s/login.jsp?permissionViolation=true&page_caps=&user_role=&os_destination=%%2Fsecure%%2FCreateIssueDetails!init.jspa%%3Fpid%%3D%d%%26issuetype%%3D%d%%26summary%%3D%%26description%%3D%%250A%%250A",
                     url, projectId, issueTypeId),
                 "",
                 String.format(
