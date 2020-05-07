@@ -4750,7 +4750,7 @@ function showAlertNavigator(
 ) {
   clearChildren(output);
   const fileNameFormatter = commonPathPrefix(
-    allAlerts.flatMap(a => a.locations).map(l => l.file)
+    allAlerts.flatMap(a => a.locations || []).map(l => l.file)
   );
   const showAlertGroup = (container, alerts, usedLabels, addFilter) => {
     clearChildren(container);
