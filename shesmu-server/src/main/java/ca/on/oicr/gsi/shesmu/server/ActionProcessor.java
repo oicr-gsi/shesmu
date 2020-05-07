@@ -1276,7 +1276,8 @@ public final class ActionProcessor
                     AutoCloseable inflight =
                         Server.inflightCloseable(
                             String.format(
-                                "Performing %s action from %s", entry.getKey().type(), location))) {
+                                "Performing %s action %s from %s",
+                                entry.getKey().type(), entry.getValue().id, location))) {
                   entry.getValue().lastState =
                       entry
                               .getValue()
