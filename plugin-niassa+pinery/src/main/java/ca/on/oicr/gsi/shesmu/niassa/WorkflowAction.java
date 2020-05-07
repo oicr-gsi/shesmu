@@ -34,7 +34,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.model.IUSAttribute;
+import net.sourceforge.seqware.common.model.Workflow;
 import net.sourceforge.seqware.common.model.WorkflowRun;
 import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
 
@@ -152,15 +154,17 @@ public final class WorkflowAction extends Action {
             return false;
           } else {
             try {
-              final WorkflowRun run =
-                  action.server.get().metadata().getWorkflowRun(action.runAccession);
+              final Metadata metadata = action.server.get().metadata();
+              final WorkflowRun run = metadata.getWorkflowRun(action.runAccession);
               if (run.getStatus() == WorkflowRunStatus.failed
                   || run.getStatus() == WorkflowRunStatus.cancelled) {
                 run.setStatus(WorkflowRunStatus.submitted_retry);
-                action.server.get().metadata().updateWorkflowRun(run);
+                metadata.updateWorkflowRun(run);
                 action.lastState = ActionState.UNKNOWN;
+                metadata.clean_up();
                 return true;
               }
+              metadata.clean_up();
             } catch (Exception e) {
               e.printStackTrace();
             }
@@ -363,7 +367,9 @@ public final class WorkflowAction extends Action {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
         try (AutoCloseable timer = updateTime.start(Long.toString(workflowAccession))) {
-          final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+          final Metadata metadata = server.get().metadata();
+          final WorkflowRun run = metadata.getWorkflowRun(runAccession);
+          metadata.clean_up();
 
           final ActionState state = NiassaServer.processingStateToActionState(run.getStatus());
           if (state != lastState || state == ActionState.INFLIGHT) {
@@ -452,7 +458,10 @@ public final class WorkflowAction extends Action {
                   .sorted()
                   .collect(Collectors.toList());
         } catch (InitialCachePopulationException e) {
-          if (server.get().metadata().getWorkflow((int) workflowAccession) == null) {
+          final Metadata metadata = server.get().metadata();
+          final Workflow workflow = metadata.getWorkflow((int) workflowAccession);
+          metadata.clean_up();
+          if (workflow == null) {
             this.errors =
                 Collections.singletonList("Niassa doesn't seem to recognise this workflow SWID.");
             cacheCollision = false;
@@ -482,10 +491,9 @@ public final class WorkflowAction extends Action {
               final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
               attribute.setTag("skip");
               attribute.setValue("shesmu-upgrade");
-              server
-                  .get()
-                  .metadata()
-                  .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
+              final Metadata metadata = server.get().metadata();
+              metadata.annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
+              metadata.clean_up();
               this.server.log(
                   String.format(
                       "Skipping workflow run %d (workflow %d) due to upgrade in action %s",
@@ -503,13 +511,13 @@ public final class WorkflowAction extends Action {
             // We matched, but we might need to update the LIMS keys OR add
             // missing signatures (if the LIMS keys match exactly but
             // signatures are absent)
+            final Metadata metadata = server.get().metadata();
             if (match.comparison() == AnalysisComparison.FIXABLE) {
-              match.fixVersions(
-                  server, actionId, match.state().workflowAccession(), server.get().metadata());
+              match.fixVersions(server, actionId, match.state().workflowAccession(), metadata);
             } else {
-              match.fixSignatures(
-                  server, actionId, match.state().workflowAccession(), server.get().metadata());
+              match.fixSignatures(server, actionId, match.state().workflowAccession(), metadata);
             }
+            metadata.clean_up();
           }
           externalTimestamp = Optional.ofNullable(match.state().lastModified());
           this.errors = Collections.emptyList();
@@ -556,6 +564,7 @@ public final class WorkflowAction extends Action {
           return ActionState.WAITING;
         }
 
+        final Metadata metadata = server.get().metadata();
         // Tell the input LIMS collection to register all the LIMS keys and prepare the INI file as
         // appropriate. We provide a callback to do the registration, keep track of all registered
         // IUS accessions to automatically associate them with the workflow
@@ -566,38 +575,32 @@ public final class WorkflowAction extends Action {
                 iusAccessions.computeIfAbsent(
                     new SimpleLimsKey(key),
                     k ->
-                        server
-                            .get()
-                            .metadata()
-                            .addIUS(
-                                server
-                                    .get()
-                                    .metadata()
-                                    .addLimsKey(
-                                        k.getProvider(),
-                                        k.getId(),
-                                        k.getVersion(),
-                                        k.getLastModified()),
-                                false)),
+                        metadata.addIUS(
+                            server
+                                .get()
+                                .metadata()
+                                .addLimsKey(
+                                    k.getProvider(),
+                                    k.getId(),
+                                    k.getVersion(),
+                                    k.getLastModified()),
+                            false)),
             ini);
         for (final Map.Entry<? extends LimsKey, Set<String>> signature : signatures.entrySet()) {
           final int iusAccession = iusAccessions.get(new SimpleLimsKey(signature.getKey()));
-          server
-              .get()
-              .metadata()
-              .annotateIUS(
-                  iusAccession,
-                  signature
-                      .getValue()
-                      .stream()
-                      .map(
-                          s -> {
-                            final IUSAttribute attribute = new IUSAttribute();
-                            attribute.setTag("signature");
-                            attribute.setValue(s);
-                            return attribute;
-                          })
-                      .collect(Collectors.toSet()));
+          metadata.annotateIUS(
+              iusAccession,
+              signature
+                  .getValue()
+                  .stream()
+                  .map(
+                      s -> {
+                        final IUSAttribute attribute = new IUSAttribute();
+                        attribute.setTag("signature");
+                        attribute.setValue(s);
+                        return attribute;
+                      })
+                  .collect(Collectors.toSet()));
         }
 
         final File iniFile = File.createTempFile("niassa", ".ini");
@@ -610,7 +613,7 @@ public final class WorkflowAction extends Action {
         try (AutoCloseable timer = launchTime.start(Long.toString(workflowAccession))) {
           final Scheduler scheduler =
               new Scheduler(
-                  server.get().metadata(),
+                  metadata,
                   server
                       .get()
                       .settings()
@@ -646,7 +649,7 @@ public final class WorkflowAction extends Action {
           final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
           attribute.setTag(MAJOR_OLIVE_VERSION);
           attribute.setValue(Long.toString(majorOliveVersion));
-          server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
+          metadata.annotateWorkflowRun(runAccession, attribute, null);
           annotations.keySet().forEach(supplementalAnnotations::remove);
           supplementalAnnotations.remove(MAJOR_OLIVE_VERSION);
           supplementalAnnotations.remove("skip");
@@ -657,7 +660,7 @@ public final class WorkflowAction extends Action {
               WorkflowRunAttribute userAttribute = new WorkflowRunAttribute();
               userAttribute.setTag(annotation.getKey());
               userAttribute.setValue(annotation.getValue());
-              server.get().metadata().annotateWorkflowRun(runAccession, userAttribute, null);
+              metadata.annotateWorkflowRun(runAccession, userAttribute, null);
             }
           }
           success = runAccession != 0;
@@ -668,6 +671,7 @@ public final class WorkflowAction extends Action {
           this.errors = Collections.singletonList(e.toString());
           success = false;
         }
+        metadata.clean_up();
 
         // Indicate if we managed to schedule the workflow; if we did, mark ourselves
         // dirty so there is a delay before our next query.
@@ -750,14 +754,15 @@ public final class WorkflowAction extends Action {
     final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
     attribute.setTag("skip");
     attribute.setValue("shesmu-ui");
-    server.get().metadata().annotateWorkflowRun(workflowRunSwid, attribute, null);
-    final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+    final Metadata metadata = server.get().metadata();
+    metadata.annotateWorkflowRun(workflowRunSwid, attribute, null);
+    final WorkflowRun run = metadata.getWorkflowRun(runAccession);
     switch (run.getStatus()) {
       case running:
       case pending:
       case submitted:
         run.setStatus(WorkflowRunStatus.submitted_cancel);
-        server.get().metadata().updateWorkflowRun(run);
+        metadata.updateWorkflowRun(run);
     }
     this.server.log(
         String.format(
