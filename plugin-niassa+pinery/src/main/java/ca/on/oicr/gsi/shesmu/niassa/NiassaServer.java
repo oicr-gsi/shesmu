@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
@@ -53,12 +54,11 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
     @Override
     protected Stream<AnalysisState> fetch(Long key, Instant lastUpdated) throws IOException {
-      if (metadata == null) {
-        return Stream.empty();
-      }
+      final MetadataWS metadata = metadataConstructor.get();
       if (metadata.getWorkflow(key.intValue()) == null) {
         definer.log(
             String.format("No such workflow %d fetching matches!", key), Collections.emptyMap());
+        metadata.clean_up();
         return Stream.empty();
       }
       slowFetch.labels(key.toString()).set(0);
@@ -81,6 +81,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           .onClose(
               () -> {
                 badStatus.labels(url, Long.toString(key)).set(badStatusCount.get());
+                metadata.clean_up();
 
                 final Set<Pair<String, String>> stale =
                     staleKeys.computeIfAbsent(key, k -> new HashSet<>());
@@ -124,11 +125,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     @Override
     protected Stream<CerberusAnalysisProvenanceValue> fetch(Instant lastUpdated)
         throws IOException {
-      if (metadata == null) {
-        return Stream.empty();
-      }
+      final MetadataWS metadata = metadataConstructor.get();
       return metadata
           .streamAnalysisProvenance(Collections.emptyMap())
+          .onClose(metadata::clean_up)
           .map(CerberusAnalysisProvenanceValue::new);
     }
   }
@@ -146,7 +146,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     @Override
     protected Optional<WorkflowRunEssentials> fetch(Long key, Instant lastUpdated)
         throws Exception {
+      final MetadataWS metadata = metadataConstructor.get();
       final WorkflowRun run = metadata.getWorkflowRun(key.intValue());
+      metadata.clean_up();
       final Properties ini = new Properties();
       ini.load(new StringReader(run.getIniFile()));
       final Optional<String> cromwellId =
@@ -242,6 +244,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               // Backout any LIMS keys we already locked
               this.activeLimsKeys.removeAll(lockedLimsKeys.keySet());
               isLive = false;
+              break;
             }
           }
           this.isLive = isLive;
@@ -292,16 +295,15 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
     @Override
     protected Optional<Integer> fetch(Long workflowSwid, Instant lastUpdated) throws IOException {
-      if (metadata == null) {
-        return Optional.empty();
-      }
+      final MetadataWS metadata = metadataConstructor.get();
       if (metadata.getWorkflow(workflowSwid.intValue()) == null) {
         definer.log(
             String.format("No such workflow %d for max-in-flight check!", workflowSwid),
             Collections.emptyMap());
+        metadata.clean_up();
         return Optional.empty();
       }
-      return Optional.of(
+      int count =
           Stream.of(
                   WorkflowRunStatus.pending,
                   WorkflowRunStatus.running,
@@ -312,7 +314,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                       countRecords(
                           metadata.getWorkflowRunReport(
                               workflowSwid.intValue(), status, null, null)))
-              .sum());
+              .sum();
+      metadata.clean_up();
+      return Optional.of(count);
     }
   }
 
@@ -327,11 +331,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
     @Override
     protected Stream<Pair<Tuple, Tuple>> fetch(Instant lastUpdated) throws IOException {
-      if (metadata == null) {
-        return Stream.empty();
-      }
+      final MetadataWS metadata = metadataConstructor.get();
       return metadata
           .streamAnalysisProvenance(Collections.emptyMap())
+          .onClose(metadata::clean_up)
           .filter(ap -> ap.getSkip() != null && ap.getSkip() && ap.getWorkflowId() == null)
           .flatMap(ap -> ap.getIusLimsKeys().stream())
           .map(
@@ -476,7 +479,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private final Map<Integer, Set<Pair<String, String>>> launchLocks = new ConcurrentHashMap<>();
   private final Map<String, Integer> maxInFlight = new ConcurrentHashMap<>();
   private final MaxInFlightCache maxInFlightCache;
-  private MetadataWS metadata;
+  private Supplier<MetadataWS> metadataConstructor =
+      () -> {
+        throw new IllegalStateException("Metadata WS is not initialised");
+      };
   private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>, Stream<Pair<Tuple, Tuple>>> skipCache;
   private final Map<Long, Set<Pair<String, String>>> staleKeys = new ConcurrentSkipListMap<>();
@@ -586,7 +592,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public Metadata metadata() {
-    return metadata;
+    return metadataConstructor.get();
   }
 
   @ShesmuInputSource
@@ -618,11 +624,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       return Optional.of(2);
     }
     cromwellUrl = Optional.ofNullable(value.getCromwellUrl());
-    metadata =
-        new MetadataWS(
-            settings.getProperty("SW_REST_URL"),
-            settings.getProperty("SW_REST_USER"),
-            settings.getProperty("SW_REST_PASS"));
+    metadataConstructor =
+        () ->
+            new MetadataWS(
+                settings.getProperty("SW_REST_URL"),
+                settings.getProperty("SW_REST_USER"),
+                settings.getProperty("SW_REST_PASS"));
     host = settings.getProperty("SW_HOST", host);
     url = settings.getProperty("SW_REST_URL", url);
     this.settings = settings;

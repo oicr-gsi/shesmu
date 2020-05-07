@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.model.Annotatable;
 import net.sourceforge.seqware.common.model.Attribute;
 
@@ -90,10 +91,12 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
   public final ActionState perform(ActionServices actionServices) {
     try {
       final int accession = Integer.parseInt(this.accession);
-      final Annotatable<A> item = type.fetch(server.get().metadata(), accession);
+      final Metadata metadata = server.get().metadata();
+      final Annotatable<A> item = type.fetch(metadata, accession);
       if (item.getAnnotations()
           .stream()
           .anyMatch(a -> a.getTag().equals(key) && a.getValue().equals(value))) {
+        metadata.clean_up();
         return ActionState.SUCCEEDED;
       }
       if (!automatic) {
@@ -103,7 +106,8 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
       final A attribute = type.create();
       attribute.setTag(key);
       attribute.setValue(value);
-      type.save(server.get().metadata(), accession, attribute);
+      type.save(metadata, accession, attribute);
+      metadata.clean_up();
       return ActionState.SUCCEEDED;
     } catch (final Exception e) {
       e.printStackTrace();
