@@ -52,6 +52,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.prometheus.client.hotspot.DefaultExports;
@@ -100,6 +101,25 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
+  private static final Pattern AMPERSAND = Pattern.compile("&");
+  private static final Pattern EQUAL = Pattern.compile("=");
+  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
+  private static final String instanceName =
+      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
+          .map("Shesmu - "::concat)
+          .orElse("Shesmu");
+  private static final LatencyHistogram responseTime =
+      new LatencyHistogram(
+          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
+  private static final Gauge stopGauge =
+      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
+          .register();
+  private static final Counter versionCounter =
+      Counter.build("shesmu_version", "The Shesmu git commit version")
+          .labelNames("version")
+          .register();
+
   public static Map<String, String> getParameters(HttpExchange t) {
     return Optional.ofNullable(t.getRequestURI().getQuery())
         .map(
@@ -128,20 +148,6 @@ public final class Server implements ServerConfig, ActionServices {
     s.start();
   }
 
-  private static final Pattern AMPERSAND = Pattern.compile("&");
-  private static final Pattern EQUAL = Pattern.compile("=");
-  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
-  private static final String instanceName =
-      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
-          .map("Shesmu - "::concat)
-          .orElse("Shesmu");
-  private static final LatencyHistogram responseTime =
-      new LatencyHistogram(
-          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
-  private static final Gauge stopGauge =
-      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
-          .register();
   public final String build;
   public final Instant buildTime;
   private final CompiledGenerator compiler;
@@ -186,6 +192,7 @@ public final class Server implements ServerConfig, ActionServices {
       final Properties prop = new Properties();
       prop.load(in);
       version = prop.getProperty("version");
+      versionCounter.labels(version).inc();
       build =
           prop.getProperty("githash")
               + (Boolean.parseBoolean(prop.getProperty("gitdirty")) ? "-dirty" : "");
@@ -2516,6 +2523,14 @@ public final class Server implements ServerConfig, ActionServices {
         });
   }
 
+  public ArrayNode deadFilePauses() {
+    final Set<String> currentFiles =
+        compiler.dashboard().map(p -> p.second().filename()).collect(Collectors.toSet());
+    final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
+    processor.pausedFiles().filter(file -> !currentFiles.contains(file)).forEach(deadPauses::add);
+    return deadPauses;
+  }
+
   public ArrayNode deadPauses() {
     final Map<String, String> currentOlives =
         compiler
@@ -2527,14 +2542,6 @@ public final class Server implements ServerConfig, ActionServices {
         .pauses()
         .filter(pause -> !currentOlives.getOrDefault(pause.fileName(), "").equals(pause.hash()))
         .forEach(location -> location.toJson(deadPauses, pluginManager));
-    return deadPauses;
-  }
-
-  public ArrayNode deadFilePauses() {
-    final Set<String> currentFiles =
-        compiler.dashboard().map(p -> p.second().filename()).collect(Collectors.toSet());
-    final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
-    processor.pausedFiles().filter(file -> !currentFiles.contains(file)).forEach(deadPauses::add);
     return deadPauses;
   }
 
