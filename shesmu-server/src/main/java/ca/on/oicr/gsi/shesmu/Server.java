@@ -105,6 +105,13 @@ public final class Server implements ServerConfig, ActionServices {
   private static final Pattern EQUAL = Pattern.compile("=");
   public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
+  private static final Gauge inflightCount =
+      Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
+  private static final Gauge inflightOldest =
+      Gauge.build(
+              "shesmu_inflight_oldest_time",
+              "The start time of the longest-running server process.")
+          .register();
   private static final String instanceName =
       Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
           .map("Shesmu - "::concat)
@@ -134,7 +141,25 @@ public final class Server implements ServerConfig, ActionServices {
 
   public static Runnable inflight(String name) {
     INFLIGHT.putIfAbsent(name, Instant.now());
-    return () -> INFLIGHT.remove(name);
+    inflightOldest.set(
+        INFLIGHT
+            .values()
+            .stream()
+            .min(Comparator.naturalOrder())
+            .map(Instant::getEpochSecond)
+            .orElse(0L));
+    inflightCount.set(INFLIGHT.size());
+    return () -> {
+      INFLIGHT.remove(name);
+      inflightOldest.set(
+          INFLIGHT
+              .values()
+              .stream()
+              .min(Comparator.naturalOrder())
+              .map(Instant::getEpochSecond)
+              .orElse(0L));
+      inflightCount.set(INFLIGHT.size());
+    };
   }
 
   public static AutoCloseable inflightCloseable(String name) {
