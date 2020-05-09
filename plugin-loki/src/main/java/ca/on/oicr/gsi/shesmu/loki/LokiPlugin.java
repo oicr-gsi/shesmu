@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -47,6 +48,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
       Gauge.build("shesmu_loki_write_time", "The last time Shesmu attempted to pushed data to Loki")
           .labelNames("filename")
           .register();
+  private final Pattern INVALID_LABEL = Pattern.compile("[^a-zA-Z0-9_]");
   private final Map<Map<String, String>, List<Pair<Instant, String>>> buffer = new HashMap<>();
   private Optional<Configuration> configuration = Optional.empty();
   private final Definer<LokiPlugin> definer;
@@ -93,10 +95,10 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
               final ObjectNode stream = streams.addObject();
               final ObjectNode labels = stream.putObject("stream");
               for (final Entry<String, String> label : entry.getKey().entrySet()) {
-                labels.put(label.getKey(), label.getValue());
+                labels.put(INVALID_LABEL.matcher(label.getKey()).replaceAll("_"), label.getValue());
               }
               for (final Entry<String, String> label : c.getLabels().entrySet()) {
-                labels.put(label.getKey(), label.getValue());
+                labels.put(INVALID_LABEL.matcher(label.getKey()).replaceAll("_"), label.getValue());
               }
               final ArrayNode values = stream.putArray("values");
               entry.getValue().sort(Comparator.comparing(Pair::first));

@@ -133,7 +133,7 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
                     logMessage.put("iusSWID", signature.getKey());
                     logMessage.put("signature", s);
                     final Map<String, String> labels = new TreeMap<>();
-                    labels.put("ius-swid", Integer.toString(signature.getKey()));
+                    labels.put("ius_swid", Integer.toString(signature.getKey()));
                     labels.put("signature", s);
                     labels.put("action", actionId);
                     definer.log("Setting signature for LIMS key", labels);
@@ -169,10 +169,10 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
       metadata.updateLimsKey(limsKey);
       counter.inc();
       final Map<String, String> labels = new TreeMap<>();
-      labels.put("ius-swid", Integer.toString(version.getKey()));
-      labels.put("old-version", oldValue);
-      labels.put("new-version", version.getValue().first());
-      labels.put("new-timestamp", version.getValue().second().toInstant().toString());
+      labels.put("ius_swid", Integer.toString(version.getKey()));
+      labels.put("old_version", oldValue);
+      labels.put("new_version", version.getValue().first());
+      labels.put("new_timestamp", version.getValue().second().toInstant().toString());
       labels.put("action", actionId);
       definer.log("Rewriting LIMS key version", labels);
     }
