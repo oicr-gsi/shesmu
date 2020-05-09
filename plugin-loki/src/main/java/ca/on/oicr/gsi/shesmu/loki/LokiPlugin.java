@@ -104,7 +104,7 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
                 record.add(
                     String.format(
                         "%d%09d", value.first().getEpochSecond(), value.first().getNano()));
-                record.add(value.second());
+                record.add(value.second().replace('\n', ' '));
               }
             }
             final HttpPost request = new HttpPost(c.getUrl());
