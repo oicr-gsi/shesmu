@@ -2797,6 +2797,7 @@ public final class Server implements ServerConfig, ActionServices {
     processor.start(executor);
     System.out.println("Starting scheduler...");
     master.start(executor);
+    pluginManager.log("Shesmu started.", Collections.emptyMap());
   }
 
   private <L, V> void storeEntries(ObjectNode entries, LabelledKeyValueCache<?, L, ?, V> cache) {
