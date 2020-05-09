@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Scanner;
 import javax.xml.stream.XMLStreamException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -119,12 +120,28 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
               error.labels(fileName().toString()).set(1);
             }
             writeTime.labels(fileName().toString()).setToCurrentTime();
-            try (AutoCloseable timer = writeLatency.start(fileName().toString());
-                CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+            try (final AutoCloseable timer = writeLatency.start(fileName().toString());
+                final CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
               final boolean success = response.getStatusLine().getStatusCode() / 100 == 2;
-              error.labels(fileName().toString()).set(success ? 0 : 1);
               if (success) {
                 buffer.clear();
+                error.labels(fileName().toString()).set(0);
+              } else {
+                try (final Scanner s = new Scanner(response.getEntity().getContent())) {
+                  s.useDelimiter("\\A");
+                  if (s.hasNext()) {
+                    final String message = s.next();
+                    if (message.contains("ignored")) {
+                      buffer.clear();
+                      // Loki complains if we send duplicate messages, so treat that like success
+                      error.labels(fileName().toString()).set(0);
+                      return;
+                    }
+                    error.labels(fileName().toString()).set(1);
+                    System.err.println(message);
+                    System.err.println(MAPPER.writeValueAsString(body));
+                  }
+                }
               }
             } catch (final Exception e) {
               e.printStackTrace();
