@@ -275,10 +275,10 @@ public final class WorkflowAction extends Action {
                   limsKeys,
                   (key, message) -> {
                     final Map<String, String> labels = new TreeMap<>();
-                    labels.put("lims-provider", key.getProvider());
-                    labels.put("lims-id", key.getId());
-                    labels.put("lims-version", key.getVersion());
-                    labels.put("lims-modified", key.getLastModified().toString());
+                    labels.put("lims_provider", key.getProvider());
+                    labels.put("lims_id", key.getId());
+                    labels.put("lims_version", key.getVersion());
+                    labels.put("lims_modified", key.getLastModified().toString());
                     labels.put("action", actionId);
                     server.log(message, labels);
                   })) {
@@ -348,7 +348,7 @@ public final class WorkflowAction extends Action {
                   .metadata()
                   .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
               final Map<String, String> labels = new TreeMap<>();
-              labels.put("workflow-run", Long.toString(match.state().workflowRunAccession()));
+              labels.put("workflow_run", Long.toString(match.state().workflowRunAccession()));
               labels.put("workflow", Long.toString(match.state().workflowAccession()));
               labels.put("action", actionId);
               this.server.log("Skipping workflow run due to upgrade", labels);
@@ -633,7 +633,7 @@ public final class WorkflowAction extends Action {
           .annotateWorkflowRun(run.state().workflowRunAccession(), attribute, null);
       dirtyAccession.add(run.state().workflowAccession());
       final Map<String, String> labels = new TreeMap<>();
-      labels.put("workflow-run", Long.toString(run.state().workflowRunAccession()));
+      labels.put("workflow_run", Long.toString(run.state().workflowRunAccession()));
       labels.put("workflow", Long.toString(run.state().workflowAccession()));
       labels.put("action", actionId);
       this.server.log("Skipping workflow run", labels);
