@@ -109,8 +109,11 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
             }
             final HttpPost request = new HttpPost(c.getUrl());
             try {
+              // This doesn't use the built-in constant for JSON because that one includes a charset
+              // and Loki then thinks the request is a protobuf
               request.setEntity(
-                  new StringEntity(MAPPER.writeValueAsString(body), ContentType.APPLICATION_JSON));
+                  new StringEntity(
+                      MAPPER.writeValueAsString(body), ContentType.create("application/json")));
             } catch (final Exception e) {
               e.printStackTrace();
               error.labels(fileName().toString()).set(1);
