@@ -162,13 +162,13 @@ export function table(rows, ...headers) {
 
 export function text(t) {
   const element = document.createElement("P");
-  element.innerText = t.replace(/\n/g, "⏎");
+  element.innerText = `${t}`.replace(/\n/g, "⏎");
   return element;
 }
 
 export function strikeout(strike, t) {
   const element = document.createElement("P");
-  element.innerText = t.replace(/\n/g, "⏎");
+  element.innerText = `${t}`.replace(/\n/g, "⏎");
   if (strike) {
     element.style.textDecoration = "line-through";
   }
