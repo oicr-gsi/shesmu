@@ -132,26 +132,23 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
             String.format(
                 "%d:%d: Wrong number of arguments to function “%s”. Expected %d, got %d.",
                 line(), column(), function.name(), argumentTypes.size(), arguments.size()));
-        ok = false;
+        return false;
       }
-      ok &=
-          IntStream.range(0, argumentTypes.size())
-                  .filter(
-                      index -> {
-                        final boolean isSame =
-                            argumentTypes.get(index).isSame(arguments.get(index).type());
-                        if (!isSame) {
-                          arguments
-                              .get(index)
-                              .typeError(
-                                  argumentTypes.get(index),
-                                  arguments.get(index).type(),
-                                  errorHandler);
-                        }
-                        return isSame;
-                      })
-                  .count()
-              == argumentTypes.size();
+      return IntStream.range(0, argumentTypes.size())
+              .filter(
+                  index -> {
+                    final boolean isSame =
+                        argumentTypes.get(index).isSame(arguments.get(index).type());
+                    if (!isSame) {
+                      arguments
+                          .get(index)
+                          .typeError(
+                              argumentTypes.get(index), arguments.get(index).type(), errorHandler);
+                    }
+                    return isSame;
+                  })
+              .count()
+          == argumentTypes.size();
     }
     return ok;
   }
