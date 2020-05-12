@@ -55,6 +55,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       if (metadata == null) {
         return Stream.empty();
       }
+      if (metadata.getWorkflow(key.intValue()) == null) {
+        definer.log(
+            "No such workflow fetching matches!",
+            Collections.singletonMap("workflow", key.toString()));
+        return Stream.empty();
+      }
       slowFetch.labels(key.toString()).set(0);
       final Runnable incrementSlowFetch = slowFetch.labels(key.toString())::inc;
       final Map<Integer, LimsKey> limsKeyCache = new HashMap<>();
@@ -254,9 +260,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Optional<Integer> fetch(Long workflowRunSwid, Instant lastUpdated)
-        throws IOException {
+    protected Optional<Integer> fetch(Long workflowSwid, Instant lastUpdated) throws IOException {
       if (metadata == null) {
+        return Optional.empty();
+      }
+      if (metadata.getWorkflow(workflowSwid.intValue()) == null) {
+        definer.log(
+            "No such workflow for max-in-flight check!",
+            Collections.singletonMap("workflow", workflowSwid.toString()));
         return Optional.empty();
       }
       return Optional.of(
@@ -269,7 +280,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                   status ->
                       countRecords(
                           metadata.getWorkflowRunReport(
-                              workflowRunSwid.intValue(), status, null, null)))
+                              workflowSwid.intValue(), status, null, null)))
               .sum());
     }
   }
