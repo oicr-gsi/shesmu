@@ -254,6 +254,20 @@ public final class StandardDefinitions implements DefinitionRepository {
             new FunctionParameter(
                 "A dictionary of prefix paths and the replacement that should be used.",
                 Imyhat.dictionary(Imyhat.PATH, Imyhat.PATH))),
+        FunctionDefinition.virtualMethod(
+            "path_ends_with",
+            "endsWith",
+            "Checks if ends with the directory and filename suffix provided.",
+            Imyhat.BOOLEAN,
+            new FunctionParameter("The path to check", Imyhat.PATH),
+            new FunctionParameter("The suffix path", Imyhat.PATH)),
+        FunctionDefinition.virtualMethod(
+            "path_starts_with",
+            "startsWith",
+            "Checks if starts with the directory prefix provided.",
+            Imyhat.BOOLEAN,
+            new FunctionParameter("The path to check", Imyhat.PATH),
+            new FunctionParameter("The prefix directory", Imyhat.PATH)),
         new FunctionDefinition() {
 
           @Override
