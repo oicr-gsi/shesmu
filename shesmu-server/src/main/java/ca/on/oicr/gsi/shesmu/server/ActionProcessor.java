@@ -8,6 +8,8 @@ import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
@@ -716,25 +718,47 @@ public final class ActionProcessor
    * Execute a command on matching actions
    *
    * @param command the command to perform
+   * @param user the user performing the command, if known
    * @param filters the filters to select actions
    * @return the number of actions that were able to execute the command
    */
-  public long command(String command, Filter... filters) {
+  public long command(
+      PluginManager pluginManager, String command, Optional<String> user, Filter... filters) {
     return startStream(filters)
         .filter(
             e -> {
-              final boolean result = e.getKey().performCommand(command);
-              if (result) {
+              final List<String> performedCommands =
+                  e.getKey()
+                      .commands()
+                      .filter(
+                          c -> c.command().equals(command) && c.process(e.getKey(), command, user))
+                      .map(ActionCommand::command)
+                      .collect(Collectors.toList());
+              final Map<String, String> labels = new TreeMap<>();
+              labels.put("action", e.getValue().id);
+              labels.put("action_type", e.getKey().type());
+              for (final String performedCommand : performedCommands) {
+                labels.put("command", performedCommand);
+                pluginManager.log("Performed command", labels);
+              }
+              if (!performedCommands.isEmpty()) {
                 if (e.getValue().lastState != ActionState.UNKNOWN) {
                   stateCount.labels(e.getValue().lastState.name(), e.getKey().type()).dec();
                   stateCount.labels(ActionState.UNKNOWN.name(), e.getKey().type()).inc();
                   e.getValue().lastStateTransition = Instant.now();
                 }
                 e.getValue().lastState = ActionState.UNKNOWN;
+                return true;
               }
-              return result;
+              return false;
             })
         .count();
+  }
+
+  public Map<ActionCommand<?>, Long> commonCommands(Filter... filters) {
+    return startStream(filters)
+        .flatMap(e -> e.getKey().commands())
+        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
   }
 
   private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(
@@ -1228,8 +1252,18 @@ public final class ActionProcessor
                   .stream()
                   .sorted()
                   .forEach(location -> location.toJson(locations, linker));
-              final ObjectNode commands = node.putObject("commands");
-              entry.getKey().commands().forEach(p -> commands.put(p.first(), p.second()));
+              final ArrayNode commands = node.putArray("commands");
+              entry
+                  .getKey()
+                  .commands()
+                  .forEach(
+                      c -> {
+                        final ObjectNode command = commands.addObject();
+                        command.put("command", c.command());
+                        command.put("buttonText", c.buttonText());
+                        command.put("showPrompt", c.prefers(Preference.PROMPT));
+                        command.put("allowBulk", c.prefers(Preference.ALLOW_BULK));
+                      });
               return node;
             });
   }

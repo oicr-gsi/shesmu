@@ -1,19 +1,34 @@
 package ca.on.oicr.gsi.shesmu.core;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class NothingAction extends Action {
 
+  private static final ActionCommand<NothingAction> COMPLAIN =
+      new ActionCommand<NothingAction>(
+          NothingAction.class,
+          "NOTHING-COMPLAIN",
+          "📢 Complain loudly",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(NothingAction action, Optional<String> user) {
+          System.err.println(action.value);
+          return true;
+        }
+      };
   @RuntimeInterop public String value = "";
 
   public NothingAction() {
@@ -21,8 +36,8 @@ public class NothingAction extends Action {
   }
 
   @Override
-  public Stream<Pair<String, String>> commands() {
-    return Stream.of(new Pair<>("📢 Complain loudly", "NOTHING-COMPLAIN"));
+  public Stream<ActionCommand<?>> commands() {
+    return Stream.of(COMPLAIN);
   }
 
   @Override
@@ -63,16 +78,6 @@ public class NothingAction extends Action {
   @Override
   public ActionState perform(ActionServices services) {
     return ActionState.ZOMBIE;
-  }
-
-  @Override
-  public boolean performCommand(String commandName) {
-    if (commandName.equals("NOTHING-COMPLAIN")) {
-      System.err.println(value);
-      return true;
-    } else {
-      return false;
-    }
   }
 
   @Override

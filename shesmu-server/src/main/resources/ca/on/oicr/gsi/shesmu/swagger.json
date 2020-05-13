@@ -665,6 +665,27 @@
         },
         "type": "object"
       },
+      "Command": {
+        "properties": {
+          "buttonText": {
+            "description": "the text that should be displayed to the user for this command",
+            "type": "string"
+          },
+          "command": {
+            "description": "the command's identifier",
+            "type": "string"
+          },
+          "count": {
+            "description": "the number of actions that will be affected (for bulk commands only)",
+            "type": "boolean"
+          },
+          "showPrompt": {
+            "description": "the user should get a confirmation prompt before doing this",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "SourceOliveLocation": {
         "properties": {
           "column": {
@@ -1567,10 +1588,22 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "bulkCommands": {
+                      "items": {
+                        "$ref": "#/components/schemas/Command"
+                      },
+                      "type": "array"
+                    },
                     "results": {
                       "items": {
                         "additionalProperties": true,
                         "properties": {
+                          "commands": {
+                            "items": {
+                              "$ref": "#/components/schemas/Command"
+                            },
+                            "type": "array"
+                          },
                           "type": {
                             "type": "string"
                           }

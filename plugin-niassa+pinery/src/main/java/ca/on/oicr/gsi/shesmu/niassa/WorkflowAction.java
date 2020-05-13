@@ -6,6 +6,8 @@ import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -46,12 +48,151 @@ import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
  */
 public final class WorkflowAction extends Action {
 
+  private static final ActionCommand<WorkflowAction> IGNORE_MAX_IN_FLIGHT_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-IGNORE-MAX-IN-FLIGHT",
+          "✈️ Ignore Max-in-flight Limit",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (!action.ignoreMaxInFlight) {
+            action.ignoreMaxInFlight = true;
+            return true;
+          }
+          return false;
+        }
+      };
   static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
       Comparator.comparing(LimsKey::getProvider).thenComparing(LimsKey::getId);
-
   static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
       LIMS_ID_COMPARATOR.thenComparing(LimsKey::getVersion);
   public static final String MAJOR_OLIVE_VERSION = "major_olive_version";
+  private static final ActionCommand<WorkflowAction> PRIORITY_BOOST_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-PRIORITY-BOOST",
+          "🚀 Use High Priority",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (!action.priorityBoost) {
+            action.priorityBoost = true;
+            return true;
+          }
+          return false;
+        }
+      };
+  private static final ActionCommand<WorkflowAction> PRIORITY_NICE_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-PRIORITY-NICE",
+          "🚀 Use Normal Priority",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (action.priorityBoost) {
+            action.priorityBoost = false;
+            return true;
+          }
+          return false;
+        }
+      };
+  private static final ActionCommand<WorkflowAction> RESET_WFR_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-RESET-WFR",
+          "💔 Reset Workflow Run Connection",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          return action.resetWorkflowRun();
+        }
+      };
+  private static final ActionCommand<WorkflowAction> RESPECT_MAX_IN_FLIGHT_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-RESPECT-MAX-IN-FLIGHT",
+          "🚲 Respect Max-in-flight Limit",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (action.ignoreMaxInFlight) {
+            action.ignoreMaxInFlight = false;
+            return true;
+          }
+          return false;
+        }
+      };
+  private static final ActionCommand<WorkflowAction> RETRY_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-RETRY",
+          "🚧 Retry",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (action.runAccession == 0) {
+            return false;
+          } else {
+            try {
+              final WorkflowRun run =
+                  action.server.get().metadata().getWorkflowRun(action.runAccession);
+              if (run.getStatus() == WorkflowRunStatus.failed
+                  || run.getStatus() == WorkflowRunStatus.cancelled) {
+                run.setStatus(WorkflowRunStatus.submitted_retry);
+                action.server.get().metadata().updateWorkflowRun(run);
+                action.lastState = ActionState.UNKNOWN;
+                return true;
+              }
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+            return false;
+          }
+        }
+      };
+  private static final ActionCommand<WorkflowAction> SKIP_CANDIDATES_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-SKIP-CANDIDATES",
+          "🚧 Skip All Partially Matched Workflow Runs",
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          return action.skipWorkflowRunMatches(action.matches);
+        }
+      };
+  private static final ActionCommand<WorkflowAction> SKIP_HISTORIC_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-SKIP-HISTORIC",
+          "🚧 Skip Historic Workflow Runs",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          return action.skipWorkflowRunMatches(action.matches.subList(1, action.matches.size()));
+        }
+      };
+  private static final ActionCommand<WorkflowAction> SKIP_RERUN_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class, "NIASSA-SKIP-RERUN", "🚧 Skip and Re-run", Preference.PROMPT) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          action.skipWorkflowRun(
+              action.runAccession,
+              action
+                  .matches
+                  .stream()
+                  .filter(m -> m.state().workflowAccession() == action.runAccession)
+                  .findAny()
+                  .map(m -> m.state().workflowAccession())
+                  .orElse(action.workflowAccession));
+          return action.resetWorkflowRun();
+        }
+      };
   private static final LatencyHistogram launchTime =
       new LatencyHistogram(
           "shesmu_niassa_wr_launch_time", "The time to launch a workflow run.", "workflow");
@@ -131,30 +272,16 @@ public final class WorkflowAction extends Action {
   }
 
   @Override
-  public Stream<Pair<String, String>> commands() {
+  public Stream<ActionCommand<?>> commands() {
     return Stream.concat(
         Stream.of(
-            ignoreMaxInFlight
-                ? new Pair<>("🚲 Respect Max-in-flight Limit", "NIASSA-RESPECT-MAX-IN-FLIGHT")
-                : new Pair<>("✈️ Ignore Max-in-flight Limit", "NIASSA-IGNORE-MAX-IN-FLIGHT"),
-            priorityBoost
-                ? new Pair<>("🚀 Use Normal Priority", "NIASSA-PRIORITY-NICE")
-                : new Pair<>("🚀 Use High Priority", "NIASSA-PRIORITY-BOOST")),
+            ignoreMaxInFlight ? RESPECT_MAX_IN_FLIGHT_COMMAND : IGNORE_MAX_IN_FLIGHT_COMMAND,
+            priorityBoost ? PRIORITY_NICE_COMMAND : PRIORITY_BOOST_COMMAND),
         runAccession == 0
-            ? (matches.isEmpty()
-                ? Stream.empty()
-                : Stream.of(
-                    new Pair<>(
-                        "🚧 Skip All Partially Matched Workflow Runs", "NIASSA-SKIP-CANDIDATES")))
+            ? (matches.isEmpty() ? Stream.empty() : Stream.of(SKIP_CANDIDATES_COMMAND))
             : Stream.concat(
-                Stream.of(
-                    new Pair<>("💔 Reset Workflow Run Connection", "NIASSA-RESET-WFR"),
-                    new Pair<>("🚧 Skip and Re-run", "NIASSA-SKIP-RERUN"),
-                    new Pair<>("🚧 Retry", "NIASSA-RETRY")),
-                matches.size() > 1
-                    ? Stream.of(
-                        new Pair<>("🚧 Skip Historic Workflow Runs", "NIASSA-SKIP-HISTORIC"))
-                    : Stream.empty()));
+                Stream.of(RESET_WFR_COMMAND, SKIP_RERUN_COMMAND, RETRY_COMMAND),
+                matches.size() > 1 ? Stream.of(SKIP_HISTORIC_COMMAND) : Stream.empty()));
   }
 
   @Override
@@ -198,23 +325,6 @@ public final class WorkflowAction extends Action {
   @ActionParameter(name = "major_olive_version")
   public final void majorOliveVersion(long majorOliveVersion) {
     this.majorOliveVersion = majorOliveVersion;
-  }
-
-  @Override
-  public Stream<String> tags() {
-    final String priorRuns;
-    switch (matches.size()) {
-      case 0:
-        priorRuns = "prior-runs:none";
-        break;
-      case 1:
-        priorRuns = "prior-runs:one";
-        break;
-      default:
-        priorRuns = "prior-runs:many";
-        break;
-    }
-    return Stream.of("workflow-name:" + workflowName, priorRuns);
   }
 
   @SuppressWarnings("checkstyle:CyclomaticComplexity")
@@ -549,114 +659,6 @@ public final class WorkflowAction extends Action {
     }
   }
 
-  @Override
-  public synchronized boolean performCommand(String commandName) {
-    switch (commandName) {
-      case "NIASSA-RESPECT-MAX-IN-FLIGHT":
-        if (ignoreMaxInFlight) {
-          ignoreMaxInFlight = false;
-          return true;
-        }
-        return false;
-      case "NIASSA-IGNORE-MAX-IN-FLIGHT":
-        if (!ignoreMaxInFlight) {
-          ignoreMaxInFlight = true;
-          return true;
-        }
-        return false;
-      case "NIASSA-PRIORITY-BOOST":
-        if (!priorityBoost) {
-          priorityBoost = true;
-          return true;
-        }
-        return false;
-      case "NIASSA-PRIORITY-NICE":
-        if (priorityBoost) {
-          priorityBoost = false;
-          return true;
-        }
-        return false;
-      case "NIASSA-SKIP-HISTORIC":
-        return skipWorkflowRunMatches(matches.subList(1, matches.size()));
-      case "NIASSA-SKIP-CANDIDATES":
-        return skipWorkflowRunMatches(matches);
-      case "NIASSA-SKIP-RERUN":
-        if (runAccession == 0) {
-          return false;
-        } else {
-          final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
-          attribute.setTag("skip");
-          attribute.setValue("shesmu-ui");
-          server.get().metadata().annotateWorkflowRun(runAccession, attribute, null);
-          final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
-          switch (run.getStatus()) {
-            case running:
-            case pending:
-            case submitted:
-              run.setStatus(WorkflowRunStatus.submitted_cancel);
-              server.get().metadata().updateWorkflowRun(run);
-          }
-          workflowAccessions().forEach(server.get().analysisCache()::invalidate);
-        }
-        // Intentional fall through
-      case "NIASSA-RESET-WFR":
-        if (runAccession == 0) {
-          return false;
-        } else {
-          runAccession = 0;
-          hasLaunched = false;
-          lastState = ActionState.UNKNOWN;
-          workflowAccessions().forEach(server.get().analysisCache()::invalidate);
-          return true;
-        }
-      case "NIASSA-RETRY":
-        if (runAccession == 0) {
-          return false;
-        } else {
-          try {
-            final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
-            if (run.getStatus() == WorkflowRunStatus.failed
-                || run.getStatus() == WorkflowRunStatus.cancelled) {
-              run.setStatus(WorkflowRunStatus.submitted_retry);
-              server.get().metadata().updateWorkflowRun(run);
-              lastState = ActionState.UNKNOWN;
-              return true;
-            }
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          return false;
-        }
-    }
-    return false;
-  }
-
-  private boolean skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
-    final Set<Long> dirtyAccession = new TreeSet<>();
-    for (final WorkflowRunMatch run : runs) {
-      if (run.state().skipped()) {
-        continue;
-      }
-      final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
-      attribute.setTag("skip");
-      attribute.setValue("shesmu-ui");
-      server
-          .get()
-          .metadata()
-          .annotateWorkflowRun(run.state().workflowRunAccession(), attribute, null);
-      dirtyAccession.add(run.state().workflowAccession());
-      this.server.log(
-          String.format(
-              "Skipping workflow run %d (workflow %d) for action %s",
-              run.state().workflowRunAccession(), run.state().workflowAccession(), actionId),
-          Collections.emptyMap());
-    }
-    for (final long accession : dirtyAccession) {
-      server.get().analysisCache().invalidate(accession);
-    }
-    return !dirtyAccession.isEmpty();
-  }
-
   public Duration performTimeout() {
     return Duration.of(8, ChronoUnit.HOURS);
   }
@@ -671,6 +673,18 @@ public final class WorkflowAction extends Action {
     // If this action is being purged, there's a good chance the user is trying to skip & rerun, so
     // zap the cache so we see that change.
     server.get().analysisCache().invalidate(workflowAccession);
+  }
+
+  private boolean resetWorkflowRun() {
+    if (runAccession == 0) {
+      return false;
+    } else {
+      runAccession = 0;
+      hasLaunched = false;
+      lastState = ActionState.UNKNOWN;
+      workflowAccessions().forEach(server.get().analysisCache()::invalidate);
+      return true;
+    }
   }
 
   @Override
@@ -706,9 +720,61 @@ public final class WorkflowAction extends Action {
     annotations.putIfAbsent(tag, value);
   }
 
+  private void skipWorkflowRun(int workflowRunSwid, long workflowSwid) {
+    final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
+    attribute.setTag("skip");
+    attribute.setValue("shesmu-ui");
+    server.get().metadata().annotateWorkflowRun(workflowRunSwid, attribute, null);
+    final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
+    switch (run.getStatus()) {
+      case running:
+      case pending:
+      case submitted:
+        run.setStatus(WorkflowRunStatus.submitted_cancel);
+        server.get().metadata().updateWorkflowRun(run);
+    }
+    final Map<String, String> labels = new TreeMap<>();
+    labels.put("workflow_run", Integer.toString(workflowRunSwid));
+    labels.put("workflow", Long.toString(workflowSwid));
+    labels.put("action", actionId);
+    this.server.log("Skipping workflow run", labels);
+  }
+
+  private boolean skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
+    final Set<Long> dirtyAccession = new TreeSet<>();
+    for (final WorkflowRunMatch run : runs) {
+      if (run.state().skipped()) {
+        continue;
+      }
+      dirtyAccession.add(run.state().workflowAccession());
+      skipWorkflowRun(run.state().workflowRunAccession(), run.state().workflowAccession());
+    }
+    for (final long accession : dirtyAccession) {
+      server.get().analysisCache().invalidate(accession);
+    }
+    return !dirtyAccession.isEmpty();
+  }
+
   @ActionParameter(required = false)
   public void supplemental_annotations(Map<String, String> annotations) {
     supplementalAnnotations.putAll(annotations);
+  }
+
+  @Override
+  public Stream<String> tags() {
+    final String priorRuns;
+    switch (matches.size()) {
+      case 0:
+        priorRuns = "prior-runs:none";
+        break;
+      case 1:
+        priorRuns = "prior-runs:one";
+        break;
+      default:
+        priorRuns = "prior-runs:many";
+        break;
+    }
+    return Stream.of("workflow-name:" + workflowName, priorRuns);
   }
 
   @Override

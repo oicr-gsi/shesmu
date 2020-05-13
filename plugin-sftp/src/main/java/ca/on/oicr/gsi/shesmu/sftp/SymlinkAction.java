@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -19,12 +21,29 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class SymlinkAction extends Action {
+  private static final ActionCommand<SymlinkAction> HUMAN_APPROVE_COMMAND =
+      new ActionCommand<SymlinkAction>(
+          SymlinkAction.class, "SFTP-HUMAN-APPROVE", "🚀 Allow to run", Preference.ALLOW_BULK) {
+
+        @Override
+        protected boolean execute(SymlinkAction action, Optional user) {
+          if (!action.automatic) {
+            action.automatic = true;
+            return true;
+          }
+          return false;
+        }
+      };
   private static final Gauge filesInTheWay =
       Gauge.build(
               "shesmu_sftp_files_in_the_way",
               "The number of non-symlink files preventing the creation of a symlink.")
           .labelNames("target")
           .register();
+
+  @ActionParameter(required = false)
+  public boolean automatic = true;
+
   private final Supplier<SftpServer> connection;
   private boolean fileInTheWay;
   private boolean force;
@@ -32,26 +51,14 @@ public class SymlinkAction extends Action {
   private Optional<Instant> mtime = Optional.empty();
   private Path target;
 
-  @ActionParameter(required = false)
-  public boolean automatic = true;
-
-  @Override
-  public boolean performCommand(String commandName) {
-    if (commandName.equals("SFTP-HUMAN-APPROVE") && !automatic) {
-      automatic = true;
-      return true;
-    }
-    return false;
-  }
-
-  @Override
-  public Stream<Pair<String, String>> commands() {
-    return Stream.of(new Pair<>("🚀 Allow to run", "SFTP-HUMAN-APPROVE"));
-  }
-
   public SymlinkAction(Supplier<SftpServer> connection) {
     super("sftp-symlink");
     this.connection = connection;
+  }
+
+  @Override
+  public Stream<ActionCommand<?>> commands() {
+    return automatic ? Stream.empty() : Stream.of(HUMAN_APPROVE_COMMAND);
   }
 
   @Override

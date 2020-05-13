@@ -14,6 +14,8 @@ import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.LabelledKeyValueCache;
@@ -1633,6 +1635,20 @@ public final class Server implements ServerConfig, ActionServices {
                       }
                     });
             jsonOutput.writeEndArray();
+            jsonOutput.writeArrayFieldStart("bulkCommands");
+            for (final Map.Entry<ActionCommand<?>, Long> command :
+                processor.commonCommands(filters).entrySet()) {
+              if (command.getKey().prefers(Preference.ALLOW_BULK)) {
+                jsonOutput.writeStartObject();
+                jsonOutput.writeStringField("command", command.getKey().command());
+                jsonOutput.writeStringField("buttonText", command.getKey().buttonText());
+                jsonOutput.writeBooleanField(
+                    "showPrompt", command.getKey().prefers(Preference.PROMPT));
+                jsonOutput.writeNumberField("count", command.getValue());
+                jsonOutput.writeEndObject();
+              }
+            }
+            jsonOutput.writeEndArray();
             jsonOutput.writeEndObject();
             jsonOutput.close();
           }
@@ -1758,7 +1774,12 @@ public final class Server implements ServerConfig, ActionServices {
             RuntimeSupport.MAPPER.writeValue(
                 os,
                 processor.command(
+                    pluginManager,
                     request.getCommand(),
+                    t.getRequestHeaders()
+                        .getOrDefault("X-Remote-User", Collections.emptyList())
+                        .stream()
+                        .findFirst(),
                     Stream.of(request.getFilters())
                         .filter(Objects::nonNull)
                         .map(filterJson -> filterJson.convert(processor))

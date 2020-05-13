@@ -201,10 +201,10 @@ export function parseType() {
 }
 
 export const parser = {
-  _: function(input) {
+  _: function (input) {
     return { good: false, input: input, error: "Cannot parse bad type." };
   },
-  a: function(innerType) {
+  a: function (innerType) {
     return input => {
       const output = [];
       for (;;) {
@@ -236,7 +236,7 @@ export const parser = {
       }
     };
   },
-  b: function(input) {
+  b: function (input) {
     let match = input.match(/^\s*([Tt]rue|[Ff]alse)/);
     if (match) {
       return {
@@ -248,7 +248,7 @@ export const parser = {
       return { good: false, input: input, error: "Expected boolean." };
     }
   },
-  d: function(input) {
+  d: function (input) {
     let match = input.match(/^\s*EpochSecond\s+(\d*)/);
     if (match) {
       return {
@@ -278,7 +278,7 @@ export const parser = {
       return { good: false, input: input, error: "Expected date." };
     }
   },
-  j: function(input) {
+  j: function (input) {
     let match = input.match(/^\s*(\d+(\.\d*)?([eE][+-]?\d+)?)/);
     if (match) {
       return {
@@ -408,7 +408,7 @@ export const parser = {
       error: "Unexpected input."
     };
   },
-  f: function(input) {
+  f: function (input) {
     let match = input.match(/^\s*(\d*(\.\d*([eE][+-]?\d+)?))/);
     if (match) {
       return {
@@ -424,7 +424,7 @@ export const parser = {
       };
     }
   },
-  i: function(input) {
+  i: function (input) {
     let match = input.match(/^\s*(\d*)/);
     if (match) {
       return {
@@ -436,7 +436,7 @@ export const parser = {
       return { good: false, input: input, error: "Expected integer." };
     }
   },
-  m: function(keyType, valueType) {
+  m: function (keyType, valueType) {
     return input => {
       const output = [];
       let match = input.match(/^\s*Dict/);
@@ -492,7 +492,7 @@ export const parser = {
       }
     };
   },
-  o: function(fieldTypes) {
+  o: function (fieldTypes) {
     return input => {
       const output = {};
       let first = true;
@@ -548,7 +548,7 @@ export const parser = {
       }
     };
   },
-  p: function(input) {
+  p: function (input) {
     let match = input.match(/^\s*'(([^'\\]|\\')*)'/);
     if (match) {
       return {
@@ -560,7 +560,7 @@ export const parser = {
       return { good: false, input: input, error: "Expected path." };
     }
   },
-  s: function(input) {
+  s: function (input) {
     let match = input.match(/^\s*"(([^"\\]|\\")*)"/);
     if (match) {
       return {
@@ -572,7 +572,7 @@ export const parser = {
       return { good: false, input: input, error: "Expected string." };
     }
   },
-  t: function(innerTypes) {
+  t: function (innerTypes) {
     return input => {
       const output = [];
       for (let i = 0; i < innerTypes.length; i++) {
@@ -604,7 +604,7 @@ export const parser = {
       }
     };
   },
-  parse: function(input, parse, resultHandler, errorHandler) {
+  parse: function (input, parse, resultHandler, errorHandler) {
     let state = parse(input);
     if (!state.good) {
       errorHandler(state.error, input.length - state.input.length);
@@ -800,10 +800,7 @@ function simulationPagination(container, filename, data, render, predicate) {
   };
   showData(data);
   searchInput.addEventListener("input", e => {
-    const keywords = searchInput.value
-      .trim()
-      .toLowerCase()
-      .split(/\W+/);
+    const keywords = searchInput.value.trim().toLowerCase().split(/\W+/);
     if (keywords.length) {
       condition = x => predicate(x, keywords);
     } else {
@@ -1192,10 +1189,7 @@ function filterableDialog(items, addItem, render, predicate, breakLines) {
   dialog.appendChild(help);
 
   searchInput.addEventListener("input", e => {
-    const keywords = searchInput.value
-      .trim()
-      .toLowerCase()
-      .split(/\W+/);
+    const keywords = searchInput.value.trim().toLowerCase().split(/\W+/);
     if (keywords.length) {
       showItems(x => predicate(x, keywords));
     } else {
@@ -1535,7 +1529,7 @@ export function initialiseOliveDash(
               metroPane.appendChild(document.adoptNode(svg.documentElement));
             }
           })
-          .catch(function(error) {
+          .catch(function (error) {
             if (error && metroLock()) {
               const element = document.createElement("SPAN");
               element.innerText = error.message;
@@ -1752,10 +1746,7 @@ export function initialiseOliveDash(
     oliveSearch.appendChild(document.createTextNode("Filter: "));
     oliveSearch.appendChild(oliveSearchInput);
     oliveSearchInput.addEventListener("input", e => {
-      const keywords = oliveSearchInput.value
-        .trim()
-        .toLowerCase()
-        .split(/\W+/);
+      const keywords = oliveSearchInput.value.trim().toLowerCase().split(/\W+/);
       if (keywords.length) {
         for (const { texts, elements } of visibilityUpdates) {
           const visible = keywords.every(keyword =>
@@ -2125,20 +2116,24 @@ export function initialiseOliveDash(
   }
   window.addEventListener("popstate", e => {
     if (e.state) {
-      oliveFiles.filter(file => file.filename == e.state.file).forEach(file => {
-        if (e.state.line) {
-          file.olives
-            .filter(
-              olive =>
-                e.state.line == olive.line &&
-                e.state.column == olive.column &&
-                e.state.hash == file.hash
-            )
-            .forEach(olive => renderOlive(file, olive, e.state.filters, true));
-        } else {
-          renderFile(file, e.state.prettyFileName, e.state.filters, true);
-        }
-      });
+      oliveFiles
+        .filter(file => file.filename == e.state.file)
+        .forEach(file => {
+          if (e.state.line) {
+            file.olives
+              .filter(
+                olive =>
+                  e.state.line == olive.line &&
+                  e.state.column == olive.column &&
+                  e.state.hash == file.hash
+              )
+              .forEach(olive =>
+                renderOlive(file, olive, e.state.filters, true)
+              );
+          } else {
+            renderFile(file, e.state.prettyFileName, e.state.filters, true);
+          }
+        });
     }
   });
 }
@@ -2176,7 +2171,7 @@ function results(container, slug, body, render) {
         render(container, data);
       }
     })
-    .catch(function(error) {
+    .catch(function (error) {
       if (error && checkLock()) {
         clearChildren(container);
         const element = document.createElement("SPAN");
@@ -2296,6 +2291,68 @@ function nextPage(query, targetElement, onActionPage) {
     if (data.results.length == 0) {
       jumble.innerText = "No actions found.";
     }
+    const bulkCommands = data.bulkCommands || [];
+    if (bulkCommands.length) {
+      const bulkToolbar = document.createElement("P");
+      jumble.appendChild(bulkToolbar);
+
+      for (const { command, buttonText, showPrompt, count } of bulkCommands) {
+        const performCommand = () =>
+          fetchJsonWithBusyDialog(
+            "/command",
+            {
+              body: JSON.stringify({
+                command: command,
+                filters: query.filters
+              }),
+              method: "POST"
+            },
+            actualCount => {
+              if (actualCount != count) {
+                const dialog = makePopup();
+                dialog.appendChild(
+                  document.createTextNode(
+                    `Command was executed by ${actualCount} actions, but ${count} were expected. So, good luck with that.`
+                  )
+                );
+                const image = document.createElement("IMG");
+                dialog.appendChild(image);
+                image.src = "ohno.gif";
+              }
+              nextPage(query, targetElement, onActionPage);
+            }
+          );
+        bulkToolbar.appendChild(
+          dangerButton(
+            buttonText,
+            `Perform special command ${command} on ${count} actions.`,
+            showPrompt
+              ? () => {
+                  const [dialog, close] = makePopup(true);
+
+                  const sarcasm = document.createElement("P");
+                  sarcasm.innerText = `Perform command ${command} on ${count} actions? This is your moment of sober second thought.`;
+                  dialog.appendChild(sarcasm);
+                  dialog.appendChild(
+                    dangerButton(
+                      buttonText.toUpperCase(),
+                      "Really do it!",
+                      () => {
+                        close();
+                        performCommand();
+                      }
+                    )
+                  );
+                  dialog.appendChild(document.createElement("BR"));
+                  dialog.appendChild(
+                    button("Back away slowly", "Don't do anything.", close)
+                  );
+                }
+              : performCommand
+          )
+        );
+      }
+    }
 
     data.results.forEach(action => {
       const tile = document.createElement("DIV");
@@ -2354,53 +2411,74 @@ function nextPage(query, targetElement, onActionPage) {
       json.innerText = JSON.stringify(action, null, 2);
       collapse("JSON", json).forEach(x => tile.appendChild(x));
 
-      for (const [commandName, command] of Object.entries(
-        action.commands || {}
-      )) {
+      for (const { command, buttonText, showPrompt } of action.commands || []) {
+        const performCommand = () =>
+          fetchJsonWithBusyDialog(
+            "/command",
+            {
+              body: JSON.stringify({
+                command: command,
+                filters: [
+                  {
+                    type: "id",
+                    ids: [action.actionId]
+                  }
+                ]
+              }),
+              method: "POST"
+            },
+            count => {
+              if (count == 0) {
+                const dialog = makePopup();
+                dialog.appendChild(
+                  document.createTextNode(
+                    "This action is indifferent to your pleas."
+                  )
+                );
+                const image = document.createElement("IMG");
+                dialog.appendChild(image);
+                image.src = "indifferent.gif";
+              } else if (count > 1) {
+                const dialog = makePopup();
+                dialog.appendChild(
+                  document.createTextNode(
+                    `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`
+                  )
+                );
+                const image = document.createElement("IMG");
+                dialog.appendChild(image);
+                image.src = "ohno.gif";
+              }
+              nextPage(query, targetElement, onActionPage);
+            }
+          );
         toolbar.appendChild(
           dangerButton(
-            commandName,
+            buttonText,
             `Perform special command ${command} on this action.`,
-            () =>
-              fetchJsonWithBusyDialog(
-                "/command",
-                {
-                  body: JSON.stringify({
-                    command: command,
-                    filters: [
-                      {
-                        type: "id",
-                        ids: [action.actionId]
+            showPrompt
+              ? () => {
+                  const [dialog, close] = makePopup(true);
+
+                  const sarcasm = document.createElement("P");
+                  sarcasm.innerText = `Perform command ${command} on this action? This is your moment of sober second thought.`;
+                  dialog.appendChild(sarcasm);
+                  dialog.appendChild(
+                    dangerButton(
+                      buttonText.toUpperCase(),
+                      "Really do it!",
+                      () => {
+                        close();
+                        performCommand();
                       }
-                    ]
-                  }),
-                  method: "POST"
-                },
-                count => {
-                  if (count == 0) {
-                    const dialog = makePopup();
-                    dialog.appendChild(
-                      document.createTextNode(
-                        "This action is indifferent to your pleas."
-                      )
-                    );
-                    const image = document.createElement("IMG");
-                    dialog.appendChild(image);
-                    image.src = "indifferent.gif";
-                  } else if (count > 1) {
-                    const dialog = makePopup();
-                    dialog.appendChild(
-                      document.createTextNode(
-                        `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`
-                      )
-                    );
-                    const image = document.createElement("IMG");
-                    dialog.appendChild(image);
-                    image.src = "ohno.gif";
-                  }
-                  nextPage(query, targetElement, onActionPage);
+                    )
+                  );
+                  dialog.appendChild(document.createElement("BR"));
+                  dialog.appendChild(
+                    button("Back away slowly", "Don't do anything.", close)
+                  );
                 }
-              )
+              : performCommand
           )
         );
       }
@@ -2726,7 +2804,11 @@ function editTime(original, callback) {
       )
     );
     target.appendChild(document.createTextNode(" "));
-    day = makeNumberBox(1, () => selected.getDate(), v => selected.setDate(v));
+    day = makeNumberBox(
+      1,
+      () => selected.getDate(),
+      v => selected.setDate(v)
+    );
     day.max = new Date(
       selected.getFullYear(),
       selected.getMonth() + 1,
@@ -2813,9 +2895,8 @@ function editTimeAgo(original, callback) {
   dialog.appendChild(
     button("Save", "Update time range filter in current search.", () => {
       close();
-      callback(
-        x =>
-          Number.isNaN(input.valueAsNumber) ? 0 : input.valueAsNumber * units
+      callback(x =>
+        Number.isNaN(input.valueAsNumber) ? 0 : input.valueAsNumber * units
       );
     })
   );
@@ -3090,8 +3171,8 @@ function renderFilter(tile, filter, mutateCallback) {
             ? "None of"
             : "Not one of"
           : filter.type == "and"
-            ? "All of"
-            : "Any of";
+          ? "All of"
+          : "Any of";
         tile.appendChild(title);
         const list = document.createElement("DIV");
         list.className = "filters";
@@ -3369,18 +3450,16 @@ function getStats(
                       idText.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
                       m => "shesmu:" + m[1].toUpperCase()
                     );
-                    mutateFilters(
-                      "id",
-                      list =>
-                        list
-                          ? list
-                              .concat(ids)
-                              .sort()
-                              .filter(
-                                (item, index, array) =>
-                                  item == 0 || item != array[index - 1]
-                              )
-                          : ids
+                    mutateFilters("id", list =>
+                      list
+                        ? list
+                            .concat(ids)
+                            .sort()
+                            .filter(
+                              (item, index, array) =>
+                                item == 0 || item != array[index - 1]
+                            )
+                        : ids
                     );
                   }
                 )
@@ -3974,9 +4053,9 @@ function getStats(
                   ([bin, counts], binIndex) => {
                     if (counts.length != boundaryLabels.length - 1) {
                       throw new Error(
-                        `Data type ${bin} has ${
-                          counts.length
-                        } but expected ${boundaryLabels.length - 1}`
+                        `Data type ${bin} has ${counts.length} but expected ${
+                          boundaryLabels.length - 1
+                        }`
                       );
                     }
                     for (
@@ -4499,7 +4578,7 @@ export function initialiseSimulationDashboard(
   );
   document.addEventListener(
     "keydown",
-    function(e) {
+    function (e) {
       // Map Ctrl-S or Command-S to download/save
       if (
         (window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey) &&
@@ -4521,7 +4600,10 @@ export function initialiseSimulationDashboard(
       },
       ([name, theme]) => name,
       ([name, theme]) => savedTheme == theme,
-      [["Ambiance", "ace/theme/ambiance"], ["Chrome", "ace/theme/chrome"]]
+      [
+        ["Ambiance", "ace/theme/ambiance"],
+        ["Chrome", "ace/theme/chrome"]
+      ]
     )
   );
 
@@ -4536,9 +4618,9 @@ export function initialiseSimulationDashboard(
 
   const updateFakeActions = () => {
     clearChildren(fakeActionList);
-    for (const [name, declaration] of Object.entries(fakeActions).sort(
-      ([aName], [bName]) => aName.localeCompare(bName)
-    )) {
+    for (const [name, declaration] of Object.entries(
+      fakeActions
+    ).sort(([aName], [bName]) => aName.localeCompare(bName))) {
       const row = document.createElement("TR");
       fakeActionList.appendChild(row);
       const nameCell = document.createElement("TD");
@@ -4704,7 +4786,10 @@ function drawAlert(a, fileNameFormatter, container, makeHeader) {
       ["Label", x => x[0]],
       ["Value", x => x[1].split(/\n/).map(t => text(t))]
     ),
-    [["Started", "startsAt"], ["Ended", "endsAt"]].map(([name, property]) => {
+    [
+      ["Started", "startsAt"],
+      ["Ended", "endsAt"]
+    ].map(([name, property]) => {
       const time = a[property];
       if (time) {
         const [ago, exact] = formatTimeBin(time);
@@ -4908,9 +4993,9 @@ function showAlertNavigator(
     if (liveCount == alerts.length) {
       total.innerText = `🔔 ${alerts.length} firing alerts`;
     } else {
-      total.innerText = `${
-        alerts.length
-      } alerts 🔔 ${liveCount} firing 💤 ${alerts.length - liveCount} expired`;
+      total.innerText = `${alerts.length} alerts 🔔 ${liveCount} firing 💤 ${
+        alerts.length - liveCount
+      } expired`;
     }
     container.appendChild(total);
 

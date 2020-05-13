@@ -1,9 +1,9 @@
 package ca.on.oicr.gsi.shesmu.guanyin;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.*;
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.action.*;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -33,6 +33,22 @@ import org.apache.http.impl.client.HttpClients;
  * attempt to run it using Cromwell.
  */
 public class RunReport extends JsonParameterisedAction {
+  private static final ActionCommand<RunReport> FORCE_RELAUNCH_COMMAND =
+      new ActionCommand<RunReport>(
+          RunReport.class,
+          "GUANYIN-FORCE-RELAUNCH",
+          "🚀 Relaunch on Cromwell",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(RunReport action, Optional<String> user) {
+          if (action.reportRecordId.isPresent()) {
+            action.forceRelaunch = true;
+            return true;
+          }
+          return false;
+        }
+      };
   static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String WDL =
@@ -113,10 +129,8 @@ public class RunReport extends JsonParameterisedAction {
   }
 
   @Override
-  public Stream<Pair<String, String>> commands() {
-    return reportRecordId.isPresent()
-        ? Stream.of(new Pair<>("🚀 Relaunch on Cromwell", "GUANYIN-FORCE-RELAUNCH"))
-        : Stream.empty();
+  public Stream<ActionCommand<?>> commands() {
+    return reportRecordId.isPresent() ? Stream.of(FORCE_RELAUNCH_COMMAND) : Stream.empty();
   }
 
   @Override
@@ -303,15 +317,6 @@ public class RunReport extends JsonParameterisedAction {
       this.errors = Collections.singletonList(e.getMessage());
       return ActionState.FAILED;
     }
-  }
-
-  @Override
-  public boolean performCommand(String commandName) {
-    if (commandName.equals("GUANYIN-FORCE-RELAUNCH") && reportRecordId.isPresent()) {
-      forceRelaunch = true;
-      return true;
-    }
-    return false;
   }
 
   @Override
