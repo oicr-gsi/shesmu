@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -21,6 +21,20 @@ import net.sourceforge.seqware.common.model.Attribute;
 /** Action to annotate a SeqWare/Niassa object */
 public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
 
+  @SuppressWarnings("rawtypes")
+  private static final ActionCommand<AnnotationAction> HUMAN_APPROVE_COMMAND =
+      new ActionCommand<AnnotationAction>(
+          AnnotationAction.class, "NIASSA-HUMAN-APPROVE", "🚀 Allow to run") {
+        @Override
+        protected boolean execute(AnnotationAction action, Optional<String> user) {
+          if (!action.automatic) {
+            action.automatic = true;
+            return true;
+          }
+          return false;
+        }
+      };
+
   @ActionParameter public String accession;
 
   @ActionParameter(required = false)
@@ -38,8 +52,8 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
   }
 
   @Override
-  public Stream<Pair<String, String>> commands() {
-    return Stream.of(new Pair<>("🚀 Allow to run", "NIASSA-HUMAN-APPROVE"));
+  public Stream<ActionCommand<?>> commands() {
+    return Stream.of(HUMAN_APPROVE_COMMAND);
   }
 
   @Override
@@ -95,15 +109,6 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
       e.printStackTrace();
       return ActionState.FAILED;
     }
-  }
-
-  @Override
-  public boolean performCommand(String commandName) {
-    if (commandName.equals("NIASSA-HUMAN-APPROVE") && !automatic) {
-      automatic = true;
-      return true;
-    }
-    return false;
   }
 
   @Override

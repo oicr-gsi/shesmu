@@ -1,7 +1,8 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -18,6 +19,24 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class DeleteAction extends Action {
+
+  public static final ActionCommand<DeleteAction> HUMAN_APPROVE_COMMAND =
+      new ActionCommand<DeleteAction>(
+          DeleteAction.class,
+          "SFTP-HUMAN-APPROVE",
+          "🚀 Allow to run",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(DeleteAction action, Optional user) {
+          if (!action.automatic) {
+            action.automatic = true;
+            return true;
+          }
+          return false;
+        }
+      };
+
   @ActionParameter(required = false)
   public boolean automatic = true;
 
@@ -30,8 +49,8 @@ public class DeleteAction extends Action {
   }
 
   @Override
-  public Stream<Pair<String, String>> commands() {
-    return Stream.of(new Pair<>("🚀 Allow to run", "SFTP-HUMAN-APPROVE"));
+  public Stream<ActionCommand<?>> commands() {
+    return automatic ? Stream.empty() : Stream.of(HUMAN_APPROVE_COMMAND);
   }
 
   @Override
@@ -62,15 +81,6 @@ public class DeleteAction extends Action {
     // The logic for removing happens in the other class so that it can make
     // serialised requests to the remote end
     return connection.get().rm(target.toString(), automatic);
-  }
-
-  @Override
-  public boolean performCommand(String commandName) {
-    if (commandName.equals("SFTP-HUMAN-APPROVE") && !automatic) {
-      automatic = true;
-      return true;
-    }
-    return false;
   }
 
   @Override

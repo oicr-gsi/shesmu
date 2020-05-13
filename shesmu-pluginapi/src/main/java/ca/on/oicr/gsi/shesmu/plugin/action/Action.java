@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
-import ca.on.oicr.gsi.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Duration;
@@ -46,10 +45,9 @@ public abstract class Action {
   /**
    * Get the actions that are appropriate for this action
    *
-   * @return a stream of pairs of the user-friendly name for the command and the command name that
-   *     should be used in {@link #performCommand(String)}
+   * @return a stream of commands that the user can perform on this action
    */
-  public Stream<Pair<String, String>> commands() {
+  public Stream<ActionCommand<?>> commands() {
     return Stream.empty();
   }
 
@@ -92,20 +90,6 @@ public abstract class Action {
   public abstract ActionState perform(ActionServices services);
 
   /**
-   * Perform an action-specific command
-   *
-   * <p>Commands are a way for a user to provide specific direction to actions. This is meant to
-   * provide a way to adjust an action's behaviour at runtime. Actions may receive invalid or
-   * inappropriate commands and should simply ignore them.
-   *
-   * @param commandName the name of the command
-   * @return true if the command was followed; false if inappropriate or not understood
-   */
-  public boolean performCommand(String commandName) {
-    return false;
-  }
-
-  /**
    * The amount of time the {@link #perform(ActionServices)} method should be allowed to run for
    * before being interrupted
    */
@@ -141,13 +125,6 @@ public abstract class Action {
   public abstract boolean search(Pattern query);
 
   /**
-   * Render the action to JSON for display by the front end.
-   *
-   * <p>It should set the <tt>type</tt> property.
-   */
-  public abstract ObjectNode toJson(ObjectMapper mapper);
-
-  /**
    * Self-determined tags that should be attached to this action
    *
    * <p>An olive may attach tags to an action and an action may also self-determine tags it wants
@@ -160,6 +137,13 @@ public abstract class Action {
   public Stream<String> tags() {
     return Stream.empty();
   }
+
+  /**
+   * Render the action to JSON for display by the front end.
+   *
+   * <p>It should set the <tt>type</tt> property.
+   */
+  public abstract ObjectNode toJson(ObjectMapper mapper);
 
   /** The action's name as it will appear in the JSON. */
   public final String type() {
