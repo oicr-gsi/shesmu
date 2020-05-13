@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
+import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.PackWdlVariables;
@@ -122,6 +123,95 @@ public final class IniParam<T> {
       };
     }
   }
+  /** Save a Boolean value as "true" or "false" */
+  public static final Stringifier BOOLEAN =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.BOOLEAN;
+        }
+      };
+
+  public static final Stringifier FLOAT =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.FLOAT;
+        }
+      };
+  /** Save an integer in the way you'd expect */
+  public static final Stringifier INTEGER =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.INTEGER;
+        }
+      };
+  /** Save a JSON blob */
+  public static final Stringifier JSON =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          try {
+            return NiassaServer.MAPPER.writeValueAsString(value);
+          } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "null";
+          }
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.JSON;
+        }
+      };
+  /** Save a path */
+  public static final Stringifier PATH =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return value.toString();
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.PATH;
+        }
+      };
+  /** Save a string exactly as it is passed by the user */
+  public static final Stringifier STRING =
+      new Stringifier() {
+
+        @Override
+        public String stringify(WorkflowAction action, Object value) {
+          return (String) value;
+        }
+
+        @Override
+        public Imyhat type() {
+          return Imyhat.STRING;
+        }
+      };
 
   /**
    * Save an integer, but first correct the units
@@ -245,102 +335,18 @@ public final class IniParam<T> {
       }
     };
   }
-  /** Save a Boolean value as "true" or "false" */
-  public static final Stringifier BOOLEAN =
-      new Stringifier() {
 
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.BOOLEAN;
-        }
-      };
-
-  public static final Stringifier FLOAT =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.FLOAT;
-        }
-      };
-  /** Save an integer in the way you'd expect */
-  public static final Stringifier INTEGER =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.INTEGER;
-        }
-      };
-  /** Save a JSON blob */
-  public static final Stringifier JSON =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          try {
-            return NiassaServer.MAPPER.writeValueAsString(value);
-          } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "null";
-          }
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.JSON;
-        }
-      };
-  /** Save a path */
-  public static final Stringifier PATH =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return value.toString();
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.PATH;
-        }
-      };
-  /** Save a string exactly as it is passed by the user */
-  public static final Stringifier STRING =
-      new Stringifier() {
-
-        @Override
-        public String stringify(WorkflowAction action, Object value) {
-          return (String) value;
-        }
-
-        @Override
-        public Imyhat type() {
-          return Imyhat.STRING;
-        }
-      };
-
+  private JsonNode defaultValue;
   private String iniName;
   private String name;
   private boolean required;
   private Stringifier type;
 
   public IniParam() {}
+
+  public JsonNode getDefaultValue() {
+    return defaultValue;
+  }
 
   public String getIniName() {
     return iniName;
@@ -367,6 +373,10 @@ public final class IniParam<T> {
     };
   }
 
+  public void setDefaultValue(JsonNode defaultValue) {
+    this.defaultValue = defaultValue;
+  }
+
   public void setIniName(String iniName) {
     this.iniName = iniName;
   }
@@ -381,5 +391,12 @@ public final class IniParam<T> {
 
   public void setType(Stringifier type) {
     this.type = type;
+  }
+
+  public void writeDefault(WorkflowAction action) {
+    if (defaultValue != null) {
+      action.ini.put(
+          iniName, type.stringify(action, type.type().apply(new UnpackJson(defaultValue))));
+    }
   }
 }
