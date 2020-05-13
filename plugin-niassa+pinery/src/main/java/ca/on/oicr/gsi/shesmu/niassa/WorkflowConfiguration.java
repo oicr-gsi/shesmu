@@ -10,12 +10,110 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class WorkflowConfiguration {
+
+  private static class UserAnnotationParameter extends CustomActionParameter<WorkflowAction> {
+
+    public UserAnnotationParameter(Entry<String, String> e) {
+      super(e.getKey(), true, Imyhat.parse(e.getValue()));
+    }
+
+    @Override
+    public void store(WorkflowAction action, Object value) {
+      action.setAnnotation(
+          name(),
+          type()
+              .apply(
+                  new ImyhatFunction<String>() {
+                    @Override
+                    public String apply(boolean value) {
+                      return Boolean.toString(value);
+                    }
+
+                    @Override
+                    public String apply(double value) {
+                      return Double.toString(value);
+                    }
+
+                    @Override
+                    public String apply(Instant value) {
+                      return value.toString();
+                    }
+
+                    @Override
+                    public String apply(long value) {
+                      return Long.toString(value);
+                    }
+
+                    @Override
+                    public String apply(Stream<Object> values, Imyhat inner) {
+                      return values
+                          .map(v -> inner.apply(this, v))
+                          .collect(Collectors.joining(",", "[", "]"));
+                    }
+
+                    @Override
+                    public String apply(String value) {
+                      return value;
+                    }
+
+                    @Override
+                    public String apply(Path value) {
+                      return value.toString();
+                    }
+
+                    @Override
+                    public String apply(Imyhat inner, Optional<?> value) {
+                      return value.map(v -> inner.apply(this, v)).orElse("null");
+                    }
+
+                    @Override
+                    public String apply(JsonNode value) {
+                      try {
+                        return NiassaServer.MAPPER.writeValueAsString(value);
+                      } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                      }
+                    }
+
+                    @Override
+                    public String applyMap(Map<?, ?> map, Imyhat key, Imyhat value) {
+                      return map.entrySet()
+                          .stream()
+                          .map(
+                              e ->
+                                  key.apply(this, e.getKey())
+                                      + ":"
+                                      + value.apply(this, e.getValue()))
+                          .collect(Collectors.joining(","));
+                    }
+
+                    @Override
+                    public String applyObject(Stream<Field<String>> contents) {
+                      return contents
+                          .sorted(Comparator.comparing(Field::index))
+                          .map(f -> f.type().apply(this, f.value()))
+                          .collect(Collectors.joining("|", "{", "}"));
+                    }
+
+                    @Override
+                    public String applyTuple(Stream<Field<Integer>> contents) {
+                      return contents
+                          .sorted(Comparator.comparing(Field::index))
+                          .map(f -> f.type().apply(this, f.value()))
+                          .collect(Collectors.joining("|", "(", ")"));
+                    }
+                  },
+                  value));
+    }
+  }
+
   private long accession;
   private Map<String, String> annotations = Collections.emptyMap();
   private FileMatchingPolicy fileMatchingPolicy = FileMatchingPolicy.SUPERSET;
@@ -23,9 +121,9 @@ public class WorkflowConfiguration {
   private int maxInFlight;
   private IniParam<?>[] parameters;
   private long[] previousAccessions;
+  private boolean relaunchFailedOnUpgrade;
   private List<String> services = Collections.emptyList();
   private InputLimsKeyProvider type;
-  private boolean relaunchFailedOnUpgrade;
   private Map<String, String> userAnnotations = Collections.emptyMap();
 
   public void define(String name, Definer<NiassaServer> definer) {
@@ -44,122 +142,26 @@ public class WorkflowConfiguration {
         name,
         description,
         WorkflowAction.class,
-        () ->
-            new WorkflowAction(
-                definer,
-                name,
-                accession,
-                previousAccessions,
-                fileMatchingPolicy,
-                services,
-                annotations,
-                relaunchFailedOnUpgrade),
+        () -> {
+          final WorkflowAction action =
+              new WorkflowAction(
+                  definer,
+                  name,
+                  accession,
+                  previousAccessions,
+                  fileMatchingPolicy,
+                  services,
+                  annotations,
+                  relaunchFailedOnUpgrade);
+          for (final IniParam<?> param : getParameters()) {
+            param.writeDefault(action);
+          }
+          return action;
+        },
         Stream.of(
                 Stream.of(getType().parameter()),
                 Stream.of(getParameters()).map(IniParam::parameter),
-                userAnnotations
-                    .entrySet()
-                    .stream()
-                    .map(
-                        e ->
-                            new CustomActionParameter<WorkflowAction>(
-                                e.getKey(), true, Imyhat.parse(e.getValue())) {
-                              @Override
-                              public void store(WorkflowAction action, Object value) {
-                                action.setAnnotation(
-                                    name(),
-                                    type()
-                                        .apply(
-                                            new ImyhatFunction<String>() {
-                                              @Override
-                                              public String apply(boolean value) {
-                                                return Boolean.toString(value);
-                                              }
-
-                                              @Override
-                                              public String apply(double value) {
-                                                return Double.toString(value);
-                                              }
-
-                                              @Override
-                                              public String apply(Instant value) {
-                                                return value.toString();
-                                              }
-
-                                              @Override
-                                              public String apply(long value) {
-                                                return Long.toString(value);
-                                              }
-
-                                              @Override
-                                              public String apply(
-                                                  Stream<Object> values, Imyhat inner) {
-                                                return values
-                                                    .map(v -> inner.apply(this, v))
-                                                    .collect(Collectors.joining(",", "[", "]"));
-                                              }
-
-                                              @Override
-                                              public String apply(String value) {
-                                                return value;
-                                              }
-
-                                              @Override
-                                              public String apply(Path value) {
-                                                return value.toString();
-                                              }
-
-                                              @Override
-                                              public String apply(Imyhat inner, Optional<?> value) {
-                                                return value
-                                                    .map(v -> inner.apply(this, v))
-                                                    .orElse("null");
-                                              }
-
-                                              @Override
-                                              public String apply(JsonNode value) {
-                                                try {
-                                                  return NiassaServer.MAPPER.writeValueAsString(
-                                                      value);
-                                                } catch (JsonProcessingException ex) {
-                                                  throw new RuntimeException(ex);
-                                                }
-                                              }
-
-                                              @Override
-                                              public String applyMap(
-                                                  Map<?, ?> map, Imyhat key, Imyhat value) {
-                                                return map.entrySet()
-                                                    .stream()
-                                                    .map(
-                                                        e ->
-                                                            key.apply(this, e.getKey())
-                                                                + ":"
-                                                                + value.apply(this, e.getValue()))
-                                                    .collect(Collectors.joining(","));
-                                              }
-
-                                              @Override
-                                              public String applyObject(
-                                                  Stream<Field<String>> contents) {
-                                                return contents
-                                                    .sorted(Comparator.comparing(Field::index))
-                                                    .map(f -> f.type().apply(this, f.value()))
-                                                    .collect(Collectors.joining("|", "{", "}"));
-                                              }
-
-                                              @Override
-                                              public String applyTuple(
-                                                  Stream<Field<Integer>> contents) {
-                                                return contents
-                                                    .sorted(Comparator.comparing(Field::index))
-                                                    .map(f -> f.type().apply(this, f.value()))
-                                                    .collect(Collectors.joining("|", "(", ")"));
-                                              }
-                                            },
-                                            value));
-                              }
-                            }))
+                userAnnotations.entrySet().stream().map(UserAnnotationParameter::new))
             .flatMap(Function.identity()));
   }
 

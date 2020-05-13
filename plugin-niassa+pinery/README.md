@@ -118,15 +118,18 @@ available to olives. Each parameter is defined as follows:
           "name": "foo",
           "iniName": "foo",
           "required": true,
-          "type": "string"
+          "type": "string",
+          "defaultValue": "bar"
         }
 
 The `name` is the name that will be used in the Shesmu `With` block, while
 `iniName` is the name as it will appear in the workflow run's INI file.
 `required` determines if the parameter must be set; if not required and not
-present, it will be omitted from the INI file. The `type` indicates the Shesmu
-type and how that will be converted to the INI file. The following simple types
-are available:
+present, it will be omitted from the INI file. If the INI parameter is not
+required and `"defaultValue"` is provided, it will be put in the workflow INI
+when the olive does not supply a value.  The `type` indicates the Shesmu type
+and how that will be converted to the INI file. The following simple types are
+available:
 
 - `boolean`: treated as a Shesmu boolean and set in the INI file as `true` or `false`
 - `integer`: treated in Shesmu and the INI file as an integer
