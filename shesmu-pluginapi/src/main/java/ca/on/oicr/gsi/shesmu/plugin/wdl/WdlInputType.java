@@ -76,25 +76,8 @@ public final class WdlInputType {
     return flatToNested(
         inputs,
         (name, node) -> {
-          final AtomicReference<Function<Boolean, Imyhat>> type =
-              new AtomicReference<>(x -> Imyhat.BAD);
-          final AtomicReference<Pair<Integer, String>> error = new AtomicReference<>();
-          final Parser parser =
-              Parser.start(
-                      node.asText(),
-                      (line, column, errorMessage) -> {
-                        if (error.get() == null || error.get().first() < column) {
-                          error.set(new Pair<>(column, errorMessage));
-                        }
-                      })
-                  .then(WdlInputType::parse, type::set);
-          final Imyhat imyhat = type.get().apply(pairsAsObjects);
-          if (parser.isGood() && parser.isEmpty() && !imyhat.isBad()) {
-            return Optional.of(imyhat);
-          } else {
-            errorHandler.raise(1, error.get().first(), error.get().second());
-            return Optional.empty();
-          }
+          final Imyhat result = parseRoot(node.asText(), pairsAsObjects, errorHandler);
+          return result.isBad() ? Optional.empty() : Optional.of(result);
         });
   }
 
@@ -122,11 +105,19 @@ public final class WdlInputType {
   }
 
   private static final Pattern DEFAULT_PROVIDED = Pattern.compile("(\\([^)]*\\))?");
+
   public static Imyhat parseString(String input, boolean pairsAsObjects) {
+    return parseRoot(input, pairsAsObjects, (line, column, errorMessage) -> {});
+  }
+
+  public static Imyhat parseRoot(String input, boolean pairsAsObjects, ErrorConsumer errorHandler) {
     final AtomicReference<Function<Boolean, Imyhat>> type = new AtomicReference<>();
     final Parser result =
-        parse(Parser.start(input, (line, column, errorMessage) -> {}), type::set)
-            .regex(DEFAULT_PROVIDED, m -> type.updateAndGet(t -> x -> t.apply(x).asOptional()), "Shouldn't reach here");
+        parse(Parser.start(input, errorHandler), type::set)
+            .regex(
+                DEFAULT_PROVIDED,
+                m -> type.updateAndGet(t -> x -> t.apply(x).asOptional()),
+                "Shouldn't reach here");
     if (result.isGood()) {
       return type.get().apply(pairsAsObjects);
     }
