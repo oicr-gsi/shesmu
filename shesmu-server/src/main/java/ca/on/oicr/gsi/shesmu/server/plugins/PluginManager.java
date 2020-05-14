@@ -502,6 +502,15 @@ public final class PluginManager
       }
 
       @Override
+      public void defineConstantBySupplier(
+          String name, String description, Imyhat type, Supplier<Object> supplier) {
+        constants.put(
+            name,
+            new ArbitraryConstantDefinition(
+                name, MH_SUPPLIER_GET.bindTo(supplier), type, description, instance.fileName()));
+      }
+
+      @Override
       public <R> void defineDynamicSigner(
           String name,
           ReturnTypeGuarantee<R> returnType,

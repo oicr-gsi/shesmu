@@ -120,6 +120,17 @@ public interface Definer<T> extends Supplier<T> {
       String name, String description, ReturnTypeGuarantee<R> returnType, Supplier<R> constant);
 
   /**
+   * Define a constant using a particular value
+   *
+   * @param name the name for the constant
+   * @param description the help text for the constant
+   * @param type the Shesmu type for the object
+   * @param supplier a callback to compute the current value of the constant
+   */
+  void defineConstantBySupplier(
+      String name, String description, Imyhat type, Supplier<Object> supplier);
+
+  /**
    * Define a new signature format that looks at input objects
    *
    * @param name the name of the signature

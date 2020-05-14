@@ -135,3 +135,24 @@ Normally, if a key is not present in `"values"`, the function will return an
 empty optional. If `"missingUsesDefaults"` is true, then, the values in
 `"defaults"` will be provided instead. This requires that *all* values in the
 `"types"` have a default value (or are optional).
+
+## Refillable Dictionary
+This is a mechanism for inter-olive communication. It allows one olive to fill
+a dictionary and others to read values out of it. In a file ending in
+`.redict`, create a structure as follows:
+
+    {
+      "key": "s",
+      "value": "i"
+    }
+
+This will create a dictionary constant and a refiller with the same name as the
+file. The type of the dictionary is set by the `"key"` and `"value"` properties
+in the configuration file using Shesmu type descriptors. In this case, the
+dictionary will be `string -> integer`. The refiller can set the dictionary
+with two parameters: `key` and `value`. When the refiller runs, it will create
+a new dictionary with all the keys and values provided. If there are duplicate
+keys, one is selected arbitrarily. The dictionary is updated atomically, so
+olives reading the dictionary will have the complete set of data; however, it
+may be updated during an olive's run, so multiple accesses can produce
+different results.
