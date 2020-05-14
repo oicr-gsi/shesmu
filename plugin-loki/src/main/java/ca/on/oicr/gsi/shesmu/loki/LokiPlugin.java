@@ -139,11 +139,10 @@ public class LokiPlugin extends JsonPluginFile<Configuration> {
                       error.labels(fileName().toString()).set(0);
                       return;
                     }
-                    error.labels(fileName().toString()).set(1);
                     System.err.println(message);
-                    System.err.println(MAPPER.writeValueAsString(body));
                   }
                 }
+                error.labels(fileName().toString()).set(1);
               }
             } catch (final Exception e) {
               e.printStackTrace();
