@@ -147,6 +147,12 @@ public class CheckConfig {
               }
 
               @Override
+              public void defineConstantBySupplier(
+                  String name, String description, Imyhat type, Supplier<Object> supplier) {
+                System.out.printf("Constant %s of type %s.\n", name, type.name());
+              }
+
+              @Override
               public void defineRefiller(String name, String description, RefillDefiner definer) {
                 RefillInfo<Object, ?> info = definer.info(Object.class);
                 System.out.printf("Refiller %s bound to %s.\n", name, info.type().getName());
