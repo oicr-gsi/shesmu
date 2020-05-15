@@ -136,6 +136,9 @@ empty optional. If `"missingUsesDefaults"` is true, then, the values in
 `"defaults"` will be provided instead. This requires that *all* values in the
 `"types"` have a default value (or are optional).
 
+The types are JSON-enhanced descriptors. See [types in the language
+description](../language.md#types) for details.
+
 ## Refillable Dictionary
 This is a mechanism for inter-olive communication. It allows one olive to fill
 a dictionary and others to read values out of it. In a file ending in
@@ -156,3 +159,7 @@ keys, one is selected arbitrarily. The dictionary is updated atomically, so
 olives reading the dictionary will have the complete set of data; however, it
 may be updated during an olive's run, so multiple accesses can produce
 different results.
+
+The types are JSON-enhanced descriptors. See [types in the language
+description](../language.md#types) for details.
+

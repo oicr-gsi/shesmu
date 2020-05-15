@@ -54,9 +54,7 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
 
   @Override
   protected Optional<Integer> update(Configuration configuration) {
-    final Imyhat key = Imyhat.parse(configuration.getKey());
-    final Imyhat value = Imyhat.parse(configuration.getValue());
-    if (key.isBad() || value.isBad()) {
+    if (configuration.getKey().isBad() || configuration.getValue().isBad()) {
       return Optional.empty();
     }
 
@@ -65,7 +63,7 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
     definer.defineConstantBySupplier(
         name(),
         "Dictionary of values collected from refiller.",
-        Imyhat.dictionary(key, value),
+        Imyhat.dictionary(configuration.getKey(), configuration.getValue()),
         dictionary::get);
     definer.defineRefiller(
         name(),
@@ -82,14 +80,16 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
               @Override
               public Stream<CustomRefillerParameter<DictionaryRefiller<I>, I>> parameters() {
                 return Stream.of(
-                    new CustomRefillerParameter<DictionaryRefiller<I>, I>("key", key) {
+                    new CustomRefillerParameter<DictionaryRefiller<I>, I>(
+                        "key", configuration.getKey()) {
                       @Override
                       public void store(
                           DictionaryRefiller<I> refiller, Function<I, Object> function) {
                         refiller.key = function;
                       }
                     },
-                    new CustomRefillerParameter<DictionaryRefiller<I>, I>("value", value) {
+                    new CustomRefillerParameter<DictionaryRefiller<I>, I>(
+                        "value", configuration.getValue()) {
                       @Override
                       public void store(
                           DictionaryRefiller<I> refiller, Function<I, Object> function) {

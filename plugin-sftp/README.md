@@ -56,6 +56,9 @@ as a tuple:
       "returns": "t2si"
     }
 
+The parameter and return types are JSON-enhanced descriptors. See [types
+in the language description](../language.md#types) for details.
+
 ## Refillers
 A remote server can provide programs that will ingest data from a `Refill`
 olive. To create one, add an entry in the `"refillers"` section as follows:
@@ -70,9 +73,10 @@ olive. To create one, add an entry in the `"refillers"` section as follows:
 
 This will create `example` as a refiller available to olives. It will take
 parameters as defined in the `"parameters"` block; the value of each parameter
-is a Shesmu type descriptor. When the olive is ready, Shesmu will compute an
-order-independent hash from the data. Then, over SSH, `"command"` will be run
-with the hash (as a hexadecimal string) after it.
+is a JSON-enhanced Shesmu type descriptors (see [types in the language
+description](../language.md#types) for details).  When the olive is ready,
+Shesmu will compute an order-independent hash from the data. Then, over SSH,
+`"command"` will be run with the hash (as a hexadecimal string) after it.
 
 This program can then decide if the hash matches the last version it has
 consumed. If so, it should print: `OK` and exit 0. If it has stale data, it

@@ -31,14 +31,14 @@ After the `Input` line, various script modifiers can be added.
 
 Stop the script after _integer_ seconds. The usual integer suffixes, especially
 `minutes` and `hours` can be added here. When a script runs over its time
-budget, the Prometheus variable `shesmu_run_overtime` will be set. 
+budget, the Prometheus variable `shesmu_run_overtime` will be set.
 
 ### Frequency
 
 - `Frequency` _integer_ `;`
 
-Run the script every _integer_ seconds. The usual integer suffixes can be used, where seconds 
-is the default and others such as `minutes` and `hours` can be used. 
+Run the script every _integer_ seconds. The usual integer suffixes can be used, where seconds
+is the default and others such as `minutes` and `hours` can be used.
 
 ### Required Services
 
@@ -169,7 +169,7 @@ Discriminators come in multiple forms:
 |---                          |---                                                                                                      |
 | _name_ `=` _expr_           | Compute the value from _expr_ for teach row and use it for grouping; assign it to _name_ in the output. |
 | _name_                      | Use an existing variable _name_ for grouping and copy it to the output.                                 |
-| `@`_gang_                   | Use all variables in a gang for grouping and copy them to the output.                                   | 
+| `@`_gang_                   | Use all variables in a gang for grouping and copy them to the output.                                   |
 
 Custom groupers take parameters. Some parameters are per-row, which may use
 variables, and some are fixed, which must use constants or parameters to a
@@ -222,7 +222,7 @@ Reshapes the data by creating new variables from existing expressions. There are
 |---                                     |---                                                                                                             |
 | _name_ `=` _expr_                      | Compute the value from _expr_ and assign it to _name_.                                                         |
 | _name_                                 | Copy an existing variable _name_ without modification.                                                         |
-| `@`_gang_                              | Copy all variables in a gang without modification.                                                             | 
+| `@`_gang_                              | Copy all variables in a gang without modification.                                                             |
 | _name_ `= OnlyIf` _expr_               | Compute an optional value from _expr_; if it contains a value, assign it to _name_; if empty, discard the row. |
 | _name_ `= Univalued` _expr_            | Compute a list from _expr_; if it contains exactly one value, assign it to _name_; otherwise discard the row.  |
 | `Prefix` _name_`,` ... `With` _prefix_ | Copy all the variables, but renaming them by adding the supplied prefix. This is useful for self-joins.        |
@@ -327,7 +327,7 @@ Check if _expr_ is false for all rows. If none are collected, the result is true
 
 Take an optional value and extract it. Ignore any empty optionals. If multiple
 different values are found, reject the group. If only one unique value is
-found, use it as the result and use this value. 
+found, use it as the result and use this value.
 
 - `PartitionCount` _expr_
 
@@ -437,11 +437,11 @@ cannot be guaranteed, it will return an optional of _type_. To create a JSON
 `null` value, use `` ` ` As json ``.
 
 ### Blocks
-- `Begin`  
- _name0_ `=` _expr0_`;`  
- [ _name1_ `=` _expr1_`;`]  
- [...]  
- `Return` _expr_`;`  
+- `Begin`
+ _name0_ `=` _expr0_`;`
+ [ _name1_ `=` _expr1_`;`]
+ [...]
+ `Return` _expr_`;`
  `End`
 
 Creates local variables in _name0_ by evaluating _expr1_. These variables are
@@ -684,7 +684,7 @@ tuple is determined based on the elements.
 
 Instead of _field_` = `_expr_, a `...`_expr_ can be used and this will copy all
 the elements in _expr_, which must be an object. If some fields are to be
-excluded, use the form: `...`_expr_ `Without` _field1_ _field2_ ... 
+excluded, use the form: `...`_expr_ `Without` _field1_ _field2_ ...
 
 #### Synthetic Tuple
 - `{@`_name_`}`
@@ -852,7 +852,7 @@ Select the first _integer_ items in a sorted list while _condition_ is evaluated
 #### Squish
 - `Squish` _integer_
 
-Randomly select _integer_ items from a sorted list.  
+Randomly select _integer_ items from a sorted list.
 
 ### Collectors
 
@@ -942,6 +942,7 @@ For details on optional values, see [the Mandatory Guide to Optional
 Values](optionalguide.md).
 
 
+<a name="types">
 ## Types
 There are a small number of types in the language, listed below. Each has
 syntax as it appears in the language and a descriptor that is used for
@@ -983,6 +984,22 @@ Provides the type of an element in a tuple.
 - _type_`.`_field_
 
 Provides the type of a field in an object.
+
+Descriptors are a machine-friendly form Shesmu uses to communicate type
+information between systems. Most of this does not involve human interaction,
+but some plugin configuration files require type information in descriptor
+form. For JSON configuration files, there is a JSON-enhanced descriptor. Any
+string is treated as a normal descriptor, but composite types can be expanded
+to a more readable form:
+
+    { "is": "optional", "inner": X } // X?
+    { "is": "list", "inner": X } // [X]
+    { "is": "dictionary", "key": K, "value": V } //  K -> V
+    { "is": "object", "fields": { "f1": F1, "f2": F2 } } // { f1 = F1, f2 = F2 }
+    [ E1, E2 ] // {E1, E2}
+
+Mixing the two representations is fine (_e.g._, `["qb", "s"]` is equivalent to
+`[{"optional", "inner": "b"}, "s"]` or `t2qbs`).
 
 <a name="regexflags">
 ## Regular Expression Flags
