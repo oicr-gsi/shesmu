@@ -39,11 +39,7 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
   protected Optional<Integer> update(Configuration value) {
     final Imyhat.ObjectImyhat type =
         new Imyhat.ObjectImyhat(
-            value
-                .getTypes()
-                .entrySet()
-                .stream()
-                .map(e -> new Pair<>(e.getKey(), Imyhat.parse(e.getValue()))));
+            value.getTypes().entrySet().stream().map(e -> new Pair<>(e.getKey(), e.getValue())));
     final Set<String> badRecords = new TreeSet<>();
     final Map<String, Optional<Tuple>> values =
         value

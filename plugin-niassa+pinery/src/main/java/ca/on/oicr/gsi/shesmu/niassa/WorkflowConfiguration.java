@@ -20,8 +20,8 @@ public class WorkflowConfiguration {
 
   private static class UserAnnotationParameter extends CustomActionParameter<WorkflowAction> {
 
-    public UserAnnotationParameter(Entry<String, String> e) {
-      super(e.getKey(), true, Imyhat.parse(e.getValue()));
+    public UserAnnotationParameter(Entry<String, Imyhat> e) {
+      super(e.getKey(), true, e.getValue());
     }
 
     @Override
@@ -124,7 +124,7 @@ public class WorkflowConfiguration {
   private boolean relaunchFailedOnUpgrade;
   private List<String> services = Collections.emptyList();
   private InputLimsKeyProvider type;
-  private Map<String, String> userAnnotations = Collections.emptyMap();
+  private Map<String, Imyhat> userAnnotations = Collections.emptyMap();
 
   public void define(String name, Definer<NiassaServer> definer) {
     final String description =
@@ -201,7 +201,7 @@ public class WorkflowConfiguration {
     return type;
   }
 
-  public Map<String, String> getUserAnnotations() {
+  public Map<String, Imyhat> getUserAnnotations() {
     return userAnnotations;
   }
 
@@ -249,7 +249,7 @@ public class WorkflowConfiguration {
     this.type = type;
   }
 
-  public void setUserAnnotations(Map<String, String> userAnnotations) {
+  public void setUserAnnotations(Map<String, Imyhat> userAnnotations) {
     this.userAnnotations = userAnnotations;
   }
 }

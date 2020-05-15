@@ -4,6 +4,8 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
@@ -35,6 +37,8 @@ import java.util.stream.Stream;
  * <p>Java's {@link Class} are unsuitable for this purpose because generic erasure has happened.
  * Shesmu types also have an interchange string format, called a descriptor.
  */
+@JsonDeserialize(using = ImyhatDeserializer.class)
+@JsonSerialize(using = ImyhatSerializer.class)
 public abstract class Imyhat {
   /** A subclass of types for base types */
   public abstract static class BaseImyhat extends Imyhat {

@@ -196,6 +196,7 @@ export function parseType() {
       document.getElementById("humanType").innerText = data.humanName;
       document.getElementById("descriptorType").innerText = data.descriptor;
       document.getElementById("wdlType").innerText = data.wdlType;
+      document.getElementById("jsonDescriptorType").innerText = JSON.stringify(data.jsonDescriptor);
     }
   );
 }

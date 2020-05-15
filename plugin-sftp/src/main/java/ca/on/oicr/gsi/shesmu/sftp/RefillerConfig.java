@@ -1,16 +1,17 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.Map;
 
 public class RefillerConfig {
   private String command;
-  private Map<String, String> parameters;
+  private Map<String, Imyhat> parameters;
 
   public String getCommand() {
     return command;
   }
 
-  public Map<String, String> getParameters() {
+  public Map<String, Imyhat> getParameters() {
     return parameters;
   }
 
@@ -18,7 +19,7 @@ public class RefillerConfig {
     this.command = command;
   }
 
-  public void setParameters(Map<String, String> parameters) {
+  public void setParameters(Map<String, Imyhat> parameters) {
     this.parameters = parameters;
   }
 }

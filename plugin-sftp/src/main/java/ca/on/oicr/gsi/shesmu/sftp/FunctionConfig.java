@@ -1,22 +1,23 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 
 public final class FunctionConfig {
   private String command;
-  private List<String> parameters;
-  private String returns;
+  private List<Imyhat> parameters;
+  private Imyhat returns;
   private int ttl = 60;
 
   public String getCommand() {
     return command;
   }
 
-  public List<String> getParameters() {
+  public List<Imyhat> getParameters() {
     return parameters;
   }
 
-  public String getReturns() {
+  public Imyhat getReturns() {
     return returns;
   }
 
@@ -28,11 +29,11 @@ public final class FunctionConfig {
     this.command = command;
   }
 
-  public void setParameters(List<String> parameters) {
+  public void setParameters(List<Imyhat> parameters) {
     this.parameters = parameters;
   }
 
-  public void setReturns(String returns) {
+  public void setReturns(Imyhat returns) {
     this.returns = returns;
   }
 

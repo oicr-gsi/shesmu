@@ -1,22 +1,24 @@
 package ca.on.oicr.gsi.shesmu.redict;
 
-public class Configuration {
-  private String key;
-  private String value;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 
-  public String getKey() {
+public class Configuration {
+  private Imyhat key;
+  private Imyhat value;
+
+  public Imyhat getKey() {
     return key;
   }
 
-  public String getValue() {
+  public Imyhat getValue() {
     return value;
   }
 
-  public void setKey(String key) {
+  public void setKey(Imyhat key) {
     this.key = key;
   }
 
-  public void setValue(String value) {
+  public void setValue(Imyhat value) {
     this.value = value;
   }
 }

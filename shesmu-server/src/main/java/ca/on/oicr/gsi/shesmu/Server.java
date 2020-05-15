@@ -1292,6 +1292,10 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeCharacters("Descriptor");
                 writer.writeEndElement();
                 writer.writeStartElement("option");
+                writer.writeAttribute("value", "3");
+                writer.writeCharacters("JSON-enhanced Descriptor");
+                writer.writeEndElement();
+                writer.writeStartElement("option");
                 writer.writeAttribute("value", "1");
                 writer.writeCharacters("WDL Type (Pairs as tuples)");
                 writer.writeEndElement();
@@ -1358,6 +1362,17 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeStartElement("td");
                 writer.writeStartElement("span");
                 writer.writeAttribute("id", "descriptorType");
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+
+                writer.writeStartElement("tr");
+                writer.writeStartElement("td");
+                writer.writeCharacters("JSON-enhanced Descriptor");
+                writer.writeEndElement();
+                writer.writeStartElement("td");
+                writer.writeStartElement("span");
+                writer.writeAttribute("id", "jsonDescriptorType");
                 writer.writeEndElement();
                 writer.writeEndElement();
                 writer.writeEndElement();
@@ -2310,6 +2325,8 @@ public final class Server implements ServerConfig, ActionServices {
             type = WdlInputType.parseString(request.getValue(), false);
           } else if (request.getFormat().equals("2")) {
             type = WdlInputType.parseString(request.getValue(), true);
+          } else if (request.getFormat().equals("3")) {
+            type = RuntimeSupport.MAPPER.readValue(request.getValue(), Imyhat.class);
           } else {
             Optional<Function<String, Imyhat>> existingTypes =
                 request.getFormat().isEmpty()

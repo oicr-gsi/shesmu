@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.json;
 
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
 import java.util.Map;
@@ -7,14 +8,14 @@ import java.util.Map;
 public class Configuration {
   private Map<String, JsonNode> defaults = Collections.emptyMap();
   private boolean missingUsesDefaults;
-  private Map<String, String> types;
+  private Map<String, Imyhat> types;
   private Map<String, Map<String, JsonNode>> values;
 
   public Map<String, JsonNode> getDefaults() {
     return defaults;
   }
 
-  public Map<String, String> getTypes() {
+  public Map<String, Imyhat> getTypes() {
     return types;
   }
 
@@ -34,7 +35,7 @@ public class Configuration {
     this.missingUsesDefaults = missingUsesDefaults;
   }
 
-  public void setTypes(Map<String, String> types) {
+  public void setTypes(Map<String, Imyhat> types) {
     this.types = types;
   }
 

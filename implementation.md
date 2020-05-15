@@ -113,6 +113,10 @@ The ASM bytecode generation library has a class `Type` that describes JVM
 types. A `Type` object can be constructed either by knowing the JVM name for a
 class, or by using `Type.getType(Foo.class)` where _Foo_ is the class.
 
+If you require a type as part of your configuration, `Imyhat` can be serialised
+and unserialised by Jackson with JSON-enhanced descriptors. See [types in the
+language description](language.md#types).
+
 In JSON documents, Shesmu types must be converted to the more limited types
 available. Again, there is a type erasure, so the Shesmu `Imyhat` type is
 necessary to convert a JSON document back into an interpretable format.

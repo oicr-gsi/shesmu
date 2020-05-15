@@ -387,7 +387,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                       .map(
                           parameter ->
                               new CustomRefillerParameter<SshRefiller<I>, I>(
-                                  parameter.getKey(), Imyhat.parse(parameter.getValue())) {
+                                  parameter.getKey(), parameter.getValue()) {
                                 @Override
                                 public void store(
                                     SshRefiller<I> refiller, Function<I, Object> function) {
@@ -411,9 +411,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
     definer.clearFunctions();
     for (final Map.Entry<String, FunctionConfig> entry : configuration.getFunctions().entrySet()) {
-      final Imyhat returns = Imyhat.parse(entry.getValue().getReturns());
-      final Imyhat[] parameters =
-          entry.getValue().getParameters().stream().map(Imyhat::parse).toArray(Imyhat[]::new);
+      final Imyhat returns = entry.getValue().getReturns();
+      final Imyhat[] parameters = entry.getValue().getParameters().stream().toArray(Imyhat[]::new);
       final KeyValueCache<Tuple, Optional<Object>, Optional<Object>> cache =
           new KeyValueCache<Tuple, Optional<Object>, Optional<Object>>(
               String.format("sftp-function %s %s", fileName(), entry.getKey()),
