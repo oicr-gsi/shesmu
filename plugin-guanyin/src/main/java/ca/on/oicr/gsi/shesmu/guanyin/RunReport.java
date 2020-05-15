@@ -332,7 +332,7 @@ public class RunReport extends JsonParameterisedAction {
       if (s.hasNext()) {
         final String message = s.next();
         final Map<String, String> labels = new TreeMap<>();
-        labels.put("url", url.toASCIIString());
+        labels.put("url", url.getHost());
         owner.log(message, labels);
         errors.add(message);
       }

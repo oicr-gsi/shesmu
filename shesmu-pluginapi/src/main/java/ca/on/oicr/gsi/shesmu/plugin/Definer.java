@@ -219,10 +219,14 @@ public interface Definer<T> extends Supplier<T> {
   /**
    * Write out a logging message
    *
-   * <p>This writes a log message to external services (e.g., Loki)
+   * <p>This writes a log message to external services (e.g., Loki). It is important to keep the set
+   * of labels small, as unbounded labels make Loki sad. Each plugin's type and configuration file
+   * will be automatically added to the label set by Shesmu. The current rule of thumb is that
+   * labels should only contain data based on what configuration files provide rather than what
+   * olives provide.
    *
    * @param message the log message to write
-   * @param attributes the labels associated with this message
+   * @param labels the labels associated with this message
    */
-  void log(String message, Map<String, String> attributes);
+  void log(String message, Map<String, String> labels);
 }

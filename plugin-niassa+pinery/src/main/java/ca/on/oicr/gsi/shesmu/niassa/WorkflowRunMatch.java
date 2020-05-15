@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import net.sourceforge.seqware.common.metadata.Metadata;
 import net.sourceforge.seqware.common.model.IUSAttribute;
@@ -128,15 +127,11 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
                     final IUSAttribute attribute = new IUSAttribute();
                     attribute.setTag("signature");
                     attribute.setValue(s);
-                    final ObjectNode logMessage = NiassaServer.MAPPER.createObjectNode();
-                    logMessage.put("type", "signature");
-                    logMessage.put("iusSWID", signature.getKey());
-                    logMessage.put("signature", s);
-                    final Map<String, String> labels = new TreeMap<>();
-                    labels.put("ius_swid", Integer.toString(signature.getKey()));
-                    labels.put("signature", s);
-                    labels.put("action", actionId);
-                    definer.log("Setting signature for LIMS key", labels);
+                    definer.log(
+                        String.format(
+                            "Setting signature to %s for LIMS key %d for action %s",
+                            s, signature.getKey(), actionId),
+                        Collections.emptyMap());
                     return attribute;
                   })
               .collect(Collectors.toSet()));
@@ -168,13 +163,15 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
       limsKey.setLastModified(version.getValue().second());
       metadata.updateLimsKey(limsKey);
       counter.inc();
-      final Map<String, String> labels = new TreeMap<>();
-      labels.put("ius_swid", Integer.toString(version.getKey()));
-      labels.put("old_version", oldValue);
-      labels.put("new_version", version.getValue().first());
-      labels.put("new_timestamp", version.getValue().second().toInstant().toString());
-      labels.put("action", actionId);
-      definer.log("Rewriting LIMS key version", labels);
+      definer.log(
+          String.format(
+              "Rewriting LIMS key %s version from %s to %s[%s] for action %s",
+              version.getKey(),
+              oldValue,
+              version.getValue().first(),
+              version.getValue().second().toInstant(),
+              actionId),
+          Collections.emptyMap());
     }
   }
 
