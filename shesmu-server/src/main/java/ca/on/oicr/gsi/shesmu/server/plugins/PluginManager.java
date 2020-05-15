@@ -675,10 +675,11 @@ public final class PluginManager
       }
 
       @Override
-      public void log(String message, Map<String, String> attributes) {
-        final Map<String, String> amendedAttributes = new TreeMap<>(attributes);
-        amendedAttributes.put("plugin", instance.fileName().toString());
-        PluginManager.this.log(message, amendedAttributes);
+      public void log(String message, Map<String, String> labels) {
+        final Map<String, String> amendedLabels = new TreeMap<>(labels);
+        amendedLabels.put("plugin", instance.fileName().toString());
+        amendedLabels.put("plugin_type", FormatTypeWrapper.this.fileFormat.getClass().toString());
+        PluginManager.this.log(message, amendedLabels);
       }
 
       public Stream<Object> fetch(String format, boolean readStale) {

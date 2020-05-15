@@ -57,8 +57,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       }
       if (metadata.getWorkflow(key.intValue()) == null) {
         definer.log(
-            "No such workflow fetching matches!",
-            Collections.singletonMap("workflow", key.toString()));
+            String.format("No such workflow %d fetching matches!", key), Collections.emptyMap());
         return Stream.empty();
       }
       slowFetch.labels(key.toString()).set(0);
@@ -266,8 +265,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       }
       if (metadata.getWorkflow(workflowSwid.intValue()) == null) {
         definer.log(
-            "No such workflow for max-in-flight check!",
-            Collections.singletonMap("workflow", workflowSwid.toString()));
+            String.format("No such workflow %d for max-in-flight check!", workflowSwid),
+            Collections.emptyMap());
         return Optional.empty();
       }
       return Optional.of(

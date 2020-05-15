@@ -274,13 +274,16 @@ public final class WorkflowAction extends Action {
                   annotations,
                   limsKeys,
                   (key, message) -> {
-                    final Map<String, String> labels = new TreeMap<>();
-                    labels.put("lims_provider", key.getProvider());
-                    labels.put("lims_id", key.getId());
-                    labels.put("lims_version", key.getVersion());
-                    labels.put("lims_modified", key.getLastModified().toString());
-                    labels.put("action", actionId);
-                    server.log(message, labels);
+                    server.log(
+                        String.format(
+                            "%s for %s/%s/%s[%s] for %s",
+                            message,
+                            key.getProvider(),
+                            key.getId(),
+                            key.getVersion(),
+                            key.getLastModified(),
+                            actionId),
+                        Collections.emptyMap());
                   })) {
         if (!launchLock.isLive()) {
           this.cacheCollision = true;
@@ -347,11 +350,13 @@ public final class WorkflowAction extends Action {
                   .get()
                   .metadata()
                   .annotateWorkflowRun(match.state().workflowRunAccession(), attribute, null);
-              final Map<String, String> labels = new TreeMap<>();
-              labels.put("workflow_run", Long.toString(match.state().workflowRunAccession()));
-              labels.put("workflow", Long.toString(match.state().workflowAccession()));
-              labels.put("action", actionId);
-              this.server.log("Skipping workflow run due to upgrade", labels);
+              this.server.log(
+                  String.format(
+                      "Skipping workflow run %d (workflow %d) due to upgrade in action %s",
+                      match.state().workflowRunAccession(),
+                      match.state().workflowAccession(),
+                      actionId),
+                  Collections.emptyMap());
               server.get().analysisCache().invalidate(match.state().workflowAccession());
               // Try again
               return ActionState.UNKNOWN;
@@ -632,11 +637,11 @@ public final class WorkflowAction extends Action {
           .metadata()
           .annotateWorkflowRun(run.state().workflowRunAccession(), attribute, null);
       dirtyAccession.add(run.state().workflowAccession());
-      final Map<String, String> labels = new TreeMap<>();
-      labels.put("workflow_run", Long.toString(run.state().workflowRunAccession()));
-      labels.put("workflow", Long.toString(run.state().workflowAccession()));
-      labels.put("action", actionId);
-      this.server.log("Skipping workflow run", labels);
+      this.server.log(
+          String.format(
+              "Skipping workflow run %d (workflow %d) for action %s",
+              run.state().workflowRunAccession(), run.state().workflowAccession(), actionId),
+          Collections.emptyMap());
     }
     for (final long accession : dirtyAccession) {
       server.get().analysisCache().invalidate(accession);

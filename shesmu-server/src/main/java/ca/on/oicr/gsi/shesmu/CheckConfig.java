@@ -223,11 +223,11 @@ public class CheckConfig {
               }
 
               @Override
-              public void log(String message, Map<String, String> attributes) {
+              public void log(String message, Map<String, String> labels) {
                 System.err.printf(
                     "PLUGIN LOG: %s [%s]\n",
                     message,
-                    attributes
+                    labels
                         .entrySet()
                         .stream()
                         .map(e -> e.getKey() + "=" + e.getValue())
