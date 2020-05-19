@@ -574,6 +574,7 @@ public abstract class ExpressionNode implements Renderable {
 
     UNARY.addSymbol("!", just(ExpressionNodeLogicalNot::new));
     UNARY.addSymbol("-", just(ExpressionNodeNegate::new));
+    UNARY.addKeyword("ConvertWdlPair", just(ExpressionNodeWdlPair::new));
 
     SUFFIX_TIGHT.addSymbol(
         "[",
@@ -901,11 +902,11 @@ public abstract class ExpressionNode implements Renderable {
 
   public abstract void collectPlugins(Set<Path> pluginFileNames);
 
-  public int column() {
+  public final int column() {
     return column;
   }
 
-  public int line() {
+  public final int line() {
     return line;
   }
 
@@ -935,7 +936,7 @@ public abstract class ExpressionNode implements Renderable {
    * @param acceptable the allowed type
    * @param found the type provided
    */
-  protected void typeError(Imyhat acceptable, Imyhat found, Consumer<String> errorHandler) {
+  protected final void typeError(Imyhat acceptable, Imyhat found, Consumer<String> errorHandler) {
     generateTypeError(line(), column(), "", acceptable, found, errorHandler);
   }
 
@@ -945,7 +946,7 @@ public abstract class ExpressionNode implements Renderable {
    * @param acceptable the allowed type
    * @param found the type provided
    */
-  protected void typeError(String acceptable, Imyhat found, Consumer<String> errorHandler) {
+  protected final void typeError(String acceptable, Imyhat found, Consumer<String> errorHandler) {
     errorHandler.accept(
         String.format(
             "%d:%d: Expected %s, but got %s.", line(), column(), acceptable, found.name()));

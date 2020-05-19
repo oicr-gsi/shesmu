@@ -1,0 +1,3 @@
+Input test;
+
+Olive Run ok With ok = (ConvertWdlPair {0, "hi"} == {left = 0, right = "hi"}) && (ConvertWdlPair {left = 0, right = "hi"} == {0, "hi"});
