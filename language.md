@@ -591,6 +591,15 @@ Compute the logical complement of the expression, which must be a boolean.
 
 Computes the arithmetic additive inverse of the expression, which must be an integer.
 
+#### WDL Pair Conversion
+- `ConvertWdlPair` _expr_
+
+WDL has a pair type, `Pair[X, Y]`, which can be represented in Shesmu two ways:
+as a tuple, `{X, Y}`; or as an object, `{left = X, right = Y}`. The tuple form
+better matches how pairs are written in WDL, while the object better matches
+how pairs are encoded as JSON. This function converts between the two
+representations.
+
 #### Optional Creation
 - `` ` `` _expr_ `` ` ``
 
