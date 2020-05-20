@@ -733,11 +733,11 @@ public final class WorkflowAction extends Action {
         run.setStatus(WorkflowRunStatus.submitted_cancel);
         server.get().metadata().updateWorkflowRun(run);
     }
-    final Map<String, String> labels = new TreeMap<>();
-    labels.put("workflow_run", Integer.toString(workflowRunSwid));
-    labels.put("workflow", Long.toString(workflowSwid));
-    labels.put("action", actionId);
-    this.server.log("Skipping workflow run", labels);
+    this.server.log(
+        String.format(
+            "Skipping workflow run %d (workflow %d) for action %s",
+            workflowRunSwid, workflowSwid, actionId),
+        Collections.emptyMap());
   }
 
   private boolean skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
