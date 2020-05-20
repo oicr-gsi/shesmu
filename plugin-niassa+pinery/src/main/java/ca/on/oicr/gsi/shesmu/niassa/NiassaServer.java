@@ -519,6 +519,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     return host;
   }
 
+  public void invalidateDirectoryAndIni(long workfowRunSwid) {
+    directoryAndIniCache.invalidate(workfowRunSwid);
+  }
+
   public void invalidateMaxInFlight(long workflowRunSwid) {
     maxInFlightCache.invalidate(workflowRunSwid);
   }
