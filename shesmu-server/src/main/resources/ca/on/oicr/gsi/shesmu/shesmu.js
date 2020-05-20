@@ -3926,7 +3926,6 @@ function getStats(
               tr.appendChild(value);
               if (row.kind == "property") {
                 makeClick(tr, propertyFilterMaker(row.type)(row.json));
-                A;
               }
             });
           }
