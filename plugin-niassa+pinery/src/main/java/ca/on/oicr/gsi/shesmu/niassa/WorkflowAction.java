@@ -63,6 +63,21 @@ public final class WorkflowAction extends Action {
           return false;
         }
       };
+  private static final ActionCommand<WorkflowAction> INVALIDATE_ESSENTIALS_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-INVALIDATE-ESSENTIALS",
+          "ℹ️ Refresh Run Information",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (action.runAccession != 0) {
+            action.server.get().invalidateDirectoryAndIni(action.runAccession);
+            return true;
+          }
+          return false;
+        }
+      };
   static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
       Comparator.comparing(LimsKey::getProvider).thenComparing(LimsKey::getId);
   static final Comparator<LimsKey> LIMS_KEY_COMPARATOR =
@@ -280,7 +295,11 @@ public final class WorkflowAction extends Action {
         runAccession == 0
             ? (matches.isEmpty() ? Stream.empty() : Stream.of(SKIP_CANDIDATES_COMMAND))
             : Stream.concat(
-                Stream.of(RESET_WFR_COMMAND, SKIP_RERUN_COMMAND, RETRY_COMMAND),
+                Stream.of(
+                    INVALIDATE_ESSENTIALS_COMMAND,
+                    RESET_WFR_COMMAND,
+                    SKIP_RERUN_COMMAND,
+                    RETRY_COMMAND),
                 matches.size() > 1 ? Stream.of(SKIP_HISTORIC_COMMAND) : Stream.empty()));
   }
 
