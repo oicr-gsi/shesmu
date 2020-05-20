@@ -116,7 +116,11 @@ public final class WdlInputType {
         parse(Parser.start(input, errorHandler), type::set)
             .regex(
                 DEFAULT_PROVIDED,
-                m -> type.updateAndGet(t -> x -> t.apply(x).asOptional()),
+                m -> {
+                  if (m.group(1) != null) {
+                    type.updateAndGet(t -> x -> t.apply(x).asOptional());
+                  }
+                },
                 "Shouldn't reach here");
     if (result.isGood()) {
       return type.get().apply(pairsAsObjects);
