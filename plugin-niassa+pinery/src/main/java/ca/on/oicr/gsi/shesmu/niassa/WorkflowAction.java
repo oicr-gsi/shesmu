@@ -366,6 +366,13 @@ public final class WorkflowAction extends Action {
           final WorkflowRun run = server.get().metadata().getWorkflowRun(runAccession);
 
           final ActionState state = NiassaServer.processingStateToActionState(run.getStatus());
+          if (state != lastState || state == ActionState.INFLIGHT) {
+            // If we have transitioned to a new state or are actively running, then we may have more
+            // information about what's going on from Cromwell and should fetch it if the user views
+            // thie action again.
+            server.get().invalidateDirectoryAndIni(runAccession);
+          }
+
           if (state != lastState) {
             lastState = state;
             externalTimestamp = Optional.of(run.getUpdateTimestamp().toInstant());
