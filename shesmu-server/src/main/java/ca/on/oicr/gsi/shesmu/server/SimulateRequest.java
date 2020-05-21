@@ -10,6 +10,8 @@ import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.actions.fake.FakeAction;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
+import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
@@ -441,8 +443,9 @@ public class SimulateRequest {
               }
               final CollectorRegistry registry = new CollectorRegistry();
               action.register(registry);
-              final Map<Action, Set<String>> actions = new HashMap<>();
-              final Set<Pair<List<String>, List<String>>> alerts = new HashSet<>();
+              final Map<Action, Pair<Set<String>, Set<SourceLocation>>> actions = new HashMap<>();
+              final Map<Pair<List<String>, List<String>>, Set<SourceLocation>> alerts =
+                  new HashMap<>();
               final ObjectNode dumpers = response.putObject("dumpers");
               final ArrayNode olives = response.putArray("olives");
               final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
@@ -475,9 +478,11 @@ public class SimulateRequest {
                           int column,
                           String hash,
                           String[] tags) {
-                        return actions
-                            .computeIfAbsent(action, k -> new TreeSet<>())
-                            .addAll(Arrays.asList(tags));
+                        final Pair<Set<String>, Set<SourceLocation>> info =
+                            actions.computeIfAbsent(
+                                action, k -> new Pair<>(new TreeSet<>(), new HashSet<>()));
+                        return info.first().addAll(Arrays.asList(tags))
+                            | info.second().add(new SourceLocation(filename, line, column, hash));
                       }
 
                       @Override
@@ -490,8 +495,11 @@ public class SimulateRequest {
                           int column,
                           String hash)
                           throws Exception {
-                        return alerts.add(
-                            new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)));
+                        return alerts
+                            .computeIfAbsent(
+                                new Pair<>(Arrays.asList(labels), Arrays.asList(annotation)),
+                                k -> new HashSet<>())
+                            .add(new SourceLocation(filename, line, column, hash));
                       }
 
                       @Override
@@ -594,17 +602,23 @@ public class SimulateRequest {
                       });
 
               final ArrayNode actionsJson = response.putArray("actions");
-              for (final Map.Entry<Action, Set<String>> a : actions.entrySet()) {
+              for (final Map.Entry<Action, Pair<Set<String>, Set<SourceLocation>>> a :
+                  actions.entrySet()) {
                 final ObjectNode aj = a.getKey().toJson(RuntimeSupport.MAPPER);
                 aj.put("type", a.getKey().type());
-                a.getValue().forEach(aj.putArray("tags")::add);
+                a.getValue().first().forEach(aj.putArray("tags")::add);
+                final ArrayNode locations = aj.putArray("locations");
+                a.getValue().second().forEach(l -> l.toJson(locations, SourceLocationLinker.EMPTY));
                 actionsJson.add(aj);
               }
               final ArrayNode alertsJson = response.putArray("alerts");
-              for (final Pair<List<String>, List<String>> a : alerts) {
+              for (final Map.Entry<Pair<List<String>, List<String>>, Set<SourceLocation>> a :
+                  alerts.entrySet()) {
                 final ObjectNode alertJson = alertsJson.addObject();
-                writeLabels(alertJson.putObject("labels"), a.first());
-                writeLabels(alertJson.putObject("annotations"), a.second());
+                writeLabels(alertJson.putObject("labels"), a.getKey().first());
+                writeLabels(alertJson.putObject("annotations"), a.getKey().second());
+                final ArrayNode locations = alertJson.putArray("locations");
+                a.getValue().forEach(l -> l.toJson(locations, SourceLocationLinker.EMPTY));
               }
             });
       }

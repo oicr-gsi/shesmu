@@ -196,7 +196,9 @@ export function parseType() {
       document.getElementById("humanType").innerText = data.humanName;
       document.getElementById("descriptorType").innerText = data.descriptor;
       document.getElementById("wdlType").innerText = data.wdlType;
-      document.getElementById("jsonDescriptorType").innerText = JSON.stringify(data.jsonDescriptor);
+      document.getElementById("jsonDescriptorType").innerText = JSON.stringify(
+        data.jsonDescriptor
+      );
     }
   );
 }
@@ -811,6 +813,58 @@ function simulationPagination(container, filename, data, render, predicate) {
   });
 }
 
+function simulationActions(container, actions) {
+  simulationPagination(
+    container,
+    "simulation.actnow",
+    actions,
+    selected => {
+      const list = document.createElement("DIV");
+      selected.forEach(a => {
+        const div = document.createElement("DIV");
+        list.appendChild(div);
+        div.className = "action state_simulated";
+        div.appendChild(text(a.name));
+        if (a.tags.length > 0) {
+          const tags = document.createElement("DIV");
+          tags.className = "filterlist";
+          tags.innerText = "Tags: ";
+          a.tags.forEach(tag => {
+            const button = document.createElement("SPAN");
+            button.innerText = tag;
+            tags.appendChild(button);
+            tags.appendChild(document.createTextNode(" "));
+          });
+          div.appendChild(tags);
+        }
+        div.appendChild(
+          table(
+            Object.entries(a.parameters).sort((a, b) =>
+              a[0].localeCompare(b[0])
+            ),
+            ["Name", x => x[0]],
+            ["Value", x => JSON.stringify(x[1], null, 2)]
+          )
+        );
+
+        collapse(
+          "Locations",
+          table(a.locations, ["Line", l => l.line], ["Column", l => l.column])
+        ).forEach(x => div.appendChild(x));
+      });
+
+      return list;
+    },
+    (a, keywords) =>
+      keywords.every(
+        k =>
+          a.name.toLowerCase().indexOf(k) != -1 ||
+          a.tags.some(tag => tag.toLowerCase().indexOf(k) != -1) ||
+          matchKeywordInArbitraryData(k, a.parameters)
+      )
+  );
+}
+
 function matchKeywordInArbitraryData(keyword, value) {
   switch (typeof value) {
     case "function":
@@ -908,7 +962,8 @@ export function initialiseActionDash(
           sources,
           results,
           true,
-          targetElement => makeTabs(targetElement, 0, "Overview", "Actions"),
+          targetElement =>
+            makeTabs(targetElement, 0, null, "Overview", "Actions"),
 
           (reset, updateLocalSearches, newName) => {
             if (reset) {
@@ -1391,7 +1446,14 @@ export function initialiseOliveDash(
           const {
             panes: [infoPane, listPane, bytecodePane],
             find
-          } = makeTabs(targetElement, 0, "Overview", "Actions", "Bytecode");
+          } = makeTabs(
+            targetElement,
+            0,
+            null,
+            "Overview",
+            "Actions",
+            "Bytecode"
+          );
           prepareFileInfo(file, infoPane, bytecodePane);
 
           const statsHeader = document.createElement("H2");
@@ -1444,7 +1506,7 @@ export function initialiseOliveDash(
       clearChildren(resultsContainer);
       const {
         panes: [infoPane, bytecodePane]
-      } = makeTabs(resultsContainer, 0, "Overview", "Bytecode");
+      } = makeTabs(resultsContainer, 0, null, "Overview", "Bytecode");
       prepareFileInfo(file, infoPane, bytecodePane);
     }
   };
@@ -1611,6 +1673,7 @@ export function initialiseOliveDash(
               } = makeTabs(
                 targetElement,
                 0,
+                null,
                 "Overview",
                 "Dataflow",
                 "Actions",
@@ -1661,6 +1724,7 @@ export function initialiseOliveDash(
           } = makeTabs(
             resultsContainer,
             0,
+            null,
             "Overview",
             "Alerts",
             "Dataflow",
@@ -1689,6 +1753,7 @@ export function initialiseOliveDash(
                 a => link(a.generatorURL, "Permalink"),
                 updateOliveFilter,
                 f => find(1, f),
+                standardLocationColumns,
                 throttleFileButton
               )
           );
@@ -1699,7 +1764,14 @@ export function initialiseOliveDash(
         clearChildren(resultsContainer);
         const {
           panes: [infoPane, metroPane, bytecodePane]
-        } = makeTabs(resultsContainer, 0, "Overview", "Dataflow", "Bytecode");
+        } = makeTabs(
+          resultsContainer,
+          0,
+          null,
+          "Overview",
+          "Dataflow",
+          "Bytecode"
+        );
         prepareInfo(infoPane, metroPane, bytecodePane);
         if (throttleFileButton) {
           infoPane.appendChild(throttleFileButton);
@@ -1991,7 +2063,7 @@ export function initialiseOliveDash(
             const {
               panes: [infoPane, listPane],
               find
-            } = makeTabs(targetElement, 0, "Overview", "Actions");
+            } = makeTabs(targetElement, 0, null, "Overview", "Actions");
 
             const cleanup = () => {
               deadTableBody.removeChild(tr);
@@ -2219,7 +2291,7 @@ function makePopup(returnClose, afterClose) {
   return returnClose ? [inner, close] : inner;
 }
 
-function makeTabs(container, selectedTab, ...tabs) {
+function makeTabs(container, selectedTab, findHandler, ...tabs) {
   let original = true;
   const panes = tabs.map(t => document.createElement("DIV"));
   const finds = new Array(tabs.length);
@@ -2256,7 +2328,11 @@ function makeTabs(container, selectedTab, ...tabs) {
     find: (i, f) => {
       finds[i] = f;
       if (original && i == selectedTab) {
-        findOverride = f;
+        if (findHandler) {
+          findHandler(f);
+        } else {
+          findOverride = f;
+        }
       }
     }
   };
@@ -3926,7 +4002,6 @@ function getStats(
               tr.appendChild(value);
               if (row.kind == "property") {
                 makeClick(tr, propertyFilterMaker(row.type)(row.json));
-                A;
               }
             });
           }
@@ -4357,85 +4432,128 @@ export function initialiseSimulationDashboard(
                   tab,
                   a => [],
                   filters => {},
-                  find
+                  find,
+                  [
+                    ["Line", l => l.line],
+                    ["Column", l => l.column]
+                  ]
                 )
             });
           }
           if (response.hasOwnProperty("actions") && response.actions.length) {
             tabs.push({
               name: "Actions",
-              render: tab =>
-                simulationPagination(
-                  tab,
-                  "simulation.actnow",
-                  response.actions,
-                  selected => {
-                    const list = document.createElement("DIV");
-                    selected.forEach(a => {
-                      const div = document.createElement("DIV");
-                      list.appendChild(div);
-                      div.className = "action state_simulated";
-                      div.appendChild(text(a.name));
-                      if (a.tags.length > 0) {
-                        const tags = document.createElement("DIV");
-                        tags.className = "filterlist";
-                        tags.innerText = "Tags: ";
-                        a.tags.forEach(tag => {
-                          const button = document.createElement("SPAN");
-                          button.innerText = tag;
-                          tags.appendChild(button);
-                          tags.appendChild(document.createTextNode(" "));
-                        });
-                        div.appendChild(tags);
-                      }
-                      div.appendChild(
-                        table(
-                          Object.entries(a.parameters).sort((a, b) =>
-                            a[0].localeCompare(b[0])
-                          ),
-                          ["Name", x => x[0]],
-                          ["Value", x => JSON.stringify(x[1], null, 2)]
-                        )
-                      );
-                    });
-                    return list;
-                  },
-                  (a, keywords) =>
-                    keywords.every(
-                      k =>
-                        a.name.toLowerCase().indexOf(k) != -1 ||
-                        a.tags.some(
-                          tag => tag.toLowerCase().indexOf(k) != -1
-                        ) ||
-                        matchKeywordInArbitraryData(k, a.parameters)
-                    )
-                )
+              render: tab => simulationActions(tab, response.actions)
             });
           }
           if (response.hasOwnProperty("olives") && response.olives.length) {
-            for (const olive of response.olives) {
-              tabs.push({
-                name:
-                  infoForProduces(olive.produces)[0] +
-                  " " +
-                  olive.syntax +
-                  " ― " +
-                  olive.description,
-                render: tab => {
-                  tab.appendChild(
-                    text(`Runtime: ${formatTimeSpan(olive.duration / 1e6)}`)
-                  );
-                  tab.appendChild(
-                    document.adoptNode(
-                      new DOMParser().parseFromString(
-                        olive.diagram,
-                        "image/svg+xml"
-                      ).documentElement
-                    )
-                  );
-                }
-              });
-            }
+            tabs.push({
+              name: "Olives",
+              render: (tab, outerFind) => {
+                const oliveInfo = document.createElement("DIV");
+                tab.appendChild(
+                  dropDown(
+                    olive => {
+                      clearChildren(oliveInfo);
+                      const oliveActions = (response.hasOwnProperty("actions")
+                        ? response.actions
+                        : []
+                      ).filter(a =>
+                        a.locations.some(
+                          l => l.line == olive.line && l.column == l.column
+                        )
+                      );
+                      const oliveAlerts = (response.hasOwnProperty("alerts")
+                        ? response.alerts
+                        : []
+                      ).filter(a =>
+                        a.locations.some(
+                          l => l.line == olive.line && l.column == l.column
+                        )
+                      );
+                      const oliveTabs = [
+                        {
+                          name: "Overview",
+                          render: t => {
+                            const info = {
+                              Runtime: formatTimeSpan(olive.duration / 1e6)
+                            };
+                            if (olive.produces == "ACTIONS") {
+                              info["Total Actions"] = oliveActions.length;
+                            } else if (olive.produces == "ALERTS") {
+                              info["Total Alerts"] = oliveAlerts.length;
+                            }
+                            t.appendChild(
+                              table(
+                                Object.entries(info),
+                                ["Information", x => x[0]],
+                                ["Value", x => x[1]]
+                              )
+                            );
+                          }
+                        },
+                        {
+                          name: "Dataflow",
+                          render: t =>
+                            t.appendChild(
+                              document.adoptNode(
+                                new DOMParser().parseFromString(
+                                  olive.diagram,
+                                  "image/svg+xml"
+                                ).documentElement
+                              )
+                            )
+                        }
+                      ];
+
+                      if (oliveActions.length) {
+                        oliveTabs.push({
+                          name: "Actions",
+                          render: t => simulationActions(t, oliveActions)
+                        });
+                      }
+                      if (oliveAlerts.length) {
+                        oliveTabs.push({
+                          name: "Alerts",
+                          render: (tab, innerFind) =>
+                            showAlertNavigator(
+                              oliveAlerts,
+                              [],
+                              t,
+                              a => [],
+                              filters => {},
+                              innerFind,
+                              [
+                                ["Line", l => l.line],
+                                ["Column", l => l.column]
+                              ]
+                            )
+                        });
+                      }
+
+                      const { panes, find } = makeTabs(
+                        oliveInfo,
+                        0,
+                        outerFind,
+                        ...oliveTabs.map(t => t.name)
+                      );
+                      for (let i = 0; i < panes.length; i++) {
+                        oliveTabs[i].render(panes[i], find);
+                      }
+                    },
+                    olive =>
+                      infoForProduces(olive.produces)[0] +
+                      " " +
+                      olive.syntax +
+                      " ― " +
+                      olive.description,
+                    olive => olive == response.olives[0],
+                    response.olives
+                  )
+                );
+                tab.appendChild(oliveInfo);
+              }
+            });
           }
           updateAnnotations(response);
           if (
@@ -4472,40 +4590,70 @@ export function initialiseSimulationDashboard(
               }
             });
           }
-          if (response.hasOwnProperty("refillers")) {
-            for (const [name, entries] of Object.entries(response.refillers)) {
-              if (entries.length > 0) {
-                tabs.push({
-                  name: "Refill ― " + name,
-                  render: tab =>
-                    simulationTable(
-                      tab,
-                      name + ".refiller.json",
-                      entries,
-                      ...Object.keys(entries[0])
-                        .sort((a, b) => a.localeCompare(b))
-                        .map(name => [name, row => row[name]])
-                    )
-                });
+          if (
+            response.hasOwnProperty("refillers") &&
+            Object.keys(response.refillers).length
+          ) {
+            tabs.push({
+              name: "Refill Output",
+              render: tab => {
+                const refillInfo = document.createElement("DIV");
+                tab.appendChild(
+                  dropDown(
+                    ([name, entries]) => {
+                      clearChildren(refillInfo);
+                      if (entries.length > 0) {
+                        simulationTable(
+                          refillInfo,
+                          name + ".refiller.json",
+                          entries,
+                          ...Object.keys(entries[0])
+                            .sort((a, b) => a.localeCompare(b))
+                            .map(name => [name, row => row[name]])
+                        );
+                      } else {
+                        refillInfo.innerText =
+                          "No records provided to refiller.";
+                      }
+                    },
+                    ([name, entries]) => name,
+                    ([name, entries]) =>
+                      name == Object.keys(response.refillers)[0],
+                    Object.entries(response.refillers)
+                  )
+                );
+                tab.appendChild(refillInfo);
               }
-            }
+            });
           }
           if (response.hasOwnProperty("dumpers")) {
-            for (const [name, entries] of Object.entries(response.dumpers)) {
-              tabs.push({
-                name: "Dump ― " + name,
-                render: tab =>
-                  simulationTable(
-                    tab,
-                    name + ".dump.json",
-                    entries,
-                    ...Array.from(entries[0].keys()).map(i => [
-                      "Column " + i,
-                      row => row[i]
-                    ])
+            tabs.push({
+              name: "Dumpers",
+              render: tab => {
+                const dumpInfo = document.createElement("DIV");
+                tab.appendChild(
+                  dropDown(
+                    ([name, entries]) => {
+                      clearChildren(dumpInfo);
+                      simulationTable(
+                        dumpInfo,
+                        name + ".dump.json",
+                        entries,
+                        ...Array.from(entries[0].keys()).map(i => [
+                          `Column ${i + 1}`,
+                          row => row[i]
+                        ])
+                      );
+                    },
+                    ([name, entries]) => name,
+                    ([name, entries]) =>
+                      name == Object.keys(response.dumpers)[0],
+                    Object.entries(response.dumpers)
                   )
-              });
-            }
+                );
+                tab.appendChild(dumpInfo);
+              }
+            });
           }
           if (
             response.hasOwnProperty("overloadedInputs") &&
@@ -4542,6 +4690,7 @@ export function initialiseSimulationDashboard(
           } = makeTabs(
             outputContainer,
             tabs.length > 0 ? 2 : 0,
+            null,
             ...["Script", "Extra Definitions"].concat(
               tabs.map(({ name, render }) => name)
             )
@@ -4610,7 +4759,7 @@ export function initialiseSimulationDashboard(
 
   const {
     panes: [scriptPane, extraPane]
-  } = makeTabs(outputContainer, 0, "Script", "Extra Definitions");
+  } = makeTabs(outputContainer, 0, null, "Script", "Extra Definitions");
   scriptPane.appendChild(script);
   extraPane.appendChild(extra);
   const fakeActionList = document.createElement("TABLE");
@@ -4778,7 +4927,36 @@ export function initialiseSimulationDashboard(
     localStorage.setItem("shesmu_script", editor.getValue());
   });
 }
-function drawAlert(a, fileNameFormatter, container, makeHeader) {
+const standardLocationColumns = [
+  ["File", l => fileNameFormatter(l.file)],
+  ["Line", l => l.line],
+  ["Column", l => l.column],
+  ["Source Hash", l => l.hash],
+  [
+    "Olive",
+    l =>
+      link(
+        "/olivedash?saved=" +
+          encodeURIComponent(
+            JSON.stringify({
+              file: l.file,
+              line: l.line,
+              column: l.column,
+              hash: l.hash
+            })
+          ),
+        "View in Dashboard"
+      )
+  ],
+  ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
+];
+function drawAlert(
+  a,
+  fileNameFormatter,
+  container,
+  makeHeader,
+  locationColumns
+) {
   container.classList.add(a.live ? "live" : "expired");
   [
     makeHeader(a),
@@ -4803,30 +4981,7 @@ function drawAlert(a, fileNameFormatter, container, makeHeader) {
       }
     }),
     objectTable(a.annotations, "Annotations", x => x),
-    table(
-      a.locations,
-      ["File", l => fileNameFormatter(l.file)],
-      ["Line", l => l.line],
-      ["Column", l => l.column],
-      ["Source Hash", l => l.hash],
-      [
-        "Olive",
-        l =>
-          link(
-            "/olivedash?saved=" +
-              encodeURIComponent(
-                JSON.stringify({
-                  file: l.file,
-                  line: l.line,
-                  column: l.column,
-                  hash: l.hash
-                })
-              ),
-            "View in Dashboard"
-          )
-      ],
-      ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
-    )
+    table(a.locations, ...locationColumns)
   ]
     .flat(Number.MAX_VALUE)
     .forEach(element => container.appendChild(element));
@@ -4839,6 +4994,7 @@ function showAlertNavigator(
   makeHeader,
   pushFilters,
   find,
+  locationColumns,
   ...toolbarExtras
 ) {
   clearChildren(output);
@@ -5042,7 +5198,13 @@ function showAlertNavigator(
         .forEach(a => {
           const alertTile = document.createElement("DIV");
           alertTile.className = "alert";
-          drawAlert(a, fileNameFormatter, alertTile, makeHeader);
+          drawAlert(
+            a,
+            fileNameFormatter,
+            alertTile,
+            makeHeader,
+            locationColumns
+          );
           alertList.appendChild(alertTile);
         });
     };
@@ -5288,7 +5450,7 @@ export function initialiseAlertDashboard(initialFilterString, output) {
       selectedAlert => {
         if (selectedAlert) {
           output.className = "alert";
-          drawAlert(selectedAlert, output, makeHeader);
+          drawAlert(selectedAlert, output, makeHeader, standardLocationColumns);
         } else {
           output.innerText = "Unknown alert.";
         }
@@ -5342,7 +5504,8 @@ export function initialiseAlertDashboard(initialFilterString, output) {
                 JSON.stringify(userFilters)
               )}`
             ),
-          f => (findOverride = f)
+          f => (findOverride = f),
+          standardLocationColumns
         );
         window.addEventListener("popstate", e => {
           if (e.state) {
