@@ -13,6 +13,9 @@ import java.util.stream.Stream;
 public final class SourceLocation implements Comparable<SourceLocation> {
 
   public interface SourceLocationLinker {
+
+    SourceLocationLinker EMPTY = (path, line, column, hash) -> Stream.empty();
+
     Stream<String> sourceUrl(String localFilePath, int line, int column, String hash);
   }
 
