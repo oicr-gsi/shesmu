@@ -74,8 +74,11 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 
   @Override
   public ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       for (LetArgumentNode a : arguments) {
         a.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
       }
@@ -93,7 +96,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     arguments.forEach(
         argument -> argument.collectFreeVariables(freeVariables, Flavour::needsCapture));

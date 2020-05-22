@@ -144,8 +144,11 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       discriminators.forEach(
           d -> d.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
       inputExpressions.forEach(
@@ -174,7 +177,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     discriminators.forEach(

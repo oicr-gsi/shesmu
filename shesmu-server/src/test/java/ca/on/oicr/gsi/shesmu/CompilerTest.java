@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinitionRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
@@ -93,6 +95,16 @@ public class CompilerTest {
     @Override
     protected InputFormatDefinition getInputFormats(String name) {
       return RunTest.INPUT_FORMATS.get(name);
+    }
+
+    @Override
+    protected CallableDefinition getOliveDefinition(String name) {
+      return null;
+    }
+
+    @Override
+    protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
+      return null;
     }
 
     @Override

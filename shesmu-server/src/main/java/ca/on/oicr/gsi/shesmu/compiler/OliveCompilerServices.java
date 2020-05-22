@@ -14,7 +14,7 @@ public interface OliveCompilerServices extends ExpressionCompilerServices, Const
 
   InputFormatDefinition inputFormat(String format);
 
-  OliveNodeDefinition olive(String name);
+  CallableDefinition olive(String name);
 
   RefillerDefinition refiller(String name);
 

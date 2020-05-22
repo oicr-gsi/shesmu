@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.ConstantLoader;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository.CallableOliveDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
@@ -570,7 +571,75 @@ public final class Server implements ServerConfig, ActionServices {
             }.renderPage(os);
           }
         });
+    add(
+        "/olivedefs",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+              @Override
+              public String activeUrl() {
+                return "olivedefs";
+              }
 
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                definitionRepository
+                    .oliveDefinitions()
+                    .sorted(Comparator.comparing(CallableDefinition::name))
+                    .forEach(
+                        oliveDefinition -> {
+                          try {
+                            writer.writeStartElement("h1");
+                            writer.writeAttribute("id", oliveDefinition.name());
+                            writer.writeCharacters(oliveDefinition.name());
+                            writer.writeEndElement();
+
+                            writer.writeStartElement("table");
+                            writer.writeAttribute("class", "even");
+                            showSourceConfig(writer, oliveDefinition.filename());
+                            writer.writeStartElement("tr");
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Output Format");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters(
+                                oliveDefinition.isRoot() ? "Same and signable" : "Transformed");
+                            writer.writeEndElement();
+                            writer.writeEndElement();
+
+                            writer.writeEndElement();
+
+                            writer.writeStartElement("table");
+                            writer.writeAttribute("class", "even");
+                            for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
+                              writer.writeStartElement("tr");
+                              writer.writeStartElement("td");
+                              writer.writeCharacters("Argument " + (i + 1));
+                              writer.writeEndElement();
+                              writer.writeStartElement("td");
+                              writer.writeCharacters(oliveDefinition.parameterType(i).name());
+                              writer.writeEndElement();
+                              writer.writeEndElement();
+                            }
+                            writer.writeEndElement();
+
+                            TableRowWriter row = new TableRowWriter(writer);
+                            oliveDefinition
+                                .outputStreamVariables(null, null)
+                                .get()
+                                .sorted(Comparator.comparing(Target::name))
+                                .forEach(p -> row.write(false, p.name(), p.type().name()));
+                            writer.writeEndElement();
+                          } catch (XMLStreamException e) {
+                            throw new RuntimeException(e);
+                          }
+                        });
+              }
+            }.renderPage(os);
+          }
+        });
     add(
         "/actiondefs",
         t -> {
@@ -1475,6 +1544,28 @@ public final class Server implements ServerConfig, ActionServices {
           return array;
         });
     addJson(
+        "/olivedefinitions",
+        (mapper, query) -> {
+          final ArrayNode array = mapper.createArrayNode();
+          Stream.concat(definitionRepository.oliveDefinitions(), compiler.oliveDefinitions())
+              .forEach(
+                  oliveDefinition -> {
+                    final ObjectNode obj = array.addObject();
+                    obj.put("name", oliveDefinition.name());
+                    obj.put("isRoot", oliveDefinition.isRoot());
+                    final ObjectNode output = obj.putObject("output");
+                    oliveDefinition
+                        .outputStreamVariables(null, null)
+                        .get()
+                        .forEach(v -> output.put(v.name(), v.type().descriptor()));
+                    final ArrayNode parameters = obj.putArray("parameters");
+                    for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
+                      parameters.add(oliveDefinition.parameterType(i).descriptor());
+                    }
+                  });
+          return array;
+        });
+    addJson(
         "/olives",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
@@ -1920,6 +2011,12 @@ public final class Server implements ServerConfig, ActionServices {
               (new Compiler(true) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+                    private final NameLoader<CallableOliveDefinition> definitions =
+                        new NameLoader<>(
+                            Stream.concat(
+                                definitionRepository.oliveDefinitions(),
+                                compiler.oliveDefinitions()),
+                            CallableOliveDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             Stream.concat(definitionRepository.functions(), compiler.functions()),
@@ -1944,6 +2041,11 @@ public final class Server implements ServerConfig, ActionServices {
                     }
 
                     @Override
+                    protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
+                      return definitions.get(name);
+                    }
+
+                    @Override
                     protected FunctionDefinition getFunction(String name) {
                       return functions.get(name);
                     }
@@ -1951,6 +2053,11 @@ public final class Server implements ServerConfig, ActionServices {
                     @Override
                     protected InputFormatDefinition getInputFormats(String name) {
                       return CompiledGenerator.SOURCES.get(name);
+                    }
+
+                    @Override
+                    protected CallableDefinition getOliveDefinition(String name) {
+                      return definitions.get(name);
                     }
 
                     @Override
@@ -1979,7 +2086,13 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final SimulateRequest request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
-          request.run(definitionRepository, compiler::functions, this, inputSource, t);
+          request.run(
+              definitionRepository,
+              compiler::functions,
+              compiler::oliveDefinitions,
+              this,
+              inputSource,
+              t);
         });
 
     add(
@@ -1996,6 +2109,9 @@ public final class Server implements ServerConfig, ActionServices {
               (new Compiler(false) {
                     private final NameLoader<ActionDefinition> actions =
                         new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+                    private final NameLoader<CallableOliveDefinition> definitions =
+                        new NameLoader<>(
+                            definitionRepository.oliveDefinitions(), CallableOliveDefinition::name);
                     private final NameLoader<FunctionDefinition> functions =
                         new NameLoader<>(
                             Stream.concat(definitionRepository.functions(), compiler.functions()),
@@ -2030,6 +2146,16 @@ public final class Server implements ServerConfig, ActionServices {
                     }
 
                     @Override
+                    protected CallableDefinition getOliveDefinition(String name) {
+                      return definitions.get(name);
+                    }
+
+                    @Override
+                    protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
+                      return definitions.get(name);
+                    }
+
+                    @Override
                     protected RefillerDefinition getRefiller(String name) {
                       return refillers.get(name);
                     }
@@ -2053,6 +2179,36 @@ public final class Server implements ServerConfig, ActionServices {
                                   final TableRowWriter row = new TableRowWriter(writer);
                                   writer.writeStartElement("table");
                                   row.write(false, "Constant", type.name());
+                                  writer.writeEndElement();
+                                } catch (XMLStreamException e) {
+                                  throw new RuntimeException(e);
+                                }
+                              });
+                        }
+
+                        @Override
+                        public void definition(
+                            String name,
+                            String inputFormat,
+                            boolean root,
+                            List<Imyhat> parameters,
+                            List<Target> outputTargets) {
+                          exports.add(
+                              writer -> {
+                                try {
+                                  writer.writeStartElement("h1");
+                                  writer.writeCharacters("Export Define");
+                                  writer.writeCharacters(name);
+                                  writer.writeEndElement();
+                                  final TableRowWriter row = new TableRowWriter(writer);
+                                  writer.writeStartElement("table");
+                                  for (final Imyhat parameter : parameters) {
+                                    row.write(false, "Parameter", parameter.name());
+                                  }
+                                  for (final Target outputTarget : outputTargets) {
+                                    row.write(
+                                        false, outputTarget.name(), outputTarget.type().name());
+                                  }
                                   writer.writeEndElement();
                                 } catch (XMLStreamException e) {
                                   throw new RuntimeException(e);
@@ -2730,6 +2886,7 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.submenu(
             "Definitions",
             NavigationMenu.item("actiondefs", "Actions"),
+            NavigationMenu.item("olivedefs", "Callable Olives"),
             NavigationMenu.item("constantdefs", "Constants"),
             NavigationMenu.item("functiondefs", "Functions"),
             NavigationMenu.item("grouperdefs", "Groupers"),

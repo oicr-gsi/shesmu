@@ -104,17 +104,18 @@ public final class OliveBuilder extends BaseOliveBuilder {
       InputFormatDefinition initialFormat,
       int line,
       int column,
-      Stream<? extends Target> signableNames) {
+      Stream<SignableRenderer> signableNames) {
     super(owner, initialFormat);
     this.line = line;
     this.column = column;
     accessorType =
         Type.getObjectType(String.format("shesmu/dyn/Signer Accessor %d:%d", line, column));
     signerPrefix = String.format("Olive %d:%d ", line, column);
-    final List<Target> signables = signableNames.collect(Collectors.toList());
+    final List<SignableRenderer> signables = signableNames.collect(Collectors.toList());
     owner
         .signatureVariables()
-        .forEach(signer -> createSignature(signerPrefix, initialFormat, signables, signer));
+        .forEach(
+            signer -> createSignature(signerPrefix, initialFormat, signables.stream(), signer));
   }
 
   /**

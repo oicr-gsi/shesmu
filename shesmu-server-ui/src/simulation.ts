@@ -56,10 +56,10 @@ import { helpArea } from "./help.js";
 /**
  * An exported definition from a simulated script
  */
-type Export = ExportConstant | ExportFunction;
+type Export = ExportConstant | ExportDefine | ExportFunction;
 
 /**
- * A constant definition exported by a simulated scrip.
+ * A constant definition exported by a simulated script.
  */
 interface ExportConstant {
   type: "constant";
@@ -67,6 +67,27 @@ interface ExportConstant {
   name: string;
   /** The type as a Shesmu descriptor */
   returns: string;
+}
+/**
+ * An olive definition exported by a simulated script.
+ */
+interface ExportDefine {
+  type: "define";
+  /** The exported name */
+  name: string;
+  /** The input format consume by this olive*/
+  inputFormat: string;
+  /**
+   * The output variables and their types
+   */
+  output: { [name: string]: string };
+  /** The parameter types as Shesmu descriptors */
+  parameters: string[];
+  /** If true, the definition is returning an “unmodified” data stream.
+   *
+   * The data stream may actaully be modified through a <tt>Flatten</tt> or <tt>Require</tt> operation, but it is close enough to the original format to still compute signatures on.
+   */
+  isRoot: boolean;
 }
 /**
  * A function definition exported by a simulated script
@@ -461,6 +482,31 @@ export function initialiseSimulationDashboard(
                       ["Type", (x) => x[0]]
                     ),
                   ];
+                case "define":
+                  return [
+                    header(ex.name),
+                    table(
+                      [
+                        ["Input Format", ex.inputFormat],
+                        ["Should Sign After", ex.isRoot ? "Yes" : "No"],
+                      ]
+                        .concat(
+                          ex.parameters.map((type, index) => [
+                            `Parameter ${index + 1}`,
+                            type,
+                          ])
+                        )
+                        .concat(
+                          Object.entries(ex.output).map(([name, type]) => [
+                            `Output Variable ${name}`,
+                            type,
+                          ])
+                        ),
+                      ["Position", (x) => x[0]],
+                      ["Type", (x) => x[0]]
+                    ),
+                  ];
+
                 case "function":
                   return [
                     header(ex.name),

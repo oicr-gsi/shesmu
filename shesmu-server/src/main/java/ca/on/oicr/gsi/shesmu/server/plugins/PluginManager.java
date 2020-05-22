@@ -1792,6 +1792,11 @@ public final class PluginManager
     return formatTypes.stream().flatMap(FormatTypeWrapper::constants);
   }
 
+  @Override
+  public Stream<CallableOliveDefinition> oliveDefinitions() {
+    return Stream.empty();
+  }
+
   public long count() {
     return (long) formatTypes.size();
   }

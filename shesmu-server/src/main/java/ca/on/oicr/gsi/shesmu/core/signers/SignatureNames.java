@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core.signers;
 
-import ca.on.oicr.gsi.shesmu.compiler.Target;
+import ca.on.oicr.gsi.shesmu.compiler.SignableRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureStorage;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -28,18 +28,21 @@ public final class SignatureNames extends SignatureDefinition {
   }
 
   @Override
-  public void build(GeneratorAdapter method, Type initialType, Stream<Target> variables) {
+  public void build(GeneratorAdapter method, Type initialType, Stream<SignableRenderer> variables) {
     method.newInstance(A_TREE_SET_TYPE);
     method.dup();
     method.invokeConstructor(A_TREE_SET_TYPE, CTOR_DEFAULT);
 
     variables.forEach(
-        target -> {
-          method.dup();
-          method.push(target.name());
-          method.invokeVirtual(A_TREE_SET_TYPE, METHOD_TREE_SET__ADD);
-          method.pop();
-        });
+        signableRenderer ->
+            signableRenderer.render(
+                method,
+                (m, target) -> {
+                  m.dup();
+                  m.push(target.name());
+                  m.invokeVirtual(A_TREE_SET_TYPE, METHOD_TREE_SET__ADD);
+                  m.pop();
+                }));
   }
 
   @Override

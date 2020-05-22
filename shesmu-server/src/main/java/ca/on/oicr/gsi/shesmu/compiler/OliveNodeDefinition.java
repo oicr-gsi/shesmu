@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -14,10 +13,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class OliveNodeDefinition extends OliveNodeWithClauses {
+public final class OliveNodeDefinition extends OliveNodeWithClauses implements CallableDefinition {
 
   private final int column;
-  private Function<String, FunctionDefinition> definedFunctions;
+  private final boolean export;
+  private String inputFormat;
   private final int line;
   private final String name;
   private List<Target> outputStreamVariables;
@@ -29,18 +29,20 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
   public OliveNodeDefinition(
       int line,
       int column,
+      boolean export,
       String name,
       List<OliveParameter> parameters,
       List<OliveClauseNode> clauses) {
     super(clauses);
     this.line = line;
     this.column = column;
+    this.export = export;
     this.name = name;
     this.parameters = parameters;
   }
 
   @Override
-  public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void build(RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions) {
     definitions.put(name, builder.buildDefineOlive(name, parameters.stream()));
   }
 
@@ -64,15 +66,12 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
 
   @Override
   public boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     if (definedOlives.containsKey(name)) {
-      final OliveNodeDefinition other = definedOlives.get(name);
       errorHandler.accept(
-          String.format(
-              "%d:%d: Duplicate definition of “Define %s”. Previous entry on %d:%d.",
-              line, column, name, other.line, other.column));
+          String.format("%d:%d: Duplicate definition of “Define %s”.", line, column, name));
       return false;
     }
     definedOlives.put(name, this);
@@ -89,18 +88,32 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
     return Stream.empty();
   }
 
-  public Stream<OliveClauseRow> dashboardInner() {
+  @Override
+  public void collectSignables(
+      Set<String> signableNames, Consumer<SignableVariableCheck> addSignableCheck) {
+    signableNames.addAll(this.signableNames);
+  }
+
+  @Override
+  public Stream<OliveClauseRow> dashboardInner(int line, int column) {
     return clauses().stream().flatMap(OliveClauseNode::dashboard);
+  }
+
+  @Override
+  public Path filename() {
+    return null;
   }
 
   public boolean isRoot() {
     return clauses().stream().noneMatch(OliveClauseNodeGroup.class::isInstance);
   }
 
-  public Stream<Target> outputStreamVariables() {
-    return outputStreamVariables.stream();
+  @Override
+  public String name() {
+    return name;
   }
 
+  @Override
   public Optional<Stream<Target>> outputStreamVariables(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     if (outputStreamVariables != null || resolve(oliveCompilerServices, errorHandler)) {
@@ -109,24 +122,37 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
     return Optional.empty();
   }
 
+  @Override
   public int parameterCount() {
     return parameters.size();
   }
 
+  @Override
   public Imyhat parameterType(int index) {
     return index < parameters.size() ? parameters.get(index).type() : Imyhat.BAD;
   }
 
   @Override
   public void processExport(ExportConsumer exportConsumer) {
-    // Not exportable
+    if (export) {
+      exportConsumer.definition(
+          name,
+          inputFormat,
+          isRoot(),
+          parameters.stream().map(OliveParameter::type).collect(Collectors.toList()),
+          outputStreamVariables);
+    }
   }
 
   @Override
-  public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
-    final OliveDefineBuilder oliveBuilder = definitions.get(name);
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
+    final OliveDefineBuilder oliveBuilder = (OliveDefineBuilder) definitions.apply(name);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.finish();
+    if (export) {
+      oliveBuilder.export(outputStreamVariables.stream(), signableNames);
+    }
   }
 
   @Override
@@ -140,6 +166,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses {
     if (outputStreamVariables != null) {
       return true;
     }
+    inputFormat = oliveCompilerServices.inputFormat().name();
     resolveLock = true;
     final NameDefinitions result =
         clauses()

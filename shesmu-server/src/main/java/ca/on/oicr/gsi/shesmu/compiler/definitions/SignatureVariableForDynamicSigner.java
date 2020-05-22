@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
-import ca.on.oicr.gsi.shesmu.compiler.Target;
+import ca.on.oicr.gsi.shesmu.compiler.SignableRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.plugin.signature.DynamicSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -31,24 +31,29 @@ public abstract class SignatureVariableForDynamicSigner extends SignatureDefinit
   protected abstract void newInstance(GeneratorAdapter method);
 
   @Override
-  public final void build(GeneratorAdapter method, Type initialType, Stream<Target> variables) {
+  public final void build(
+      GeneratorAdapter method, Type initialType, Stream<SignableRenderer> variables) {
     newInstance(method);
     variables.forEach(
-        target -> {
-          method.dup();
-          method.push(target.name());
-          Renderer.loadImyhatInMethod(method, target.type().descriptor());
-          method.loadArg(0);
-          if (target instanceof InputVariable) {
-            ((InputVariable) target).extract(method);
-          } else {
-            method.invokeVirtual(
-                initialType,
-                new Method(target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
-          }
-          method.valueOf(target.type().apply(TypeUtils.TO_ASM));
-          method.invokeInterface(A_DYNAMIC_SIGNER_TYPE, METHOD_DYNAMIC_SIGNER__ADD_VARIABLE);
-        });
+        signableRenderer ->
+            signableRenderer.render(
+                method,
+                (m, target) -> {
+                  m.dup();
+                  m.push(target.name());
+                  Renderer.loadImyhatInMethod(m, target.type().descriptor());
+                  m.loadArg(0);
+                  if (target instanceof InputVariable) {
+                    ((InputVariable) target).extract(m);
+                  } else {
+                    m.invokeVirtual(
+                        initialType,
+                        new Method(
+                            target.name(), target.type().apply(TypeUtils.TO_ASM), new Type[] {}));
+                  }
+                  m.valueOf(target.type().apply(TypeUtils.TO_ASM));
+                  m.invokeInterface(A_DYNAMIC_SIGNER_TYPE, METHOD_DYNAMIC_SIGNER__ADD_VARIABLE);
+                }));
     method.invokeInterface(A_DYNAMIC_SIGNER_TYPE, METHOD_DYNAMIC_SIGNER__FINISH);
     method.unbox(type().apply(TypeUtils.TO_ASM));
   }

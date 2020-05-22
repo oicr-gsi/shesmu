@@ -111,7 +111,7 @@ public abstract class Compiler {
    * @param name the internal name of the class to generate; it will extend {@link ActionGenerator}
    * @param path the source file's path for debugging information
    * @param exportConsumer a callback to handle the exported functions from this program
-   * @param allowDuplicates
+   * @param allowDuplicates allow redefinition of known functions (useful during checking)
    * @return whether compilation was successful
    */
   public final boolean compile(
@@ -145,6 +145,7 @@ public abstract class Compiler {
                 this::getFunction,
                 this::getAction,
                 this::getRefiller,
+                this::getOliveDefinition,
                 this::errorHandler,
                 constants,
                 signatures,
@@ -203,7 +204,7 @@ public abstract class Compiler {
       servicesMethodGen.returnValue();
       servicesMethodGen.visitMaxs(0, 0);
       servicesMethodGen.visitEnd();
-      program.get().render(builder);
+      program.get().render(builder, this::getOliveDefinitionRenderer);
       builder.finish();
       if (exportConsumer != null) {
         program.get().processExports(exportConsumer);
@@ -265,6 +266,16 @@ public abstract class Compiler {
    * @return the format definition, or null if no format is available
    */
   protected abstract InputFormatDefinition getInputFormats(String name);
+
+  /**
+   * Get a Define olive by name.
+   *
+   * @param name the name of the olive
+   * @return the olive or null if no function is available
+   */
+  protected abstract CallableDefinition getOliveDefinition(String name);
+
+  protected abstract CallableDefinitionRenderer getOliveDefinitionRenderer(String name);
 
   /**
    * Get a refiller by name.

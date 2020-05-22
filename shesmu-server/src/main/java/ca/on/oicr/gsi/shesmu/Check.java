@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu;
 import ca.on.oicr.gsi.shesmu.compiler.*;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -17,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -111,7 +113,9 @@ public final class Check extends Compiler {
 
                       @Override
                       public void build(
-                          GeneratorAdapter method, Type streamType, Stream<Target> variables) {
+                          GeneratorAdapter method,
+                          Type streamType,
+                          Stream<SignableRenderer> variables) {
                         throw new UnsupportedOperationException();
                       }
 
@@ -135,6 +139,10 @@ public final class Check extends Compiler {
     final NameLoader<RefillerDefinition> refillers =
         new NameLoader<>(
             fetch(remote, "refillers").map(Check::makeRefiller), RefillerDefinition::name);
+    final NameLoader<CallableDefinition> oliveDefinitions =
+        new NameLoader<>(
+            fetch(remote, "olivedefinitions").map(Check::makeOliveDefinition),
+            CallableDefinition::name);
 
     final boolean ok =
         Stream.of(files)
@@ -143,7 +151,13 @@ public final class Check extends Compiler {
                       boolean fileOk;
                       try {
                         fileOk =
-                            new Check(file, inputFormats, functions, actions, refillers)
+                            new Check(
+                                    file,
+                                    inputFormats,
+                                    functions,
+                                    actions,
+                                    refillers,
+                                    oliveDefinitions)
                                 .compile(
                                     Files.readAllBytes(Paths.get(file)),
                                     "dyn/shesmu/Program",
@@ -406,8 +420,91 @@ public final class Check extends Compiler {
     };
   }
 
+  private static CallableDefinition makeOliveDefinition(ObjectNode node) {
+    return new CallableDefinition() {
+      final boolean isRoot = node.get("isRoot").asBoolean();
+      final String name = node.get("name").asText();
+      final List<Imyhat> parameters =
+          Utils.stream(node.get("parameters").elements())
+              .map(parameter -> Imyhat.parse(parameter.asText()))
+              .collect(Collectors.toList());
+      final List<Target> output =
+          Utils.stream(node.get("output").fields())
+              .map(
+                  output ->
+                      new Target() {
+                        private final String name = output.getKey();
+                        private final Imyhat type = Imyhat.parse(output.getValue().asText());
+
+                        @Override
+                        public Flavour flavour() {
+                          return Flavour.STREAM;
+                        }
+
+                        @Override
+                        public String name() {
+                          return name;
+                        }
+
+                        @Override
+                        public void read() {
+                          // Don't care.
+                        }
+
+                        @Override
+                        public Imyhat type() {
+                          return type;
+                        }
+                      })
+              .collect(Collectors.toList());
+
+      @Override
+      public void collectSignables(
+          Set<String> signableNames, Consumer<SignableVariableCheck> addSignableCheck) {
+        // Pretend like there's none, since we can't know.
+      }
+
+      @Override
+      public Stream<OliveClauseRow> dashboardInner(int line, int column) {
+        return null;
+      }
+
+      @Override
+      public Path filename() {
+        return null;
+      }
+
+      @Override
+      public boolean isRoot() {
+        return isRoot;
+      }
+
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public Optional<Stream<Target>> outputStreamVariables(
+          OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+        return Optional.of(output.stream());
+      }
+
+      @Override
+      public int parameterCount() {
+        return parameters.size();
+      }
+
+      @Override
+      public Imyhat parameterType(int index) {
+        return parameters.get(index);
+      }
+    };
+  }
+
   static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   private final NameLoader<ActionDefinition> actions;
+  private final NameLoader<CallableDefinition> definitions;
   private final String fileName;
   private final NameLoader<FunctionDefinition> functions;
   private final NameLoader<InputFormatDefinition> inputFormats;
@@ -418,13 +515,15 @@ public final class Check extends Compiler {
       NameLoader<InputFormatDefinition> inputFormats,
       NameLoader<FunctionDefinition> functions,
       NameLoader<ActionDefinition> actions,
-      NameLoader<RefillerDefinition> refillers) {
+      NameLoader<RefillerDefinition> refillers,
+      NameLoader<CallableDefinition> definitions) {
     super(true);
     this.fileName = fileName;
     this.inputFormats = inputFormats;
     this.functions = functions;
     this.actions = actions;
     this.refillers = refillers;
+    this.definitions = definitions;
   }
 
   @Override
@@ -450,6 +549,16 @@ public final class Check extends Compiler {
   @Override
   protected InputFormatDefinition getInputFormats(String name) {
     return inputFormats.get(name);
+  }
+
+  @Override
+  protected CallableDefinition getOliveDefinition(String name) {
+    return definitions.get(name);
+  }
+
+  @Override
+  protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
+    return null;
   }
 
   @Override

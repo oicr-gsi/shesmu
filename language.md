@@ -123,7 +123,7 @@ possible types are defined below. If
 `olive::`_script_`::`_name_.
 
 
-- `Define` _name_`(`[_type1_ _arg1_[`,` ...]]`)` _clauses_ `;`
+- [`Export`] `Define` _name_`(`[_type1_ _arg1_[`,` ...]]`)` _clauses_ `;`
 
 Create a new define olive. This is a section of olive that can be reused among
 different olives in the file. It is intended for when olives share similar

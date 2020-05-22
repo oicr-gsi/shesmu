@@ -31,7 +31,7 @@ public final class OliveNodeConstant extends OliveNode implements Target {
   }
 
   @Override
-  public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void build(RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions) {
     builder.defineConstant(
         name,
         body.type().apply(TypeUtils.TO_ASM),
@@ -56,7 +56,7 @@ public final class OliveNodeConstant extends OliveNode implements Target {
 
   @Override
   public boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     if (definedConstants.containsKey(name)) {
@@ -109,7 +109,8 @@ public final class OliveNodeConstant extends OliveNode implements Target {
   }
 
   @Override
-  public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     // Nothing to do.
   }
 

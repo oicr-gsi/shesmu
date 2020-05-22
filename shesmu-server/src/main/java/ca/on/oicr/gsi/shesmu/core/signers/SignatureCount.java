@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core.signers;
 
-import ca.on.oicr.gsi.shesmu.compiler.Target;
+import ca.on.oicr.gsi.shesmu.compiler.SignableRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureStorage;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -20,8 +20,22 @@ public final class SignatureCount extends SignatureDefinition {
   }
 
   @Override
-  public void build(GeneratorAdapter method, Type initialType, Stream<Target> variables) {
-    method.push(variables.count());
+  public void build(GeneratorAdapter method, Type initialType, Stream<SignableRenderer> variables) {
+    final int count = method.newLocal(Type.INT_TYPE);
+    method.push(0);
+    method.storeLocal(count);
+    variables.forEach(
+        signableRenderer ->
+            signableRenderer.render(
+                method,
+                (m, t) -> {
+                  m.loadLocal(count);
+                  m.push(1);
+                  m.math(GeneratorAdapter.ADD, Type.INT_TYPE);
+                  m.storeLocal(count);
+                }));
+    method.loadLocal(count);
+    method.cast(Type.INT_TYPE, Type.LONG_TYPE);
   }
 
   @Override

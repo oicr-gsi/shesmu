@@ -3,11 +3,12 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** An olive stanza declaration */
@@ -15,6 +16,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 
   private final List<OliveClauseNode> clauses;
   protected final Set<String> signableNames = new TreeSet<>();
+  protected final List<SignableVariableCheck> signableVariableChecks = new ArrayList<>();
 
   public OliveNodeWithClauses(List<OliveClauseNode> clauses) {
     super();
@@ -35,9 +37,9 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   public final boolean checkVariableStream(Consumer<String> errorHandler) {
     ClauseStreamOrder state = ClauseStreamOrder.PURE;
     for (final OliveClauseNode clause : clauses()) {
-      state = clause.ensureRoot(state, signableNames, errorHandler);
+      state = clause.ensureRoot(state, signableNames, signableVariableChecks::add, errorHandler);
     }
-    if (state == ClauseStreamOrder.PURE) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       collectArgumentSignableVariables();
     }
     return state != ClauseStreamOrder.BAD;
@@ -68,7 +70,8 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 
   /** Generate bytecode for this stanza into the {@link ActionGenerator#run} method */
   @Override
-  public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
+  public abstract void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions);
 
   /** Resolve all variable plugins */
   @Override

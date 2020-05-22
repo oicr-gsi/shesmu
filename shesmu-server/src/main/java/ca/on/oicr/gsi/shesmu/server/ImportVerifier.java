@@ -1,7 +1,9 @@
 package ca.on.oicr.gsi.shesmu.server;
 
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
@@ -9,10 +11,15 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /** An import reference that can check if it is still valid */
 public interface ImportVerifier {
@@ -141,6 +148,69 @@ public interface ImportVerifier {
                           .map(FunctionParameter::type)
                           .collect(Collectors.toList())
                           .equals(parameters));
+    }
+  }
+
+  class OliveDefinitionVerifier implements ImportVerifier {
+
+    private final boolean isRoot;
+    private final String name;
+    private final Map<String, Imyhat> output;
+    private final List<Imyhat> parameters = new ArrayList<>();
+
+    public OliveDefinitionVerifier(CallableDefinition definition) {
+      name = definition.name();
+      isRoot = definition.isRoot();
+      for (int i = 0; i < definition.parameterCount(); i++) {
+        parameters.add(definition.parameterType(i));
+      }
+      output =
+          definition
+              .outputStreamVariables(null, null)
+              .get()
+              .collect(Collectors.toMap(Target::name, Target::type));
+    }
+
+    private boolean checkOutput(Stream<Target> targets) {
+      final Set<String> names = new TreeSet<>();
+      return targets
+              .peek(t -> names.add(t.name()))
+              .allMatch(t -> output.getOrDefault(t.name(), Imyhat.BAD).isSame(t.type()))
+          && names.equals(output.keySet());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      OliveDefinitionVerifier that = (OliveDefinitionVerifier) o;
+      return isRoot == that.isRoot
+          && name.equals(that.name)
+          && parameters.equals(that.parameters)
+          && output.equals(that.output);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(name, isRoot, parameters, output);
+    }
+
+    @Override
+    public boolean stillMatches(DefinitionRepository repository) {
+      return repository
+          .oliveDefinitions()
+          .anyMatch(
+              d ->
+                  d.name().equals(name)
+                      && d.isRoot() == isRoot
+                      && d.parameterCount() == parameters.size()
+                      && IntStream.range(0, parameters.size())
+                          .allMatch(i -> d.parameterType(i).isSame(parameters.get(i)))
+                      && checkOutput(d.outputStreamVariables(null, null).get()));
     }
   }
 

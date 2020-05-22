@@ -115,10 +115,11 @@ public class PragmaNodeInputGuard extends PragmaNode {
             LambdaBuilder.biconsumer(newType, A_OBJECT_TYPE),
             capturedVariables);
 
-    final List<Target> signables =
+    final List<SignableRenderer> signables =
         inputFormatDefinition
             .baseStreamVariables()
             .filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE && signableNames.contains(t.name()))
+            .map(SignableRenderer::always)
             .collect(Collectors.toList());
     final String prefix = String.format("Guard %d:%d ", line, column);
     root.signatureVariables()

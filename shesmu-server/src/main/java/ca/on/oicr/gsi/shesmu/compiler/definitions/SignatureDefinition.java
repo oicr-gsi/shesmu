@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
+import ca.on.oicr.gsi.shesmu.compiler.SignableRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -22,7 +23,8 @@ public abstract class SignatureDefinition implements Target {
     }
 
     @Override
-    public void build(GeneratorAdapter method, Type streamType, Stream<Target> variables) {
+    public void build(
+        GeneratorAdapter method, Type streamType, Stream<SignableRenderer> variables) {
       original.build(method, streamType, variables);
     }
 
@@ -66,7 +68,8 @@ public abstract class SignatureDefinition implements Target {
    * @param streamType the type of the input data
    * @param variables the input variables to capture
    */
-  public abstract void build(GeneratorAdapter method, Type streamType, Stream<Target> variables);
+  public abstract void build(
+      GeneratorAdapter method, Type streamType, Stream<SignableRenderer> variables);
 
   public abstract Path filename();
 
@@ -87,6 +90,10 @@ public abstract class SignatureDefinition implements Target {
 
   public final SignatureStorage storage() {
     return storage;
+  }
+
+  public Class<?> storageClass() {
+    return storage.holderClass(type.javaType());
   }
 
   public final Type storageType() {

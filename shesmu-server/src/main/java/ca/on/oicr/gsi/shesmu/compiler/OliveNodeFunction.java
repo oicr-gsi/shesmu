@@ -53,7 +53,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   }
 
   @Override
-  public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void build(RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions) {
     ownerType = builder.selfType();
     method =
         new Method(
@@ -80,7 +80,7 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
 
   @Override
   public boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
@@ -143,7 +143,8 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   }
 
   @Override
-  public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     final GeneratorAdapter methodGen =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, method, null, null, builder.classVisitor);
     methodGen.visitCode();

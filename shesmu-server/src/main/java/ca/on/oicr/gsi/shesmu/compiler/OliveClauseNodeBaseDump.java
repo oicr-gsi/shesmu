@@ -72,7 +72,10 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
     return state;
   }
 
@@ -85,7 +88,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   public final void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Predicate<String> shouldCapture = captureVariable();
     final Renderer renderer =
         oliveBuilder.peek(

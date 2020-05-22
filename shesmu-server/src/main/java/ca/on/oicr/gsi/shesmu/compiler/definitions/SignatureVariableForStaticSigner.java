@@ -1,7 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
-import ca.on.oicr.gsi.shesmu.compiler.Target;
+import ca.on.oicr.gsi.shesmu.compiler.SignableRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.plugin.signature.StaticSigner;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -28,15 +28,19 @@ public abstract class SignatureVariableForStaticSigner extends SignatureDefiniti
   }
 
   @Override
-  public final void build(GeneratorAdapter method, Type initialType, Stream<Target> variables) {
+  public final void build(
+      GeneratorAdapter method, Type initialType, Stream<SignableRenderer> variables) {
     newInstance(method);
     variables.forEach(
-        target -> {
-          method.dup();
-          method.push(target.name());
-          Renderer.loadImyhatInMethod(method, target.type().descriptor());
-          method.invokeInterface(A_SIGNER_TYPE, METHOD_STATIC_SIGNER__ADD_VARIABLE);
-        });
+        signableRenderer ->
+            signableRenderer.render(
+                method,
+                (m, target) -> {
+                  m.dup();
+                  m.push(target.name());
+                  Renderer.loadImyhatInMethod(method, target.type().descriptor());
+                  m.invokeInterface(A_SIGNER_TYPE, METHOD_STATIC_SIGNER__ADD_VARIABLE);
+                }));
     method.invokeInterface(A_SIGNER_TYPE, METHOD_STATIC_SIGNER__FINISH);
     method.unbox(type().apply(TypeUtils.TO_ASM));
   }

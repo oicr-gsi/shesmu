@@ -1,21 +1,30 @@
 package ca.on.oicr.gsi.shesmu.server;
 
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinitionRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.Compiler;
 import ca.on.oicr.gsi.shesmu.compiler.ExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
+import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer.DefineVariableExport;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository.CallableOliveDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
+import ca.on.oicr.gsi.shesmu.runtime.SignatureAccessor;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier.ActionVerifier;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier.ConstantVerifier;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier.FunctionVerifier;
+import ca.on.oicr.gsi.shesmu.server.ImportVerifier.OliveDefinitionVerifier;
 import ca.on.oicr.gsi.shesmu.server.ImportVerifier.RefillerVerifier;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import java.io.IOException;
@@ -24,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -78,6 +88,9 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           new Compiler(false) {
             private final NameLoader<ActionDefinition> actionCache =
                 new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
+            private final NameLoader<CallableOliveDefinition> definitionCache =
+                new NameLoader<>(
+                    definitionRepository.oliveDefinitions(), CallableOliveDefinition::name);
             private final NameLoader<FunctionDefinition> functionCache =
                 new NameLoader<>(definitionRepository.functions(), FunctionDefinition::name);
             private final NameLoader<RefillerDefinition> refillerCache =
@@ -114,6 +127,20 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
             @Override
             protected InputFormatDefinition getInputFormats(String name) {
               return inputFormats.apply(name);
+            }
+
+            @Override
+            protected CallableDefinition getOliveDefinition(String name) {
+              final CallableOliveDefinition definition = definitionCache.get(name);
+              if (definition != null) {
+                registerImport.accept(new OliveDefinitionVerifier(definition));
+              }
+              return definition;
+            }
+
+            @Override
+            protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
+              return definitionCache.get(name);
             }
 
             @Override
@@ -160,6 +187,89 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                           name,
                           type);
                     } catch (NoSuchFieldException | IllegalAccessException e) {
+                      e.printStackTrace();
+                    }
+                  });
+            }
+
+            @Override
+            public void definition(
+                String name,
+                String inputFormat,
+                boolean root,
+                List<Imyhat> parameters,
+                List<Target> outputVariables) {
+              exports.add(
+                  instance -> {
+                    try {
+                      exportConsumer.defineOlive(
+                          lookup
+                              .unreflect(
+                                  instance
+                                      .getClass()
+                                      .getMethod(
+                                          String.format("Define %s", name),
+                                          Stream.concat(
+                                                  Stream.of(
+                                                      Stream.class,
+                                                      OliveServices.class,
+                                                      InputProvider.class,
+                                                      int.class,
+                                                      int.class,
+                                                      SignatureAccessor.class),
+                                                  parameters.stream().map(Imyhat::javaType))
+                                              .toArray(Class[]::new)))
+                              .bindTo(instance),
+                          name,
+                          inputFormat,
+                          root,
+                          parameters,
+                          outputVariables
+                              .stream()
+                              .map(
+                                  v -> {
+                                    try {
+                                      return new DefineVariableExport(
+                                          v.name(),
+                                          v.flavour(),
+                                          v.type(),
+                                          lookup.unreflect(
+                                              instance
+                                                  .getClass()
+                                                  .getMethod(
+                                                      String.format("Define %s %s", name, v.name()),
+                                                      Object.class)));
+                                    } catch (IllegalAccessException | NoSuchMethodException e) {
+                                      throw new RuntimeException(e);
+                                    }
+                                  })
+                              .collect(Collectors.toList()),
+                          root
+                              ? inputFormats
+                                  .apply(inputFormat)
+                                  .baseStreamVariables()
+                                  .map(
+                                      v -> {
+                                        try {
+                                          return new DefineVariableExport(
+                                              v.name(),
+                                              v.flavour(),
+                                              v.type(),
+                                              lookup.unreflect(
+                                                  instance
+                                                      .getClass()
+                                                      .getMethod(
+                                                          String.format(
+                                                              "Define %s %s Signer Check",
+                                                              name, v.name()))));
+                                        } catch (IllegalAccessException | NoSuchMethodException e) {
+                                          throw new RuntimeException(e);
+                                        }
+                                      })
+                                  .collect(Collectors.toList())
+                              : Collections.emptyList());
+
+                    } catch (NoSuchMethodException | IllegalAccessException e) {
                       e.printStackTrace();
                     }
                   });
