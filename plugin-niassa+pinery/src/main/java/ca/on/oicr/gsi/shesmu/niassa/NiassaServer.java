@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,7 +78,23 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                 }
                 return true;
               })
-          .onClose(() -> badStatus.labels(url, Long.toString(key)).set(badStatusCount.get()))
+          .onClose(
+              () -> {
+                badStatus.labels(url, Long.toString(key)).set(badStatusCount.get());
+
+                final Set<Pair<String, String>> stale =
+                    staleKeys.computeIfAbsent(key, k -> new HashSet<>());
+                synchronized (stale) {
+                  stale.forEach(
+                      p ->
+                          definer.log(
+                              String.format(
+                                  "Purging stale lock on %s/%s for workflow %d",
+                                  p.first(), p.second(), key),
+                              Collections.emptyMap()));
+                  stale.clear();
+                }
+              })
           .filter(ap -> ap.getWorkflowId() != null)
           .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
           .entrySet()
@@ -173,13 +190,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  public static final class LaunchLock implements AutoCloseable {
+  public final class LaunchLock implements AutoCloseable {
 
-    private final LockLogger logger;
     private final Set<Pair<String, String>> activeLimsKeys;
     private final boolean isLive;
     private final Map<Pair<String, String>, ca.on.oicr.gsi.provenance.model.LimsKey>
         lockedLimsKeys = new HashMap<>();
+    private final LockLogger logger;
+    private final long workflowAccession;
 
     /**
      * Create a lock on a chunk of LIMS key space
@@ -189,36 +207,45 @@ class NiassaServer extends JsonPluginFile<Configuration> {
      *     combination
      */
     public LaunchLock(
-        LockLogger logger, List<SimpleLimsKey> limsKeys, Set<Pair<String, String>> activeLimsKeys) {
+        LockLogger logger,
+        long workflowAccession,
+        List<SimpleLimsKey> limsKeys,
+        Set<Pair<String, String>> activeLimsKeys) {
       this.logger = logger;
+      this.workflowAccession = workflowAccession;
       this.activeLimsKeys = activeLimsKeys;
       // We're going to place all of our LIMS keys into the active LIMS key set and, if any are
       // already present, someone else holds the lock, so we will back out.
-      synchronized (this.activeLimsKeys) {
-        boolean isLive = true;
-        for (final SimpleLimsKey limsKey : limsKeys) {
-          // We don't want to use the full LIMS key because if there are different versions, they
-          // should block each other, so just provider + ID
-          final Pair<String, String> limsKeyId = new Pair<>(limsKey.getProvider(), limsKey.getId());
-          if (lockedLimsKeys.containsKey(limsKeyId)) {
-            // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
-            // can lock it successfully.
-            logger.log(
-                limsKey,
-                "There's an olive that has produced multiple LIMS keys with multiple %s/%s and that's a bug.");
-            continue;
+      final Set<Pair<String, String>> stale =
+          staleKeys.computeIfAbsent(workflowAccession, k -> new HashSet<>());
+      synchronized (stale) {
+        synchronized (this.activeLimsKeys) {
+          boolean isLive = true;
+          for (final SimpleLimsKey limsKey : limsKeys) {
+            // We don't want to use the full LIMS key because if there are different versions, they
+            // should block each other, so just provider + ID
+            final Pair<String, String> limsKeyId =
+                new Pair<>(limsKey.getProvider(), limsKey.getId());
+            if (lockedLimsKeys.containsKey(limsKeyId) || stale.contains(limsKeyId)) {
+              // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
+              // can lock it successfully.
+              logger.log(
+                  limsKey,
+                  "There's an olive that has produced multiple LIMS keys with multiple %s/%s and that's a bug.");
+              continue;
+            }
+            // Add this lims key to the set of active locks. Add returns true if it was newly added
+            if (this.activeLimsKeys.add(limsKeyId)) {
+              // Track that we added this LIMS key and therefore own it
+              lockedLimsKeys.put(limsKeyId, limsKey);
+            } else {
+              // Backout any LIMS keys we already locked
+              this.activeLimsKeys.removeAll(lockedLimsKeys.keySet());
+              isLive = false;
+            }
           }
-          // Add this lims key to the set of active locks. Add returns true if it was newly added
-          if (this.activeLimsKeys.add(limsKeyId)) {
-            // Track that we added this LIMS key and therefore own it
-            lockedLimsKeys.put(limsKeyId, limsKey);
-          } else {
-            // Backout any LIMS keys we already locked
-            this.activeLimsKeys.removeAll(lockedLimsKeys.keySet());
-            isLive = false;
-          }
+          this.isLive = isLive;
         }
-        this.isLive = isLive;
       }
       if (isLive) {
         limsKeys.forEach(k -> logger.log(k, "Acquired lock"));
@@ -228,6 +255,11 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     @Override
     public void close() throws Exception {
       if (isLive) {
+        final Set<Pair<String, String>> stale =
+            staleKeys.computeIfAbsent(workflowAccession, k -> new HashSet<>());
+        synchronized (stale) {
+          stale.addAll(lockedLimsKeys.keySet());
+        }
         synchronized (activeLimsKeys) {
           activeLimsKeys.removeAll(lockedLimsKeys.keySet());
         }
@@ -320,33 +352,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  static ActionState processingStateToActionState(String state) {
-    if (state == null) {
-      return ActionState.UNKNOWN;
-    }
-    return processingStateToActionState(WorkflowRunStatus.valueOf(state));
-  }
-
-  static ActionState processingStateToActionState(WorkflowRunStatus state) {
-    switch (state) {
-      case submitted:
-      case submitted_retry:
-        return ActionState.WAITING;
-      case pending:
-        return ActionState.QUEUED;
-      case running:
-        return ActionState.INFLIGHT;
-      case cancelled:
-      case submitted_cancel:
-      case failed:
-        return ActionState.FAILED;
-      case completed:
-        return ActionState.SUCCEEDED;
-      default:
-        return ActionState.UNKNOWN;
-    }
-  }
-
   private static final AnnotationType<FileAttribute> FILE =
       new AnnotationType<FileAttribute>() {
         @Override
@@ -433,6 +438,34 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               "The number of times a slow fetch (get workflow run and LIMS keys separately) had to be used.")
           .labelNames("workflow")
           .register();
+
+  static ActionState processingStateToActionState(String state) {
+    if (state == null) {
+      return ActionState.UNKNOWN;
+    }
+    return processingStateToActionState(WorkflowRunStatus.valueOf(state));
+  }
+
+  static ActionState processingStateToActionState(WorkflowRunStatus state) {
+    switch (state) {
+      case submitted:
+      case submitted_retry:
+        return ActionState.WAITING;
+      case pending:
+        return ActionState.QUEUED;
+      case running:
+        return ActionState.INFLIGHT;
+      case cancelled:
+      case submitted_cancel:
+      case failed:
+        return ActionState.FAILED;
+      case completed:
+        return ActionState.SUCCEEDED;
+      default:
+        return ActionState.UNKNOWN;
+    }
+  }
+
   private final AnalysisCache analysisCache;
   private final AnalysisDataCache analysisDataCache;
   private Optional<Configuration> configuration = Optional.empty();
@@ -446,6 +479,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   private MetadataWS metadata;
   private Properties settings = new Properties();
   private final ValueCache<Stream<Pair<Tuple, Tuple>>, Stream<Pair<Tuple, Tuple>>> skipCache;
+  private final Map<Long, Set<Pair<String, String>>> staleKeys = new ConcurrentSkipListMap<>();
   private final Runnable unsubscribe = WORKFLOWS.subscribe(this::updateWorkflows);
   private String url;
 
@@ -474,6 +508,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       LockLogger logger) {
     return new LaunchLock(
         logger,
+        workflowAccession,
         limsKeys,
         launchLocks.computeIfAbsent(
             Objects.hash(workflowAccession, annotations), k -> new HashSet<>()));
