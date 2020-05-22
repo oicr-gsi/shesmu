@@ -9,11 +9,11 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,8 +82,11 @@ public class OliveClauseNodePick extends OliveClauseNode {
 
   @Override
   public ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       discriminatorVariables
           .stream()
           .filter(v -> v.flavour() == Flavour.STREAM_SIGNABLE)
@@ -103,7 +106,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     extractor.collectFreeVariables(freeVariables, Flavour::needsCapture);
 

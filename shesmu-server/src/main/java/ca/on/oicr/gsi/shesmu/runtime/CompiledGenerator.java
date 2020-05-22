@@ -1,18 +1,21 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
+import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer.DefineVariableExport;
+import ca.on.oicr.gsi.shesmu.compiler.OliveCompilerServices;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.SignableVariableCheck;
+import ca.on.oicr.gsi.shesmu.compiler.Target;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
+import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
+import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
@@ -30,28 +33,14 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Timer;
 import java.io.PrintStream;
-import java.lang.invoke.CallSite;
-import java.lang.invoke.ConstantCallSite;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.*;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,6 +51,55 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public class CompiledGenerator implements DefinitionRepository {
+
+  public static final class DefinitionKey {
+    private final String definitionName;
+    private final String inputFormat;
+    private final String variableName;
+
+    public DefinitionKey(
+        String inputFormat, String definitionName, String variableName, String[] otherVariables) {
+      this.inputFormat = inputFormat;
+      // We need to have a consistent name for this definition. Suppose the export changes to drop
+      // or rename a variable that we need; it must be that we don't upgrade that variable, but we
+      // also need to not upgrade the other definition call and all the related variables.
+      // Therefore, the name of a definition must include the names of all the output variables (and
+      // their types).
+      this.definitionName =
+          definitionName
+              + Stream.concat(Stream.of(variableName), Stream.of(otherVariables))
+                  .sorted()
+                  .distinct()
+                  .collect(Collectors.joining(" ", " ", ""));
+      this.variableName = variableName;
+    }
+
+    public DefinitionKey(String inputFormat, String definitionName, String variableName) {
+      this.inputFormat = inputFormat;
+      this.definitionName = definitionName;
+      this.variableName = variableName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      DefinitionKey that = (DefinitionKey) o;
+      return inputFormat.equals(that.inputFormat)
+          && definitionName.equals(that.definitionName)
+          && variableName.equals(that.variableName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(inputFormat, definitionName, variableName);
+    }
+  }
+
   private final class Script implements WatchedFileListener {
     class ExportedConstantDefinition extends ConstantDefinition {
 
@@ -79,10 +117,247 @@ public class CompiledGenerator implements DefinitionRepository {
       @Override
       public void load(GeneratorAdapter methodGen) {
         methodGen.invokeDynamic(
-            invokeName,
-            Type.getMethodDescriptor(type().apply(TypeUtils.TO_ASM)),
-            BSM,
-            fileName.toString());
+            invokeName, Type.getMethodDescriptor(type().apply(TO_ASM)), BSM, fileName.toString());
+      }
+    }
+
+    class ExportedDefineOliveDefinition implements Supplier<CallableOliveDefinition> {
+      @SuppressWarnings("FieldCanBeLocal")
+      private final List<MutableCallSite> callsites = new ArrayList<>();
+
+      private final List<DefineVariableExport> checks;
+      private final String inputFormatName;
+      private final boolean isRoot;
+      private final String name;
+      private final List<Imyhat> parameterTypes;
+      private final String qualifiedName;
+      private final List<DefineVariableExport> variables;
+
+      public ExportedDefineOliveDefinition(
+          MethodHandle method,
+          String name,
+          String inputFormatName,
+          boolean isRoot,
+          List<Imyhat> parameterTypes,
+          List<DefineVariableExport> variables,
+          List<DefineVariableExport> checks) {
+        this.name = name;
+        this.inputFormatName = inputFormatName;
+        this.isRoot = isRoot;
+        this.parameterTypes = parameterTypes;
+        this.checks = checks;
+
+        this.variables = variables;
+
+        qualifiedName =
+            parameterTypes
+                .stream()
+                .map(Imyhat::descriptor)
+                .collect(Collectors.joining(" ", name + " ", ""));
+        for (final List<DefineVariableExport> variableSubset : powerSet(variables)) {
+          if (variableSubset.isEmpty()) {
+            continue;
+          }
+          final String expandedName =
+              qualifiedName
+                  + variableSubset
+                      .stream()
+                      .sorted(Comparator.comparing(DefineVariableExport::name))
+                      .map(d -> d.name() + "$" + d.type().descriptor())
+                      .collect(Collectors.joining(" ", " ", ""));
+          callsites.add(DEFINE_REGISTRY.upsert(new Pair<>(inputFormatName, expandedName), method));
+          for (final DefineVariableExport variable : variableSubset) {
+            callsites.add(
+                DEFINE_VARIABLE_REGISTRY.upsert(
+                    new DefinitionKey(
+                        inputFormatName,
+                        expandedName,
+                        variable.name() + "$" + variable.type().descriptor()),
+                    variable.method()));
+          }
+          for (final DefineVariableExport variable : checks) {
+            callsites.add(
+                DEFINE_SIGNATURE_CHECK_REGISTRY.upsert(
+                    new DefinitionKey(inputFormatName, expandedName, variable.name()),
+                    variable.method()));
+          }
+        }
+        MutableCallSite.syncAll(callsites.stream().toArray(MutableCallSite[]::new));
+      }
+
+      @Override
+      public CallableOliveDefinition get() {
+        // We create a new one of these whenever necessary because the used information needs to be
+        // isolated between users
+        return new CallableOliveDefinition() {
+          private final Set<String> used = new TreeSet<>();
+          private final List<SignableVariableCheck> checkers =
+              checks
+                  .stream()
+                  .map(
+                      c ->
+                          new SignableVariableCheck() {
+                            @Override
+                            public String name() {
+                              return c.name();
+                            }
+
+                            @Override
+                            public void render(GeneratorAdapter methodGen) {
+                              methodGen.invokeDynamic(
+                                  c.name(),
+                                  Type.getMethodDescriptor(Type.BOOLEAN_TYPE, A_OBJECT_TYPE),
+                                  BSM_DEFINE_SIGNATURE_CHECK,
+                                  Stream.concat(
+                                          Stream.of(inputFormatName, qualifiedName), used.stream())
+                                      .toArray());
+                            }
+                          })
+                  .collect(Collectors.toList());
+          private final List<Target> targets =
+              variables
+                  .stream()
+                  .map(
+                      v ->
+                          new InputVariable() {
+                            @Override
+                            public void extract(GeneratorAdapter methodGen) {
+                              methodGen.invokeDynamic(
+                                  v.name() + "$" + v.type().descriptor(),
+                                  Type.getMethodDescriptor(v.type().apply(TO_ASM), A_OBJECT_TYPE),
+                                  BSM_DEFINE_VARIABLE,
+                                  Stream.concat(
+                                          Stream.of(inputFormatName, qualifiedName), used.stream())
+                                      .toArray());
+                            }
+
+                            @Override
+                            public Flavour flavour() {
+                              return v.flavour();
+                            }
+
+                            @Override
+                            public String name() {
+                              return v.name();
+                            }
+
+                            @Override
+                            public void read() {
+                              // We only want to include the values that were used in the signature.
+                              used.add(v.name() + "$" + v.type().descriptor());
+                            }
+
+                            @Override
+                            public Imyhat type() {
+                              return v.type();
+                            }
+                          })
+                  .collect(Collectors.toList());
+
+          @Override
+          public void collectSignables(
+              Set<String> signableNames, Consumer<SignableVariableCheck> addSignableCheck) {
+            checkers.forEach(addSignableCheck);
+          }
+
+          @Override
+          public Type currentType() {
+            return A_OBJECT_TYPE;
+          }
+
+          @Override
+          public Stream<OliveClauseRow> dashboardInner(int line, int column) {
+            return Stream.of(
+                new OliveClauseRow(
+                    name,
+                    line,
+                    column,
+                    true,
+                    !isRoot,
+                    targets
+                        .stream()
+                        .map(
+                            x ->
+                                new VariableInformation(
+                                    x.name(), x.type(), Stream.empty(), Behaviour.DEFINITION))));
+          }
+
+          @Override
+          public Path filename() {
+            return fileName;
+          }
+
+          @Override
+          public void generateCall(GeneratorAdapter methodGen) {
+            methodGen.invokeDynamic(
+                qualifiedName,
+                Type.getMethodDescriptor(
+                    A_STREAM_TYPE,
+                    Stream.concat(
+                            Stream.of(
+                                A_STREAM_TYPE,
+                                A_OLIVE_SERVICES_TYPE,
+                                A_INPUT_PROVIDER_TYPE,
+                                Type.INT_TYPE,
+                                Type.INT_TYPE,
+                                A_SIGNATURE_ACCESSOR_TYPE),
+                            parameterTypes.stream().map(t -> t.apply(TO_ASM)))
+                        .toArray(Type[]::new)),
+                BSM_DEFINE,
+                Stream.concat(Stream.of(inputFormatName), used.stream()).toArray());
+          }
+
+          @Override
+          public void generatePreamble(GeneratorAdapter methodGen) {
+            // No preamble
+          }
+
+          @Override
+          public boolean isRoot() {
+            return isRoot;
+          }
+
+          @Override
+          public String name() {
+            return name;
+          }
+
+          @Override
+          public Optional<Stream<Target>> outputStreamVariables(
+              OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+            return Optional.of(targets.stream());
+          }
+
+          @Override
+          public Type parameter(int i) {
+            return parameterTypes.get(i).apply(TO_ASM);
+          }
+
+          @Override
+          public int parameterCount() {
+            return parameterTypes.size();
+          }
+
+          @Override
+          public Imyhat parameterType(int index) {
+            return parameterTypes.get(index);
+          }
+
+          @Override
+          public int parameters() {
+            return parameterTypes.size();
+          }
+        };
+      }
+
+      private List<List<DefineVariableExport>> powerSet(List<DefineVariableExport> variables) {
+        Stream<Supplier<Stream<DefineVariableExport>>> supplier = Stream.of(Stream::empty);
+        for (final DefineVariableExport variable : variables) {
+          supplier =
+              supplier.flatMap(
+                  head -> Stream.of(head, () -> Stream.concat(head.get(), Stream.of(variable))));
+        }
+        return supplier.map(s -> s.get().collect(Collectors.toList())).collect(Collectors.toList());
       }
     }
 
@@ -138,8 +413,8 @@ public class CompiledGenerator implements DefinitionRepository {
         methodGen.invokeDynamic(
             invokeName,
             Type.getMethodDescriptor(
-                returnType.apply(TypeUtils.TO_ASM),
-                parameters.get().map(p -> p.type().apply(TypeUtils.TO_ASM)).toArray(Type[]::new)),
+                returnType.apply(TO_ASM),
+                parameters.get().map(p -> p.type().apply(TO_ASM)).toArray(Type[]::new)),
             BSM,
             fileName.toString());
       }
@@ -161,6 +436,7 @@ public class CompiledGenerator implements DefinitionRepository {
     private FileTable dashboard;
     private List<String> errors = Collections.emptyList();
     private List<ExportedConstantDefinition> exportedConstants = Collections.emptyList();
+    private List<ExportedDefineOliveDefinition> exportedDefineOlives = Collections.emptyList();
     private List<ExportedFunctionDefinition> exportedFunctions = Collections.emptyList();
     private final Path fileName;
     private final DefinitionRepository allowedDefinitions =
@@ -185,6 +461,13 @@ public class CompiledGenerator implements DefinitionRepository {
           @Override
           public Stream<ConfigurationSection> listConfiguration() {
             return definitionRepository.listConfiguration();
+          }
+
+          @Override
+          public Stream<CallableOliveDefinition> oliveDefinitions() {
+            return definitionRepository
+                .oliveDefinitions()
+                .filter(od -> !od.filename().equals(fileName));
           }
 
           @Override
@@ -247,6 +530,10 @@ public class CompiledGenerator implements DefinitionRepository {
       return exportedFunctions.stream().map(x -> x);
     }
 
+    public Stream<CallableOliveDefinition> oliveDefinitions() {
+      return exportedDefineOlives.stream().map(Supplier::get);
+    }
+
     public synchronized String run(OliveServices consumer, InputProvider input) {
       if (!live) {
         return "Deleted while waiting to run.";
@@ -255,7 +542,7 @@ public class CompiledGenerator implements DefinitionRepository {
           new MonitoredOliveServices(consumer, fileName.toString())) {
         generator.run(monitoredConsumer, input);
         return "Completed normally";
-      } catch (final Exception e) {
+      } catch (final Throwable e) {
         e.printStackTrace();
         return e.toString();
       }
@@ -276,6 +563,7 @@ public class CompiledGenerator implements DefinitionRepository {
     public synchronized Optional<Integer> update() {
       live = true;
       try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
+        final List<ExportedDefineOliveDefinition> exportedDefineOlives = new ArrayList<>();
         final List<ExportedConstantDefinition> exportedConstants = new ArrayList<>();
         final List<ExportedFunctionDefinition> exportedFunctions = new ArrayList<>();
         final Set<ImportVerifier> imports = new HashSet<>();
@@ -292,6 +580,26 @@ public class CompiledGenerator implements DefinitionRepository {
                             method,
                             String.join(Parser.NAMESPACE_SEPARATOR, "olive", instance, name),
                             type));
+                  }
+
+                  @Override
+                  public void defineOlive(
+                      MethodHandle method,
+                      String name,
+                      String inputFormatName,
+                      boolean isRoot,
+                      List<Imyhat> parameterTypes,
+                      List<DefineVariableExport> variables,
+                      List<DefineVariableExport> checks) {
+                    exportedDefineOlives.add(
+                        new ExportedDefineOliveDefinition(
+                            method,
+                            String.join(Parser.NAMESPACE_SEPARATOR, "olive", instance, name),
+                            inputFormatName,
+                            isRoot,
+                            parameterTypes,
+                            variables,
+                            checks));
                   }
 
                   @Override
@@ -323,6 +631,7 @@ public class CompiledGenerator implements DefinitionRepository {
                       fileName.toString(), MethodHandles.constant(ActionGenerator.class, x));
               this.exportedFunctions = exportedFunctions;
               this.exportedConstants = exportedConstants;
+              this.exportedDefineOlives = exportedDefineOlives;
               this.imports = imports;
               // Find all callsites previously exported that no longer exists. Replace the method
               // handle in the call site with an exception.
@@ -356,19 +665,73 @@ public class CompiledGenerator implements DefinitionRepository {
     }
   }
 
+  public static final Type A_CALLSITE_TYPE = Type.getType(CallSite.class);
+  private static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
+  public static final Type A_LOOKUP_TYPE = Type.getType(Lookup.class);
+  public static final Type A_METHOD_TYPE_TYPE = Type.getType(MethodType.class);
+  private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
+  private static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
+  private static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
+  private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
+  public static final Type A_STRING_TYPE = Type.getType(String.class);
+  public static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
+  public static final Handle BSM_DEFINE =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(CompiledGenerator.class),
+          "bootstrapDefine",
+          Type.getMethodDescriptor(
+              A_CALLSITE_TYPE,
+              A_LOOKUP_TYPE,
+              A_STRING_TYPE,
+              A_METHOD_TYPE_TYPE,
+              A_STRING_TYPE,
+              A_STRING_ARRAY_TYPE),
+          false);
+  public static final Handle BSM_DEFINE_VARIABLE =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(CompiledGenerator.class),
+          "bootstrapDefineVariable",
+          Type.getMethodDescriptor(
+              A_CALLSITE_TYPE,
+              A_LOOKUP_TYPE,
+              A_STRING_TYPE,
+              A_METHOD_TYPE_TYPE,
+              A_STRING_TYPE,
+              A_STRING_TYPE,
+              A_STRING_ARRAY_TYPE),
+          false);
+  public static final Handle BSM_DEFINE_SIGNATURE_CHECK =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(CompiledGenerator.class),
+          "bootstrapDefineSignatureCheck",
+          Type.getMethodDescriptor(
+              A_CALLSITE_TYPE,
+              A_LOOKUP_TYPE,
+              A_STRING_TYPE,
+              A_METHOD_TYPE_TYPE,
+              A_STRING_TYPE,
+              A_STRING_TYPE,
+              A_STRING_ARRAY_TYPE),
+          false);
   private static final Handle BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
           Type.getInternalName(CompiledGenerator.class),
           "bootstrap",
           Type.getMethodDescriptor(
-              Type.getType(CallSite.class),
-              Type.getType(MethodHandles.Lookup.class),
-              Type.getType(String.class),
-              Type.getType(MethodType.class),
-              Type.getType(String.class)),
+              A_CALLSITE_TYPE, A_LOOKUP_TYPE, A_STRING_TYPE, A_METHOD_TYPE_TYPE, A_STRING_TYPE),
           false);
+
   private static final MethodHandle CREATE_EXCEPTION;
+  private static final CallSiteRegistry<Pair<String, String>> DEFINE_REGISTRY =
+      new CallSiteRegistry<>();
+  private static final CallSiteRegistry<DefinitionKey> DEFINE_SIGNATURE_CHECK_REGISTRY =
+      new CallSiteRegistry<>();
+  private static final CallSiteRegistry<DefinitionKey> DEFINE_VARIABLE_REGISTRY =
+      new CallSiteRegistry<>();
   private static final CallSiteRegistry<Pair<String, String>> FUNCTION_REGISTRY =
       new CallSiteRegistry<>();
   public static final LatencyHistogram INPUT_FETCH_TIME =
@@ -419,6 +782,64 @@ public class CompiledGenerator implements DefinitionRepository {
     return (result != null)
         ? result
         : new ConstantCallSite(makeDeadMethodHandle(methodName.split(" ")[0], type));
+  }
+
+  public static CallSite bootstrapDefine(
+      MethodHandles.Lookup lookup,
+      String defineName,
+      MethodType type,
+      String inputFormat,
+      String... otherVariables) {
+    final CallSite result =
+        DEFINE_REGISTRY.get(
+            new Pair<>(
+                inputFormat,
+                defineName
+                    + Stream.of(otherVariables)
+                        .sorted()
+                        .collect(Collectors.joining(" ", " ", ""))));
+    return (result != null)
+        ? result
+        : new ConstantCallSite(
+            makeDeadMethodHandle(
+                String.format("Definition %s on %s", defineName, inputFormat), type));
+  }
+
+  public static CallSite bootstrapDefineSignatureCheck(
+      MethodHandles.Lookup lookup,
+      String variableName,
+      MethodType type,
+      String inputFormat,
+      String defineName,
+      String... otherVariables) {
+    final CallSite result =
+        DEFINE_SIGNATURE_CHECK_REGISTRY.get(
+            new DefinitionKey(inputFormat, defineName, variableName, otherVariables));
+    return (result != null)
+        ? result
+        : new ConstantCallSite(
+            makeDeadMethodHandle(
+                String.format(
+                    "Signature check for %s from %s on %s", variableName, defineName, inputFormat),
+                type));
+  }
+
+  public static CallSite bootstrapDefineVariable(
+      MethodHandles.Lookup lookup,
+      String variableName,
+      MethodType type,
+      String inputFormat,
+      String defineName,
+      String... otherVariables) {
+    final CallSite result =
+        DEFINE_VARIABLE_REGISTRY.get(
+            new DefinitionKey(inputFormat, defineName, variableName, otherVariables));
+    return (result != null)
+        ? result
+        : new ConstantCallSite(
+            makeDeadMethodHandle(
+                String.format("Variable %s from %s on %s", variableName, defineName, inputFormat),
+                type));
   }
 
   public static boolean didFileTimeout(String fileName) {
@@ -495,6 +916,11 @@ public class CompiledGenerator implements DefinitionRepository {
   @Override
   public Stream<ConfigurationSection> listConfiguration() {
     return Stream.empty();
+  }
+
+  @Override
+  public Stream<CallableOliveDefinition> oliveDefinitions() {
+    return scripts().flatMap(Script::oliveDefinitions);
   }
 
   @Override

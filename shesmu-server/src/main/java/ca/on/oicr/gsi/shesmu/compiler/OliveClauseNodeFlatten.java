@@ -1,11 +1,13 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -71,8 +73,12 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
 
   @Override
   public OliveNode.ClauseStreamOrder ensureRoot(
-      OliveNode.ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == OliveNode.ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == OliveNode.ClauseStreamOrder.PURE
+        || state == OliveNode.ClauseStreamOrder.ALMOST_PURE) {
       expression.collectFreeVariables(signableNames, Target.Flavour.STREAM_SIGNABLE::equals);
       copySignatures = true;
       // Okay, we're going to lie here. Flatten does modify the stream but we're going to say that
@@ -80,7 +86,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
       // still be part of the signature since flatten only adds new (non-signable) variables. For
       // this reason, we'll mark flatten as non-deadly (i.e., it won't erase previously defined
       // variables).
-      return OliveNode.ClauseStreamOrder.PURE;
+      return OliveNode.ClauseStreamOrder.ALMOST_PURE;
     }
     return state;
   }
@@ -94,7 +100,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Target.Flavour::needsCapture);
 

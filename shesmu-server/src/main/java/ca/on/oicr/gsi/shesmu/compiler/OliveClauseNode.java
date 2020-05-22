@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -475,7 +476,10 @@ public abstract class OliveClauseNode {
    * @param state the current variable state
    */
   public abstract ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler);
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler);
 
   public abstract int line();
 
@@ -488,7 +492,7 @@ public abstract class OliveClauseNode {
   public abstract void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions);
+      Function<String, CallableDefinitionRenderer> definitions);
 
   /**
    * Resolve all variable plugins in this clause

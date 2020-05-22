@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Label;
@@ -97,8 +98,11 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
 
   @Override
   public ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       expression.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
       copySignatures = true;
     }
@@ -116,7 +120,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     expression.collectFreeVariables(freeVariables, Flavour::needsCapture);
     handlers.forEach(handler -> handler.collectFreeVariables(freeVariables));

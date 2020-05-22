@@ -92,7 +92,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   }
 
   @Override
-  public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void build(RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions) {
     // Do nothing.
   }
 
@@ -109,7 +109,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
 
   @Override
   public boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
@@ -158,8 +158,10 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   }
 
   @Override
-  public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
-    final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
+    final OliveBuilder oliveBuilder =
+        builder.buildRunOlive(line, column, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
     oliveBuilder.finish(

@@ -678,6 +678,11 @@ public final class StandardDefinitions implements DefinitionRepository {
   }
 
   @Override
+  public Stream<CallableOliveDefinition> oliveDefinitions() {
+    return Stream.empty();
+  }
+
+  @Override
   public Stream<FunctionDefinition> functions() {
     return Stream.of(FUNCTIONS);
   }

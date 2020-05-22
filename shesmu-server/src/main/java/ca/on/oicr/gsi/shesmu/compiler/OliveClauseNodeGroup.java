@@ -10,12 +10,12 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -134,8 +134,11 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       discriminators.forEach(
           d -> d.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
       children.forEach(c -> c.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals));
@@ -154,7 +157,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     discriminators.forEach(

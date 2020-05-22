@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,7 +77,9 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
+      ClauseStreamOrder state, Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
     return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
   }
 
@@ -91,7 +94,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
   public final void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
     outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);

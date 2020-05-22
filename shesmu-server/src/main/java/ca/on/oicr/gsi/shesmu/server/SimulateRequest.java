@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository.CallableOliveDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.actions.fake.FakeAction;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
@@ -313,6 +314,7 @@ public class SimulateRequest {
   public void run(
       DefinitionRepository definitionRepository,
       Supplier<Stream<FunctionDefinition>> importableFunctions,
+      Supplier<Stream<CallableOliveDefinition>> importableOliveDefinitions,
       ActionServices actionServices,
       InputSource inputSource,
       HttpExchange http)
@@ -367,6 +369,12 @@ public class SimulateRequest {
                 }
 
                 @Override
+                public Stream<CallableOliveDefinition> oliveDefinitions() {
+                  return Stream.concat(
+                      definitionRepository.oliveDefinitions(), importableOliveDefinitions.get());
+                }
+
+                @Override
                 public Stream<FunctionDefinition> functions() {
                   return Stream.concat(definitionRepository.functions(), importableFunctions.get());
                 }
@@ -410,6 +418,30 @@ public class SimulateRequest {
                   info.put("name", name);
                   info.put("type", "constant");
                   info.put("returns", type.descriptor());
+                }
+
+                @Override
+                public void defineOlive(
+                    MethodHandle method,
+                    String name,
+                    String inputFormatName,
+                    boolean isRoot,
+                    List<Imyhat> parameterTypes,
+                    List<DefineVariableExport> variables,
+                    List<DefineVariableExport> checks) {
+                  final ObjectNode info = exports.addObject();
+                  info.put("type", "define");
+                  info.put("name", name);
+                  info.put("isRoot", isRoot);
+                  info.put("inputFormat", inputFormatName);
+                  final ObjectNode output = info.putObject("output");
+                  for (final DefineVariableExport variable : variables) {
+                    output.put(variable.name(), variable.type().name());
+                  }
+                  parameterTypes
+                      .stream()
+                      .map(Imyhat::descriptor)
+                      .forEach(info.putArray("parameters")::add);
                 }
 
                 @Override

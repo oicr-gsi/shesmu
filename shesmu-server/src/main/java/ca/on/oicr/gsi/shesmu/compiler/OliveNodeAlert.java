@@ -100,7 +100,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
-  public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void build(RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions) {
     // Do nothing.
   }
 
@@ -119,7 +119,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
   @Override
   public boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
@@ -226,13 +226,15 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
-  public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> captures = new HashSet<>();
     ttl.collectFreeVariables(captures, Flavour::needsCapture);
     labels.forEach(label -> label.collectFreeVariables(captures, Flavour::needsCapture));
     annotations.forEach(
         annotation -> annotation.collectFreeVariables(captures, Flavour::needsCapture));
-    final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
+    final OliveBuilder oliveBuilder =
+        builder.buildRunOlive(line, column, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
     final Renderer action =

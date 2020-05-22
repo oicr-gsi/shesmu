@@ -17,11 +17,14 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.*;
@@ -217,7 +220,8 @@ public abstract class RootBuilder {
   }
 
   /** Create a new “Define” olive */
-  public OliveDefineBuilder buildDefineOlive(String name, Stream<? extends Target> parameters) {
+  public CallableDefinitionRenderer buildDefineOlive(
+      String name, Stream<? extends Target> parameters) {
     return new OliveDefineBuilder(this, name, parameters);
   }
 
@@ -225,9 +229,17 @@ public abstract class RootBuilder {
    * Create a new “Run” olive
    *
    * @param line the line in the source file this olive starts on
-   * @param signableNames
    */
-  public final OliveBuilder buildRunOlive(int line, int column, Set<String> signableNames) {
+  public final OliveBuilder buildRunOlive(
+      int line,
+      int column,
+      Set<String> signableNames,
+      List<SignableVariableCheck> signableVariableChecks) {
+    final Map<String, List<SignableVariableCheck>> checks =
+        signableVariableChecks
+            .stream()
+            .filter(c -> !signableNames.contains(c.name()))
+            .collect(Collectors.groupingBy(SignableVariableCheck::name, Collectors.toList()));
     return new OliveBuilder(
         this,
         inputFormatDefinition,
@@ -235,8 +247,13 @@ public abstract class RootBuilder {
         column,
         inputFormatDefinition
             .baseStreamVariables()
-            .filter(
-                t -> t.flavour() == Flavour.STREAM_SIGNABLE && signableNames.contains(t.name())));
+            .filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE)
+            .map(
+                t ->
+                    signableNames.contains(t.name())
+                        ? SignableRenderer.always(t)
+                        : SignableRenderer.conditional(
+                            t, checks.getOrDefault(t.name(), Collections.emptyList()))));
   }
 
   public Stream<LoadableValue> constants(boolean allowUserDefined) {

@@ -4,10 +4,10 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -17,7 +17,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
   private final int column;
   private final int line;
   private final String name;
-  private OliveNodeDefinition target;
+  private CallableDefinition target;
 
   public OliveClauseNodeCall(int line, int column, String name, List<ExpressionNode> arguments) {
     this.line = line;
@@ -43,22 +43,25 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 
   @Override
   public Stream<OliveClauseRow> dashboard() {
-    return target.dashboardInner();
+    return target.dashboardInner(line, column);
   }
 
   @Override
   public ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
+      ClauseStreamOrder state,
+      Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
     switch (state) {
-      case BAD:
-        return ClauseStreamOrder.BAD;
+      case ALMOST_PURE:
       case TRANSFORMED:
         errorHandler.accept(
-            String.format("%d:%d: Call clause cannot be applied to grouped result.", line, column));
+            String.format(
+                "%d:%d: Call clause cannot be applied to transformed result.", line, column));
         return ClauseStreamOrder.BAD;
       case PURE:
-        signableNames.addAll(target.signableNames);
-        return target.isRoot() ? ClauseStreamOrder.PURE : ClauseStreamOrder.TRANSFORMED;
+        target.collectSignables(signableNames, addSignableCheck);
+        return target.isRoot() ? ClauseStreamOrder.ALMOST_PURE : ClauseStreamOrder.TRANSFORMED;
       default:
         return ClauseStreamOrder.BAD;
     }
@@ -73,11 +76,10 @@ public class OliveClauseNodeCall extends OliveClauseNode {
   public void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     oliveBuilder.line(line);
     oliveBuilder.call(
-        definitions.get(name),
-        arguments.stream().map(argument -> renderer -> argument.render(renderer)));
+        definitions.apply(name), arguments.stream().map(argument -> argument::render));
 
     oliveBuilder.measureFlow(builder.sourcePath(), line, column);
   }

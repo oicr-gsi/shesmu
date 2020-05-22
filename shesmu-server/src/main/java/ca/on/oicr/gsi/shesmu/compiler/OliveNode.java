@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -18,6 +19,7 @@ public abstract class OliveNode {
   protected enum ClauseStreamOrder {
     BAD,
     PURE,
+    ALMOST_PURE,
     TRANSFORMED
   }
 
@@ -31,44 +33,11 @@ public abstract class OliveNode {
         int line, int column, List<OliveClauseNode> clauses, Set<String> tags, String description);
   }
 
-  public static Parser parseAlert(Parser input, Consumer<OliveAlertConstructor> output) {
-    final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
-    final AtomicReference<List<OliveArgumentNode>> annotations =
-        new AtomicReference<>(Collections.emptyList());
-    final AtomicReference<ExpressionNode> ttl = new AtomicReference<>();
-    Parser result =
-        input.whitespace().list(labels::set, OliveArgumentNode::parse, ',').whitespace();
-    final Parser annotationsParser = result.keyword("Annotations");
-    if (annotationsParser.isGood()) {
-      result =
-          annotationsParser
-              .whitespace()
-              .listEmpty(annotations::set, OliveArgumentNode::parse, ',')
-              .whitespace();
-    }
-    result = result.keyword("For").whitespace().then(ExpressionNode::parse, ttl::set);
-    if (result.isGood()) {
-      output.accept(
-          (line, column, clauses, tags, description) ->
-              new OliveNodeAlert(
-                  line,
-                  column,
-                  labels.get(),
-                  annotations.get(),
-                  ttl.get(),
-                  clauses,
-                  tags,
-                  description));
-    }
-    return result;
-  }
-
-  private static final Parser.ParseDispatch<OliveNode> ROOTS = new Parser.ParseDispatch<>();
+  private static final Pattern DESCRIPTION = Pattern.compile("[^\"\\n]*");
   private static final Parser.ParseDispatch<OliveNode> EXPORTABLE = new Parser.ParseDispatch<>();
+  private static final Parser.ParseDispatch<OliveNode> ROOTS = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<OliveConstructor> TERMINAL =
       new Parser.ParseDispatch<>();
-
-  private static final Pattern DESCRIPTION = Pattern.compile("[^\"\\n]*");
 
   static {
     TERMINAL.addKeyword(
@@ -145,32 +114,8 @@ public abstract class OliveNode {
           }
           return result;
         });
-    ROOTS.addKeyword(
-        "Define",
-        (input, output) -> {
-          final AtomicReference<String> name = new AtomicReference<>();
-          final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
-          final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
-          final Parser result =
-              input
-                  .whitespace()
-                  .identifier(name::set)
-                  .whitespace()
-                  .symbol("(")
-                  .listEmpty(params::set, OliveParameter::parse, ',')
-                  .symbol(")")
-                  .whitespace()
-                  .list(clauses::set, OliveClauseNode::parse)
-                  .whitespace()
-                  .symbol(";")
-                  .whitespace();
-          if (result.isGood()) {
-            output.accept(
-                new OliveNodeDefinition(
-                    input.line(), input.column(), name.get(), params.get(), clauses.get()));
-          }
-          return result;
-        });
+    ROOTS.addKeyword("Define", (input, output) -> parseDefine(input, false, output));
+    EXPORTABLE.addKeyword("Define", (input, output) -> parseDefine(input, true, output));
     ROOTS.addKeyword(
         "Olive",
         (input, output) -> {
@@ -224,6 +169,43 @@ public abstract class OliveNode {
         "constant declaration", (input, output) -> parseConstant(input, true, output));
   }
 
+  /** Parse a single olive node stanza */
+  public static Parser parse(Parser input, Consumer<OliveNode> output) {
+    return input.dispatch(ROOTS, output).whitespace();
+  }
+
+  public static Parser parseAlert(Parser input, Consumer<OliveAlertConstructor> output) {
+    final AtomicReference<List<OliveArgumentNode>> labels = new AtomicReference<>();
+    final AtomicReference<List<OliveArgumentNode>> annotations =
+        new AtomicReference<>(Collections.emptyList());
+    final AtomicReference<ExpressionNode> ttl = new AtomicReference<>();
+    Parser result =
+        input.whitespace().list(labels::set, OliveArgumentNode::parse, ',').whitespace();
+    final Parser annotationsParser = result.keyword("Annotations");
+    if (annotationsParser.isGood()) {
+      result =
+          annotationsParser
+              .whitespace()
+              .listEmpty(annotations::set, OliveArgumentNode::parse, ',')
+              .whitespace();
+    }
+    result = result.keyword("For").whitespace().then(ExpressionNode::parse, ttl::set);
+    if (result.isGood()) {
+      output.accept(
+          (line, column, clauses, tags, description) ->
+              new OliveNodeAlert(
+                  line,
+                  column,
+                  labels.get(),
+                  annotations.get(),
+                  ttl.get(),
+                  clauses,
+                  tags,
+                  description));
+    }
+    return result;
+  }
+
   private static Parser parseConstant(Parser input, boolean exported, Consumer<OliveNode> output) {
     final AtomicReference<String> name = new AtomicReference<>();
     final AtomicReference<ExpressionNode> body = new AtomicReference<>();
@@ -241,6 +223,31 @@ public abstract class OliveNode {
     if (result.isGood()) {
       output.accept(
           new OliveNodeConstant(input.line(), input.column(), exported, name.get(), body.get()));
+    }
+    return result;
+  }
+
+  private static Parser parseDefine(Parser input, boolean export, Consumer<OliveNode> output) {
+    final AtomicReference<String> name = new AtomicReference<>();
+    final AtomicReference<List<OliveParameter>> params = new AtomicReference<>();
+    final AtomicReference<List<OliveClauseNode>> clauses = new AtomicReference<>();
+    final Parser result =
+        input
+            .whitespace()
+            .identifier(name::set)
+            .whitespace()
+            .symbol("(")
+            .listEmpty(params::set, OliveParameter::parse, ',')
+            .symbol(")")
+            .whitespace()
+            .list(clauses::set, OliveClauseNode::parse)
+            .whitespace()
+            .symbol(";")
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(
+          new OliveNodeDefinition(
+              input.line(), input.column(), export, name.get(), params.get(), clauses.get()));
     }
     return result;
   }
@@ -270,18 +277,14 @@ public abstract class OliveNode {
     return result;
   }
 
-  /** Parse a single olive node stanza */
-  public static Parser parse(Parser input, Consumer<OliveNode> output) {
-    return input.dispatch(ROOTS, output).whitespace();
-  }
-
   /**
    * Create {@link OliveDefineBuilder} instances for this olive, if required
    *
    * <p>This is part of bytecode generation and happens well after {@link #collectDefinitions(Map,
    * Map, Consumer)}
    */
-  public abstract void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
+  public abstract void build(
+      RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions);
 
   /** Check that every variable that is declare is used somewhere in the program */
   public abstract boolean checkUnusedDeclarations(Consumer<String> errorHandler);
@@ -295,7 +298,7 @@ public abstract class OliveNode {
    * <p>This is part of analysis and happens well before {@link #build(RootBuilder, Map)}
    */
   public abstract boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler);
 
@@ -311,7 +314,8 @@ public abstract class OliveNode {
   public abstract void processExport(ExportConsumer exportConsumer);
 
   /** Generate bytecode for this stanza into the {@link ActionGenerator#run} method */
-  public abstract void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions);
+  public abstract void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions);
 
   /** Resolve all variable plugins */
   public abstract boolean resolve(

@@ -37,7 +37,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     }
 
     @Override
-    public void build(GeneratorAdapter method, Type streamType, Stream<Target> variables) {
+    public void build(GeneratorAdapter method, Type streamType,
+        Stream<SignableRenderer> variables) {
       backing.build(method, streamType, variables);
     }
 
@@ -208,8 +209,10 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
-    if (state == ClauseStreamOrder.PURE) {
+      ClauseStreamOrder state, Set<String> signableNames,
+      Consumer<SignableVariableCheck> addSignableCheck,
+      Consumer<String> errorHandler) {
+    if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       outerKey.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
     }
     return state;
@@ -226,7 +229,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   public final void render(
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
-      Map<String, OliveDefineBuilder> definitions) {
+      Function<String, CallableDefinitionRenderer> definitions) {
     final String prefix = String.format("LeftJoin %d:%d To %s ", line, column, inputFormat.name());
     final Set<String> freeVariables = new HashSet<>();
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
@@ -241,18 +244,20 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     children.forEach(
         group -> group.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals));
     innerKey.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals);
-    final List<Target> signables =
-        inputFormat
-            .baseStreamVariables()
-            .filter(input -> innerSignables.contains(variablePrefix + input.name()))
-            .collect(Collectors.toList());
 
     builder
         .signatureVariables()
         .filter(signature -> innerSignatures.contains(variablePrefix + signature.name()))
         .forEach(
             signatureDefinition ->
-                oliveBuilder.createSignature(prefix, inputFormat, signables, signatureDefinition));
+                oliveBuilder.createSignature(
+                    prefix,
+                    inputFormat,
+                    inputFormat
+                        .baseStreamVariables()
+                        .filter(input -> innerSignables.contains(variablePrefix + input.name()))
+                        .map(SignableRenderer::always),
+                    signatureDefinition));
 
     oliveBuilder.line(line);
     final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin =

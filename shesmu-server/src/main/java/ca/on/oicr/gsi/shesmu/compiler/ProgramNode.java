@@ -140,11 +140,15 @@ public class ProgramNode {
   }
 
   /** Generate bytecode for this definition */
-  public void render(RootBuilder builder) {
-    final Map<String, OliveDefineBuilder> definitions = new HashMap<>();
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> externalDefinitions) {
+    final Map<String, CallableDefinitionRenderer> definitions = new HashMap<>();
     pragmas.forEach(pragma -> pragma.renderGuard(builder));
     olives.forEach(olive -> olive.build(builder, definitions));
-    olives.forEach(olive -> olive.render(builder, definitions));
+    olives.forEach(
+        olive ->
+            olive.render(
+                builder, name -> definitions.getOrDefault(name, externalDefinitions.apply(name))));
     pragmas.forEach(pragma -> pragma.renderAtExit(builder));
   }
 
@@ -167,6 +171,7 @@ public class ProgramNode {
       Function<String, FunctionDefinition> definedFunctions,
       Function<String, ActionDefinition> definedActions,
       Function<String, RefillerDefinition> definedRefillers,
+      Function<String, CallableDefinition> definedOlives,
       Consumer<String> errorHandler,
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures,
@@ -181,7 +186,7 @@ public class ProgramNode {
     }
     final Map<String, Imyhat> userDefinedTypes =
         InputFormatDefinition.predefinedTypes(signatures.get(), inputFormatDefinition);
-    final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
+    final Map<String, CallableDefinition> userDefinedOlives = new HashMap<>();
     final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
     final Map<String, Target> userDefinedConstants = new HashMap<>();
     final List<ImportRewriter> importRewriters =
@@ -259,8 +264,9 @@ public class ProgramNode {
           }
 
           @Override
-          public OliveNodeDefinition olive(String name) {
-            return definedOlives.get(name);
+          public CallableDefinition olive(String name) {
+            final CallableDefinition external = checkImports(definedOlives, name);
+            return external == null ? userDefinedOlives.get(name) : external;
           }
 
           @Override
@@ -295,7 +301,7 @@ public class ProgramNode {
                     .filter(
                         olive ->
                             olive.collectDefinitions(
-                                definedOlives, userDefinedConstants, errorHandler))
+                                userDefinedOlives, userDefinedConstants, errorHandler))
                     .count()
                 == olives.size();
     ok =

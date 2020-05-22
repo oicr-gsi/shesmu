@@ -410,6 +410,11 @@ public class RunTest {
                     }
 
                     @Override
+                    public Stream<CallableOliveDefinition> oliveDefinitions() {
+                      return Stream.empty();
+                    }
+
+                    @Override
                     public Stream<FunctionDefinition> functions() {
                       return Stream.of(INT2STR, INT2DATE);
                     }
@@ -497,6 +502,18 @@ public class RunTest {
                   new LiveExportConsumer() {
                     @Override
                     public void constant(MethodHandle method, String name, Imyhat type) {
+                      // Do nothing
+                    }
+
+                    @Override
+                    public void defineOlive(
+                        MethodHandle method,
+                        String name,
+                        String inputFormatName,
+                        boolean isRoot,
+                        List<Imyhat> parameterTypes,
+                        List<DefineVariableExport> variables,
+                        List<DefineVariableExport> checks) {
                       // Do nothing
                     }
 

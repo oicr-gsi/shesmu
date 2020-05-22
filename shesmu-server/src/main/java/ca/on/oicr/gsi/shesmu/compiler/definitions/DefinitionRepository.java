@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.CallableDefinitionRenderer;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.util.LoadedConfiguration;
 import ca.on.oicr.gsi.status.ConfigurationSection;
@@ -8,6 +10,7 @@ import java.util.stream.Stream;
 
 /** A service class that can provide external constants that should be visible to Shesmu programs */
 public interface DefinitionRepository extends LoadedConfiguration {
+  interface CallableOliveDefinition extends CallableDefinition, CallableDefinitionRenderer {}
 
   static DefinitionRepository concat(DefinitionRepository... definitionRepositories) {
     return new DefinitionRepository() {
@@ -20,6 +23,11 @@ public interface DefinitionRepository extends LoadedConfiguration {
       @Override
       public Stream<ConstantDefinition> constants() {
         return Stream.of(definitionRepositories).flatMap(DefinitionRepository::constants);
+      }
+
+      @Override
+      public Stream<CallableOliveDefinition> oliveDefinitions() {
+        return Stream.of(definitionRepositories).flatMap(DefinitionRepository::oliveDefinitions);
       }
 
       @Override
@@ -62,6 +70,9 @@ public interface DefinitionRepository extends LoadedConfiguration {
 
   /** Provide all constants know by this service */
   Stream<ConstantDefinition> constants();
+
+  /** Provide all olive definitions */
+  Stream<CallableOliveDefinition> oliveDefinitions();
 
   Stream<RefillerDefinition> refillers();
   /**

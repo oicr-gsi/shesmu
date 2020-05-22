@@ -57,7 +57,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   }
 
   @Override
-  public void build(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void build(RootBuilder builder, Map<String, CallableDefinitionRenderer> definitions) {
     // Do nothing.
   }
 
@@ -74,7 +74,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
 
   @Override
   public boolean collectDefinitions(
-      Map<String, OliveNodeDefinition> definedOlives,
+      Map<String, CallableDefinition> definedOlives,
       Map<String, Target> definedConstants,
       Consumer<String> errorHandler) {
     return true;
@@ -119,11 +119,13 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   private static final Type A_STRING_TYPE = Type.getType(String.class);
 
   @Override
-  public void render(RootBuilder builder, Map<String, OliveDefineBuilder> definitions) {
+  public void render(
+      RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> captures = new HashSet<>();
     arguments.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
     variableTags.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
-    final OliveBuilder oliveBuilder = builder.buildRunOlive(line, column, signableNames);
+    final OliveBuilder oliveBuilder =
+        builder.buildRunOlive(line, column, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
     final Renderer action =

@@ -147,7 +147,7 @@ public abstract class BaseOliveBuilder {
       RootBuilder owner,
       String prefix,
       InputFormatDefinition inputFormat,
-      List<Target> signables,
+      List<SignableRenderer> signables,
       SignatureDefinition signer) {
     final String name = prefix + signer.name();
     switch (signer.storage()) {
@@ -197,7 +197,8 @@ public abstract class BaseOliveBuilder {
    * @param defineOlive the define olive to run
    * @param arguments the arguments to pass as parameters to the olive
    */
-  public final void call(OliveDefineBuilder defineOlive, Stream<Consumer<Renderer>> arguments) {
+  public final void call(
+      CallableDefinitionRenderer defineOlive, Stream<Consumer<Renderer>> arguments) {
     final List<Consumer<Renderer>> arglist = arguments.collect(Collectors.toList());
     if (arglist.size() != defineOlive.parameters()) {
       throw new IllegalArgumentException(
@@ -210,8 +211,7 @@ public abstract class BaseOliveBuilder {
     }
     steps.add(
         renderer -> {
-          renderer.methodGen().loadThis();
-          renderer.methodGen().swap();
+          defineOlive.generatePreamble(renderer.methodGen());
           loadOliveServices(renderer.methodGen());
           loadInputProvider(renderer.methodGen());
           loadOwnerSourceLocation(renderer.methodGen());
@@ -219,8 +219,7 @@ public abstract class BaseOliveBuilder {
           for (int i = 0; i < arglist.size(); i++) {
             arglist.get(i).accept(renderer);
           }
-
-          renderer.methodGen().invokeVirtual(owner.selfType(), defineOlive.method());
+          defineOlive.generateCall(renderer.methodGen());
         });
     currentType = defineOlive.currentType();
   }
@@ -228,9 +227,9 @@ public abstract class BaseOliveBuilder {
   public final void createSignature(
       String prefix,
       InputFormatDefinition inputFormat,
-      List<Target> signables,
+      Stream<SignableRenderer> signables,
       SignatureDefinition signer) {
-    createSignatureInfrastructure(owner, prefix, inputFormat, signables, signer);
+    createSignatureInfrastructure(owner, prefix, inputFormat, signables.collect(Collectors.toList()), signer);
   }
 
   /**
