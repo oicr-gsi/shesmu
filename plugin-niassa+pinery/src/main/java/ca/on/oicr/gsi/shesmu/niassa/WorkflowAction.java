@@ -617,6 +617,7 @@ public final class WorkflowAction extends Action {
           // Zap the cache so any other workflows will see this workflow running and won't exceed
           // our budget
           server.get().invalidateMaxInFlight(workflowAccession);
+          server.get().analysisCache().invalidate(workflowAccession);
           final WorkflowRunAttribute attribute = new WorkflowRunAttribute();
           attribute.setTag(MAJOR_OLIVE_VERSION);
           attribute.setValue(Long.toString(majorOliveVersion));
