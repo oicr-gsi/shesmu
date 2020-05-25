@@ -132,6 +132,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       final WorkflowRun run = metadata.getWorkflowRun(key.intValue());
       final Properties ini = new Properties();
       ini.load(new StringReader(run.getIniFile()));
+
       final Optional<String> cromwellId =
           run.getWorkflowRunAttributes()
               .stream()

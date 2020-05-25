@@ -18,6 +18,7 @@ import net.sourceforge.seqware.common.model.WorkflowRun;
 public class AnalysisState implements Comparable<AnalysisState> {
   private final Map<String, Set<String>> annotations;
   private final Set<Integer> fileSWIDSToRun;
+  private final SortedSet<FileInfo> files;
   private final Set<String> knownSignatures;
   private final Instant lastModified;
   private final List<Pair<? extends LimsKey, Integer>> limsKeys;
@@ -148,6 +149,12 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .collect(
                 Collectors.groupingBy(
                     Pair::first, Collectors.mapping(Pair::second, Collectors.toSet())));
+    files =
+        source
+            .stream()
+            .filter(ap -> ap.getFileId() != null && ap.getFilePath() != null)
+            .map(FileInfo::new)
+            .collect(Collectors.toCollection(TreeSet::new));
   }
 
   /** Check how much this analysis record matches the data provided */
@@ -283,6 +290,10 @@ public class AnalysisState implements Comparable<AnalysisState> {
       comparison = Integer.compare(other.workflowRunAccession, workflowRunAccession);
     }
     return comparison;
+  }
+
+  public Iterable<FileInfo> files() {
+    return files;
   }
 
   public Instant lastModified() {
