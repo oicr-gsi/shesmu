@@ -111,6 +111,15 @@ actionRender.set("niassa", a => [
     )
   ),
   collapse(
+    "Output Files",
+    table(
+      a.files || [],
+      ["Accession", f => f.accession],
+      ["Path", f => f.path],
+      ["Metatype", f => f.metatype]
+    )
+  ),
+  collapse(
     `Logs from Cromwell Job ${a.cromwellId}`,
     table(
       a.cromwellLogs || [],

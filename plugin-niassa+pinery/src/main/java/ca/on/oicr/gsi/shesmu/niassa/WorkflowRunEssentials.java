@@ -4,7 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class WorkflowRunEssentials {
+public final class WorkflowRunEssentials {
+
   public static final WorkflowRunEssentials EMPTY =
       new WorkflowRunEssentials(null, null, null, Collections.emptyMap(), Collections.emptyMap());
   private final String cromwellId;

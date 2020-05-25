@@ -852,6 +852,27 @@ public final class WorkflowAction extends Action {
         node.put("cromwellRoot", essentials.cromwellRoot());
         final ObjectNode discoveredIniNode = node.putObject("discoveredIni");
         essentials.ini().forEach((k, v) -> discoveredIniNode.put(k.toString(), v.toString()));
+        final ArrayNode outputFiles = node.putArray("files");
+
+        final Iterable<FileInfo> files =
+            matches
+                .stream()
+                .filter(m -> m.state().workflowRunAccession() == runAccession)
+                .findAny()
+                .map(m -> m.state().files())
+                .orElseGet(
+                    () ->
+                        server
+                            .get()
+                            .analysisCache()
+                            .getStale(workflowAccession)
+                            .filter(s -> s.workflowRunAccession() == runAccession)
+                            .findAny()
+                            .map(AnalysisState::files)
+                            .orElse(Collections.emptyList()));
+        for (final FileInfo file : files) {
+          file.toJson(outputFiles);
+        }
         final ArrayNode cromwellLogs = node.putArray("cromwellLogs");
         essentials
             .cromwellLogs()
