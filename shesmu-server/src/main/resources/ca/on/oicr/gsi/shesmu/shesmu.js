@@ -5,12 +5,15 @@ import {
   commonPathPrefix,
   formatTimeBin,
   formatTimeSpan,
+  italic,
   link,
+  mono,
+  objectTable,
+  paragraph,
   preformatted,
   table,
   text,
   title,
-  objectTable,
   toggleCollapse,
   visibleText
 } from "./utils.js";
@@ -1208,7 +1211,8 @@ function saveSearch(filters, updateSearchList) {
   );
 }
 
-function filterableDialog(items, addItem, render, predicate, breakLines) {
+function filterableDialog(items, setItems, render, predicate, breakLines) {
+  const selected = [];
   const [dialog, close] = makePopup(true);
   const list = document.createElement("DIV");
   const showItems = p => {
@@ -1217,8 +1221,9 @@ function filterableDialog(items, addItem, render, predicate, breakLines) {
       const [name, title] = render(item);
       list.appendChild(
         button(name, title, e => {
-          addItem(item);
+          selected.push(item);
           if (!e.ctrlKey) {
+            setItems(selected);
             e.stopPropagation();
             close();
           }
@@ -2616,7 +2621,7 @@ function addToSet(value) {
   return list =>
     list
       ? list
-          .concat([value])
+          .concat(Array.isArray(value) ? value : [value])
           .sort()
           .filter((item, index, array) => item == 0 || item != array[index - 1])
       : [value];
@@ -2723,6 +2728,13 @@ function removeFromList(value) {
   return list => (list ? list.filter(x => x !== value) : []);
 }
 
+function updateText(original, text, matchedCase) {
+  return x =>
+    (x || [])
+      .filter(v => v.text != original.text && v.text != text)
+      .concat(text ? [{ text: text, matchCase: matchCase }] : []);
+}
+
 function editText(original, callback) {
   const [dialog, close] = makePopup(true);
   dialog.appendChild(document.createTextNode("Search for text: "));
@@ -2743,21 +2755,24 @@ function editText(original, callback) {
     button("Save", "Update text search filter in current search.", () => {
       close();
       const text = input.value.trim();
-      callback(x =>
-        (x || [])
-          .filter(v => v.text != original.text && v.text != text)
-          .concat(text ? [{ text: text, matchCase: matchCase.checked }] : [])
-      );
+      callback(text, matchCase.checked);
     })
   );
   if (original.text) {
     dialog.appendChild(
       button("Delete", "Remove text search filer from current search.", () => {
         close();
-        callback(x => (x || []).filter(v => v.text != original.text));
+        callback(null, false);
       })
     );
   }
+}
+
+function updateRegex(original, pattern, matchCase) {
+  return x =>
+    (x || [])
+      .filter(v => v.pattern != original.pattern && v.pattern != pattern)
+      .concat(pattern ? [{ pattern: pattern, matchCase: matchCase }] : []);
 }
 
 function editRegex(original, callback) {
@@ -2766,9 +2781,17 @@ function editRegex(original, callback) {
   const error = document.createElement("SPAN");
   const input = document.createElement("INPUT");
   input.type = "text";
-  input.value = original;
+  input.value = original.pattern;
   dialog.appendChild(input);
   dialog.appendChild(error);
+  dialog.appendChild(document.createElement("BR"));
+  const matchCaseLabel = document.createElement("LABEL");
+  const matchCase = document.createElement("INPUT");
+  matchCase.type = "checkbox";
+  matchCase.checked = original.matchCase;
+  matchCaseLabel.appendChild(matchCase);
+  matchCaseLabel.appendChild(document.createTextNode("Case sensitive"));
+  dialog.appendChild(matchCaseLabel);
   dialog.appendChild(document.createElement("BR"));
   dialog.appendChild(
     button(
@@ -2782,22 +2805,18 @@ function editRegex(original, callback) {
           return;
         }
         close();
-        callback(x =>
-          (x || [])
-            .filter(v => v != original && v != input.value)
-            .concat(input.value ? [input.value] : [])
-        );
+        callback(input.value, matchCase.checked);
       }
     )
   );
-  if (original) {
+  if (original.pattern) {
     dialog.appendChild(
       button(
         "Delete",
         "Remove regular expression search from current filter.",
         () => {
           close();
-          callback(x => (x || []).filter(v => v != original));
+          callback(null, false);
         }
       )
     );
@@ -2928,14 +2947,14 @@ function editTime(original, callback) {
   dialog.appendChild(
     button("Save", "Update time range filter in current search.", () => {
       close();
-      callback(x => ({ start: start(), end: end() }));
+      callback(start(), end());
     })
   );
   if (original.start || original.end) {
     dialog.appendChild(
       button("Delete", "Remove time range filter from current search.", () => {
         close();
-        callback(x => ({ start: null, end: null }));
+        callback(null, null);
       })
     );
   }
@@ -2972,7 +2991,7 @@ function editTimeAgo(original, callback) {
   dialog.appendChild(
     button("Save", "Update time range filter in current search.", () => {
       close();
-      callback(x =>
+      callback(
         Number.isNaN(input.valueAsNumber) ? 0 : input.valueAsNumber * units
       );
     })
@@ -2981,7 +3000,7 @@ function editTimeAgo(original, callback) {
     dialog.appendChild(
       button("Delete", "Remove time range filter from current search.", () => {
         close();
-        callback(x => 0);
+        callback(0);
       })
     );
   }
@@ -3052,7 +3071,9 @@ function renderFilter(tile, filter, mutateCallback) {
           duration.style.textAlign = "center";
           tile.appendChild(duration);
         }
-        editable(tile, filter.type, filter, editTime);
+        editable(tile, filter.type, filter, (origina, update) =>
+          editTime(original, (start, end) => update({ start: start, end: end }))
+        );
       }
       break;
     case "addedago":
@@ -3070,19 +3091,30 @@ function renderFilter(tile, filter, mutateCallback) {
         const duration = document.createElement("DIV");
         duration.innerText = "🕑 " + formatTimeSpan(filter.offset);
         tile.appendChild(duration);
-        editable(tile, filter.type, filter.offset, editTimeAgo);
+        editable(tile, filter.type, filter.offset, (original, update) =>
+          editTimeAgo(original, update)
+        );
       }
       break;
 
     case "regex": {
       const title = document.createElement("DIV");
-      title.innerText = (filter.negate ? "Not " : "") + "Regular Expression";
+      title.innerText =
+        (filter.negate ? "Not " : "") +
+        (filter.matchCase ? "Case-Sensitive " : "Case-Insensitive ") +
+        "Regular Expression";
       tile.appendChild(title);
-      deleteButton(title, "regex", x => x.filter(v => v != filter.pattern));
+      deleteButton(title, "regex", x =>
+        x.filter(v => v.pattern != filter.pattern)
+      );
       const pattern = document.createElement("PRE");
       pattern.innerText = filter.pattern;
       tile.appendChild(pattern);
-      editable(tile, "regex", filter.pattern, editRegex);
+      editable(tile, "regex", filter, (original, update) =>
+        editRegex(original, (pattern, matchCase) =>
+          update(updateRegex(original, pattern, matchCase))
+        )
+      );
       break;
     }
     case "text":
@@ -3098,7 +3130,11 @@ function renderFilter(tile, filter, mutateCallback) {
         const text = document.createElement("PRE");
         text.innerText = visibleText(filter.text);
         tile.appendChild(text);
-        editable(tile, "text", filter, editText);
+        editable(tile, "text", filter, (original, update) =>
+          editText(original, (update, matchedCase) =>
+            update(updateText(original, update, matchedCase))
+          )
+        );
       }
       break;
 
@@ -3327,7 +3363,7 @@ function synthesiseFilters(metaFilter) {
   }
   if (metaFilter.regex) {
     metaFilter.regex.forEach(regex =>
-      filters.push({ type: "regex", pattern: regex })
+      filters.push({ ...regex, type: "regex" })
     );
   }
   return filters;
@@ -3361,7 +3397,664 @@ export function encodeSearch(filters) {
     )
   );
 }
+function renderStats(container, data, makePropertyClick, linkBinRange) {
+  if (data.length == 0) {
+    container.innerText = "No statistics are available.";
+    return;
+  }
+  const help = document.createElement("P");
+  help.innerText = "Click any cell or table heading to filter results.";
+  container.appendChild(help);
 
+  let selectedElement = null;
+  data.forEach(stat => {
+    const element = document.createElement("DIV");
+    switch (stat.type) {
+      case "text":
+        element.innerText = stat.value;
+        break;
+      case "table":
+        {
+          const table = document.createElement("TABLE");
+          element.appendChild(table);
+          stat.table.forEach(row => {
+            let prettyTitle;
+            switch (row.kind) {
+              case "property":
+                prettyTitle = x => `${x} ${row.property}`;
+                break;
+              default:
+                prettyTitle = x => x;
+            }
+            const tr = document.createElement("TR");
+            table.appendChild(tr);
+            const title = document.createElement("TD");
+            title.innerText = prettyTitle(row.title);
+            tr.appendChild(title);
+            const value = document.createElement("TD");
+            breakSlashes(row.value.toString()).forEach(x =>
+              value.appendChild(x)
+            );
+            tr.appendChild(value);
+            if (row.kind == "property") {
+              makePropertyClick(tr, [row.type, row.json]);
+            }
+          });
+        }
+        break;
+      case "crosstab":
+        {
+          const table = document.createElement("TABLE");
+          element.appendChild(table);
+
+          const header = document.createElement("TR");
+          table.appendChild(header);
+
+          header.appendChild(document.createElement("TH"));
+          for (let col of stat.columns) {
+            const currentHeader = document.createElement("TH");
+            breakSlashes(col.name).forEach(x => currentHeader.appendChild(x));
+            header.appendChild(currentHeader);
+            makeProperyClick(currentHeader, [col.name, col.value]);
+          }
+          const maximum = Math.max(
+            1,
+            Math.max(
+              ...Object.values(stat.data).map(row =>
+                Math.max(...Object.values(row))
+              )
+            )
+          );
+
+          for (let rowKey of Object.keys(stat.data).sort()) {
+            const rowValue = stat.rows[rowKey];
+            const currentRow = document.createElement("TR");
+            table.appendChild(currentRow);
+
+            const currentHeader = document.createElement("TH");
+            breakSlashes(rowKey).forEach(x => currentHeader.appendChild(x));
+            currentRow.appendChild(currentHeader);
+            makePropertyClick(currentRow, [stat.row, rowValue]);
+
+            for (let col of stat.columns) {
+              const currentValue = document.createElement("TD");
+              // The matrix might be ragged if doing a tag-tag crosstab
+              const value =
+                stat.hasOwnProperty(rowKey) &&
+                stat[rowKey].hasOwnProperty(col.name)
+                  ? stat.data[rowKey][col.name]
+                  : 0;
+              if (value) {
+                currentValue.innerText = stat.data[rowKey][col.name];
+              }
+              currentRow.appendChild(currentValue);
+              setColorIntensity(currentValue, value, maximum);
+              makePropertyClick(
+                currentValue,
+                [col.name, col.filter],
+                [stat.row, rowValue]
+              );
+            }
+          }
+        }
+        break;
+
+      case "histogram":
+        {
+          const boundaryLabels = stat.boundaries.map(x => formatTimeBin(x));
+          const max = Math.log(
+            Math.max(...Object.values(stat.counts).flat()) + 1
+          );
+          const labels = Object.keys(stat.counts).map(
+            bin => " " + nameForBin(bin)
+          );
+          const div = document.createElement("div");
+          div.className = "histogram";
+          let selectionStart = null;
+          div.width = "90%";
+          element.appendChild(div);
+          const canvas = document.createElement("canvas");
+          const ctxt = canvas.getContext("2d");
+          const rowHeight = 40;
+          const fontHeight = 10; // We should be able to compute this from the font metrics, but they don't provide it, so uhh...10pts.
+          const columnLabelHeight =
+            Math.sin(headerAngle) *
+              Math.max(
+                ...boundaryLabels.map(l => ctxt.measureText(l[0]).width)
+              ) +
+            2 * fontHeight;
+          canvas.height = labels.length * rowHeight + columnLabelHeight;
+          div.appendChild(canvas);
+          const currentTime = document.createElement("span");
+          currentTime.innerText = "\u00A0";
+          element.appendChild(currentTime);
+          const redraw = () => {
+            const cs = getComputedStyle(div);
+            const width = parseInt(cs.getPropertyValue("width"), 10);
+            canvas.width = width;
+
+            const labelWidth = Math.max(
+              ...labels.map(l => ctxt.measureText(l).width)
+            );
+            const columnWidth =
+              (width - labelWidth) / (boundaryLabels.length - 1);
+            const columnSkip = Math.ceil(
+              (2 * fontHeight * Math.cos(headerAngle)) / columnWidth
+            );
+
+            const repaint = selectionEnd => {
+              ctxt.clearRect(0, 0, width, canvas.height);
+              ctxt.fillStyle = "#000";
+              boundaryLabels.forEach((label, index) => {
+                if (index % columnSkip == 0) {
+                  // We can only apply rotation about the origin, so move the origin to the point where we want to draw the text, rotate it, draw the text at the origin, then reset the coordinate system.
+                  ctxt.translate(index * columnWidth, columnLabelHeight);
+                  ctxt.rotate(-headerAngle);
+                  ctxt.fillText(
+                    label[0],
+                    fontHeight * Math.tan(headerAngle),
+                    0
+                  );
+                  ctxt.setTransform(1, 0, 0, 1, 0, 0);
+                }
+              });
+              Object.entries(stat.counts).forEach(([bin, counts], binIndex) => {
+                if (counts.length != boundaryLabels.length - 1) {
+                  throw new Error(
+                    `Data type ${bin} has ${counts.length} but expected ${
+                      boundaryLabels.length - 1
+                    }`
+                  );
+                }
+                for (
+                  let countIndex = 0;
+                  countIndex < counts.length;
+                  countIndex++
+                ) {
+                  if (
+                    selectionStart &&
+                    selectionEnd &&
+                    selectionStart.bin == binIndex &&
+                    selectionEnd.bin == binIndex &&
+                    countIndex >=
+                      Math.min(
+                        selectionStart.boundary,
+                        selectionEnd.boundary
+                      ) &&
+                    countIndex <=
+                      Math.max(selectionStart.boundary, selectionEnd.boundary)
+                  ) {
+                    ctxt.fillStyle = "#E0493B";
+                  } else {
+                    ctxt.fillStyle = "#06AED5";
+                  }
+                  ctxt.globalAlpha = Math.log(counts[countIndex] + 1) / max;
+                  ctxt.fillRect(
+                    countIndex * columnWidth + 1,
+                    binIndex * rowHeight + 2 + columnLabelHeight,
+                    columnWidth - 2,
+                    rowHeight - 4
+                  );
+                }
+                ctxt.fillStyle = "#000";
+                ctxt.globalAlpha = 1;
+                ctxt.fillText(
+                  labels[binIndex],
+                  width - labelWidth,
+                  binIndex * rowHeight +
+                    (rowHeight + fontHeight) / 2 +
+                    columnLabelHeight
+                );
+              });
+            };
+            repaint(null);
+            const findSelection = e => {
+              if (e.button != 0) return null;
+              const bounds = canvas.getBoundingClientRect();
+              const x = e.clientX - bounds.left;
+              const y = e.clientY - bounds.top - columnLabelHeight;
+              if (y > 0 && x > 0 && x < width - labelWidth) {
+                return {
+                  bin: Math.max(0, Math.floor(y / rowHeight)),
+                  boundary: Math.max(
+                    0,
+                    Math.floor(
+                      (x / (width - labelWidth)) * (boundaryLabels.length - 1)
+                    )
+                  )
+                };
+              }
+              return null;
+            };
+            canvas.onmousedown = e => {
+              selectionStart = findSelection(e);
+              if (selectionStart) {
+                currentTime.innerText =
+                  Object.values(stat.counts)[selectionStart.bin][
+                    selectionStart.boundary
+                  ] +
+                  " actions over " +
+                  formatTimeSpan(
+                    stat.boundaries[selectionStart.boundary + 1] -
+                      stat.boundaries[selectionStart.boundary]
+                  ) +
+                  " (" +
+                  boundaryLabels[selectionStart.boundary][0] +
+                  " to " +
+                  boundaryLabels[selectionStart.boundary + 1][0] +
+                  ")";
+                currentTime.title = boundaryLabels[selectionStart.boundary][1];
+                repaint(selectionStart);
+              } else {
+                currentTime.innerText = "\u00A0";
+                currentTime.title = "";
+              }
+            };
+            const mouseWhileDown = (e, after) => {
+              const selectionEnd = findSelection(e);
+              repaint(selectionEnd);
+              if (selectionStart.bin == selectionEnd.bin) {
+                const startBound = Math.min(
+                  selectionStart.boundary,
+                  selectionEnd.boundary
+                );
+                const endBound =
+                  Math.max(selectionStart.boundary, selectionEnd.boundary) + 1;
+                const [typeName, counts] = Object.entries(stat.counts)[
+                  selectionEnd.bin
+                ];
+                const sum = counts.reduce(
+                  (acc, value, index) =>
+                    index >= startBound && index < endBound ? acc + value : acc,
+                  0
+                );
+                currentTime.innerText =
+                  sum +
+                  " actions over " +
+                  formatTimeSpan(
+                    stat.boundaries[endBound] - stat.boundaries[startBound]
+                  ) +
+                  " (" +
+                  boundaryLabels[startBound][0] +
+                  " to " +
+                  boundaryLabels[endBound][0] +
+                  ")";
+                currentTime.title =
+                  boundaryLabels[startBound][1] +
+                  " to " +
+                  boundaryLabels[endBound][1];
+                after(
+                  typeName,
+                  stat.boundaries[startBound],
+                  stat.boundaries[endBound]
+                );
+              } else {
+                currentTime.innerText = "\u00A0";
+                currentTime.title = "";
+              }
+            };
+            canvas.onmouseup = e => {
+              mouseWhileDown(e, linkBinRange);
+              selectionStart = null;
+            };
+            canvas.onmousemove = e => {
+              if (selectionStart) {
+                mouseWhileDown(e, (typeName, start, end) => {});
+              }
+            };
+          };
+          let timeout = window.setTimeout(redraw, 100);
+          window.addEventListener("resize", () => {
+            clearTimeout(timeout);
+            window.setTimeout(redraw, 100);
+          });
+        }
+        break;
+
+      default:
+        element.innerText = `Unknown stat type: ${stat.type}`;
+    }
+    container.appendChild(element);
+  });
+}
+
+function exportSearchDialog(customFilters) {
+  const [dialog, close] = makePopup(true);
+  dialog.appendChild(
+    button("⎘ To Clipboard", "Export search to the clipboard.", () => {
+      copyJson(customFilters);
+      close();
+    })
+  );
+  dialog.appendChild(
+    button(
+      "⎘ To Clipboard for Ticket",
+      "Export search to the clipboard in a way that can be pasted in a text document.",
+      () => {
+        copyText(encodeSearch(customFilters));
+        close();
+      }
+    )
+  );
+  dialog.appendChild(
+    button("📁 To File", "Download search as a file.", () => {
+      downloadData(
+        JSON.stringify(customFilters),
+        "application/json",
+        "My Search.search"
+      );
+      close();
+    })
+  );
+  dialog.appendChild(
+    button(
+      "🖥 cURL Actions",
+      "Convert search to a cURL command to extract actions.",
+      () => {
+        copyText(
+          `curl -d '${JSON.stringify({
+            filters: customFilters,
+            skip: 0,
+            limit: 100000
+          })}' -X POST ${location.origin}/query`
+        );
+        close();
+      }
+    )
+  );
+  dialog.appendChild(
+    button(
+      "🖥 Wget Actions",
+      "Convert search to a Wget command to extract actions.",
+      () => {
+        copyText(
+          `wget --post-data '${JSON.stringify({
+            filters: customFilters,
+            skip: 0,
+            limit: 100000
+          })}' ${location.origin}/query`
+        );
+        close();
+      }
+    )
+  );
+  dialog.appendChild(
+    button(
+      "🖥 cURL Purge",
+      "Convert search to a cURL command to purge matching actions.",
+      () => {
+        copyText(
+          `curl -d '${JSON.stringify(customFilters)}' -X POST ${
+            location.origin
+          }/purge`
+        );
+        close();
+      }
+    )
+  );
+  dialog.appendChild(
+    button(
+      "🖥 Wget Purge",
+      "Convert search to a Wget command to purge matching actions.",
+      () => {
+        copyText(
+          `wget --post-data '${JSON.stringify(customFilters)}' ${
+            location.origin
+          }/purge`
+        );
+        close();
+      }
+    )
+  );
+  for (const [name, description, callback] of exportSearches) {
+    dialog.appendChild(
+      button(name, description, () => {
+        callback(customFilters);
+        close();
+      })
+    );
+  }
+}
+
+function addFilterDialog(
+  onActionPage,
+  sources,
+  tags,
+  timeRange,
+  timeAgo,
+  addSet,
+  setText,
+  setRegex
+) {
+  const [dialog, close] = makePopup(true);
+  dialog.appendChild(
+    button(
+      "🕑 Fixed Time Range",
+      "Add a filter that restricts between two absolute times.",
+      () => {
+        close();
+        timeDialog(n =>
+          editTime({ start: null, end: null }, (start, end) =>
+            timeRange(n, start, end)
+          )
+        );
+      }
+    )
+  );
+  dialog.appendChild(
+    button(
+      "🕑 Time Since Now",
+      "Add a filter that restricts using a sliding window.",
+      () => {
+        close();
+        timeDialog(n => editTimeAgo(0, update => timeAgo(n + "ago", update)));
+      }
+    )
+  );
+  dialog.appendChild(
+    button("👾 Action Identifier", "Add a unique action identifier.", () => {
+      close();
+      const [idDialog, closeId] = makePopup(true);
+      idDialog.appendChild(document.createTextNode("Action Identifiers:"));
+      idDialog.appendChild(document.createElement("BR"));
+      const idText = document.createElement("TEXTAREA");
+      idDialog.appendChild(idText);
+      idDialog.appendChild(document.createElement("BR"));
+      idDialog.appendChild(
+        button(
+          "Add All",
+          "Add any action IDs in the text to the filter.",
+          () => {
+            closeId();
+            const ids = Array.from(
+              idText.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
+              m => "shesmu:" + m[1].toUpperCase()
+            );
+            addSet("id", ids);
+          }
+        )
+      );
+    })
+  );
+  dialog.appendChild(
+    button(
+      "🔠 Text",
+      "Add a filter that looks for actions with specific text.",
+      () => {
+        close();
+        editText({ text: "", matchCase: false }, setText);
+      }
+    )
+  );
+  dialog.appendChild(
+    button(
+      "*️⃣  Regular Expression",
+      "Add a filter that looks for actions that match a regular expression.",
+      () => {
+        close();
+        editRegex({ pattern: "", matchCase: false }, setRegex);
+      }
+    )
+  );
+  dialog.appendChild(
+    button(
+      "🏁 Status",
+      "Add a filter that searches for actions in a particular state.",
+      () => {
+        close();
+        const selected = [];
+        const [statusDialog, closeStatus] = makePopup(true);
+        const table = document.createElement("TABLE");
+        statusDialog.appendChild(table);
+        Object.entries(actionStates).forEach(([state, description]) => {
+          const row = document.createElement("TR");
+          table.appendChild(row);
+          const buttonCell = document.createElement("TD");
+          row.appendChild(buttonCell);
+          const button = statusButton(state, true);
+          buttonCell.appendChild(button);
+          button.addEventListener("click", e => {
+            selected.push(state);
+            if (!e.ctrlKey) {
+              addSet("status", selected);
+              e.stopPropagation();
+              closeStatus();
+            }
+          });
+          const pCell = document.createElement("TD");
+          row.appendChild(pCell);
+          const p = document.createElement("P");
+          p.innerText = description;
+          pCell.appendChild(p);
+        });
+
+        const help = document.createElement("P");
+        help.innerText = "Control-click to select multiple.";
+        statusDialog.appendChild(help);
+      }
+    )
+  );
+  if (onActionPage) {
+    dialog.appendChild(
+      button(
+        "🎬 Action Type",
+        "Add a filter that searches for actions of a particular type.",
+        () => {
+          close();
+          filterableDialog(
+            Array.from(actionRender.keys()).sort(),
+            type => addSet("type", type),
+            type => [type, ""],
+            (type, keywords) =>
+              keywords.every(k => type.toLowerCase().indexOf(k) != -1),
+            false
+          );
+        }
+      )
+    );
+  }
+  if (tags.length) {
+    dialog.appendChild(
+      button(
+        "🏷️ Tags",
+        "Add a filter that searches for actions marked with a particular tag by an olive.",
+        () => {
+          close();
+          filterableDialog(
+            tags.sort(),
+            tag => addSet("tag", tag),
+            tag => [tag, ""],
+            (tag, keywords) =>
+              keywords.every(k => tag.toLowerCase().indexOf(k) != -1),
+            false
+          );
+        }
+      )
+    );
+  }
+  if (sources.length) {
+    dialog.appendChild(
+      button(
+        "📍 Source Olive",
+        "Add a filter that searches for actions that came from a particular olive (even if that olive has been replaced or deleted).",
+        () => {
+          close();
+          const fileNameFormatter = commonPathPrefix(sources.map(s => s.file));
+          filterableDialog(
+            sources
+              .sort(
+                (a, b) =>
+                  a.file.localeCompare(b.file) ||
+                  a.line - b.line ||
+                  a.column - b.column ||
+                  a.hash.localeCompare(b.hash)
+              )
+              .flatMap((source, index, array) => {
+                const previous = index == 0 ? null : array[index - 1];
+                const result = [];
+                if (index == 0 || source.file != previous.file) {
+                  result.push({
+                    file: source.file,
+                    line: null,
+                    column: null,
+                    hash: null
+                  });
+                }
+                if (
+                  index == 0 ||
+                  source.file != previous.file ||
+                  source.line != previous.line
+                ) {
+                  result.push({
+                    file: source.file,
+                    line: source.line,
+                    column: null,
+                    hash: null
+                  });
+                }
+                if (
+                  index == 0 ||
+                  source.file != previous.file ||
+                  source.line != previous.line ||
+                  source.column != previous.column
+                ) {
+                  result.push({
+                    file: source.file,
+                    line: source.line,
+                    column: source.column,
+                    hash: null
+                  });
+                }
+                result.push(source);
+                return result;
+              }),
+            sourceLocation => addSet("sourcelocation", sourceLocation),
+            sourceLocation => [
+              fileNameFormatter(sourceLocation.file) +
+                (sourceLocation.line
+                  ? ":" +
+                    sourceLocation.line +
+                    (sourceLocation.column
+                      ? ":" +
+                        sourceLocation.column +
+                        (sourceLocation.hash
+                          ? "[" + sourceLocation.hash + "]"
+                          : "")
+                      : "")
+                  : ""),
+              sourceLocation.file
+            ],
+            (sourceLocation, keywords) =>
+              keywords.every(
+                k => sourceLocation.file.toLowerCase().indexOf(k) != -1
+              ),
+            true
+          );
+        }
+      )
+    );
+  }
+}
 function getStats(
   filters,
   tags,
@@ -3375,93 +4068,678 @@ function getStats(
   exportSearches,
   ...toolbarExtras
 ) {
-  let additionalFilters = [];
-  if (userSuppliedFilter) {
-    additionalFilters.push(userSuppliedFilter);
-  }
+  const state =
+    typeof userSuppliedFilter == "string"
+      ? (() => {
+          const bar = document.createElement("DIV");
+          const errors = document.createElement("DIV");
+          const input = document.createElement("INPUT");
+          input.type = "search";
+          input.value = userSuppliedFilter;
+          input.style.width = "100%";
+          bar.appendChild(input);
+          bar.appendChild(document.createElement("BR"));
+          bar.appendChild(errors);
+          collapse(
+            "Help",
+            paragraph(
+              "Conjunction: ",
+              italic("expr"),
+              mono(" and "),
+              italic("expr")
+            ),
+            paragraph(
+              "Disjunction: ",
+              italic("expr"),
+              mono(" or "),
+              italic("expr")
+            ),
+            paragraph("Negation: ", mono("not "), italic("expr")),
+            paragraph("Action ID: ", mono("shesmu:"), italic("hash")),
+            paragraph(
+              "Saved Search: ",
+              mono("shesmusearch:"),
+              italic("uglystuff")
+            ),
+            paragraph(
+              "Text: ",
+              mono('text = "'),
+              italic("string"),
+              mono('"'),
+              " or ",
+              mono('text != "'),
+              italic("string"),
+              mono('"'),
+              " or ",
+              mono("text ~ /"),
+              italic("regex"),
+              mono("/"),
+
+              " or ",
+              mono("text !~ /"),
+              italic("regex"),
+              mono("/"),
+              "[",
+              mono("i"),
+              "]"
+            ),
+            paragraph(
+              "Sets of stuff: ",
+              "(",
+              mono("file"),
+              "|",
+              mono("status"),
+              "|",
+              mono("tag"),
+              "|",
+              mono("type"),
+              ") (",
+              mono(" = "),
+              italic("name"),
+              " | ",
+              mono(" != "),
+              italic("name"),
+              " | ",
+              mono(" in ("),
+              italic("name1"),
+              mono(", "),
+              italic("name2"),
+              ", ...",
+              mono(")"),
+              " | ",
+              mono(" not in ("),
+              italic("name1"),
+              mono(", "),
+              italic("name2"),
+              ", ...",
+              mono(")"),
+              ")"
+            ),
+
+            paragraph(
+              "Times: ",
+              "(",
+              mono("generated"),
+              " | ",
+              mono("checked"),
+              " | ",
+              mono("external"),
+              " | ",
+              mono("status_changed"),
+
+              ") (",
+              mono("last "),
+              italic("timespan"),
+              " | ",
+              mono("prior "),
+              italic("timespan"),
+              " | ",
+              mono("after "),
+              italic("datetime"),
+              " | ",
+              mono("before "),
+              italic("datetime"),
+              " | ",
+              mono("between "),
+              italic("datetime"),
+              mono(" to "),
+              italic("datetime"),
+              " | ",
+              mono("outside "),
+              italic("datetime"),
+              mono(" to "),
+              italic("datetime"),
+              " )"
+            ),
+
+            paragraph(
+              "Timespan: ",
+              italic("number"),
+              "(",
+              mono("days"),
+              "|",
+              mono("hours"),
+              "|",
+              mono("mins"),
+              "|",
+              mono("secs"),
+              "|",
+              mono("millis"),
+              ")"
+            ),
+            paragraph(
+              "Date-time: (",
+              mono("today"),
+              " | ",
+              mono("yesterday"),
+              " | ",
+              mono("monday"),
+              " | ... | ",
+              mono("friday"),
+              " | ",
+              italic("YYYY"),
+              mono("-"),
+              italic("mm"),
+              mono("-"),
+              italic("dd"),
+              ") (",
+              mono("current"),
+              " | ",
+              mono("midnight"),
+              " | ",
+              mono("noon"),
+              " | ",
+              italic("HH"),
+              mono(":"),
+              italic("MM"),
+              mono(":"),
+              italic("SS"),
+              mono(":"),
+              ") (",
+              mono("server"),
+              " | ",
+              mono("utc"),
+              ")?"
+            )
+          )
+            .flat(Number.MAX_VALUE)
+            .forEach(element => bar.appendChild(element));
+
+          input.addEventListener("keydown", e => {
+            if (e.keyCode === 13) {
+              e.preventDefault();
+              refresh();
+            }
+          });
+          return {
+            buttons: [
+              button(
+                "🖱️ Basic",
+                "Switch to basic query interface. Current query will be lost.",
+                () => {
+                  const [dialog, close] = makePopup(true);
+                  dialog.innerText =
+                    "Switching to basic query interface will discard current query.";
+                  dialog.appendChild(document.createElement("BR"));
+                  dialog.appendChild(
+                    button(
+                      "Stay here",
+                      "Stay in the advanced query interface.",
+                      close
+                    )
+                  );
+                  dialog.appendChild(
+                    button(
+                      "Switch to basic",
+                      "Switch to the basic query interface.",
+                      () => {
+                        close();
+                        getStats(
+                          filters,
+                          tags,
+                          sources,
+                          targetElement,
+                          onActionPage,
+                          prepareTabs,
+                          updateSearchList,
+                          {},
+                          updateURL,
+                          exportSearches,
+                          ...toolbarExtras
+                        );
+                      }
+                    )
+                  );
+                }
+              ),
+              ...[
+                [
+                  "🙴 And Filter",
+                  "and",
+                  "Add a filter that restricts the existing query."
+                ],
+                [
+                  "❚ Or Filter",
+                  "or",
+                  "Add a filter that expands the existing query."
+                ]
+              ].map(([label, operator, description]) =>
+                accessoryButton(label, description, () => {
+                  const replaceQuery = (...filters) =>
+                    fetch("/printquery", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        type: operator,
+                        filters: filters
+                      })
+                    })
+                      .then(response =>
+                        response.ok
+                          ? response.text().then(query => {
+                              input.value = query;
+                              updateURL(query);
+                              refresh();
+                            })
+                          : Promise.reject(
+                              new Error(
+                                `Failed to load: ${response.status} ${response.statusText}`
+                              )
+                            )
+                      )
+                      .catch(err => (makePopup.innerText = err.message));
+                  const showDialog = callback =>
+                    addFilterDialog(
+                      onActionPage,
+                      sources,
+                      tags,
+                      (type, start, end) =>
+                        callback({ start: start, end: end, type: type }),
+                      (type, value) => callback({ offset: value, type: type }),
+                      (type, values) => {
+                        let key;
+                        switch (type) {
+                          case "id":
+                            key = "ids";
+                            break;
+                          case "sourcefile":
+                            key = "files";
+                            break;
+                          case "sourcelocation":
+                            key = "locations";
+                            break;
+                          case "status":
+                            key = "states";
+                            break;
+                          case "tag":
+                            key = "tags";
+                            break;
+                          case "type":
+                            key = "types";
+                            break;
+                          default:
+                            throw new Error("Unsupported type: " + type);
+                        }
+                        callback({ [key]: values, type: type });
+                      },
+                      (text, matchCase) =>
+                        callback({
+                          type: "text",
+                          text: text,
+                          matchCase: matchCase
+                        }),
+                      (pattern, matchCase) =>
+                        callback({
+                          type: "regex",
+                          pattern: pattern,
+                          matchCase: matchCase
+                        })
+                    );
+                  if (input.value.trim()) {
+                    fetch("/parsequery", {
+                      method: "POST",
+                      body: JSON.stringify(input.value)
+                    })
+                      .then(response =>
+                        response.ok
+                          ? response.json()
+                          : Promise.reject([
+                              `Failed to load: ${response.status} ${response.statusText}`
+                            ])
+                      )
+                      .then(result => {
+                        if (result.errors.length) {
+                          return Promise.reject(result.errors);
+                        } else {
+                          showDialog(filter =>
+                            replaceQuery(result.filter, filter)
+                          );
+                        }
+                      })
+                      .catch(errs => {
+                        makePopup().innerText =
+                          "Can't add clauses to a broken query.";
+                        if (Array.isArray(errs)) {
+                          for (const err of errs) {
+                            errors.appendChild(
+                              text(typeof err == "string" ? err : err.message)
+                            );
+                          }
+                        } else {
+                          errors.appendChild(text(errs.message));
+                        }
+                      });
+                  } else {
+                    showDialog(filter => replaceQuery(filter));
+                  }
+                })
+              )
+            ],
+            entryBar: bar,
+            find: null,
+            linkBinRange: (typeName, start, end) => {
+              input.value = `(${
+                input.value
+              }) and ${typeName} between ${new Date(
+                start
+              ).toISOString()} to ${new Date(end).toISOString()}`;
+              refresh();
+            },
+            makePropertyClick: (element, ...properties) => {
+              element.style.cursor = "pointer";
+              element.addEventListener("click", e => {
+                const propertyQuery = properties
+                  .map(
+                    ([name, value]) =>
+                      `${
+                        name == "sourcefile" ? source : name
+                      } = "${value.replace('"', '\\"')}"`
+                  )
+                  .join(" and ");
+                input.value = `(${input.value}) and ${propertyQuery}`;
+                e.stopPropagation();
+                refresh();
+              });
+            },
+            prepare: () => {
+              clearChildren(errors);
+              if (!input.value.trim()) {
+                return Promise.resolve([]);
+              }
+              return fetch("/parsequery", {
+                method: "POST",
+                body: JSON.stringify(input.value)
+              })
+                .then(response =>
+                  response.ok
+                    ? response.json()
+                    : Promise.reject([
+                        `Failed to load: ${response.status} ${response.statusText}`
+                      ])
+                )
+                .then(result => {
+                  if (result.errors.length) {
+                    return Promise.reject(result.errors);
+                  } else {
+                    input.value = result.formatted;
+                    updateURL(result.formatted);
+                    return Promise.resolve([result.filter]);
+                  }
+                })
+                .catch(errs => {
+                  if (Array.isArray(errs)) {
+                    for (const err of errs) {
+                      errors.appendChild(
+                        text(typeof err == "string" ? err : err.message)
+                      );
+                    }
+                  } else {
+                    errors.appendChild(text(errs.message));
+                  }
+                });
+            },
+            revert: () => {
+              input.value = "";
+
+              refresh();
+            },
+            undo: () => {
+              pastFilters.pop();
+              refresh();
+            }
+          };
+        })()
+      : (() => {
+          let additionalFilters = [];
+          if (userSuppliedFilter) {
+            additionalFilters.push(userSuppliedFilter);
+          }
+          const queryBuilder = document.createElement("DIV");
+          queryBuilder.className = "filters";
+          const addFilters = (...f) => {
+            additionalFilters.push(
+              additionalFilters.length > 0
+                ? { ...additionalFilters[additionalFilters.length - 1] }
+                : {}
+            );
+            const current = additionalFilters[additionalFilters.length - 1];
+            for (const [type, update] of f) {
+              current[type] = update(current[type]);
+            }
+            refresh();
+          };
+          const mutateFilters = (type, update) => {
+            additionalFilters.push({
+              ...additionalFilters[additionalFilters.length - 1]
+            });
+            const current = additionalFilters[additionalFilters.length - 1];
+            current[type] = update(current[type]);
+            refresh();
+          };
+
+          return {
+            buttons: [
+              accessoryButton(
+                "➕ Add Filter",
+                "Add a filter to limit the actions displayed.",
+                () =>
+                  addFilterDialog(
+                    onActionPage,
+                    sources,
+                    tags,
+                    (type, start, end) =>
+                      mutateFilters(n, original => ({
+                        start: start,
+                        end: end
+                      })),
+                    (type, value) => mutateFilters(n, original => value),
+                    (type, values) => {
+                      switch (type) {
+                        case "sourceLocation":
+                          mutateFilters("sourcelocation", list => {
+                            if (!list) {
+                              return values;
+                            }
+                            for (const sourceLocation of values) {
+                              if (
+                                list.some(
+                                  loc =>
+                                    loc.file == sourceLocation.file &&
+                                    (!loc.line ||
+                                      loc.line == sourceLocation.line) &&
+                                    (!loc.column ||
+                                      loc.column == sourceLocation.column) &&
+                                    (!loc.hash ||
+                                      loc.hash == sourceLocation.hash)
+                                )
+                              ) {
+                                // If the item we are adding is already a subset of something in the list, discard it.
+                              } else {
+                                // Discard anything which is a subset of what we have
+                                list = list.filter(
+                                  loc =>
+                                    loc.file != sourceLocation.file ||
+                                    (line && loc.line != sourceLocation.line) ||
+                                    (column &&
+                                      loc.column != sourceLocation.column) ||
+                                    (hash && loc.hash != sourceLocation.hash)
+                                );
+                                list.push(sourceLocation);
+                              }
+                            }
+                            return list;
+                          });
+                          break;
+
+                        default:
+                          mutateFilters(type, addToSet(values));
+                      }
+                    },
+                    (text, matchedCase) =>
+                      mutateFilters("text", updateText("", text, matchedCase)),
+                    (pattern, matchCase) =>
+                      mutateFilters(
+                        "regex",
+                        updateRegex("", pattern, matchCase)
+                      )
+                  )
+              ),
+
+              button(
+                "⌨️ Advanced",
+                "Switch to advanced query interface. Query will be saved, but cannot be converted back.",
+                () =>
+                  fetch("/printquery", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      type: "and",
+                      filters:
+                        additionalFilters.length == 0
+                          ? []
+                          : synthesiseFilters(
+                              additionalFilters[additionalFilters.length - 1]
+                            )
+                    })
+                  })
+                    .then(response =>
+                      response.ok
+                        ? response.text()
+                        : Promise.reject(
+                            new Error(
+                              `Failed to load: ${response.status} ${response.statusText}`
+                            )
+                          )
+                    )
+                    .then(result =>
+                      getStats(
+                        filters,
+                        tags,
+                        sources,
+                        targetElement,
+                        onActionPage,
+                        prepareTabs,
+                        updateSearchList,
+                        result,
+                        updateURL,
+                        exportSearches,
+                        ...toolbarExtras
+                      )
+                    )
+
+                    .catch(error => {
+                      makePopup().innerText = error.message;
+                    })
+              )
+            ],
+
+            entryBar: queryBuilder,
+            find: () =>
+              editText({ text: "", matchCase: false }, (text, matchCase) =>
+                mutateFilters("text", updateText("", text, matchedCase))
+              ),
+            linkBinRange: (typeName, start, end) =>
+              addFilters([
+                typeName,
+                x => ({
+                  start: Math.max(start, x ? x.start || 0 : 0),
+                  end: Math.min(end, x ? x.end || Infinity : Infinity)
+                })
+              ]),
+
+            makePropertyClick: (element, ...properties) => {
+              const f = properties
+                .map(([name, value]) => propertyFilterMaker(name)(value))
+                .filter(x => !!x);
+              if (!f.length) {
+                return;
+              }
+              element.style.cursor = "pointer";
+              element.addEventListener("click", e => {
+                addFilters(...f);
+                e.stopPropagation();
+              });
+            },
+            prepare: async () => {
+              clearChildren(queryBuilder);
+              // Don't show base filters on the olive page since it's always the olive context.
+              if (onActionPage && filters.length) {
+                const filterList = document.createElement("DIV");
+                const filterPane = document.createElement("DIV");
+                queryBuilder.appendChild(filterPane);
+                collapse("Base Filters", filterList).forEach(x =>
+                  filterPane.appendChild(x)
+                );
+
+                filters.forEach(filter => {
+                  const filterTile = document.createElement("DIV");
+                  filterList.appendChild(filterTile);
+                  renderFilter(filterTile, filter, null);
+                });
+              }
+              updateURL(
+                additionalFilters.length == 0
+                  ? null
+                  : additionalFilters[additionalFilters.length - 1]
+              );
+              const customFilters =
+                additionalFilters.length == 0
+                  ? []
+                  : synthesiseFilters(
+                      additionalFilters[additionalFilters.length - 1]
+                    );
+              customFilters.forEach((filter, index) => {
+                const filterTile = document.createElement("DIV");
+                queryBuilder.appendChild(filterTile);
+                renderFilter(filterTile, filter, mutateFilters);
+              });
+              if (
+                (onActionPage ? filters.length : 0) + customFilters.length ==
+                0
+              ) {
+                queryBuilder.innerText = "All actions.";
+              }
+              return filters.concat(customFilters);
+            },
+            revert: () => {
+              additionalFilters = [];
+              refresh();
+            },
+
+            undo: () => {
+              additionalFilters.pop();
+              refresh();
+            }
+          };
+        })();
+
   clearChildren(targetElement);
   const toolBar = document.createElement("P");
   toolBar.className = "accessory";
   targetElement.appendChild(toolBar);
-  const queryBuilder = document.createElement("DIV");
-  queryBuilder.className = "filters";
-  targetElement.appendChild(queryBuilder);
+  targetElement.appendChild(state.entryBar);
   const {
     panes: [statsPane, listPane],
     find
   } = prepareTabs(targetElement);
-  function mutateFilters(type, update) {
-    additionalFilters.push({
-      ...additionalFilters[additionalFilters.length - 1]
+  function refresh() {
+    state.prepare().then(f => {
+      if (f) {
+        results(statsPane, "/stats", JSON.stringify(f), (c, d) =>
+          renderStats(c, d, state.makePropertyClick, state.linkBinRange)
+        );
+        nextPage(
+          {
+            filters: f,
+            limit: 25,
+            skip: 0
+          },
+          listPane,
+          onActionPage
+        );
+      }
     });
-    const current = additionalFilters[additionalFilters.length - 1];
-    current[type] = update(current[type]);
-    refresh();
   }
-  const refresh = () => {
-    clearChildren(queryBuilder);
-    // Don't show base filters on the olive page since it's always the olive context.
-    if (onActionPage && filters.length) {
-      const filterList = document.createElement("DIV");
-      const filterPane = document.createElement("DIV");
-      queryBuilder.appendChild(filterPane);
-      collapse("Base Filters", filterList).forEach(x =>
-        filterPane.appendChild(x)
-      );
-
-      filters.forEach(filter => {
-        const filterTile = document.createElement("DIV");
-        filterList.appendChild(filterTile);
-        renderFilter(filterTile, filter, null);
-      });
-    }
-    updateURL(
-      additionalFilters.length == 0
-        ? null
-        : additionalFilters[additionalFilters.length - 1]
-    );
-    const customFilters =
-      additionalFilters.length == 0
-        ? []
-        : synthesiseFilters(additionalFilters[additionalFilters.length - 1]);
-    customFilters.forEach((filter, index) => {
-      const filterTile = document.createElement("DIV");
-      queryBuilder.appendChild(filterTile);
-      renderFilter(filterTile, filter, mutateFilters);
-    });
-    if ((onActionPage ? filters.length : 0) + customFilters.length == 0) {
-      queryBuilder.innerText = "All actions.";
-    }
-    const f = filters.concat(customFilters);
-    results(statsPane, "/stats", JSON.stringify(f), renderStats);
-    nextPage(
-      {
-        filters: f,
-        limit: 25,
-        skip: 0
-      },
-      listPane,
-      onActionPage
-    );
-  };
-  const addFilters = (...f) => {
-    additionalFilters.push(
-      additionalFilters.length > 0
-        ? { ...additionalFilters[additionalFilters.length - 1] }
-        : {}
-    );
-    const current = additionalFilters[additionalFilters.length - 1];
-    for (const [type, update] of f) {
-      current[type] = update(current[type]);
-    }
-    refresh();
-  };
   for (let i = 0; i < 2; i++) {
-    find(i, () =>
-      editText({ text: "", matchCase: false }, update =>
-        mutateFilters("text", update)
-      )
-    );
+    find(i, state.find);
   }
 
   toolBar.appendChild(
@@ -3471,429 +4749,28 @@ function getStats(
       refresh
     )
   );
-  toolBar.appendChild(
-    accessoryButton(
-      "➕ Add Filter",
-      "Add a filter to limit the actions displayed.",
-      () => {
-        const [dialog, close] = makePopup(true);
-        dialog.appendChild(
-          button(
-            "🕑 Fixed Time Range",
-            "Add a filter that restricts between two absolute times.",
-            () => {
-              close();
-              timeDialog(n =>
-                editTime({ start: null, end: null }, update =>
-                  mutateFilters(n, update)
-                )
-              );
-            }
-          )
-        );
-        dialog.appendChild(
-          button(
-            "🕑 Time Since Now",
-            "Add a filter that restricts using a sliding window.",
-            () => {
-              close();
-              timeDialog(n =>
-                editTimeAgo(0, update => mutateFilters(n + "ago", update))
-              );
-            }
-          )
-        );
-        dialog.appendChild(
-          button(
-            "👾 Action Identifier",
-            "Add a unique action identifier.",
-            () => {
-              close();
-              const [idDialog, closeId] = makePopup(true);
-              idDialog.appendChild(
-                document.createTextNode("Action Identifiers:")
-              );
-              idDialog.appendChild(document.createElement("BR"));
-              const idText = document.createElement("TEXTAREA");
-              idDialog.appendChild(idText);
-              idDialog.appendChild(document.createElement("BR"));
-              idDialog.appendChild(
-                button(
-                  "Add All",
-                  "Add any action IDs in the text to the filter.",
-                  () => {
-                    closeId();
-                    const ids = Array.from(
-                      idText.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
-                      m => "shesmu:" + m[1].toUpperCase()
-                    );
-                    mutateFilters("id", list =>
-                      list
-                        ? list
-                            .concat(ids)
-                            .sort()
-                            .filter(
-                              (item, index, array) =>
-                                item == 0 || item != array[index - 1]
-                            )
-                        : ids
-                    );
-                  }
-                )
-              );
-            }
-          )
-        );
-        dialog.appendChild(
-          button(
-            "🔠 Text",
-            "Add a filter that looks for actions with specific text.",
-            () => {
-              close();
-              editText({ text: "", matchCase: false }, update =>
-                mutateFilters("text", update)
-              );
-            }
-          )
-        );
-        dialog.appendChild(
-          button(
-            "*️⃣  Regular Expression",
-            "Add a filter that looks for actions that match a regular expression.",
-            () => {
-              close();
-              editRegex("", update => mutateFilters("regex", update));
-            }
-          )
-        );
-        dialog.appendChild(
-          button(
-            "🏁 Status",
-            "Add a filter that searches for actions in a particular state.",
-            () => {
-              close();
-              const [statusDialog, closeStatus] = makePopup(true);
-              const table = document.createElement("TABLE");
-              statusDialog.appendChild(table);
-              Object.entries(actionStates).forEach(([state, description]) => {
-                const row = document.createElement("TR");
-                table.appendChild(row);
-                const buttonCell = document.createElement("TD");
-                row.appendChild(buttonCell);
-                const button = statusButton(state, true);
-                buttonCell.appendChild(button);
-                button.addEventListener("click", e => {
-                  addFilters(["status", addToSet(state)]);
-                  if (!e.ctrlKey) {
-                    e.stopPropagation();
-                    closeStatus();
-                  }
-                });
-                const pCell = document.createElement("TD");
-                row.appendChild(pCell);
-                const p = document.createElement("P");
-                p.innerText = description;
-                pCell.appendChild(p);
-              });
-
-              const help = document.createElement("P");
-              help.innerText = "Control-click to select multiple.";
-              statusDialog.appendChild(help);
-            }
-          )
-        );
-        if (onActionPage) {
-          dialog.appendChild(
-            button(
-              "🎬 Action Type",
-              "Add a filter that searches for actions of a particular type.",
-              () => {
-                close();
-                filterableDialog(
-                  Array.from(actionRender.keys()).sort(),
-                  type => addFilters(["type", addToSet(type)]),
-                  type => [type, ""],
-                  (type, keywords) =>
-                    keywords.every(k => type.toLowerCase().indexOf(k) != -1),
-                  false
-                );
-              }
-            )
-          );
-        }
-        if (tags.length) {
-          dialog.appendChild(
-            button(
-              "🏷️ Tags",
-              "Add a filter that searches for actions marked with a particular tag by an olive.",
-              () => {
-                close();
-                filterableDialog(
-                  tags.sort(),
-                  tag => addFilters(["tag", addToSet(tag)]),
-                  tag => [tag, ""],
-                  (tag, keywords) =>
-                    keywords.every(k => tag.toLowerCase().indexOf(k) != -1),
-                  false
-                );
-              }
-            )
-          );
-        }
-        if (sources.length) {
-          dialog.appendChild(
-            button(
-              "📍 Source Olive",
-              "Add a filter that searches for actions that came from a particular olive (even if that olive has been replaced or deleted).",
-              () => {
-                close();
-                const fileNameFormatter = commonPathPrefix(
-                  sources.map(s => s.file)
-                );
-                filterableDialog(
-                  sources
-                    .sort(
-                      (a, b) =>
-                        a.file.localeCompare(b.file) ||
-                        a.line - b.line ||
-                        a.column - b.column ||
-                        a.hash.localeCompare(b.hash)
-                    )
-                    .flatMap((source, index, array) => {
-                      const previous = index == 0 ? null : array[index - 1];
-                      const result = [];
-                      if (index == 0 || source.file != previous.file) {
-                        result.push({
-                          file: source.file,
-                          line: null,
-                          column: null,
-                          hash: null
-                        });
-                      }
-                      if (
-                        index == 0 ||
-                        source.file != previous.file ||
-                        source.line != previous.line
-                      ) {
-                        result.push({
-                          file: source.file,
-                          line: source.line,
-                          column: null,
-                          hash: null
-                        });
-                      }
-                      if (
-                        index == 0 ||
-                        source.file != previous.file ||
-                        source.line != previous.line ||
-                        source.column != previous.column
-                      ) {
-                        result.push({
-                          file: source.file,
-                          line: source.line,
-                          column: source.column,
-                          hash: null
-                        });
-                      }
-                      result.push(source);
-                      return result;
-                    }),
-                  sourceLocation =>
-                    addFilters([
-                      "sourcelocation",
-                      list => {
-                        if (!list) {
-                          return [sourceLocation];
-                        } else if (
-                          list.some(
-                            loc =>
-                              loc.file == sourceLocation.file &&
-                              (!loc.line || loc.line == sourceLocation.line) &&
-                              (!loc.column ||
-                                loc.column == sourceLocation.column) &&
-                              (!loc.hash || loc.hash == sourceLocation.hash)
-                          )
-                        ) {
-                          // If the item we are adding is already a subset of something in the list, discard it.
-                          return list;
-                        } else {
-                          // Discard anything which is a subset of what we have
-                          const result = list.filter(
-                            loc =>
-                              loc.file != sourceLocation.file ||
-                              (line && loc.line != sourceLocation.line) ||
-                              (column && loc.column != sourceLocation.column) ||
-                              (hash && loc.hash != sourceLocation.hash)
-                          );
-                          result.push(sourceLocation);
-                          return result;
-                        }
-                      }
-                    ]),
-                  sourceLocation => [
-                    fileNameFormatter(sourceLocation.file) +
-                      (sourceLocation.line
-                        ? ":" +
-                          sourceLocation.line +
-                          (sourceLocation.column
-                            ? ":" +
-                              sourceLocation.column +
-                              (sourceLocation.hash
-                                ? "[" + sourceLocation.hash + "]"
-                                : "")
-                            : "")
-                        : ""),
-                    sourceLocation.file
-                  ],
-                  (sourceLocation, keywords) =>
-                    keywords.every(
-                      k => sourceLocation.file.toLowerCase().indexOf(k) != -1
-                    ),
-                  true
-                );
-              }
-            )
-          );
-        }
-      }
-    )
-  );
+  for (const button of state.buttons) {
+    toolBar.appendChild(button);
+  }
   toolBar.appendChild(
     accessoryButton(
       "💾 Add to My Searches",
       "Save this search to the local search collection.",
-      () => {
-        const customFilters =
-          additionalFilters.length == 0
-            ? []
-            : synthesiseFilters(
-                additionalFilters[additionalFilters.length - 1]
-              );
-        if (customFilters.length > 0) {
-          saveSearch(
-            filters.concat(customFilters),
-            (updateLocalSearches, name) =>
+      () =>
+        state
+          .prepare()
+          .then(f =>
+            saveSearch(filters.concat(f), (updateLocalSearches, name) =>
               updateSearchList(false, updateLocalSearches, name)
-          );
-        } else {
-          makePopup().innerText = "No changes to save.";
-        }
-      }
+            )
+          )
     )
   );
   toolBar.appendChild(
     accessoryButton(
       "🡇 Export Search",
       "Export this search to a file or the clipboard.",
-      () => {
-        const customFilters =
-          additionalFilters.length == 0
-            ? filters
-            : filters.concat(
-                synthesiseFilters(
-                  additionalFilters[additionalFilters.length - 1]
-                )
-              );
-        if (customFilters.length > 0) {
-          const [dialog, close] = makePopup(true);
-          dialog.appendChild(
-            button("⎘ To Clipboard", "Export search to the clipboard.", () => {
-              copyJson(customFilters);
-              close();
-            })
-          );
-          dialog.appendChild(
-            button(
-              "⎘ To Clipboard for Ticket",
-              "Export search to the clipboard in a way that can be pasted in a text document.",
-              () => {
-                copyText(encodeSearch(customFilters));
-                close();
-              }
-            )
-          );
-          dialog.appendChild(
-            button("📁 To File", "Download search as a file.", () => {
-              downloadData(
-                JSON.stringify(customFilters),
-                "application/json",
-                "My Search.search"
-              );
-              close();
-            })
-          );
-          dialog.appendChild(
-            button(
-              "🖥 cURL Actions",
-              "Convert search to a cURL command to extract actions.",
-              () => {
-                copyText(
-                  `curl -d '${JSON.stringify({
-                    filters: customFilters,
-                    skip: 0,
-                    limit: 100000
-                  })}' -X POST ${location.origin}/query`
-                );
-                close();
-              }
-            )
-          );
-          dialog.appendChild(
-            button(
-              "🖥 Wget Actions",
-              "Convert search to a Wget command to extract actions.",
-              () => {
-                copyText(
-                  `wget --post-data '${JSON.stringify({
-                    filters: customFilters,
-                    skip: 0,
-                    limit: 100000
-                  })}' ${location.origin}/query`
-                );
-                close();
-              }
-            )
-          );
-          dialog.appendChild(
-            button(
-              "🖥 cURL Purge",
-              "Convert search to a cURL command to purge matching actions.",
-              () => {
-                copyText(
-                  `curl -d '${JSON.stringify(customFilters)}' -X POST ${
-                    location.origin
-                  }/purge`
-                );
-                close();
-              }
-            )
-          );
-          dialog.appendChild(
-            button(
-              "🖥 Wget Purge",
-              "Convert search to a Wget command to purge matching actions.",
-              () => {
-                copyText(
-                  `wget --post-data '${JSON.stringify(customFilters)}' ${
-                    location.origin
-                  }/purge`
-                );
-                close();
-              }
-            )
-          );
-          for (const [name, description, callback] of exportSearches) {
-            dialog.appendChild(
-              button(name, description, () => {
-                callback(customFilters);
-                close();
-              })
-            );
-          }
-        } else {
-          makePopup().innerText = "No search to save.";
-        }
-      }
+      () => state.prepare().then(exportSearchDialog)
     )
   );
 
@@ -3901,20 +4778,14 @@ function getStats(
     accessoryButton(
       "⎌ Undo",
       "Undo the last change made to this search.",
-      () => {
-        additionalFilters.pop();
-        refresh();
-      }
+      state.undo
     )
   );
   toolBar.appendChild(
     accessoryButton(
       "⌫ Revert to Saved",
       "Remove all additions and revert to the base search.",
-      () => {
-        additionalFilters = [];
-        refresh();
-      }
+      state.revert
     )
   );
   if (onActionPage) {
@@ -3949,358 +4820,6 @@ function getStats(
     }
   }
 
-  const renderStats = (container, data) => {
-    if (data.length == 0) {
-      container.innerText = "No statistics are available.";
-      return;
-    }
-    const help = document.createElement("P");
-    help.innerText = "Click any cell or table heading to filter results.";
-    container.appendChild(help);
-
-    const makeClick = (element, ...f) => {
-      f = f.filter(x => !!x);
-      if (!f.length) {
-        return;
-      }
-      element.style.cursor = "pointer";
-      element.addEventListener("click", e => {
-        addFilters(...f);
-        e.stopPropagation();
-      });
-    };
-
-    let selectedElement = null;
-    data.forEach(stat => {
-      const element = document.createElement("DIV");
-      switch (stat.type) {
-        case "text":
-          element.innerText = stat.value;
-          break;
-        case "table":
-          {
-            const table = document.createElement("TABLE");
-            element.appendChild(table);
-            stat.table.forEach(row => {
-              let prettyTitle;
-              switch (row.kind) {
-                case "property":
-                  prettyTitle = x => `${x} ${row.property}`;
-                  break;
-                default:
-                  prettyTitle = x => x;
-              }
-              const tr = document.createElement("TR");
-              table.appendChild(tr);
-              const title = document.createElement("TD");
-              title.innerText = prettyTitle(row.title);
-              tr.appendChild(title);
-              const value = document.createElement("TD");
-              breakSlashes(row.value.toString()).forEach(x =>
-                value.appendChild(x)
-              );
-              tr.appendChild(value);
-              if (row.kind == "property") {
-                makeClick(tr, propertyFilterMaker(row.type)(row.json));
-              }
-            });
-          }
-          break;
-        case "crosstab":
-          {
-            const makeColumnFilter = propertyFilterMaker(stat.column);
-            const makeRowFilter = propertyFilterMaker(stat.row);
-
-            const table = document.createElement("TABLE");
-            element.appendChild(table);
-
-            const header = document.createElement("TR");
-            table.appendChild(header);
-
-            header.appendChild(document.createElement("TH"));
-            const columns = stat.columns.sort().map(col => ({
-              name: col.name,
-              filter: makeColumnFilter(col.value)
-            }));
-            for (let col of columns) {
-              const currentHeader = document.createElement("TH");
-              breakSlashes(col.name).forEach(x => currentHeader.appendChild(x));
-              header.appendChild(currentHeader);
-              makeClick(currentHeader, col.filter);
-            }
-            const maximum = Math.max(
-              1,
-              Math.max(
-                ...Object.values(stat.data).map(row =>
-                  Math.max(...Object.values(row))
-                )
-              )
-            );
-
-            for (let rowKey of Object.keys(stat.data).sort()) {
-              const rowFilter = makeRowFilter(stat.rows[rowKey]);
-              const currentRow = document.createElement("TR");
-              table.appendChild(currentRow);
-
-              const currentHeader = document.createElement("TH");
-              breakSlashes(rowKey).forEach(x => currentHeader.appendChild(x));
-              currentRow.appendChild(currentHeader);
-              makeClick(currentRow, rowFilter);
-
-              for (let col of columns) {
-                const currentValue = document.createElement("TD");
-                // The matrix might be ragged if doing a tag-tag crosstab
-                const value =
-                  stat.hasOwnProperty(rowKey) &&
-                  stat[rowKey].hasOwnProperty(col.name)
-                    ? stat.data[rowKey][col.name]
-                    : 0;
-                if (value) {
-                  currentValue.innerText = stat.data[rowKey][col.name];
-                }
-                currentRow.appendChild(currentValue);
-                setColorIntensity(currentValue, value, maximum);
-                makeClick(currentValue, col.filter, rowFilter);
-              }
-            }
-          }
-          break;
-
-        case "histogram":
-          {
-            const boundaryLabels = stat.boundaries.map(x => formatTimeBin(x));
-            const max = Math.log(
-              Math.max(...Object.values(stat.counts).flat()) + 1
-            );
-            const labels = Object.keys(stat.counts).map(
-              bin => " " + nameForBin(bin)
-            );
-            const div = document.createElement("div");
-            div.className = "histogram";
-            let selectionStart = null;
-            div.width = "90%";
-            element.appendChild(div);
-            const canvas = document.createElement("canvas");
-            const ctxt = canvas.getContext("2d");
-            const rowHeight = 40;
-            const fontHeight = 10; // We should be able to compute this from the font metrics, but they don't provide it, so uhh...10pts.
-            const columnLabelHeight =
-              Math.sin(headerAngle) *
-                Math.max(
-                  ...boundaryLabels.map(l => ctxt.measureText(l[0]).width)
-                ) +
-              2 * fontHeight;
-            canvas.height = labels.length * rowHeight + columnLabelHeight;
-            div.appendChild(canvas);
-            const currentTime = document.createElement("span");
-            currentTime.innerText = "\u00A0";
-            element.appendChild(currentTime);
-            const redraw = () => {
-              const cs = getComputedStyle(div);
-              const width = parseInt(cs.getPropertyValue("width"), 10);
-              canvas.width = width;
-
-              const labelWidth = Math.max(
-                ...labels.map(l => ctxt.measureText(l).width)
-              );
-              const columnWidth =
-                (width - labelWidth) / (boundaryLabels.length - 1);
-              const columnSkip = Math.ceil(
-                (2 * fontHeight * Math.cos(headerAngle)) / columnWidth
-              );
-
-              const repaint = selectionEnd => {
-                ctxt.clearRect(0, 0, width, canvas.height);
-                ctxt.fillStyle = "#000";
-                boundaryLabels.forEach((label, index) => {
-                  if (index % columnSkip == 0) {
-                    // We can only apply rotation about the origin, so move the origin to the point where we want to draw the text, rotate it, draw the text at the origin, then reset the coordinate system.
-                    ctxt.translate(index * columnWidth, columnLabelHeight);
-                    ctxt.rotate(-headerAngle);
-                    ctxt.fillText(
-                      label[0],
-                      fontHeight * Math.tan(headerAngle),
-                      0
-                    );
-                    ctxt.setTransform(1, 0, 0, 1, 0, 0);
-                  }
-                });
-                Object.entries(stat.counts).forEach(
-                  ([bin, counts], binIndex) => {
-                    if (counts.length != boundaryLabels.length - 1) {
-                      throw new Error(
-                        `Data type ${bin} has ${counts.length} but expected ${
-                          boundaryLabels.length - 1
-                        }`
-                      );
-                    }
-                    for (
-                      let countIndex = 0;
-                      countIndex < counts.length;
-                      countIndex++
-                    ) {
-                      if (
-                        selectionStart &&
-                        selectionEnd &&
-                        selectionStart.bin == binIndex &&
-                        selectionEnd.bin == binIndex &&
-                        countIndex >=
-                          Math.min(
-                            selectionStart.boundary,
-                            selectionEnd.boundary
-                          ) &&
-                        countIndex <=
-                          Math.max(
-                            selectionStart.boundary,
-                            selectionEnd.boundary
-                          )
-                      ) {
-                        ctxt.fillStyle = "#E0493B";
-                      } else {
-                        ctxt.fillStyle = "#06AED5";
-                      }
-                      ctxt.globalAlpha = Math.log(counts[countIndex] + 1) / max;
-                      ctxt.fillRect(
-                        countIndex * columnWidth + 1,
-                        binIndex * rowHeight + 2 + columnLabelHeight,
-                        columnWidth - 2,
-                        rowHeight - 4
-                      );
-                    }
-                    ctxt.fillStyle = "#000";
-                    ctxt.globalAlpha = 1;
-                    ctxt.fillText(
-                      labels[binIndex],
-                      width - labelWidth,
-                      binIndex * rowHeight +
-                        (rowHeight + fontHeight) / 2 +
-                        columnLabelHeight
-                    );
-                  }
-                );
-              };
-              repaint(null);
-              const findSelection = e => {
-                if (e.button != 0) return null;
-                const bounds = canvas.getBoundingClientRect();
-                const x = e.clientX - bounds.left;
-                const y = e.clientY - bounds.top - columnLabelHeight;
-                if (y > 0 && x > 0 && x < width - labelWidth) {
-                  return {
-                    bin: Math.max(0, Math.floor(y / rowHeight)),
-                    boundary: Math.max(
-                      0,
-                      Math.floor(
-                        (x / (width - labelWidth)) * (boundaryLabels.length - 1)
-                      )
-                    )
-                  };
-                }
-                return null;
-              };
-              canvas.onmousedown = e => {
-                selectionStart = findSelection(e);
-                if (selectionStart) {
-                  currentTime.innerText =
-                    Object.values(stat.counts)[selectionStart.bin][
-                      selectionStart.boundary
-                    ] +
-                    " actions over " +
-                    formatTimeSpan(
-                      stat.boundaries[selectionStart.boundary + 1] -
-                        stat.boundaries[selectionStart.boundary]
-                    ) +
-                    " (" +
-                    boundaryLabels[selectionStart.boundary][0] +
-                    " to " +
-                    boundaryLabels[selectionStart.boundary + 1][0] +
-                    ")";
-                  currentTime.title =
-                    boundaryLabels[selectionStart.boundary][1];
-                  repaint(selectionStart);
-                } else {
-                  currentTime.innerText = "\u00A0";
-                  currentTime.title = "";
-                }
-              };
-              const mouseWhileDown = (e, after) => {
-                const selectionEnd = findSelection(e);
-                repaint(selectionEnd);
-                if (selectionStart.bin == selectionEnd.bin) {
-                  const startBound = Math.min(
-                    selectionStart.boundary,
-                    selectionEnd.boundary
-                  );
-                  const endBound =
-                    Math.max(selectionStart.boundary, selectionEnd.boundary) +
-                    1;
-                  const [typeName, counts] = Object.entries(stat.counts)[
-                    selectionEnd.bin
-                  ];
-                  const sum = counts.reduce(
-                    (acc, value, index) =>
-                      index >= startBound && index < endBound
-                        ? acc + value
-                        : acc,
-                    0
-                  );
-                  currentTime.innerText =
-                    sum +
-                    " actions over " +
-                    formatTimeSpan(
-                      stat.boundaries[endBound] - stat.boundaries[startBound]
-                    ) +
-                    " (" +
-                    boundaryLabels[startBound][0] +
-                    " to " +
-                    boundaryLabels[endBound][0] +
-                    ")";
-                  currentTime.title =
-                    boundaryLabels[startBound][1] +
-                    " to " +
-                    boundaryLabels[endBound][1];
-                  after(
-                    typeName,
-                    stat.boundaries[startBound],
-                    stat.boundaries[endBound]
-                  );
-                } else {
-                  currentTime.innerText = "\u00A0";
-                  currentTime.title = "";
-                }
-              };
-              canvas.onmouseup = e => {
-                mouseWhileDown(e, (typeName, start, end) => {
-                  addFilters([
-                    typeName,
-                    x => ({
-                      start: Math.max(start, x ? x.start || 0 : 0),
-                      end: Math.min(end, x ? x.end || Infinity : Infinity)
-                    })
-                  ]);
-                });
-                selectionStart = null;
-              };
-              canvas.onmousemove = e => {
-                if (selectionStart) {
-                  mouseWhileDown(e, (typeName, start, end) => {});
-                }
-              };
-            };
-            let timeout = window.setTimeout(redraw, 100);
-            window.addEventListener("resize", () => {
-              clearTimeout(timeout);
-              window.setTimeout(redraw, 100);
-            });
-          }
-          break;
-
-        default:
-          element.innerText = `Unknown stat type: ${stat.type}`;
-      }
-      container.appendChild(element);
-    });
-  };
   refresh();
 }
 

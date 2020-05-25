@@ -4,6 +4,9 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -160,14 +163,17 @@ public interface ActionFilterBuilder<F> {
    */
   ActionFilterBuilder<Pair<String, Integer>> QUERY =
       new ActionFilterBuilder<Pair<String, Integer>>() {
+        private final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
+
         @Override
         public Pair<String, Integer> added(Optional<Instant> start, Optional<Instant> end) {
-          return new Pair<>(String.format("added between %s to %s", start, end), 0);
+          return range("generated", start, end);
         }
 
         @Override
         public Pair<String, Integer> addedAgo(long offset) {
-          return formatAgo("added", offset);
+          return formatAgo("generated", offset);
         }
 
         @Override
@@ -181,7 +187,7 @@ public interface ActionFilterBuilder<F> {
 
         @Override
         public Pair<String, Integer> checked(Optional<Instant> start, Optional<Instant> end) {
-          return new Pair<>(String.format("checked between %s to %s", start, end), 0);
+          return range("checked", start, end);
         }
 
         @Override
@@ -191,7 +197,7 @@ public interface ActionFilterBuilder<F> {
 
         @Override
         public Pair<String, Integer> external(Optional<Instant> start, Optional<Instant> end) {
-          return new Pair<>(String.format("external between %s to %s", start, end), 0);
+          return range("external", start, end);
         }
 
         @Override
@@ -218,18 +224,18 @@ public interface ActionFilterBuilder<F> {
             reduced = offset;
             units = "millis";
           }
-          return new Pair<>(String.format("%s after %d%s", name, reduced, units), 1);
+          return new Pair<>(String.format("%s last %d%s", name, reduced, units), 0);
         }
 
         private Pair<String, Integer> formatSet(String name, String... items) {
           if (items.length == 1) {
-            return new Pair<>(String.format("%s = %s", name, quote(items[0])), 1);
+            return new Pair<>(String.format("%s = %s", name, quote(items[0])), 0);
           } else {
             return new Pair<>(
                 Stream.of(items)
                     .map(this::quote)
                     .collect(Collectors.joining(", ", name + " in (", ")")),
-                1);
+                0);
           }
         }
 
@@ -280,7 +286,7 @@ public interface ActionFilterBuilder<F> {
           return new Pair<>(
               filters
                   .map(p -> p.second() > 3 ? "(" + p.first() + ")" : p.first())
-                  .collect(Collectors.joining(" and ")),
+                  .collect(Collectors.joining(" or ")),
               3);
         }
 
@@ -292,12 +298,36 @@ public interface ActionFilterBuilder<F> {
           }
         }
 
+        private Pair<String, Integer> range(
+            String name, Optional<Instant> start, Optional<Instant> end) {
+          if (start.isPresent() && end.isPresent()) {
+            return new Pair<>(
+                String.format(
+                    "%s between %s to %s",
+                    name,
+                    FORMATTER.format(start.get().truncatedTo(ChronoUnit.SECONDS)),
+                    FORMATTER.format(end.get().truncatedTo(ChronoUnit.SECONDS))),
+                0);
+          } else if (start.isPresent()) {
+            return new Pair<>(
+                String.format(
+                    "%s after %s",
+                    name, FORMATTER.format(start.get().truncatedTo(ChronoUnit.SECONDS))),
+                0);
+          } else if (end.isPresent()) {
+            return new Pair<>(
+                String.format(
+                    "%s before %s",
+                    name, FORMATTER.format(end.get().truncatedTo(ChronoUnit.SECONDS))),
+                0);
+          } else {
+            throw new IllegalStateException();
+          }
+        }
+
         @Override
         public Pair<String, Integer> statusChanged(Optional<Instant> start, Optional<Instant> end) {
-          final ActionFilterStatusChanged result = new ActionFilterStatusChanged();
-          result.setStart(start.map(Instant::getEpochSecond).orElse(null));
-          result.setEnd(end.map(Instant::getEpochSecond).orElse(null));
-          return new Pair<>(String.format("status_changed between %s to %s", start, end), 0);
+          return range("status_changed", start, end);
         }
 
         @Override
@@ -308,6 +338,11 @@ public interface ActionFilterBuilder<F> {
         @Override
         public Pair<String, Integer> tags(Stream<String> tags) {
           return formatSet("tag", tags.toArray(String[]::new));
+        }
+
+        @Override
+        public Pair<String, Integer> textSearch(String text, boolean matchCase) {
+          return new Pair<>("text = \"" + text.replace("\"", "\\\"") + "\"", 0);
         }
 
         @Override
@@ -442,6 +477,18 @@ public interface ActionFilterBuilder<F> {
    * @param pattern the pattern
    */
   F textSearch(Pattern pattern);
+
+  /**
+   * Check that an action matches the text provided
+   *
+   * @param text the text
+   * @param matchCase whether the match should be case sensitive
+   */
+  default F textSearch(String text, boolean matchCase) {
+    return textSearch(
+        Pattern.compile(
+            "^.*" + Pattern.quote(text) + ".*$", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
+  }
 
   /** Check that an action has one of the types specified */
   F type(String... types);
