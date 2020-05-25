@@ -184,7 +184,7 @@ public abstract class ActionFilter {
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<DateNode> DATE = new Parser.ParseDispatch<>();
   private static final Pattern DATE_PATTERN =
-      Pattern.compile("(\\d{4})-(\\d{2}|[A-Za-z]+)-(?:\\d{2})");
+      Pattern.compile("(\\d{4})-(\\d{2}|[A-Za-z]+)-(\\d{2})");
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Parser.ParseDispatch<UnaryOperator<ActionFilterNode>> NOT =
       new Parser.ParseDispatch<>();
@@ -283,9 +283,9 @@ public abstract class ActionFilter {
                     m ->
                         o.accept(
                             errorHandler -> {
-                              final ActionFilterText filter = new ActionFilterText();
-                              filter.setText(m.group(1));
-                              filter.setMatchCase(m.group(2).length() > 0);
+                              final ActionFilterRegex filter = new ActionFilterRegex();
+                              filter.setPattern(m.group(1));
+                              filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
                               return Optional.of(filter);
                             }),
                     "regular expression"));
@@ -298,9 +298,9 @@ public abstract class ActionFilter {
                     m ->
                         o.accept(
                             errorHandler -> {
-                              final ActionFilterText filter = new ActionFilterText();
-                              filter.setText(m.group(1));
-                              filter.setMatchCase(m.group(2).length() > 0);
+                              final ActionFilterRegex filter = new ActionFilterRegex();
+                              filter.setPattern(m.group(1));
+                              filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
                               filter.setNegate(true);
                               return Optional.of(filter);
                             }),

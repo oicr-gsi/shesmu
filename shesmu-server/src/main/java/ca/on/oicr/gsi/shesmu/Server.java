@@ -2492,7 +2492,11 @@ public final class Server implements ServerConfig, ActionServices {
                     error.put("column", column);
                     error.put("message", errorMessage);
                   }))
-              .ifPresent(f -> response.putPOJO("filter", f));
+              .ifPresent(
+                  f -> {
+                    response.putPOJO("filter", f);
+                    response.put("formatted", f.convert(ActionFilterBuilder.QUERY).first());
+                  });
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {

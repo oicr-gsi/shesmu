@@ -124,6 +124,34 @@ export function objectTable(object, title, valueFormatter) {
   );
 }
 
+export function italic(text) {
+  const element = document.createElement("I");
+  element.innerText = text;
+  return element;
+
+}
+
+export function mono(text) {
+  const element = document.createElement("SPAN");
+  element.style.fontFamily = "monospace";
+  element.innerText = text;
+  return element;
+
+}
+
+export function paragraph(...contents) {
+  const element = document.createElement("P");
+for (const entry of contents) {
+      if (entry instanceof HTMLElement) {
+        element.appendChild(entry);
+      } else {
+        element.appendChild(document.createTextNode(entry));
+      }
+}
+  return element;
+}
+
+
 export function preformatted(text) {
   const pre = document.createElement("PRE");
   pre.style.overflowX = "scroll";

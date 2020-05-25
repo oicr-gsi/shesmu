@@ -1378,6 +1378,9 @@
                     },
                     "filter": {
                       "$ref": "#/components/schemas/ActionFilter"
+                    },
+                    "formatted": {
+                      "type": "string"
                     }
                   },
                   "type": "object"
