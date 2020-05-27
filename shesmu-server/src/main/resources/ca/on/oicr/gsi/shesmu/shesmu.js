@@ -1753,7 +1753,7 @@ export function initialiseOliveDash(
                 a => link(a.generatorURL, "Permalink"),
                 updateOliveFilter,
                 f => find(1, f),
-                standardLocationColumns,
+                standardLocationColumns(filename => filename),
                 throttleFileButton
               )
           );
@@ -4519,7 +4519,7 @@ export function initialiseSimulationDashboard(
                             showAlertNavigator(
                               oliveAlerts,
                               [],
-                              t,
+                              tab,
                               a => [],
                               filters => {},
                               innerFind,
@@ -4927,7 +4927,7 @@ export function initialiseSimulationDashboard(
     localStorage.setItem("shesmu_script", editor.getValue());
   });
 }
-const standardLocationColumns = [
+const standardLocationColumns = fileNameFormatter => [
   ["File", l => fileNameFormatter(l.file)],
   ["Line", l => l.line],
   ["Column", l => l.column],
@@ -4950,13 +4950,7 @@ const standardLocationColumns = [
   ],
   ["Source", l => (l.url ? link(l.url, "View Source") : blank())]
 ];
-function drawAlert(
-  a,
-  fileNameFormatter,
-  container,
-  makeHeader,
-  locationColumns
-) {
+function drawAlert(a, container, makeHeader, locationColumns) {
   container.classList.add(a.live ? "live" : "expired");
   [
     makeHeader(a),
@@ -4998,9 +4992,6 @@ function showAlertNavigator(
   ...toolbarExtras
 ) {
   clearChildren(output);
-  const fileNameFormatter = commonPathPrefix(
-    allAlerts.flatMap(a => a.locations || []).map(l => l.file)
-  );
   const showAlertGroup = (container, alerts, usedLabels, addFilter) => {
     clearChildren(container);
     const count = document.createElement("P");
@@ -5198,13 +5189,7 @@ function showAlertNavigator(
         .forEach(a => {
           const alertTile = document.createElement("DIV");
           alertTile.className = "alert";
-          drawAlert(
-            a,
-            fileNameFormatter,
-            alertTile,
-            makeHeader,
-            locationColumns
-          );
+          drawAlert(a, alertTile, makeHeader, locationColumns);
           alertList.appendChild(alertTile);
         });
     };
@@ -5450,7 +5435,12 @@ export function initialiseAlertDashboard(initialFilterString, output) {
       selectedAlert => {
         if (selectedAlert) {
           output.className = "alert";
-          drawAlert(selectedAlert, output, makeHeader, standardLocationColumns);
+          drawAlert(
+            selectedAlert,
+            output,
+            makeHeader,
+            standardLocationColumns(filename => filename)
+          );
         } else {
           output.innerText = "Unknown alert.";
         }
@@ -5491,6 +5481,9 @@ export function initialiseAlertDashboard(initialFilterString, output) {
         } catch (e) {
           console.log(e);
         }
+        const fileNameFormatter = commonPathPrefix(
+          alerts.flatMap(a => a.locations || []).map(l => l.file)
+        );
         const updateFilters = showAlertNavigator(
           alerts,
           userFilters,
@@ -5505,7 +5498,7 @@ export function initialiseAlertDashboard(initialFilterString, output) {
               )}`
             ),
           f => (findOverride = f),
-          standardLocationColumns
+          standardLocationColumns(fileNameFormatter)
         );
         window.addEventListener("popstate", e => {
           if (e.state) {
