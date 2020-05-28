@@ -6,10 +6,12 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.ParseDispatch;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -76,7 +78,7 @@ public final class WdlInputType {
     return flatToNested(
         inputs,
         (name, node) -> {
-          final Imyhat result = parseRoot(node.asText(), pairsAsObjects, errorHandler);
+          final Imyhat result = parseWdlJson(node, pairsAsObjects, errorHandler);
           return result.isBad() ? Optional.empty() : Optional.of(result);
         });
   }
@@ -102,6 +104,25 @@ public final class WdlInputType {
 
   public static Imyhat parseString(String input) {
     return parseString(input, false);
+  }
+
+  private static Imyhat parseWdlJson(
+      JsonNode node, boolean pairsAsObjects, ErrorConsumer errorHandler) {
+    if (node.isTextual()) {
+      return parseRoot(node.asText(), pairsAsObjects, errorHandler);
+    }
+    if (node.isObject()) {
+      final List<Pair<String, Imyhat>> fields = new ArrayList<>();
+      final Iterator<Entry<String, JsonNode>> entries = node.fields();
+      while (entries.hasNext()) {
+        final Entry<String, JsonNode> entry = entries.next();
+        fields.add(
+            new Pair<>(
+                entry.getKey(), parseWdlJson(entry.getValue(), pairsAsObjects, errorHandler)));
+      }
+      return new ObjectImyhat(fields.stream());
+    }
+    throw new IllegalArgumentException("Cannot cope with WDL JSON as " + node.getNodeType().name());
   }
 
   private static final Pattern DEFAULT_PROVIDED = Pattern.compile("(\\([^)]*\\))?");
