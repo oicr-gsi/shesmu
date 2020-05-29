@@ -93,10 +93,10 @@ public abstract class PluginFileType<T extends PluginFile> {
    *
    * @param services a list of service names to check; this set must not be modified; these names
    *     are arbitrary and must be coordinated by {@link Action} and the throttler
-   * @return true if the action should be blocked; false if it may proceed
+   * @return the names of any services that are in overload
    */
-  public boolean isOverloaded(Set<String> services) {
-    return false;
+  public Stream<String> isOverloaded(Set<String> services) {
+    return Stream.empty();
   }
 
   /** Get the method lookup for this class. */

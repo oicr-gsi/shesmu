@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.kohsuke.MetaInfServices;
 
@@ -51,9 +52,10 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
     }
 
     @Override
-    public boolean isOverloaded(Set<String> services) {
-
-      return (name().equals("maintenance") || services.contains(name())) && inMaintenanceWindow();
+    public Stream<String> isOverloaded(Set<String> services) {
+      return (name().equals("maintenance") || services.contains(name())) && inMaintenanceWindow()
+          ? Stream.of(name())
+          : Stream.empty();
     }
 
     @Override

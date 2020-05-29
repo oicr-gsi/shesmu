@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.kohsuke.MetaInfServices;
 
@@ -37,17 +38,17 @@ public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenB
     }
 
     @Override
-    public synchronized boolean isOverloaded(Set<String> services) {
+    public synchronized Stream<String> isOverloaded(Set<String> services) {
       if (!services.contains(name())) {
-        return false;
+        return Stream.empty();
       }
       final long newTokens = Duration.between(lastTime, Instant.now()).toMillis() / delay;
       lastTime = lastTime.plusMillis(delay * newTokens);
       tokens = Math.min(tokens + newTokens, capacity);
       tokenCount.labels(name()).set(tokens);
-      if (tokens < 1) return true;
+      if (tokens < 1) return Stream.of(name());
       tokens--;
-      return false;
+      return Stream.empty();
     }
 
     @Override

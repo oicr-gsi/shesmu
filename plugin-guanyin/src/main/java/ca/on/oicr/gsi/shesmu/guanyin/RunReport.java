@@ -193,7 +193,9 @@ public class RunReport extends JsonParameterisedAction {
 
   @Override
   public ActionState perform(ActionServices services) {
-    if (services.isOverloaded("all", "guanyin")) {
+    final Set<String> overloaded = services.isOverloaded("all", "guanyin");
+    if (!overloaded.isEmpty()) {
+      errors = Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
       return ActionState.THROTTLED;
     }
 

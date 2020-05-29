@@ -316,7 +316,10 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public boolean isOverloaded(String... services) {
                 return processor.isOverloaded(services)
-                    || pluginManager.isOverloaded(new HashSet<>(Arrays.asList(services)));
+                    || pluginManager
+                        .isOverloaded(new HashSet<>(Arrays.asList(services)))
+                        .findAny()
+                        .isPresent();
               }
 
               @Override
@@ -2651,9 +2654,13 @@ public final class Server implements ServerConfig, ActionServices {
       AnnotatedInputFormatDefinition format,
       boolean readStale)
       throws IOException {
-    if (processor.isOverloaded(format.name())
-        || pluginManager.isOverloaded(Collections.singleton(format.name()))
-        || !inputDownloadSemaphore.tryAcquire()) {
+    if (!readStale
+        && (processor.isOverloaded(format.name())
+            || pluginManager
+                .isOverloaded(Collections.singleton(format.name()))
+                .findAny()
+                .isPresent()
+            || !inputDownloadSemaphore.tryAcquire())) {
       t.sendResponseHeaders(503, 0);
       try (OutputStream os = t.getResponseBody()) {}
       return;
@@ -2686,8 +2693,11 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   @Override
-  public boolean isOverloaded(Set<String> services) {
-    return emergencyStop || pluginManager.isOverloaded(services);
+  public Set<String> isOverloaded(Set<String> services) {
+    return Stream.concat(
+            emergencyStop ? Stream.of("Emergency Stop Button") : Stream.empty(),
+            pluginManager.isOverloaded(services))
+        .collect(Collectors.toSet());
   }
 
   private String localname() {

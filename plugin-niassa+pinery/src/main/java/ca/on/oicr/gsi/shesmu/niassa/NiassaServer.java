@@ -570,12 +570,16 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   public MaxStatus maxInFlight(
-      ActionServices services, String workflowName, long workflowAccession) {
+      ActionServices services,
+      String workflowName,
+      long workflowAccession,
+      Set<String> overloadedServices) {
     // Ban all jobs with invalid accessions from running
     if (workflowAccession < 1) {
       return MaxStatus.INVALID_SWID;
     }
-    if (services.isOverloaded("niassa-launch", workflowName)) {
+    overloadedServices.addAll(services.isOverloaded("niassa-launch", workflowName));
+    if (!overloadedServices.isEmpty()) {
       return MaxStatus.EXTERNAL_THROTTLE;
     }
     synchronized (this) {

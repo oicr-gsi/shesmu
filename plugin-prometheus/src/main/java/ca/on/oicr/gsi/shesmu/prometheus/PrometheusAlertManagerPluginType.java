@@ -14,8 +14,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -120,18 +122,16 @@ public class PrometheusAlertManagerPluginType
     }
 
     @Override
-    public boolean isOverloaded(Set<String> services) {
-      String environment = configuration.map(Configuration::getEnvironment).orElse("");
-      return cache
-          .get()
-          .anyMatch(
-              alert ->
-                  alert.matches(
-                      environment,
-                      configuration
-                          .map(Configuration::getLabels)
-                          .orElse(Collections.singletonList("job")),
-                      services));
+    public Stream<String> isOverloaded(Set<String> services) {
+      final String environment = configuration.map(Configuration::getEnvironment).orElse("");
+      final List<String> labels =
+          configuration.map(Configuration::getLabels).orElse(Collections.singletonList("job"));
+      final Set<String> knownOverloads =
+          cache
+              .get()
+              .flatMap(alert -> alert.matches(environment, labels))
+              .collect(Collectors.toSet());
+      return services.stream().filter(knownOverloads::contains);
     }
 
     @Override

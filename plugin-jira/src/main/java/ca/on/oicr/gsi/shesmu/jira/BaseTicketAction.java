@@ -49,6 +49,7 @@ public abstract class BaseTicketAction extends Action {
   private final Supplier<JiraConnection> connection;
 
   private final Optional<ActionState> emptyTransitionState;
+  private List<String> errors = Collections.emptyList();
   private Optional<Instant> issueLastModified = Optional.empty();
   private URI issueUrl;
   private final Set<String> issues = new TreeSet<>();
@@ -76,7 +77,12 @@ public abstract class BaseTicketAction extends Action {
 
   protected final ActionState createIssue(
       ActionServices services, String description, String assignee) {
-    if (services.isOverloaded("jira", connection.get().projectKey())) {
+    final Set<String> overloadedServices =
+        services.isOverloaded("jira", connection.get().projectKey());
+    if (!overloadedServices.isEmpty()) {
+      errors =
+          Collections.singletonList(
+              "Overloaded services: " + String.join(", ", overloadedServices));
       return ActionState.THROTTLED;
     }
     issueCreates.labels(connection.get().url(), connection.get().projectKey()).inc();
@@ -228,6 +234,7 @@ public abstract class BaseTicketAction extends Action {
     node.put("instanceUrl", connection.get().url());
     node.put("url", issueUrl == null ? null : issueUrl.toString());
     issues.forEach(node.putArray("issues")::add);
+    errors.forEach(node.putArray("errors")::add);
     return node;
   }
 
@@ -255,7 +262,12 @@ public abstract class BaseTicketAction extends Action {
         .findAny() //
         .map(
             t -> {
-              if (services.isOverloaded("jira", connection.get().projectKey())) {
+              final Set<String> overloadedServices =
+                  services.isOverloaded("jira", connection.get().projectKey());
+              if (!overloadedServices.isEmpty()) {
+                errors =
+                    Collections.singletonList(
+                        "Overloaded services: " + String.join(", ", overloadedServices));
                 return ActionState.THROTTLED;
               }
               issueUpdates.labels(connection.get().url(), connection.get().projectKey()).inc();
