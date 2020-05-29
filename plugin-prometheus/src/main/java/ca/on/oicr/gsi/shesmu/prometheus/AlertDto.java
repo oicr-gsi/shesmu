@@ -3,7 +3,7 @@ package ca.on.oicr.gsi.shesmu.prometheus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /** Bean of the Alert Manager alert JSON object */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -49,19 +49,15 @@ public class AlertDto {
     return status;
   }
 
-  public boolean matches(String environment, List<String> labelNames, Set<String> serviceSet) {
+  public Stream<String> matches(String environment, List<String> labelNames) {
     if (!labels.get("alertname").asText("").equals("AutoInhibit")) {
-      return false;
+      return Stream.empty();
     }
     if (labels.hasNonNull("environment")
         && !labels.get("environment").asText("").equals(environment)) {
-      return false;
+      return Stream.empty();
     }
-    return labelNames
-        .stream()
-        .filter(labels::hasNonNull)
-        .map(l -> labels.get(l).asText(""))
-        .anyMatch(serviceSet::contains);
+    return labelNames.stream().filter(labels::hasNonNull).map(l -> labels.get(l).asText(""));
   }
 
   public void setAnnotations(ObjectNode annotations) {

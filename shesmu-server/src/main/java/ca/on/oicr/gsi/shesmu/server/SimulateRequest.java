@@ -433,14 +433,13 @@ public class SimulateRequest {
       if (!dryRun) {
         result.ifPresent(
             action -> {
-              if (action
-                      .inputs()
-                      .filter(actionServices::isOverloaded)
-                      .peek(response.putArray("overloadedInputs")::add)
-                      .count()
-                  > 0) {
+              final Set<String> overloadedInputs =
+                  actionServices.isOverloaded(action.inputs().collect(Collectors.toSet()));
+              if (!overloadedInputs.isEmpty()) {
+                overloadedInputs.forEach(response.putArray("overloadedInputs")::add);
                 return;
               }
+
               final CollectorRegistry registry = new CollectorRegistry();
               action.register(registry);
               final Map<Action, Pair<Set<String>, Set<SourceLocation>>> actions = new HashMap<>();
@@ -448,6 +447,7 @@ public class SimulateRequest {
                   new HashMap<>();
               final ObjectNode dumpers = response.putObject("dumpers");
               final ArrayNode olives = response.putArray("olives");
+              final ArrayNode overloadedServices = response.putArray("overloadedServices");
               final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
 
               final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
@@ -524,7 +524,9 @@ public class SimulateRequest {
 
                       @Override
                       public boolean isOverloaded(String... services) {
-                        return actionServices.isOverloaded(services);
+                        final Set<String> overloads = actionServices.isOverloaded(services);
+                        overloads.forEach(overloadedServices::add);
+                        return !overloads.isEmpty();
                       }
 
                       @Override

@@ -749,7 +749,7 @@ public final class PluginManager
         return instance;
       }
 
-      public boolean isOverloaded(Set<String> services) {
+      public Stream<String> isOverloaded(Set<String> services) {
         return instance.isOverloaded(services);
       }
 
@@ -1018,9 +1018,10 @@ public final class PluginManager
           methodGen.invokeDynamic(mangledMethodName, methodDescriptor, BSM_HANDLE, path);
     }
 
-    public boolean isOverloaded(Set<String> services) {
-      return fileFormat.isOverloaded(services)
-          || configuration.stream().anyMatch(f -> f.isOverloaded(services));
+    public Stream<String> isOverloaded(Set<String> services) {
+      return Stream.concat(
+          fileFormat.isOverloaded(services),
+          configuration.stream().flatMap(f -> f.isOverloaded(services)));
     }
 
     public final Stream<ConfigurationSection> listConfiguration() {
@@ -1802,8 +1803,8 @@ public final class PluginManager
    *     are arbitrary and must be coordinated by {@link Action} and the throttler
    * @return true if the action should be blocked; false if it may proceed
    */
-  public boolean isOverloaded(Set<String> services) {
-    return formatTypes.stream().anyMatch(f -> f.isOverloaded(services));
+  public Stream<String> isOverloaded(Set<String> services) {
+    return formatTypes.stream().flatMap(f -> f.isOverloaded(services));
   }
 
   @Override

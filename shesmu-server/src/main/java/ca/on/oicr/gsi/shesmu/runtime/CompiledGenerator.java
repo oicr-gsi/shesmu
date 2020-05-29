@@ -454,7 +454,7 @@ public class CompiledGenerator implements DefinitionRepository {
             .filter(s -> s.running.isDone())
             .flatMap(s -> s.generator.inputs())
             .collect(Collectors.toSet());
-    // Allow inhibitions to be set on a per-input format format and skip fetching this data.
+    // Allow inhibitions to be set on a per-input format and skip fetching this data.
     final Set<String> inhibitedFormats =
         usedFormats
             .stream()

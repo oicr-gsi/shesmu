@@ -354,8 +354,11 @@ public final class WorkflowAction extends Action {
   @Override
   public final ActionState perform(ActionServices actionServices) {
     cacheCollision = false;
-    if (actionServices.isOverloaded(
-        Stream.concat(services.stream(), server.get().services()).collect(Collectors.toSet()))) {
+    final Set<String> overloaded =
+        actionServices.isOverloaded(
+            Stream.concat(services.stream(), server.get().services()).collect(Collectors.toSet()));
+    if (!overloaded.isEmpty()) {
+      errors = Collections.singletonList("Overloaded services: " + String.join(", ", overloaded));
       return ActionState.THROTTLED;
     }
     final List<String> errors = new ArrayList<>();
@@ -535,7 +538,10 @@ public final class WorkflowAction extends Action {
           // Check if there are already too many copies of this workflow running; if so, wait until
           // later.
           if (!ignoreMaxInFlight) {
-            switch (server.get().maxInFlight(actionServices, workflowName, workflowAccession)) {
+            final Set<String> overloadedServices = new TreeSet<>();
+            switch (server
+                .get()
+                .maxInFlight(actionServices, workflowName, workflowAccession, overloadedServices)) {
               case RUN:
                 break;
               case TOO_MANY_RUNNING:
@@ -544,7 +550,11 @@ public final class WorkflowAction extends Action {
                         "Too many workflows running. Sit tight or increase max-in-flight setting.");
                 return ActionState.WAITING;
               case EXTERNAL_THROTTLE:
-                this.errors = Collections.singletonList("Launching workflows has been inhibited.");
+                this.errors =
+                    Collections.singletonList(
+                        "Launching workflows has been inhibited due to signals from "
+                            + String.join(" and ", overloadedServices)
+                            + ",");
                 return ActionState.THROTTLED;
               case INVALID_SWID:
                 this.errors =

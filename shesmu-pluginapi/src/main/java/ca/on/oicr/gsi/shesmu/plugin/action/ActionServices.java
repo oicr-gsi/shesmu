@@ -11,7 +11,7 @@ public interface ActionServices {
    *
    * @param services the names of the services
    */
-  default boolean isOverloaded(String... services) {
+  default Set<String> isOverloaded(String... services) {
     return isOverloaded(new TreeSet<>(Arrays.asList(services)));
   }
 
@@ -20,5 +20,5 @@ public interface ActionServices {
    *
    * @param services the names of the services
    */
-  boolean isOverloaded(Set<String> services);
+  Set<String> isOverloaded(Set<String> services);
 }
