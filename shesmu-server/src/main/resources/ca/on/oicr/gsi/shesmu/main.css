@@ -256,7 +256,6 @@ a.load.danger:visited {
   background-color: #dfdfdf;
 }
 
-
 .state_failed.updating,
 .state_unknown.updating {
   background: linear-gradient(
@@ -471,11 +470,9 @@ a.load.danger:visited {
 }
 
 .action.state_zombie a:hover,
-.action.state_zombie a:active
-{
+.action.state_zombie a:active {
   color: #888;
 }
-
 
 .action > :first-child::before,
 .alert > :first-child::before {
@@ -534,7 +531,6 @@ a.load.danger:visited {
   color: #aaa;
 }
 
-
 .alert.expired > :first-child::before {
   content: "Expired 😴";
   color: #06aed5;
@@ -565,8 +561,7 @@ a.load.danger:visited {
 .load.state_throttled,
 .load.state_unknown,
 .load.state_waiting,
-.load.state_zombie
- {
+.load.state_zombie {
   color: #000;
 }
 
@@ -765,4 +760,9 @@ table.errors {
   max-height: 80vh;
   overflow-y: auto;
   cursor: default;
+}
+
+.vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
