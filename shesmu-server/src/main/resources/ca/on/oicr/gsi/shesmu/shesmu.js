@@ -3453,6 +3453,7 @@ function renderStats(container, data, makePropertyClick, linkBinRange) {
           header.appendChild(document.createElement("TH"));
           for (let col of stat.columns) {
             const currentHeader = document.createElement("TH");
+            currentHeader.className = "vertical";
             breakSlashes(col.name).forEach(x => currentHeader.appendChild(x));
             header.appendChild(currentHeader);
             makeProperyClick(currentHeader, [col.name, col.value]);
@@ -3480,8 +3481,8 @@ function renderStats(container, data, makePropertyClick, linkBinRange) {
               const currentValue = document.createElement("TD");
               // The matrix might be ragged if doing a tag-tag crosstab
               const value =
-                stat.hasOwnProperty(rowKey) &&
-                stat[rowKey].hasOwnProperty(col.name)
+                stat.data.hasOwnProperty(rowKey) &&
+                stat.data[rowKey].hasOwnProperty(col.name)
                   ? stat.data[rowKey][col.name]
                   : 0;
               if (value) {
