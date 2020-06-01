@@ -6,13 +6,20 @@ import ca.on.oicr.gsi.shesmu.Server;
 import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.server.HotloadingCompiler;
+import ca.on.oicr.gsi.shesmu.server.ImportVerifier;
 import ca.on.oicr.gsi.shesmu.server.InputSource;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.server.plugins.CallSiteRegistry;
@@ -22,11 +29,27 @@ import ca.on.oicr.gsi.status.SectionRenderer;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Timer;
 import java.io.PrintStream;
-import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -39,7 +62,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public class CompiledGenerator implements DefinitionRepository {
   private final class Script implements WatchedFileListener {
-
     class ExportedConstantDefinition extends ConstantDefinition {
 
       @SuppressWarnings({"unused", "FieldCanBeLocal"})
@@ -54,7 +76,7 @@ public class CompiledGenerator implements DefinitionRepository {
       }
 
       @Override
-      protected void load(GeneratorAdapter methodGen) {
+      public void load(GeneratorAdapter methodGen) {
         methodGen.invokeDynamic(
             invokeName,
             Type.getMethodDescriptor(type().apply(TypeUtils.TO_ASM)),
@@ -140,13 +162,61 @@ public class CompiledGenerator implements DefinitionRepository {
     private List<ExportedConstantDefinition> exportedConstants = Collections.emptyList();
     private List<ExportedFunctionDefinition> exportedFunctions = Collections.emptyList();
     private final Path fileName;
+    private final DefinitionRepository allowedDefinitions =
+        new DefinitionRepository() {
+          @Override
+          public Stream<ActionDefinition> actions() {
+            return definitionRepository.actions();
+          }
+
+          @Override
+          public Stream<ConstantDefinition> constants() {
+            return definitionRepository.constants();
+          }
+
+          @Override
+          public Stream<FunctionDefinition> functions() {
+            return definitionRepository
+                .functions()
+                .filter(f -> f.filename() == null || !f.filename().equals(fileName));
+          }
+
+          @Override
+          public Stream<ConfigurationSection> listConfiguration() {
+            return definitionRepository.listConfiguration();
+          }
+
+          @Override
+          public Stream<RefillerDefinition> refillers() {
+            return definitionRepository.refillers();
+          }
+
+          @Override
+          public Stream<SignatureDefinition> signatures() {
+            return definitionRepository.signatures();
+          }
+
+          @Override
+          public void writeJavaScriptRenderer(PrintStream writer) {
+            definitionRepository.writeJavaScriptRenderer(writer);
+          }
+        };
     private ActionGenerator generator = ActionGenerator.NULL;
+    private Set<ImportVerifier> imports = Collections.emptySet();
     private volatile boolean live = true;
     private OliveRunInfo runInfo;
     private CompletableFuture<?> running = CompletableFuture.completedFuture(null);
 
     private Script(Path fileName) {
       this.fileName = fileName;
+    }
+
+    public void checkDefinitions() {
+      // Since the definitions can change, check if any of the imports used by this script change
+      // and trigger a rebuild.
+      if (!imports.stream().allMatch(i -> i.stillMatches(allowedDefinitions))) {
+        FileWatcher.DATA_DIRECTORY.trigger(this.fileName);
+      }
     }
 
     public Stream<ConstantDefinition> constants() {
@@ -203,47 +273,9 @@ public class CompiledGenerator implements DefinitionRepository {
       try (Timer timer = compileTime.labels(fileName.toString()).startTimer()) {
         final List<ExportedConstantDefinition> exportedConstants = new ArrayList<>();
         final List<ExportedFunctionDefinition> exportedFunctions = new ArrayList<>();
+        final Set<ImportVerifier> imports = new HashSet<>();
         final HotloadingCompiler compiler =
-            new HotloadingCompiler(
-                SOURCES::get,
-                new DefinitionRepository() {
-                  @Override
-                  public Stream<ActionDefinition> actions() {
-                    return definitionRepository.actions();
-                  }
-
-                  @Override
-                  public Stream<ConstantDefinition> constants() {
-                    return definitionRepository.constants();
-                  }
-
-                  @Override
-                  public Stream<FunctionDefinition> functions() {
-                    return definitionRepository
-                        .functions()
-                        .filter(f -> f.filename() == null || !f.filename().equals(fileName));
-                  }
-
-                  @Override
-                  public Stream<ConfigurationSection> listConfiguration() {
-                    return definitionRepository.listConfiguration();
-                  }
-
-                  @Override
-                  public Stream<RefillerDefinition> refillers() {
-                    return definitionRepository.refillers();
-                  }
-
-                  @Override
-                  public Stream<SignatureDefinition> signatures() {
-                    return definitionRepository.signatures();
-                  }
-
-                  @Override
-                  public void writeJavaScriptRenderer(PrintStream writer) {
-                    definitionRepository.writeJavaScriptRenderer(writer);
-                  }
-                });
+            new HotloadingCompiler(SOURCES::get, allowedDefinitions);
         final Optional<ActionGenerator> result =
             compiler.compile(
                 fileName,
@@ -263,7 +295,8 @@ public class CompiledGenerator implements DefinitionRepository {
                         new ExportedFunctionDefinition(method, name, returnType, parameters));
                   }
                 },
-                ft -> dashboard = ft);
+                ft -> dashboard = ft,
+                imports::add);
         sourceValid.labels(fileName.toString()).set(result.isPresent() ? 1 : 0);
         result.ifPresent(
             x -> {
@@ -277,6 +310,7 @@ public class CompiledGenerator implements DefinitionRepository {
                       fileName.toString(), MethodHandles.constant(ActionGenerator.class, x));
               this.exportedFunctions = exportedFunctions;
               this.exportedConstants = exportedConstants;
+              this.imports = imports;
               // Find all callsites previously exported that no longer exists. Replace the method
               // handle in the call site with an exception.
               FUNCTION_REGISTRY
@@ -410,6 +444,15 @@ public class CompiledGenerator implements DefinitionRepository {
       ScheduledExecutorService executor, DefinitionRepository definitionRepository) {
     this.executor = executor;
     this.definitionRepository = DefinitionRepository.concat(definitionRepository, this);
+    executor.scheduleWithFixedDelay(
+        () ->
+            scripts
+                .map(AutoUpdatingDirectory::stream)
+                .orElseGet(Stream::empty)
+                .forEach(Script::checkDefinitions),
+        10,
+        5,
+        TimeUnit.MINUTES);
   }
 
   @Override

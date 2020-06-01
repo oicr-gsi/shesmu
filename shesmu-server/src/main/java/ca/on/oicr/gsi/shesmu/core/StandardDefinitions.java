@@ -481,7 +481,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             null) {
 
           @Override
-          protected void load(GeneratorAdapter methodGen) {
+          public void load(GeneratorAdapter methodGen) {
             methodGen.invokeStatic(A_INSTANT_TYPE, METHOD_INSTANT__NOW);
           }
         }

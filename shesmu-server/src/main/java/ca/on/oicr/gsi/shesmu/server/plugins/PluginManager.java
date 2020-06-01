@@ -131,7 +131,7 @@ public final class PluginManager
       }
 
       @Override
-      protected void load(GeneratorAdapter methodGen) {
+      public void load(GeneratorAdapter methodGen) {
         methodGen.invokeDynamic(
             fixedName,
             Type.getMethodDescriptor(type().apply(TypeUtils.TO_ASM)),
@@ -1100,7 +1100,7 @@ public final class PluginManager
                       path) {
 
                     @Override
-                    protected void load(GeneratorAdapter methodGen) {
+                    public void load(GeneratorAdapter methodGen) {
                       invoker.write(methodGen, path.toString());
                     }
                   });

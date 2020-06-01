@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.compiler.ExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.LiveExportConsumer;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
@@ -12,6 +13,10 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.ActionGenerator;
+import ca.on.oicr.gsi.shesmu.server.ImportVerifier.ActionVerifier;
+import ca.on.oicr.gsi.shesmu.server.ImportVerifier.ConstantVerifier;
+import ca.on.oicr.gsi.shesmu.server.ImportVerifier.FunctionVerifier;
+import ca.on.oicr.gsi.shesmu.server.ImportVerifier.RefillerVerifier;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -27,6 +32,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public final class HotloadingCompiler extends BaseHotloadingCompiler {
@@ -43,13 +49,17 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
   }
 
   public Optional<ActionGenerator> compile(
-      Path fileName, LiveExportConsumer exportConsumer, Consumer<FileTable> dashboardConsumer) {
+      Path fileName,
+      LiveExportConsumer exportConsumer,
+      Consumer<FileTable> dashboardConsumer,
+      Consumer<ImportVerifier> registerImport) {
     try {
       return compile(
           fileName.toString(),
           new String(Files.readAllBytes(fileName), StandardCharsets.UTF_8),
           exportConsumer,
-          dashboardConsumer);
+          dashboardConsumer,
+          registerImport);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -60,7 +70,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       String fileName,
       String contents,
       LiveExportConsumer exportConsumer,
-      Consumer<FileTable> dashboardConsumer) {
+      Consumer<FileTable> dashboardConsumer,
+      Consumer<ImportVerifier> registerImport) {
     try {
       errors.clear();
       final Compiler compiler =
@@ -84,12 +95,20 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected ActionDefinition getAction(String name) {
-              return actionCache.get(name);
+              final ActionDefinition definition = actionCache.get(name);
+              if (definition != null) {
+                registerImport.accept(new ActionVerifier(definition));
+              }
+              return definition;
             }
 
             @Override
             protected FunctionDefinition getFunction(String function) {
-              return functionCache.get(function);
+              final FunctionDefinition definition = functionCache.get(function);
+              if (definition != null) {
+                registerImport.accept(new FunctionVerifier(definition));
+              }
+              return definition;
             }
 
             @Override
@@ -99,7 +118,11 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
 
             @Override
             protected RefillerDefinition getRefiller(String name) {
-              return refillerCache.get(name);
+              final RefillerDefinition definition = refillerCache.get(name);
+              if (definition != null) {
+                registerImport.accept(new RefillerVerifier(definition));
+              }
+              return definition;
             }
           };
 
@@ -109,7 +132,20 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           contents,
           "dyn/shesmu/Program",
           fileName,
-          definitionRepository.constants().collect(Collectors.toList())::stream,
+          definitionRepository
+                  .constants()
+                  .<ConstantDefinition>map(
+                      c ->
+                          new ConstantDefinition(
+                              c.name(), c.type(), c.description(), c.filename()) {
+                            @Override
+                            public void load(GeneratorAdapter methodGen) {
+                              c.load(methodGen);
+                              registerImport.accept(new ConstantVerifier(c));
+                            }
+                          })
+                  .collect(Collectors.toList())
+              ::stream,
           definitionRepository.signatures().collect(Collectors.toList())::stream,
           new ExportConsumer() {
             @Override

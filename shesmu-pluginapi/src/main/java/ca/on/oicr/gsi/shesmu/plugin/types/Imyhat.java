@@ -72,95 +72,6 @@ public abstract class Imyhat {
     }
   }
 
-  public static final class ListImyhat extends Imyhat {
-    private final Imyhat inner;
-
-    private ListImyhat(Imyhat inner) {
-      this.inner = inner;
-    }
-
-    @Override
-    public void accept(ImyhatConsumer dispatcher, Object value) {
-      @SuppressWarnings("unchecked")
-      final Set<Object> values = (Set<Object>) value;
-      dispatcher.accept(values.stream(), inner);
-    }
-
-    @Override
-    public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
-      @SuppressWarnings("unchecked")
-      final Set<Object> values = (Set<Object>) value;
-      return dispatcher.apply(values.stream(), inner);
-    }
-
-    @Override
-    public <R> R apply(ImyhatTransformer<R> transformer) {
-      return transformer.list(inner);
-    }
-
-    @Override
-    public Comparator<?> comparator() {
-      @SuppressWarnings("unchecked")
-      final Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
-      return (Set<?> a, Set<?> b) -> {
-        final Iterator<?> aIt = a.iterator();
-        final Iterator<?> bIt = b.iterator();
-        while (aIt.hasNext() && bIt.hasNext()) {
-          final int result = innerComparator.compare(aIt.next(), bIt.next());
-          if (result != 0) {
-            return result;
-          }
-        }
-        return Boolean.compare(aIt.hasNext(), bIt.hasNext());
-      };
-    }
-
-    @Override
-    public String descriptor() {
-      return "a" + inner.descriptor();
-    }
-
-    public Imyhat inner() {
-      return inner;
-    }
-
-    @Override
-    public boolean isBad() {
-      return inner.isBad();
-    }
-
-    @Override
-    public boolean isOrderable() {
-      return false;
-    }
-
-    @Override
-    public boolean isSame(Imyhat other) {
-      if (other instanceof ListImyhat) {
-        return inner.isSame(((ListImyhat) other).inner);
-      }
-      return other == EMPTY;
-    }
-
-    @Override
-    public Class<?> javaType() {
-      return Set.class;
-    }
-
-    @Override
-    public String name() {
-      return "[" + inner.name() + "]";
-    }
-
-    @Override
-    public Imyhat unify(Imyhat other) {
-      if (other == EMPTY) {
-        return this;
-      }
-      return new ListImyhat(inner.unify(((ListImyhat) other).inner));
-    }
-  }
-
   public static final class DictionaryImyhat extends Imyhat {
     private final Imyhat key;
     private final Imyhat value;
@@ -216,6 +127,23 @@ public abstract class Imyhat {
     }
 
     @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      DictionaryImyhat that = (DictionaryImyhat) o;
+      return key.equals(that.key) && value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(key, value);
+    }
+
+    @Override
     public boolean isBad() {
       return key.isBad() || value.isBad();
     }
@@ -256,6 +184,112 @@ public abstract class Imyhat {
 
     public Imyhat value() {
       return value;
+    }
+  }
+
+  public static final class ListImyhat extends Imyhat {
+    private final Imyhat inner;
+
+    private ListImyhat(Imyhat inner) {
+      this.inner = inner;
+    }
+
+    @Override
+    public void accept(ImyhatConsumer dispatcher, Object value) {
+      @SuppressWarnings("unchecked")
+      final Set<Object> values = (Set<Object>) value;
+      dispatcher.accept(values.stream(), inner);
+    }
+
+    @Override
+    public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+      @SuppressWarnings("unchecked")
+      final Set<Object> values = (Set<Object>) value;
+      return dispatcher.apply(values.stream(), inner);
+    }
+
+    @Override
+    public <R> R apply(ImyhatTransformer<R> transformer) {
+      return transformer.list(inner);
+    }
+
+    @Override
+    public Comparator<?> comparator() {
+      @SuppressWarnings("unchecked")
+      final Comparator<Object> innerComparator = (Comparator<Object>) inner.comparator();
+      return (Set<?> a, Set<?> b) -> {
+        final Iterator<?> aIt = a.iterator();
+        final Iterator<?> bIt = b.iterator();
+        while (aIt.hasNext() && bIt.hasNext()) {
+          final int result = innerComparator.compare(aIt.next(), bIt.next());
+          if (result != 0) {
+            return result;
+          }
+        }
+        return Boolean.compare(aIt.hasNext(), bIt.hasNext());
+      };
+    }
+
+    @Override
+    public String descriptor() {
+      return "a" + inner.descriptor();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ListImyhat that = (ListImyhat) o;
+      return inner.equals(that.inner);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(inner);
+    }
+
+    public Imyhat inner() {
+      return inner;
+    }
+
+    @Override
+    public boolean isBad() {
+      return inner.isBad();
+    }
+
+    @Override
+    public boolean isOrderable() {
+      return false;
+    }
+
+    @Override
+    public boolean isSame(Imyhat other) {
+      if (other instanceof ListImyhat) {
+        return inner.isSame(((ListImyhat) other).inner);
+      }
+      return other == EMPTY;
+    }
+
+    @Override
+    public Class<?> javaType() {
+      return Set.class;
+    }
+
+    @Override
+    public String name() {
+      return "[" + inner.name() + "]";
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      if (other == EMPTY) {
+        return this;
+      }
+      return new ListImyhat(inner.unify(((ListImyhat) other).inner));
     }
   }
 
@@ -335,12 +369,29 @@ public abstract class Imyhat {
               .collect(Collectors.joining());
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ObjectImyhat that = (ObjectImyhat) o;
+      return fields.equals(that.fields);
+    }
+
     public Stream<Map.Entry<String, Pair<Imyhat, Integer>>> fields() {
       return fields.entrySet().stream();
     }
 
     public Imyhat get(String field) {
       return fields.getOrDefault(field, new Pair<>(BAD, 0)).first();
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(fields);
     }
 
     public int index(String field) {
@@ -449,6 +500,23 @@ public abstract class Imyhat {
       return "q" + inner.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      OptionalImyhat that = (OptionalImyhat) o;
+      return inner.equals(that.inner);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(inner);
+    }
+
     public Imyhat inner() {
       return inner;
     }
@@ -545,8 +613,25 @@ public abstract class Imyhat {
           .collect(Collectors.joining("", "t" + types.length, ""));
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      TupleImyhat that = (TupleImyhat) o;
+      return Arrays.equals(types, that.types);
+    }
+
     public Imyhat get(int index) {
       return index >= 0 && index < types.length ? types[index] : BAD;
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(types);
     }
 
     public Stream<Imyhat> inner() {
@@ -1274,16 +1359,16 @@ public abstract class Imyhat {
     }
   }
 
+  public static DictionaryImyhat dictionary(Imyhat key, Imyhat value) {
+    return new DictionaryImyhat(key, value);
+  }
+
   /** Parse a name which must be one of the base types (no lists or tuples) */
   public static BaseImyhat forName(String s) {
     return baseTypes()
         .filter(t -> t.name().equals(s))
         .findAny()
         .orElseThrow(() -> new IllegalArgumentException(String.format("No such base type %s.", s)));
-  }
-
-  public static DictionaryImyhat dictionary(Imyhat key, Imyhat value) {
-    return new DictionaryImyhat(key, value);
   }
 
   public static Optional<? extends Imyhat> of(Type c) {

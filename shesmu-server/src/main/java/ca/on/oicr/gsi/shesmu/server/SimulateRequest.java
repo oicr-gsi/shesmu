@@ -425,7 +425,8 @@ public class SimulateRequest {
                       .forEach(info.putArray("parameters")::add);
                 }
               },
-              fileTable::set);
+              fileTable::set,
+              importVerifier -> {});
       compiler.errors().forEach(errors::add);
       if (fileTable.get() != null) {
         response.put("bytecode", fileTable.get().bytecode());

@@ -107,7 +107,7 @@ public abstract class ConstantDefinition implements Target {
     }
 
     @Override
-    protected final void load(GeneratorAdapter methodGen) {
+    public final void load(GeneratorAdapter methodGen) {
       Renderer.loadImyhatInMethod(methodGen, type().descriptor());
       methodGen.invokeVirtual(A_IMYHAT_TYPE, METHOD_IMYHAT__NEW_SET);
       for (final T value : values) {
@@ -165,7 +165,7 @@ public abstract class ConstantDefinition implements Target {
     return new ConstantDefinition(name, Imyhat.BOOLEAN, description, null) {
 
       @Override
-      protected void load(GeneratorAdapter methodGen) {
+      public void load(GeneratorAdapter methodGen) {
         methodGen.push(value);
       }
     };
@@ -180,7 +180,7 @@ public abstract class ConstantDefinition implements Target {
     return new ConstantDefinition(name, Imyhat.DATE, description, null) {
 
       @Override
-      protected void load(GeneratorAdapter methodGen) {
+      public void load(GeneratorAdapter methodGen) {
         methodGen.push(value.toEpochMilli());
         methodGen.invokeStatic(type().apply(TypeUtils.TO_ASM), INSTANT_CTOR);
       }
@@ -196,7 +196,7 @@ public abstract class ConstantDefinition implements Target {
     return new ConstantDefinition(name, Imyhat.INTEGER, description, null) {
 
       @Override
-      protected void load(GeneratorAdapter methodGen) {
+      public void load(GeneratorAdapter methodGen) {
         methodGen.push(value);
       }
     };
@@ -211,7 +211,7 @@ public abstract class ConstantDefinition implements Target {
     return new ConstantDefinition(name, Imyhat.STRING, description, null) {
 
       @Override
-      protected void load(GeneratorAdapter methodGen) {
+      public void load(GeneratorAdapter methodGen) {
         methodGen.push(value);
       }
     };
@@ -283,7 +283,7 @@ public abstract class ConstantDefinition implements Target {
    *
    * @param methodGen the method to load the value in
    */
-  protected abstract void load(GeneratorAdapter methodGen);
+  public abstract void load(GeneratorAdapter methodGen);
 
   /**
    * The name of the constant.

@@ -97,7 +97,7 @@ public final class Check extends Compiler {
                         null) {
 
                       @Override
-                      protected void load(GeneratorAdapter methodGen) {
+                      public void load(GeneratorAdapter methodGen) {
                         throw new UnsupportedOperationException();
                       }
                     }) //
