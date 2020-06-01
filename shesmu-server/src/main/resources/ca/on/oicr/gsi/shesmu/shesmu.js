@@ -2728,7 +2728,7 @@ function removeFromList(value) {
   return list => (list ? list.filter(x => x !== value) : []);
 }
 
-function updateText(original, text, matchedCase) {
+function updateText(original, text, matchCase) {
   return x =>
     (x || [])
       .filter(v => v.text != original.text && v.text != text)
@@ -3456,7 +3456,7 @@ function renderStats(container, data, makePropertyClick, linkBinRange) {
             currentHeader.className = "vertical";
             breakSlashes(col.name).forEach(x => currentHeader.appendChild(x));
             header.appendChild(currentHeader);
-            makeProperyClick(currentHeader, [col.name, col.value]);
+            makePropertyClick(currentHeader, [col.name, col.value]);
           }
           const maximum = Math.max(
             1,
