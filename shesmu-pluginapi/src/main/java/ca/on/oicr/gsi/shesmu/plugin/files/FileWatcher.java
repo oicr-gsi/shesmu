@@ -98,6 +98,16 @@ public abstract class FileWatcher {
     }
 
     @Override
+    public void trigger(Path path) {
+      final Instant now = Instant.now();
+      active
+          .getOrDefault(path, Collections.emptyList())
+          .stream()
+          .map(listener -> new RetryProcess(now, listener, path))
+          .forEach(retry::add);
+    }
+
+    @Override
     public synchronized void register(String extension, Function<Path, WatchedFileListener> ctor) {
       List<Function<Path, WatchedFileListener>> holder;
       if (!ctors.containsKey(extension)) {
@@ -161,10 +171,12 @@ public abstract class FileWatcher {
                 final RetryProcess current = retry.poll();
                 if (current == null) break;
                 if (Duration.between(now, current.time()).toMillis() <= 0) {
+                  // Since we might be externally triggered on an already retrying file, there might
+                  // be duplicate updates; this will eventually deduplicate them
+                  retryOutput.removeIf(p -> p.listener == current.listener);
                   try (AutoCloseable timer =
                       fileUpdateDuration.labels(current.filename()).startTimer()) {
                     current.update(retryOutput::add, now);
-                    ;
                   } catch (Exception e) {
                     e.printStackTrace();
                   }
@@ -273,6 +285,11 @@ public abstract class FileWatcher {
                     }
 
                     @Override
+                    public void trigger(Path path) {
+                      // Do nothing.
+                    }
+
+                    @Override
                     public void register(
                         String extension, Function<Path, WatchedFileListener> ctor) {
                       // Do nothing
@@ -289,7 +306,21 @@ public abstract class FileWatcher {
           .labelNames("filename")
           .register();
 
+  /** The directories being monitored */
   public abstract Stream<Path> paths();
 
+  /**
+   * Trigger an update on a file (if it exists and is known to this updater)
+   *
+   * <p>This will behave as if the file was changed on disk even if it wasn't.
+   */
+  public abstract void trigger(Path path);
+
+  /**
+   * Add a new file type to monitor
+   *
+   * @param extension the file extension
+   * @param ctor a constructor to call when a new file is discovered.
+   */
   public abstract void register(String extension, Function<Path, WatchedFileListener> ctor);
 }
