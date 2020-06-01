@@ -509,7 +509,8 @@ public class RunTest {
                       // Do nothing
                     }
                   },
-                  dashboard::set)
+                  dashboard::set,
+                  importVerifier -> {})
               .orElse(ActionGenerator.NULL);
       compiler.errors().forEach(System.err::println);
       final ActionChecker checker = new ActionChecker();
