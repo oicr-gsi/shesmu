@@ -4463,7 +4463,7 @@ function getStats(
                   } else {
                     input.value = result.formatted;
                     updateURL(result.formatted);
-                    return Promise.resolve([result.filter]);
+                    return Promise.resolve(filters.concat([result.filter]));
                   }
                 })
                 .catch(errs => {
@@ -4761,7 +4761,7 @@ function getStats(
         state
           .prepare()
           .then(f =>
-            saveSearch(filters.concat(f), (updateLocalSearches, name) =>
+            saveSearch(f, (updateLocalSearches, name) =>
               updateSearchList(false, updateLocalSearches, name)
             )
           )
@@ -4802,17 +4802,7 @@ function getStats(
     dangerButton(
       "☠️ PURGE",
       "Remove matching actions from the Shesmu server.",
-      () =>
-        purge(
-          filters.concat(
-            additionalFilters.length == 0
-              ? []
-              : synthesiseFilters(
-                  additionalFilters[additionalFilters.length - 1]
-                )
-          ),
-          refresh
-        )
+      () => state.prepare().then(f => purge(f, refresh))
     )
   );
   for (const extra of toolbarExtras) {
