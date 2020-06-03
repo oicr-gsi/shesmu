@@ -1,12 +1,19 @@
 # Shesmu Decision-Action Language Reference
 
 A Shesmu script contains:
+- a version
 - an input declaration
 - pragmas if required
 - type aliases if required
 - constants and functions
 - define olives
 - olives
+
+The version can determine what language features are available and provides a
+mechanism to change syntax in the future. Currently, only one version is
+supported.
+
+    Version 1;
 
 The input declaration determines the input format that will be read by olives
 in the file. This is the only required entry in a file.

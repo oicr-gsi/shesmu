@@ -13,6 +13,7 @@ _run_.
 First, we need to specify the type of information to be processed. All the
 olives in a file share the same _input format_. At the top of the file:
 
+    Version 1;
     Input cerberus_fp;
 
 This doesn't specify where the data comes from, but what kind of data will be
@@ -874,6 +875,7 @@ so the action that produces the BAM does not need to be re-run. However,
 changing the tissue type affects the variant caller, so it should be triggered
 to rerun even though the input BAM is not changed.
 
+    Version 1;
     Input cerberus_fp;
     
     Olive
@@ -911,6 +913,7 @@ signature is a short hand that includes the correct information.
 
 Now, suppose we wish to compare possible variants that are in two organs of interest:
 
+    Version 1;
     Input cerberus_fp;
     
     Olive

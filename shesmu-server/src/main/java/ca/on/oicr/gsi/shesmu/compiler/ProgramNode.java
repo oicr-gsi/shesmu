@@ -5,11 +5,14 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.Parser.ParseDispatch;
+import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -17,37 +20,71 @@ import java.util.stream.Stream;
 
 /** Representation of a complete Shesmu script */
 public class ProgramNode {
+  private static final ParseDispatch<Rule<BiFunction<Integer, Integer, ProgramNode>>> VERSIONS =
+      new ParseDispatch<>();
+
+  static {
+    VERSIONS.addSymbol(
+        "1",
+        Parser.just(
+            (parser, output) -> {
+              final AtomicReference<String> inputFormat = new AtomicReference<>();
+              final AtomicReference<List<PragmaNode>> pragmas = new AtomicReference<>();
+              final AtomicReference<List<TypeAliasNode>> typeAliases = new AtomicReference<>();
+              final AtomicReference<List<OliveNode>> olives = new AtomicReference<>();
+              final Parser result =
+                  parser
+                      .keyword("Input")
+                      .whitespace()
+                      .identifier(inputFormat::set)
+                      .whitespace()
+                      .symbol(";")
+                      .whitespace()
+                      .list(pragmas::set, PragmaNode::parse)
+                      .list(typeAliases::set, TypeAliasNode::parse)
+                      .list(olives::set, OliveNode::parse)
+                      .whitespace();
+              if (result.isGood()) {
+                output.accept(
+                    (line, column) ->
+                        new ProgramNode(
+                            line,
+                            column,
+                            inputFormat.get(),
+                            pragmas.get(),
+                            typeAliases.get(),
+                            olives.get()));
+              }
+              return result;
+            }));
+    VERSIONS.addRaw(
+        "unknown",
+        Parser.just(
+            (parser, output) -> parser.raise("Version is not supported by this Shesmu server.")));
+  }
   /** Parse a file of olive nodes */
   public static boolean parseFile(
       CharSequence input, Consumer<ProgramNode> output, ErrorConsumer errorHandler) {
+
+    // This is a bit weird; we want to support multiple versions of the olive language in the
+    // future, so we parse the version and the version gives us the parser for the rest of the file.
+    final AtomicReference<Rule<BiFunction<Integer, Integer, ProgramNode>>> version =
+        new AtomicReference<>();
     final AtomicReference<Pair<Integer, Integer>> start = new AtomicReference<>();
-    final AtomicReference<String> inputFormat = new AtomicReference<>();
-    final AtomicReference<List<PragmaNode>> pragmas = new AtomicReference<>();
-    final AtomicReference<List<TypeAliasNode>> typeAliases = new AtomicReference<>();
-    final AtomicReference<List<OliveNode>> olives = new AtomicReference<>();
-    final Parser result =
+    Parser result =
         Parser.start(input, errorHandler)
             .whitespace()
             .location(start::set)
-            .keyword("Input")
+            .keyword("Version")
             .whitespace()
-            .identifier(inputFormat::set)
+            .dispatch(VERSIONS, version::set)
             .whitespace()
             .symbol(";")
-            .whitespace()
-            .list(pragmas::set, PragmaNode::parse)
-            .list(typeAliases::set, TypeAliasNode::parse)
-            .list(olives::set, OliveNode::parse)
             .whitespace();
-    if (result.finished()) {
-      output.accept(
-          new ProgramNode(
-              start.get().first(),
-              start.get().second(),
-              inputFormat.get(),
-              pragmas.get(),
-              typeAliases.get(),
-              olives.get()));
+
+    if (result
+        .then(version.get(), f -> output.accept(f.apply(start.get().first(), start.get().second())))
+        .finished()) {
       return true;
     }
     return false;

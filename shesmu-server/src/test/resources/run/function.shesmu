@@ -1,3 +1,4 @@
+Version 1;
 Input test;
 
 Function foo(string x) x == "the_foo_study";

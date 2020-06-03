@@ -1,3 +1,4 @@
+Version 1;
 Input test;
 
 TypeAlias thingie {project = project_type, count = Return str_len};

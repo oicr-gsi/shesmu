@@ -1,3 +1,4 @@
+Version 1;
 Input test;
 
 Function x(integer a) `{x = ``, a = a}` As json; # This is what we're really testing, but we just need to generate valid bytecode

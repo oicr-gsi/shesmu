@@ -1,3 +1,4 @@
+Version 1;
 Input test;
 
 Olive Run ok With ok = (If True Then 3 Else If True Then 5 Else 6) == 3  ;
