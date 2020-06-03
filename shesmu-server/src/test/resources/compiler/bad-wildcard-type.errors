@@ -1,1 +1,1 @@
-4:25: Object expected for destructuring, but got {boolean, integer}.
+5:25: Object expected for destructuring, but got {boolean, integer}.

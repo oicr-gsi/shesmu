@@ -1,3 +1,4 @@
+Version 1;
 Input test;
 Function foo([{boolean, integer}] input) For x In input: Sort x[1] Subsample(Fixed 1 While x[0]) Count;
 

@@ -1,3 +1,4 @@
+Version 1;
 Input test;
 
 Olive Run ok With ok = "{path_dir(path)}" == "/";
