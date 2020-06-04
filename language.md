@@ -307,6 +307,11 @@ Collect all values into a list from existing lists (duplicates are removed).
 
 Collects the results into a dictionary. Duplicate values are resolved arbitrarily.
 
+- `LexicalConcat` _expr_ `With` _delimiter_
+
+Concatenate all values, which must be strings, into a single string separated
+by _delimiter_, which must also be a string.
+
 - `List` _expr_
 
 Collect all values into a list (duplicates are removed).

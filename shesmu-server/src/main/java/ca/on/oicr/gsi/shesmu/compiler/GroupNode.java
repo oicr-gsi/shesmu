@@ -40,6 +40,27 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword("Flatten", of(GroupNodeFlatten::new));
     GROUPERS.addKeyword("OnlyIf", of(GroupNodeOnlyIf::new));
     GROUPERS.addKeyword("List", of(GroupNodeList::new));
+    GROUPERS.addKeyword(
+        "LexicalConcat",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> delimiter = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .then(ExpressionNode::parse0, expression::set)
+                  .whitespace()
+                  .keyword("With")
+                  .whitespace()
+                  .then(ExpressionNode::parse0, delimiter::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                (line, column, name) ->
+                    new GroupNodeLexicalConcat(
+                        line, column, name, expression.get(), delimiter.get()));
+          }
+          return result;
+        });
     GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
     GROUPERS.addKeyword("Sum", of(GroupNodeSum::new));
     GROUPERS.addKeyword("Univalued", ofWithDefault(GroupNodeUnivalued::new));

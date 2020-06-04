@@ -67,6 +67,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
+    public void addLexicalConcat(
+        String fieldName, Consumer<Renderer> loader, Consumer<Renderer> delimiterLoader) {
+      elements.add(new LexicalConcat(prefix + fieldName, loader, delimiterLoader));
+    }
+
+    @Override
     public final void addMatches(String name, Match matchType, Consumer<Renderer> condition) {
       elements.add(new Matches(prefix + name, matchType, condition));
     }
@@ -629,6 +635,89 @@ public final class RegroupVariablesBuilder implements Regrouper {
     @Override
     protected void collect() {
       collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD_ALL);
+    }
+  }
+
+  private class LexicalConcat extends Element {
+
+    private final Consumer<Renderer> delimiter;
+    private final String fieldName;
+    private final Consumer<Renderer> loader;
+
+    public LexicalConcat(
+        String fieldName, Consumer<Renderer> loader, Consumer<Renderer> delimiter) {
+      this.fieldName = fieldName;
+      this.loader = loader;
+      this.delimiter = delimiter;
+      classVisitor
+          .visitField(Opcodes.ACC_PUBLIC, fieldName, A_SET_TYPE.getDescriptor(), null, null)
+          .visitEnd();
+      classVisitor
+          .visitField(
+              Opcodes.ACC_PUBLIC, fieldName + "$delim", A_STRING_TYPE.getDescriptor(), null, null)
+          .visitEnd();
+      final GeneratorAdapter getMethod =
+          new GeneratorAdapter(
+              Opcodes.ACC_PUBLIC,
+              new Method(fieldName, A_STRING_TYPE, new Type[] {}),
+              null,
+              null,
+              classVisitor);
+      getMethod.visitCode();
+      getMethod.loadThis();
+      getMethod.getField(self, fieldName + "$delim", A_STRING_TYPE);
+      getMethod.loadThis();
+      getMethod.getField(self, fieldName, A_SET_TYPE);
+      getMethod.invokeStatic(A_STRING_TYPE, METHOD_STRING__JOIN);
+      getMethod.returnValue();
+      getMethod.endMethod();
+    }
+
+    @Override
+    public void buildCollect() {
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer.methodGen().getField(self, fieldName, A_SET_TYPE);
+      loader.accept(collectRenderer);
+      collectRenderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__ADD);
+      collectRenderer.methodGen().pop();
+    }
+
+    @Override
+    public int buildConstructor(GeneratorAdapter ctor, int index) {
+      ctor.loadThis();
+      ctor.loadArg(index);
+      ctor.putField(self, fieldName + "$delim", A_STRING_TYPE);
+      ctor.loadThis();
+      ctor.newInstance(A_TREE_SET_TYPE);
+      ctor.dup();
+      ctor.invokeConstructor(A_TREE_SET_TYPE, CTOR_DEFAULT);
+      ctor.putField(self, fieldName, A_SET_TYPE);
+      return index + 1;
+    }
+
+    @Override
+    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+      // LexicalConcat with default are not included in equality.
+    }
+
+    @Override
+    public void buildHashCode(GeneratorAdapter method) {
+      // LexicalConcat with are not included in hash code.
+    }
+
+    @Override
+    public Stream<Type> constructorType() {
+      return Stream.of(A_STRING_TYPE);
+    }
+
+    @Override
+    public void failIfBad(GeneratorAdapter okMethod) {
+      // LexicalConcat with default is always ok
+    }
+
+    @Override
+    public void loadConstructorArgument() {
+      delimiter.accept(newRenderer);
     }
   }
 
@@ -1317,6 +1406,8 @@ public final class RegroupVariablesBuilder implements Regrouper {
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PARTITION_COUNT_TYPE = Type.getType(PartitionCount.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  private static final Type A_STRING_TYPE = Type.getType(String.class);
+  private static final Type A_TREE_SET_TYPE = Type.getType(TreeSet.class);
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   private static final Type A_UNIVALUED_GROUP_ACCUMULATOR_TYPE =
       Type.getType(UnivaluedGroupAccumulator.class);
@@ -1344,6 +1435,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
       new Method("add", BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
   private static final Method METHOD_SET__ADD_ALL =
       new Method("addAll", BOOLEAN_TYPE, new Type[] {Type.getType(Collection.class)});
+  private static final Method METHOD_STRING__JOIN =
+      new Method(
+          "join",
+          A_STRING_TYPE,
+          new Type[] {Type.getType(CharSequence.class), Type.getType(Iterable.class)});
   private static final Method METHOD_UNIVALUED_GROUP_ACCUMULATOR__ADD =
       new Method("add", VOID_TYPE, new Type[] {A_OBJECT_TYPE});
   private static final Method METHOD_UNIVALUED_GROUP_ACCUMULATOR__CTOR =
@@ -1416,6 +1512,12 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
   public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {
     elements.add(new Discriminator(fieldType, fieldName, loader));
+  }
+
+  @Override
+  public void addLexicalConcat(
+      String fieldName, Consumer<Renderer> loader, Consumer<Renderer> delimiterLoader) {
+    elements.add(new LexicalConcat(fieldName, loader, delimiterLoader));
   }
 
   @Override

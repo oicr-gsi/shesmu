@@ -1,0 +1,8 @@
+Input test;
+
+Olive
+ Group
+  By project
+  Into
+    library_sizes = LexicalConcat "{library_size}" With ","
+ Run ok With ok = library_sizes == "300,307";

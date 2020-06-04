@@ -58,6 +58,14 @@ public interface Regrouper {
   void addFlatten(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
 
   /**
+   * Create a lexically concatenated string
+   *
+   * @param fieldName the name of the variable for consumption by downstream uses
+   */
+  void addLexicalConcat(
+      String fieldName, Consumer<Renderer> loader, Consumer<Renderer> delimiterLoader);
+
+  /**
    * Add a value that is the Boolean result of checking expressions
    *
    * @param condition the condition that must be satisfied
