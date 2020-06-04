@@ -2,5 +2,5 @@ Input test;
 
 Olive
  Flatten * In [{ a = `True`, b = 3 }]
- Require x = a {}
+ Require x = a OnReject Dump a To aaa Resume
  Run ok With ok = x && b == 3;

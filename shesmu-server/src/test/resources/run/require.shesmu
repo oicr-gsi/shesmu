@@ -4,7 +4,7 @@ Olive
  Description "something, something"
  Tag foo
  Tag bar
- Require x = If path == '/foo1' Then `"hi"` Else `` {
+ Require x = If path == '/foo1' Then `"hi"` Else `` OnReject
    Dump workflow To somefile
- }
+ Resume
  Run ok With ok = x == "hi";

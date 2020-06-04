@@ -246,7 +246,7 @@ largest or smallest value of _expr_ to pass and discards the rest.
 
 This does not reshape the data.
 
-- `Reject` _cond_ `{` _reject1_[`,` _reject2_[`,` ...]] `}`
+- `Reject` _cond_ `OnReject` _reject1_[ _reject2_[ ...]] `Resume`
 
 Filter rows from the input. If _cond_ is false, the row will be kept; if true,
 it will be discarded. This is the opposite of `Where`. Rows which are rejected
@@ -255,7 +255,7 @@ an `Alert` terminal.
 
 This does not reshape the data.
 
-- `Require` _name_ `=` _expr_ `{` _reject1_[`,` _reject2_[`,` ...]] `}`
+- `Require` _name_ `=` _expr_ `OnReject` _reject1_[ _reject2_[ ...]] `Resume`
 
 Evaluate _expr_, which must return an optional. If the result is empty, the row
 will be discarded; if the optional has a value, this value will be assigned to
