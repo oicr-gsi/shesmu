@@ -4,7 +4,7 @@ Olive
  Description "something, something"
  Tag foo
  Tag bar
- Reject path != '/foo1' {
+ Reject path != '/foo1' OnReject
    Dump workflow To somefile
- }
+ Resume
  Run ok With ok = path == '/foo1';

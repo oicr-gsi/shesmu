@@ -281,12 +281,11 @@ public abstract class OliveClauseNode {
                   .whitespace()
                   .then(ExpressionNode::parse, clause::set)
                   .whitespace()
-                  .symbol("{")
+                  .keyword("OnReject")
                   .whitespace()
-                  .listEmpty(
-                      handlers::set, (rp, ro) -> rp.whitespace().dispatch(REJECT_CLAUSES, ro), ',')
+                  .list(handlers::set, (rp, ro) -> rp.whitespace().dispatch(REJECT_CLAUSES, ro))
                   .whitespace()
-                  .symbol("}")
+                  .keyword("Resume")
                   .whitespace();
 
           if (result.isGood()) {
@@ -311,12 +310,11 @@ public abstract class OliveClauseNode {
                   .whitespace()
                   .then(ExpressionNode::parse, expression::set)
                   .whitespace()
-                  .symbol("{")
+                  .keyword("OnReject")
                   .whitespace()
-                  .listEmpty(
-                      handlers::set, (rp, ro) -> rp.whitespace().dispatch(REJECT_CLAUSES, ro), ',')
+                  .list(handlers::set, (rp, ro) -> rp.whitespace().dispatch(REJECT_CLAUSES, ro))
                   .whitespace()
-                  .symbol("}")
+                  .keyword("Resume")
                   .whitespace();
 
           if (result.isGood()) {

@@ -62,6 +62,7 @@ syn keyword shesmuKeyword Monitor
 syn keyword shesmuKeyword None
 syn keyword shesmuKeyword Olive
 syn keyword shesmuKeyword OnlyIf
+syn keyword shesmuKeyword OnReject
 syn keyword shesmuKeyword PartitionCount
 syn keyword shesmuKeyword Pick
 syn keyword shesmuKeyword Prefix
