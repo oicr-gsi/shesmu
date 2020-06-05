@@ -613,8 +613,8 @@ public class CompiledGenerator implements DefinitionRepository {
     return Stream.empty();
   }
 
-  public void start() {
-    scripts = Optional.of(new AutoUpdatingDirectory<>(".shesmu", Script::new));
+  public void start(FileWatcher fileWatcher) {
+    scripts = Optional.of(new AutoUpdatingDirectory<>(fileWatcher, ".shesmu", Script::new));
   }
 
   @Override

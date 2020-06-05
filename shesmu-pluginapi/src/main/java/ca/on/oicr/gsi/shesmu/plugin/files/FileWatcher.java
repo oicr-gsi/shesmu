@@ -306,6 +306,11 @@ public abstract class FileWatcher {
           .labelNames("filename")
           .register();
 
+  public static FileWatcher of(Stream<String> paths) {
+    return new RealFileWatcher(paths);
+  }
+
+
   /** The directories being monitored */
   public abstract Stream<Path> paths();
 

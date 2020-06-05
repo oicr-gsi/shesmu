@@ -171,7 +171,7 @@ public final class Server implements ServerConfig, ActionServices {
   public static void main(String[] args) throws Exception {
     DefaultExports.initialize();
 
-    final Server s = new Server(8081);
+    final Server s = new Server(8081, FileWatcher.DATA_DIRECTORY);
     s.start();
   }
 
@@ -183,16 +183,16 @@ public final class Server implements ServerConfig, ActionServices {
   private volatile boolean emergencyStop;
   private final ScheduledExecutorService executor =
       new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
+  private final FileWatcher fileWatcher;
   private final Map<String, FunctionRunner> functionRunners = new HashMap<>();
   private final Semaphore inputDownloadSemaphore =
       new Semaphore(Math.min(Runtime.getRuntime().availableProcessors() / 2, 1));
   private final Map<String, String> jsonDumpers = new ConcurrentHashMap<>();
   private final MasterRunner master;
   private final ThreadLocal<Boolean> overloadState = ThreadLocal.withInitial(() -> false);
-  private final PluginManager pluginManager = new PluginManager();
+  private final PluginManager pluginManager;
   private final ActionProcessor processor;
-  private final AutoUpdatingDirectory<SavedSearch> savedSearches =
-      new AutoUpdatingDirectory<>(".search", SavedSearch::new);
+  private final AutoUpdatingDirectory<SavedSearch> savedSearches;
   private final HttpServer server;
   private final StaticActions staticActions;
   public final String version;
@@ -214,7 +214,8 @@ public final class Server implements ServerConfig, ActionServices {
             overloadState.set(false);
           });
 
-  public Server(int port) throws IOException, ParseException {
+  public Server(int port, FileWatcher fileWatcher) throws IOException, ParseException {
+    this.fileWatcher = fileWatcher;
     try (final InputStream in = Server.class.getResourceAsStream("shesmu-build.properties")) {
       final Properties prop = new Properties();
       prop.load(in);
@@ -228,6 +229,8 @@ public final class Server implements ServerConfig, ActionServices {
               .parse(prop.getProperty("buildtime"))
               .toInstant();
     }
+    pluginManager = new PluginManager(fileWatcher);
+    savedSearches = new AutoUpdatingDirectory<>(fileWatcher, ".search", SavedSearch::new);
     final SimpleModule module = new SimpleModule("shesmu");
     module.addSerializer(
         SourceLocation.class, new SourceLocation.SourceLocationSerializer(pluginManager));
@@ -357,7 +360,7 @@ public final class Server implements ServerConfig, ActionServices {
                     "Emergency Stop",
                     emergencyStop ? "/resume" : "/stopstopstop",
                     emergencyStop ? "▶ Resume" : "⏹ STOP ALL ACTIONS");
-                FileWatcher.DATA_DIRECTORY
+                fileWatcher
                     .paths()
                     .forEach(path -> renderer.line("Data Directory", path.toString()));
                 compiler.errorHtml(renderer);
@@ -2876,8 +2879,8 @@ public final class Server implements ServerConfig, ActionServices {
     final long pluginCount = pluginManager.count();
     System.out.printf("Found %d plugins\n", pluginCount);
     System.out.println("Compiling script...");
-    compiler.start();
-    staticActions.start();
+    compiler.start(fileWatcher);
+    staticActions.start(fileWatcher);
     System.out.println("Starting action processor...");
     processor.start(executor);
     System.out.println("Starting scheduler...");
