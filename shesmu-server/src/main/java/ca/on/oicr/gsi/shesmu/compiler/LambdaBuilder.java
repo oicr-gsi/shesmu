@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 import static org.objectweb.asm.Type.*;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
@@ -46,7 +47,9 @@ public final class LambdaBuilder {
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_SUPPLIER_TYPE = Type.getType(Supplier.class);
+  private static final Type A_TO_DOUBLE_FUNCTION_TYPE = Type.getType(ToDoubleFunction.class);
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
+  private static final Type A_TO_LONG_FUNCTION_TYPE = Type.getType(ToLongFunction.class);
   private static final Type A_TRIGROUPER_TYPE = Type.getType(TriGrouper.class);
   private static final Handle LAMBDA_METAFACTORY_BSM =
       new Handle(
@@ -86,8 +89,7 @@ public final class LambdaBuilder {
           case ERASED:
             return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE);
           case REAL:
-            return Stream.of(
-                parameter1Type.apply(TypeUtils.TO_ASM), parameter2Type.apply(TypeUtils.TO_ASM));
+            return Stream.of(parameter1Type.apply(TO_ASM), parameter2Type.apply(TO_ASM));
           default:
             throw new UnsupportedOperationException();
         }
@@ -215,8 +217,7 @@ public final class LambdaBuilder {
                 parameter1Type.apply(TypeUtils.TO_BOXED_ASM),
                 parameter2Type.apply(TypeUtils.TO_BOXED_ASM));
           case REAL:
-            return Stream.of(
-                parameter1Type.apply(TypeUtils.TO_ASM), parameter2Type.apply(TypeUtils.TO_ASM));
+            return Stream.of(parameter1Type.apply(TO_ASM), parameter2Type.apply(TO_ASM));
           case ERASED:
             return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE);
           default:
@@ -235,7 +236,7 @@ public final class LambdaBuilder {
           case BOXED:
             return returnType.apply(TypeUtils.TO_BOXED_ASM);
           case REAL:
-            return returnType.apply(TypeUtils.TO_ASM);
+            return returnType.apply(TO_ASM);
           case ERASED:
             return A_OBJECT_TYPE;
           default:
@@ -266,7 +267,7 @@ public final class LambdaBuilder {
           case BOXED:
             return Stream.of(parameter1Type, parameter2Type.apply(TypeUtils.TO_BOXED_ASM));
           case REAL:
-            return Stream.of(parameter1Type, parameter2Type.apply(TypeUtils.TO_ASM));
+            return Stream.of(parameter1Type, parameter2Type.apply(TO_ASM));
           case ERASED:
             return Stream.of(A_OBJECT_TYPE, A_OBJECT_TYPE);
           default:
@@ -441,7 +442,7 @@ public final class LambdaBuilder {
           case ERASED:
             return Stream.of(A_OBJECT_TYPE);
           case REAL:
-            return Stream.of(parameterType.apply(TypeUtils.TO_ASM));
+            return Stream.of(parameterType.apply(TO_ASM));
           default:
             throw new UnsupportedOperationException();
         }
@@ -460,7 +461,7 @@ public final class LambdaBuilder {
           case ERASED:
             return A_OBJECT_TYPE;
           case REAL:
-            return returnType.apply(TypeUtils.TO_ASM);
+            return returnType.apply(TO_ASM);
           default:
             throw new UnsupportedOperationException();
         }
@@ -508,7 +509,7 @@ public final class LambdaBuilder {
           case ERASED:
             return A_OBJECT_TYPE;
           case REAL:
-            return returnType.apply(TypeUtils.TO_ASM);
+            return returnType.apply(TO_ASM);
           default:
             throw new UnsupportedOperationException();
         }
@@ -536,7 +537,7 @@ public final class LambdaBuilder {
           case BOXED:
             return Stream.of(parameterType.apply(TypeUtils.TO_BOXED_ASM));
           case REAL:
-            return Stream.of(parameterType.apply(TypeUtils.TO_ASM));
+            return Stream.of(parameterType.apply(TO_ASM));
           case ERASED:
             return Stream.of(A_OBJECT_TYPE);
           default:
@@ -633,7 +634,7 @@ public final class LambdaBuilder {
           case ERASED:
             return Stream.of(A_OBJECT_TYPE);
           case REAL:
-            return Stream.of(parameterType.apply(TypeUtils.TO_ASM));
+            return Stream.of(parameterType.apply(TO_ASM));
           default:
             throw new UnsupportedOperationException();
         }
@@ -863,10 +864,48 @@ public final class LambdaBuilder {
           case ERASED:
             return A_OBJECT_TYPE;
           case REAL:
-            return returnType.apply(TypeUtils.TO_ASM);
+            return returnType.apply(TO_ASM);
           default:
             throw new UnsupportedOperationException();
         }
+      }
+    };
+  }
+
+  public static LambdaType toDoubleFunction(Imyhat parameterType) {
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_TO_DOUBLE_FUNCTION_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "applyAsDouble";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+          case REAL:
+            return Stream.of(parameterType.apply(TO_ASM));
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 1;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        return DOUBLE_TYPE;
       }
     };
   }
@@ -906,6 +945,44 @@ public final class LambdaBuilder {
       @Override
       public Type returnType(AccessMode accessMode) {
         return INT_TYPE;
+      }
+    };
+  }
+
+  public static LambdaType toLongFunction(Imyhat parameterType) {
+    return new LambdaType() {
+
+      @Override
+      public Type interfaceType() {
+        return A_TO_LONG_FUNCTION_TYPE;
+      }
+
+      @Override
+      public String methodName() {
+        return "applyAsLong";
+      }
+
+      @Override
+      public Stream<Type> parameterTypes(AccessMode accessMode) {
+        switch (accessMode) {
+          case BOXED:
+          case REAL:
+            return Stream.of(parameterType.apply(TO_ASM));
+          case ERASED:
+            return Stream.of(A_OBJECT_TYPE);
+          default:
+            throw new UnsupportedOperationException();
+        }
+      }
+
+      @Override
+      public int parameters() {
+        return 1;
+      }
+
+      @Override
+      public Type returnType(AccessMode accessMode) {
+        return LONG_TYPE;
       }
     };
   }
@@ -999,6 +1076,10 @@ public final class LambdaBuilder {
                     streamType == null ? Stream.empty() : Stream.of(streamType)),
                 Arrays.stream(capturedVariables).map(LoadableValue::type))
             .toArray(Type[]::new);
+  }
+
+  public LambdaType lambda() {
+    return lambda;
   }
 
   /** Get the method that was generated */

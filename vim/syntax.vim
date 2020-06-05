@@ -80,6 +80,7 @@ syn keyword shesmuKeyword Sort
 syn keyword shesmuKeyword Splitting
 syn keyword shesmuKeyword Squish
 syn keyword shesmuKeyword Subsample
+syn keyword shesmuKeyword Sum
 syn keyword shesmuKeyword Switch
 syn keyword shesmuKeyword Tag
 syn keyword shesmuKeyword Then

@@ -1,0 +1,9 @@
+Input test;
+
+Olive
+ Group
+  By project
+  Into
+    x = Sum library_size,
+    y = Sum library_size * 1.0
+ Run ok With ok = x == 607 && y == 607.0;

@@ -113,7 +113,6 @@ public final class JavaStreamBuilder {
   }
 
   public void collect() {
-    finish();
     renderer.loadImyhat(currentType.descriptor());
     renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_COLLECTORS__TO_SET);
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
@@ -149,7 +148,6 @@ public final class JavaStreamBuilder {
   }
 
   public void collector(Type resultType, Consumer<Renderer> loadCollector) {
-    finish();
     loadCollector.accept(renderer);
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
     renderer.methodGen().checkCast(resultType);
@@ -175,7 +173,6 @@ public final class JavaStreamBuilder {
   }
 
   public void count() {
-    finish();
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COUNT);
   }
 
@@ -186,7 +183,6 @@ public final class JavaStreamBuilder {
       Imyhat keyType,
       Imyhat valueType,
       LoadableValue[] capturedVariables) {
-    finish();
     final LambdaBuilder keyBuilder =
         new LambdaBuilder(
             owner,
@@ -234,10 +230,7 @@ public final class JavaStreamBuilder {
     return makeRender(builder, name);
   }
 
-  public final void finish() {}
-
   public void first() {
-    finish();
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__FIND_FIRST);
   }
 
@@ -295,13 +288,37 @@ public final class JavaStreamBuilder {
     return makeRender(builder, name);
   }
 
+  public final Renderer mapToPrimitive(
+      int line,
+      int column,
+      LoadableConstructor name,
+      PrimitiveStream primitive,
+      LoadableValue... capturedVariables) {
+    final LambdaBuilder builder =
+        new LambdaBuilder(
+            owner,
+            String.format("For ⋯ Map %d:%d", line, column),
+            primitive.lambdaOf(currentType),
+            renderer.streamType(),
+            capturedVariables);
+    builder.push(renderer);
+    renderer
+        .methodGen()
+        .invokeInterface(
+            A_STREAM_TYPE,
+            new Method(
+                primitive.methodName(),
+                primitive.outputStreamType(),
+                new Type[] {builder.lambda().interfaceType()}));
+    return makeRender(builder, name);
+  }
+
   public final Renderer match(
       int line,
       int column,
       Match matchType,
       LoadableConstructor name,
       LoadableValue... capturedVariables) {
-    finish();
     final LambdaBuilder builder =
         new LambdaBuilder(
             owner,
@@ -324,7 +341,6 @@ public final class JavaStreamBuilder {
     final Renderer extractRenderer =
         comparator(line, column, max ? "Max" : "Min", name, targetType, capturedVariables);
 
-    finish();
     renderer
         .methodGen()
         .invokeInterface(A_STREAM_TYPE, max ? METHOD_STREAM__MAX : METHOD_STREAM__MIN);
@@ -348,7 +364,6 @@ public final class JavaStreamBuilder {
             LambdaBuilder.bifunction(accumulatorType, accumulatorType, currentType),
             renderer.streamType(),
             capturedVariables);
-    finish();
     initial.accept(renderer);
     renderer.methodGen().valueOf(accumulatorType.apply(TO_ASM));
     builder.push(renderer);
@@ -407,8 +422,14 @@ public final class JavaStreamBuilder {
     renderer.methodGen().invokeVirtual(A_SUBSAMPLER_TYPE, METHOD_SUBSAMPLER__SUBSAMPLE);
   }
 
+  public void sum(PrimitiveStream primitive) {
+    renderer
+        .methodGen()
+        .invokeVirtual(
+            primitive.outputStreamType(), new Method("sum", primitive.resultType(), new Type[0]));
+  }
+
   public void univalued() {
-    finish();
     renderer.methodGen().newInstance(A_UNIVALUED_COLLECTOR_TYPE);
     renderer.methodGen().dup();
     renderer.methodGen().invokeConstructor(A_UNIVALUED_COLLECTOR_TYPE, DEFAULT_CTOR);

@@ -41,6 +41,7 @@ public abstract class GroupNode implements DefinedTarget {
     GROUPERS.addKeyword("OnlyIf", of(GroupNodeOnlyIf::new));
     GROUPERS.addKeyword("List", of(GroupNodeList::new));
     GROUPERS.addKeyword("PartitionCount", of(GroupNodePartitionCount::new));
+    GROUPERS.addKeyword("Sum", of(GroupNodeSum::new));
     GROUPERS.addKeyword("Univalued", ofWithDefault(GroupNodeUnivalued::new));
     GROUPERS.addKeyword(
         "Max",

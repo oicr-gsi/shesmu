@@ -336,6 +336,11 @@ times it was _false_. The resulting value will be an object with two fields:
 `matched_count` with the number of rows that satisfied the condition and
 `not_matched_count` with the number that failed the provided condition
 
+- `Sum` _expr_
+
+Compute the sum of the resulting value from _expr_, which must be an integer or
+floating point number.
+
 - `Univalued` _expr_
 
 Collect exactly one value; if none are collected, the group is rejected; if
@@ -936,6 +941,12 @@ Performs a reduction operation on all the items in the list. _a_ is the
 accumulator, which will be returned, which is initially set to _initialexpr_.
 For every item, _expr_ is evaluated with _a_ set to the previously returned
 value.
+
+#### Sum
+- `Sum` _expr_
+
+Evaluates _expr_ for every item and compute the sum of all the results. _expr_
+must return an integer or a floating-point number.
 
 #### Univalued
 - `Univalued` _expr_
