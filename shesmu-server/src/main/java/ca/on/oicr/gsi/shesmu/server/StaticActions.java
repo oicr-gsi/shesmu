@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.server;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.util.LoadedConfiguration;
@@ -140,9 +141,9 @@ public class StaticActions implements LoadedConfiguration {
         });
   }
 
-  public void start() {
+  public void start(FileWatcher fileWatcher) {
     if (configuration == null) {
-      configuration = new AutoUpdatingDirectory<>(".actnow", StaticActionFile::new);
+      configuration = new AutoUpdatingDirectory<>(fileWatcher, ".actnow", StaticActionFile::new);
     }
   }
 }

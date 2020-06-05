@@ -20,6 +20,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
+import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
@@ -683,14 +684,6 @@ public final class PluginManager
                 name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
       }
 
-      @Override
-      public void log(String message, Map<String, String> labels) {
-        final Map<String, String> amendedLabels = new TreeMap<>(labels);
-        amendedLabels.put("plugin", instance.fileName().toString());
-        amendedLabels.put("plugin_type", FormatTypeWrapper.this.fileFormat.getClass().toString());
-        PluginManager.this.log(message, amendedLabels);
-      }
-
       public Stream<Object> fetch(String format, boolean readStale) {
         final Queue<DynamicInputDataSource> sources = dynamicSources.get(format);
         final Deque<InputDataSource> customSource = this.customSources.get(format);
@@ -751,6 +744,14 @@ public final class PluginManager
 
       public Stream<String> isOverloaded(Set<String> services) {
         return instance.isOverloaded(services);
+      }
+
+      @Override
+      public void log(String message, Map<String, String> labels) {
+        final Map<String, String> amendedLabels = new TreeMap<>(labels);
+        amendedLabels.put("plugin", instance.fileName().toString());
+        amendedLabels.put("plugin_type", FormatTypeWrapper.this.fileFormat.getClass().toString());
+        PluginManager.this.log(message, amendedLabels);
       }
 
       public Stream<RefillerDefinition> refillers() {
@@ -829,6 +830,7 @@ public final class PluginManager
       // file, we can reanimate the existing instance rather than creating a new one.
       configuration =
           new AutoUpdatingDirectory<>(
+              fileWatcher,
               fileFormat.extension(),
               p -> wrappers.computeIfAbsent(p, x -> new WeakReference<>(new FileWrapper(x))).get());
     }
@@ -1482,22 +1484,6 @@ public final class PluginManager
     }
   }
 
-  private final ThreadLocal<Boolean> LOG_REENTRANT_CHECK = ThreadLocal.withInitial(() -> false);
-
-  public void log(String message, Map<String, String> attributes) {
-    if (LOG_REENTRANT_CHECK.get()) {
-      throw new IllegalStateException("Trying to log while logging.");
-    }
-    LOG_REENTRANT_CHECK.set(true);
-    try {
-      for (final FormatTypeWrapper<?, ?> format : this.formatTypes) {
-        format.log(message, attributes);
-      }
-    } finally {
-      LOG_REENTRANT_CHECK.set(false);
-    }
-  }
-
   private static final Type A_REFILLER_TYPE = Type.getType(Refiller.class);
   private static final String BSM_DESCRIPTOR_ARBITRARY =
       Type.getMethodDescriptor(
@@ -1667,10 +1653,13 @@ public final class PluginManager
     return Stream.of(users).flatMap(RequiredServices::services).distinct().toArray(String[]::new);
   }
 
+  private final ThreadLocal<Boolean> LOG_REENTRANT_CHECK = ThreadLocal.withInitial(() -> false);
+  private final FileWatcher fileWatcher;
   private final List<FormatTypeWrapper<?, ?>> formatTypes;
 
   @SuppressWarnings("Convert2MethodRef")
-  public PluginManager() {
+  public PluginManager(FileWatcher fileWatcher) {
+    this.fileWatcher = fileWatcher;
     formatTypes = Utils.stream(FILE_FORMATS).map(ff -> create(ff)).collect(Collectors.toList());
   }
 
@@ -1810,6 +1799,20 @@ public final class PluginManager
   @Override
   public Stream<ConfigurationSection> listConfiguration() {
     return formatTypes.stream().flatMap(FormatTypeWrapper::listConfiguration);
+  }
+
+  public void log(String message, Map<String, String> attributes) {
+    if (LOG_REENTRANT_CHECK.get()) {
+      throw new IllegalStateException("Trying to log while logging.");
+    }
+    LOG_REENTRANT_CHECK.set(true);
+    try {
+      for (final FormatTypeWrapper<?, ?> format : this.formatTypes) {
+        format.log(message, attributes);
+      }
+    } finally {
+      LOG_REENTRANT_CHECK.set(false);
+    }
   }
 
   public void pushAlerts(String alertJson) {
