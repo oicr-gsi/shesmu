@@ -106,6 +106,14 @@ public interface Regrouper {
   void addPartitionCount(String fieldName, Consumer<Renderer> condition);
 
   /**
+   * Add a new sum of values slurped during iteration
+   *
+   * @param valueType the type of the values (either float or integer)
+   * @param fieldName the name of the variable for consumption by downstream uses
+   */
+  void addSum(Imyhat valueType, String fieldName, Consumer<Renderer> loader);
+
+  /**
    * Create a collection that should only ever have one item in it
    *
    * <p>The row will be rejected if it has zero or 2 or more items.

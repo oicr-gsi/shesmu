@@ -105,6 +105,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
 
     @Override
+    public void addSum(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      elements.add(new Sum(valueType, prefix + fieldName, loader));
+    }
+
+    @Override
     public final void addUnivalued(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
       elements.add(new Univalued(valueType, prefix + fieldName, loader));
     }
@@ -1074,6 +1079,60 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
+  private class Sum extends Element {
+    private final String fieldName;
+    private final Consumer<Renderer> loader;
+    private final Type type;
+
+    private Sum(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+      super();
+      this.type = valueType.apply(TO_ASM);
+      this.fieldName = fieldName;
+      this.loader = loader;
+      buildGetter(type, fieldName);
+    }
+
+    @Override
+    public void buildCollect() {
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer.methodGen().loadArg(collectedSelfArgument);
+      collectRenderer.methodGen().getField(self, fieldName, type);
+      loader.accept(collectRenderer);
+      collectRenderer.methodGen().math(GeneratorAdapter.ADD, type);
+      collectRenderer.methodGen().putField(self, fieldName, type);
+    }
+
+    @Override
+    public int buildConstructor(GeneratorAdapter ctor, int index) {
+      return index;
+    }
+
+    @Override
+    public void buildEquals(GeneratorAdapter methodGen, int otherLocal, Label end) {
+      // Sum are not included in equality.
+    }
+
+    @Override
+    public void buildHashCode(GeneratorAdapter hashMethod) {
+      // Sum are not included in the hash.
+    }
+
+    @Override
+    public Stream<Type> constructorType() {
+      return Stream.empty();
+    }
+
+    @Override
+    public void failIfBad(GeneratorAdapter okMethod) {
+      // Sum cannot fail
+    }
+
+    @Override
+    public void loadConstructorArgument() {
+      // No argument to constructor.
+    }
+  }
+
   private class Univalued extends Element {
     private final String fieldName;
     private final Consumer<Renderer> loader;
@@ -1394,6 +1453,11 @@ public final class RegroupVariablesBuilder implements Regrouper {
   @Override
   public void addPartitionCount(String fieldName, Consumer<Renderer> condition) {
     elements.add(new PartitionCounter(fieldName, condition));
+  }
+
+  @Override
+  public void addSum(Imyhat valueType, String fieldName, Consumer<Renderer> loader) {
+    elements.add(new Sum(valueType, fieldName, loader));
   }
 
   @Override

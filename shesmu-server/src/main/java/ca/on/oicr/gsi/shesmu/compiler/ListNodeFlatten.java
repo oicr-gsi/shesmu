@@ -90,7 +90,6 @@ public class ListNodeFlatten extends ListNode {
                 (a, b) -> {
                   throw new UnsupportedOperationException();
                 });
-    flattenBuilder.finish();
     renderer.methodGen().returnValue();
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
