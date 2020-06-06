@@ -914,6 +914,14 @@ Values](optionalguide.md).
 Checks whether none, all, or any (some) of the items in the list meet the
 condition specified in _expr_, which must return a Boolean.
 
+#### Object Collector
+ - `{` _name1_ `=` _modifications..._ _collector_`,`  _name1_ `=` _modifications..._ _collector_`,` ... `}`
+
+Products an object. Each field in the object is made by sending the same items
+through individual collectors. Consider something like:
+
+    For x In xs: Where x > 5 { count = Count, sum = Sum x }
+
 #### Partitioned Counter
 - `PartitionCount` _expr_
 

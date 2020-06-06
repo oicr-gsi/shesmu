@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.runtime.UnivaluedCollector;
@@ -59,6 +60,11 @@ public final class JavaStreamBuilder {
 
   private static final Method METHOD_OPTIONAL__OR_ELSE_GET =
       new Method("orElseGet", A_OBJECT_TYPE, new Type[] {A_SUPPLIER_TYPE});
+  private static final Method METHOD_RUNTIME_SUPPORT__COLLECT_OBJECT =
+      new Method(
+          "collect",
+          Type.getType(Tuple.class),
+          new Type[] {A_STREAM_TYPE, Type.getType(Function[].class)});
   private static final Method METHOD_STREAM__COLLECT =
       new Method("collect", A_OBJECT_TYPE, new Type[] {A_COLLECTOR_TYPE});
   private static final Method METHOD_STREAM__COUNT =
@@ -100,13 +106,9 @@ public final class JavaStreamBuilder {
 
   private final Renderer renderer;
 
-  private final Type streamType;
-
-  public JavaStreamBuilder(
-      RootBuilder owner, Renderer renderer, Type streamType, Imyhat initialType) {
+  public JavaStreamBuilder(RootBuilder owner, Renderer renderer, Imyhat initialType) {
     this.owner = owner;
     this.renderer = renderer;
-    this.streamType = streamType;
     currentType = initialType;
   }
 
@@ -116,6 +118,34 @@ public final class JavaStreamBuilder {
     renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, METHOD_COLLECTORS__TO_SET);
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COLLECT);
     renderer.methodGen().checkCast(A_SET_TYPE);
+  }
+
+  public JavaStreamBuilder[] collectObject(
+      int line, int column, List<Pair<String, LoadableValue[]>> children) {
+    final JavaStreamBuilder[] builders = new JavaStreamBuilder[children.size()];
+    renderer.methodGen().push(children.size());
+    renderer.methodGen().newArray(A_FUNCTION_TYPE);
+    for (int i = 0; i < children.size(); i++) {
+      final LambdaBuilder lambda =
+          new LambdaBuilder(
+              renderer.root(),
+              String.format("Object %d:%d %s", line, column, children.get(i).first()),
+              LambdaBuilder.function(A_STREAM_TYPE, A_OBJECT_TYPE),
+              renderer.streamType(),
+              children.get(i).second());
+      renderer.methodGen().dup();
+      renderer.methodGen().push(i);
+      lambda.push(renderer);
+      renderer.methodGen().arrayStore(A_FUNCTION_TYPE);
+      final Renderer inner = lambda.renderer(renderer.signerEmitter());
+      inner.methodGen().visitCode();
+      inner.methodGen().loadArg(lambda.trueArgument(0));
+      builders[i] = inner.buildStream(currentType);
+    }
+    renderer
+        .methodGen()
+        .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__COLLECT_OBJECT);
+    return builders;
   }
 
   public void collector(Type resultType, Consumer<Renderer> loadCollector) {

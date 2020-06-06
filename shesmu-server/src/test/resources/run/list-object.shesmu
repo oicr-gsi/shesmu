@@ -1,0 +1,7 @@
+Input test;
+
+Olive
+ Run ok With ok = (For {x, y} In [ {"a", 2}, {"b", 1} ]:
+	{ a = All y < 3,
+	  s = LexicalConcat x With ","
+  }) == { a = True, s = "a,b" };
