@@ -52,6 +52,17 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>release.overture</id>
+      <name>Overture Release Repository</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/dcc-release</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
   </repositories>
   <distributionManagement>
     <repository>
@@ -177,6 +188,7 @@
     <module>plugin-mongo</module>
     <module>plugin-nabu</module>
     <module>plugin-niassa+pinery</module>
+    <module>plugin-overture</module>
     <module>plugin-prometheus</module>
     <module>plugin-ratelimit</module>
     <module>plugin-runscanner</module>
