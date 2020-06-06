@@ -154,6 +154,13 @@ public final class RuntimeSupport {
     return result;
   }
 
+  @RuntimeInterop
+  @SafeVarargs
+  public static <T> Tuple collect(Stream<T> items, Function<Stream<T>, Object>... processors) {
+    final List<T> data = items.collect(Collectors.toList());
+    return new Tuple(Stream.of(processors).map(p -> p.apply(data.stream())).toArray());
+  }
+
   /** Determine the difference between two instants, in seconds. */
   @RuntimeInterop
   public static long difference(Instant left, Instant right) {

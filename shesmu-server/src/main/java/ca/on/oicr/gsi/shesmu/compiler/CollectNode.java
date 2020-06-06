@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -138,6 +139,17 @@ public abstract class CollectNode {
             return result;
           });
     }
+    DISPATCH.addSymbol(
+        "{",
+        (p, o) -> {
+          final AtomicReference<List<CollectFieldNode>> fields = new AtomicReference<>();
+          final Parser result =
+              p.list(fields::set, CollectFieldNode::parse, ',').symbol("}").whitespace();
+          if (result.isGood()) {
+            o.accept(new CollectNodeObject(p.line(), p.column(), fields.get()));
+          }
+          return result;
+        });
   }
 
   private static Rule<CollectNode> optima(boolean max) {

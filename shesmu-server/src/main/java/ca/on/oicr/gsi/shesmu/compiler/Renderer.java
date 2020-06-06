@@ -87,7 +87,7 @@ public class Renderer {
   }
 
   public JavaStreamBuilder buildStream(Imyhat initialType) {
-    return new JavaStreamBuilder(rootBuilder, this, streamType, initialType);
+    return new JavaStreamBuilder(rootBuilder, this, initialType);
   }
 
   public void define(String name, LoadableValue value) {
