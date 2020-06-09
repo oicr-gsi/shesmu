@@ -238,7 +238,8 @@ public abstract class ActionFilter {
                   o.accept(
                       errorHandler -> {
                         final ActionFilterIds filter = new ActionFilterIds();
-                        filter.setIds(Collections.singletonList(m.group(0).toUpperCase()));
+                        filter.setIds(
+                            Collections.singletonList("shesmu:" + m.group(0).toUpperCase()));
                         return Optional.of(filter);
                       });
                 },
