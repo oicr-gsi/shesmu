@@ -43,6 +43,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 class NiassaServer extends JsonPluginFile<Configuration> {
+  private interface MaxCheck {
+    MaxStatus check(String workflowName);
+  }
+
   private class AnalysisCache
       extends KeyValueCache<Long, Stream<AnalysisState>, Stream<AnalysisState>> {
     public AnalysisCache(Path fileName) {
@@ -276,7 +280,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
   }
 
-  private class MaxInFlightCache extends KeyValueCache<Long, Optional<Integer>, Optional<Integer>> {
+  private class MaxInFlightCache
+      extends KeyValueCache<Long, Optional<MaxCheck>, Optional<MaxCheck>> {
+
     public MaxInFlightCache(Path fileName) {
       super(
           "niassa-max-in-flight " + fileName.toString(),
@@ -295,7 +301,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     @Override
-    protected Optional<Integer> fetch(Long workflowSwid, Instant lastUpdated) throws IOException {
+    protected Optional<MaxCheck> fetch(Long workflowSwid, Instant lastUpdated) throws IOException {
       final MetadataWS metadata = metadataConstructor.get();
       if (metadata.getWorkflow(workflowSwid.intValue()) == null) {
         definer.log(
@@ -304,7 +310,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         metadata.clean_up();
         return Optional.empty();
       }
-      int count =
+      final int count =
           Stream.of(
                   WorkflowRunStatus.pending,
                   WorkflowRunStatus.running,
@@ -317,7 +323,25 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                               workflowSwid.intValue(), status, null, null)))
               .sum();
       metadata.clean_up();
-      return Optional.of(count);
+      return Optional.of(
+          new MaxCheck() {
+            // Every time we successfully start a workflow, we're going to count it as running and
+            // prevent other workflows from launching. This is to avoid multiple threads from
+            // overriding the max-in-flight limit by launching concurrently. We don't need to
+            // maintain this state; once the cache is invalidated, this object will die, but the new
+            // running count will reflect anything we have added to the started count.
+            private int started;
+
+            public synchronized MaxStatus check(String workflowName) {
+              foundRunning.labels(url(), workflowName).set(count + started);
+              if (count + started < maxInFlight.getOrDefault(workflowName, 0)) {
+                started++;
+                return MaxStatus.RUN;
+              } else {
+                return MaxStatus.TOO_MANY_RUNNING;
+              }
+            }
+          });
     }
   }
 
@@ -585,13 +609,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     synchronized (this) {
       return maxInFlightCache
           .get(workflowAccession)
-          .map(
-              running -> {
-                foundRunning.labels(url(), workflowName).set(running);
-                return running >= maxInFlight.getOrDefault(workflowName, 0)
-                    ? MaxStatus.TOO_MANY_RUNNING
-                    : MaxStatus.RUN;
-              })
+          .map(running -> running.check(workflowName))
           .orElse(MaxStatus.RUN);
     }
   }
