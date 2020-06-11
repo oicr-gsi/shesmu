@@ -804,7 +804,7 @@ public final class WorkflowAction extends Action {
   @Override
   public Stream<String> tags() {
     final String priorRuns;
-    switch (matches.size()) {
+    switch ((int) matches.stream().filter(m -> !m.state().skipped()).count()) {
       case 0:
         priorRuns = "prior-runs:none";
         break;
@@ -815,7 +815,19 @@ public final class WorkflowAction extends Action {
         priorRuns = "prior-runs:many";
         break;
     }
-    return Stream.of("workflow-name:" + workflowName, priorRuns);
+    final String skippedRuns;
+    switch ((int) matches.stream().filter(m -> m.state().skipped()).count()) {
+      case 0:
+        skippedRuns = "skipped-runs:none";
+        break;
+      case 1:
+        skippedRuns = "skipped-runs:one";
+        break;
+      default:
+        skippedRuns = "skipped-runs:many";
+        break;
+    }
+    return Stream.of("workflow-name:" + workflowName, priorRuns, skippedRuns);
   }
 
   @Override
