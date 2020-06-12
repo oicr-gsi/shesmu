@@ -2524,8 +2524,10 @@ public final class Server implements ServerConfig, ActionServices {
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
+    add("definitions.js", "text/javascript;charset=utf-8");
     add("html.js", "text/javascript;charset=utf-8");
     add("io.js", "text/javascript;charset=utf-8");
+    add("parser.js", "text/javascript;charset=utf-8");
     add("shesmu.js", "text/javascript;charset=utf-8"); // Deprecated
     add("util.js", "text/javascript;charset=utf-8");
     add("utils.js", "text/javascript;charset=utf-8"); // Deprecated
@@ -2696,7 +2698,7 @@ public final class Server implements ServerConfig, ActionServices {
         Header.cssFile("/main.css"),
         Header.faviconPng(16),
         Header.jsModule(
-            "import {parser, fetchConstant, parseType, runFunction } from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
+            "import { fetchConstant, parseType, runFunction } from './definitions.js'; import * as parser from './parser.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
   }
 
   @Override
