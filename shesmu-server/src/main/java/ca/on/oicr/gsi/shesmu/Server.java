@@ -2183,7 +2183,7 @@ public final class Server implements ServerConfig, ActionServices {
                         String.format(
                             "import {"
                                 + "initialiseSimulationDashboard"
-                                + "} from \"./shesmu.js\";"
+                                + "} from \"./simulation.js\";"
                                 + "const output = document.getElementById(\"outputContainer\");"
                                 + "const sound = document.getElementById(\"sound\");"
                                 + "initialiseSimulationDashboard(ace, output, sound, %s, %s);",
@@ -2448,6 +2448,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("olive.js", "text/javascript;charset=utf-8");
     add("parser.js", "text/javascript;charset=utf-8");
     add("shesmu.js", "text/javascript;charset=utf-8"); // Deprecated
+    add("simulation.js", "text/javascript;charset=utf-8");
     add("stats.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
     add("utils.js", "text/javascript;charset=utf-8"); // Deprecated

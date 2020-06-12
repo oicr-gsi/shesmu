@@ -318,7 +318,7 @@ public class SimulateRequest {
       HttpExchange http)
       throws IOException {
     final ObjectNode response = RuntimeSupport.MAPPER.createObjectNode();
-    final ObjectNode exports = response.putObject("exports");
+    final ArrayNode exports = response.putArray("exports");
     final ArrayNode errors = response.putArray("errors");
     final AtomicReference<FileTable> fileTable = new AtomicReference<>();
     try {
@@ -406,7 +406,9 @@ public class SimulateRequest {
               new LiveExportConsumer() {
                 @Override
                 public void constant(MethodHandle method, String name, Imyhat type) {
-                  final ObjectNode info = exports.putObject(name);
+                  final ObjectNode info = exports.addObject();
+                  info.put("name", name);
+                  info.put("type", "constant");
                   info.put("returns", type.descriptor());
                 }
 
@@ -416,7 +418,9 @@ public class SimulateRequest {
                     String name,
                     Imyhat returnType,
                     Supplier<Stream<FunctionParameter>> parameters) {
-                  final ObjectNode info = exports.putObject(name);
+                  final ObjectNode info = exports.addObject();
+                  info.put("name", name);
+                  info.put("type", "function");
                   info.put("returns", returnType.descriptor());
                   parameters
                       .get()
