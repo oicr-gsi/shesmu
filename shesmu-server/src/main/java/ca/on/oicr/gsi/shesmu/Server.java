@@ -2524,13 +2524,17 @@ public final class Server implements ServerConfig, ActionServices {
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
-    add("shesmu.js", "text/javascript;charset=utf-8");
-    add("utils.js", "text/javascript;charset=utf-8");
+    add("html.js", "text/javascript;charset=utf-8");
+    add("io.js", "text/javascript;charset=utf-8");
+    add("shesmu.js", "text/javascript;charset=utf-8"); // Deprecated
+    add("util.js", "text/javascript;charset=utf-8");
+    add("utils.js", "text/javascript;charset=utf-8"); // Deprecated
     add("ace.js", "text/javascript;charset=utf-8");
     add("ext-searchbox.js", "text/javascript;charset=utf-8");
     add("theme-ambiance.js", "text/javascript;charset=utf-8");
     add("theme-chrome.js", "text/javascript;charset=utf-8");
     add("mode-shesmu.js", "text/javascript;charset=utf-8");
+    add("dead.svg", "image/svg+xml");
     add("shesmu.svg", "image/svg+xml");
     add("press.svg", "image/svg+xml");
     add("car.gif", "image/gif");

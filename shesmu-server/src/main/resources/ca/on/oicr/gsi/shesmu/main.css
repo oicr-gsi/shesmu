@@ -766,3 +766,7 @@ table.errors {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
 }
+
+.active {
+  background-color: #d1efed;
+}
