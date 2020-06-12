@@ -437,16 +437,13 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public Stream<Header> headers() {
                 String olivesJson = "[]";
-                String deadPausesJson = "[]";
-                String deadPausedFilesJson = "[]";
                 String savedJson = "null";
-                String userFilters = "'null'";
+                String userFilters = "null";
+                String alertFilters = "null";
                 try {
                   final ArrayNode olives = RuntimeSupport.MAPPER.createArrayNode();
                   oliveJson(olives);
                   olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
-                  deadPausesJson = RuntimeSupport.MAPPER.writeValueAsString(deadPauses());
-                  deadPausedFilesJson = RuntimeSupport.MAPPER.writeValueAsString(deadFilePauses());
 
                   final String savedString = parameters.get("saved");
                   if (savedString != null) {
@@ -457,7 +454,11 @@ public final class Server implements ServerConfig, ActionServices {
                   }
                   userFilters =
                       RuntimeSupport.MAPPER.writeValueAsString(
-                          parameters.getOrDefault("filters", "null"));
+                          RuntimeSupport.MAPPER.readTree(
+                              parameters.getOrDefault("filters", "null")));
+                  alertFilters =
+                      RuntimeSupport.MAPPER.writeValueAsString(
+                          RuntimeSupport.MAPPER.readTree(parameters.getOrDefault("alert", "null")));
 
                 } catch (IOException e) {
                   e.printStackTrace();
@@ -466,17 +467,17 @@ public final class Server implements ServerConfig, ActionServices {
                     Header.jsModule(
                         "import {"
                             + "initialiseOliveDash"
-                            + "} from \"./shesmu.js\";"
+                            + "} from \"./olive.js\";"
                             + "initialiseOliveDash("
                             + olivesJson
-                            + ", "
-                            + deadPausesJson
-                            + ", "
-                            + deadPausedFilesJson
                             + ", "
                             + savedJson
                             + ", "
                             + userFilters
+                            + ", "
+                            + alertFilters
+                            + ", "
+                            + exportSearches()
                             + ");"));
               }
 
@@ -485,10 +486,6 @@ public final class Server implements ServerConfig, ActionServices {
 
                 writer.writeStartElement("div");
                 writer.writeAttribute("id", "olives");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeStartElement("div");
-                writer.writeAttribute("id", "results");
                 writer.writeComment("");
                 writer.writeEndElement();
               }
@@ -522,10 +519,12 @@ public final class Server implements ServerConfig, ActionServices {
                   locations = RuntimeSupport.MAPPER.writeValueAsString(activeLocations());
                   savedSearch =
                       RuntimeSupport.MAPPER.writeValueAsString(
-                          parameters.getOrDefault("saved", "All Actions"));
+                          RuntimeSupport.MAPPER.readValue(
+                              parameters.getOrDefault("saved", "\"All Actions\""), String.class));
                   userFilter =
                       RuntimeSupport.MAPPER.writeValueAsString(
-                          parameters.getOrDefault("filters", "null"));
+                          RuntimeSupport.MAPPER.readTree(
+                              parameters.getOrDefault("filters", "null")));
                 } catch (JsonProcessingException e) {
                   e.printStackTrace();
                   savedSearches = "{}";
@@ -534,47 +533,12 @@ public final class Server implements ServerConfig, ActionServices {
                   locations = "[]";
                   userFilter = "'{}'";
                 }
-                final String exportedSearch =
-                    pluginManager
-                        .exportSearches(
-                            new ExportSearch<String>() {
-                              @Override
-                              public String linkWithJson(
-                                  String name, String urlStart, String urlEnd, String description) {
-                                try {
-                                  return String.format(
-                                      "[%s, %s, filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s]",
-                                      RuntimeSupport.MAPPER.writeValueAsString(name),
-                                      RuntimeSupport.MAPPER.writeValueAsString(description),
-                                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
-                                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
-                                } catch (JsonProcessingException e) {
-                                  throw new RuntimeException(e);
-                                }
-                              }
-
-                              @Override
-                              public String linkWithUrlSearch(
-                                  String name, String urlStart, String urlEnd, String description) {
-                                try {
-                                  return String.format(
-                                      "[%s, %s, filters => window.location.href = %s + encodeSearch(filters) + %s]",
-                                      RuntimeSupport.MAPPER.writeValueAsString(name),
-                                      RuntimeSupport.MAPPER.writeValueAsString(description),
-                                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
-                                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
-                                } catch (JsonProcessingException e) {
-                                  throw new RuntimeException(e);
-                                }
-                              }
-                            })
-                        .collect(Collectors.joining(",", "[", "]"));
                 return Stream.of(
                     Header.jsModule(
                         "import {"
                             + "encodeSearch,"
                             + "initialiseActionDash"
-                            + "} from \"./shesmu.js\";"
+                            + "} from \"./action.js\";"
                             + "initialiseActionDash("
                             + savedSearches
                             + ", "
@@ -586,67 +550,14 @@ public final class Server implements ServerConfig, ActionServices {
                             + ", "
                             + userFilter
                             + ", "
-                            + exportedSearch
+                            + exportSearches()
                             + ");"));
               }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
                 writer.writeStartElement("div");
-
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load accessory");
-                writer.writeAttribute("id", "pasteSearchButton");
-                writer.writeCharacters("➕ Add Search");
-                writer.writeEndElement();
-
-                writer.writeCharacters(" My Searches: ");
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "dropdown");
-                writer.writeStartElement("span");
-                writer.writeAttribute("id", "searchName");
-                writer.writeCharacters("Select Search");
-                writer.writeEndElement();
-                writer.writeCharacters(" ▼");
-                writer.writeStartElement("div");
-                writer.writeAttribute("id", "searches");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeEndElement();
-
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load accessory");
-                writer.writeAttribute("id", "importButton");
-                writer.writeCharacters("⬆️ Import Searches");
-                writer.writeEndElement();
-
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load accessory");
-                writer.writeAttribute("id", "exportButton");
-                writer.writeCharacters("⬇️ Export Searches");
-                writer.writeEndElement();
-
-                writer.writeStartElement("span");
-                writer.writeAttribute("class", "load accessory");
-                writer.writeAttribute("id", "deleteSearchButton");
-                writer.writeCharacters("✖ Delete Search");
-                writer.writeEndElement();
-
-                writer.writeEndElement();
-
-                writer.writeStartElement("div");
-                writer.writeAttribute("id", "results");
-                writer.writeComment("");
-                writer.writeEndElement();
-
-                writer.writeStartElement("div");
-                writer.writeAttribute("id", "results");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeStartElement("textarea");
-                writer.writeAttribute("id", "copybuffer");
-                writer.writeAttribute("style", "display: none");
-                writer.writeCharacters("NA");
+                writer.writeAttribute("id", "actiondash");
                 writer.writeEndElement();
               }
             }.renderPage(os);
@@ -1424,7 +1335,8 @@ public final class Server implements ServerConfig, ActionServices {
                                   + "} from \"./alert.js\";"
                                   + "const output = document.getElementById(\"outputContainer\");"
                                   + "initialiseAlertDashboard(%s, output);",
-                              RuntimeSupport.MAPPER.writeValueAsString(query))));
+                              RuntimeSupport.MAPPER.writeValueAsString(
+                                  RuntimeSupport.MAPPER.readTree(query)))));
                 } catch (Exception e) {
                   throw new RuntimeException(e);
                 }
@@ -1641,6 +1553,7 @@ public final class Server implements ServerConfig, ActionServices {
                 new JsonFactory().createGenerator(os, JsonEncoding.UTF8);
             jsonOutput.setCodec(RuntimeSupport.MAPPER);
             jsonOutput.writeStartObject();
+            jsonOutput.writeNumberField("offset", query.getSkip());
             jsonOutput.writeNumberField("total", processor.size(filters));
             jsonOutput.writeArrayFieldStart("results");
             processor
@@ -2405,7 +2318,7 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody();
               PrintStream writer = new PrintStream(os, false, "UTF-8")) {
             writer.println(
-                "import { blank, breakSlashes, collapse, jsonParameters, link, objectTable, preformatted, table, text, timespan, title, strikeout, visibleText } from './utils.js';\nexport const actionRender = new Map();\nexport const specialImports = [];\n");
+                "import { title } from './action.js'; import { breakSlashes } from './util.js'; import { blank, collapsible, jsonParameters, link, objectTable, preformatted, revealWhitespace, table, text, timespan, strikeout } from './html.js';\nexport const actionRender = new Map();\nexport const specialImports = [];\n");
             definitionRepository.writeJavaScriptRenderer(writer);
           }
         });
@@ -2524,12 +2437,18 @@ public final class Server implements ServerConfig, ActionServices {
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
+    add("actions.d.js", "text/javascript;charset=utf-8");
+    add("action.js", "text/javascript;charset=utf-8");
+    add("actionfilters.js", "text/javascript;charset=utf-8");
     add("alert.js", "text/javascript;charset=utf-8");
     add("definitions.js", "text/javascript;charset=utf-8");
+    add("histogram.js", "text/javascript;charset=utf-8");
     add("html.js", "text/javascript;charset=utf-8");
     add("io.js", "text/javascript;charset=utf-8");
+    add("olive.js", "text/javascript;charset=utf-8");
     add("parser.js", "text/javascript;charset=utf-8");
     add("shesmu.js", "text/javascript;charset=utf-8"); // Deprecated
+    add("stats.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
     add("utils.js", "text/javascript;charset=utf-8"); // Deprecated
     add("ace.js", "text/javascript;charset=utf-8");
@@ -2561,6 +2480,43 @@ public final class Server implements ServerConfig, ActionServices {
     add("api-docs/swagger-ui-standalone-preset.js", "text/javascript");
     add("api-docs/swagger-ui.css", "text/css");
     add("api-docs/swagger-ui.js", "text/javascript");
+  }
+
+  private String exportSearches() {
+    return pluginManager
+        .exportSearches(
+            new ExportSearch<String>() {
+              @Override
+              public String linkWithJson(
+                  String name, String urlStart, String urlEnd, String description) {
+                try {
+                  return String.format(
+                      "[%s, %s, filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s]",
+                      RuntimeSupport.MAPPER.writeValueAsString(name),
+                      RuntimeSupport.MAPPER.writeValueAsString(description),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
+                } catch (JsonProcessingException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+
+              @Override
+              public String linkWithUrlSearch(
+                  String name, String urlStart, String urlEnd, String description) {
+                try {
+                  return String.format(
+                      "[%s, %s, filters => window.location.href = %s + encodeSearch(filters) + %s]",
+                      RuntimeSupport.MAPPER.writeValueAsString(name),
+                      RuntimeSupport.MAPPER.writeValueAsString(description),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
+                } catch (JsonProcessingException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+            })
+        .collect(Collectors.joining(",", "[", "]"));
   }
 
   private ArrayNode activeLocations() {
@@ -2699,7 +2655,7 @@ public final class Server implements ServerConfig, ActionServices {
         Header.cssFile("/main.css"),
         Header.faviconPng(16),
         Header.jsModule(
-            "import { fetchConstant, parseType, runFunction } from './definitions.js'; import * as parser from './parser.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
+            "import {parser, fetchConstant, parseType, runFunction } from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
   }
 
   @Override
@@ -2788,7 +2744,9 @@ public final class Server implements ServerConfig, ActionServices {
               final ObjectNode fileNode = array.addObject();
               fileNode.put("format", fileTable.second().format().name());
               fileNode.put("hash", fileTable.second().hash());
-              fileNode.put("filename", fileTable.second().filename());
+              fileNode.put("file", fileTable.second().filename());
+              fileNode.putNull("line");
+              fileNode.putNull("column");
               fileNode.put("bytecode", fileTable.second().bytecode());
               fileNode.put("isPaused", processor.isPaused(fileTable.second().filename()));
               fileNode.put(

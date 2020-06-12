@@ -53,7 +53,7 @@ export type NamedComponents<T> = {
  */
 export type StateListener<T> = ((state: T) => void) | null;
 /**
- * An interface to keep two different system snychonrized
+ * An interface to keep two different system synchonrized
  */
 export interface StateSynchronizer<T> extends StatefulModel<T> {
   /**
@@ -325,9 +325,10 @@ export function dateEditor(
   ];
   const monthModel = temporaryState(initialMonth);
   const month = dropdown(
-    ([month, name]: [number, string]) => name,
+    ([_month, name]: [number, string]) => name,
     initialMonth,
     monthModel,
+    null,
     ...months.entries()
   );
   const day = inputNumber(selected.getDate(), 1, 31);
@@ -413,10 +414,15 @@ export function dialog(
  * @param model a model to manage this dropdown's state
  * @returns the UI element to change
  */
-export function dropdown<T>(
+export function dropdown<T, S>(
   labelMaker: (input: T) => UIElement,
   initial: T | null,
   model: StatefulModel<T>,
+  synchronizer: {
+    synchronizer: StateSynchronizer<S>;
+    predicate: (recovered: S, item: T) => boolean;
+    extract: (item: T) => S;
+  } | null,
   ...items: T[]
 ): UIElement {
   const container = document.createElement("span");
@@ -455,6 +461,7 @@ export function dropdown<T>(
       listElement.className = "ready";
     }
   });
+  const synchronizerCallbacks: ((state: S) => void)[] = [];
   for (const item of items) {
     const element = document.createElement("span");
     const label = labelMaker(item);
@@ -470,8 +477,23 @@ export function dropdown<T>(
     if (item == initial || item == items[0]) {
       addElements(activeElement, label);
       model.statusChanged(item);
+      if (synchronizer) {
+        synchronizer.synchronizer.statusChanged(synchronizer.extract(item));
+      }
     }
+    synchronizerCallbacks.push((state) => {
+      if (synchronizer?.predicate(state, item)) {
+        clearChildren(activeElement);
+        addElements(activeElement, label);
+        model.statusChanged(item);
+      }
+    });
     listElement.appendChild(element);
+  }
+  if (synchronizer) {
+    synchronizer.synchronizer.listen((value) =>
+      synchronizerCallbacks.forEach((callback) => callback(value))
+    );
   }
   return container;
 }
@@ -480,19 +502,25 @@ export function dropdown<T>(
  *
  * This acts like a passive user input that gets read on demand.
  * @param model a model to manage this dropdown's state
- * @param labelMaker a function to produce a label the user will see for the label
+ * @param activeLabelMaker a function to produce a label the user will see for the label
  * @param searchPredicate a function that determines if the current user search keywords match an item
  * @returns the UI element to change
  */
-export function dropdownTable<T>(
-  model: StatefulModel<T>,
-  labelMaker: (input: T) => UIElement,
-  searchPredicate: (input: T, keywords: string[]) => boolean,
-  ...items: DropdownTableSection<T>[]
+export function dropdownTable<T, S>(
+  model: StatefulModel<T | null>,
+  synchronizer: {
+    synchronzier: StateSynchronizer<S>;
+    predicate: (recovered: S, item: T | null) => boolean;
+    extract: (item: T | null) => S;
+  } | null,
+  activeLabelMaker: (input: T | null) => UIElement,
+  searchPredicate: (input: T | null, keywords: string[]) => boolean,
+  ...items: DropdownTableSection<T | null>[]
 ): UIElement {
   const container = document.createElement("span");
   container.className = "dropdown";
   const activeElement = document.createElement("span");
+  addElements(activeElement, activeLabelMaker(null));
   container.appendChild(activeElement);
   container.appendChild(document.createTextNode(" ▼"));
   const listElement = document.createElement("div");
@@ -542,15 +570,19 @@ export function dropdownTable<T>(
       listElement.className = "ready";
     }
   });
+  const synchronizerCallbacks: ((state: S) => void)[] = [];
   if (items.length) {
     for (const { value, label, children } of items) {
       const block = document.createElement("div");
-      const element = document.createElement("span");
-      addElements(element, label);
-      element.addEventListener("click", (e) => {
+      const groupLabel = document.createElement("span");
+      addElements(groupLabel, activeLabelMaker(value));
+      groupLabel.addEventListener("click", (e) => {
         model.statusChanged(value);
+        if (synchronizer) {
+          synchronizer.synchronzier.statusChanged(synchronizer.extract(value));
+        }
         clearChildren(activeElement);
-        addElements(activeElement, labelMaker(value));
+        addElements(activeElement, activeLabelMaker(value));
         if (open) {
           closeActiveMenu(false);
         }
@@ -562,7 +594,14 @@ export function dropdownTable<T>(
             ? "block"
             : "none";
       });
-      block.appendChild(element);
+      block.appendChild(groupLabel);
+      synchronizerCallbacks.push((state) => {
+        if (synchronizer?.predicate(state, value)) {
+          clearChildren(activeElement);
+          addElements(activeElement, label);
+          model.statusChanged(value);
+        }
+      });
       if (children.length) {
         addElements(
           block,
@@ -570,13 +609,25 @@ export function dropdownTable<T>(
             children.map((child) => {
               const row = tableRow(() => {
                 model.statusChanged(child.value);
+                if (synchronizer) {
+                  synchronizer.synchronzier.statusChanged(
+                    synchronizer.extract(child.value)
+                  );
+                }
                 clearChildren(activeElement);
-                addElements(activeElement, labelMaker(child.value));
+                addElements(activeElement, activeLabelMaker(child.value));
               }, ...child.label);
               searchFilters.push((keywords) => {
                 row.style.display = searchPredicate(child.value, keywords)
                   ? "block"
                   : "none";
+              });
+              synchronizerCallbacks.push((state) => {
+                if (synchronizer?.predicate(state, child.value)) {
+                  clearChildren(activeElement);
+                  addElements(activeElement, label);
+                  model.statusChanged(child.value);
+                }
               });
               return row;
             })
@@ -588,6 +639,12 @@ export function dropdownTable<T>(
   } else {
     addElements(listElement, "No items.");
   }
+  model.statusChanged(null);
+  if (synchronizer) {
+    synchronizer.synchronzier.listen((value) =>
+      synchronizerCallbacks.forEach((callback) => callback(value))
+    );
+  }
   return container;
 }
 
@@ -598,14 +655,19 @@ export function findProxy(): {
   find: FindHandler;
   updateHandle: (original: FindHandler) => void;
   update: (original: { ui: UIElement; find: FindHandler }) => UIElement;
+  updateMany: <T>(original: { components: T; find: FindHandler }) => T;
 } {
   let findHandler: FindHandler | null = null;
   return {
     find: () => (findHandler ? findHandler() : false),
     updateHandle: (replacement) => (findHandler = replacement),
-    update: (navigator) => {
-      findHandler = navigator.find;
-      return navigator.ui;
+    update: (original) => {
+      findHandler = original.find;
+      return original.ui;
+    },
+    updateMany: (original) => {
+      findHandler = original.find;
+      return original.components;
     },
   };
 }
@@ -848,13 +910,15 @@ export function mono(text: string): UIElement {
  * This create multiple panels with some shared state that can be updated
  * @param primary the main panel that should display error notification
  * @param formatters a collection of callback that will be called to update the contents of the panes when the state changes
+ * @param silentOnChange if a panel name is listed here, it will be blank when updating/showing an error. This is useful for toolbars
  */
 export function multipaneState<
   T,
   F extends { [name: string]: (input: T) => UIElement }
 >(
   primary: keyof F | null,
-  formatters: F
+  formatters: F,
+  ...silentOnChange: (keyof F)[]
 ): { model: StatefulModel<T>; components: NamedComponents<F> } {
   const updaters: ((input: T) => void)[] = [];
   const rawUpdaters: ((input: UIElement) => void)[] = [];
@@ -863,7 +927,11 @@ export function multipaneState<
     Object.entries(formatters).map(([name, formatter], index) => {
       const { ui, update } = pane();
       updaters.push((input) => update(formatter(input)));
-      rawUpdaters.push(update);
+      if (silentOnChange.includes(name)) {
+        rawUpdaters.push((_element) => update(blank()));
+      } else {
+        rawUpdaters.push(update);
+      }
       if (index == 0 || name == primary) {
         primaryUpdater = update;
       }
@@ -1348,8 +1416,13 @@ export function synchronizerFields<
       return [
         key,
         {
-          update(state: T[K]): void {
+          reload: () => {},
+          statusChanged(state: T[K]): void {
             parent.statusChanged({ ...parent.get(), [key]: state });
+          },
+          statusWaiting(): void {},
+          statusFailed(message: string, retry: () => void): void {
+            console.log(message);
           },
           get(): T[K] {
             return parent.get()[key];
@@ -1360,7 +1433,7 @@ export function synchronizerFields<
               currentListener(parent.get()[key]);
             }
           },
-        },
+        } as StateSynchronizer<T[K]>,
       ];
     })
   ) as unknown) as SynchronizedFields<T>;

@@ -376,6 +376,7 @@ export function mutableStoreWatcher<K, V>(
   store: MutableStore<K, V>,
   model: StatefulModel<Iterable<[K, V]>>
 ): MutableStore<K, V> {
+  model.statusChanged(store);
   return {
     clear(): void {
       store.clear();
