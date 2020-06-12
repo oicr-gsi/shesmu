@@ -61,7 +61,8 @@ export type AlertFilter =
   | AlertFilterHasRegex
   | AlertFilterLive
   | AlertFilterNe
-  | AlertFilterRegExp;
+  | AlertFilterRegExp
+  | AlertFilterSourceLocation;
 
 /**
  * An alert filter that checks for a value to be equal to a reference value.
@@ -110,6 +111,11 @@ export interface AlertFilterRegExp {
   label: string;
   value: RegExp;
   type: "regex";
+}
+
+export interface AlertFilterSourceLocation {
+  locations: SourceLocation[];
+  type: "sourcelocation";
 }
 
 type AlertFilterRenderer = (alerts: AlertFilter[]) => UIElement;
@@ -668,6 +674,21 @@ function showFilter(
     case "regex":
       name = `${userFilter.label} ~ ${userFilter.value}`;
       break;
+    case "sourcelocation":
+      return tile(
+        ["load"],
+        "Source Location",
+        table(
+          userFilter.locations,
+          ["File", (l) => l.file],
+          ["Line", (l) => l.line?.toString() || "*"],
+          ["Column", (l) => l.column?.toString() || "*"],
+          ["Hash", (l) => l.hash || "*"]
+        ),
+        buttonClose("Remove filter.", () =>
+          list.keepOnly((x) => x != userFilter)
+        )
+      );
     default:
       name = "Unknown";
   }
@@ -677,9 +698,10 @@ function showFilter(
     buttonClose("Remove filter.", () =>
       list.keepOnly(
         (x) =>
-          x.label != userFilter.label &&
-          x.value != userFilter.value &&
-          x.type != userFilter.type
+          x.type != userFilter.type &&
+          (x.type == "sourcelocation"
+            ? true
+            : x.label != userFilter.label && x.value != userFilter.value)
       )
     )
   );

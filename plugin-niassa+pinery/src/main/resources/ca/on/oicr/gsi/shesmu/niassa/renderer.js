@@ -6,24 +6,24 @@ const automaticIniParams = new Set([
   "parent_accessions",
   "workflow-run-accession",
   "workflow_bundle_dir",
-  "workflow_run_accession"
+  "workflow_run_accession",
 ]);
 
-const maybeJsonVisibleText = input => {
+const maybeJsonVisibleText = (input) => {
   try {
     return preformatted(JSON.stringify(JSON.parse(input), null, 2));
   } catch (e) {
-    return visibleText(input);
+    return revealWhitespace(input);
   }
 };
 
-actionRender.set("niassa", a => [
+actionRender.set("niassa", (a) => [
   title(a, `Workflow ${a.workflowName} (${a.workflowAccession})`),
   table(
     [
-      ["Major Olive Version", a.majorOliveVersion],
+      ["Major Olive Version", a.majorOliveVersion.toString()],
       a.workflowRunAccession
-        ? ["Workflow Run Accession", a.workflowRunAccession]
+        ? ["Workflow Run Accession", a.workflowRunAccession.toString()]
         : null,
       a.workingDirectory
         ? ["Working Directory", breakSlashes(a.workingDirectory)]
@@ -36,18 +36,18 @@ actionRender.set("niassa", a => [
                   `${a.cromwellUrl}/api/workflows/v1/${a.cromwellId}/metadata`,
                   a.cromwellId
                 )
-              : a.cromwellId
+              : a.cromwellId,
           ]
         : null,
       a.cromwellRoot
         ? ["Cromwell Workflow Directory", breakSlashes(a.cromwellRoot)]
-        : null
-    ].filter(x => x),
-    ["Workflow Information", x => x[0]],
-    ["Value", x => x[1]]
+        : null,
+    ].filter((x) => x),
+    ["Workflow Information", (x) => x[0]],
+    ["Value", (x) => x[1]]
   ),
-  objectTable(a.annotations, "Annotations", x => x),
-  objectTable(a.supplementalAnnotations, "Supplemental Annotations", x => x),
+  objectTable(a.annotations, "Annotations", (x) => x),
+  objectTable(a.supplementalAnnotations, "Supplemental Annotations", (x) => x),
   objectTable(a.ini, "INI from Olive", maybeJsonVisibleText),
   objectTable(
     a.discoveredIni || {},
@@ -55,7 +55,7 @@ actionRender.set("niassa", a => [
     maybeJsonVisibleText
   ),
   a.discoveredIni && Object.entries(a.discoveredIni).length > 0
-    ? collapse(
+    ? collapsible(
         "Differences in INI",
         table(
           Object.keys(a.discoveredIni)
@@ -66,10 +66,10 @@ actionRender.set("niassa", a => [
                 !automaticIniParams.has(item) &&
                 (item == 0 || item != array[index - 1])
             ),
-          ["Key", k => k],
+          ["Key", (k) => k],
           [
             "Values",
-            k => {
+            (k) => {
               const isDiscovered = a.discoveredIni.hasOwnProperty(k);
               const isOlive = a.ini.hasOwnProperty(k);
               if (isDiscovered && !isOlive) {
@@ -80,78 +80,78 @@ actionRender.set("niassa", a => [
                 return "Different";
               }
               return "";
-            }
+            },
           ]
         )
       )
     : blank(),
-  collapse(
+  collapsible(
     "LIMS Keys from Olive",
     table(
       a.limsKeys,
-      ["Provider", k => k.provider],
-      ["ID", k => k.id],
-      ["Version", k => k.version],
-      ["Last Modified", k => k.lastModified]
+      ["Provider", (k) => k.provider],
+      ["ID", (k) => k.id],
+      ["Version", (k) => k.version],
+      ["Last Modified", (k) => k.lastModified]
     )
   ),
-  collapse(
+  collapsible(
     "Input File SWIDs from Olive",
-    table(a.inputFiles, ["File SWID", k => k])
+    table(a.inputFiles, ["File SWID", (k) => k.toString()])
   ),
-  collapse(
+  collapsible(
     "Signatures from Olive",
     table(
       a.signatures,
-      ["Provider", k => k.provider],
-      ["ID", k => k.id],
-      ["Version", k => k.version],
-      ["Last Modified", k => k.lastModified],
-      ["Signature SHA1", k => k.signature]
+      ["Provider", (k) => k.provider],
+      ["ID", (k) => k.id],
+      ["Version", (k) => k.version],
+      ["Last Modified", (k) => k.lastModified],
+      ["Signature SHA1", (k) => k.signature]
     )
   ),
-  collapse(
+  collapsible(
     "Output Files",
     table(
       a.files || [],
-      ["Accession", f => f.accession],
-      ["Path", f => f.path],
-      ["Metatype", f => f.metatype]
+      ["Accession", (f) => f.accession.toString()],
+      ["Path", (f) => f.path],
+      ["Metatype", (f) => f.metatype]
     )
   ),
-  collapse(
+  collapsible(
     `Logs from Cromwell Job ${a.cromwellId}`,
     table(
       a.cromwellLogs || [],
-      ["Task", x => x.task],
-      ["Attempt", x => x.attempt],
-      ["Scatter", x => (x.shardIndex < 0 ? "N/A" : x.shardIndex)],
-      ["Backend", x => x.backend || "Unknown"],
-      ["Job ID", x => x.jobId || "Unknown"],
-      ["Standard Error", x => (x.stderr ? breakSlashes(x.stderr) : "N/A")],
-      ["Standard Output", x => (x.stdout ? breakSlashes(x.stdout) : "N/A")]
+      ["Task", (x) => x.task],
+      ["Attempt", (x) => x.attempt],
+      ["Scatter", (x) => (x.shardIndex < 0 ? "N/A" : x.shardIndex.toString())],
+      ["Backend", (x) => x.backend || "Unknown"],
+      ["Job ID", (x) => x.jobId || "Unknown"],
+      ["Standard Error", (x) => (x.stderr ? breakSlashes(x.stderr) : "N/A")],
+      ["Standard Output", (x) => (x.stdout ? breakSlashes(x.stdout) : "N/A")]
     )
   ),
-  collapse(
+  collapsible(
     "Prior Workflow Runs",
     table(
       a.matches,
-      ["Workflow Run", m => strikeout(m.skipped, m.workflowRunAccession)],
+      ["Workflow Run", (m) => strikeout(m.skipped, m.workflowRunAccession)],
       [
         "Workflow",
-        m =>
+        (m) =>
           strikeout(
             m.skipped,
             m.workflowAccession == a.workflowAccession
               ? "Current"
-              : m.workflowAccession
-          )
+              : m.workflowAccession.toString()
+          ),
       ],
-      ["Status", m => strikeout(m.skipped, m.state)],
-      ["Stale", m => strikeout(m.skipped, m.stale ? "🍞 Stale" : "🍅 Fresh")],
+      ["Status", (m) => strikeout(m.skipped, m.state)],
+      ["Stale", (m) => strikeout(m.skipped, m.stale ? "🍞 Stale" : "🍅 Fresh")],
       [
         "LIMS Keys",
-        m => {
+        (m) => {
           if (m.missingLimsKeys && m.extraLimsKeys) {
             return strikeout(m.skipped, "⬍ Messy Overlap");
           }
@@ -162,20 +162,20 @@ actionRender.set("niassa", a => [
             return strikeout(m.skipped, "⬇️ Missing");
           }
           return strikeout(m.skipped, "✓ Same");
-        }
+        },
       ],
       [
         "Input Files",
-        m => strikeout(m.skipped, m.fileSubset ? "📂️️ Missing" : "✓ Same")
+        (m) => strikeout(m.skipped, m.fileSubset ? "📂️️ Missing" : "✓ Same"),
       ]
     )
-  )
+  ),
 ]);
 
-actionRender.set("niassa-annotation", a => [
+actionRender.set("niassa-annotation", (a) => [
   title(a, `Annotate ${a.name} ${a.accession}`),
   text(`Key: ${a.key}`),
-  text(`Value: ${a.value}`)
+  text(`Value: ${a.value}`),
 ]);
 
 function processIniType(name, type, toplevel) {
@@ -198,7 +198,7 @@ function processIniType(name, type, toplevel) {
       case "list":
         return "a" + processIniType(name, type.of, false);
       case "tuple":
-        const elements = type.of.map(element =>
+        const elements = type.of.map((element) =>
           processIniType(name, element, false)
         );
         return "a" + elements.length + elements.join("");
@@ -217,7 +217,7 @@ function processIniType(name, type, toplevel) {
   return "!";
 }
 
-specialImports.push(data => {
+specialImports.push((data) => {
   try {
     const json = JSON.parse(data);
     if (typeof json == "object" && json && json.hasOwnProperty("accession")) {
@@ -232,7 +232,7 @@ specialImports.push(data => {
         ) {
           output[parameter.name] = {
             required: parameter.required || false,
-            type: processIniType(parameter.name, parameter.type, true)
+            type: processIniType(parameter.name, parameter.type, true),
           };
         } else {
           errors.push(`Malformed parameter: ${JSON.stringify(parameter)}`);
