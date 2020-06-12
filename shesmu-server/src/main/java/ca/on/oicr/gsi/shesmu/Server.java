@@ -1421,7 +1421,7 @@ public final class Server implements ServerConfig, ActionServices {
                           String.format(
                               "import {"
                                   + "initialiseAlertDashboard"
-                                  + "} from \"./shesmu.js\";"
+                                  + "} from \"./alert.js\";"
                                   + "const output = document.getElementById(\"outputContainer\");"
                                   + "initialiseAlertDashboard(%s, output);",
                               RuntimeSupport.MAPPER.writeValueAsString(query))));
@@ -2524,6 +2524,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("/resume", new EmergencyThrottlerHandler(false));
     add("/stopstopstop", new EmergencyThrottlerHandler(true));
     add("main.css", "text/css; charset=utf-8");
+    add("alert.js", "text/javascript;charset=utf-8");
     add("definitions.js", "text/javascript;charset=utf-8");
     add("html.js", "text/javascript;charset=utf-8");
     add("io.js", "text/javascript;charset=utf-8");

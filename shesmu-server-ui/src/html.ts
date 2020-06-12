@@ -1163,13 +1163,11 @@ export function revealWhitespace(text: string): string {
 
 /**
  * This create multiple panels with a single shared state that can be updated and this regenerates all the panels
- * @param initial the initial item used
  * @param primary the main panel that should display error notification
  * @param formatters a collection of callback that will be called to update the contents of the panes when the state changes
  * @param keys all the keys provided by the formatter
  */
 export function sharedPane<T, F extends { [name: string]: UIElement }>(
-  initial: T | null,
   primary: keyof F | null,
   formatter: (input: T) => F,
   ...keys: (keyof F)[]
