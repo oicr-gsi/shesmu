@@ -15,6 +15,6 @@ public class LokiPluginType extends PluginFileType<LokiPlugin> {
   }
 
   public LokiPluginType() {
-    super(MethodHandles.lookup(), LokiPlugin.class, ".loki");
+    super(MethodHandles.lookup(), LokiPlugin.class, ".loki", "loki");
   }
 }

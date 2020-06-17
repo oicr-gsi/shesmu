@@ -10,7 +10,7 @@ import org.kohsuke.MetaInfServices;
 public class IntervalsPlugin extends PluginFileType<IntervalsFile> {
 
   public IntervalsPlugin() {
-    super(MethodHandles.lookup(), IntervalsFile.class, ".intervals");
+    super(MethodHandles.lookup(), IntervalsFile.class, ".intervals", "intervals");
   }
 
   @Override

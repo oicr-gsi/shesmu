@@ -145,7 +145,8 @@ public abstract class ImyhatNode {
     final Parser returnParser = input.keyword("Return");
     if (returnParser.isGood()) {
       final AtomicReference<String> function = new AtomicReference<>();
-      final Parser result = returnParser.whitespace().identifier(function::set).whitespace();
+      final Parser result =
+          returnParser.whitespace().qualifiedIdentifier(function::set).whitespace();
       output.accept(new ImyhatNodeReturn(input.line(), input.column(), function.get()));
       return result;
     }
@@ -157,7 +158,7 @@ public abstract class ImyhatNode {
       final Parser result =
           argumentParser
               .whitespace()
-              .identifier(function::set)
+              .qualifiedIdentifier(function::set)
               .whitespace()
               .symbol("(")
               .whitespace()

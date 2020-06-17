@@ -22,6 +22,6 @@ public class GuanyinReportPluginType extends PluginFileType<GuanyinRemote> {
   }
 
   public GuanyinReportPluginType() {
-    super(MethodHandles.lookup(), GuanyinRemote.class, ".guanyin");
+    super(MethodHandles.lookup(), GuanyinRemote.class, ".guanyin", "guanyin");
   }
 }

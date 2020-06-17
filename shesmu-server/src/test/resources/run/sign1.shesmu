@@ -6,4 +6,4 @@ Define foo(string s)
 
 Olive
  foo("the_foo_study")
- Run ok With ok = signature_count == 1 && "project" In signature_names;
+ Run ok With ok = std::signature::count == 1 && "project" In std::signature::names;

@@ -13,7 +13,7 @@ public class SftpPluginType extends PluginFileType<SftpServer> {
   private static final String EXTENSION = ".sftp";
 
   public SftpPluginType() {
-    super(MethodHandles.lookup(), SftpServer.class, EXTENSION);
+    super(MethodHandles.lookup(), SftpServer.class, EXTENSION, "ssh");
   }
 
   @Override

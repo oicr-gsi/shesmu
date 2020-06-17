@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public abstract class PragmaNode {
   private static final Parser.ParseDispatch<PragmaNode> DISPATCH = new Parser.ParseDispatch<>();
@@ -66,15 +67,52 @@ public abstract class PragmaNode {
           }
           return result;
         });
+
+    DISPATCH.addKeyword(
+        "Import",
+        (p, o) -> {
+          final AtomicReference<List<String>> namespaces = new AtomicReference<>();
+          final AtomicReference<List<ImportNode>> import_ = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .list(
+                      namespaces::set,
+                      (partParser, partOutput) -> {
+                        final AtomicReference<String> part = new AtomicReference<>();
+                        final Parser partResult =
+                            partParser
+                                .whitespace()
+                                .identifier(part::set)
+                                .whitespace()
+                                .symbol(Parser.NAMESPACE_SEPARATOR)
+                                .whitespace();
+                        if (partResult.isGood()) {
+                          partOutput.accept(part.get());
+                        }
+                        return partResult;
+                      })
+                  .then(ImportNode::parse, import_::set)
+                  .whitespace()
+                  .symbol(";")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                new PragmaNodeImport(
+                    String.join(Parser.NAMESPACE_SEPARATOR, namespaces.get()), import_.get()));
+          }
+          return result;
+        });
   }
 
   public static Parser parse(Parser parser, Consumer<PragmaNode> output) {
     return parser.whitespace().dispatch(DISPATCH, output).whitespace();
   }
 
-  public abstract void renderGuard(RootBuilder root);
+  public abstract Stream<ImportRewriter> imports();
 
   public abstract void renderAtExit(RootBuilder root);
+
+  public abstract void renderGuard(RootBuilder root);
 
   public abstract void timeout(AtomicInteger timeout);
 }

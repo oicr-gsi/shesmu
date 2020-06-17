@@ -37,7 +37,7 @@ public class RangeFile extends PluginFile {
   public void configuration(SectionRenderer renderer) throws XMLStreamException {}
 
   @ShesmuMethod(
-      name = "$",
+      name = "get",
       type = "t2ds",
       description =
           "Gets the value for a range of time windows specified in {file}. Time before the first window will return the empty string.")

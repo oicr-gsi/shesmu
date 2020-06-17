@@ -11,7 +11,7 @@ import org.kohsuke.MetaInfServices;
 public class JsonFileDefinitionFileType extends PluginFileType<JsonFileDefinitionFile> {
 
   public JsonFileDefinitionFileType() {
-    super(MethodHandles.lookup(), JsonFileDefinitionFile.class, ".constants");
+    super(MethodHandles.lookup(), JsonFileDefinitionFile.class, ".constants", "config");
   }
 
   @Override

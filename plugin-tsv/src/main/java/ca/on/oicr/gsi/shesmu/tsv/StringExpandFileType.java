@@ -13,7 +13,7 @@ public class StringExpandFileType extends PluginFileType<StringExpandFile> {
   static final String EXTENSION = ".strexpand";
 
   public StringExpandFileType() {
-    super(MethodHandles.lookup(), StringExpandFile.class, EXTENSION);
+    super(MethodHandles.lookup(), StringExpandFile.class, EXTENSION, "table");
   }
 
   @Override

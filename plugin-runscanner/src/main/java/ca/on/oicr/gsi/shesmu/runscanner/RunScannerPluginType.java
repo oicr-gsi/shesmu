@@ -10,7 +10,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices
 public class RunScannerPluginType extends PluginFileType<RunScannerClient> {
   public RunScannerPluginType() {
-    super(MethodHandles.lookup(), RunScannerClient.class, ".runscanner");
+    super(MethodHandles.lookup(), RunScannerClient.class, ".runscanner", "runscanner");
   }
 
   @Override

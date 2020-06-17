@@ -344,6 +344,7 @@ public final class PluginManager
       private final Map<String, FunctionDefinition> functions = new ConcurrentHashMap<>();
       private final List<FunctionDefinition> functionsFromAnnotations;
       private final T instance;
+      private final String instanceName;
       private final Map<String, RefillerDefinition> refillers = new ConcurrentHashMap<>();
       private final List<RefillerDefinition> refillersFromAnnotations;
       private final Map<String, SignatureDefinition> signatures = new ConcurrentHashMap<>();
@@ -359,7 +360,7 @@ public final class PluginManager
         // because if the olive stops using it, it will be garbage collected
         callsite = CONFIG_FILE_INSTANCES.upsert(path.toString(), target);
 
-        final String instanceName =
+        instanceName =
             RuntimeSupport.removeExtension(instance.fileName(), fileFormat.extension())
                 .replaceAll("[^a-zA-Z0-9_]", "_");
 
@@ -450,7 +451,11 @@ public final class PluginManager
         actions.put(
             name,
             new ArbitraryActionDefintition(
-                name,
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
                 handle,
                 description,
                 instance.fileName(),
@@ -465,7 +470,11 @@ public final class PluginManager
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                name,
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
                 MethodHandles.constant(type.javaType(), value),
                 type,
                 description,
@@ -478,7 +487,11 @@ public final class PluginManager
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                name,
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
                 MethodHandles.constant(type.type().javaType(), value),
                 type.type(),
                 description,
@@ -495,7 +508,11 @@ public final class PluginManager
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                name,
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
                 MH_SUPPLIER_GET.bindTo(constant),
                 returnType.type(),
                 description,
@@ -508,7 +525,15 @@ public final class PluginManager
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                name, MH_SUPPLIER_GET.bindTo(supplier), type, description, instance.fileName()));
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
+                MH_SUPPLIER_GET.bindTo(supplier),
+                type,
+                description,
+                instance.fileName()));
       }
 
       @Override
@@ -519,7 +544,14 @@ public final class PluginManager
         signatures.put(
             name,
             new ArbitraryDynamicSignatureDefintion(
-                name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
+                MH_SUPPLIER_GET.bindTo(signer),
+                returnType.type(),
+                instance.fileName()));
       }
 
       @Override
@@ -540,7 +572,16 @@ public final class PluginManager
         functions.put(
             name,
             new ArbitraryFunctionDefinition(
-                name, description, instance.fileName(), handle, returnType, parameters));
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
+                description,
+                instance.fileName(),
+                handle,
+                returnType,
+                parameters));
       }
 
       @Override
@@ -560,7 +601,11 @@ public final class PluginManager
         functions.put(
             name,
             new ArbitraryFunctionDefinition(
-                name,
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
                 description,
                 instance.fileName(),
                 handle,
@@ -596,7 +641,7 @@ public final class PluginManager
                 + returnType.type().descriptor();
         installArbitrary(fixedName, handle);
         functions.put(
-            name,
+            validate(name),
             new FunctionDefinition() {
 
               @Override
@@ -611,7 +656,8 @@ public final class PluginManager
 
               @Override
               public String name() {
-                return name;
+                return String.join(
+                    Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, name);
               }
 
               @Override
@@ -650,7 +696,11 @@ public final class PluginManager
         refillers.put(
             name,
             new ArbitraryRefillerDefinition(
-                name,
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
                 MH_REFILL_INFO_CREATE.bindTo(info),
                 instance.fileName(),
                 description,
@@ -681,7 +731,14 @@ public final class PluginManager
         signatures.put(
             name,
             new ArbitraryStaticSignatureDefintion(
-                name, MH_SUPPLIER_GET.bindTo(signer), returnType.type(), instance.fileName()));
+                String.join(
+                    Parser.NAMESPACE_SEPARATOR,
+                    fileFormat.namespace(),
+                    instanceName,
+                    validate(name)),
+                MH_SUPPLIER_GET.bindTo(signer),
+                returnType.type(),
+                instance.fileName()));
       }
 
       public Stream<Object> fetch(String format, boolean readStale) {
@@ -812,12 +869,14 @@ public final class PluginManager
         for (final Method method : fileFormat.getClass().getMethods()) {
           checkRepositoryMethod(method);
           checkRepositoryAction(method);
+          checkRepositoryRefill(method);
           checkRepositorySignature(method);
           checkRepositorySource(method);
         }
         for (final Method method : fileFormat.fileClass().getMethods()) {
           checkInstanceMethod(method);
           checkInstanceAction(method);
+          checkInstanceRefill(method);
           checkInstanceSignature(method);
           checkInstanceSource(method);
         }
@@ -863,6 +922,19 @@ public final class PluginManager
                   method.getName(), method.getDeclaringClass().getName()));
         }
         processFunctionOrConstantMethod(methodAnnotation, method, true, 0);
+      }
+    }
+
+    private void checkInstanceRefill(final Method method) throws IllegalAccessException {
+      final ShesmuRefill refillAnnotation = method.getAnnotation(ShesmuRefill.class);
+      if (refillAnnotation != null) {
+        if (Modifier.isStatic(method.getModifiers()) || !Modifier.isPublic(method.getModifiers())) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Method %s of %s has ShesmuRefill annotation but is not virtual.",
+                  method.getName(), method.getDeclaringClass().getName()));
+        }
+        processRefillMethod(refillAnnotation, method, true);
       }
     }
 
@@ -929,6 +1001,19 @@ public final class PluginManager
             method.getParameterCount() > 0
                 && method.getParameterTypes()[0].isAssignableFrom(fileFormat.fileClass());
         processFunctionOrConstantMethod(methodAnnotation, method, isInstance, isInstance ? 1 : 0);
+      }
+    }
+
+    private void checkRepositoryRefill(final Method method) throws IllegalAccessException {
+      final ShesmuRefill refillAnnotation = method.getAnnotation(ShesmuRefill.class);
+      if (refillAnnotation != null) {
+        if (!Modifier.isStatic(method.getModifiers())) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Method %s of %s has ShesmuRefill annotation but is not static.",
+                  method.getName(), method.getDeclaringClass().getName()));
+        }
+        processRefillMethod(refillAnnotation, method, false);
       }
     }
 
@@ -1042,7 +1127,7 @@ public final class PluginManager
 
     private void processActionMethod(ShesmuAction annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
+      final String name = AnnotationUtils.checkName(annotation.name(), method);
       if (!Action.class.isAssignableFrom(method.getReturnType())) {
         throw new IllegalArgumentException(
             String.format(
@@ -1058,7 +1143,7 @@ public final class PluginManager
         actionTemplates.add(
             (instance, path) ->
                 new ActionDefinition(
-                    name.replace("$", instance),
+                    String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instance, name),
                     mangleDescription(annotation.description(), instance, path),
                     path,
                     parameters.stream()) {
@@ -1071,7 +1156,7 @@ public final class PluginManager
       } else {
         staticActions.add(
             new ArbitraryActionDefintition(
-                name,
+                String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
                 fileFormat.lookup().unreflect(method),
                 annotation.description(),
                 null,
@@ -1082,7 +1167,7 @@ public final class PluginManager
     private void processFunctionOrConstantMethod(
         ShesmuMethod annotation, Method method, boolean isInstance, int offset)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
+      final String name = AnnotationUtils.checkName(annotation.name(), method);
       final Imyhat returnType =
           Imyhat.convert(
               String.format(
@@ -1097,7 +1182,8 @@ public final class PluginManager
           constantTemplates.add(
               (instanceName, path) ->
                   new ConstantDefinition(
-                      name.replace("$", instanceName),
+                      String.join(
+                          Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, name),
                       returnType,
                       mangleDescription(annotation.description(), instanceName, path),
                       path) {
@@ -1111,7 +1197,11 @@ public final class PluginManager
           final MethodHandle handle = fileFormat.lookup().unreflect(method);
           staticConstants.add(
               new ArbitraryConstantDefinition(
-                  name, handle, returnType, annotation.description(), null));
+                  String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
+                  handle,
+                  returnType,
+                  annotation.description(),
+                  null));
         }
       } else {
         final FunctionParameter[] functionParameters =
@@ -1155,7 +1245,8 @@ public final class PluginManager
 
                     @Override
                     public String name() {
-                      return name.replace("$", instanceName);
+                      return String.join(
+                          Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, name);
                     }
 
                     @Override
@@ -1182,14 +1273,19 @@ public final class PluginManager
           final MethodHandle handle = fileFormat.lookup().unreflect(method);
           staticFunctions.add(
               new ArbitraryFunctionDefinition(
-                  name, annotation.description(), null, handle, returnType, functionParameters));
+                  String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
+                  annotation.description(),
+                  null,
+                  handle,
+                  returnType,
+                  functionParameters));
         }
       }
     }
 
     private void processRefillMethod(ShesmuRefill annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
+      final String name = AnnotationUtils.checkName(annotation.name(), method);
       if (!Refiller.class.isAssignableFrom(method.getReturnType())) {
         throw new IllegalArgumentException(
             String.format(
@@ -1240,7 +1336,9 @@ public final class PluginManager
                 new RefillerDefinition() {
                   final String description =
                       mangleDescription(annotation.description(), instance, path);
-                  final String instanceName = name.replace("$", instance);
+                  final String instanceName =
+                      String.join(
+                          Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instance, name);
 
                   @Override
                   public String description() {
@@ -1270,7 +1368,7 @@ public final class PluginManager
       } else {
         staticRefillers.add(
             new ArbitraryRefillerDefinition(
-                name,
+                String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
                 fileFormat.lookup().unreflect(method),
                 null,
                 annotation.description(),
@@ -1280,7 +1378,7 @@ public final class PluginManager
 
     private void processSignatureMethod(ShesmuSigner annotation, Method method, boolean isInstance)
         throws IllegalAccessException {
-      final String name = AnnotationUtils.checkName(annotation.name(), method, isInstance);
+      final String name = AnnotationUtils.checkName(annotation.name(), method);
       if (!DynamicSigner.class.isAssignableFrom(method.getReturnType())
           && !StaticSigner.class.isAssignableFrom(method.getReturnType())) {
         throw new IllegalArgumentException(
@@ -1306,7 +1404,10 @@ public final class PluginManager
         if (isDynamic) {
           signatureTemplates.add(
               (instance, path) ->
-                  new SignatureVariableForDynamicSigner(name, returnType) {
+                  new SignatureVariableForDynamicSigner(
+                      String.join(
+                          Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instance, name),
+                      returnType) {
 
                     @Override
                     public Path filename() {
@@ -1321,7 +1422,10 @@ public final class PluginManager
         } else {
           signatureTemplates.add(
               (instance, path) ->
-                  new SignatureVariableForStaticSigner(name, returnType) {
+                  new SignatureVariableForStaticSigner(
+                      String.join(
+                          Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instance, name),
+                      returnType) {
 
                     @Override
                     public Path filename() {
@@ -1338,11 +1442,17 @@ public final class PluginManager
         if (isDynamic) {
           staticSignatures.add(
               new ArbitraryDynamicSignatureDefintion(
-                  name, fileFormat.lookup().unreflect(method), returnType, null));
+                  String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
+                  fileFormat.lookup().unreflect(method),
+                  returnType,
+                  null));
         } else {
           staticSignatures.add(
               new ArbitraryStaticSignatureDefintion(
-                  name, fileFormat.lookup().unreflect(method), returnType, null));
+                  String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), name),
+                  fileFormat.lookup().unreflect(method),
+                  returnType,
+                  null));
         }
       }
     }
@@ -1651,6 +1761,15 @@ public final class PluginManager
 
   public static String[] requiredServices(RequiredServices... users) {
     return Stream.of(users).flatMap(RequiredServices::services).distinct().toArray(String[]::new);
+  }
+
+  private static String validate(String name) {
+    if (Parser.QUALIFIED_IDENTIFIER.matcher(name).matches()) {
+      return name;
+    } else {
+      throw new IllegalArgumentException(
+          String.format("The name “%s” is not a valid Shesmu qualified identifier.", name));
+    }
   }
 
   private final ThreadLocal<Boolean> LOG_REENTRANT_CHECK = ThreadLocal.withInitial(() -> false);

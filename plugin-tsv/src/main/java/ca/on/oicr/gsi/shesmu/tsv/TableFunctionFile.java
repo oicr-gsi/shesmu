@@ -114,7 +114,7 @@ class TableFunctionFile extends PluginFile {
               .collect(Collectors.toList());
 
       definer.defineFunction(
-          name(),
+          "get",
           String.format("Table-defined lookup from %s.", fileName()),
           types.get(types.size() - 1),
           new Table(attempts, types.get(types.size() - 1).defaultValue()),

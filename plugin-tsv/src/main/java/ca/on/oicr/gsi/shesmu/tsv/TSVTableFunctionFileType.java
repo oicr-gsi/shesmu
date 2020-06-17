@@ -22,7 +22,7 @@ public class TSVTableFunctionFileType extends PluginFileType<TableFunctionFile> 
   private static final Pattern TAB = Pattern.compile("\t");
 
   public TSVTableFunctionFileType() {
-    super(MethodHandles.lookup(), TableFunctionFile.class, ".lookup");
+    super(MethodHandles.lookup(), TableFunctionFile.class, ".lookup", "table");
   }
 
   @Override

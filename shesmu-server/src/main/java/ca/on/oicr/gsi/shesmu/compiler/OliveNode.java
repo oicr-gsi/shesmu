@@ -80,7 +80,7 @@ public abstract class OliveNode {
           final Parser result =
               input
                   .whitespace()
-                  .identifier(name::set)
+                  .qualifiedIdentifier(name::set)
                   .whitespace()
                   .list(variableTags::set, VariableTagNode::parse)
                   .whitespace()
@@ -113,7 +113,7 @@ public abstract class OliveNode {
           final Parser result =
               input
                   .whitespace()
-                  .identifier(name::set)
+                  .qualifiedIdentifier(name::set)
                   .whitespace()
                   .keyword("With")
                   .whitespace()

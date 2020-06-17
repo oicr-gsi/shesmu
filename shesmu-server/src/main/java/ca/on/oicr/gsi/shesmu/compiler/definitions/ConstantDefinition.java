@@ -42,7 +42,21 @@ public abstract class ConstantDefinition implements Target {
   /** Write the value of a constant into the <tt>value</tt> property of a JSON object. */
   public interface ConstantLoader {
     @RuntimeInterop
-    public void load(ObjectNode target);
+    void load(ObjectNode target);
+  }
+
+  public static class AliasedConstantDefinition extends ConstantDefinition {
+    private final ConstantDefinition original;
+
+    public AliasedConstantDefinition(ConstantDefinition original, String alias) {
+      super(alias, original.type(), original.description(), original.filename());
+      this.original = original;
+    }
+
+    @Override
+    public void load(GeneratorAdapter methodGen) {
+      original.load(methodGen);
+    }
   }
 
   private class ConstantCompiler extends BaseHotloadingCompiler {

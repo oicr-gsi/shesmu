@@ -12,7 +12,7 @@ public class StructuredConfigFileType extends PluginFileType<StructuredConfigFil
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   public StructuredConfigFileType() {
-    super(MethodHandles.lookup(), StructuredConfigFile.class, ".jsonconfig");
+    super(MethodHandles.lookup(), StructuredConfigFile.class, ".jsonconfig", "config");
   }
 
   @Override

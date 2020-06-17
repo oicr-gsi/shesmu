@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.tsv;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
+import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -12,6 +13,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +38,13 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
       super(fileName, instanceName);
     }
 
+    @ShesmuMethod(description = "Check if a particular date was in maintenance.")
+    public boolean check(Instant date) {
+      return windows
+          .stream()
+          .anyMatch(window -> date.isAfter(window[0]) && date.isBefore(window[1]));
+    }
+
     @Override
     public void configuration(SectionRenderer renderer) throws XMLStreamException {
       renderer.line("Current State", inMaintenanceWindow() ? "Throttled" : "Permit");
@@ -48,7 +57,7 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
 
     public boolean inMaintenanceWindow() {
       final Instant now = Instant.now();
-      return windows.stream().anyMatch(window -> now.isAfter(window[0]) && now.isBefore(window[1]));
+      return check(now);
     }
 
     @Override
@@ -75,7 +84,7 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
                                         .toInstant())
                             .toArray(Instant[]::new))
                 .filter(times -> times[0].isBefore(times[1]))
-                .sorted((a, b) -> a[0].compareTo(b[0]))
+                .sorted(Comparator.comparing(a -> a[0]))
                 .collect(Collectors.toList());
       } catch (final IOException e) {
         e.printStackTrace();
@@ -87,7 +96,7 @@ public class MaintenanceSchedule extends PluginFileType<MaintenanceSchedule.Sche
   private static final Pattern BLANK = Pattern.compile("\\s+");
 
   public MaintenanceSchedule() {
-    super(MethodHandles.lookup(), ScheduleReader.class, ".schedule");
+    super(MethodHandles.lookup(), ScheduleReader.class, ".schedule", "schedule");
   }
 
   @Override

@@ -15,6 +15,6 @@ public class OnlineReportPluginType extends PluginFileType<OnlineReport> {
   }
 
   public OnlineReportPluginType() {
-    super(MethodHandles.lookup(), OnlineReport.class, ".onlinereport");
+    super(MethodHandles.lookup(), OnlineReport.class, ".onlinereport", "onlinereport");
   }
 }

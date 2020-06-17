@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public class PragmaNodeTimeout extends PragmaNode {
 
@@ -12,13 +13,18 @@ public class PragmaNodeTimeout extends PragmaNode {
   }
 
   @Override
-  public void renderGuard(RootBuilder root) {
+  public Stream<ImportRewriter> imports() {
+    return Stream.empty();
+  }
+
+  @Override
+  public void renderAtExit(RootBuilder root) {
     // Do nothing.
 
   }
 
   @Override
-  public void renderAtExit(RootBuilder root) {
+  public void renderGuard(RootBuilder root) {
     // Do nothing.
 
   }

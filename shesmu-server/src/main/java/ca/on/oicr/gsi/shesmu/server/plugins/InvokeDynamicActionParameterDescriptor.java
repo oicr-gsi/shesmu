@@ -98,8 +98,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                             "Field %s in %s is annotated with ShesmuParameter, but not a public instance field.",
                             field.getName(), field.getDeclaringClass().getName()));
                   }
-                  final String fieldName =
-                      AnnotationUtils.checkName(fieldAnnotation.name(), field, false);
+                  final String fieldName = AnnotationUtils.checkName(fieldAnnotation.name(), field);
 
                   final Imyhat fieldType =
                       Imyhat.convert(
@@ -132,7 +131,7 @@ public final class InvokeDynamicActionParameterDescriptor implements ActionParam
                             setter.getName(), setter.getDeclaringClass().getName()));
                   }
                   final String setterName =
-                      AnnotationUtils.checkName(setterAnnotation.name(), setter, false);
+                      AnnotationUtils.checkName(setterAnnotation.name(), setter);
                   final Imyhat setterType =
                       Imyhat.convert(
                           String.format(

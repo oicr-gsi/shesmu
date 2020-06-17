@@ -14,7 +14,7 @@ import org.kohsuke.MetaInfServices;
 public class WorkflowActionRepository extends PluginFileType<NiassaServer> {
 
   public WorkflowActionRepository() {
-    super(MethodHandles.lookup(), NiassaServer.class, ".niassa");
+    super(MethodHandles.lookup(), NiassaServer.class, ".niassa", "niassa");
   }
 
   @Override

@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.core.signers.JsonSigner;
 import ca.on.oicr.gsi.shesmu.core.signers.SHA1DigestSigner;
 import ca.on.oicr.gsi.shesmu.core.signers.SignatureCount;
 import ca.on.oicr.gsi.shesmu.core.signers.SignatureNames;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -87,79 +88,79 @@ public final class StandardDefinitions implements DefinitionRepository {
   private static final FunctionDefinition[] FUNCTIONS =
       new FunctionDefinition[] {
         FunctionDefinition.virtualMethod(
-            "date_to_seconds",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "to_seconds"),
             "getEpochSecond",
             "Get the number of seconds since the UNIX epoch for this date.",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.virtualMethod(
-            "date_to_millis",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "to_millis"),
             "toEpochMilli",
             "Get the number of milliseconds since the UNIX epoch for this date.",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
-            "is_infinite",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "is_infinite"),
             Double.class,
             "isInfinite",
             "Check if the number is infinite.",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
         FunctionDefinition.staticMethod(
-            "is_nan",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "is_nan"),
             Double.class,
             "isNaN",
             "Check if the number is not-a-number.",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
         FunctionDefinition.staticMethod(
-            "start_of_day",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "start_of_day"),
             StandardDefinitions.class,
             "start_of_day",
             "Rounds a date-time to the previous midnight.",
             Imyhat.DATE,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
-            "json_object",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "json", "object"),
             StandardDefinitions.class,
             "jsonObject",
             "Create a JSON object from fields.",
             Imyhat.JSON,
             new FunctionParameter("fields", Imyhat.tuple(Imyhat.STRING, Imyhat.JSON).asList())),
         FunctionDefinition.staticMethod(
-            "json_array_from_dict",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "json", "array_from_dict"),
             RuntimeSupport.class,
             "jsonMap",
             "Convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.",
             Imyhat.JSON,
             new FunctionParameter("Map to encode", Imyhat.dictionary(Imyhat.STRING, Imyhat.JSON))),
         FunctionDefinition.virtualMethod(
-            "path_file",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "file"),
             "getFileName",
             "Extracts the last element in a path.",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
-            "path_dir",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "dir"),
             "getParent",
             "Extracts all but the last elements in a path (i.e., the containing directory).",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
-            "path_normalize",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "normalize"),
             "normalize",
             "Normalize a path (i.e., remove any ./ and ../ in the path).",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
-            "path_relativize",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "relativize"),
             "relativize",
             "Creates a new path of relativize one path as if in the directory of the other.",
             Imyhat.PATH,
             new FunctionParameter("directory path", Imyhat.PATH),
             new FunctionParameter("path to relativize", Imyhat.PATH)),
         FunctionDefinition.staticMethod(
-            "path_replace_home",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "replace_home"),
             StandardDefinitions.class,
             "replaceHome",
             "Replace any path that starts with $HOME or ~ with the provided home directory",
@@ -167,7 +168,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             new FunctionParameter("path to change", Imyhat.PATH),
             new FunctionParameter("home directory", Imyhat.PATH)),
         FunctionDefinition.staticMethod(
-            "version_at_least",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "version_at_least"),
             StandardDefinitions.class,
             "version_at_least",
             "Checks whether the supplied version tuple is the same or greater than version numbers provided.",
@@ -178,74 +179,74 @@ public final class StandardDefinitions implements DefinitionRepository {
             new FunctionParameter("minor", Imyhat.INTEGER),
             new FunctionParameter("patch", Imyhat.INTEGER)),
         FunctionDefinition.virtualMethod(
-            "str_trim",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "trim"),
             "trim",
             "Remove white space from a string.",
             Imyhat.STRING,
-            new FunctionParameter("str", Imyhat.STRING)),
+            new FunctionParameter("input to trim", Imyhat.STRING)),
         FunctionDefinition.virtualMethod(
-            "str_lower",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "lower"),
             "toLowerCase",
             "Convert a string to lower case.",
             Imyhat.STRING,
-            new FunctionParameter("str", Imyhat.STRING)),
+            new FunctionParameter("input to convert", Imyhat.STRING)),
         FunctionDefinition.virtualMethod(
-            "str_upper",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "upper"),
             "toUpperCase",
             "Convert a string to upper case.",
             Imyhat.STRING,
-            new FunctionParameter("str", Imyhat.STRING)),
+            new FunctionParameter("input to convert", Imyhat.STRING)),
         FunctionDefinition.virtualMethod(
-            "str_eq",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "eq"),
             "equalsIgnoreCase",
             "Compares two strings ignoring case.",
             Imyhat.BOOLEAN,
             new FunctionParameter("first", Imyhat.STRING),
             new FunctionParameter("second", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "parse_int",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "parse"),
             RuntimeSupport.class,
             "parseLong",
             "Convert a string containing digits into an integer.",
             Imyhat.INTEGER.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "parse_bool",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "boolean", "parse"),
             RuntimeSupport.class,
             "parseBool",
             "Convert a string containing into a Boolean.",
             Imyhat.BOOLEAN.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "parse_float",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "parse"),
             RuntimeSupport.class,
             "parseDouble",
             "Convert a string containing digits and a decimal point into an float.",
             Imyhat.FLOAT.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "parse_json",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "json", "parse"),
             RuntimeSupport.class,
             "parseJson",
             "Convert a string containing JSON data into a JSON value.",
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "url_decode",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "url", "decode"),
             RuntimeSupport.class,
             "urlDecode",
             "Convert a URL-encoded string back to a normal string.",
             Imyhat.STRING.asOptional(),
             new FunctionParameter("String to encode", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "url_encode",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "url", "encode"),
             RuntimeSupport.class,
             "urlEncode",
             "Convert a string to a URL-encoded string (also escaping *, even though that is not standard).",
             Imyhat.STRING,
             new FunctionParameter("String to encode", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
-            "path_change_prefix",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "change_prefix"),
             RuntimeSupport.class,
             "changePrefix",
             "Replaces the prefix of a path with a replacement. A number of prefixes are provided and the longest match is the one that is selected. If no match is found, the path is returned unchanged. This is mean to reconcile different mounts or symlink trees of the same file tree.",
@@ -255,14 +256,14 @@ public final class StandardDefinitions implements DefinitionRepository {
                 "A dictionary of prefix paths and the replacement that should be used.",
                 Imyhat.dictionary(Imyhat.PATH, Imyhat.PATH))),
         FunctionDefinition.virtualMethod(
-            "path_ends_with",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "ends_with"),
             "endsWith",
             "Checks if ends with the directory and filename suffix provided.",
             Imyhat.BOOLEAN,
             new FunctionParameter("The path to check", Imyhat.PATH),
             new FunctionParameter("The suffix path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
-            "path_starts_with",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "starts_with"),
             "startsWith",
             "Checks if starts with the directory prefix provided.",
             Imyhat.BOOLEAN,
@@ -282,12 +283,12 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public String name() {
-            return "str_len";
+            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "length");
           }
 
           @Override
           public Stream<FunctionParameter> parameters() {
-            return Stream.of(new FunctionParameter("str", Imyhat.STRING));
+            return Stream.of(new FunctionParameter("input to measure", Imyhat.STRING));
           }
 
           @Override
@@ -321,7 +322,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public String name() {
-            return "str_replace";
+            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "replace");
           }
 
           @Override
@@ -366,12 +367,12 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public String name() {
-            return "str_to_path";
+            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "to_path");
           }
 
           @Override
           public Stream<FunctionParameter> parameters() {
-            return Stream.of(new FunctionParameter("str", Imyhat.STRING));
+            return Stream.of(new FunctionParameter("input to convert", Imyhat.STRING));
           }
 
           @Override
@@ -407,7 +408,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public String name() {
-            return "to_int";
+            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "to_integer");
           }
 
           @Override
@@ -444,7 +445,7 @@ public final class StandardDefinitions implements DefinitionRepository {
 
           @Override
           public String name() {
-            return "to_float";
+            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "to_float");
           }
 
           @Override
@@ -473,9 +474,11 @@ public final class StandardDefinitions implements DefinitionRepository {
   private static final ConstantDefinition[] CONSTANTS =
       new ConstantDefinition[] {
         ConstantDefinition.of(
-            "epoch", Instant.EPOCH, "The date at UNIX timestamp 0: 1970-01-01T00:00:00Z"),
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "epoch"),
+            Instant.EPOCH,
+            "The date at UNIX timestamp 0: 1970-01-01T00:00:00Z"),
         new ConstantDefinition(
-            "now",
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "now"),
             Imyhat.DATE,
             "The current timestamp. This is fetched every time this constant is referenced, so now != now.",
             null) {
@@ -488,7 +491,7 @@ public final class StandardDefinitions implements DefinitionRepository {
       };
   private static final ActionDefinition NOTHING_ACTION =
       new ActionDefinition(
-          "nothing",
+          String.join(Parser.NAMESPACE_SEPARATOR, "std", "nothing"),
           "Does absolutely nothing and ignores the value provided. Useful for debugging.",
           null,
           Stream.of(
@@ -531,7 +534,8 @@ public final class StandardDefinitions implements DefinitionRepository {
       new SignatureDefinition[] {
         new SignatureCount(),
         new SignatureNames(),
-        new SignatureVariableForDynamicSigner("json_signature", Imyhat.JSON) {
+        new SignatureVariableForDynamicSigner(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "json", "signature"), Imyhat.JSON) {
 
           @Override
           public Path filename() {
@@ -545,7 +549,8 @@ public final class StandardDefinitions implements DefinitionRepository {
             method.invokeConstructor(A_JSON_SIGNATURE_TYPE, DEFAULT_CTOR);
           }
         },
-        new SignatureVariableForDynamicSigner("sha1_signature", Imyhat.STRING) {
+        new SignatureVariableForDynamicSigner(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "signature", "sha1"), Imyhat.STRING) {
 
           @Override
           public Path filename() {

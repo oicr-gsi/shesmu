@@ -9,6 +9,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Parse an input stream */
 public abstract class Parser {
@@ -308,6 +310,9 @@ public abstract class Parser {
 
   private static final Pattern COMMENT = Pattern.compile("#[^\\n]*");
   public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-zA-Z0-9_]*");
+  public static final Pattern QUALIFIED_IDENTIFIER =
+      Pattern.compile("[a-z][a-zA-Z0-9_]*(::[a-z][a-zA-Z0-9_]*)*");
+  public static final String NAMESPACE_SEPARATOR = "::";
   private static final Pattern WHITESPACE = Pattern.compile("[\\t ]+");
 
   private static CharSequence consume(CharSequence input, int offset) {
@@ -408,9 +413,7 @@ public abstract class Parser {
   }
 
   private final int column;
-
   private final MaxParseError errorConsumer;
-
   private final int line;
 
   private Parser(MaxParseError errorConsumer, int line, int column) {
@@ -562,6 +565,42 @@ public abstract class Parser {
 
   /** Check if the next character in the input, if any, satisfies a condition. */
   protected abstract Parser lookAhead(Predicate<Character> test, String error);
+
+  /**
+   * Parse a colon separated name
+   *
+   * @see #identifier(Consumer)
+   */
+  public final Parser qualifiedIdentifier(Consumer<String> name) {
+    final AtomicReference<List<String>> namespaces = new AtomicReference<>();
+    final AtomicReference<String> tail = new AtomicReference<>();
+    Parser result =
+        this.whitespace()
+            .list(
+                namespaces::set,
+                (partParser, partOutput) -> {
+                  final AtomicReference<String> part = new AtomicReference<>();
+                  final Parser partResult =
+                      partParser
+                          .whitespace()
+                          .identifier(part::set)
+                          .whitespace()
+                          .symbol(NAMESPACE_SEPARATOR)
+                          .whitespace();
+                  if (partResult.isGood()) {
+                    partOutput.accept(part.get());
+                  }
+                  return partResult;
+                })
+            .identifier(tail::set)
+            .whitespace();
+    if (result.isGood()) {
+      name.accept(
+          Stream.concat(namespaces.get().stream(), Stream.of(tail.get()))
+              .collect(Collectors.joining(NAMESPACE_SEPARATOR)));
+    }
+    return result;
+  }
 
   /** Return a parser which flags an error at the current position. */
   public final Parser raise(String message) {

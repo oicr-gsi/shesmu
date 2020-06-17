@@ -15,7 +15,7 @@ import org.kohsuke.MetaInfServices;
 public class StringSetFilePlugin extends PluginFileType<StringSetFile> {
 
   public StringSetFilePlugin() {
-    super(MethodHandles.lookup(), StringSetFile.class, ".set");
+    super(MethodHandles.lookup(), StringSetFile.class, ".set", "table");
   }
 
   @Override

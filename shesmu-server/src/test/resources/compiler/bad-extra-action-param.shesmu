@@ -4,7 +4,7 @@ Input test;
 
 Define standard_fastq(string s)
   Where workflow == {"BamQC 2.7+", 3 }[0]
-  Where str_len(path) == file_size;
+  Where std::string::length(path) == file_size;
 
 Olive
   standard_fastq("a")

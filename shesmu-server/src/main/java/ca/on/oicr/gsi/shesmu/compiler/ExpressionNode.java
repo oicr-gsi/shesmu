@@ -756,7 +756,7 @@ public abstract class ExpressionNode implements Renderable {
         "function call, variable",
         (p, o) -> {
           final AtomicReference<String> name = new AtomicReference<>();
-          Parser result = p.identifier(name::set).whitespace();
+          Parser result = p.qualifiedIdentifier(name::set);
           if (result.isGood()) {
             if (result.lookAhead('(')) {
               final AtomicReference<List<ExpressionNode>> items = new AtomicReference<>();

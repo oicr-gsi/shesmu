@@ -131,7 +131,7 @@ public abstract class OliveClauseNode {
                       "Using",
                       up ->
                           up.whitespace()
-                              .identifier(name::set)
+                              .qualifiedIdentifier(name::set)
                               .whitespace()
                               .list(
                                   inputs::set,
@@ -389,7 +389,7 @@ public abstract class OliveClauseNode {
         "call",
         (input, output) -> {
           final AtomicReference<String> name = new AtomicReference<>();
-          final Parser callParser = input.identifier(name::set);
+          final Parser callParser = input.qualifiedIdentifier(name::set);
           if (callParser.isGood()) {
             final AtomicReference<List<ExpressionNode>> arguments = new AtomicReference<>();
             final Parser result =

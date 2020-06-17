@@ -117,7 +117,7 @@ public abstract class GrouperDefinition {
    *     information back to the olive
    * @param factory a function that creates a new grouper
    * @param <I> the type of the input rows; this is controlled by Shesmu
-   * @param <O> the type of the ouput rows; this is controlled by Shesmu
+   * @param <O> the type of the output rows; this is controlled by Shesmu
    * @param <G> the type of the grouping operation
    * @param <T> the type of the argument to the grouping operation
    * @param <C> the type of the grouped collector

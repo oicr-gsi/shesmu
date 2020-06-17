@@ -109,6 +109,6 @@ public class GitHubBranchesApiPluginType
   }
 
   public GitHubBranchesApiPluginType() {
-    super(MethodHandles.lookup(), GitHubRemote.class, ".github");
+    super(MethodHandles.lookup(), GitHubRemote.class, ".github", "github");
   }
 }

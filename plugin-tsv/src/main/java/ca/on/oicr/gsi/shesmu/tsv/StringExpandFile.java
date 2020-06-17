@@ -36,7 +36,7 @@ class StringExpandFile extends PluginFile {
   }
 
   @ShesmuMethod(
-      name = "$",
+      name = "get",
       description =
           "Expand a string to a set of strings or a set containing only the input string.")
   public Set<String> get(

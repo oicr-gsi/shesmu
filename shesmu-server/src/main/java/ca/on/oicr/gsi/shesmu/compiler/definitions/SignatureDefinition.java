@@ -13,6 +13,29 @@ import org.objectweb.asm.commons.GeneratorAdapter;
  * input
  */
 public abstract class SignatureDefinition implements Target {
+  public static class AliasedSignatureDefintion extends SignatureDefinition {
+    private final SignatureDefinition original;
+
+    public AliasedSignatureDefintion(SignatureDefinition original, String alias) {
+      super(alias, original.storage(), original.type());
+      this.original = original;
+    }
+
+    @Override
+    public void build(GeneratorAdapter method, Type streamType, Stream<Target> variables) {
+      original.build(method, streamType, variables);
+    }
+
+    @Override
+    public Path filename() {
+      return original.filename();
+    }
+
+    @Override
+    public void read() {
+      original.read();
+    }
+  }
 
   private final String name;
   private final SignatureStorage storage;

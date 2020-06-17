@@ -1,0 +1,6 @@
+Version 1;
+Input test;
+Import std::string::length;
+Import std::string::length As strlen;
+
+Olive Run ok With ok = length(project) == strlen(project);

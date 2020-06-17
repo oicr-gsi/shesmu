@@ -33,6 +33,35 @@ Olives, define olives, functions, and constants may be mixed in any order.
 ## Pragmas
 After the `Input` line, various script modifiers can be added.
 
+### Imports
+- `Import` _qname_`;`
+
+Access any qualified name by the final section (_i.e._, `Import
+std::string::to_path;` will make `to_path` the same as `std::string::to_path`).
+
+- `Import` _qname_ `As` name`;`
+
+Access a qualified name by a custom name (_i.e._, `Import std::string::to_path
+As pathify;` will make `pathify` the same as `std::string::to_path`).
+
+- `Import` _qname_`::{` _name1_ [`As` _name1P_]  [`,` _name2_ ...]`};`
+
+Perform mutltiple of the above access patterns at once. That is:
+
+    Import std::string::{length As strlen, to_path};
+
+is equivalent to:
+
+    Import std::string::length As strlen;
+    Import std::string::to_path;
+
+- `Import` _qname_`::*;`
+
+Access all children of a qualified name (_i.e._, `Import std::string::*;` will
+make `to_path` the same as `std::string::to_path`, `length` the same as
+`std::string::length` and so on).
+
+
 ### Timeouts
 - `Timeout` _integer_ `;`
 
@@ -70,12 +99,16 @@ possible to reuse the same name for any of these without an error.
 - [`Export`] _name_ `=` _expression_ `;`
 
 Creates a new constant. The _name_ cannot be used for any other constant. If
-`Export` is present, this constant will be available to other scripts.
+`Export` is present, this constant will be available to other scripts as
+`olive::`_script_`::`_name_.
 
 - [`Export`] `Function` _name_`(`_type1_ _arg1_[`,` ...]`)` _expr_`;`
 
 Create a new function. The function must take at least one argument. The
-possible types are defined below.
+possible types are defined below. If
+`Export` is present, this constant will be available to other scripts as
+`olive::`_script_`::`_name_.
+
 
 - `Define` _name_`(`[_type1_ _arg1_[`,` ...]]`)` _clauses_ `;`
 

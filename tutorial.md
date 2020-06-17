@@ -850,17 +850,18 @@ The collection of referenced signable variables is considered over the whole
 scope. For instance:
 
    Olive
-     Where "project" In signature_names # This is true even though project is
-                                        # referenced after this check
+     Where "project" In std::signature::names # This is true even though
+                                              # project is referenced after
+                                              # this check
      Where project ~ /N.*/
      Run x With project = project;
 
 Since there are no `Group`, `Join`, or `Let` clauses, the entire olive is in
 scope. The signable variable `project` is referenced (used) twice: once in the
 `Where` clause and once in the arguments to the action. Therefore `project` is
-one of the referenced variables and appears in `signature_names`.  Order does
-not matter: although `project` is referenced after `signature_names` is used,
-it is still present because it is used in that scope.
+one of the referenced variables and appears in `std::signature::names`.  Order
+does not matter: although `project` is referenced after `std::signature::names`
+is used, it is still present because it is used in that scope.
 
 This behaviour is necessary to ensure that a signature returns the same
 value in all parts of the program.
@@ -883,18 +884,22 @@ to rerun even though the input BAM is not changed.
       Max timestamp By donor, tissue_type
       Group
           reference = Where tissue_type == "R" First path,
-          reference_signature = Where tissue_type == "R" First sha1_signature,
+          reference_signature =
+             Where tissue_type == "R"
+             First std::signature::sha1,
           tumour = Where tissue_type == "T" First path,
-          tumour_signature = Where tissue_type == "T" First sha1_signature
+          tumour_signature =
+             Where tissue_type == "T"
+             First std::signature::sha1
         By donor
       Run variant_caller With
         input_signatures = [reference_signature, tumour_signature],
         reference_file = reference,
         tumour_file = tumour;
 
-The value of `sha1_signature` is a string containing a hexadecimal SHA-1 hash
-of all the names and values referenced variables. There is also
-`json_signature` which produced a JSON object filled with the referenced
+The value of `std::signature::sha1` is a string containing a hexadecimal SHA-1
+hash of all the names and values referenced variables. There is also
+`std::json::signature` which produced a JSON object filled with the referenced
 values.  By saving the signatures as part of the action, we save the input
 information.
 
@@ -921,9 +926,13 @@ Now, suppose we wish to compare possible variants that are in two organs of inte
       Pick Max timestamp By donor, tissue_origin
       Group
           blood = Where tissue_origin == "Blood" First path,
-          blood_signature = Where tissue_origin == "Blood" First sha1_signature,
+          blood_signature =
+            Where tissue_origin == "Blood"
+            First std::signature::sha1,
           organ = Where tissue_origin == "Brain" First path,
-          organ_signature = Where tissue_origin == "Brain" First sha1_signature
+          organ_signature =
+            Where tissue_origin == "Brain"
+            First std::signature::sha1
         By donor
       Run variant_caller With
         input_signaturees = [blood_signature, organ_signature],

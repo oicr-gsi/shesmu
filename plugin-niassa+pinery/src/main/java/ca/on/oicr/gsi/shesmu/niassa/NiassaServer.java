@@ -527,7 +527,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   @ShesmuMethod(
       description = "Whether an IUS and LIMS key combination has been marked as skipped in {file}.")
-  public boolean $_is_skipped(
+  public boolean is_skipped(
       @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
       @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
     return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
@@ -551,17 +551,17 @@ class NiassaServer extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuAction(description = "Add an annotation to a file.")
-  public AnnotationAction<FileAttribute> annotate_$_file() {
+  public AnnotationAction<FileAttribute> annotate_file() {
     return new AnnotationAction<>(definer, FILE);
   }
 
   @ShesmuAction(description = "Add an annotation to an IUS.")
-  public AnnotationAction<IUSAttribute> annotate_$_ius() {
+  public AnnotationAction<IUSAttribute> annotate_ius() {
     return new AnnotationAction<>(definer, IUS);
   }
 
   @ShesmuAction(description = "Add an annotation to a workflow run.")
-  public AnnotationAction<WorkflowRunAttribute> annotate_$_workflow_run() {
+  public AnnotationAction<WorkflowRunAttribute> annotate_workflow_run() {
     return new AnnotationAction<>(definer, WORKFLOW_RUN);
   }
 
