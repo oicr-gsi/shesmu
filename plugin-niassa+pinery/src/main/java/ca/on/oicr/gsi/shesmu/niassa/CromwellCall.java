@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CromwellCall {
   private int attempt;
+  private String backend;
   private String callRoot;
+  private String jobId;
   private String shardIndex;
   private String stderr;
   private String stdout;
@@ -14,8 +16,16 @@ public class CromwellCall {
     return attempt;
   }
 
+  public String getBackend() {
+    return backend;
+  }
+
   public String getCallRoot() {
     return callRoot;
+  }
+
+  public String getJobId() {
+    return jobId;
   }
 
   public String getShardIndex() {
@@ -34,8 +44,16 @@ public class CromwellCall {
     this.attempt = attempt;
   }
 
+  public void setBackend(String backend) {
+    this.backend = backend;
+  }
+
   public void setCallRoot(String callRoot) {
     this.callRoot = callRoot;
+  }
+
+  public void setJobId(String jobId) {
+    this.jobId = jobId;
   }
 
   public void setShardIndex(String shardIndex) {
