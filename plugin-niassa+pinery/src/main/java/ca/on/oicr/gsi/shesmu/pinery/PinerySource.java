@@ -345,7 +345,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @ShesmuMethod(
-      name = "$_active_projects",
+      name = "active_projects",
       description = "Projects marked active from in Pinery defined in {file}.")
   public Set<String> activeProjects() {
     return projects
@@ -356,7 +356,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @ShesmuMethod(
-      name = "$_projects_with_secondary_scheme",
+      name = "projects_with_secondary_scheme",
       description =
           "Projects marked with the secondary naming scheme from in Pinery defined in {file}.")
   public Set<String> secondaryProjects() {
@@ -367,13 +367,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         .collect(Collectors.toSet());
   }
 
-  @ShesmuMethod(name = "$_projects", description = "All projects from in Pinery defined in {file}.")
+  @ShesmuMethod(name = "projects", description = "All projects from in Pinery defined in {file}.")
   public Set<String> allProjects() {
     return projects.get().map(SampleProjectDto::getName).collect(Collectors.toSet());
   }
 
   @ShesmuMethod(
-      name = "$_clinical_projects",
+      name = "clinical_projects",
       description = "Projects marked clinical from in Pinery defined in {file}.")
   public Set<String> clinicalProjects() {
     return projects
@@ -404,7 +404,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   @ShesmuMethod(
-      name = "platform_for_$_instrument_model",
+      name = "platform_for_instrument_model",
       description = "The the platform of the instrument model for the Pinery defined in {file}.")
   public String platformForInstrumentModel(
       @ShesmuParameter(description = "The instrument model name as found in Pinery")

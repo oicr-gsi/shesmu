@@ -22,7 +22,7 @@ public class CSVTableFunctionFileType extends PluginFileType<TableFunctionFile> 
   private static final Pattern COMMA = Pattern.compile(",");
 
   public CSVTableFunctionFileType() {
-    super(MethodHandles.lookup(), TableFunctionFile.class, ".commalookup");
+    super(MethodHandles.lookup(), TableFunctionFile.class, ".commalookup", "table");
   }
 
   @Override

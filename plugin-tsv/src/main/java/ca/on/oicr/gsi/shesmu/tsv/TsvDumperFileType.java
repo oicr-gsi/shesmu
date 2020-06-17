@@ -97,7 +97,7 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
   }
 
   public TsvDumperFileType() {
-    super(MethodHandles.lookup(), DumperConfiguration.class, ".tsvdump");
+    super(MethodHandles.lookup(), DumperConfiguration.class, ".tsvdump", "table");
   }
 
   @Override

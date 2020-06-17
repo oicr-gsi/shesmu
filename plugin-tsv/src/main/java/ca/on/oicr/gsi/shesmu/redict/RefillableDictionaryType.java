@@ -10,7 +10,7 @@ import org.kohsuke.MetaInfServices;
 public class RefillableDictionaryType extends PluginFileType<RefillableDictionary> {
 
   public RefillableDictionaryType() {
-    super(MethodHandles.lookup(), RefillableDictionary.class, ".redict");
+    super(MethodHandles.lookup(), RefillableDictionary.class, ".redict", "redict");
   }
 
   @Override

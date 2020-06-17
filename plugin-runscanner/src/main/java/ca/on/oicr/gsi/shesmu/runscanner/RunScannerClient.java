@@ -79,6 +79,15 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     }
   }
 
+  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private static final Map<Pair<Integer, Boolean>, Set<Set<Long>>> LANE_GEOMETRY_CACHE =
+      new ConcurrentHashMap<>();
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  static {
+    MAPPER.registerModule(new JavaTimeModule());
+  }
+
   /**
    * Determine the correct flow cell geometry for a run
    *
@@ -118,15 +127,6 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     }
   }
 
-  static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-  private static final Map<Pair<Integer, Boolean>, Set<Set<Long>>> LANE_GEOMETRY_CACHE =
-      new ConcurrentHashMap<>();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
-  static {
-    MAPPER.registerModule(new JavaTimeModule());
-  }
-
   private final RunCache runCache;
   private final RunCycleCache runCycleCache;
   private Optional<String> url = Optional.empty();
@@ -137,10 +137,16 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     runCycleCache = new RunCycleCache(fileName);
   }
 
+  @Override
+  public void configuration(SectionRenderer renderer) throws XMLStreamException {
+    renderer.line("Filename", fileName().toString());
+    url.ifPresent(u -> renderer.link("URL", u, u));
+  }
+
   @ShesmuMethod(
       description =
           "Get the current scored cycle detected by the Run Scanner defined in {file} for an Illumina run.")
-  public Optional<Long> $_cycle(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<Long> cycle(@ShesmuParameter(description = "name of run") String runName) {
     try {
       return runCycleCache.get(runName);
     } catch (InitialCachePopulationException e) {
@@ -151,7 +157,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Get the serial number of the flowcell detected by the Run Scanner defined in {file}.")
-  public Optional<String> $_flowcell(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<String> flowcell(@ShesmuParameter(description = "name of run") String runName) {
     try {
       return runCache.get(runName).map(NotificationDto::getContainerSerialNumber);
     } catch (InitialCachePopulationException e) {
@@ -162,7 +168,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Get the lane splitting/merging layout of the flowcell detected by the Run Scanner defined in {file}.")
-  public Set<Set<Long>> $_flowcell_geometry(
+  public Set<Set<Long>> flowcell_geometry(
       @ShesmuParameter(description = "name of run") String runName) {
     try {
       return runCache
@@ -176,7 +182,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
 
   @ShesmuMethod(
       description = "Get the number of lanes detected by the Run Scanner defined in {file}.")
-  public Optional<Long> $_lane_count(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<Long> lane_count(@ShesmuParameter(description = "name of run") String runName) {
     try {
       return runCache.get(runName).map(r -> (long) r.getLaneCount());
     } catch (InitialCachePopulationException e) {
@@ -186,7 +192,7 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
 
   @ShesmuMethod(
       description = "Get the number of reads detected by the Run Scanner defined in {file}.")
-  public Optional<Long> $_read_ends(@ShesmuParameter(description = "name of run") String runName) {
+  public Optional<Long> read_ends(@ShesmuParameter(description = "name of run") String runName) {
     try {
       return runCache
           .get(runName)
@@ -195,12 +201,6 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
     } catch (InitialCachePopulationException e) {
       return Optional.empty();
     }
-  }
-
-  @Override
-  public void configuration(SectionRenderer renderer) throws XMLStreamException {
-    renderer.line("Filename", fileName().toString());
-    url.ifPresent(u -> renderer.link("URL", u, u));
   }
 
   @Override

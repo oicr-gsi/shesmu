@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -10,15 +11,33 @@ import org.objectweb.asm.commons.Method;
 
 public class PragmaNodeFrequency extends PragmaNode {
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
-  private static final Method METHOD_INSTANT__NOW =
-      new Method("now", A_INSTANT_TYPE, new Type[] {});
   private static final Method METHOD_INSTANT__GET_EPOCH_SECOND =
       new Method("getEpochSecond", Type.LONG_TYPE, new Type[] {});
+  private static final Method METHOD_INSTANT__NOW =
+      new Method("now", A_INSTANT_TYPE, new Type[] {});
   private final int frequency;
 
   public PragmaNodeFrequency(int frequency) {
     super();
     this.frequency = frequency;
+  }
+
+  @Override
+  public Stream<ImportRewriter> imports() {
+    return Stream.empty();
+  }
+
+  @Override
+  public void renderAtExit(RootBuilder builder) {
+    Renderer renderer = builder.rootRenderer(false);
+    renderer.methodGen().loadThis();
+    renderer
+        .methodGen()
+        .invokeStatic(A_INSTANT_TYPE, new Method("now", A_INSTANT_TYPE, new Type[] {}));
+    renderer
+        .methodGen()
+        .invokeVirtual(A_INSTANT_TYPE, new Method("getEpochSecond", Type.LONG_TYPE, new Type[] {}));
+    renderer.methodGen().putField(builder.selfType(), "$lastOliveRun", Type.LONG_TYPE);
   }
 
   @Override
@@ -47,19 +66,6 @@ public class PragmaNodeFrequency extends PragmaNode {
           methodGen.push(false);
           methodGen.mark(end);
         });
-  }
-
-  @Override
-  public void renderAtExit(RootBuilder builder) {
-    Renderer renderer = builder.rootRenderer(false);
-    renderer.methodGen().loadThis();
-    renderer
-        .methodGen()
-        .invokeStatic(A_INSTANT_TYPE, new Method("now", A_INSTANT_TYPE, new Type[] {}));
-    renderer
-        .methodGen()
-        .invokeVirtual(A_INSTANT_TYPE, new Method("getEpochSecond", Type.LONG_TYPE, new Type[] {}));
-    renderer.methodGen().putField(builder.selfType(), "$lastOliveRun", Type.LONG_TYPE);
   }
 
   @Override

@@ -2,6 +2,8 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition.AliasedConstantDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition.AliasedSignatureDefintion;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.plugin.ErrorConsumer;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
@@ -16,6 +18,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Representation of a complete Shesmu script */
@@ -96,10 +99,8 @@ public class ProgramNode {
   private final int line;
 
   private final List<OliveNode> olives;
-
-  private final List<TypeAliasNode> typeAliases;
-
   private final List<PragmaNode> pragmas;
+  private final List<TypeAliasNode> typeAliases;
 
   public ProgramNode(
       int line,
@@ -117,6 +118,10 @@ public class ProgramNode {
     this.olives = olives;
   }
 
+  public void collectPlugins(Set<Path> pluginFileNames) {
+    olives.forEach(olive -> olive.collectPlugins(pluginFileNames));
+  }
+
   public FileTable dashboard(String filename, String hash, String bytecode) {
     return new FileTable(
         filename,
@@ -128,10 +133,6 @@ public class ProgramNode {
 
   public InputFormatDefinition inputFormatDefinition() {
     return inputFormatDefinition;
-  }
-
-  public void collectPlugins(Set<Path> pluginFileNames) {
-    olives.forEach(olive -> olive.collectPlugins(pluginFileNames));
   }
 
   public void processExports(ExportConsumer exportConsumer) {
@@ -183,15 +184,18 @@ public class ProgramNode {
     final Map<String, OliveNodeDefinition> definedOlives = new HashMap<>();
     final Map<String, FunctionDefinition> userDefinedFunctions = new HashMap<>();
     final Map<String, Target> userDefinedConstants = new HashMap<>();
+    final List<ImportRewriter> importRewriters =
+        Stream.concat(Stream.of(ImportRewriter.NULL), pragmas.stream().flatMap(PragmaNode::imports))
+            .collect(Collectors.toList());
     // Find and resolve olive “Define” and “Matches”
     final OliveCompilerServices compilerServices =
         new OliveCompilerServices() {
-          final Set<String> metricNames = new HashSet<>();
           final Map<String, List<Imyhat>> dumpers = new HashMap<>();
+          final Set<String> metricNames = new HashSet<>();
 
           @Override
           public ActionDefinition action(String name) {
-            return definedActions.apply(name);
+            return checkImports(definedActions, name);
           }
 
           @Override
@@ -199,6 +203,49 @@ public class ProgramNode {
             if (metricNames.contains(metricName)) return true;
             metricNames.add(metricName);
             return false;
+          }
+
+          private <T> T checkImports(Function<String, T> getter, String name) {
+            for (final ImportRewriter importRewriter : importRewriters) {
+              final String original = importRewriter.rewrite(name);
+              if (original == null) continue;
+              final T result = getter.apply(original);
+              if (result != null) {
+                return result;
+              }
+            }
+            return null;
+          }
+
+          @Override
+          public Stream<? extends Target> constants(boolean allowUserDefined) {
+            return allowUserDefined
+                ? Stream.concat(
+                    duplicateImport(constants.get(), AliasedConstantDefinition::new),
+                    userDefinedConstants.values().stream())
+                : constants.get();
+          }
+
+          private <T extends Target> Stream<T> duplicateImport(
+              Stream<T> input, BiFunction<T, String, T> alias) {
+            return input.flatMap(
+                item ->
+                    importRewriters
+                        .stream()
+                        .map(importRewriter -> importRewriter.rewrite(item.name()))
+                        .filter(Objects::nonNull)
+                        .map(name -> alias.apply(item, name)));
+          }
+
+          @Override
+          public FunctionDefinition function(String name) {
+            final FunctionDefinition external = checkImports(definedFunctions, name);
+            return external == null ? userDefinedFunctions.get(name) : external;
+          }
+
+          @Override
+          public Imyhat imyhat(String name) {
+            return userDefinedTypes.get(name);
           }
 
           @Override
@@ -218,35 +265,17 @@ public class ProgramNode {
 
           @Override
           public RefillerDefinition refiller(String name) {
-            return definedRefillers.apply(name);
+            return checkImports(definedRefillers, name);
           }
 
           @Override
           public Stream<SignatureDefinition> signatures() {
-            return signatures.get();
+            return duplicateImport(signatures.get(), AliasedSignatureDefintion::new);
           }
 
           @Override
           public List<Imyhat> upsertDumper(String dumper) {
             return dumpers.computeIfAbsent(dumper, k -> new ArrayList<>());
-          }
-
-          @Override
-          public Stream<? extends Target> constants(boolean allowUserDefined) {
-            return allowUserDefined
-                ? Stream.concat(constants.get(), userDefinedConstants.values().stream())
-                : constants.get();
-          }
-
-          @Override
-          public FunctionDefinition function(String name) {
-            final FunctionDefinition external = definedFunctions.apply(name);
-            return external == null ? userDefinedFunctions.get(name) : external;
-          }
-
-          @Override
-          public Imyhat imyhat(String name) {
-            return userDefinedTypes.get(name);
           }
         };
 

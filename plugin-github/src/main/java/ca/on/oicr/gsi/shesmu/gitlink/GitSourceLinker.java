@@ -15,7 +15,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices
 public class GitSourceLinker extends PluginFileType<GitSourceLinker.GitLinkerFile> {
   public GitSourceLinker() {
-    super(MethodHandles.lookup(), GitLinkerFile.class, ".gitlink");
+    super(MethodHandles.lookup(), GitLinkerFile.class, ".gitlink", "git");
   }
 
   private static final ObjectMapper MAPPER = new ObjectMapper();

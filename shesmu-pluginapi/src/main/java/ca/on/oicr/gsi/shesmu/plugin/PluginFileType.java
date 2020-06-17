@@ -10,8 +10,10 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 /**
@@ -26,8 +28,12 @@ import java.util.stream.Stream;
  */
 public abstract class PluginFileType<T extends PluginFile> {
   private final String extension;
+  private final String namespace;
   private final Class<T> fileClass;
   private final Lookup lookup;
+  private static final Set<String> RESERVED_NAMES =
+      new TreeSet<>(
+          Arrays.asList("core", "java", "olive", "plugin", "script", "shesmu", "std", "sys"));
 
   /**
    * Create a new configuration format
@@ -39,12 +45,37 @@ public abstract class PluginFileType<T extends PluginFile> {
    * @param pluginFileClass the class associated with each instance of a configuration file
    * @param extension the extension to use from directories; no two plugins may use the same
    *     extension
+   * @param namespaces the namespace that will be used to identify this all plugins are group into
+   *     namespaces; different plugins may share a namespace though this is discouraged. It also
+   *     cannot be any of the reserved namespace include <tt>core</tt>, <tt>java</tt>,
+   *     <tt>olive</tt>, <tt>plugin</tt>, <tt>script</tt>, <tt>shesmu</tt>, <tt>std</tt>, and
+   *     <tt>sys</tt>.
    */
-  public PluginFileType(Lookup lookup, Class<T> pluginFileClass, String extension) {
+  public PluginFileType(
+      Lookup lookup, Class<T> pluginFileClass, String extension, String... namespaces) {
     super();
     this.lookup = lookup;
     this.fileClass = pluginFileClass;
     this.extension = extension;
+    if (namespaces.length == 0) {
+      throw new IllegalArgumentException(
+          String.format("Plugin %s has no namespaces.", getClass().getName()));
+    }
+    for (final String namespace : namespaces) {
+      if (!Parser.IDENTIFIER.matcher(namespace).matches()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Plugin %s has an invalid namespace identifier “%s”",
+                getClass().getName(), namespace));
+      }
+    }
+    if (RESERVED_NAMES.contains(namespaces[0])) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Namespace identifier “%s” for plugin %s is reserved",
+              namespaces[0], getClass().getName()));
+    }
+    this.namespace = String.join(Parser.NAMESPACE_SEPARATOR, namespaces);
   }
 
   /**
@@ -86,6 +117,11 @@ public abstract class PluginFileType<T extends PluginFile> {
    */
   public Stream<Dumper> findDumper(String name, Imyhat... types) {
     return Stream.empty();
+  }
+
+  /** The namespace that olives will see when they use exports from this plugin */
+  public String namespace() {
+    return namespace;
   }
 
   /**

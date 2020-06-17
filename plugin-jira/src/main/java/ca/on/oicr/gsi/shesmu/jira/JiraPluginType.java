@@ -11,7 +11,7 @@ import org.kohsuke.MetaInfServices;
 public final class JiraPluginType extends PluginFileType<JiraConnection> {
 
   public JiraPluginType() {
-    super(MethodHandles.lookup(), JiraConnection.class, ".jira");
+    super(MethodHandles.lookup(), JiraConnection.class, ".jira", "jira");
   }
 
   @Override

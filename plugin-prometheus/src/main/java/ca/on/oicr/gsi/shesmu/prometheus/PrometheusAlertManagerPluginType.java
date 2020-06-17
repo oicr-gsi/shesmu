@@ -145,7 +145,7 @@ public class PrometheusAlertManagerPluginType
   private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
 
   public PrometheusAlertManagerPluginType() {
-    super(MethodHandles.lookup(), AlertManagerEndpoint.class, ".alertman");
+    super(MethodHandles.lookup(), AlertManagerEndpoint.class, ".alertman", "prometheus");
   }
 
   @Override

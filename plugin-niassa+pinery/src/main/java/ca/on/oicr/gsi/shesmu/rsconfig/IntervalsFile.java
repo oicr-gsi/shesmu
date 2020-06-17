@@ -28,7 +28,7 @@ public class IntervalsFile extends PluginFile {
     renderer.line("Config Good", configGood ? "Yes" : "No");
   }
 
-  @ShesmuMethod(name = "$", description = "Get RsConfig data from {file}.")
+  @ShesmuMethod(name = "get", description = "Get RsConfig data from {file}.")
   public Optional<String> get(
       @ShesmuParameter(description = "The template type") String templateType,
       @ShesmuParameter(description = "The resequencing type (kit).") String resequencingType,
@@ -37,7 +37,7 @@ public class IntervalsFile extends PluginFile {
   }
 
   @ShesmuMethod(
-      name = "$_chromosomes",
+      name = "chromosomes",
       description = "Get RsConfig chromosomes as a collection from {file}.")
   public Optional<Set<String>> getChromosomes(
       @ShesmuParameter(description = "The template type") String templateType,

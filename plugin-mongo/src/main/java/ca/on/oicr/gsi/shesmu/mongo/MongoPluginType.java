@@ -12,7 +12,7 @@ public class MongoPluginType extends PluginFileType<MongoServer> {
   private static final String EXTENSION = ".mongodb";
 
   public MongoPluginType() {
-    super(MethodHandles.lookup(), MongoServer.class, EXTENSION);
+    super(MethodHandles.lookup(), MongoServer.class, EXTENSION, "mongo");
   }
 
   @Override

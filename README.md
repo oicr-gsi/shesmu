@@ -192,28 +192,29 @@ These constants are available on any instance:
 #### Functions
 These functions are available on any instance:
 
-- `date_to_millis`: get the number of milliseconds since the UNIX epoch for this date.
-- `date_to_seconds`: get the number of seconds since the UNIX epoch for this date.
-- `is_infinite`: check if a floating-point number is infinite.
-- `is_nan`: check if a floating-point number is not-a-number.
-- `json_array_from_dict`: convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.
-- `json_object`: create a JSON object from fields.
-- `parse_bool`: Convert a string containing into a Boolean.
-- `parse_float`: Convert a string containing digits and a decimal point into an float.
-- `parse_int`: Convert a string containing digits into an integer.
-- `parse_json`: Convert a string containing JSON data into a JSON value.
-- `path_dir`: Extracts all but the last elements in a path (_i.e._, the containing directory).
-- `path_file`: extracts the last element in a path.
-- `path_normalize`: Normalize a path (_i.e._, remove any `./` and `../` in the path).
-- `path_relativize`: Creates a new path of relativize one path as if in the directory of the other.
-- `path_replace_home`: Replace any path that starts with $HOME or ~ with the provided home directory.
-- `str_eq`: Compares two strings ignoring case.
-- `str_lower`: Convert a string to lower case.
-- `str_trim`: Remove white space from a string.
-- `str_upper`: Convert a string to upper case.
-- `url_decode`: Convert a URL-encoded string back to a normal string.
-- `url_encode`: Convert a string to a URL-encoded string (also escaping `*`, even though that is not standard).
-- `version_at_least`: Checks whether the supplied version tuple is the same or greater than version numbers provided.
+- `std::boolean::parse` Convert a string containing into a Boolean.
+- `std::date::to_millis`: get the number of milliseconds since the UNIX epoch for this date.
+- `std::date::to_seconds`: get the number of seconds since the UNIX epoch for this date.
+- `std::float::is_infinite`: check if a floating-point number is infinite.
+- `std::float::is_nan`: check if a floating-point number is not-a-number.
+- `std::float::parse` Convert a string containing digits and a decimal point into an float.
+- `std::integer::parse` Convert a string containing digits into an integer.
+- `std::json::array_from_dict`: convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.
+- `std::json::object`: create a JSON object from fields.
+- `std::json::parse` Convert a string containing JSON data into a JSON value.
+- `std::path::change_prefix`: allow rewriting path prefixes to undo directory symlinking.
+- `std::path::dir`: Extracts all but the last elements in a path (_i.e._, the containing directory).
+- `std::path::file`: extracts the last element in a path.
+- `std::path::normalize`: Normalize a path (_i.e._, remove any `./` and `../` in the path).
+- `std::path::relativize`: Creates a new path of relativize one path as if in the directory of the other.
+- `std::path::replace_home`: Replace any path that starts with `$HOME` or `~` with the provided home directory.
+- `std::string::eq`: Compares two strings ignoring case.
+- `std::string::lower`: Convert a string to lower case.
+- `std::string::trim`: Remove white space from a string.
+- `std::string::upper`: Convert a string to upper case.
+- `std::url::decode`: Convert a URL-encoded string back to a normal string.
+- `std::url::encode`: Convert a string to a URL-encoded string (also escaping `*`, even though that is not standard).
+- `std::version_at_least`: Checks whether the supplied version tuple is the same or greater than version numbers provided.
 
 Note that paths can be joined with the `+` operator and strings can be joined using interpolation (_e.g._, `"{x}{y}"`).
 

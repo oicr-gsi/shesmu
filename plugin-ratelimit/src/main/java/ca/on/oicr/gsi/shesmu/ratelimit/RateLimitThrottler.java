@@ -81,7 +81,7 @@ public class RateLimitThrottler extends PluginFileType<RateLimitThrottler.TokenB
           .register();
 
   public RateLimitThrottler() {
-    super(MethodHandles.lookup(), TokenBucket.class, EXTENSION);
+    super(MethodHandles.lookup(), TokenBucket.class, EXTENSION, "ratelimit");
   }
 
   @Override

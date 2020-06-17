@@ -20,7 +20,7 @@ public class PipeDevProvenancePluginType extends BaseProvenancePluginType<Defaul
   }
 
   public PipeDevProvenancePluginType() {
-    super("pipedev", ".pipedev");
+    super("pipedev", ".pipedev", "cerberus");
   }
 
   @Override

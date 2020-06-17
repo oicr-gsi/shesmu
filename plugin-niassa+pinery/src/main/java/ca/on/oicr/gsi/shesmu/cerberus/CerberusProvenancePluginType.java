@@ -28,7 +28,7 @@ public class CerberusProvenancePluginType extends BaseProvenancePluginType<Cerbe
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   public CerberusProvenancePluginType() {
-    super("cerberus", ".cerberus");
+    super("cerberus", ".cerberus", "cerberus");
   }
 
   @Override

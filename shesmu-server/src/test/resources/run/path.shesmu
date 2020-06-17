@@ -1,4 +1,4 @@
 Version 1;
 Input test;
 
-Olive Run ok With ok = "{path_dir(path)}" == "/";
+Olive Run ok With ok = "{std::path::dir(path)}" == "/";

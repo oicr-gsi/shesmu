@@ -2,4 +2,4 @@ Version 1;
 Input test;
 
 Olive
- Run ok With ok = signature_count == 0 && sha1_signature == "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709"; # This is a signature with no input data
+ Run ok With ok = std::signature::count == 0 && std::signature::sha1 == "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709"; # This is a signature with no input data

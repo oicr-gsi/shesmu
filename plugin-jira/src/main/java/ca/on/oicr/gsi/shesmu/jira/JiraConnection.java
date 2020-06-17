@@ -233,7 +233,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   @ShesmuMethod(
       description =
           "Count the number of open or closed tickets from the JIRA project defined in {file}.")
-  public long count_tickets_$(
+  public long count_tickets(
       @ShesmuParameter(description = "keyword") String keyword,
       @ShesmuParameter(description = "is ticket open") boolean open) {
     return issues().filter(new IssueFilter(keyword, open)).count();
@@ -262,6 +262,11 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
     return issues.get();
   }
 
+  @ShesmuAction(description = "Opens (or re-opens) a JIRA ticket. Defined in {file}.")
+  public FileTicket open_ticket() {
+    return new FileTicket(definer);
+  }
+
   public String projectKey() {
     return projectKey;
   }
@@ -270,7 +275,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       type = "at2ss",
       description =
           "Get the ticket summary and descriptions from the JIRA project defined in {file}.")
-  public Set<Tuple> query_tickets_$(
+  public Set<Tuple> query_tickets(
       @ShesmuParameter(description = "keyword") String keyword,
       @ShesmuParameter(description = "is ticket open") boolean open) {
     return issues()
@@ -284,7 +289,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   @ShesmuAction(description = "Closes any JIRA tickets with a matching summary. Defined in {file}.")
-  public ResolveTicket resolve_ticket_$() {
+  public ResolveTicket resolve_ticket() {
     return new ResolveTicket(definer);
   }
 
@@ -311,11 +316,6 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   @Override
   public Stream<String> services() {
     return Stream.of("jira", projectKey);
-  }
-
-  @ShesmuAction(description = "Opens (or re-opens) a JIRA ticket. Defined in {file}.")
-  public FileTicket ticket_$() {
-    return new FileTicket(definer);
   }
 
   @Override

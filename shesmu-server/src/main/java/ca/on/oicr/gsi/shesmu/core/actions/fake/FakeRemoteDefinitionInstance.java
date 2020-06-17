@@ -18,7 +18,7 @@ import org.kohsuke.MetaInfServices;
 public class FakeRemoteDefinitionInstance extends PluginFileType<RemoteInstance> {
 
   public FakeRemoteDefinitionInstance() {
-    super(MethodHandles.lookup(), RemoteInstance.class, ".fakeactions");
+    super(MethodHandles.lookup(), RemoteInstance.class, ".fakeactions", "fake");
   }
 
   @Override

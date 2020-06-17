@@ -316,8 +316,12 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
 
   private final String name;
 
-  public BaseProvenancePluginType(String name, String extension) {
-    super(MethodHandles.lookup(), BaseProvenancePluginType.FileConfiguration.class, extension);
+  public BaseProvenancePluginType(String name, String extension, String namespace) {
+    super(
+        MethodHandles.lookup(),
+        BaseProvenancePluginType.FileConfiguration.class,
+        extension,
+        namespace);
     this.name = name;
   }
 

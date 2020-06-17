@@ -119,41 +119,6 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     this.definer = definer;
   }
 
-  @ShesmuMethod(
-      description =
-          "Returns true if the file or directory exists on the SFTP server described in {file}.")
-  public Optional<Boolean> $_exists(@ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes.get(fileName).map(a -> a.getSize() != -1);
-  }
-
-  @ShesmuMethod(
-      description =
-          "Gets the last modification timestamp of a file or directory living on the SFTP server described in {file}.")
-  public Optional<Instant> $_mtime(@ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes
-        .get(fileName)
-        .filter(a -> a.getSize() != -1)
-        .map(a -> Instant.ofEpochSecond(a.getMtime()));
-  }
-
-  @ShesmuAction(
-      description = "Remove a file (not directory) on an SFTP server described in {file}.")
-  public DeleteAction $_rm() {
-    return new DeleteAction(definer);
-  }
-
-  @ShesmuMethod(
-      description =
-          "Get the size of a file, in bytes, living on the SFTP server described in {file}.")
-  public Optional<Long> $_size(@ShesmuParameter(description = "path to file") Path fileName) {
-    return fileAttributes.get(fileName).filter(a -> a.getSize() != -1).map(FileAttributes::getSize);
-  }
-
-  @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
-  public SymlinkAction $_symlink() {
-    return new SymlinkAction(definer);
-  }
-
   @Override
   public void configuration(SectionRenderer renderer) throws XMLStreamException {
     renderer.line("Filename", fileName().toString());
@@ -163,6 +128,19 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           renderer.line("Port", configuration.getPort());
           renderer.line("User", configuration.getUser());
         });
+  }
+
+  @ShesmuAction(
+      description = "Remove a file (not directory) on an SFTP server described in {file}.")
+  public DeleteAction delete() {
+    return new DeleteAction(definer);
+  }
+
+  @ShesmuMethod(
+      description =
+          "Returns true if the file or directory exists on the SFTP server described in {file}.")
+  public Optional<Boolean> exists(@ShesmuParameter(description = "path to file") Path fileName) {
+    return fileAttributes.get(fileName).map(a -> a.getSize() != -1);
   }
 
   @ShesmuJsonInputSource(format = "unix_file")
@@ -279,6 +257,17 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     }
   }
 
+  @ShesmuMethod(
+      description =
+          "Gets the last modification timestamp of a file or directory living on the SFTP server described in {file}.")
+  public Optional<Instant> modification_time(
+      @ShesmuParameter(description = "path to file") Path fileName) {
+    return fileAttributes
+        .get(fileName)
+        .filter(a -> a.getSize() != -1)
+        .map(a -> Instant.ofEpochSecond(a.getMtime()));
+  }
+
   public boolean refill(String name, String command, ArrayNode data) {
     final Configuration config = configuration.orElse(null);
     if (config == null) return false;
@@ -355,6 +344,18 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       e.printStackTrace();
       return ActionState.FAILED;
     }
+  }
+
+  @ShesmuMethod(
+      description =
+          "Get the size of a file, in bytes, living on the SFTP server described in {file}.")
+  public Optional<Long> size(@ShesmuParameter(description = "path to file") Path fileName) {
+    return fileAttributes.get(fileName).filter(a -> a.getSize() != -1).map(FileAttributes::getSize);
+  }
+
+  @ShesmuAction(description = "Create a symlink on the SFTP server described in {file}.")
+  public SymlinkAction symlink() {
+    return new SymlinkAction(definer);
   }
 
   @Override

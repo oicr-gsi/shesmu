@@ -2,4 +2,4 @@ Version 1;
 Input test;
 
 Define standard_fastq(string s)
-  Where str_len(3) == s;
+  Where std::string::length(3) == s;

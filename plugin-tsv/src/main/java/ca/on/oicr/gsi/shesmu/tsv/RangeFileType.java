@@ -9,7 +9,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices
 public class RangeFileType extends PluginFileType<RangeFile> {
   public RangeFileType() {
-    super(MethodHandles.lookup(), RangeFile.class, ".range");
+    super(MethodHandles.lookup(), RangeFile.class, ".range", "table");
   }
 
   @Override

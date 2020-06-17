@@ -2,8 +2,8 @@ Version 1;
 Input test;
 
 Define foo(string s)
- Where s == project && sha1_signature != "";
+ Where s == project && std::signature::sha1 != "";
 
 Olive
  foo("the_foo_study")
- Run ok With ok = signature_count == 2 && "project" In signature_names && library_size > 0 && "library_size" In signature_names;
+ Run ok With ok = std::signature::count == 2 && "project" In std::signature::names && library_size > 0 && "library_size" In std::signature::names;

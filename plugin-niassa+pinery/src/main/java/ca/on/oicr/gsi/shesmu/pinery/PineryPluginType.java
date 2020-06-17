@@ -116,7 +116,7 @@ public class PineryPluginType extends PluginFileType<PinerySource> {
   private static final Pattern BASE_MASK = Pattern.compile("([iIyYnN])\\s*(\\*|[0-9]*)");
 
   public PineryPluginType() {
-    super(MethodHandles.lookup(), PinerySource.class, ".pinery");
+    super(MethodHandles.lookup(), PinerySource.class, ".pinery", "pinery");
   }
 
   @Override

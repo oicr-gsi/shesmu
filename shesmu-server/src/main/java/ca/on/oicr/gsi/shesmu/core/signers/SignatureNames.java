@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.core.signers;
 import ca.on.oicr.gsi.shesmu.compiler.Target;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureStorage;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.TreeSet;
@@ -20,7 +21,10 @@ public final class SignatureNames extends SignatureDefinition {
       new Method("add", Type.BOOLEAN_TYPE, new Type[] {Type.getType(Object.class)});
 
   public SignatureNames() {
-    super("signature_names", SignatureStorage.STATIC, Imyhat.STRING.asList());
+    super(
+        String.join(Parser.NAMESPACE_SEPARATOR, "std", "signature", "names"),
+        SignatureStorage.STATIC,
+        Imyhat.STRING.asList());
   }
 
   @Override

@@ -61,12 +61,12 @@ public class RefillableDictionary extends JsonPluginFile<Configuration> {
     final AtomicReference<Map<Object, Object>> dictionary =
         new AtomicReference<>(Collections.emptyMap());
     definer.defineConstantBySupplier(
-        name(),
+        "get",
         "Dictionary of values collected from refiller.",
         Imyhat.dictionary(configuration.getKey(), configuration.getValue()),
         dictionary::get);
     definer.defineRefiller(
-        name(),
+        "put",
         "A way to fill the dictionary available as a constant of the same name",
         new RefillDefiner() {
           @Override

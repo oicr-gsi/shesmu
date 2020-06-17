@@ -129,8 +129,7 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                             "Field %s in %s is annotated with RefillerParameter, but not an instance field.",
                             field.getName(), field.getDeclaringClass().getName()));
                   }
-                  final String fieldName =
-                      AnnotationUtils.checkName(fieldAnnotation.name(), field, false);
+                  final String fieldName = AnnotationUtils.checkName(fieldAnnotation.name(), field);
                   final Imyhat fieldType =
                       unpack(
                           String.format(
@@ -160,7 +159,7 @@ public final class InvokeDynamicRefillerParameterDescriptor implements RefillerP
                             setter.getName(), setter.getDeclaringClass().getName()));
                   }
                   final String setterName =
-                      AnnotationUtils.checkName(setterAnnotation.name(), setter, false);
+                      AnnotationUtils.checkName(setterAnnotation.name(), setter);
                   final Imyhat setterType =
                       unpack(
                           String.format(

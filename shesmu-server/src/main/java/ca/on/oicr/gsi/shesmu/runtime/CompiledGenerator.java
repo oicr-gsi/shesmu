@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.FunctionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.files.WatchedFileListener;
@@ -203,12 +204,15 @@ public class CompiledGenerator implements DefinitionRepository {
         };
     private ActionGenerator generator = ActionGenerator.NULL;
     private Set<ImportVerifier> imports = Collections.emptySet();
+    private final String instance;
     private volatile boolean live = true;
     private OliveRunInfo runInfo;
     private CompletableFuture<?> running = CompletableFuture.completedFuture(null);
 
     private Script(Path fileName) {
       this.fileName = fileName;
+      instance =
+          RuntimeSupport.removeExtension(fileName, ".shesmu").replaceAll("[^a-zA-Z0-9_]", "_");
     }
 
     public void checkDefinitions() {
@@ -282,7 +286,11 @@ public class CompiledGenerator implements DefinitionRepository {
                 new LiveExportConsumer() {
                   @Override
                   public void constant(MethodHandle method, String name, Imyhat type) {
-                    exportedConstants.add(new ExportedConstantDefinition(method, name, type));
+                    exportedConstants.add(
+                        new ExportedConstantDefinition(
+                            method,
+                            String.join(Parser.NAMESPACE_SEPARATOR, "olive", instance, name),
+                            type));
                   }
 
                   @Override
@@ -292,7 +300,11 @@ public class CompiledGenerator implements DefinitionRepository {
                       Imyhat returnType,
                       Supplier<Stream<FunctionParameter>> parameters) {
                     exportedFunctions.add(
-                        new ExportedFunctionDefinition(method, name, returnType, parameters));
+                        new ExportedFunctionDefinition(
+                            method,
+                            String.join(Parser.NAMESPACE_SEPARATOR, "olive", instance, name),
+                            returnType,
+                            parameters));
                   }
                 },
                 ft -> dashboard = ft,
