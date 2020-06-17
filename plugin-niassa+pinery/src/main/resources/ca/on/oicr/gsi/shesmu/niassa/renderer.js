@@ -126,6 +126,8 @@ actionRender.set("niassa", a => [
       ["Task", x => x.task],
       ["Attempt", x => x.attempt],
       ["Scatter", x => (x.shardIndex < 0 ? "N/A" : x.shardIndex)],
+      ["Backend", x => x.backend || "Unknown"],
+      ["Job ID", x => x.jobId || "Unknown"],
       ["Standard Error", x => (x.stderr ? breakSlashes(x.stderr) : "N/A")],
       ["Standard Output", x => (x.stdout ? breakSlashes(x.stdout) : "N/A")]
     )

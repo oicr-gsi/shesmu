@@ -910,6 +910,8 @@ public final class WorkflowAction extends Action {
                           final ObjectNode logEntry = cromwellLogs.addObject();
                           logEntry.put("task", task);
                           logEntry.put("attempt", log.getAttempt());
+                          logEntry.put("backend", log.getBackend());
+                          logEntry.put("jobId", log.getJobId());
                           logEntry.put("shardIndex", log.getShardIndex());
                           logEntry.put("stderr", log.getStderr());
                           logEntry.put("stdout", log.getStdout());
