@@ -18,7 +18,7 @@ public final class FileInfo implements Comparable<FileInfo> {
     this.md5sum = ap.getFileMd5sum();
     this.metatype = ap.getFileMetaType();
     this.path = ap.getFilePath();
-    this.size = Long.parseUnsignedLong(ap.getFileSize());
+    this.size = ap.getFileSize() == null ? 0 : Long.parseUnsignedLong(ap.getFileSize());
   }
 
   @Override
