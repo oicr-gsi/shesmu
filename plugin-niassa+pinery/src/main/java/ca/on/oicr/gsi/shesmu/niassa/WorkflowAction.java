@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import static ca.on.oicr.gsi.shesmu.niassa.NiassaServer.HTTP_CLIENT;
+
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
@@ -39,6 +41,9 @@ import net.sourceforge.seqware.common.model.IUSAttribute;
 import net.sourceforge.seqware.common.model.Workflow;
 import net.sourceforge.seqware.common.model.WorkflowRun;
 import net.sourceforge.seqware.common.model.WorkflowRunAttribute;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 
 /**
  * Action to run a SeqWare/Niassa workflow
@@ -773,6 +778,45 @@ public final class WorkflowAction extends Action {
       case submitted:
         run.setStatus(WorkflowRunStatus.submitted_cancel);
         metadata.updateWorkflowRun(run);
+        server
+            .get()
+            .cromwellUrl()
+            .ifPresent(
+                root ->
+                    run.getWorkflowRunAttributes()
+                        .stream()
+                        .filter(a -> a.getTag().equals("cromwell-workflow-id"))
+                        .map(WorkflowRunAttribute::getValue)
+                        .forEach(
+                            id -> {
+                              final HttpPost request =
+                                  new HttpPost(
+                                      String.format("%s/api/workflows/v1/%s/abort", root, id));
+                              request.addHeader(
+                                  "Accept", ContentType.APPLICATION_JSON.getMimeType());
+                              try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+                                if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                                  server
+                                      .get()
+                                      .writeLog(
+                                          String.format(
+                                              "Failed to cancel Cromwell job %s when skipping %d for %s: %s",
+                                              id,
+                                              workflowRunSwid,
+                                              actionId,
+                                              response.getStatusLine().getReasonPhrase()),
+                                          Collections.emptyMap());
+                                }
+                              } catch (Exception e) {
+                                server
+                                    .get()
+                                    .writeLog(
+                                        String.format(
+                                            "Exception trying to cancel Cromwell job %s when skipping %d for %s: %s",
+                                            id, workflowRunSwid, actionId, e.getMessage()),
+                                        Collections.emptyMap());
+                              }
+                            }));
     }
     this.server.log(
         String.format(
