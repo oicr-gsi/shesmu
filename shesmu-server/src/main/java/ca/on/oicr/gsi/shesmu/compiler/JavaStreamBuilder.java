@@ -176,6 +176,10 @@ public final class JavaStreamBuilder {
     renderer.methodGen().invokeInterface(A_STREAM_TYPE, METHOD_STREAM__COUNT);
   }
 
+  public Imyhat currentType() {
+    return currentType;
+  }
+
   public Pair<Renderer, Renderer> dictionary(
       int line,
       int column,

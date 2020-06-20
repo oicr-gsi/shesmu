@@ -960,6 +960,52 @@ value.
 Evaluates _expr_ for every item and compute the sum of all the results. _expr_
 must return an integer or a floating-point number.
 
+#### Table
+- `Table` _name_ `=` _value_`,` ... `With` _format_
+
+This collects items into a table and formats that table as a string. This can be useful for creating HTML or Markdown tables for inserting into JIRA. The _name_, which must evaluate to a string, will the be name of the column, and _value_, which must also produce a string, will be the contents of that column for every item. The _format_ determines how the text is laid out. It is an object with the following properties:
+
+- `data_start`: the leader for each row
+- `data_separator`: the text to place in between inner columns
+- `data_end`: the trailer for each row
+- `header_start`: the leader for first row
+- `header_separator`: the text to place in between inner columns of the first row
+- `header_end`: the trailer for the first row
+- `header_underline`: optional text to add on the second line for each column
+
+For a few common formats, this object would be defined as:
+
+    html = {
+      data_start = "<tr><td>",
+      data_separator = "</td><td>",
+      data_end = "</td></tr>",
+      header_start = "<tr><th>",
+      header_separator = "</th><th>",
+      header_end = "</th></tr>",
+      header_underline = ``
+    }
+
+    markdown = {
+      data_start = "|",
+      data_separator = "|",
+      data_end = "|",
+      header_start = "|",
+      header_separator = "|",
+      header_end = "|",
+      header_underline = `"|---"`
+    }
+
+    jira = {
+      data_start = "|",
+      data_separator = "|",
+      data_end = "|",
+      header_start = "||",
+      header_separator = "||",
+      header_end = "||",
+      header_underline = ``
+    }
+
+
 #### Univalued
 - `Univalued` _expr_
 
