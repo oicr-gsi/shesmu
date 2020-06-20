@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.CollectNodeConcatenate.ConcatentationType;
 import ca.on.oicr.gsi.shesmu.compiler.ListNode.Ordering;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
@@ -108,6 +109,42 @@ public abstract class CollectNode {
                     accumulatorName.get(),
                     defaultExpression.get(),
                     initialExpression.get()));
+          }
+          return result;
+        });
+    DISPATCH.addKeyword(
+        "Table",
+        (p, o) -> {
+          final AtomicReference<ExpressionNode> format = new AtomicReference<>();
+          final AtomicReference<List<Pair<ExpressionNode, ExpressionNode>>> columns =
+              new AtomicReference<>();
+          final Parser result =
+              p.list(
+                      columns::set,
+                      (cp, co) -> {
+                        final AtomicReference<ExpressionNode> header = new AtomicReference<>();
+                        final AtomicReference<ExpressionNode> data = new AtomicReference<>();
+                        final Parser columnResult =
+                            cp.whitespace()
+                                .then(ExpressionNode::parse, header::set)
+                                .whitespace()
+                                .symbol("=")
+                                .whitespace()
+                                .then(ExpressionNode::parse, data::set)
+                                .whitespace();
+                        if (columnResult.isGood()) {
+                          co.accept(new Pair<>(header.get(), data.get()));
+                        }
+                        return columnResult;
+                      },
+                      ',')
+                  .whitespace()
+                  .keyword("With")
+                  .whitespace()
+                  .then(ExpressionNode::parse, format::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(new CollectNodeTable(p.line(), p.column(), format.get(), columns.get()));
           }
           return result;
         });

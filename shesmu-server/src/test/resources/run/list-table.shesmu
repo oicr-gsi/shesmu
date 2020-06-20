@@ -1,0 +1,14 @@
+Version 1;
+Input test;
+
+Olive
+ Run ok With ok = (For {a, b} In [ {1, "hi"}, {2, "bye"} ]:
+	Sort a
+	Table
+		"A" = "{a}",
+		"B" = b
+   With {
+		header_start = "H ", header_separator = " HS ", header_end = " HE",
+		data_start = "D ", data_separator = " DS ", data_end = " DE", header_underline = ``}) ==
+"H A HS B HE\nD 1 DS hi DE\nD 2 DS bye DE"
+;
