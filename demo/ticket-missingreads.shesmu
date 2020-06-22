@@ -1,0 +1,20 @@
+Version 1;
+Input cerberus_fp;
+Import fake::demo::*;
+
+Olive
+  Description "File a ticket with genomics for sequencing without reads."
+  Tag housekeeping
+  Tag genomics
+  Where workflow == "bcl2fastq" && (`olive::common::extract_read_count(file_attributes)? == 0` Default False)
+  Group By run = ius[0]
+    Into
+      iuses = List "|{ius[1]}|{ius[2]}|{project}|{library_name}|",
+      projects = List project
+  Run jira::genomics::open_ticket
+    Tag "run:{run}"
+    Tags For p In projects: List "project:{p}"
+    With
+      summary = "No reads for libraries in {run}",
+      description = "In run [{run}|https://miso.oicr.on.ca/miso/run/alias/{std::url::encode(run)}], the following libraries had no reads sequenced:\n\n||Lane||Barcode||Project||Library Name||\n{For ius In iuses: LexicalConcat ius With "\n"}\n\nPlease fix the entries in MISO.",
+      labels = projects;

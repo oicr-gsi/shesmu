@@ -1,0 +1,54 @@
+Version 1;
+Input cerberus_fp;
+
+# Find the reference associated with a workflow run from its attributes
+Export Function extract_reference(workflow_run_attributes_type workflow_run_attributes)
+  For value In workflow_run_attributes["reference"]: Univalued value;
+
+Export Function is_full_depth(workflow_run_attributes_type workflow_run_attributes)
+  For value In workflow_run_attributes["mode"]: Any value == "fulldepth" || value == "merged";
+
+Export Function is_single_lane(workflow_run_attributes_type workflow_run_attributes)
+  For value In workflow_run_attributes["mode"]: Any value == "discrete" || value == "ius";
+
+Export Function extract_read_count(file_attributes_type file_attributes)
+ For value In file_attributes["read_count"]: Univalued std::integer::parse(value);
+
+Export Function extract_read_number(path path, file_attributes_type file_attributes)
+  (For value In file_attributes["read_number"]: Univalued std::integer::parse(value)) ||
+  (If "{path}" ~ /.*(_R1[_.]|\.1\.fastq).*/ Then `1`
+  Else If "{path}" ~ /.*(_R2[_.]|\.2\.fastq).*/ Then `2`
+  Else ``);
+
+# Find optical distance parameter for Picard MarkDuplicates
+Export Function get_optical_distance(string instrument_type)
+  # find MarkDuplicates optical pixel distance parameter
+  # If eg. NovaSeq mixed with MiSeq, use the NovaSeq distance
+  If instrument_type ~ /.*NovaSeq.*/ || instrument_type ~ /.*HiSeq X.*/ Then
+      2500
+    Else
+      100;
+
+Export Function get_reference_interval_info(string reference, string library_design, string targeted_resequencing)
+  Switch reference
+    When "hg19" Then
+        `{
+          reference_name = "hg19",
+          chromosomes = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM",
+          interval_file = "/srv/reference/hg19-p13/intervals.txt",
+          reference_file = "/srv/reference/hg19-p13/hg19_random.fa",
+          reference_index_file = "/srv/reference/hg19-p13/hg19_random.fa.fai",
+          reference_dict_file = "/srv/reference/hg19-p13/hg19_random.dict",
+          module = "hg19/p13"
+        }`
+    When "hg38" Then
+        `{
+          reference_name = "hg38",
+          chromosomes = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM",
+          interval_file = "/srv/reference/hg38-p12/intervals.txt",
+          reference_file = "/srv/reference/hg38-p12/hg38_random.fa",
+          reference_index_file = "/srv/reference/hg38-p12/hg38_random.fa.fai",
+          reference_dict_file = "/srv/reference/hg38-p12/hg38_random.dict",
+          module = "hg38/p12"
+        }`
+    Else ``;

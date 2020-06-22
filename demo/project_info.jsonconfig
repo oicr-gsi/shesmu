@@ -1,0 +1,87 @@
+{
+  "defaults": {
+    "cancer_pipeline": {
+      "enable_freec": false,
+      "enable_hmmcopy": false,
+      "enable_manta": false,
+      "enable_novoBreak": false,
+      "enable_sequenza": false,
+      "enable_varscan": false,
+      "enable_xenoclassify": false,
+      "swgs_sequencer": "none"
+    },
+    "covid_pipeline": null,
+    "reference_for_species": {
+      "HOMO SAPIENS": [
+        "hg38"
+      ]
+    }
+  },
+  "missingUsesDefaults": true,
+  "types": {
+    "cancer_pipeline": {
+      "inner": {
+        "fields": {
+          "enable_freec": "b",
+          "enable_hmmcopy": "b",
+          "enable_manta": "b",
+          "enable_novoBreak": "b",
+          "enable_sequenza": "b",
+          "enable_varscan": "b",
+          "enable_xenoclassify": "b",
+          "swgs_sequencer": "s"
+        },
+        "is": "object"
+      },
+      "is": "optional"
+    },
+    "covid_pipeline": {
+      "inner": {
+        "fields": {
+          "enable_sars_cov": "b"
+        },
+        "is": "object"
+      },
+      "is": "optional"
+    },
+    "reference_for_species": "msas"
+  },
+  "values": {
+    "ABC": {
+      "cancer_pipeline": {
+        "enable_freec": false,
+        "enable_hmmcopy": false,
+        "enable_manta": false,
+        "enable_novoBreak": false,
+        "enable_sequenza": false,
+        "enable_varscan": false,
+        "enable_xenoclassify": false,
+        "swgs_sequencer": "none"
+      },
+      "covid_pipeline": null,
+      "reference_for_species": {
+        "HOMO SAPIENS": [
+          "hg19"
+        ]
+      }
+    },
+    "DEF": {
+      "cancer_pipeline": {
+        "enable_freec": false,
+        "enable_hmmcopy": false,
+        "enable_manta": false,
+        "enable_novoBreak": false,
+        "enable_sequenza": false,
+        "enable_varscan": false,
+        "enable_xenoclassify": false,
+        "swgs_sequencer": "none"
+      },
+      "covid_pipeline": null,
+      "reference_for_species": {
+        "HOMO SAPIENS": [
+          "hg19"
+        ]
+      }
+    }
+  }
+}

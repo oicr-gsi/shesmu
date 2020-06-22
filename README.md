@@ -22,6 +22,7 @@ the provenance data.
 ## Documentation Quick Reference
 
 - [Olive Tutorial](tutorial.md)
+- [Running the Demo](demo/README.md)
 - [Olive Language Reference](language.md)
 - [Complex Olive Cookbook](olive-complex-cookbook.md)
 - [The Mandatory Guide to Optional Values](optionalguide.md)
@@ -65,6 +66,10 @@ other configuration files will be placed (see below). Shesmu can read many
 `.shesmu` scripts containing multiple olives from `/srv/shesmu`. If you don't
 know how to write them, have a look at [the tutorial](tutorial.md) and [the
 language guide](language.md).
+
+An unconfigured Shesmu server is pretty boring. Try the instructions for
+[running a demo server](demo/README.md) to bring up a server with a set of
+demonstration olives.
 
 ### Docker Setup
 You can build and run the container with:
