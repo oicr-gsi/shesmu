@@ -1,0 +1,28 @@
+Version 1;
+Input pinery_ius;
+
+Olive
+  Description "Collect known merged library contents to block unnecessary merging."
+  Tag housekeeping
+  Group
+    By run_name = run_name, instrument_model
+    Using lane_splitting
+      flowcell_architecture = If container_model == `"S4"` Then [[1, 2, 3, 4]] Else [[1]], # DEMO NOTE: Normally we use runscanner::miso::flowcell_geometry(run_name)
+      is_sample = If is_sample Then `ius[2]` Else ``,
+      lane = ius[1]
+    Into
+      merged_libraries = List { ius[2], { donor, tissue_origin, tissue_type, library_design, group_id } },
+      lane_number = Univalued (For l In merged_lanes: Min l Default 0)
+  Reject lane_number == 0 OnReject
+    Alert
+      alertname = "BadLaneNumber",
+      run = run_name
+    For 30mins
+  Resume
+  Flatten {barcode, merged_library} In merged_libraries
+  Group
+    By merged_library, instrument_model
+    Into iuses = List {run_name, lane_number, barcode}
+  Refill redict::merging_ready_checker::put With
+    key = { instrument_model, merged_library },
+    value = iuses;

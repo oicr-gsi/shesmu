@@ -1,0 +1,4 @@
+string,string
+ABC,/srv/data/project/ABC
+DEF,/srv/data/project/DEF
+*,/src/data/misc

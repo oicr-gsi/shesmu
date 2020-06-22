@@ -1,0 +1,278 @@
+[
+  {
+    "description": "Runs Niassa workflow 17318036 with settings in /home/debian/shesmu/production/gsi.niassa. Considered equivalent to workflows: 2280235, 2967897, 11971238, 13262061, 15033907, 15078370, 15078370, 16543238, 16563239, 16733247",
+    "name": "niassa::gsi::bwaMem_Miseq_2_0",
+    "parameters": [
+      {
+        "name": "inputs",
+        "required": true,
+        "type": "ao4accession$slims$o4id$sprovider$stime$dversion$ssignature$sstale$b"
+      },
+      {
+        "name": "wdl_inputs",
+        "required": true,
+        "type": "o1bwaMem$o16adapter1$qsadapter2$qsadapterTrimming$o4addParam$qsjobMemory$qimodules$qstimeout$qibamMerge$o3jobMemory$qimodules$qstimeout$qicountChunkSize$o2jobMemory$qitimeout$qidoTrim$bfastqR1$pfastqR2$pindexBam$o3jobMemory$qimodules$qstimeout$qinumChunk$ioutputFileNamePrefix$sreadGroups$srunBwaMem$o6addParam$qsbwaRef$sjobMemory$qimodules$sthreads$qitimeout$qislicer$o3jobMemory$qimodules$qstimeout$qitrimMinLength$qitrimMinQuality$qi"
+      },
+      {
+        "name": "wdl_options",
+        "required": true,
+        "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
+      },
+      {
+        "name": "cromwell_host",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "output_prefix",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "reference",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "priority",
+        "required": false,
+        "type": "i"
+      },
+      {
+        "name": "services",
+        "required": false,
+        "type": "as"
+      },
+      {
+        "name": "major_olive_version",
+        "required": true,
+        "type": "i"
+      },
+      {
+        "name": "supplemental_annotations",
+        "required": false,
+        "type": "mss"
+      }
+    ]
+  },
+  {
+    "description": "Runs Niassa workflow 17040615 with settings in /home/debian/shesmu/production/gsi.niassa.",
+    "name": "niassa::gsi::bcl2fastq_3_0",
+    "parameters": [
+      {
+        "name": "wdl_outputs",
+        "required": true,
+        "type": "o1bcl2fastq$o1fastqs$ao2fastqs$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsname$s"
+      },
+      {
+        "name": "wdl_inputs",
+        "required": true,
+        "type": "o1bcl2fastq$o8basesMask$qslanes$aimismatches$imodules$sprocess$o9bcl2fastq$qsbcl2fastqJail$qsextraOptions$qsignoreMissingBcls$qbignoreMissingFilter$qbignoreMissingPositions$qbmemory$qitemporaryDirectory$qsthreads$qirunDirectory$ssamples$ao2barcodes$asname$stimeout$qi"
+      },
+      {
+        "name": "wdl_options",
+        "required": true,
+        "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
+      },
+      {
+        "name": "cromwell_host",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "output_prefix",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "priority",
+        "required": false,
+        "type": "i"
+      },
+      {
+        "name": "services",
+        "required": false,
+        "type": "as"
+      },
+      {
+        "name": "major_olive_version",
+        "required": true,
+        "type": "i"
+      },
+      {
+        "name": "supplemental_annotations",
+        "required": false,
+        "type": "mss"
+      }
+    ]
+  },
+  {
+    "description": "Runs Niassa workflow 16733247 with settings in /home/debian/shesmu/production/gsi.niassa. Considered equivalent to workflows: 2280235, 2967897, 11971238, 13262061, 15033907, 15078370, 15078370, 16543238, 16563239",
+    "name": "niassa::gsi::bwaMem_nonMiseq_2_0",
+    "parameters": [
+      {
+        "name": "inputs",
+        "required": true,
+        "type": "ao4accession$slims$o4id$sprovider$stime$dversion$ssignature$sstale$b"
+      },
+      {
+        "name": "wdl_inputs",
+        "required": true,
+        "type": "o1bwaMem$o16adapter1$qsadapter2$qsadapterTrimming$o4addParam$qsjobMemory$qimodules$qstimeout$qibamMerge$o3jobMemory$qimodules$qstimeout$qicountChunkSize$o2jobMemory$qitimeout$qidoTrim$bfastqR1$pfastqR2$pindexBam$o3jobMemory$qimodules$qstimeout$qinumChunk$ioutputFileNamePrefix$sreadGroups$srunBwaMem$o6addParam$qsbwaRef$sjobMemory$qimodules$sthreads$qitimeout$qislicer$o3jobMemory$qimodules$qstimeout$qitrimMinLength$qitrimMinQuality$qi"
+      },
+      {
+        "name": "wdl_options",
+        "required": true,
+        "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
+      },
+      {
+        "name": "cromwell_host",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "output_prefix",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "reference",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "priority",
+        "required": false,
+        "type": "i"
+      },
+      {
+        "name": "services",
+        "required": false,
+        "type": "as"
+      },
+      {
+        "name": "major_olive_version",
+        "required": true,
+        "type": "i"
+      },
+      {
+        "name": "supplemental_annotations",
+        "required": false,
+        "type": "mss"
+      }
+    ]
+  },
+  {
+    "description": "Runs Niassa workflow 17030363 with settings in /home/debian/shesmu/production/gsi.niassa. Considered equivalent to workflows: 3254816, 7815155, 9532886, 10345255, 15085825, 15328417, 15333319, 15576673",
+    "name": "niassa::gsi::bam_merge_preprocessing_2_0",
+    "parameters": [
+      {
+        "name": "wdl_outputs",
+        "required": true,
+        "type": "o1bamMergePreprocessing$o3outputGroups$ao3bam$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsbamIndex$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsoutputIdentifier$srecalibrationReport$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qsrecalibrationTable$o4attributes$at2ssfiles$at2sblims_keys$ao5id$sprovider$ssignature$stime$dversion$smetatype$qs"
+      },
+      {
+        "name": "wdl_inputs",
+        "required": true,
+        "type": "o1bamMergePreprocessing$o16analyzeCovariates$o3jobMemory$qimodules$qstimeout$qiapplyBaseQualityScoreRecalibration$o3jobMemory$qimodules$qstimeout$qibaseQualityScoreRecalibration$o4jobMemory$qiknownSites$asmodules$qstimeout$qidoBqsr$qbdoFilter$qbdoIndelRealignment$qbdoMarkDuplicates$qbdoSplitNCigarReads$qbgatherBQSRReports$o3jobMemory$qimodules$qstimeout$qiindelRealign$o4jobMemory$qiknownAlleles$asmodules$qstimeout$qiinputGroups$ao2bamAndBamIndexInputs$ao2bam$pbamIndex$poutputIdentifier$sintervalsToParallelizeByString$smergeSplitByIntervalBams$o3jobMemory$qimodules$qstimeout$qipreprocessBam$o9filterFlags$qijobMemory$qimarkDuplicatesAdditionalParams$qsminMapQuality$qimodules$qsopticalDuplicatePixelDistance$qioverhead$qitemporaryWorkingDir$qstimeout$qirealignerTargetCreator$o5downsamplingType$qsjobMemory$qiknownIndels$asmodules$qstimeout$qireference$s"
+      },
+      {
+        "name": "wdl_options",
+        "required": true,
+        "type": "o2final_call_logs_dir$sfinal_workflow_log_dir$s"
+      },
+      {
+        "name": "cromwell_host",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "output_prefix",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "reference",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "priority",
+        "required": false,
+        "type": "i"
+      },
+      {
+        "name": "services",
+        "required": false,
+        "type": "as"
+      },
+      {
+        "name": "major_olive_version",
+        "required": true,
+        "type": "i"
+      },
+      {
+        "name": "supplemental_annotations",
+        "required": false,
+        "type": "mss"
+      }
+    ]
+  },
+  {
+    "description": "Opens (or re-opens) a JIRA ticket. Defined in /home/debian/shesmu/production/genomics.jira.",
+    "name": "jira::genomics::open_ticket",
+    "parameters": [
+      {
+        "name": "assignee",
+        "required": false,
+        "type": "s"
+      },
+      {
+        "name": "description",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "labels",
+        "required": false,
+        "type": "as"
+      },
+      {
+        "name": "summary",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "type",
+        "required": false,
+        "type": "s"
+      }
+    ]
+  },
+  {
+    "description": "Closes any JIRA tickets with a matching summary. Defined in /home/debian/shesmu/production/genomics.jira.",
+    "name": "jira::genomics::resolve_ticket",
+    "parameters": [
+      {
+        "name": "comment",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "labels",
+        "required": false,
+        "type": "as"
+      },
+      {
+        "name": "summary",
+        "required": true,
+        "type": "s"
+      },
+      {
+        "name": "type",
+        "required": false,
+        "type": "s"
+      }
+    ]
+  }
+]

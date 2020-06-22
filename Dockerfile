@@ -8,7 +8,7 @@ RUN mkdir /build
 COPY . /build/
 RUN cd /build && \
     tsc -p shesmu-server-ui && \
-    mvn -q -pl "!plugin-niassa+pinery" -Dsurefire.useFile=false clean install && \
+    mvn -q -Dsurefire.useFile=false clean install && \
     mkdir /usr/share/shesmu && \
     cp shesmu-pluginapi/target/shesmu-pluginapi.jar shesmu-server/target/shesmu.jar plugin-*/target/shesmu-plugin-*.jar /usr/share/shesmu
 

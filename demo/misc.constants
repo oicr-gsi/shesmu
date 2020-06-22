@@ -1,0 +1,8 @@
+{
+  "cromwell_host": "http://cromwell.example.com:8000",
+  "final_workflow_log_dir": "/srv/logs/workflow",
+  "final_call_logs_dir": "/srv/logs/call",
+  "environment": "production",
+  "niassa_home_dir": "/home/niassa",
+  "cromwell_home_dir": "/home/cromwell"
+}

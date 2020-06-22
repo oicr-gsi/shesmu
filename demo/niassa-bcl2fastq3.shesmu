@@ -1,0 +1,196 @@
+Version 1;
+Input pinery_ius;
+Import fake::demo::niassa::gsi::*;
+
+Olive
+  Description "BCL2FASTQ for pinery-miso"
+  Tag bcl2fastq
+  Tag casava
+  Where
+    bases_mask != "" && # exclude injected runs
+    run_status == "Completed"
+
+  Let
+    sample_info = If is_sample Then [{barcode = ius[2], name = library_name, signature = std::signature::sha1, lims = lims, group_id = group_id, project = project}] Else [],
+    lane_or_sample_ius = ius,
+    lane_or_sample_is_sample = is_sample,
+    lane_or_sample_instrument_model = instrument_model,
+    lane_or_sample_sequencing_control_type = sequencing_control_type,
+    lane_or_sample_run_dir = path,
+    lane_or_sample_run_name = ius[0],
+    lane_or_sample_bases_mask = bases_mask
+
+  # get bcl2barcode counts for all lanes and samples
+  LeftJoin {lane_or_sample_ius[0], lane_or_sample_ius[1]} To cerberus_fp{ius[0], ius[1]}
+    bcl2barcode_paths = Where workflow == "bcl2barcode" List path
+
+  # group by lane to check bcl2barcode file count
+  Group
+    By run = lane_or_sample_ius[0], lane = lane_or_sample_ius[1], lane_or_sample_instrument_model
+    Into
+      lane_bcl2barcode_paths = Flatten bcl2barcode_paths,
+      lane_has_negative_control = Any lane_or_sample_sequencing_control_type In table::negative_sequencing_controls::get,
+      lane_data = List {
+          sample_info = sample_info,
+          lane_or_sample_ius = lane_or_sample_ius,
+          lane_or_sample_is_sample = lane_or_sample_is_sample,
+          lane_or_sample_sequencing_control_type = lane_or_sample_sequencing_control_type,
+          lane_or_sample_run_dir = lane_or_sample_run_dir,
+          lane_or_sample_run_name = lane_or_sample_run_name,
+          lane_or_sample_bases_mask = lane_or_sample_bases_mask
+        }
+
+  # lanes with negative controls require bcl2barcode count (alert if none or multiple)
+  Reject lane_has_negative_control && (For _ In lane_bcl2barcode_paths: Count) == 0
+    OnReject
+      Alert
+        alertname = "MissingBcl2BarcodeInput",
+        severity = "pipeline",
+        environment = config::misc::environment,
+        workflow = "bcl2fastq",
+        run = run,
+        lane = "{lane}",
+        bcl2barcode_paths = "No bcl2barcode counts found"
+      For 30mins
+    Resume
+
+  Reject lane_has_negative_control && (For _ In lane_bcl2barcode_paths: Count) > 1
+    OnReject
+      Alert
+        alertname = "MultipleBcl2BarcodeInput",
+        severity = "pipeline",
+        environment = config::misc::environment,
+        workflow = "bcl2fastq",
+        run = run,
+        lane = "{lane}",
+        bcl2barcode_paths = "{For i In lane_bcl2barcode_paths: LexicalConcat "{i}" With ","}"
+      For 30mins
+    Resume
+
+  # destructure grouped lane data back into rows/stream
+  Flatten ld In lane_data
+
+  # get the single bclbarcode path
+  Let
+    sample_info = ld.sample_info,
+    lane_or_sample_ius = ld.lane_or_sample_ius,
+    lane_or_sample_is_sample = ld.lane_or_sample_is_sample,
+    lane_or_sample_sequencing_control_type = ld.lane_or_sample_sequencing_control_type,
+    lane_or_sample_run_dir = ld.lane_or_sample_run_dir,
+    lane_or_sample_run_name = ld.lane_or_sample_run_name,
+    lane_or_sample_bases_mask = ld.lane_or_sample_bases_mask,
+    lane_bcl2barcode_paths = lane_bcl2barcode_paths,
+    lane_or_sample_instrument_model
+
+  # Exclude negative control samples that have 0 reads as CASAVA workflow fails when
+  # a sample does not have any reads (i.e. no fastq to provision out).
+  # Note: alert-sequencing-control.shesmu alerts if there are any negative control reads
+  Require passes_sequencing_control_filter =
+    # allow all lanes to pass filter
+    If !lane_or_sample_is_sample Then `True`
+    # allow all samples that are not negative control to pass filter
+    Else If !(lane_or_sample_sequencing_control_type In table::negative_sequencing_controls::get) Then `True`
+    # include negative controls with reads > 0
+    # alert on any lanes with negative controls but no bcl2barcode counts
+    # alert when unable to get barcode count from get_bcl2barcode_counts (by default it returns 0)
+    Else
+      (Begin
+        bcl2barcode_path = For i In lane_bcl2barcode_paths: Univalued i;
+        counts = `Dict { lane_or_sample_ius[2] = 5000 }`; # DEMO NOTE: Normally we call `ssh::isilon::get_bcl2barcode_counts(bcl2barcode_path?, [lane_or_sample_ius[2]])`, but this connected to infrastructure that's difficult to reproduce here.
+        ius_barcode_count = counts[lane_or_sample_ius[2]];
+        Return `ius_barcode_count? > 0`;
+      End)
+   OnReject
+      Alert
+        alertname = "MissingBarcodeCounts",
+        severity = "pipeline",
+        environment = config::misc::environment,
+        workflow = "bcl2fastq",
+        run = lane_or_sample_ius[0],
+        lane = "{lane_or_sample_ius[1]}",
+        barcode = lane_or_sample_ius[2],
+        bcl2barcode_path = `"{For i In lane_bcl2barcode_paths: LexicalConcat "{i}" With ","}"` Default "No bcl2barcode counts found"
+      For 30mins
+    Resume
+
+  # exclude samples that don't pass sequencing control filters
+  Where passes_sequencing_control_filter
+
+
+  Group
+    By run_name = lane_or_sample_run_name, run_dir = lane_or_sample_run_dir, bases_mask = lane_or_sample_bases_mask, instrument_model = lane_or_sample_instrument_model
+    Using lane_splitting
+      flowcell_architecture = If lane_or_sample_instrument_model ~ /.*NovaSeq.*/ Then [[1, 2, 3, 4]] Else [[1]], # DEMO NOTE: Normally we use runscanner::miso::flowcell_geometry(run_name)
+      is_sample = If lane_or_sample_is_sample Then `lane_or_sample_ius[2]` Else ``,
+      lane = lane_or_sample_ius[1]
+    Into
+      samples = Flatten sample_info,
+      lane_numbers = Univalued merged_lanes
+  Flatten sample In samples
+  Group
+    By run_name, lane_numbers, run_dir, bases_mask, instrument_model
+    Using barcodes
+      edit_distance = 3,
+      bases_mask = bases_mask,
+      barcodes = table::expand_index::get(sample.barcode),
+      run_name = "{run_name} {For l In lane_numbers: Sort l FixedConcat "{l}" With "-"}"
+    Into
+      trimmed_bases_mask = Univalued trimmed_bases_mask,
+      samples = List {
+          ...sample,
+          real_barcodes = trimmed_barcodes,
+          filename = "{sample.name}_{run_name}_{For l In lane_numbers: Min l Default 0}_{sample.barcode}"
+        }
+  Flatten sample In samples
+  Run bcl2fastq_3_0
+  Tag "instrument:{instrument_model}"
+  Tag "project:{sample.project}"
+  With
+    cromwell_host = config::misc::cromwell_host,
+    output_prefix = table::output_for_project::get(""), # No project since all FASTQs go in default space
+    wdl_inputs = {
+          bcl2fastq = {
+            basesMask = `trimmed_bases_mask`,
+            lanes = lane_numbers,
+            mismatches = 1,
+            modules = "bcl2fastq/2.20.0.422 bcl2fastq-jail/3.0.0",
+            process = {
+              bcl2fastq = ``,
+              bcl2fastqJail = ``,
+              extraOptions = ``,
+              ignoreMissingBcls = ``,
+              ignoreMissingFilter = ``,
+              ignoreMissingPositions = ``,
+              memory =
+                Switch instrument_model
+                  When "NextSeq 550" Then `18`
+                  Else `14`,
+              temporaryDirectory = `"$TMP"`,
+              threads = ``
+            },
+            runDirectory = "{run_dir}",
+            samples = [ {
+                barcodes = sample.real_barcodes,
+                name = sample.filename
+              } ],
+            timeout = ``
+          }
+    },
+    wdl_outputs = {
+      bcl2fastq = {
+        fastqs = [ {
+            name = sample.filename,
+            fastqs = {
+              attributes = [],
+              files = [],
+              lims_keys = [{...sample.lims, signature = sample.signature}],
+              metatype = ``
+            }
+          } ]
+      }
+    },
+    wdl_options = {
+      final_workflow_log_dir = config::misc::final_workflow_log_dir,
+      final_call_logs_dir = config::misc::final_call_logs_dir
+    },
+    major_olive_version = 0;

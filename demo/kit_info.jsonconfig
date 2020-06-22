@@ -1,0 +1,24 @@
+{
+  "defaults": {
+    "is_ligation_prep": null,
+    "rna_strandedness": "NONE",
+    "single_cell": "none",
+    "umi_regex": null
+  },
+  "missingUsesDefaults": true,
+  "types": {
+    "is_ligation_prep": "qb",
+    "rna_strandedness": "s",
+    "single_cell": "s",
+    "umi_regex": "qs"
+  },
+  "values": {
+    "KAPA Hyper Prep": {
+      "is_ligation_prep": true,
+      "rna_strandedness": "SECOND_READ_TRANSCRIPTION_STRAND"
+    },
+    "TruSeq RNA Access": {
+      "rna_strandedness": "SECOND_READ_TRANSCRIPTION_STRAND"
+    }
+  }
+}
