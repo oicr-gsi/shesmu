@@ -241,7 +241,11 @@ public abstract class BaseOliveBuilder {
   }
 
   public FlattenBuilder flatten(
-      int line, int column, Imyhat unrollType, LoadableValue... capturedVariables) {
+      int line,
+      int column,
+      Imyhat unrollType,
+      boolean copySignatures,
+      LoadableValue... capturedVariables) {
     final String className = String.format("shesmu/dyn/Flatten %d:%d", line, column);
 
     final Type oldType = currentType;
@@ -255,21 +259,53 @@ public abstract class BaseOliveBuilder {
             LambdaBuilder.function(A_STREAM_TYPE, oldType),
             capturedVariables);
 
+    final FlattenBuilder flattenBuilder =
+        new FlattenBuilder(
+            owner,
+            newType,
+            oldType,
+            unrollType.apply(TO_ASM),
+            copySignatures,
+            explodeLambda.renderer(oldType, this::emitSigner));
+
+    final Consumer<Renderer> pushConstructor;
+    if (copySignatures) {
+      final LambdaBuilder constructLambda =
+          new LambdaBuilder(
+              owner,
+              String.format("Flatten %d:%d✨", line, column),
+              LambdaBuilder.bifunction(newType, oldType, unrollType));
+
+      final Renderer constructorRenderer = constructLambda.renderer(oldType, 0, this::emitSigner);
+      constructorRenderer.methodGen().visitCode();
+      constructorRenderer.methodGen().newInstance(flattenBuilder.type());
+      constructorRenderer.methodGen().dup();
+      constructorRenderer.methodGen().loadArg(constructLambda.trueArgument(0));
+      constructorRenderer.methodGen().loadArg(constructLambda.trueArgument(1));
+      owner.signatureVariables().forEach(constructorRenderer::emitSigner);
+      constructorRenderer
+          .methodGen()
+          .invokeConstructor(flattenBuilder.type(), flattenBuilder.constructor());
+      constructorRenderer.methodGen().returnValue();
+
+      constructorRenderer.methodGen().endMethod();
+      pushConstructor = constructLambda::push;
+    } else {
+      pushConstructor =
+          render ->
+              LambdaBuilder.pushNew(render, LambdaBuilder.bifunction(newType, oldType, unrollType));
+    }
+
     steps.add(
         renderer -> {
           explodeLambda.push(renderer);
-          LambdaBuilder.pushNew(renderer, LambdaBuilder.bifunction(newType, oldType, unrollType));
+          pushConstructor.accept(renderer);
           renderer
               .methodGen()
               .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__FLATTEN);
         });
 
-    return new FlattenBuilder(
-        owner,
-        newType,
-        oldType,
-        unrollType.apply(TO_ASM),
-        explodeLambda.renderer(oldType, this::emitSigner));
+    return flattenBuilder;
   }
 
   public final JoinBuilder join(

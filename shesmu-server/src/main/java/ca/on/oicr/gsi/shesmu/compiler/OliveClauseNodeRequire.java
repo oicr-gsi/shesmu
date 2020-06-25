@@ -28,10 +28,13 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
   private static final Method METHOD_RUNTIME_SUPPORT__STEAM_OPTIONAL =
       new Method("stream", Type.getType(Stream.class), new Type[] {A_OPTIONAL_TYPE});
   private final int column;
-  private final DestructuredArgumentNode name;
+  private boolean copySignatures;
   private final ExpressionNode expression;
   private final List<RejectNode> handlers;
+  private List<Target> incoming;
   private final int line;
+  private final DestructuredArgumentNode name;
+  private Imyhat type = Imyhat.BAD;
 
   public OliveClauseNodeRequire(
       int line,
@@ -97,6 +100,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
       ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE) {
       expression.collectFreeVariables(signableNames, Flavour.STREAM_SIGNABLE::equals);
+      copySignatures = true;
     }
     // All though we technically manipulate the stream, we're only adding, so we can pretend the
     // stream is still pure.
@@ -107,8 +111,6 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
   public int line() {
     return line;
   }
-
-  private List<Target> incoming;
 
   @Override
   public void render(
@@ -123,6 +125,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
             line,
             column,
             type,
+            copySignatures,
             Stream.concat(
                     Stream.of(
                         new LoadableValue() {
@@ -217,8 +220,6 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
             == handlers.size()
         & name.checkWildcard(errorHandler) != WildcardCheck.BAD;
   }
-
-  private Imyhat type = Imyhat.BAD;
 
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {

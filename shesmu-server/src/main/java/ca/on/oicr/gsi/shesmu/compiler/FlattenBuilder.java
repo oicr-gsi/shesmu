@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -15,6 +17,7 @@ public class FlattenBuilder {
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
 
   private final ClassVisitor classVisitor;
+  private final Method ctorType;
   private final Renderer explodeMethod;
   private final Type flattenType;
   private final Type originalType;
@@ -26,6 +29,7 @@ public class FlattenBuilder {
       Type flattenType,
       Type originalType,
       Type unrollType,
+      boolean copySignatures,
       Renderer explodeMethod) {
     this.owner = owner;
     this.flattenType = flattenType;
@@ -40,8 +44,16 @@ public class FlattenBuilder {
         null,
         A_OBJECT_TYPE.getInternalName(),
         null);
-    final Method ctorType =
-        new Method("<init>", Type.VOID_TYPE, new Type[] {originalType, unrollType});
+    ctorType =
+        new Method(
+            "<init>",
+            Type.VOID_TYPE,
+            Stream.concat(
+                    Stream.of(originalType, unrollType),
+                    copySignatures
+                        ? owner.signatureVariables().map(SignatureDefinition::storageType)
+                        : Stream.empty())
+                .toArray(Type[]::new));
     final GeneratorAdapter ctor =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
     ctor.visitCode();
@@ -50,17 +62,41 @@ public class FlattenBuilder {
 
     ctor.loadThis();
     ctor.loadArg(0);
-    ctor.putField(flattenType, "original", originalType);
+    ctor.putField(flattenType, "$original", originalType);
     classVisitor
-        .visitField(Opcodes.ACC_PRIVATE, "original", originalType.getDescriptor(), null, null)
+        .visitField(Opcodes.ACC_PRIVATE, "$original", originalType.getDescriptor(), null, null)
         .visitEnd();
 
     ctor.loadThis();
     ctor.loadArg(1);
-    ctor.putField(flattenType, "unroll", unrollType);
+    ctor.putField(flattenType, "$unroll", unrollType);
     classVisitor
-        .visitField(Opcodes.ACC_PRIVATE, "unroll", unrollType.getDescriptor(), null, null)
+        .visitField(Opcodes.ACC_PRIVATE, "$unroll", unrollType.getDescriptor(), null, null)
         .visitEnd();
+    if (copySignatures) {
+      owner
+          .signatureVariables()
+          .forEach(
+              new Consumer<SignatureDefinition>() {
+                private int index = 2;
+
+                @Override
+                public void accept(SignatureDefinition signatureDefinition) {
+                  ctor.loadThis();
+                  ctor.loadArg(index++);
+                  ctor.putField(
+                      flattenType, signatureDefinition.name(), signatureDefinition.storageType());
+                  classVisitor
+                      .visitField(
+                          Opcodes.ACC_PRIVATE,
+                          signatureDefinition.name(),
+                          signatureDefinition.storageType().getDescriptor(),
+                          null,
+                          null)
+                      .visitEnd();
+                }
+              });
+    }
 
     ctor.visitInsn(Opcodes.RETURN);
     ctor.visitMaxs(0, 0);
@@ -74,11 +110,15 @@ public class FlattenBuilder {
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
     getter.visitCode();
     getter.loadThis();
-    getter.getField(flattenType, "original", originalType);
-    if (target instanceof InputVariable) {
-      ((InputVariable) target).extract(getter);
+    if (target instanceof SignatureDefinition) {
+      getter.getField(flattenType, target.name(), getMethod.getReturnType());
     } else {
-      getter.invokeVirtual(originalType, getMethod);
+      getter.getField(flattenType, "$original", originalType);
+      if (target instanceof InputVariable) {
+        ((InputVariable) target).extract(getter);
+      } else {
+        getter.invokeVirtual(originalType, getMethod);
+      }
     }
     getter.returnValue();
     getter.visitMaxs(0, 0);
@@ -90,7 +130,7 @@ public class FlattenBuilder {
         .create(
             renderer -> {
               renderer.methodGen().loadThis();
-              renderer.methodGen().getField(flattenType, "unroll", unrollType);
+              renderer.methodGen().getField(flattenType, "$unroll", unrollType);
             })
         .forEach(
             loader -> {
@@ -115,11 +155,19 @@ public class FlattenBuilder {
             });
   }
 
+  public Method constructor() {
+    return ctorType;
+  }
+
   public Renderer explodeMethod() {
     return explodeMethod;
   }
 
   public void finish() {
     classVisitor.visitEnd();
+  }
+
+  public Type type() {
+    return flattenType;
   }
 }
