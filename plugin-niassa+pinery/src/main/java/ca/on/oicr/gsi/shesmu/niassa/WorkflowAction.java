@@ -377,13 +377,14 @@ public final class WorkflowAction extends Action {
       return ActionState.THROTTLED;
     }
     final List<String> errors = new ArrayList<>();
-    if (limsKeysCollection.shouldHalp(errors::add)) {
+    if (limsKeysCollection.shouldZombie(errors::add)) {
       this.errors = errors;
-      return ActionState.HALP;
+      return ActionState.ZOMBIE;
     }
     try {
       // If we know our workflow run, check its status
       if (runAccession != 0) {
+        this.errors = Collections.emptyList();
         try (AutoCloseable timer = updateTime.start(Long.toString(workflowAccession))) {
           final Metadata metadata = server.get().metadata();
           final WorkflowRun run = metadata.getWorkflowRun(runAccession);

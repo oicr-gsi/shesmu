@@ -15,6 +15,7 @@ import java.util.stream.Stream;
  * <p>These classes have corresponding {@link CustomLimsEntryType} class
  */
 abstract class CustomLimsEntry {
+
   abstract Stream<Integer> fileSwids();
 
   abstract void generateUUID(Consumer<byte[]> digest);
@@ -24,6 +25,8 @@ abstract class CustomLimsEntry {
   abstract boolean matches(Pattern query);
 
   abstract JsonNode prepare(ToIntFunction<LimsKey> createIusLimsKey);
+
+  public abstract boolean shouldZombie(Consumer<String> errorConsumer);
 
   abstract Stream<Pair<? extends LimsKey, String>> signatures();
 }

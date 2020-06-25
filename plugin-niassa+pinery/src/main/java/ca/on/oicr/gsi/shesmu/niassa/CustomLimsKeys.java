@@ -86,8 +86,12 @@ final class CustomLimsKeys implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp(Consumer<String> errorHandler) {
-    return false;
+  public boolean shouldZombie(Consumer<String> errorHandler) {
+    boolean shouldZombie = false;
+    for (final CustomLimsEntry child : entries.values()) {
+      shouldZombie = child.shouldZombie(errorHandler) || shouldZombie;
+    }
+    return shouldZombie;
   }
 
   @Override

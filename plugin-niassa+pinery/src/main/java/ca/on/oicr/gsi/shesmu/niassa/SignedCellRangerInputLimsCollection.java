@@ -65,7 +65,7 @@ class SignedCellRangerInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp(Consumer<String> errorHandler) {
+  public boolean shouldZombie(Consumer<String> errorHandler) {
     if (limsKeys.isEmpty()) {
       errorHandler.accept("No lanes.");
       return true;

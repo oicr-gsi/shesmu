@@ -80,6 +80,15 @@ public final class CustomLimsEntryTypeStructArray extends CustomLimsEntryType {
     }
 
     @Override
+    public boolean shouldZombie(Consumer<String> errorConsumer) {
+      boolean shouldZombie = false;
+      for (final CustomLimsEntry child : entries) {
+        shouldZombie = child.shouldZombie(errorConsumer) || shouldZombie;
+      }
+      return shouldZombie;
+    }
+
+    @Override
     Stream<Pair<? extends LimsKey, String>> signatures() {
       return entries.stream().flatMap(StructEntry::signatures);
     }
@@ -168,6 +177,15 @@ public final class CustomLimsEntryTypeStructArray extends CustomLimsEntryType {
         outputNode.set(child.getKey(), child.getValue().prepare(createIusLimsKey));
       }
       return node;
+    }
+
+    @Override
+    public boolean shouldZombie(Consumer<String> errorConsumer) {
+      boolean shouldZombie = false;
+      for (final CustomLimsEntry child : children.values()) {
+        shouldZombie = child.shouldZombie(errorConsumer) || shouldZombie;
+      }
+      return shouldZombie;
     }
 
     @Override

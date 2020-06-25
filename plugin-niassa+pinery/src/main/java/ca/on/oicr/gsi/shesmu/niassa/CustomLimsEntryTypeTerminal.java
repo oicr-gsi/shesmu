@@ -25,13 +25,33 @@ import java.util.stream.Stream;
 public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
   private static final class TerminalEntry extends CustomLimsEntry {
     private final Map<String, String> attributes;
-    private final Set<Integer> fileSwids;
+    private final Set<Pair<Integer, Boolean>> fileSwids;
     private final Map<SimpleLimsKey, String> limsKeys;
     private final Optional<String> metaType;
 
+    @Override
+    public boolean shouldZombie(Consumer<String> errorConsumer) {
+      boolean shouldZombie = false;
+      for (final Pair<Integer, Boolean> fileSwid : fileSwids) {
+        if (fileSwid.second()) {
+          shouldZombie = true;
+          errorConsumer.accept(
+              String.format(
+                  "Input file %d for %s is marked as stale. Fix provenance and purge this action.",
+                  fileSwid.first(),
+                  limsKeys
+                      .keySet()
+                      .stream()
+                      .map(LimsKey::getId)
+                      .collect(Collectors.joining(" or "))));
+        }
+      }
+      return shouldZombie;
+    }
+
     private TerminalEntry(
         Map<String, String> attributes,
-        Set<Integer> fileSwids,
+        Set<Pair<Integer, Boolean>> fileSwids,
         Map<SimpleLimsKey, String> limsKeys,
         Optional<String> metaType) {
       this.attributes = attributes;
@@ -52,7 +72,7 @@ public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
 
     @Override
     Stream<Integer> fileSwids() {
-      return fileSwids.stream();
+      return fileSwids.stream().map(Pair::first);
     }
 
     @Override
@@ -125,7 +145,7 @@ public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
       new Imyhat.ObjectImyhat(
           Stream.of(
               new Pair<>("attributes", Imyhat.tuple(Imyhat.STRING, Imyhat.STRING).asList()),
-              new Pair<>("files", Imyhat.STRING.asList()),
+              new Pair<>("files", Imyhat.tuple(Imyhat.STRING, Imyhat.BOOLEAN).asList()),
               new Pair<>(
                   "lims_keys",
                   new Imyhat.ObjectImyhat(
@@ -148,10 +168,14 @@ public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
       final Tuple attributeTuple = (Tuple) attribute;
       attributes.put((String) attributeTuple.get(0), (String) attributeTuple.get(1));
     }
-    final Set<Integer> fileSwids =
+    final Set<Pair<Integer, Boolean>> fileSwids =
         ((Set<?>) tuple.get(1))
             .stream()
-            .map(o -> Integer.parseInt(((Object) o).toString()))
+            .map(
+                o ->
+                    new Pair<>(
+                        Integer.parseInt(((Tuple) o).get(0).toString()),
+                        (Boolean) ((Tuple) o).get(1)))
             .collect(Collectors.toCollection(TreeSet::new));
     final Map<SimpleLimsKey, String> limsKeys = new TreeMap<>(WorkflowAction.LIMS_KEY_COMPARATOR);
     for (final Object limsKey : (Set<?>) tuple.get(2)) {

@@ -49,7 +49,7 @@ public interface InputLimsCollection {
 
   /**
    * Check whether the input is broken or stale in such a way that the action should go into {@link
-   * ca.on.oicr.gsi.shesmu.plugin.action.ActionState#HALP} and not run.
+   * ca.on.oicr.gsi.shesmu.plugin.action.ActionState#ZOMBIE} and not run.
    */
-  boolean shouldHalp(Consumer<String> errorHandler);
+  boolean shouldZombie(Consumer<String> errorHandler);
 }

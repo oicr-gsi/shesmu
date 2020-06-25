@@ -66,7 +66,7 @@ public class Bcl2FastqInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp(Consumer<String> errorHandler) {
+  public boolean shouldZombie(Consumer<String> errorHandler) {
     if (lanes.isEmpty()) {
       errorHandler.accept("No lanes.");
       return true;
