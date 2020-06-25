@@ -787,51 +787,54 @@ public final class WorkflowAction extends Action {
     final Metadata metadata = server.get().metadata();
     metadata.annotateWorkflowRun(workflowRunSwid, attribute, null);
     final WorkflowRun run = metadata.getWorkflowRun(runAccession);
-    switch (run.getStatus()) {
-      case running:
-      case pending:
-      case submitted:
-        run.setStatus(WorkflowRunStatus.submitted_cancel);
-        metadata.updateWorkflowRun(run);
-        server
-            .get()
-            .cromwellUrl()
-            .ifPresent(
-                root ->
-                    run.getWorkflowRunAttributes()
-                        .stream()
-                        .filter(a -> a.getTag().equals("cromwell-workflow-id"))
-                        .map(WorkflowRunAttribute::getValue)
-                        .forEach(
-                            id -> {
-                              final HttpPost request =
-                                  new HttpPost(
-                                      String.format("%s/api/workflows/v1/%s/abort", root, id));
-                              request.addHeader(
-                                  "Accept", ContentType.APPLICATION_JSON.getMimeType());
-                              try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-                                if (response.getStatusLine().getStatusCode() / 100 != 2) {
+    if (run != null && run.getStatus() != null) {
+      switch (run.getStatus()) {
+        case running:
+        case pending:
+        case submitted:
+          run.setStatus(WorkflowRunStatus.submitted_cancel);
+          metadata.updateWorkflowRun(run);
+          server
+              .get()
+              .cromwellUrl()
+              .ifPresent(
+                  root ->
+                      run.getWorkflowRunAttributes()
+                          .stream()
+                          .filter(a -> a.getTag().equals("cromwell-workflow-id"))
+                          .map(WorkflowRunAttribute::getValue)
+                          .forEach(
+                              id -> {
+                                final HttpPost request =
+                                    new HttpPost(
+                                        String.format("%s/api/workflows/v1/%s/abort", root, id));
+                                request.addHeader(
+                                    "Accept", ContentType.APPLICATION_JSON.getMimeType());
+                                try (CloseableHttpResponse response =
+                                    HTTP_CLIENT.execute(request)) {
+                                  if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                                    server
+                                        .get()
+                                        .writeLog(
+                                            String.format(
+                                                "Failed to cancel Cromwell job %s when skipping %d for %s: %s",
+                                                id,
+                                                workflowRunSwid,
+                                                actionId,
+                                                response.getStatusLine().getReasonPhrase()),
+                                            Collections.emptyMap());
+                                  }
+                                } catch (Exception e) {
                                   server
                                       .get()
                                       .writeLog(
                                           String.format(
-                                              "Failed to cancel Cromwell job %s when skipping %d for %s: %s",
-                                              id,
-                                              workflowRunSwid,
-                                              actionId,
-                                              response.getStatusLine().getReasonPhrase()),
+                                              "Exception trying to cancel Cromwell job %s when skipping %d for %s: %s",
+                                              id, workflowRunSwid, actionId, e.getMessage()),
                                           Collections.emptyMap());
                                 }
-                              } catch (Exception e) {
-                                server
-                                    .get()
-                                    .writeLog(
-                                        String.format(
-                                            "Exception trying to cancel Cromwell job %s when skipping %d for %s: %s",
-                                            id, workflowRunSwid, actionId, e.getMessage()),
-                                        Collections.emptyMap());
-                              }
-                            }));
+                              }));
+      }
     }
     this.server.log(
         String.format(
