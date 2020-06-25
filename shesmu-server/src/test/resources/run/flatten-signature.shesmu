@@ -1,0 +1,7 @@
+Version 1;
+Input test;
+
+Olive
+ Where project == "the_foo_study"
+ Flatten x In stuff
+ Run ok With ok = "project" In signature_names && x != "";

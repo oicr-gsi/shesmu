@@ -46,6 +46,8 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
     return column;
   }
 
+  private boolean copySignatures;
+
   @Override
   public Stream<OliveClauseRow> dashboard() {
     final Set<String> inputs = new TreeSet<>();
@@ -72,6 +74,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
       OliveNode.ClauseStreamOrder state, Set<String> signableNames, Consumer<String> errorHandler) {
     if (state == OliveNode.ClauseStreamOrder.PURE) {
       expression.collectFreeVariables(signableNames, Target.Flavour.STREAM_SIGNABLE::equals);
+      copySignatures = true;
       // Okay, we're going to lie here. Flatten does modify the stream but we're going to say that
       // it doesn't for an important reason: signatures. We want the variables that cross flatten to
       // still be part of the signature since flatten only adds new (non-signable) variables. For
@@ -100,6 +103,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
             line,
             column,
             unrollType,
+            copySignatures,
             oliveBuilder
                 .loadableValues()
                 .filter(v -> freeVariables.contains(v.name()))
