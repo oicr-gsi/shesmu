@@ -13,30 +13,6 @@ import java.util.function.Function;
  * parameters can share on entry here.
  */
 public enum InputLimsKeyType implements InputLimsKeyProvider {
-  BAM_MERGE(
-      "inputs",
-      BamMergeInputLimsCollection::new,
-      TypeGuarantee.list(
-          TypeGuarantee.tuple(
-              BamMergeGroup::new,
-              TypeGuarantee.STRING, // Output name
-              TypeGuarantee.list(
-                  TypeGuarantee.tuple(
-                      BamMergeEntry::new,
-                      TypeGuarantee.STRING, // SWID
-                      TypeGuarantee.STRING, // File name
-                      TypeGuarantee.object(
-                          SimpleLimsKey::new,
-                          "id",
-                          TypeGuarantee.STRING,
-                          "provider",
-                          TypeGuarantee.STRING,
-                          "time",
-                          TypeGuarantee.DATE,
-                          "version",
-                          TypeGuarantee.STRING), // LIMS key
-                      TypeGuarantee.BOOLEAN // staleness
-                      ))))),
   BCL2FASTQ(
       "lanes",
       Bcl2FastqInputLimsCollection::new,

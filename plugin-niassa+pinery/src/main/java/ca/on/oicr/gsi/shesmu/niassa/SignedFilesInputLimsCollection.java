@@ -67,7 +67,7 @@ class SignedFilesInputLimsCollection implements InputLimsCollection {
   }
 
   @Override
-  public boolean shouldHalp(Consumer<String> errorHandler) {
+  public boolean shouldZombie(Consumer<String> errorHandler) {
     if (filesInputFileInformation.isEmpty()) {
       errorHandler.accept("No files attached");
       return true;
