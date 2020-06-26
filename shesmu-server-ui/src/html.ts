@@ -1,5 +1,5 @@
 import { saveFile } from "./io.js";
-import { computeDuration, StatefulModel } from "./util.js";
+import { computeDuration, StatefulModel, shuffle } from "./util.js";
 /**
  * A function to render an item that can handle click events.
  */
@@ -262,6 +262,125 @@ export function buttonIcon(
     callback(e);
   });
   return button;
+}
+
+/**
+ * Display a panel that requires the user to enter a random substitution code.
+ */
+export function checkRandomPermutation(
+  count: number,
+  callback: () => void
+): UIElement {
+  const mapping = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+  ];
+  mapping.length = Math.max(
+    2,
+    Math.min(mapping.length, Math.ceil(Math.log10(count)))
+  );
+  shuffle(mapping);
+  const code = table(
+    [...mapping.entries()],
+    ["Code", ([index, _char]) => index.toString()],
+    ["Value", ([_index, char]) => char]
+  );
+  const sequence = [...mapping.entries()];
+  shuffle(sequence);
+  const answer = sequence.map(([_index, x]) => x).join("");
+  const input = document.createElement("input");
+  input.type = "text";
+  input.addEventListener("change", () => {
+    input.value = input.value.replace(/[^A-Za-z]/g, "").toUpperCase();
+    if (input.value == answer) {
+      callback();
+    }
+  });
+
+  return [
+    "Substitute each number in the sequence:",
+    br(),
+    sequence.map(([index, _x]) => index.toString()).join(", "),
+    br(),
+    "with a letter as follows:",
+    br(),
+    code,
+    br(),
+    "into this box: ",
+    input,
+    br(),
+    "and hit Enter.",
+  ];
+}
+
+/**
+ * Display a panel that requires the user to enter a random sequence to affect the number of items provided. The sequence length is proportional to the number of items.
+ */
+export function checkRandomSequence(
+  count: number,
+  callback: () => void
+): UIElement {
+  const sequence = new Array(Math.ceil(Math.log2(count)))
+    .fill(0)
+    .map((x) => Math.floor(Math.random() * 9));
+  let index = 0;
+  let { ui, update } = pane();
+  const display = () =>
+    update(`Press ${sequence[index] + 1} (${index + 1} of ${sequence.length})`);
+  display();
+  const indexButton = (value: number) =>
+    button((value + 1).toString(), "", () => {
+      if (index < sequence.length && value == sequence[index]) {
+        index++;
+        if (index < sequence.length) {
+          display();
+        } else {
+          callback();
+        }
+      } else {
+        index = 0;
+        display();
+      }
+    });
+  return tile(
+    [],
+    ui,
+    br(),
+    indexButton(0),
+    indexButton(1),
+    indexButton(2),
+    br(),
+    indexButton(3),
+    indexButton(4),
+    indexButton(5),
+    br(),
+    indexButton(6),
+    indexButton(7),
+    indexButton(8),
+    br()
+  );
 }
 
 /**
@@ -1309,6 +1428,27 @@ export function singleState<T>(
       },
     },
     ui: ui,
+  };
+}
+
+/**
+ * Create a list that can be updated and push that into a model
+ */
+export function statefulList<T>(model: StatefulModel<T[]>): UpdateableList<T> {
+  let list: T[] = [];
+  return {
+    add(item: T): void {
+      list = list.concat([item]);
+      model.statusChanged(list);
+    },
+    keepOnly(predicate: (item: T) => boolean): void {
+      list = list.filter(predicate);
+      model.statusChanged(list);
+    },
+    replace(items: T[]): void {
+      list = [...items];
+      model.statusChanged(list);
+    },
   };
 }
 

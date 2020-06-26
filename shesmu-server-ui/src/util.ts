@@ -74,6 +74,18 @@ export function softJoin(delimiter: string, text: string[]): Node[] {
 }
 
 /**
+ * Shuffle items in an array
+ */
+export function shuffle<T>(array: T[]): void {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+}
+
+/**
  * Break text containing slashes into text with soft breaks to wrap long paths.
  */
 export function breakSlashes(text: string): Node[] {
@@ -228,6 +240,7 @@ export function filterModel<T>(
     statusWaiting: model.statusWaiting,
   };
 }
+
 /**
  * Perform a conversion on the input of a model
  */

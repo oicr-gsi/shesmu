@@ -28,6 +28,8 @@ import {
   refreshButton,
   buttonAccessory,
   inputText,
+  checkRandomPermutation,
+  checkRandomSequence,
 } from "./html.js";
 import {
   StatefulModel,
@@ -90,6 +92,7 @@ interface BaseCommand {
   showPrompt: boolean;
 }
 interface BulkCommand extends BaseCommand {
+  annoyUser: boolean;
   count: number;
 }
 /**
@@ -424,8 +427,8 @@ export function actionDisplay(
                   )
                 : blank(),
               response.bulkCommands.map(
-                ({ buttonText, count, command, showPrompt }) => {
-                  const performCommand = () =>
+                ({ buttonText, count, command, showPrompt, annoyUser }) => {
+                  let performCommand = () =>
                     fetchJsonWithBusyDialog(
                       "command",
                       {
@@ -436,13 +439,30 @@ export function actionDisplay(
                         method: "POST",
                       },
                       (count: number) => {
-                        dialog((close) => [
-                          `The command executed on ${count} actions.`,
-                          img("ohno.gif"),
-                        ]);
+                        dialog(
+                          (close) => `The command executed on ${count} actions.`
+                        );
                         reload();
                       }
                     );
+                  if (annoyUser) {
+                    const realPerform = performCommand;
+                    const annoyFunction: (
+                      count: number,
+                      callback: () => void
+                    ) => UIElement =
+                      Math.random() < 0.5
+                        ? checkRandomPermutation
+                        : checkRandomSequence;
+                    performCommand = () =>
+                      dialog((close) => [
+                        "It's not that I don't trust that you know what you want to do, but solve this riddle.",
+                        annoyFunction(count, () => {
+                          close();
+                          realPerform();
+                        }),
+                      ]);
+                  }
                   return buttonDanger(
                     buttonText,
                     `Perform special command ${command} on ${count} actions.`,

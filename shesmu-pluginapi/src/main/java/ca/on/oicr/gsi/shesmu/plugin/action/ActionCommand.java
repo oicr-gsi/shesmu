@@ -24,7 +24,9 @@ public abstract class ActionCommand<A extends Action> {
     /** The UI should display a confirmation dialog */
     PROMPT,
     /** The action can be performed on a collection of actions at once */
-    ALLOW_BULK
+    ALLOW_BULK,
+    /** Make the user perform some annoying task before allowing them to execute the action. */
+    ANNOY_USER
   }
 
   private final String buttonText;
