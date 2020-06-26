@@ -183,7 +183,9 @@ public final class WorkflowAction extends Action {
           WorkflowAction.class,
           "NIASSA-SKIP-CANDIDATES",
           "🚧 Skip All Partially Matched Workflow Runs",
-          Preference.PROMPT) {
+          Preference.PROMPT,
+          Preference.ANNOY_USER,
+          Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
           return action.skipWorkflowRunMatches(action.matches);
@@ -203,7 +205,12 @@ public final class WorkflowAction extends Action {
       };
   private static final ActionCommand<WorkflowAction> SKIP_RERUN_COMMAND =
       new ActionCommand<WorkflowAction>(
-          WorkflowAction.class, "NIASSA-SKIP-RERUN", "🚧 Skip and Re-run", Preference.PROMPT) {
+          WorkflowAction.class,
+          "NIASSA-SKIP-RERUN",
+          "🚧 Skip and Re-run",
+          Preference.PROMPT,
+          Preference.ANNOY_USER,
+          Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
           action.skipWorkflowRun(

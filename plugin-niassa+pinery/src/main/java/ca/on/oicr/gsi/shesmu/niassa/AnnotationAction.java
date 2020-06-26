@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.niassa;
 
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -25,7 +26,11 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
   @SuppressWarnings("rawtypes")
   private static final ActionCommand<AnnotationAction> HUMAN_APPROVE_COMMAND =
       new ActionCommand<AnnotationAction>(
-          AnnotationAction.class, "NIASSA-HUMAN-APPROVE", "🚀 Allow to run") {
+          AnnotationAction.class,
+          "NIASSA-HUMAN-APPROVE",
+          "🚀 Allow to run",
+          Preference.ALLOW_BULK,
+          Preference.ANNOY_USER) {
         @Override
         protected boolean execute(AnnotationAction action, Optional<String> user) {
           if (!action.automatic) {

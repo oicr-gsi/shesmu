@@ -1578,6 +1578,8 @@ public final class Server implements ServerConfig, ActionServices {
                 jsonOutput.writeStringField("buttonText", command.getKey().buttonText());
                 jsonOutput.writeBooleanField(
                     "showPrompt", command.getKey().prefers(Preference.PROMPT));
+                jsonOutput.writeBooleanField(
+                    "annoyUser", command.getKey().prefers(Preference.ANNOY_USER));
                 jsonOutput.writeNumberField("count", command.getValue());
                 jsonOutput.writeEndObject();
               }
