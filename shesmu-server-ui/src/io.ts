@@ -70,11 +70,12 @@ export function fetchCustomWithBusyDialog<T>(
     .catch((error) => {
       closeBusy();
       if (error) {
-        dialog(() => [
+        dialog((close) => [
           text(error.message),
-          button("Retry", "Attempt operation again.", () =>
-            fetchCustomWithBusyDialog(url, parameters, process)
-          ),
+          button("Retry", "Attempt operation again.", () => {
+            close();
+            fetchCustomWithBusyDialog(url, parameters, process);
+          }),
         ]);
       }
     })
