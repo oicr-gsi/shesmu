@@ -14,6 +14,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.runtime.InputProvider;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import ca.on.oicr.gsi.shesmu.runtime.SignatureAccessor;
 import io.prometheus.client.Gauge;
 import java.util.*;
 import java.util.function.*;
@@ -44,6 +45,7 @@ public abstract class BaseOliveBuilder {
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   private static final Type A_SET_TYPE = Type.getType(Set.class);
+  protected static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
   protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Type A_TO_INT_FUNCTION_TYPE = Type.getType(ToIntFunction.class);
@@ -109,12 +111,17 @@ public abstract class BaseOliveBuilder {
           new Type[] {
             A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE
           });
+  protected static final Method METHOD_SIGNATURE_ACCESSOR__DYNAMIC_SIGNATURE =
+      new Method("dynamicSignature", A_OBJECT_TYPE, new Type[] {A_STRING_TYPE, A_OBJECT_TYPE});
+  protected static final Method METHOD_SIGNATURE_ACCESSOR__STATIC_SIGNATURE =
+      new Method("staticSignature", A_OBJECT_TYPE, new Type[] {A_STRING_TYPE});
   private static final Method METHOD_STREAM__FILTER =
       new Method("filter", A_STREAM_TYPE, new Type[] {A_PREDICATE_TYPE});
   private static final Method METHOD_STREAM__MAP =
       new Method("map", A_STREAM_TYPE, new Type[] {A_FUNCTION_TYPE});
   private static final Method METHOD_STREAM__PEEK =
       new Method("peek", A_STREAM_TYPE, new Type[] {A_CONSUMER_TYPE});
+  public static final String SIGNER_ACCESSOR_NAME = "Signer Accessor";
   private Type currentType;
   protected final InputFormatDefinition initialFormat;
   protected final RootBuilder owner;
@@ -150,10 +157,11 @@ public abstract class BaseOliveBuilder {
           loadOliveServices(renderer.methodGen());
           loadInputProvider(renderer.methodGen());
           loadOwnerSourceLocation(renderer.methodGen());
-          owner.signatureVariables().forEach(signer -> loadSigner(signer, renderer));
+          loadAccessor(renderer);
           for (int i = 0; i < arglist.size(); i++) {
             arglist.get(i).accept(renderer);
           }
+
           renderer.methodGen().invokeVirtual(owner.selfType(), defineOlive.method());
         });
     currentType = defineOlive.currentType();
@@ -168,7 +176,7 @@ public abstract class BaseOliveBuilder {
     switch (signer.storage()) {
       case STATIC:
         owner.classVisitor.visitField(
-            Opcodes.ACC_STATIC,
+            Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
             name,
             signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
             null,
@@ -183,7 +191,7 @@ public abstract class BaseOliveBuilder {
                 name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
         final GeneratorAdapter methodGen =
             new GeneratorAdapter(
-                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, method, null, null, owner.classVisitor);
+                Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor);
         methodGen.visitCode();
         signer.build(methodGen, inputFormat.type(), signables.stream());
         methodGen.returnValue();
@@ -424,6 +432,8 @@ public abstract class BaseOliveBuilder {
   public void line(int line) {
     steps.add(renderer -> renderer.mark(line));
   }
+
+  protected abstract void loadAccessor(Renderer renderer);
 
   protected abstract void loadInputProvider(GeneratorAdapter method);
 

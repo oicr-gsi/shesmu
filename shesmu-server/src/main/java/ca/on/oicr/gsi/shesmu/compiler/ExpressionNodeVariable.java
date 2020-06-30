@@ -47,6 +47,9 @@ public class ExpressionNodeVariable extends ExpressionNode {
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     if (predicate.test(target.flavour())) {
       names.add(name);
+      // We also need to get an accessor when in a Define olive and we need to lift the accessor
+      // along the way; in a other olives, this will just get ignored.
+      names.add(BaseOliveBuilder.SIGNER_ACCESSOR_NAME);
     }
   }
 

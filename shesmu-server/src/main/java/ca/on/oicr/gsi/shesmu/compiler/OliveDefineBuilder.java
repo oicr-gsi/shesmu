@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
@@ -13,6 +14,23 @@ import org.objectweb.asm.commons.Method;
 /** Creates bytecode for a “Define”-style olive to be used in call clauses */
 public final class OliveDefineBuilder extends BaseOliveBuilder {
 
+  public static final LoadableValue SIGNER_ACCESSOR_LOADABLE_VALUE =
+      new LoadableValue() {
+        @Override
+        public String name() {
+          return SIGNER_ACCESSOR_NAME;
+        }
+
+        @Override
+        public Type type() {
+          return A_SIGNATURE_ACCESSOR_TYPE;
+        }
+
+        @Override
+        public void accept(Renderer renderer) {
+          renderer.methodGen().loadArg(5);
+        }
+      };
   private final Method method;
   private final List<LoadableValue> parameters;
 
@@ -22,7 +40,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
     super(owner, owner.inputFormatDefinition());
     this.parameters =
         parameters
-            .map(Pair.number(5 + (int) owner.signatureVariables().count()))
+            .map(Pair.number(6))
             .map(Pair.transform(LoadParameter::new))
             .collect(Collectors.toList());
     method =
@@ -30,14 +48,13 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
             String.format("Define %s", name),
             A_STREAM_TYPE,
             Stream.concat(
-                    Stream.concat(
-                        Stream.of(
-                            A_STREAM_TYPE,
-                            A_OLIVE_SERVICES_TYPE,
-                            A_INPUT_PROVIDER_TYPE,
-                            Type.INT_TYPE,
-                            Type.INT_TYPE),
-                        owner.signatureVariables().map(SignatureDefinition::storageType)),
+                    Stream.of(
+                        A_STREAM_TYPE,
+                        A_OLIVE_SERVICES_TYPE,
+                        A_INPUT_PROVIDER_TYPE,
+                        Type.INT_TYPE,
+                        Type.INT_TYPE,
+                        A_SIGNATURE_ACCESSOR_TYPE),
                     this.parameters.stream().map(LoadableValue::type))
                 .toArray(Type[]::new));
     signerPrefix = String.format("Define %s ", name);
@@ -59,20 +76,23 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 
   @Override
   protected void emitSigner(SignatureDefinition signer, Renderer renderer) {
-    final String name = signerPrefix + signer.name();
+    renderer.emitNamed(SIGNER_ACCESSOR_NAME);
+    renderer.methodGen().push(signer.name());
     switch (signer.storage()) {
       case DYNAMIC:
-        renderer.methodGen().loadThis();
-        renderer.methodGen().getField(owner.selfType(), name, A_FUNCTION_TYPE);
         renderer.loadStream();
-        renderer.methodGen().invokeInterface(A_FUNCTION_TYPE, METHOD_FUNCTION__APPLY);
+        renderer
+            .methodGen()
+            .invokeInterface(
+                A_SIGNATURE_ACCESSOR_TYPE, METHOD_SIGNATURE_ACCESSOR__DYNAMIC_SIGNATURE);
         renderer.methodGen().unbox(signer.type().apply(TypeUtils.TO_ASM));
         break;
       case STATIC:
-        renderer.methodGen().loadThis();
         renderer
             .methodGen()
-            .getField(owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
+            .invokeInterface(
+                A_SIGNATURE_ACCESSOR_TYPE, METHOD_SIGNATURE_ACCESSOR__STATIC_SIGNATURE);
+        renderer.methodGen().unbox(signer.type().apply(TypeUtils.TO_ASM));
         break;
       default:
         throw new UnsupportedOperationException();
@@ -94,26 +114,16 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
             parameters.stream(),
             this::emitSigner);
     renderer.methodGen().visitCode();
-    owner
-        .signatureVariables()
-        .map(Pair.number())
-        .forEach(
-            pair -> {
-              renderer.methodGen().loadThis();
-              renderer.methodGen().loadArg(pair.first() + 5);
-              renderer
-                  .methodGen()
-                  .putField(
-                      owner.selfType(),
-                      signerPrefix + pair.second().name(),
-                      pair.second().storageType());
-            });
-
     renderer.methodGen().loadArg(0);
     steps.forEach(step -> step.accept(renderer));
     renderer.methodGen().returnValue();
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
+  }
+
+  @Override
+  protected void loadAccessor(Renderer renderer) {
+    renderer.emitNamed(SIGNER_ACCESSOR_NAME);
   }
 
   @Override
@@ -141,7 +151,9 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
 
   @Override
   public Stream<LoadableValue> loadableValues() {
-    return Stream.concat(parameters.stream(), owner.constants(true));
+    return Stream.of(
+            Stream.of(SIGNER_ACCESSOR_LOADABLE_VALUE), parameters.stream(), owner.constants(true))
+        .flatMap(Function.identity());
   }
 
   /** The method definition for this matcher */
