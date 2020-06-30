@@ -131,7 +131,6 @@ export type LocationColumns<L> = [string, (location: L) => UIElement][];
 export interface PrometheusAlert extends Alert<SourceLocation> {
   generatorURL: string;
 }
-type PrometheusAlertRenderer = (alerts: PrometheusAlert[] | null) => UIElement;
 /**
  * Create a display for alerts with user-customisable filtering
  */
@@ -331,8 +330,8 @@ function applyFilters<L, A extends Alert<L>>(
 /**
  * Create a snazzy breakdown of common elements among the alerts provided
  */
-function breakdown<L, A extends Alert<L>>(
-  alerts: A[],
+function breakdown(
+  alerts: Alert<unknown>[],
   list: UpdateableList<AlertFilter<RegExp>>
 ): UIElement {
   const commonLabels = { ...alerts[0].labels };
