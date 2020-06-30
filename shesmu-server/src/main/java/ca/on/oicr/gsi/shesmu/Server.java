@@ -2451,11 +2451,9 @@ public final class Server implements ServerConfig, ActionServices {
     add("io.js", "text/javascript;charset=utf-8");
     add("olive.js", "text/javascript;charset=utf-8");
     add("parser.js", "text/javascript;charset=utf-8");
-    add("shesmu.js", "text/javascript;charset=utf-8"); // Deprecated
     add("simulation.js", "text/javascript;charset=utf-8");
     add("stats.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
-    add("utils.js", "text/javascript;charset=utf-8"); // Deprecated
     add("ace.js", "text/javascript;charset=utf-8");
     add("ext-searchbox.js", "text/javascript;charset=utf-8");
     add("theme-ambiance.js", "text/javascript;charset=utf-8");

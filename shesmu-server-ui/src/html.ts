@@ -1313,27 +1313,6 @@ export function singleState<T>(
 }
 
 /**
- * Create a list that can be updated and push that into a model
- */
-export function statefulList<T>(model: StatefulModel<T[]>): UpdateableList<T> {
-  let list: T[] = [];
-  return {
-    add(item: T): void {
-      list = list.concat([item]);
-      model.statusChanged(list);
-    },
-    keepOnly(predicate: (item: T) => boolean): void {
-      list = list.filter(predicate);
-      model.statusChanged(list);
-    },
-    replace(items: T[]): void {
-      list = [...items];
-      model.statusChanged(list);
-    },
-  };
-}
-
-/**
  * Create a stateful list connected to a state synchronizer.
  */
 export function statefulListBind<T>(
@@ -1679,23 +1658,6 @@ export function timespan(title: string, time: number): UIElement {
   if (!time) return [];
   const { ago, absolute } = computeDuration(time);
   return text(`${title}: ${absolute} (${ago})`);
-}
-
-/**
- * Create a UI element whose contents can be replaced asynchronously using a processing function
- * @param initial the initial data to display
- * @param renderer a function to convert the data to a displayable format
- * @returns the UI element and a function to change its contents
- */
-export function updateable<T>(
-  initial: T,
-  renderer: (data: T) => UIElement
-): { ui: UIElement; update: (data: T) => void } {
-  const { ui, update } = pane();
-  return {
-    ui: ui,
-    update: (data) => update(renderer(data)),
-  };
 }
 
 // Preload images
