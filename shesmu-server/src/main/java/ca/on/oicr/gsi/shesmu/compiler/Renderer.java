@@ -101,7 +101,12 @@ public class Renderer {
 
   /** Find a known variable by name and load it on the stack. */
   public void emitNamed(String name) {
-    loadables.get(name).accept(this);
+    final LoadableValue value = loadables.get(name);
+    if (value == null) {
+      throw new IllegalStateException(
+          String.format("Attempt to emit “%s”, but this is an unknown name in this context", name));
+    }
+    value.accept(this);
   }
 
   public void emitSigner(SignatureDefinition name) {
