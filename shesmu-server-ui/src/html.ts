@@ -475,6 +475,7 @@ export function dropdown<T, S>(
       }
     });
     if (item == initial || item == items[0]) {
+      clearChildren(activeElement);
       addElements(activeElement, label);
       model.statusChanged(item);
       if (synchronizer) {
