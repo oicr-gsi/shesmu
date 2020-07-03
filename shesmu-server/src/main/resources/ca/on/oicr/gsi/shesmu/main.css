@@ -769,3 +769,32 @@ table.errors {
 .active {
   background-color: #d1efed;
 }
+
+.throbber span {
+  display: inline-block;
+  margin-right: 0.5em;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  vertical-align: middle;
+  background-color: #06aed5;
+  animation: throbber-pulse 1.2s linear infinite;
+}
+.throbber span:nth-child(1) {
+  animation-delay: 0s;
+}
+.throbber span:nth-child(2) {
+  animation-delay: -0.4s;
+}
+.throbber span:nth-child(3) {
+  animation-delay: -0.8s;
+}
+@keyframes throbber-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
