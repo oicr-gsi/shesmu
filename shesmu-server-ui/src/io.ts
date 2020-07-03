@@ -30,6 +30,24 @@ export interface LocalStore<T> {
 }
 
 /**
+ * The update information provided by interrogating the server
+ */
+export interface MutableServerInfo<I, R> {
+  /**
+   * The original data used to request information from the server
+   */
+  input: I;
+  /**
+   * The response from the server.
+   */
+  response: R;
+  /**
+   * A callback to attempt to mutate data on the server.
+   */
+  setter: (value: R) => void;
+}
+
+/**
  * Perform a JSON fetch operation which will display a modal dialog while working
  */
 export function fetchJsonWithBusyDialog<T>(
@@ -225,10 +243,14 @@ export function paginatedRefreshable<I, O>(
     mapModel(
       requestTupleModel(
         input,
-        mapTupleModel(promiseTupleModel(output), (promise: Promise<Response>) =>
-          promise
-            .then((response) => response.json())
-            .then((data: any) => data as O)
+        mapTupleModel(
+          promiseTupleModel(output),
+          (promise: Promise<Response | null>) =>
+            promise
+              .then((response) =>
+                response ? response.json() : Promise.resolve(null)
+              )
+              .then((data: any) => data as O)
         )
       ),
       ([request, page]: [I, number]) =>
@@ -339,20 +361,24 @@ export function requestModel(
  */
 export function requestTupleModel<T>(
   input: RequestInfo,
-  model: StatefulModel<[T, Promise<Response>]>
-): StatefulModel<[T, RequestInit]> {
-  return mapTupleModel(model, (request: RequestInit) =>
-    fetch(input, request).then((response) => {
-      if (response.ok) {
-        return Promise.resolve(response);
-      } else if (response.status == 503) {
-        return Promise.reject(new Error("Shesmu is currently overloaded."));
-      } else {
-        return Promise.reject(
-          new Error(`Failed to load: ${response.status} ${response.statusText}`)
-        );
-      }
-    })
+  model: StatefulModel<[T, Promise<Response | null>]>
+): StatefulModel<[T, RequestInit | null]> {
+  return mapTupleModel(model, (request: RequestInit | null) =>
+    request === null
+      ? Promise.resolve(null)
+      : fetch(input, request).then((response) => {
+          if (response.ok) {
+            return Promise.resolve(response);
+          } else if (response.status == 503) {
+            return Promise.reject(new Error("Shesmu is currently overloaded."));
+          } else {
+            return Promise.reject(
+              new Error(
+                `Failed to load: ${response.status} ${response.statusText}`
+              )
+            );
+          }
+        })
   );
 }
 
@@ -398,4 +424,70 @@ export function saveFile(
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+/**
+ * Create a model which is trying to updated based on state from the server.
+ *
+ * This assumes one endpoint can both fetch and change the state. It also makes it possible to bypass the entire process if the endpoint is not appropriate from some inputs.
+ * @param input the request to query server information
+ * @param model the target of the server's response; it may be null if the input was null
+ * @param makeRequest create an HTTP request or null to bypass the server state
+ */
+export function serverStateModel<I, R>(
+  input: RequestInfo,
+  model: StatefulModel<MutableServerInfo<I, R> | null>,
+  makeRequest: (request: I, value: R | null) => RequestInit | null
+): StatefulModel<I | null> {
+  const split: StatefulModel<[I, R | null] | null> = splitModel(
+    model,
+    (output) =>
+      mapModel(
+        requestTupleModel(
+          input,
+          mapTupleModel(
+            promiseTupleModel(
+              mapModel(output, (info: [I | null, R | null] | null) => {
+                const input = info?.[0];
+                const response = info?.[1];
+                if (
+                  input === null ||
+                  input === undefined ||
+                  response === null ||
+                  response === undefined
+                ) {
+                  return null;
+                } else {
+                  return {
+                    input: input,
+                    response: response,
+                    setter: (value) => split.statusChanged([input, value]),
+                  };
+                }
+              })
+            ),
+            (promise: Promise<Response | null>) =>
+              promise
+                .then((response) =>
+                  response ? response.json() : Promise.resolve(null)
+                )
+                .then((data: any) => data as R)
+          )
+        ),
+        (info: [I, R | null] | null) => {
+          if (info) {
+            const serverRequest = makeRequest(info[0], info[1]);
+            if (serverRequest === null) {
+              return [info[0], null] as [I, R | null];
+            } else {
+              return [info[0], serverRequest] as [I, R | null];
+            }
+          } else {
+            return [null, null] as [I | null, R | null];
+          }
+        }
+      )
+  );
+  return mapModel(split, (input: I | null) =>
+    input ? ([input, null] as [I, R | null]) : null
+  );
 }
