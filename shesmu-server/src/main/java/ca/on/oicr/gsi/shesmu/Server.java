@@ -2334,10 +2334,12 @@ public final class Server implements ServerConfig, ActionServices {
                   query.get("line").asInt(0),
                   query.get("column").asInt(0),
                   query.get("hash").asText(""));
-          if (query.get("pause").asBoolean(false)) {
-            processor.pause(location);
-          } else {
-            processor.resume(location);
+          if (query.has("pause") && !query.get("pause").isNull()) {
+            if (query.get("pause").asBoolean(false)) {
+              processor.pause(location);
+            } else {
+              processor.resume(location);
+            }
           }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
@@ -2352,10 +2354,12 @@ public final class Server implements ServerConfig, ActionServices {
           final ObjectNode query =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ObjectNode.class);
           final String file = query.get("file").asText("");
-          if (query.get("pause").asBoolean(false)) {
-            processor.pause(file);
-          } else {
-            processor.resume(file);
+          if (query.has("pause") && !query.get("pause").isNull()) {
+            if (query.get("pause").asBoolean(false)) {
+              processor.pause(file);
+            } else {
+              processor.resume(file);
+            }
           }
           t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);

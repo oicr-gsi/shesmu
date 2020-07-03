@@ -1409,6 +1409,7 @@
                     "type": "string"
                   },
                   "pause": {
+                    "nullable": true,
                     "type": "boolean"
                   }
                 },
@@ -1416,7 +1417,7 @@
               }
             }
           },
-          "description": "Stops any actions from olive in a file from running. This does not stop the olives from running and has no affect on Alert or Refill olives.",
+          "description": "Stops any actions from olive in a file from running. This does not stop the olives from running and has no affect on Alert or Refill olives. If the pause state provided is null, this queries the current state only.",
           "required": true
         },
         "responses": {
@@ -1459,6 +1460,7 @@
                     "type": "int"
                   },
                   "pause": {
+                    "nullable": true,
                     "type": "boolean"
                   }
                 },
@@ -1466,7 +1468,7 @@
               }
             }
           },
-          "description": "Stops an olive's actions from running. This does not stop the olive from running and has no affect on Alert or Refill olives.",
+          "description": "Stops an olive's actions from running. This does not stop the olive from running and has no affect on Alert or Refill olives. If the pause state provided is null, this queries the current state only.",
           "required": true
         },
         "responses": {
