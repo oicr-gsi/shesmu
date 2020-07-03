@@ -1,5 +1,5 @@
 import { saveFile } from "./io.js";
-import { MutableStore, computeDuration, StatefulModel } from "./util.js";
+import { computeDuration, StatefulModel } from "./util.js";
 /**
  * A function to render an item that can handle click events.
  */
@@ -576,7 +576,7 @@ export function dropdownTable<T, S>(
     for (const { value, label, children } of items) {
       const block = document.createElement("div");
       const groupLabel = document.createElement("span");
-      addElements(groupLabel, activeLabelMaker(value));
+      addElements(groupLabel, label);
       groupLabel.addEventListener("click", (e) => {
         model.statusChanged(value);
         if (synchronizer) {
@@ -599,7 +599,7 @@ export function dropdownTable<T, S>(
       synchronizerCallbacks.push((state) => {
         if (synchronizer?.predicate(state, value)) {
           clearChildren(activeElement);
-          addElements(activeElement, label);
+          addElements(activeElement, activeLabelMaker(value));
           model.statusChanged(value);
         }
       });
@@ -626,7 +626,7 @@ export function dropdownTable<T, S>(
               synchronizerCallbacks.push((state) => {
                 if (synchronizer?.predicate(state, child.value)) {
                   clearChildren(activeElement);
-                  addElements(activeElement, label);
+                  addElements(activeElement, activeLabelMaker(child.value));
                   model.statusChanged(child.value);
                 }
               });
