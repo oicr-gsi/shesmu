@@ -1649,6 +1649,18 @@ export function text(contents: string | number, title?: string): UIElement {
   return element;
 }
 /**
+ * Display text as a paragraph
+ */
+export function textInline(
+  contents: string | number,
+  title: string
+): UIElement {
+  const element = document.createElement("span");
+  element.innerText = `${contents}`.replace(/\n/g, "⏎");
+  element.title = title;
+  return element;
+}
+/**
  * Create a block with specific CSS styling
  */
 export function tile(classes: string[], ...contents: UIElement[]): UIElement {
