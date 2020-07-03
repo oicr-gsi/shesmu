@@ -949,8 +949,9 @@ export function multipaneState<
       },
       statusWaiting: () => {
         for (const updater of rawUpdaters) {
-          updater(throbber());
+          updater(throbberSmall());
         }
+        primaryUpdater(throbber());
       },
       statusFailed: (message: string, retry: (() => void) | null) => {
         for (const updater of rawUpdaters) {
@@ -1266,7 +1267,7 @@ export function sharedPane<T, F extends { [name: string]: UIElement }>(
       },
       statusWaiting: () => {
         for (const updater of rawUpdaters) {
-          updater(throbber());
+          updater(throbberSmall());
         }
       },
       statusFailed: (message: string, retry: (() => void) | null) => {
@@ -1297,7 +1298,7 @@ export function singleState<T>(
         update(formatter(input));
       },
       statusWaiting: () => {
-        update(throbber());
+        update(throbberSmall());
       },
       statusFailed: (message: string, retry: (() => void) | null) => {
         update(
@@ -1599,6 +1600,17 @@ export function throbber(): UIElement {
   throbber.className = "throbber";
   throbber.style.visibility = "hidden";
   window.setTimeout(() => (throbber.style.visibility = "visible"), 500);
+  return throbber;
+}
+/**
+ * Display a throbber to indicate that the user should be patient that's limited to the line height.
+ */
+export function throbberSmall(): UIElement {
+  const throbber = document.createElement("span");
+  throbber.className = "throbber";
+  throbber.appendChild(document.createElement("span"));
+  throbber.appendChild(document.createElement("span"));
+  throbber.appendChild(document.createElement("span"));
   return throbber;
 }
 
