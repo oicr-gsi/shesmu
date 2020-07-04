@@ -1232,6 +1232,37 @@ export function paragraph(...contents: UIElement[]): UIElement {
 }
 
 /**
+ * Create a click handler that will show a pop up menu
+ * @param items the items to be shown in the menu
+ */
+export function popup(
+  ...items: { label: string; action: () => void }[]
+): ClickHandler {
+  return (e) => {
+    e.preventDefault();
+    const modal = document.createElement("div");
+    modal.className = "menucapture";
+    document.body.appendChild(modal);
+    const menu = document.createElement("div");
+    menu.style.left = `${e.pageX}px`;
+    menu.style.top = `${e.pageY}px`;
+    for (const { label, action } of items) {
+      const item = document.createElement("div");
+      item.innerText = label;
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        document.body.removeChild(modal);
+        action();
+      });
+      menu.appendChild(item);
+    }
+    modal.appendChild(menu);
+    modal.addEventListener("click", () => document.body.removeChild(modal));
+  };
+}
+
+/**
  * Display preformatted text.
  */
 export function preformatted(text: string): UIElement {

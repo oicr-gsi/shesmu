@@ -664,7 +664,8 @@ div.olive:hover feFlood {
   flood-color: #eaf5f7;
 }
 
-.modal {
+.modal,
+.menucapture {
   position: fixed;
   z-index: 10;
   left: 0;
@@ -673,6 +674,8 @@ div.olive:hover feFlood {
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+.modal {
   background-color: rgba(0, 0, 0, 0.4);
 }
 
@@ -702,6 +705,24 @@ div.olive:hover feFlood {
 .modal.close > div > :nth-child(2) {
   overflow: auto;
   max-height: 85vh;
+}
+
+.menucapture > div {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 0.1em;
+}
+.menucapture > div > div {
+  color: #000;
+  background-color: #fff;
+  padding: 0.5em;
+  cursor: pointer;
+}
+
+.menucapture > div > div:hover {
+  color: #fff;
+  background-color: #06aed5;
 }
 
 th {
