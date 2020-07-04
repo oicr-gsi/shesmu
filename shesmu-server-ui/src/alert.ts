@@ -55,13 +55,13 @@ export interface Alert<L> {
 /**
  * An alert filter
  */
-export type AlertFilter =
+export type AlertFilter<R> =
   | AlertFilterEq
   | AlertFilterHas
-  | AlertFilterHasRegex
+  | AlertFilterHasRegex<R>
   | AlertFilterLive
   | AlertFilterNe
-  | AlertFilterRegExp
+  | AlertFilterRegExp<R>
   | AlertFilterSourceLocation;
 
 /**
@@ -83,8 +83,8 @@ export interface AlertFilterHas {
 /**
  * An alert filter that checks for a certain label to match a regular expression.
  */
-export interface AlertFilterHasRegex {
-  label: RegExp;
+export interface AlertFilterHasRegex<R> {
+  label: R;
   value: null;
   type: "has-regex";
 }
@@ -107,9 +107,9 @@ export interface AlertFilterNe {
 /**
  * An alert filter that checks for a value to match a regular expression.
  */
-export interface AlertFilterRegExp {
+export interface AlertFilterRegExp<R> {
   label: string;
-  value: RegExp;
+  value: R;
   type: "regex";
 }
 
@@ -118,7 +118,7 @@ export interface AlertFilterSourceLocation {
   type: "sourcelocation";
 }
 
-type AlertFilterRenderer = (alerts: AlertFilter[]) => UIElement;
+type AlertFilterRenderer = (alerts: AlertFilter<RegExp>[]) => UIElement;
 
 /**
  * The column formats for displaying the source location of the olives that produced an alert
@@ -138,7 +138,7 @@ type PrometheusAlertRenderer = (alerts: PrometheusAlert[] | null) => UIElement;
 export function alertNavigator<L, A extends Alert<L>>(
   allAlerts: A[],
   makeHeader: (a: A) => UIElement,
-  filterState: StateSynchronizer<AlertFilter[]>,
+  filterState: StateSynchronizer<AlertFilter<RegExp>[]>,
   locationColumns: LocationColumns<L>,
   ...toolbarExtras: UIElement[]
 ): {
@@ -148,10 +148,10 @@ export function alertNavigator<L, A extends Alert<L>>(
 } {
   const { list: filterList, register } = statefulListBind(filterState);
   const state = multipaneState<
-    AlertFilter[],
+    AlertFilter<RegExp>[],
     { alertlist: AlertFilterRenderer; filterbar: AlertFilterRenderer }
   >(null, {
-    alertlist: (filters: AlertFilter[]) => {
+    alertlist: (filters: AlertFilter<RegExp>[]) => {
       const selectedAlerts = applyFilters(allAlerts, filters);
       if (selectedAlerts.length == 0) {
         return "No matching alerts.";
@@ -188,7 +188,7 @@ export function alertNavigator<L, A extends Alert<L>>(
         ui,
       ];
     },
-    filterbar: (filters: AlertFilter[]) =>
+    filterbar: (filters: AlertFilter<RegExp>[]) =>
       group(filters.map((f) => showFilter(f, filterList))),
   });
   register(state.model);
@@ -290,7 +290,7 @@ export function alertNavigator<L, A extends Alert<L>>(
 }
 function applyFilters<L, A extends Alert<L>>(
   alerts: A[],
-  filters: AlertFilter[]
+  filters: AlertFilter<RegExp>[]
 ): A[] {
   for (const userFilter of filters) {
     switch (userFilter.type) {
@@ -333,7 +333,7 @@ function applyFilters<L, A extends Alert<L>>(
  */
 function breakdown<L, A extends Alert<L>>(
   alerts: A[],
-  list: UpdateableList<AlertFilter>
+  list: UpdateableList<AlertFilter<RegExp>>
 ): UIElement {
   const commonLabels = { ...alerts[0].labels };
   alerts.forEach((a) => {
@@ -481,7 +481,7 @@ function createLabelValueFilter(
   });
 }
 export function initialiseAlertDashboard(
-  initialFilterString: string,
+  initialFilters: AlertFilter<string>[],
   output: HTMLElement
 ) {
   initialise();
@@ -503,39 +503,32 @@ export function initialiseAlertDashboard(
         )
     );
   } else {
-    const userFilters: AlertFilter[] = [];
-    try {
-      for (const { label, value, type } of JSON.parse(initialFilterString)) {
-        switch (type) {
-          case "live":
-          case "has":
-          case "eq":
-          case "ne":
-            userFilters.push({ label: label, value: value, type: type });
-            break;
-
-          case "has-regex":
-            userFilters.push({
-              label: new RegExp(label.substring(1, label.length - 1)),
-              value: value,
-              type: type,
-            });
-            break;
-          case "regex":
-            userFilters.push({
-              label: label,
-              value: new RegExp(value.substring(1, value.length - 1)),
-              type: type,
-            });
-            break;
-        }
-      }
-    } catch (e) {
-      console.log(e);
-    }
     const filterState = synchronizerFields(
       historyState(
-        { filters: userFilters },
+        {
+          filters: initialFilters.map((filter) => {
+            switch (filter.type) {
+              case "has-regex":
+                return {
+                  label: new RegExp(
+                    filter.label.substring(1, filter.label.length - 1)
+                  ),
+                  value: null,
+                  type: filter.type,
+                };
+              case "regex":
+                return {
+                  label: filter.label,
+                  value: new RegExp(
+                    filter.value.substring(1, filter.value.length - 1)
+                  ),
+                  type: filter.type,
+                };
+              default:
+                return filter;
+            }
+          }),
+        },
         ({ filters }) => `Alerts with ${filters.length} filters`
       )
     );
@@ -651,8 +644,8 @@ function renderAlert<L, A extends Alert<L>>(
   );
 }
 function showFilter(
-  userFilter: AlertFilter,
-  list: UpdateableList<AlertFilter>
+  userFilter: AlertFilter<RegExp>,
+  list: UpdateableList<AlertFilter<RegExp>>
 ): UIElement {
   let name;
   switch (userFilter.type) {
