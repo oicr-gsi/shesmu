@@ -115,7 +115,7 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
     this.badRecords = badRecords;
     definer.clearFunctions();
     definer.defineFunction(
-        this.name(),
+        "get",
         "JSON configuration from " + fileName(),
         type.asOptional(),
         args -> values.getOrDefault(args[0], missingResult),
