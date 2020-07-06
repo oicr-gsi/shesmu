@@ -21,6 +21,7 @@ import {
 } from "./actionfilters.js";
 import { refreshable } from "./io.js";
 import { Status } from "./action.js";
+import { helpHotspot, helpArea } from "./help.js";
 
 interface TableStatRow {
   /** The human-friendly name of the thing being recorded (_e.g._, Total)
@@ -112,28 +113,31 @@ function renderStat(
     case "text":
       return stat.value;
     case "table":
-      return tableFromRows(
-        stat.table.map(
-          (row: TableStatRow): HTMLTableRowElement => {
-            let prettyTitle: string;
-            let click: (() => void) | null = null;
-            if (row.kind == null) {
-              prettyTitle = row.title;
-            } else if (row.kind == "property") {
-              prettyTitle = `${row.title} ${row.property}`;
-              click = () =>
-                addPropertySearch({ type: row.type, value: row.json });
-            } else {
-              prettyTitle = `Unknown entry for ${row.kind}`;
+      return [
+        tableFromRows(
+          stat.table.map(
+            (row: TableStatRow): HTMLTableRowElement => {
+              let prettyTitle: string;
+              let click: (() => void) | null = null;
+              if (row.kind == null) {
+                prettyTitle = row.title;
+              } else if (row.kind == "property") {
+                prettyTitle = `${row.title} ${row.property}`;
+                click = () =>
+                  addPropertySearch({ type: row.type, value: row.json });
+              } else {
+                prettyTitle = `Unknown entry for ${row.kind}`;
+              }
+              return tableRow(
+                click,
+                { contents: prettyTitle },
+                { contents: row.value.toString() }
+              );
             }
-            return tableRow(
-              click,
-              { contents: prettyTitle },
-              { contents: row.value.toString() }
-            );
-          }
-        )
-      );
+          )
+        ),
+        helpHotspot("stats-table"),
+      ];
     case "crosstab": {
       const rows: HTMLTableRowElement[] = [];
 
@@ -197,48 +201,51 @@ function renderStat(
           )
         );
       }
-      return tableFromRows(rows);
+      return [tableFromRows(rows), helpHotspot("stats-crosstab")];
     }
 
     case "histogram": {
       const boundaryLabels = stat.boundaries.map((x) => computeDuration(x));
       const boundaries = stat.boundaries;
-      return histogram(
-        Math.PI / 4,
-        boundaryLabels.map((l) => l.ago),
-        Object.entries(stat.counts).map(([bin, counts]) => ({
-          label: " " + nameForBin(bin as TimeRangeType),
-          counts: counts,
-          selected(start: number, end: number): void {
-            addRangeSearch(
-              bin as TimeRangeType,
-              boundaries[start],
-              boundaries[end]
-            );
-          },
-          selectionDisplay(start: number, end: number): string {
-            const sum = counts.reduce(
-              (acc, value, index) =>
-                index >= start && index < end ? acc + value : acc,
-              0
-            );
-            return (
-              sum +
-              " actions over " +
-              formatTimeSpan(boundaries[end] - boundaries[start]) +
-              " (" +
-              boundaryLabels[start].ago +
-              +" / " +
-              boundaryLabels[start].absolute +
-              " to " +
-              boundaryLabels[end].ago +
-              +" / " +
-              boundaryLabels[end].absolute +
-              ")"
-            );
-          },
-        }))
-      );
+      return [
+        histogram(
+          Math.PI / 4,
+          boundaryLabels.map((l) => l.ago),
+          Object.entries(stat.counts).map(([bin, counts]) => ({
+            label: " " + nameForBin(bin as TimeRangeType),
+            counts: counts,
+            selected(start: number, end: number): void {
+              addRangeSearch(
+                bin as TimeRangeType,
+                boundaries[start],
+                boundaries[end]
+              );
+            },
+            selectionDisplay(start: number, end: number): string {
+              const sum = counts.reduce(
+                (acc, value, index) =>
+                  index >= start && index < end ? acc + value : acc,
+                0
+              );
+              return (
+                sum +
+                " actions over " +
+                formatTimeSpan(boundaries[end] - boundaries[start]) +
+                " (" +
+                boundaryLabels[start].ago +
+                +" / " +
+                boundaryLabels[start].absolute +
+                " to " +
+                boundaryLabels[end].ago +
+                +" / " +
+                boundaryLabels[end].absolute +
+                ")"
+              );
+            },
+          }))
+        ),
+        helpHotspot("stats-histogram"),
+      ];
     }
 
     default:

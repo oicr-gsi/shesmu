@@ -38,6 +38,7 @@ import {
   computeDuration,
   FilenameFormatter,
 } from "./util.js";
+import { helpArea } from "./help.js";
 
 /**
  * An alert metatype
@@ -545,6 +546,7 @@ export function initialiseAlertDashboard(
       output,
       refreshButton(refresher.reload),
       alertState.components.toolbar,
+      helpArea("alert"),
       br(),
       alertState.components.main
     );

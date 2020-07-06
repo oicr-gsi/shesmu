@@ -52,6 +52,7 @@ import {
 } from "./io.js";
 import { actionStats } from "./stats.js";
 import { actionRender } from "./actions.js";
+import { helpArea } from "./help.js";
 /**
  * The minimum information provided for actions by the server.
  */
@@ -689,7 +690,7 @@ export function initialiseActionDash(
   setFindHandler(tabFind);
   addElements(
     document.getElementById("actiondash")!,
-    tile([], searchSelector, saveUi, deleteUi),
+    tile([], searchSelector, saveUi, deleteUi, helpArea("action")),
     tile([], refreshButton(combinedActionsModel.reload), buttons, bulkCommands),
     tile([], entryBar),
     tabsUi

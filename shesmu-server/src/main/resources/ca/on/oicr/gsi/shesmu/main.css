@@ -657,7 +657,8 @@ div.olive:hover feFlood {
 }
 
 .modal,
-.menucapture {
+.menucapture,
+.helpcapture {
   position: fixed;
   z-index: 10;
   left: 0;
@@ -699,7 +700,8 @@ div.olive:hover feFlood {
   max-height: 85vh;
 }
 
-.menucapture > div {
+.menucapture > div,
+.helpcapture > div {
   position: absolute;
   background: #fff;
   border: 1px solid #000;
@@ -720,7 +722,14 @@ div.olive:hover feFlood {
 th {
   color: grey;
 }
-
+.helpcapture > div {
+  padding: 1em;
+}
+.helpcapture hr {
+  border: 1px solid #aaa;
+  width: 1px;
+  height: 1px;
+}
 .userselected {
   font-weight: bold;
   font-style: italic;
