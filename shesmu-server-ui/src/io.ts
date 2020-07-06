@@ -144,21 +144,25 @@ export function loadFile(callback: (name: string, data: string) => void): void {
  * @param empty the default value to use if none is found or the value is corrupt
  */
 export function locallyStored<T>(key: string, empty: T): LocalStore<T> {
-  let original = empty;
+  let current = empty;
   try {
     const value = localStorage.getItem(key);
     if (value) {
-      original = JSON.parse(value);
+      current = JSON.parse(value);
     }
   } catch (e) {
     // Ignore
   }
   return {
-    last: original,
+    get last() {
+      return current;
+    },
     model: {
       reload: () => {},
-      statusChanged: (input: T) =>
-        localStorage.setItem(key, JSON.stringify(input)),
+      statusChanged: (input: T) => {
+        localStorage.setItem(key, JSON.stringify(input));
+        current = input;
+      },
       statusWaiting: () => {},
       statusFailed: (message: string) => console.log(message),
     },

@@ -13,6 +13,18 @@ export interface MutableStore<K, V> {
   get(key: K): V | undefined;
   set(key: K, value: V): void;
 }
+
+/**
+ * A stateful model which is can be subscriber to a publishable model.
+ */
+export interface Subscriber<T> extends StatefulModel<T> {
+  /**
+   * Check if this model is still active
+   *
+   * Once a model is not alive, it will be unsubscribed
+   */
+  isAlive: boolean;
+}
 /**
  * The objects that provide olive location information
  */
@@ -22,6 +34,13 @@ export interface SourceLocation {
   column: number | null;
   hash: string | null;
   url?: string;
+}
+
+/**
+ * A stateful model that can be subscribed to. Everytime the model is updated, all subscribers will be notified.
+ */
+export interface Publisher<T> extends StatefulModel<T> {
+  subscribe: (subscriber: Subscriber<T>) => void;
 }
 
 /**
@@ -453,7 +472,41 @@ export function promiseModel<T>(
     },
   };
 }
-
+/**
+ * Create a publish-subscribe model
+ *
+ * When the model is updated, it will update all current subscribers
+ */
+export function pubSubModel<T>(): Publisher<T> {
+  let subscribers: Subscriber<T>[] = [];
+  return {
+    subscribe: (s: Subscriber<T>) => subscribers.push(s),
+    reload: () => {
+      subscribers = subscribers.filter((s) => s.isAlive);
+      for (const subscriber of subscribers) {
+        subscriber.reload();
+      }
+    },
+    statusFailed: (message, retry) => {
+      subscribers = subscribers.filter((s) => s.isAlive);
+      for (const subscriber of subscribers) {
+        subscriber.statusFailed(message, retry);
+      }
+    },
+    statusWaiting: () => {
+      subscribers = subscribers.filter((s) => s.isAlive);
+      for (const subscriber of subscribers) {
+        subscriber.statusWaiting();
+      }
+    },
+    statusChanged: (input) => {
+      subscribers = subscribers.filter((s) => s.isAlive);
+      for (const subscriber of subscribers) {
+        subscriber.statusChanged(input);
+      }
+    },
+  };
+}
 /**
  * Create a model that can wait for promises to resolve along with some accessory data
  */

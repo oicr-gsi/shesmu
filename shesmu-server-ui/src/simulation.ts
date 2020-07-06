@@ -50,6 +50,7 @@ import {
   combineModels,
 } from "./util.js";
 import { specialImports } from "./actions.js";
+import { helpArea } from "./help.js";
 
 /**
  * An exported definition from a simulated script
@@ -661,7 +662,8 @@ export function initialiseSimulationDashboard(
         null,
         "ace/theme/ambiance",
         "ace/theme/chrome"
-      )
+      ),
+      helpArea("simulator")
     ),
     br(),
     dashboardState.ui

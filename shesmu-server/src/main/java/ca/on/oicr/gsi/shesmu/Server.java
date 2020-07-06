@@ -352,6 +352,13 @@ public final class Server implements ServerConfig, ActionServices {
             new StatusPage(this, false) {
 
               @Override
+              public Stream<Header> headers() {
+                return Stream.of(
+                    Header.jsModule(
+                        "import {initialiseStatusHelp} from \"./help.js\"; initialiseStatusHelp();"));
+              }
+
+              @Override
               protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
                 renderer.line("Version", version);
                 renderer.line("Build Time", buildTime);
@@ -2448,6 +2455,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("actionfilters.js", "text/javascript;charset=utf-8");
     add("alert.js", "text/javascript;charset=utf-8");
     add("definitions.js", "text/javascript;charset=utf-8");
+    add("help.js", "text/javascript;charset=utf-8");
     add("histogram.js", "text/javascript;charset=utf-8");
     add("html.js", "text/javascript;charset=utf-8");
     add("io.js", "text/javascript;charset=utf-8");

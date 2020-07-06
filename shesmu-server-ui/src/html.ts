@@ -1,5 +1,5 @@
 import { saveFile } from "./io.js";
-import { computeDuration, StatefulModel, shuffle } from "./util.js";
+import { computeDuration, StatefulModel, shuffle, Publisher } from "./util.js";
 /**
  * A function to render an item that can handle click events.
  */
@@ -220,7 +220,10 @@ export function buttonCustom(
   }
   addElements(button, label);
   button.title = title;
-  button.addEventListener("click", callback);
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
+    callback(e);
+  });
   return button;
 }
 
@@ -873,6 +876,13 @@ export function historyState<T extends { [name: string]: any }>(
       }
     },
   };
+}
+
+/**
+ * Create a line break
+ */
+export function hr(): UIElement {
+  return document.createElement("hr");
 }
 
 /**
@@ -1593,6 +1603,41 @@ export function synchronizerFields<
       ];
     })
   ) as unknown) as SynchronizedFields<T>;
+}
+
+/**
+ * Create a stateful panel connected to an existing publisher
+ */
+export function subscribedState<T>(
+  initial: T,
+  publisher: Publisher<T>,
+  formatter: (input: T) => UIElement
+): UIElement {
+  const ui = document.createElement("span");
+  addElements(ui, formatter(initial));
+  publisher.subscribe({
+    reload: () => {},
+    get isAlive() {
+      return ui.isConnected;
+    },
+    statusChanged: (input: T) => {
+      clearChildren(ui);
+      addElements(ui, formatter(input));
+    },
+    statusWaiting: () => {
+      clearChildren(ui);
+      addElements(ui, throbberSmall());
+    },
+    statusFailed: (message: string, retry: (() => void) | null) => {
+      clearChildren(ui);
+      addElements(
+        ui,
+        text(message),
+        retry ? button("Retry", "Attempt operation again.", retry) : blank()
+      );
+    },
+  });
+  return ui;
 }
 /**
  * Display a table from the supplied items.

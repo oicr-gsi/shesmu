@@ -54,6 +54,7 @@ import {
 } from "./alert.js";
 import { actionDisplay, ExportSearchCommand } from "./action.js";
 import { actionStats } from "./stats.js";
+import { helpArea } from "./help.js";
 
 /**
  * A description of a single clause in an olive
@@ -554,7 +555,8 @@ export function initialiseOliveDash(
       refreshButton(model.reload),
       pauseOliveButton,
       pauseFileButton,
-      bulkCommands
+      bulkCommands,
+      helpArea("olive")
     ),
     br(),
     ui,
