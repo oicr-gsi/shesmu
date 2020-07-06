@@ -51,6 +51,7 @@ import {
   prometheusAlertHeader,
   prometheusAlertLocation,
   AlertFilter,
+  loadFilterRegex,
 } from "./alert.js";
 import { actionDisplay, ExportSearchCommand } from "./action.js";
 import { actionStats } from "./stats.js";
@@ -241,7 +242,7 @@ export function initialiseOliveDash(
   oliveFiles: ScriptFile[],
   saved: SourceLocation | null,
   userFilters: string | BasicQuery | null,
-  alertFilters: AlertFilter[] | null,
+  alertFilters: AlertFilter<string>[] | null,
   exportSearches: ExportSearchCommand[]
 ): void {
   initialise();
@@ -249,7 +250,7 @@ export function initialiseOliveDash(
   const filenameFormatter = commonPathPrefix(oliveFiles.map((f) => f.file));
   const dashboardState = historyState(
     {
-      alert: alertFilters || [],
+      alert: loadFilterRegex(alertFilters || []),
       saved: saved,
       filters: userFilters || {},
     },
@@ -309,7 +310,7 @@ export function initialiseOliveDash(
       body: JSON.stringify({
         type: "sourcelocation",
         locations: [copyLocation(location)],
-      } as AlertFilter),
+      } as AlertFilter<RegExp>),
       method: "POST",
     }),
     alertModel.model
@@ -449,7 +450,7 @@ export function initialiseOliveDash(
         saved: reference
           ? copyLocation(reference.olive?.olive || reference.script)
           : null,
-        alert: [] as AlertFilter[],
+        alert: [] as AlertFilter<RegExp>[],
         filters: {} as BasicQuery,
       }),
       predicate: (state, item) => {

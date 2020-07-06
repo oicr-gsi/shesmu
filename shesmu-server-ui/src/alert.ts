@@ -505,28 +505,7 @@ export function initialiseAlertDashboard(
     const filterState = synchronizerFields(
       historyState(
         {
-          filters: initialFilters.map((filter) => {
-            switch (filter.type) {
-              case "has-regex":
-                return {
-                  label: new RegExp(
-                    filter.label.substring(1, filter.label.length - 1)
-                  ),
-                  value: null,
-                  type: filter.type,
-                };
-              case "regex":
-                return {
-                  label: filter.label,
-                  value: new RegExp(
-                    filter.value.substring(1, filter.value.length - 1)
-                  ),
-                  type: filter.type,
-                };
-              default:
-                return filter;
-            }
-          }),
+          filters: loadFilterRegex(initialFilters),
         },
         ({ filters }) => `Alerts with ${filters.length} filters`
       )
@@ -570,6 +549,32 @@ export function initialiseAlertDashboard(
     );
     refresher.statusChanged("GET");
   }
+}
+
+/**
+ * Prepare all regular expressions in an alert filter for use
+ */
+export function loadFilterRegex(
+  filters: AlertFilter<string>[]
+): AlertFilter<RegExp>[] {
+  return filters.map((filter) => {
+    switch (filter.type) {
+      case "has-regex":
+        return {
+          label: new RegExp(filter.label.substring(1, filter.label.length - 1)),
+          value: null,
+          type: filter.type,
+        };
+      case "regex":
+        return {
+          label: filter.label,
+          value: new RegExp(filter.value.substring(1, filter.value.length - 1)),
+          type: filter.type,
+        };
+      default:
+        return filter;
+    }
+  });
 }
 
 /**
