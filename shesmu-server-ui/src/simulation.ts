@@ -27,7 +27,6 @@ import {
   preformatted,
   header,
   inputCheckbox,
-  updateable,
   Tab,
   italic,
   multipaneState,
@@ -356,7 +355,7 @@ export function initialiseSimulationDashboard(
         const { main, toolbar, find } = alertNavigator(
           response.alerts,
           (a) => [],
-          temporaryState([] as AlertFilter[]),
+          temporaryState([] as AlertFilter<RegExp>[]),
           [
             ["Line", (l: SimulatedLocation) => l.line.toString()],
             ["Column", (l: SimulatedLocation) => l.column.toString()],
@@ -406,7 +405,7 @@ export function initialiseSimulationDashboard(
               const { main, toolbar, find } = alertNavigator(
                 oliveAlerts,
                 (a) => [],
-                temporaryState([] as AlertFilter[]),
+                temporaryState([] as AlertFilter<RegExp>[]),
                 [
                   ["Line", (l: SimulatedLocation) => l.line.toString()],
                   ["Column", (l: SimulatedLocation) => l.column.toString()],
