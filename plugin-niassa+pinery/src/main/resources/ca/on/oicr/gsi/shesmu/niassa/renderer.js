@@ -124,7 +124,7 @@ actionRender.set("niassa", (a) => [
     table(
       a.cromwellLogs || [],
       ["Task", (x) => x.task],
-      ["Attempt", (x) => x.attempt],
+      ["Attempt", (x) => x.attempt.toString()],
       ["Scatter", (x) => (x.shardIndex < 0 ? "N/A" : x.shardIndex.toString())],
       ["Backend", (x) => x.backend || "Unknown"],
       ["Job ID", (x) => x.jobId || "Unknown"],

@@ -120,7 +120,7 @@ export interface TableCell {
 /**
  * A bit of data that can be placed in a GUI element.
  */
-export type UIElement = UIElement[] | string | Node;
+export type UIElement = UIElement[] | string | number | Node;
 
 /**
  * A list that can be updated
@@ -141,9 +141,11 @@ export function addElements(
   target: HTMLElement,
   ...elements: UIElement[]
 ): void {
-  elements.flat(Number.MAX_VALUE).forEach((result: string | Node) => {
+  elements.flat(Number.MAX_VALUE).forEach((result: string | number | Node) => {
     if (typeof result == "string") {
       target.appendChild(document.createTextNode(result));
+    } else if (typeof result == "number") {
+      target.appendChild(document.createTextNode(result.toString()));
     } else {
       target.appendChild(result);
     }
