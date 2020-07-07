@@ -4,7 +4,6 @@ import {
   tableFromRows,
   tableRow,
   blank,
-  multipaneState,
   singleState,
 } from "./html.js";
 import {
@@ -12,7 +11,6 @@ import {
   breakSlashes,
   formatTimeSpan,
   computeDuration,
-  SplitStatefulModel,
 } from "./util.js";
 import { histogram } from "./histogram.js";
 import {
@@ -22,6 +20,7 @@ import {
   TimeRangeType,
 } from "./actionfilters.js";
 import { refreshable } from "./io.js";
+import { Status } from "./action.js";
 
 interface TableStatRow {
   /** The human-friendly name of the thing being recorded (_e.g._, Total)
@@ -45,7 +44,8 @@ interface TableStatRow {
   property?: string;
   /**
    * The machine-readable value of this property
-   */ json?: any;
+   */
+  json?: any;
 }
 /**
  * A kind of statistic that a table of counts
@@ -87,7 +87,7 @@ type Stat = StatCrosstab | StatHistogram | StatTable | StatText;
 /**
  * A callback to add a property limit to the existing search filter
  */
-export type AddPropertySearch = (...limits: [PropertyType, any][]) => void;
+export type AddPropertySearch = (...limits: PropertySearch[]) => void;
 /**
  * A callback to add a range search limit to the existing filter
  */
@@ -97,12 +97,17 @@ export type AddRangeSearch = (
   end: number
 ) => void;
 
+export type PropertySearch =
+  | { type: "status"; value: Status }
+  | { type: "sourcefile"; value: string }
+  | { type: "tag"; value: string }
+  | { type: "type"; value: string };
+
 function renderStat(
   stat: Stat,
   addPropertySearch: AddPropertySearch,
   addRangeSearch: AddRangeSearch
 ): UIElement {
-  const element = document.createElement("DIV");
   switch (stat.type) {
     case "text":
       return stat.value;
@@ -116,7 +121,8 @@ function renderStat(
               prettyTitle = row.title;
             } else if (row.kind == "property") {
               prettyTitle = `${row.title} ${row.property}`;
-              click = () => addPropertySearch([row.type, row.json]);
+              click = () =>
+                addPropertySearch({ type: row.type, value: row.json });
             } else {
               prettyTitle = `Unknown entry for ${row.kind}`;
             }
@@ -138,7 +144,9 @@ function renderStat(
             stat.columns.map((c) => ({
               contents: breakSlashes(c.name),
               header: true,
-              cell: addPropertySearch([c.name, c.value]),
+              cell: c.name,
+              click: () =>
+                addPropertySearch({ type: stat.column, value: c.value }),
             }))
           )
         )
@@ -161,7 +169,8 @@ function renderStat(
               {
                 contents: breakSlashes(rowKey) as UIElement,
                 header: true,
-                click: () => addPropertySearch([stat.row, rowValue]),
+                click: () =>
+                  addPropertySearch({ type: stat.row, value: rowValue }),
               },
             ].concat(
               stat.columns.map((col) => {
@@ -179,8 +188,8 @@ function renderStat(
                   intensity: (value || 0) / maximum,
                   click: () =>
                     addPropertySearch(
-                      [col.name, col.value],
-                      [stat.row, rowValue]
+                      { type: col.name, value: col.value },
+                      { type: stat.row, value: rowValue }
                     ),
                 };
               })

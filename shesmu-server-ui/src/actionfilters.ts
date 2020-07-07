@@ -252,7 +252,7 @@ interface ParseQueryError {
   message: string;
 }
 
-export type PropertyType = "status" | "sourcefile" | "sourcelocation" | "type";
+export type PropertyType = "status" | "sourcefile" | "tag" | "type";
 
 export type SetType = "id" | "status" | "tag" | "type";
 /**
@@ -494,6 +494,12 @@ function addFilterDialog(
         )
       : blank(),
   ]);
+}
+
+function combineSet<T>(list: T[] | undefined | null, item: T): T[] {
+  const set = new Set(list || []);
+  set.add(item);
+  return [...set];
 }
 
 /**
@@ -1288,11 +1294,10 @@ function searchAdvanced(
     addPropertySearch: (...limits) => {
       const propertyQuery = limits
         .map(
-          ([name, value]) =>
-            `${name == "sourcefile" ? "source" : name} = "${value.replace(
-              '"',
-              '\\"'
-            )}"`
+          (limit) =>
+            `${
+              limit.type == "sourcefile" ? "source" : limit.type
+            } = "${limit.value.replace('"', '\\"')}"`
         )
         .join(" and ");
       searchModel.statusChanged(`(${search.value}) and ${propertyQuery}`);
@@ -1439,10 +1444,20 @@ function searchBasic(
         },
       }),
 
-    addPropertySearch: (...properties) => {
+    addPropertySearch: (...limits) => {
       const replacement = { ...current };
-      for (const [property, value] of properties) {
-        replacement[property] = [...(replacement[property] || []), value];
+      for (const limit of limits) {
+        if (limit.type == "status") {
+          replacement[limit.type] = combineSet(
+            replacement[limit.type],
+            limit.value
+          );
+        } else {
+          replacement[limit.type] = combineSet(
+            replacement[limit.type],
+            limit.value
+          );
+        }
       }
       searchModel.statusChanged(replacement);
     },

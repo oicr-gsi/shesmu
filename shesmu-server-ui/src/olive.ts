@@ -18,12 +18,10 @@ import {
   italic,
   pane,
   blank,
-  text,
   singleState,
   sharedPane,
   synchronizerFields,
   historyState,
-  button,
   buttonDanger,
   textInline,
 } from "./html.js";
@@ -35,8 +33,6 @@ import {
   combineModels,
   mapModel,
   filterModel,
-  errorModel,
-  splitModel,
   formatTimeSpan,
 } from "./util.js";
 import { ActionFilter, createSearch, BasicQuery } from "./actionfilters.js";
