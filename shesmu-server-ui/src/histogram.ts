@@ -50,9 +50,9 @@ export function histogram(
   const fontHeight = 10; // We should be able to compute this from the font metrics, but they don't provide it, so uhh...10pts.
   const columnLabelHeight =
     Math.sin(headerAngle) *
-      Math.max(...labels.map((l) => ctxt.measureText(l[0]).width)) +
+      Math.max(...labels.map((l) => ctxt.measureText(l).width)) +
     2 * fontHeight;
-  canvas.height = labels.length * rowHeight + columnLabelHeight;
+  canvas.height = rows.length * rowHeight + columnLabelHeight;
   div.appendChild(canvas);
   const current = document.createElement("span");
   current.innerText = "\u00A0";
@@ -84,7 +84,7 @@ export function histogram(
           // We can only apply rotation about the origin, so move the origin to the point where we want to draw the text, rotate it, draw the text at the origin, then reset the coordinate system.
           ctxt.translate(index * columnWidth, columnLabelHeight);
           ctxt.rotate(-headerAngle);
-          ctxt.fillText(label[0], fontHeight * Math.tan(headerAngle), 0);
+          ctxt.fillText(label, fontHeight * Math.tan(headerAngle), 0);
           ctxt.setTransform(1, 0, 0, 1, 0, 0);
         }
       });
@@ -96,7 +96,7 @@ export function histogram(
             }`
           );
         }
-        const max = Math.max(...row.counts);
+        const logMax = Math.log(Math.max(...row.counts));
         for (let countIndex = 0; countIndex < row.counts.length; countIndex++) {
           if (
             selectionStart &&
@@ -110,7 +110,7 @@ export function histogram(
           } else {
             ctxt.fillStyle = "#06AED5";
           }
-          ctxt.globalAlpha = Math.log(row.counts[countIndex] + 1) / max;
+          ctxt.globalAlpha = Math.log(row.counts[countIndex] + 1) / logMax;
           ctxt.fillRect(
             countIndex * columnWidth + 1,
             rowIndex * rowHeight + 2 + columnLabelHeight,
