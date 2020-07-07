@@ -538,7 +538,8 @@ export function initialiseAlertDashboard(
     const refresher = refreshable(
       "/allalerts",
       (input: string) => ({ method: input }),
-      alertState.model
+      alertState.model,
+      true
     );
     addElements(
       output,

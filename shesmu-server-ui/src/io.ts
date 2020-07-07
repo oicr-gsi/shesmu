@@ -270,15 +270,16 @@ export function paginatedRefreshable<I, O>(
  * Create a collection of GUI elements backed by a server callback
  *
  * @param input the request to make
- * @param primary if multiple widgets are to be created, this selects the one that should display the retry button and any error messages
  * @param makeRequest a function to create an HTTP request from the state provided
  * @param formatters a collection of functions to display the output for a widget; the output will have a matching UI element and they will be updated simultaneously
+ * @param modal display a modal dialog to lock out the whole UI
  * @returns an object with a callback to force update of the GUI (the GUI elements are also given this), a prepared refresh button, and all the GUI elements requested
  */
 export function refreshable<I, O>(
   input: RequestInfo,
   makeRequest: (request: I) => RequestInit,
-  model: StatefulModel<O>
+  model: StatefulModel<O>,
+  modal: boolean
 ): SplitStatefulModel<I, O> {
   return splitModel(model, (output) =>
     mapModel(
@@ -288,7 +289,8 @@ export function refreshable<I, O>(
           promise
             .then((response) => response.json())
             .then((data: any) => data as O)
-        )
+        ),
+        modal
       ),
       makeRequest
     )
@@ -299,7 +301,6 @@ export function refreshable<I, O>(
  *
  * @param input the request to make
  * @param initial the GUI can immediate make a request with the state provided or it can display prefetched data provided
- * @param primary if multiple widgets are to be created, this selects the one that should display the retry button and any error messages
  * @param makeRequest a function to create an HTTP request from the state provided
  * @param formatters a collection of functions to display the output for a widget; the output will have a matching UI element and they will be updated simultaneously
  * @returns an object with a callback to force update of the GUI (the GUI elements are also given this), a prepared refresh button, and all the GUI elements requested
@@ -323,7 +324,8 @@ export function refreshableSvg<I>(
               );
               return document.adoptNode(svg.documentElement);
             })
-        )
+        ),
+        false
       ),
       makeRequest
     )
@@ -334,13 +336,17 @@ export function refreshableSvg<I>(
  *
  * @param input the request to make
  * @param model the model that will deal with the response
+ * @param modal display a modal dialog to lock out the whole UI
  */
 export function requestModel(
   input: RequestInfo,
-  model: StatefulModel<Promise<Response>>
+  model: StatefulModel<Promise<Response>>,
+  modal: boolean
 ): StatefulModel<RequestInit> {
-  return mapModel(model, (request: RequestInit) =>
-    fetch(input, request).then((response) => {
+  return mapModel(model, (request: RequestInit) => {
+    const finished = modal ? busyDialog() : () => {};
+    return fetch(input, request).then((response) => {
+      finished();
       if (response.ok) {
         return Promise.resolve(response);
       } else if (response.status == 503) {
@@ -350,8 +356,8 @@ export function requestModel(
           new Error(`Failed to load: ${response.status} ${response.statusText}`)
         );
       }
-    })
-  );
+    });
+  });
 }
 
 /**

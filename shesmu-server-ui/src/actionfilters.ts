@@ -995,7 +995,8 @@ function searchAdvanced(
         statusFailed: () => {},
         statusWaiting: () => {},
       }
-    )
+    ),
+    true
   );
 
   search.type = "search";
