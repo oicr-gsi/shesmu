@@ -607,13 +607,13 @@ public abstract class BaseOliveBuilder {
         discriminator -> {
           final Method getter =
               new Method(discriminator.name(), discriminator.type().apply(TO_ASM), new Type[] {});
-          equalsGenerator.loadArg(0);
+          equalsGenerator.loadArg(equalsLambda.trueArgument(0));
           if (discriminator instanceof InputVariable) {
             ((InputVariable) discriminator).extract(equalsGenerator);
           } else {
             equalsGenerator.invokeVirtual(streamType, getter);
           }
-          equalsGenerator.loadArg(1);
+          equalsGenerator.loadArg(equalsLambda.trueArgument(1));
           if (discriminator instanceof InputVariable) {
             ((InputVariable) discriminator).extract(equalsGenerator);
           } else {
@@ -631,7 +631,7 @@ public abstract class BaseOliveBuilder {
 
           hashCodeGenerator.push(31);
           hashCodeGenerator.math(GeneratorAdapter.MUL, INT_TYPE);
-          hashCodeGenerator.loadArg(0);
+          hashCodeGenerator.loadArg(hashCodeLambda.trueArgument(0));
           if (discriminator instanceof InputVariable) {
             ((InputVariable) discriminator).extract(hashCodeGenerator);
           } else {
