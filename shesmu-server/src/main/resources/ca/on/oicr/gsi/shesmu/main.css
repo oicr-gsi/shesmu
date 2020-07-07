@@ -570,7 +570,7 @@ a.load.danger:visited {
   box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
 }
 
-.filters > div {
+.filters > span {
   cursor: pointer;
 }
 
@@ -581,11 +581,11 @@ a.load.danger:visited {
   min-width: 25vw;
 }
 
-.filters > div > span.close {
+.filters > span > span.close {
   float: right;
 }
 
-.filters > div > span.close,
+.filters > span > span.close,
 .filterlist > div > span.close {
   margin: 0.3em;
 }
@@ -595,11 +595,11 @@ a.load.danger:visited {
   flex-flow: row wrap;
 }
 
-.filters > div {
+.filters > span {
   padding: 0.5em;
 }
 
-.filters > div:nth-child(even) {
+.filters > span:nth-child(even) {
   background-color: #eaf5f7;
 }
 
