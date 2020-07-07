@@ -272,7 +272,8 @@ export function actionStats(
       body: JSON.stringify(filters),
       method: "POST",
     }),
-    model
+    model,
+    false
   );
   return {
     ui: ui,

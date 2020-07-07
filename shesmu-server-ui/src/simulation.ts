@@ -52,14 +52,6 @@ import {
 import { specialImports } from "./actions.js";
 
 /**
- * The location of an error in the simulated script
- */
-interface ErrorLocation {
-  line: number | null;
-  column: number | null;
-  message: string;
-}
-/**
  * An exported definition from a simulated script
  */
 type Export = ExportConstant | ExportFunction;
@@ -618,7 +610,8 @@ export function initialiseSimulationDashboard(
         method: "POST",
       };
     },
-    combineModels(dashboardState.model, errorTable.model)
+    combineModels(dashboardState.model, errorTable.model),
+    true
   );
 
   const { last: lastTheme, model: savedTheme } = locallyStoredString(

@@ -310,7 +310,8 @@ export function initialiseOliveDash(
       } as AlertFilter<RegExp>),
       method: "POST",
     }),
-    alertModel.model
+    alertModel.model,
+    false
   );
 
   const { model: pauseOliveModel, ui: pauseOliveButton } = singleState(
