@@ -2789,6 +2789,12 @@ public final class Server implements ServerConfig, ActionServices {
                           oliveNode.put("paused", processor.isPaused(location));
                         }
                         olive.tags().sorted().forEach(oliveNode.putArray("tags")::add);
+                        final Set<String> dynamicTags =
+                            processor
+                                .tags(processor.fromSourceLocation(location))
+                                .collect(Collectors.toSet());
+                        olive.tags().forEach(dynamicTags::remove);
+                        dynamicTags.forEach(oliveNode.putArray("tagsDynamic")::add);
                         final ArrayNode clauseArray = oliveNode.putArray("clauses");
                         olive
                             .clauses()

@@ -101,6 +101,20 @@ export function fetchCustomWithBusyDialog<T>(
 }
 
 /**
+ * Create a model that acccepts an array and can store it for later iteration
+ */
+export function iterableModel<T>(): StatefulModel<T[]> & Iterable<T> {
+  let state: T[] = [];
+  return {
+    reload: () => {},
+    statusChanged: (input) => (state = [...input]),
+    statusFailed: (message, _retry) => console.log(message),
+    statusWaiting: () => {},
+    [Symbol.iterator]: () => state[Symbol.iterator](),
+  };
+}
+
+/**
  * Load a file off of local disk.
  * @param callback the callback to be invoked when the file is read
  */
