@@ -24,6 +24,7 @@ import {
   historyState,
   buttonDanger,
   textInline,
+  refreshButton,
 } from "./html.js";
 import {
   SourceLocation,
@@ -527,7 +528,13 @@ export function initialiseOliveDash(
     })
   );
   addElements(container, [
-    group(oliveSelector, pauseOliveButton, pauseFileButton, bulkCommands),
+    group(
+      oliveSelector,
+      refreshButton(model.reload),
+      pauseOliveButton,
+      pauseFileButton,
+      bulkCommands
+    ),
     br(),
     ui,
   ]);
