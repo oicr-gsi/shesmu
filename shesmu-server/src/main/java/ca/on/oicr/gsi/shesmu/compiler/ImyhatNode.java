@@ -142,7 +142,7 @@ public abstract class ImyhatNode {
       output.accept(new ImyhatNodeUncontainer(inner.get()));
       return result;
     }
-    final Parser returnParser = input.keyword("Return");
+    final Parser returnParser = input.keyword("ReturnType");
     if (returnParser.isGood()) {
       final AtomicReference<String> function = new AtomicReference<>();
       final Parser result =
@@ -151,7 +151,7 @@ public abstract class ImyhatNode {
       return result;
     }
 
-    final Parser argumentParser = input.keyword("Argument");
+    final Parser argumentParser = input.keyword("ArgumentType");
     if (argumentParser.isGood()) {
       final AtomicReference<String> function = new AtomicReference<>();
       final AtomicLong index = new AtomicLong();

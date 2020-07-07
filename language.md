@@ -1075,15 +1075,15 @@ machine-to-machine communication.
 
 All the variables are already available as _variable_`_type`.
 
-- `Argument` _name_`(`_number_`)`
+- `ArgumentType` _name_`(`_number_`)`
 
-Provides the type of an argument to a function
+Provides the type of an argument to a function. The number is the zero-based index of the argument.
 
 - `In` _type_
 
 Provides the inner type of a list or optional.
 
-- `Return` _name_
+- `ReturnType` _name_
 
 Provides the return type of function
 

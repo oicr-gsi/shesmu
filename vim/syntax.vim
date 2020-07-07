@@ -18,7 +18,7 @@ syn keyword shesmuKeyword Alert
 syn keyword shesmuKeyword All
 syn keyword shesmuKeyword Annotations
 syn keyword shesmuKeyword Any
-syn keyword shesmuKeyword Argument
+syn keyword shesmuKeyword ArgumentType
 syn keyword shesmuKeyword As
 syn keyword shesmuKeyword Begin
 syn keyword shesmuKeyword By
@@ -72,6 +72,7 @@ syn keyword shesmuKeyword Refill
 syn keyword shesmuKeyword Reject
 syn keyword shesmuKeyword Require
 syn keyword shesmuKeyword Return
+syn keyword shesmuKeyword ReturnType
 syn keyword shesmuKeyword Reverse
 syn keyword shesmuKeyword RequiredServices
 syn keyword shesmuKeyword Run

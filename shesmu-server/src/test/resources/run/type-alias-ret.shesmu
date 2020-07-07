@@ -1,7 +1,7 @@
 Version 1;
 Input test;
 
-TypeAlias thingie {project = project_type, count = Return std::string::length};
+TypeAlias thingie {project = project_type, count = ReturnType std::string::length};
 
 Function is_project(In [project_type] p, [project_type] projects) p In projects;
 

@@ -1,7 +1,7 @@
 Version 1;
 Input test;
 
-TypeAlias thingie {project = project_type, count = Argument std::integer::to_float(0)};
+TypeAlias thingie {project = project_type, count = ArgumentType std::integer::to_float(0)};
 
 Function is_project(In [project_type] p, [project_type] projects) p In projects;
 
