@@ -111,7 +111,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
             new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
             0,
             null,
-            parameters.stream(),
+            Stream.concat(parameters.stream(), Stream.of(SIGNER_ACCESSOR_LOADABLE_VALUE)),
             this::emitSigner);
     renderer.methodGen().visitCode();
     renderer.methodGen().loadArg(0);
