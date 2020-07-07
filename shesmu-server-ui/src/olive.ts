@@ -37,6 +37,7 @@ import {
   filterModel,
   errorModel,
   splitModel,
+  formatTimeSpan,
 } from "./util.js";
 import { ActionFilter, createSearch, BasicQuery } from "./actionfilters.js";
 import {
@@ -186,18 +187,17 @@ function overview(file: ScriptFile, olive: Olive | null) {
     lastRun = { contents: "Never" };
   }
 
-  let runtime: TableCell;
-  if (file.runtime) {
-    const { ago, absolute } = computeDuration(file.runtime);
-    runtime = { contents: ago, title: absolute };
-  } else {
-    runtime = { contents: "Unknown" };
-  }
-
   const info: HTMLTableRowElement[] = [
     tableRow(null, { contents: "Status" }, { contents: file.status }),
     tableRow(null, { contents: "Last Run" }, lastRun),
-    tableRow(null, { contents: "Run Time" }, runtime),
+    tableRow(
+      null,
+      { contents: "Run Time" },
+      {
+        contents:
+          file.runtime == null ? "Unknown" : formatTimeSpan(file.runtime),
+      }
+    ),
     tableRow(
       null,
       { contents: "Input Fomat" },
