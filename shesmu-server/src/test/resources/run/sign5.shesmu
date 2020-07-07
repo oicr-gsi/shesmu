@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Define foo(string s)
+ Where s == project && (For x In [1]: All std::signature::sha1 != "");
+
+Olive
+ foo("the_foo_study")
+ Run ok With ok = std::signature::count == 2 && "project" In std::signature::names && library_size > 0 && "library_size" In std::signature::names;
