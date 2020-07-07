@@ -29,26 +29,6 @@ public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
     private final Map<SimpleLimsKey, String> limsKeys;
     private final Optional<String> metaType;
 
-    @Override
-    public boolean shouldZombie(Consumer<String> errorConsumer) {
-      boolean shouldZombie = false;
-      for (final Pair<Integer, Boolean> fileSwid : fileSwids) {
-        if (fileSwid.second()) {
-          shouldZombie = true;
-          errorConsumer.accept(
-              String.format(
-                  "Input file %d for %s is marked as stale. Fix provenance and purge this action.",
-                  fileSwid.first(),
-                  limsKeys
-                      .keySet()
-                      .stream()
-                      .map(LimsKey::getId)
-                      .collect(Collectors.joining(" or "))));
-        }
-      }
-      return shouldZombie;
-    }
-
     private TerminalEntry(
         Map<String, String> attributes,
         Set<Pair<Integer, Boolean>> fileSwids,
@@ -136,10 +116,34 @@ public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
     }
 
     @Override
+    public boolean shouldZombie(Consumer<String> errorConsumer) {
+      boolean shouldZombie = false;
+      for (final Pair<Integer, Boolean> fileSwid : fileSwids) {
+        if (fileSwid.second()) {
+          shouldZombie = true;
+          errorConsumer.accept(
+              String.format(
+                  "Input file %d for %s is marked as stale. Fix provenance and purge this action.",
+                  fileSwid.first(),
+                  limsKeys
+                      .keySet()
+                      .stream()
+                      .map(LimsKey::getId)
+                      .collect(Collectors.joining(" or "))));
+        }
+      }
+      return shouldZombie;
+    }
+
+    @Override
     Stream<Pair<? extends LimsKey, String>> signatures() {
       return limsKeys.entrySet().stream().map(e -> new Pair<>(e.getKey(), e.getValue()));
     }
   }
+
+  private static final Comparator<Pair<Integer, Boolean>> SWID_STALE_COMPARATOR =
+      Comparator.<Pair<Integer, Boolean>, Integer>comparing(Pair::first)
+          .thenComparing(Pair::second);
 
   private static final Imyhat TYPE =
       new Imyhat.ObjectImyhat(
@@ -176,7 +180,7 @@ public final class CustomLimsEntryTypeTerminal extends CustomLimsEntryType {
                     new Pair<>(
                         Integer.parseInt(((Tuple) o).get(0).toString()),
                         (Boolean) ((Tuple) o).get(1)))
-            .collect(Collectors.toCollection(TreeSet::new));
+            .collect(Collectors.toCollection(() -> new TreeSet<>(SWID_STALE_COMPARATOR)));
     final Map<SimpleLimsKey, String> limsKeys = new TreeMap<>(WorkflowAction.LIMS_KEY_COMPARATOR);
     for (final Object limsKey : (Set<?>) tuple.get(2)) {
       final Tuple limsKeyTuple = (Tuple) limsKey;
