@@ -2660,7 +2660,7 @@ public final class Server implements ServerConfig, ActionServices {
         Header.cssFile("/main.css"),
         Header.faviconPng(16),
         Header.jsModule(
-            "import {parser, fetchConstant, parseType, runFunction } from './shesmu.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
+            "import { fetchConstant, parseType, runFunction } from './definitions.js'; import * as parser from './parser.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
   }
 
   @Override
