@@ -292,6 +292,7 @@ export function initialiseOliveDash(
     [],
     []
   );
+  actionFindProxy.updateHandle(search.find);
   const metroRequest = refreshableSvg(
     "metrodiagram",
     (location: SourceLocation) => ({
@@ -403,10 +404,7 @@ export function initialiseOliveDash(
         selected?.olive?.olive || selected?.script.olives[0] || null
     ),
     mapModel(
-      filterModel(
-        combineModels(statsModel, actionsModel),
-        "No olives selected."
-      ),
+      filterModel(search.model, "No olives selected."),
       (selected: OliveReference): ActionFilter[] | null => {
         if (selected) {
           return [
@@ -426,7 +424,11 @@ export function initialiseOliveDash(
 
   const { ui, find } = tabs(
     { name: "Overview", contents: [components.overview, statsUi] },
-    { name: "Actions", contents: actions, find: actionFindProxy.find },
+    {
+      name: "Actions",
+      contents: [search.buttons, br(), search.entryBar, br(), actions],
+      find: actionFindProxy.find,
+    },
     {
       name: "Alerts",
       contents: [
