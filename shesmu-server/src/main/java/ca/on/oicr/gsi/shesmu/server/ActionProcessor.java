@@ -921,6 +921,16 @@ public final class ActionProcessor
     };
   }
 
+  public Filter fromSourceLocation(SourceLocation location) {
+    return new Filter() {
+
+      @Override
+      protected boolean check(Action action, Information info) {
+        return info.locations.contains(location);
+      }
+    };
+  }
+
   public void getAlert(OutputStream output, String id) throws IOException {
     final Alert alert =
         alerts.values().stream().filter(a -> a.id.equals(id)).findAny().orElse(null);
@@ -1283,10 +1293,8 @@ public final class ActionProcessor
     };
   }
 
-  public Stream<String> tags() {
-    return actions
-        .entrySet()
-        .stream()
+  public Stream<String> tags(Filter... filters) {
+    return startStream(filters)
         .flatMap(entry -> Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags()));
   }
 

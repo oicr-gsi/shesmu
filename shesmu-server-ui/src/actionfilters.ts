@@ -284,7 +284,7 @@ interface TimeSpan {
 function addFilterDialog(
   onActionPage: boolean,
   sources: SourceLocation[],
-  tags: string[],
+  tags: Iterable<string>,
   timeRange: (
     accessor: BasicQueryTimeAccessor,
     start: number | null,
@@ -395,14 +395,15 @@ function addFilterDialog(
           }
         )
       : blank(),
-    tags.length
-      ? button(
+    tags[Symbol.iterator]().next().done
+      ? blank()
+      : button(
           "🏷️ Tags",
           "Add a filter that searches for actions marked with a particular tag by an olive.",
           () => {
             close();
             pickFromSet(
-              tags.sort(),
+              [...tags].sort(),
               (tag) => addSet("tag", tag),
               (tag) => ({ label: tag, title: "" }),
               (tag, keywords) =>
@@ -410,8 +411,7 @@ function addFilterDialog(
               false
             );
           }
-        )
-      : blank(),
+        ),
     sources.length
       ? button(
           "📍 Source Olive",
@@ -566,7 +566,7 @@ export function createSearch(
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
   sources: SourceLocation[],
-  tags: string[]
+  tags: Iterable<string>
 ): {
   buttons: UIElement;
   entryBar: UIElement;
@@ -968,7 +968,7 @@ function searchAdvanced(
   synchronizer: StateSynchronizer<string | BasicQuery>,
   onActionPage: boolean,
   sources: SourceLocation[],
-  tags: string[]
+  tags: Iterable<string>
 ): SearchPlatform {
   const search = document.createElement("input");
 
@@ -1322,7 +1322,7 @@ function searchBasic(
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
   sources: SourceLocation[],
-  tags: string[]
+  tags: Iterable<string>
 ): SearchPlatform {
   let current = { ...initial };
   const { ui: searchView, model: viewModel } = singleState(
