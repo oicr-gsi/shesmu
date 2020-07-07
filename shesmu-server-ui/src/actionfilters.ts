@@ -750,7 +750,7 @@ function renderFilters(
   query: BasicQuery,
   filenameFormatter: FilenameFormatter,
   update: (query: BasicQuery) => void
-): UIElement[] {
+): UIElement {
   const ui: UIElement[] = [];
   if (query.type && query.type.length > 0) {
     ui.push(
@@ -948,7 +948,7 @@ function renderFilters(
       )
     );
   }
-  return ui;
+  return ui.length ? ui : "No filters.";
 }
 
 function renderSet<T>(
@@ -1336,10 +1336,13 @@ function searchBasic(
   let current = { ...initial };
   const { ui: searchView, model: viewModel } = singleState(
     (query: BasicQuery) =>
-      renderFilters(query, filenameFormatter, (modification) => {
-        current = modification;
-        searchModel.statusChanged(modification);
-      })
+      tile(
+        ["filters"],
+        renderFilters(query, filenameFormatter, (modification) => {
+          current = modification;
+          searchModel.statusChanged(modification);
+        })
+      )
   );
   const searchModel: StatefulModel<BasicQuery> = combineModels(
     mapModel(model, createFilters),
