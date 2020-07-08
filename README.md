@@ -40,6 +40,9 @@ Build dependencies:
 
 - Java 8 or later (The Niassa + Pinery plugin does not work for Java 9+)
 - Maven 3.5 or later
+- TypeScript 3.9 or later (the version supplied with Ubuntu and Debian in
+  `node-typescript` is too old. Use `sudo npm -g i typescript` to install a
+  newer copy)
 - Docker (optional) for container builds
 
 Optional runtime dependencies:
@@ -77,7 +80,7 @@ Which will build all of the plugins available. Then run with:
 ### Local Setup
 Now, compile the main server using Maven 3.5 with Java 8:
 
-    cd shesmu-server
+    tsc -p shesmu-server-ui
     mvn install
 
 This will create `shesmu-server/target/shesmu.jar`. If you require any

@@ -3,4 +3,16 @@ export CLASSPATH=/usr/share/shesmu/*
 IFS=":"
 export SHESMU_DATA="$*"
 
-exec java -Djava.security.egd=file:/dev/./urandom -agentlib:jdwp=transport=dt_socket,server=y,address=7000,suspend=n -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+AlwaysPreTouch -Xms${MEMORY:-13g} -Xmx${MEMORY:-13g} ca.on.oicr.gsi.shesmu.Server
+exec java \
+	-Djava.security.egd=file:/dev/./urandom \
+	-agentlib:jdwp=transport=dt_socket,server=y,address=7000,suspend=n \
+	-XX:+UnlockExperimentalVMOptions \
+	-XX:+UseG1GC \
+	-XX:+UseStringDeduplication \
+	-XX:+AlwaysPreTouch \
+	-XX:MaxGCPauseMillis=2000 \
+	-XX:G1OldCSetRegionThresholdPercent=30 \
+	-XX:+ExitOnOutOfMemoryError \
+	-Xms${MEMORY:-13g} \
+	-Xmx${MEMORY:-13g} \
+	ca.on.oicr.gsi.shesmu.Server
