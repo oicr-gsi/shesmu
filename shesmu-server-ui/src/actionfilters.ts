@@ -254,7 +254,7 @@ interface ParseQueryError {
 
 export type PropertyType = "status" | "sourcefile" | "tag" | "type";
 
-export type SetType = "id" | "status" | "tag" | "type";
+export type SetType = "id" | "tag" | "type";
 /**
  * The client supports two different action querying modes: basic/GUI and advanced/text search
  *
@@ -292,6 +292,7 @@ function addFilterDialog(
   ) => void,
   timeAgo: (accessor: BasicQueryTimeAccessor, offset: number | null) => void,
   addSet: (type: SetType, items: string[]) => void,
+  addStatus: (status: Status[]) => void,
   addLocations: (locations: SourceLocation[]) => void,
   setText: TextHandler,
   setRegex: TextHandler
@@ -362,7 +363,7 @@ function addFilterDialog(
         close();
         pickFromSetCustom(
           statuses,
-          (status) => addSet("status", status),
+          (status) => addStatus(status),
           (status, click) => [
             statusButton(status, click),
             statusDescription(status),
@@ -745,7 +746,7 @@ function renderFilters(
         query.type,
         "Action Type",
         (type, click) => button(type, "Click to remove.", click),
-        (items) => update({ ...query, type: items })
+        (items) => update({ ...query, type: items.length ? items : undefined })
       )
     );
   }
@@ -755,7 +756,8 @@ function renderFilters(
         query.status,
         "Action Status",
         (status, click) => statusButton(status, click),
-        (items) => update({ ...query, status: items })
+        (items) =>
+          update({ ...query, status: items.length ? items : undefined })
       )
     );
   }
@@ -765,7 +767,7 @@ function renderFilters(
         query.tag,
         "Tags",
         (tag, click) => button(tag, "Click to remove.", click),
-        (items) => update({ ...query, tag: items })
+        (items) => update({ ...query, tag: items.length ? items : undefined })
       )
     );
   }
@@ -775,7 +777,7 @@ function renderFilters(
         query.id,
         "Action IDs",
         (id, click) => [button(id, "Click to remove.", click), br()],
-        (items) => update({ ...query, id: items })
+        (items) => update({ ...query, id: items.length ? items : undefined })
       )
     );
   }
@@ -792,7 +794,8 @@ function renderFilters(
           ),
           br(),
         ],
-        (items) => update({ ...query, sourcefile: items })
+        (items) =>
+          update({ ...query, sourcefile: items.length ? items : undefined })
       )
     );
   }
@@ -810,7 +813,10 @@ function renderFilters(
               () => {
                 const replacement = [...locations];
                 replacement.splice(index, 1);
-                update({ ...query, sourcelocation: replacement });
+                update({
+                  ...query,
+                  sourcelocation: replacement.length ? replacement : undefined,
+                });
               },
               { contents: filenameFormatter(item.file), title: item.file },
               { contents: item.line?.toString() || "*" },
@@ -1069,9 +1075,6 @@ function searchAdvanced(
                   case "id":
                     callback({ ids: values, type: "id" });
                     break;
-                  case "status":
-                    callback({ states: values as Status[], type: "status" });
-                    break;
                   case "tag":
                     callback({ tags: values, type: "tag" });
                     break;
@@ -1081,6 +1084,9 @@ function searchAdvanced(
                   default:
                     throw new Error("Unsupported type: " + type);
                 }
+              },
+              (values) => {
+                callback({ states: values, type: "status" });
               },
               (locations) => {
                 callback({ locations: locations, type: "sourcelocation" });
@@ -1314,12 +1320,13 @@ function searchBasic(
   sources: SourceLocation[],
   tags: string[]
 ): SearchPlatform {
-  let current = initial;
-  const {
-    ui: searchView,
-    model: viewModel,
-  } = singleState((query: BasicQuery) =>
-    renderFilters(query, filenameFormatter, searchModel.statusChanged)
+  let current = { ...initial };
+  const { ui: searchView, model: viewModel } = singleState(
+    (query: BasicQuery) =>
+      renderFilters(query, filenameFormatter, (modification) => {
+        current = modification;
+        searchModel.statusChanged(modification);
+      })
   );
   const searchModel: StatefulModel<BasicQuery> = combineModels(
     mapModel(model, createFilters),
@@ -1327,7 +1334,7 @@ function searchBasic(
     viewModel
   );
 
-  searchModel.statusChanged(current);
+  searchModel.statusChanged({ ...current });
   return {
     buttons: [
       buttonAccessory(
@@ -1338,59 +1345,71 @@ function searchBasic(
             onActionPage,
             sources,
             tags,
-            (type, start, end) =>
-              searchModel.statusChanged({
-                ...current,
-                [type.rangeType]: {
-                  start: start,
-                  end: end,
-                },
-              }),
-            (type, value) =>
-              searchModel.statusChanged({
-                ...current,
-                [type.horizonType]: value,
-              }),
+            (type, start, end) => {
+              current[type.rangeType] = {
+                start: start,
+                end: end,
+              };
+              searchModel.statusChanged({ ...current });
+            },
+            (type, value) => {
+              if (value) {
+                current[type.horizonType] = value;
+              } else {
+                delete current[type.horizonType];
+              }
+              searchModel.statusChanged({ ...current });
+            },
             (type, values) => {
-              searchModel.statusChanged({
-                ...current,
-                [type]: values
-                  .concat(current[type] || [])
-                  .sort()
-                  .filter(
-                    (item, index, arr) => index == 0 || arr[index - 1] != item
-                  ),
-              });
+              current[type] = values
+                .concat(current[type] || [])
+                .sort()
+                .filter(
+                  (item, index, arr) => index == 0 || arr[index - 1] != item
+                );
+              searchModel.statusChanged({ ...current });
+            },
+            (values) => {
+              current.status = values
+                .concat(current.status || [])
+                .sort()
+                .filter(
+                  (item, index, arr) => index == 0 || arr[index - 1] != item
+                );
+              searchModel.statusChanged({ ...current });
             },
             (locations) => {
-              searchModel.statusChanged({
-                ...current,
-                sourcelocation: mergeLocations(
-                  locations,
-                  current.sourcelocation || []
-                ),
-              });
+              const newLocations = mergeLocations(
+                locations,
+                current.sourcelocation || []
+              );
+              if (newLocations.length) {
+                current.sourcelocation = newLocations;
+              } else {
+                delete current.sourcelocation;
+              }
+
+              searchModel.statusChanged({ ...current });
             },
-            (text, matchCase) =>
-              searchModel.statusChanged({
-                ...current,
-                text: [
-                  {
-                    text: text,
-                    matchCase: matchCase,
-                  },
-                ].concat(current.text || []),
-              }),
-            (pattern, matchCase) =>
-              searchModel.statusChanged({
-                ...current,
-                regex: [
-                  {
-                    pattern: pattern,
-                    matchCase: matchCase,
-                  },
-                ].concat(current.regex || []),
-              })
+            (text, matchCase) => {
+              current.text = [
+                {
+                  text: text,
+                  matchCase: matchCase,
+                },
+              ].concat(current.text || []);
+
+              searchModel.statusChanged({ ...current });
+            },
+            (pattern, matchCase) => {
+              current.regex = [
+                {
+                  pattern: pattern,
+                  matchCase: matchCase,
+                },
+              ].concat(current.regex || []);
+              searchModel.statusChanged({ ...current });
+            }
           )
       ),
 
@@ -1419,47 +1438,42 @@ function searchBasic(
       buttonAccessory(
         "⌫ Clear",
         "Remove all search filters and view everything.",
-        () => searchModel.statusChanged({})
+        () => {
+          current = {};
+          searchModel.statusChanged(current);
+        }
       ),
     ],
 
     entryBar: searchView,
     find: () => {
-      editText({ text: "", matchCase: false }, (text, matchedCase) =>
+      editText({ text: "", matchCase: false }, (text, matchedCase) => {
+        current.text = [{ text: text, matchCase: matchedCase }].concat(
+          current.text || []
+        );
         searchModel.statusChanged({
           ...current,
-          text: [{ text: text, matchCase: matchedCase }].concat(
-            current.text || []
-          ),
-        })
-      );
+        });
+      });
       return true;
     },
-    addRangeSearch: (typeName, start, end) =>
-      searchModel.statusChanged({
-        ...current,
-        [typeName]: {
-          start: start,
-          end: end,
-        },
-      }),
+    addRangeSearch: (typeName, start, end) => {
+      current[typeName] = {
+        start: start,
+        end: end,
+      };
+      searchModel.statusChanged({ ...current });
+    },
 
     addPropertySearch: (...limits) => {
-      const replacement = { ...current };
       for (const limit of limits) {
         if (limit.type == "status") {
-          replacement[limit.type] = combineSet(
-            replacement[limit.type],
-            limit.value
-          );
+          current[limit.type] = combineSet(current[limit.type], limit.value);
         } else {
-          replacement[limit.type] = combineSet(
-            replacement[limit.type],
-            limit.value
-          );
+          current[limit.type] = combineSet(current[limit.type], limit.value);
         }
       }
-      searchModel.statusChanged(replacement);
+      searchModel.statusChanged({ ...current });
     },
   };
 }

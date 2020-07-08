@@ -846,7 +846,7 @@ export function historyState<T extends { [name: string]: any }>(
       if (input != current) {
         current = input;
         window.history.pushState(
-          input,
+          { ...input },
           title(input),
           window.location.pathname +
             "?" +
@@ -1605,14 +1605,14 @@ export function table<T>(
   const table = document.createElement("table");
   const headerRow = document.createElement("tr");
   table.appendChild(headerRow);
-  for (const [name, func] of headers) {
+  for (const [name, _func] of headers) {
     const column = document.createElement("th");
     column.innerText = name;
     headerRow.appendChild(column);
   }
   for (const row of rows) {
     const dataRow = document.createElement("tr");
-    for (const [name, func] of headers) {
+    for (const [_name, func] of headers) {
       const cell = document.createElement("td");
       addElements(cell, func(row));
       dataRow.appendChild(cell);
