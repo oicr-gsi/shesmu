@@ -322,7 +322,10 @@ function addFilterDialog(
       close();
       const { ui, getter } = inputTextArea();
       dialog((close) => [
-        "Action Identifiers:",
+        "Action Identifiers (",
+        mono("shesmu:"),
+        italic("40 hex characters"),
+        " - other text will be ignored):",
         br(),
         ui,
         br(),
@@ -330,12 +333,18 @@ function addFilterDialog(
           "Add All",
           "Add any action IDs in the text to the filter.",
           () => {
-            close();
             const ids = Array.from(
               getter().matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
               (m) => "shesmu:" + m[1].toUpperCase()
             );
-            addSet("id", ids);
+            if (ids.length) {
+              close();
+              addSet("id", ids);
+            } else {
+              dialog(
+                (_close) => "The text you entered has no valid identifiers."
+              );
+            }
           }
         ),
       ]);
