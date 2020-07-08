@@ -223,37 +223,33 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       this.activeLimsKeys = activeLimsKeys;
       // We're going to place all of our LIMS keys into the active LIMS key set and, if any are
       // already present, someone else holds the lock, so we will back out.
-      final Set<Pair<String, String>> stale =
-          staleKeys.computeIfAbsent(workflowAccession, k -> new HashSet<>());
-      synchronized (stale) {
-        synchronized (this.activeLimsKeys) {
-          boolean isLive = true;
-          for (final SimpleLimsKey limsKey : limsKeys) {
-            // We don't want to use the full LIMS key because if there are different versions, they
-            // should block each other, so just provider + ID
-            final Pair<String, String> limsKeyId =
-                new Pair<>(limsKey.getProvider(), limsKey.getId());
-            if (lockedLimsKeys.containsKey(limsKeyId) || stale.contains(limsKeyId)) {
-              // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
-              // can lock it successfully.
-              logger.log(
-                  limsKey,
-                  "There's an olive that has produced multiple LIMS keys with the same provider/id and that's a bug");
-              continue;
-            }
-            // Add this lims key to the set of active locks. Add returns true if it was newly added
-            if (this.activeLimsKeys.add(limsKeyId)) {
-              // Track that we added this LIMS key and therefore own it
-              lockedLimsKeys.put(limsKeyId, limsKey);
-            } else {
-              // Backout any LIMS keys we already locked
-              this.activeLimsKeys.removeAll(lockedLimsKeys.keySet());
-              isLive = false;
-              break;
-            }
+      synchronized (this.activeLimsKeys) {
+        boolean isLive = true;
+        for (final SimpleLimsKey limsKey : limsKeys) {
+          // We don't want to use the full LIMS key because if there are different versions, they
+          // should block each other, so just provider + ID
+          final Pair<String, String> limsKeyId = new Pair<>(limsKey.getProvider(), limsKey.getId());
+
+          if (lockedLimsKeys.containsKey(limsKeyId)) {
+            // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
+            // can lock it successfully.
+            logger.log(
+                limsKey,
+                "There's an olive that has produced multiple LIMS keys with the same provider/id and that's a bug");
+            continue;
           }
-          this.isLive = isLive;
+          // Add this lims key to the set of active locks. Add returns true if it was newly added
+          if (this.activeLimsKeys.add(limsKeyId)) {
+            // Track that we added this LIMS key and therefore own it
+            lockedLimsKeys.put(limsKeyId, limsKey);
+          } else {
+            // Backout any LIMS keys we already locked
+            this.activeLimsKeys.removeAll(lockedLimsKeys.keySet());
+            isLive = false;
+            break;
+          }
         }
+        this.isLive = isLive;
       }
       if (isLive) {
         limsKeys.forEach(k -> logger.log(k, "Acquired lock"));
@@ -276,7 +272,28 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     }
 
     public boolean isLive() {
-      return isLive;
+      // If we have successfully obtained a lock on these LIMS keys, we are theoretically ready to
+      // go. However, if a workflow has previously looked at them, we want to wait for a cache
+      // refresh. We need to acquire the lock before we trigger the cache refresh though, to ensure
+      // mutual exclusion between two actions with the same LIMS key. So, we let the action acquire
+      // the lock, pull from the cache, and then check if the keys that we own have been successfuly
+      // updated by the cache. The cache will erase these keys if it successfully refreshed and when
+      // we are done, we are going to mark these keys as stale in the cache, so the next action has
+      // to wait for the cache to refresh before trying to use them.
+      if (isLive) {
+        final Set<Pair<String, String>> stale =
+            staleKeys.computeIfAbsent(workflowAccession, k -> new HashSet<>());
+        synchronized (stale) {
+          if (lockedLimsKeys.keySet().stream().anyMatch(stale::contains)) {
+            lockedLimsKeys
+                .values()
+                .forEach(k -> logger.log(k, "Lock is stale after refresh; backing out."));
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
     }
   }
 
