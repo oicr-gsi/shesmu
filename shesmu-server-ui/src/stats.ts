@@ -218,7 +218,7 @@ function renderStat(
               addRangeSearch(
                 bin as TimeRangeType,
                 boundaries[start],
-                boundaries[end]
+                Math.max(boundaries[end], boundaries[start] + 60_000) // Time is rounded to minutes for some situations, so if the window is too small, the start and end times will bet the same and nothing matches; this kicks the end range a bit into the future
               );
             },
             selectionDisplay(start: number, end: number): string {
