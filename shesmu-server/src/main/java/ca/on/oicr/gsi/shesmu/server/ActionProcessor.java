@@ -230,8 +230,8 @@ public final class ActionProcessor
       return get(action, info)
           .map(
               time ->
-                  start.map(s -> s.compareTo(time) < 1).orElse(true)
-                      && end.map(e -> e.isAfter(time)).orElse(true))
+                  start.map(s -> !time.isBefore(s)).orElse(true)
+                      && end.map(e -> !time.isAfter(e)).orElse(true))
           .orElse(false);
     }
 
@@ -245,7 +245,7 @@ public final class ActionProcessor
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
-          return Optional.of(input.getValue().lastAdded);
+          return Optional.of(input.getValue().lastAdded).filter(Instant.EPOCH::isBefore);
         }
 
         @Override
@@ -317,7 +317,7 @@ public final class ActionProcessor
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
-          return Optional.of(input.getValue().lastChecked);
+          return Optional.of(input.getValue().lastChecked).filter(Instant.EPOCH::isBefore);
         }
 
         @Override
@@ -330,7 +330,7 @@ public final class ActionProcessor
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
-          return input.getKey().externalTimestamp();
+          return input.getKey().externalTimestamp().filter(Instant.EPOCH::isBefore);
         }
 
         @Override
@@ -428,7 +428,7 @@ public final class ActionProcessor
 
         @Override
         public Optional<Instant> extract(Entry<Action, Information> input) {
-          return Optional.of(input.getValue().lastStateTransition);
+          return Optional.of(input.getValue().lastStateTransition).filter(Instant.EPOCH::isBefore);
         }
 
         @Override
