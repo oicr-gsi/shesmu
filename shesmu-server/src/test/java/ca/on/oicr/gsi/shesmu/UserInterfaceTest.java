@@ -38,7 +38,16 @@ public class UserInterfaceTest {
 
     final ChromeOptions opts = new ChromeOptions();
     opts.setHeadless(true);
-    opts.addArguments("--disable-gpu");
+    opts.addArguments("--window-size=1920,1080");
+    // I would love to tell you what these do, but without them, you get a nonspecific ChromeDriver
+    // error under Docker.
+    // https://stackoverflow.com/questions/50642308/webdriverexception-unknown-error-devtoolsactiveport-file-doesnt-exist-while-t/50642913#50642913
+    opts.addArguments("start-maximized"); // open Browser in maximized mode
+    opts.addArguments("disable-infobars"); // disabling infobars
+    opts.addArguments("--disable-extensions"); // disabling extensions
+    opts.addArguments("--disable-gpu"); // applicable to windows os only
+    opts.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
+    opts.addArguments("--no-sandbox"); // Bypass OS security model
     final LoggingPreferences loggingPrefs = new LoggingPreferences();
     loggingPrefs.enable(LogType.BROWSER, Level.ALL);
     opts.setCapability(CapabilityType.LOGGING_PREFS, loggingPrefs);

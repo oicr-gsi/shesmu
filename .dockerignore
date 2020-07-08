@@ -4,6 +4,7 @@
 .idea/
 .project
 .settings/
+demo
 dependency-reduced-pom.xml
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/action.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/actionfilters.js
