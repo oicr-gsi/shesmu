@@ -453,12 +453,9 @@ public final class WorkflowAction extends Action {
                             actionId),
                         Collections.emptyMap());
                   })) {
-        if (!launchLock.isLive()) {
-          this.cacheCollision = true;
-          this.errors =
-              Collections.singletonList("Another action is scheduling a workflow for this SWID.");
-          return ActionState.WAITING;
-        }
+        // We need to check if the lock is live, but we need to trigger the cache to refresh first,
+        // or it will enter a deadlocked state where a LIMS key is locked and the cache isn't going
+        // to refresh which is what clears those keys.
         try (AutoCloseable timer = matchTime.start(Long.toString(workflowAccession))) {
           matches =
               workflowAccessions()
@@ -549,13 +546,19 @@ public final class WorkflowAction extends Action {
           this.errors = Collections.emptyList();
           return match.actionState();
         }
-
         // We get exactly one attempt to launch a job. If we fail, that's the end of this action. A
         // human needs to rescue us.
         if (hasLaunched) {
           this.errors =
               Collections.singletonList("Workflow has already been attempted. Purge to try again.");
           return ActionState.FAILED;
+        }
+        if (!launchLock.isLive()) {
+          this.cacheCollision = true;
+          this.errors =
+              Collections.singletonList(
+                  "Another action is scheduling a workflow for the same input LIMS keys.");
+          return ActionState.WAITING;
         }
         try {
           // Check if there are already too many copies of this workflow running; if so, wait until
