@@ -496,17 +496,17 @@ public abstract class ActionFilter {
         "utc",
         Parser.justWhiteSpace(
             (datetime, errorHandler) ->
-                Optional.of(datetime.atZone(ZoneId.of("Z")).toEpochSecond())));
+                Optional.of(datetime.atZone(ZoneId.of("Z")).toInstant().toEpochMilli())));
     TIME_ZONE.addKeyword(
         "server",
         Parser.justWhiteSpace(
             (datetime, errorHandler) ->
-                Optional.of(datetime.atZone(ZoneId.systemDefault()).toEpochSecond())));
+                Optional.of(datetime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())));
     TIME_ZONE.addRaw(
         "nothing",
         Parser.justWhiteSpace(
             (datetime, errorHandler) ->
-                Optional.of(datetime.atZone(ZoneId.systemDefault()).toEpochSecond())));
+                Optional.of(datetime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())));
   }
 
   private static Parser parseLocation(Parser parser, Consumer<SourceOliveLocation> output) {
