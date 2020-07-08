@@ -140,6 +140,36 @@ export function combineModels<T>(
   };
 }
 /**
+ * Create a model that can send data directly to an output model or pre-process it through another model.
+ *
+ * This is useful for conditionally sending things to the server.
+ */
+export function bypassModel<T, S, U>(
+  model: StatefulModel<T>,
+  transformer: (output: StatefulModel<T>) => StatefulModel<U>,
+  check: (input: S) => { bypass: false; value: U } | { bypass: true; value: T }
+): StatefulModel<S> {
+  const output = transformer(model);
+  let last: StatefulModel<unknown> = output as StatefulModel<unknown>;
+  return {
+    reload: () => {
+      last.reload();
+    },
+    statusChanged: (input: S) => {
+      const result = check(input);
+      if (result.bypass) {
+        model.statusChanged(result.value);
+        last = model as StatefulModel<unknown>;
+      } else {
+        output.statusChanged(result.value);
+        last = output as StatefulModel<unknown>;
+      }
+    },
+    statusFailed: (message, retry) => last.statusFailed(message, retry),
+    statusWaiting: () => last.statusWaiting(),
+  };
+}
+/**
  * Find the longest common prefix and produce a function to strip that prefix
  */
 export function commonPathPrefix(paths: string[]): FilenameFormatter {
