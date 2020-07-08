@@ -233,8 +233,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
             // should block each other, so just provider + ID
             final Pair<String, String> limsKeyId =
                 new Pair<>(limsKey.getProvider(), limsKey.getId());
-
-            if (lockedLimsKeys.containsKey(limsKeyId)) {
+            if (lockedLimsKeys.containsKey(limsKeyId) || stale.contains(limsKeyId)) {
               // Duplicate LIMS keys in input. This is bad and will probably fail elsewhere, but we
               // can lock it successfully.
               logger.log(
@@ -243,7 +242,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               continue;
             }
             // Add this lims key to the set of active locks. Add returns true if it was newly added
-            if (!stale.contains(limsKeyId) && this.activeLimsKeys.add(limsKeyId)) {
+            if (this.activeLimsKeys.add(limsKeyId)) {
               // Track that we added this LIMS key and therefore own it
               lockedLimsKeys.put(limsKeyId, limsKey);
             } else {
