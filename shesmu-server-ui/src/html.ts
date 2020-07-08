@@ -859,7 +859,7 @@ export function historyState<T extends { [name: string]: any }>(
         );
       }
     },
-    statusFailed: (message, retry) => console.log(message),
+    statusFailed: (message, _retry) => console.log(message),
     statusWaiting: () => {},
     get(): T {
       return current;
@@ -1300,7 +1300,7 @@ export function setFindHandler(handler: FindHandler | null) {
 export function pickFromSet<T>(
   items: readonly T[],
   setItems: (results: T[]) => void,
-  render: (item: T) => [string, string],
+  render: (item: T) => { label: UIElement; title: string },
   predicate: (item: T, keywords: string[]) => boolean,
   breakLines: boolean
 ) {
@@ -1308,8 +1308,8 @@ export function pickFromSet<T>(
     items,
     setItems,
     (item, click) => {
-      const [name, title] = render(item);
-      return button(name, title, click);
+      const { label, title } = render(item);
+      return button(label, title, click);
     },
     predicate,
     breakLines
