@@ -387,7 +387,7 @@ function addFilterDialog(
             pickFromSet(
               Array.from(actionRender.keys()).sort(),
               (type) => addSet("type", type),
-              (type) => [type, ""],
+              (type) => ({ label: type, title: "" }),
               (type, keywords) =>
                 keywords.every((k) => type.toLowerCase().indexOf(k) != -1),
               false
@@ -404,7 +404,7 @@ function addFilterDialog(
             pickFromSet(
               tags.sort(),
               (tag) => addSet("tag", tag),
-              (tag) => [tag, ""],
+              (tag) => ({ label: tag, title: "" }),
               (tag, keywords) =>
                 keywords.every((k) => tag.toLowerCase().indexOf(k) != -1),
               false
@@ -470,21 +470,24 @@ function addFilterDialog(
                   return result;
                 }),
               addLocations,
-              (sourceLocation) => [
-                fileNameFormatter(sourceLocation.file) +
-                  (sourceLocation.line
-                    ? ":" +
-                      sourceLocation.line +
-                      (sourceLocation.column
-                        ? ":" +
-                          sourceLocation.column +
-                          (sourceLocation.hash
-                            ? "[" + sourceLocation.hash + "]"
-                            : "")
-                        : "")
-                    : ""),
-                sourceLocation.file,
-              ],
+              (sourceLocation) => {
+                const label: UIElement[] = [
+                  fileNameFormatter(sourceLocation.file),
+                ];
+                if (sourceLocation.line) {
+                  label.push(":" + sourceLocation.line);
+                  if (sourceLocation.column) {
+                    label.push(":" + sourceLocation.column);
+                  }
+                  if (sourceLocation.hash) {
+                    label.push("[" + sourceLocation.hash + "]");
+                  }
+                }
+                return {
+                  label: label,
+                  title: sourceLocation.file,
+                };
+              },
               (sourceLocation, keywords) =>
                 keywords.every(
                   (k) => sourceLocation.file.toLowerCase().indexOf(k) != -1
