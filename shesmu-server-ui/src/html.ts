@@ -406,14 +406,16 @@ export function collapsible(title: string, ...inner: UIElement[]): UIElement {
     return [];
   }
   const showHide = document.createElement("p");
-  showHide.className = "collapse close";
   showHide.innerText = title;
-  showHide.onclick = (e) => {
-    const visible = !contents.style.maxHeight;
+  showHide.className = "collapse close";
+  contents.style.maxHeight = "0px";
+  showHide.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const visible = contents.style.maxHeight != "none";
 
     showHide.className = visible ? "collapse open" : "collapse close";
-    contents.style.maxHeight = visible ? `${contents.scrollHeight}px` : "none";
-  };
+    contents.style.maxHeight = visible ? "none" : "0px";
+  });
   return [showHide, contents];
 }
 const months: string[] = [

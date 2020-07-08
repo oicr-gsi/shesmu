@@ -169,14 +169,6 @@ a.load.danger:visited {
   overflow: hidden;
 }
 
-.collapse.close + * {
-  max-height: 0px;
-}
-
-.collapse + * :target {
-  max-height: auto;
-}
-
 .error {
   font-weight: 700;
   color: #e0493b;
