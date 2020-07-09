@@ -893,9 +893,12 @@ export function hr(): UIElement {
 /**
  * Create an image
  */
-export function img(src: string): UIElement {
+export function img(src: string, className?: string): UIElement {
   const image = document.createElement("img");
   image.src = src;
+  if (className) {
+    image.className = className;
+  }
   return image;
 }
 /**
@@ -1094,7 +1097,7 @@ export function multipaneState<
       },
       statusFailed: (message: string, retry: (() => void) | null) => {
         for (const updater of rawUpdaters) {
-          updater(img("dead.svg"));
+          updater(img("dead.svg", "deadolive"));
         }
         primaryUpdater([
           text(message),
@@ -1442,7 +1445,7 @@ export function sharedPane<T, F extends { [name: string]: UIElement }>(
       },
       statusFailed: (message: string, retry: (() => void) | null) => {
         for (const updater of rawUpdaters) {
-          updater(img("dead.svg"));
+          updater(img("dead.svg", "deadolive"));
         }
         primaryUpdater([
           text(message),
@@ -1458,7 +1461,8 @@ export function sharedPane<T, F extends { [name: string]: UIElement }>(
  * @param formatter a callback that will be called to update the contents of the pane when the state changes
  */
 export function singleState<T>(
-  formatter: (input: T) => UIElement
+  formatter: (input: T) => UIElement,
+  hideErrors?: boolean
 ): { model: StatefulModel<T>; ui: UIElement } {
   const { ui, update } = pane();
   return {
@@ -1471,10 +1475,14 @@ export function singleState<T>(
         update(throbberSmall());
       },
       statusFailed: (message: string, retry: (() => void) | null) => {
-        update(
-          text(message),
-          retry ? button("Retry", "Attempt operation again.", retry) : blank()
-        );
+        if (hideErrors) {
+          update(img("dead.svg", "deadolive"));
+        } else {
+          update(
+            text(message),
+            retry ? button("Retry", "Attempt operation again.", retry) : blank()
+          );
+        }
       },
     },
     ui: ui,

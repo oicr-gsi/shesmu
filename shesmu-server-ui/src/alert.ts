@@ -29,7 +29,6 @@ import {
   tableFromRows,
   statefulListBind,
   refreshButton,
-  singleState,
   sharedPane,
 } from "./html.js";
 import {

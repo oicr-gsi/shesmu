@@ -257,7 +257,7 @@ export function paginatedRefreshable<I, O>(
     } else {
       return blank();
     }
-  });
+  }, true);
   const outputModel = splitModel(combineModels(pagerModel, model), (output) =>
     mapModel(
       requestTupleModel(
