@@ -855,14 +855,7 @@ export function historyState<T extends { [name: string]: any }>(
         window.history.pushState(
           { ...input },
           title(input),
-          window.location.pathname +
-            "?" +
-            Object.entries(input)
-              .map(
-                ([key, value]) =>
-                  key + "=" + encodeURIComponent(JSON.stringify(value))
-              )
-              .join("&")
+          makeUrl(window.location.pathname, input)
         );
         if (listener) {
           listener(current, true);
@@ -1038,6 +1031,25 @@ export function link(
   element.href = url;
   element.title = title || "";
   return element;
+}
+/**
+ * Create a URL with query parameters
+ * @param url the base URL
+ * @param parameters the parameters to supply; they will be JSON-encoded
+ */
+export function makeUrl(
+  url: string,
+  parameters: { [name: string]: any }
+): string {
+  return (
+    url +
+    "?" +
+    Object.entries(parameters)
+      .map(
+        ([key, value]) => key + "=" + encodeURIComponent(JSON.stringify(value))
+      )
+      .join("&")
+  );
 }
 /**
  * Display some monospaced text.
