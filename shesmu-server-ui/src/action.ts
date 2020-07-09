@@ -30,6 +30,7 @@ import {
   inputText,
   checkRandomPermutation,
   checkRandomSequence,
+  makeUrl,
 } from "./html.js";
 import {
   StatefulModel,
@@ -239,9 +240,10 @@ export function actionDisplay(
                   css,
                   paragraph(
                     link(
-                      `actiondash?filters=${encodeURIComponent(
-                        JSON.stringify({ id: [action.actionId] })
-                      )}&saved=All%20Actions`,
+                      makeUrl("actiondash", {
+                        filters: { id: [action.actionId] },
+                        saved: "All Actions",
+                      }),
                       action.actionId
                     ),
                     button(
