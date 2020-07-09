@@ -820,3 +820,8 @@ table.errors {
     opacity: 0.5;
   }
 }
+
+img.deadolive {
+  height: 2em;
+  vertical-align: middle;
+}

@@ -335,7 +335,8 @@ export function initialiseOliveDash(
         );
       }
       return blank();
-    }
+    },
+    true
   );
 
   const { model: pauseFileModel, ui: pauseFileButton } = singleState(
@@ -353,7 +354,8 @@ export function initialiseOliveDash(
         );
       }
       return blank();
-    }
+    },
+    true
   );
 
   const { model: miscModel, components } = multipaneState<

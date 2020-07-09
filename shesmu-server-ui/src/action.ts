@@ -617,7 +617,8 @@ export function initialiseActionDash(
               ),
             ];
           })
-      )
+      ),
+    true
   );
   const combinedActionsModel = combineModels(
     actionModel,
