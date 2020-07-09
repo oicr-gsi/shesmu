@@ -49,6 +49,7 @@ import {
   formatTimeSpan,
   computeDuration,
   mergeLocations,
+  bypassModel,
 } from "./util.js";
 import {
   refreshable,
@@ -238,6 +239,11 @@ const timeAccessors: BasicQueryTimeAccessor[] = [
     range: (query) => query.external || null,
   },
 ];
+
+interface LogicalOperator {
+  operator: "and" | "or";
+  tip: string;
+}
 /**
  * The response format from the server when attempting to parse a text query
  */
@@ -261,9 +267,22 @@ export type SetType = "id" | "tag" | "type";
  * This is how each query format interacts with the rest of the dashboard
  */
 interface SearchPlatform {
+  /**
+   * The toolbar for this search interface
+   */
   buttons: UIElement;
+  /**
+   * The filter list or search box area
+   */
   entryBar: UIElement;
+  /**
+   * The Ctrl-F handler
+   */
   find: FindHandler;
+  /**
+   * A check if the input query is compatible with this search platform
+   */
+  handles(query: string | BasicQuery): boolean;
   addRangeSearch: AddRangeSearch;
   addPropertySearch: AddPropertySearch;
 }
@@ -304,8 +323,12 @@ function addFilterDialog(
       () => {
         close();
         timeDialog((n) =>
-          editTimeRange({ start: null, end: null }, (start, end) =>
-            timeRange(n, start, end)
+          editTimeRange(
+            {
+              start: new Date().getTime() - 3_600_000,
+              end: new Date().getTime(),
+            },
+            (start, end) => timeRange(n, start, end)
           )
         );
       }
@@ -592,8 +615,14 @@ export function createSearch(
     (left: ActionFilter[] | null, right: ActionFilter[] | null) =>
       left ? left.concat(right || []) : null
   );
-  let search: SearchPlatform;
-  synchronizer.listen((query) => {
+  let search: SearchPlatform | undefined;
+  synchronizer.listen((query, internal) => {
+    // This callback will get two kinds of events: when the user hits the back button (external) and when the search platform updates itself. Normally, we don't care, but a search platform updates itself when it wants to switch between advanced and basic queries. So, if the current search platform can't handle the query, we will reinitialise it. Otherwise, we just let it handle the event itself.
+    if (internal && (!search || search.handles(query))) {
+      return;
+    }
+    // We reset the search platform so that during initialisation, when we hit this callback again, we hit the early return.
+    search = undefined;
     if (typeof query == "string") {
       search = searchAdvanced(
         query,
@@ -623,8 +652,8 @@ export function createSearch(
     entryBar: entryBar.ui,
     model: baseModel,
     addRangeSearch: (typeName, start, end) =>
-      search.addRangeSearch(typeName, start, end),
-    addPropertySearch: (...limits) => search.addPropertySearch(...limits),
+      search?.addRangeSearch(typeName, start, end),
+    addPropertySearch: (...limits) => search?.addPropertySearch(...limits),
     find: find.find,
   };
 }
@@ -685,8 +714,14 @@ function editTimeRange(
         tableRow(null, { contents: start.ui }, { contents: end.ui }),
       ]),
       button("Save", "Update time range filter in current search.", () => {
-        close();
-        callback(start.getter(), end.getter());
+        const startTime = start.getter();
+        const endTime = end.getter();
+        if (startTime === null && endTime === null) {
+          dialog((_close) => "You have selected neither a start nor end time.");
+        } else {
+          close();
+          callback(start.getter(), end.getter());
+        }
       }),
     ];
   });
@@ -981,32 +1016,30 @@ function searchAdvanced(
 ): SearchPlatform {
   const search = document.createElement("input");
 
-  const searchModel: StatefulModel<string> = refreshable(
-    "parsequery",
-    (query) => ({
-      method: "POST",
-      body: JSON.stringify(query),
-    }),
+  const searchModel: StatefulModel<string> = bypassModel(
     combineModels(
-      errorModel(model, (response: ParseQueryRespose) =>
-        response.filter
-          ? { type: "ok", value: [response.filter] }
-          : {
-              type: "error",
-              message:
-                response.errors
-                  .map((e) => `${e.line}:${e.column}: ${e.message}`)
-                  .join("; ") || "Unknown error.",
-            }
-      ),
-      mapModel(
-        filterModel(synchronizer, "Parse error."),
-        (response) => response.formatted || null
+      errorModel(model, (response: ParseQueryRespose | null) => {
+        if (!response) {
+          return { type: "ok", value: [] };
+        }
+        if (response.filter) {
+          return { type: "ok", value: [response.filter] };
+        }
+        return {
+          type: "error",
+          message:
+            response.errors
+              .map((e) => `${e.line}:${e.column}: ${e.message}`)
+              .join("; ") || "Unknown error.",
+        };
+      }),
+      mapModel(filterModel(synchronizer, "Parse error."), (response) =>
+        response ? response.formatted || null : ""
       ),
       {
         reload: () => {},
-        statusChanged: (response: ParseQueryRespose) => {
-          if (response.formatted) {
+        statusChanged: (response: ParseQueryRespose | null) => {
+          if (response?.formatted) {
             search.value = response.formatted;
           }
         },
@@ -1014,19 +1047,72 @@ function searchAdvanced(
         statusWaiting: () => {},
       }
     ),
-    true
+    (output: StatefulModel<ParseQueryRespose | null>) =>
+      refreshable(
+        "parsequery",
+        (query) => ({
+          method: "POST",
+          body: JSON.stringify(query),
+        }),
+        output,
+        true
+      ),
+    (input: string) => {
+      if (input.trim().length) {
+        return { bypass: false, value: input };
+      } else {
+        return {
+          bypass: true,
+          value: null,
+        };
+      }
+    }
   );
 
   search.type = "search";
   search.value = filter;
   search.style.width = "100%";
-  search.addEventListener("keydown", (e) => {
-    if (e.keyCode === 13) {
-      e.preventDefault();
-      searchModel.statusChanged(search.value);
-    }
-  });
+  search.addEventListener("search", () =>
+    searchModel.statusChanged(search.value)
+  );
   searchModel.statusChanged(filter);
+  const updateFromClick = (...filters: ActionFilter[]) => {
+    const doUpdate = (existingQuery: ActionFilter[]) => {
+      fetchCustomWithBusyDialog(
+        "printquery",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            type: "and",
+            filters: filters.concat(existingQuery),
+          }),
+        },
+        (p) =>
+          p.then((response) => response.text()).then(searchModel.statusChanged)
+      );
+    };
+    if (search.value.trim()) {
+      fetchJsonWithBusyDialog<ParseQueryRespose>(
+        "parsequery",
+        {
+          method: "POST",
+          body: JSON.stringify(search.value),
+        },
+        (result) => {
+          const existing = result.filter;
+          if (existing) {
+            doUpdate([existing]);
+            return Promise.resolve(existing);
+          } else {
+            dialog((_close) => "Can't add conditions to a broken query.");
+            return Promise.reject("Can't add conditions to a broken query.");
+          }
+        }
+      );
+    } else {
+      doUpdate([]);
+    }
+  };
   return {
     buttons: [
       button(
@@ -1047,16 +1133,14 @@ function searchAdvanced(
             ),
           ])
       ),
-      ...[
-        [
-          "🙴 And Filter",
-          "and",
-          "Add a filter that restricts the existing query.",
-        ],
-        ["❚ Or Filter", "or", "Add a filter that expands the existing query."],
-      ].map(([label, operator, description]) =>
-        buttonAccessory(label, description, () => {
-          const replaceQuery = (...filters: ActionFilter[]) =>
+      buttonAccessory(
+        "➕ Add Filter",
+        "Add a filter to limit the actions displayed.",
+        () => {
+          const replaceQuery = (
+            operator: "and" | "or",
+            ...filters: ActionFilter[]
+          ) =>
             fetchCustomWithBusyDialog(
               "printquery",
               {
@@ -1064,7 +1148,7 @@ function searchAdvanced(
                 body: JSON.stringify({
                   type: operator,
                   filters: filters,
-                }),
+                } as ActionFilter),
               },
               (p) =>
                 p
@@ -1127,7 +1211,34 @@ function searchAdvanced(
               (result) => {
                 const existing = result.filter;
                 if (existing) {
-                  showDialog((filter) => replaceQuery(existing, filter));
+                  showDialog((filter) =>
+                    dialog((close) =>
+                      [
+                        {
+                          operator: "and",
+                          tip:
+                            "Add a filter that restricts the existing query.",
+                        } as LogicalOperator,
+                        {
+                          operator: "or",
+                          tip: "Add a filter that expands the existing query.",
+                        } as LogicalOperator,
+                      ].map((operation) =>
+                        button(
+                          [
+                            "Existing Query ",
+                            italic(operation.operator),
+                            " New Filter",
+                          ],
+                          operation.tip,
+                          () => {
+                            close();
+                            replaceQuery(operation.operator, existing, filter);
+                          }
+                        )
+                      )
+                    )
+                  );
                   return Promise.resolve(existing);
                 } else {
                   return Promise.reject("Can't add clauses to a broken query.");
@@ -1135,12 +1246,13 @@ function searchAdvanced(
               }
             );
           } else {
-            showDialog((filter) => replaceQuery(filter));
+            showDialog((filter) => replaceQuery("and", filter));
           }
-        })
+        }
       ),
     ],
     entryBar: [
+      "Action query: ",
       search,
       br(),
       collapsible(
@@ -1303,23 +1415,31 @@ function searchAdvanced(
       ),
     ],
     find: null,
+    handles(query: string | BasicQuery): boolean {
+      return typeof query == "string";
+    },
     addRangeSearch: (typeName, start, end) => {
-      searchModel.statusChanged(
-        `(${search.value}) and ${typeName} between ${new Date(
-          start
-        ).toISOString()} to ${new Date(end).toISOString()}`
-      );
+      updateFromClick({ type: typeName, start: start, end: end });
     },
     addPropertySearch: (...limits) => {
-      const propertyQuery = limits
-        .map(
-          (limit) =>
-            `${
-              limit.type == "sourcefile" ? "source" : limit.type
-            } = "${limit.value.replace('"', '\\"')}"`
+      updateFromClick(
+        ...limits.map(
+          (limit): ActionFilter => {
+            switch (limit.type) {
+              case "status":
+                return { type: "status", states: [limit.value] };
+              case "tag":
+                return { type: "tag", tags: [limit.value] };
+              case "sourcefile":
+                return { type: "sourcefile", files: [limit.value] };
+              case "type":
+                return { type: "type", types: [limit.value] };
+              default:
+                throw new Error("Unhandled limit");
+            }
+          }
         )
-        .join(" and ");
-      searchModel.statusChanged(`(${search.value}) and ${propertyQuery}`);
+      );
     },
   };
 }
@@ -1472,6 +1592,9 @@ function searchBasic(
         });
       });
       return true;
+    },
+    handles(query: string | BasicQuery): boolean {
+      return typeof query != "string";
     },
     addRangeSearch: (typeName, start, end) => {
       current[typeName] = {
