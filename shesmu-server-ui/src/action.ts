@@ -574,7 +574,7 @@ export function initialiseActionDash(
   } = synchronizerFields(
     historyState(
       {
-        filters: userFilters || {},
+        filters: userFilters === null ? {} : userFilters,
         saved: savedQueryName || "All Actions",
       },
       (input) =>
