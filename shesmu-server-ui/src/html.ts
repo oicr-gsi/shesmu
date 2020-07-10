@@ -601,6 +601,9 @@ export function dropdown<T, S>(
       if (open) {
         closeActiveMenu(false);
       }
+      if (synchronizer) {
+        synchronizer.synchronizer.statusChanged(synchronizer.extract(item));
+      }
     });
     if (item == initial || item == items[0]) {
       clearChildren(activeElement);
