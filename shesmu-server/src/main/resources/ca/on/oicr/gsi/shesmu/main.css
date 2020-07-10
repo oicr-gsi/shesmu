@@ -1,93 +1,186 @@
+:root {
+  --widget-zebra: #eaf5f7;
+  --blue-background: #d2ebee;
+  --blue-desaturated: #baecf7;
+  --blue-highlight: #33bcdc;
+  --blue-watermark: #06aed5;
+  --cyan-background-wrong: #048c81;
+  --cyan-background: #d1efed;
+  --cyan-desaturated: #b9f0ec;
+  --cyan-highlight: #31b9ae;
+  --cyan-watermark: #04aa9d;
+  --dialog-background: #fefefe;
+  --dialog-border: #888;
+  --grey-background: #dfdfdf;
+  --grey-desaturated: #efefef;
+  --grey-highlight: #888;
+  --grey-watermark: #aaa;
+  --link-highlight: #058faf;
+  --link-main: #077888;
+  --red-background: #f9dddb;
+  --red-desaturated: #fac7c3;
+  --red-highlight: #e56a5e;
+  --red-watermark: #e0493b;
+  --scarlet-background: #b83c31;
+  --scarlet-desaturated: #b84e44;
+  --scarlet-watermark: #e0493b;
+  --widget-danger-highlight: #e0493b;
+  --widget-danger-lowlight: #b83c31;
+  --widget-danger-negative: #fff;
+  --widget-danger-shadow: #fceae9;
+  --widget-highlight: #058faf;
+  --widget-lowlight: #077888;
+  --widget-negative: #fff;
+  --widget-shadow: #e5faff;
+  --widget-text: #000;
+  --yellow-background: #fcf5d2;
+  --yellow-desaturated: #fcf1b8;
+  --yellow-highlight: #f2d234;
+  --yellow-watermark: #c5a407;
+}
+
 h2 {
   font-size: inherit;
 }
 
 a:visited,
 a:link {
-  color: #077888;
+  color: var(--link-main);
 }
 
 a text {
-  fill: #077888;
+  fill: var(--link-main);
 }
 
 a:hover,
 a:active {
-  color: #058faf;
+  color: var(--link-highlight);
 }
 
 a:hover text,
 a:active text {
-  fill: #058faf;
+  fill: var(--link-highlight);
 }
 
-.load,
-a.load:link,
-a.load:visited {
+.button,
+a.button:link,
+a.button:visited {
   white-space: nowrap;
 }
 
-.load,
-a.load:link,
-a.load:visited,
+.button,
+a.button,
 .dropdown,
 .olivemenu {
-  font-weight: 700;
-  color: #fff;
-  background-color: #04aa9d;
-  margin: 0.5em;
-  padding: 0.2em;
-  border: 1px solid #78c3cd;
-  box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease 0s;
+  margin: 0.2em;
+  padding: 0.4em;
+  border: 1px solid var(--widget-lowlight);
   cursor: pointer;
   display: inline-block;
-  border-radius: 0.1em;
+  border-radius: 0.4em;
 }
 
-a.load {
+a.button {
   text-decoration: none;
 }
 
-.load:hover {
-  background-color: #048c81;
-  border-color: #048c81;
-}
-
-.load:active,
-a.load:active {
-  transform: translate(0.1em, 0.1em);
-  box-shadow: 0em 0em 5px 0px rgba(0, 0, 0, 0.1);
-}
-
-.load.accessory,
-a.load.accessory:link,
-a.load.accessory:visited,
 .dropdown,
 .olivemenu {
-  background-color: #06aed5;
-  border-color: #06aed5;
+  color: var(--widget-negative);
+  background-color: var(--widget-lowlight);
+}
+.olivemenu {
+  font-weight: bold;
 }
 
-.load.accessory:hover,
-a.load.accessory:hover,
+.button.accessory,
+a.button.accessory:link,
+a.button.accessory:visited {
+  background-color: var(--widget-negative);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-negative),
+    var(--widget-shadow)
+  );
+}
+
+.button.accessory:hover,
+a.button.accessory:hover,
 .dropdown:hover {
-  background-color: #058faf;
-  border-color: #058faf;
+  background-color: var(--widget-highlight);
 }
 
-.load.danger,
-a.load.danger:link,
-a.load.danger:visited {
-  background-color: #e0493b;
-  border-color: #e0493b;
+.button.accessory,
+a.button.accessory:link,
+a.button.accessory:visited {
+  background-color: var(--widget-negative);
+  color: var(--widget-lowlight);
+  border-color: var(--widget-lowlight);
 }
 
-.load.danger:hover {
-  background-color: #b83c31;
+.button.regular,
+a.button.regular:link,
+a.button.regular:visited,
+.button.regular:hover,
+.button.accessory:hover {
+  background-color: var(--widget-highlight);
+  color: var(--widget-negative);
+  border-color: var(--widget-lowlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-highlight),
+    var(--widget-lowlight)
+  );
 }
 
-.accessory > .load {
+.button.regular:active,
+.button.accessory:active {
+  background-color: var(--widget-lowlight);
+  color: var(--widget-negative);
+  border-color: var(--widget-highlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-lowlight),
+    var(--widget-highlighth)
+  );
+}
+
+.button.danger,
+a.button.danger:link,
+a.button.danger:visited {
+  background-color: var(--widget-danger-negative);
+  color: var(--widget-danger-lowlight);
+  border-color: var(--widget-danger-lowlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-danger-negative),
+    var(--widget-danger-shadow)
+  );
+}
+
+.button.danger:hover {
+  background-color: var(--widget-danger-highlight);
+  color: var(--widget-danger-negative);
+  border-color: var(--widget-danger-lowlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-danger-highlight),
+    var(--widget-danger-lowlight)
+  );
+}
+
+.button.danger:active {
+  background-color: var(--widget-danger-lowlight);
+  color: var(--widget-danger-negative);
+  border-color: var(--widget-danger-highlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-danger-lowlight),
+    var(--widget-danger-highlighth)
+  );
+}
+
+.accessory > .button {
   font-weight: 400;
   font-size: 90%;
 }
@@ -96,8 +189,8 @@ a.load.danger:visited {
 .olivemenu > div {
   position: absolute;
   min-width: 200px;
-  background-color: #fff;
-  border: 1px solid #058faf;
+  background-color: var(--widget-negative);
+  border: 1px solid var(--widget-lowlight);
   box-shadow: 0.2em 0.2em 5px 0px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   visibility: hidden;
@@ -119,8 +212,8 @@ a.load.danger:visited {
 .olivemenu > div {
   display: block;
   max-width: 50vw;
-  color: #058faf;
-  background-color: #fff;
+  color: var(--widget-lowlight);
+  background-color: var(--widget-negative);
   padding: 0.5em;
 }
 
@@ -129,9 +222,9 @@ a.load.danger:visited {
   word-break: break-all;
 }
 
-.dropdown > div > *:hover {
-  background-color: #058faf;
-  color: #fff;
+.dropdown > div > span:hover {
+  background-color: var(--widget-highlight);
+  color: var(--widget-negative);
 }
 
 .olivemenu table {
@@ -171,7 +264,7 @@ a.load.danger:visited {
 
 .error {
   font-weight: 700;
-  color: #e0493b;
+  color: var(--red-watermark);
 }
 
 .action,
@@ -193,71 +286,71 @@ a.load.danger:visited {
 .state_failed,
 .filterlist .state_failed,
 .alert.live {
-  border: 1px solid #e0493b;
-  background-color: #f9dddb;
+  border: 1px solid var(--red-watermark);
+  background-color: var(--red-background);
 }
 
 .state_halp,
 .filterlist .state_halp {
-  border: 1px solid #e0493b;
-  background-color: #b83c31;
-  color: #fff;
+  border: 1px solid var(--scarlet-watermark);
+  background-color: var(--scarlet-background);
+  color: white;
 }
 
 .state_inflight,
 .filterlist .state_inflight {
-  border: 1px solid #04aa9d;
-  background-color: #d1efed;
+  border: 1px solid var(--cyan-watermark);
+  background-color: var(--cyan-background);
 }
 
 .state_queued,
 .filterlist .state_queued {
-  border: 1px dashed #04aa9d;
-  background-color: #d1efed;
+  border: 1px dashed var(--cyan-watermark);
+  background-color: var(--cyan-background);
 }
 
 .state_succeeded,
 .filterlist .state_succeeded,
 .state_simulated,
 .alert.expired {
-  border: 1px solid #06aed5;
-  background-color: #d1f0f7;
+  border: 1px solid var(--blue-watermark);
+  background-color: var(--blue-background);
 }
 
 .state_throttled,
 .filterlist .state_throttled {
-  border: 1px dashed #f0c808;
-  background-color: #fcf5d2;
+  border: 1px dashed var(--yellow-watermark);
+  background-color: var(--yellow-background);
 }
 
 .state_unknown,
 .filterlist .state_unknown {
-  border: 1px dashed #e0493b;
-  background-color: #f9dddb;
+  border: 1px dashed var(--red-watermark);
+  background-color: var(--red-background);
 }
 
 .state_waiting,
 .filterlist .state_waiting {
-  border: 1px solid #f0c808;
-  background-color: #fcf5d2;
+  border: 1px solid var(--yellow-watermark);
+  background-color: var(--yellow-background);
 }
 
 .state_zombie,
 .filterlist .state_zombie {
-  border: 1px solid #000;
-  background-color: #dfdfdf;
+  border: 1px solid var(--grey-watermark);
+  background-color: var(--grey-background);
 }
 
 .state_failed.updating,
 .state_unknown.updating {
   background: linear-gradient(
     -45deg,
-    #f9dddb 25%,
-    #fac7c3 25%,
-    #fac7c3 50%,
-    #f9dddb 50%,
-    #f9dddb 75%,
-    #fac7c3 75%
+    var(--red-background) 25%,
+    var(--red-desaturated) 25%,
+    var(--red-desaturated) 50%,
+    var(--red-background) 50%,
+    var(--red-background) 75%,
+    var(--red-desaturated) 75%
   );
   background-size: 200px 200px;
 }
@@ -265,12 +358,12 @@ a.load.danger:visited {
 .state_halp.updating {
   background: linear-gradient(
     -45deg,
-    #b83c31 25%,
-    #b84e44 25%,
-    #b84e44 50%,
-    #b83c31 50%,
-    #b83c31 75%,
-    #b84e44 75%
+    var(--scarlet-background) 25%,
+    var(--scarlet-desaturated) 25%,
+    var(--scarlet-desaturated) 50%,
+    var(--scarlet-background) 50%,
+    var(--scarlet-background) 75%,
+    var(--scarlet-desaturated) 75%
   );
   background-size: 200px 200px;
 }
@@ -279,12 +372,12 @@ a.load.danger:visited {
 .state_queued.updating {
   background: linear-gradient(
     -45deg,
-    #d1efed 25%,
-    #b9f0ec 25%,
-    #b9f0ec 50%,
-    #d1efed 50%,
-    #d1efed 75%,
-    #b9f0ec 75%
+    var(--cyan-background) 25%,
+    var(--cyan-desaturated) 25%,
+    var(--cyan-desaturated) 50%,
+    var(--cyan-background) 50%,
+    var(--cyan-background) 75%,
+    var(--cyan-desaturated) 75%
   );
   background-size: 200px 200px;
 }
@@ -292,12 +385,12 @@ a.load.danger:visited {
 .state_succeeded.updating {
   background: linear-gradient(
     -45deg,
-    #d1f0f7 25%,
-    #baecf7 25%,
-    #baecf7 50%,
-    #d1f0f7 50%,
-    #d1f0f7 75%,
-    #baecf7 75%
+    var(--blue-background) 25%,
+    var(--blue-desaturated) 25%,
+    var(--blue-desaturated) 50%,
+    var(--blue-background) 50%,
+    var(--blue-background) 75%,
+    var(--blue-desaturated) 75%
   );
   background-size: 200px 200px;
 }
@@ -306,12 +399,12 @@ a.load.danger:visited {
 .state_waiting.updating {
   background: linear-gradient(
     -45deg,
-    #fcf5d2 25%,
-    #fcf1b8 25%,
-    #fcf1b8 50%,
-    #fcf5d2 50%,
-    #fcf5d2 75%,
-    #fcf1b8 75%
+    var(--yellow-background) 25%,
+    var(--yellow-desaturated) 25%,
+    var(--yellow-desaturated) 50%,
+    var(--yellow-background) 50%,
+    var(--yellow-background) 75%,
+    var(--yellow-desaturated) 75%
   );
   background-size: 200px 200px;
 }
@@ -319,12 +412,12 @@ a.load.danger:visited {
 .state_zombie.updating {
   background: linear-gradient(
     -45deg,
-    #dfdfdf 25%,
-    #efefef 25%,
-    #efefef 50%,
-    #dfdfdf 50%,
-    #dfdfdf 75%,
-    #efefef 75%
+    var(--grey-background) 25%,
+    var(--grey-desaturated) 25%,
+    var(--grey-desaturated) 50%,
+    var(--grey-background) 50%,
+    var(--grey-background) 75%,
+    var(--grey-desaturated) 75%
   );
   background-size: 200px 200px;
 }
@@ -354,14 +447,11 @@ a.load.danger:visited {
 
 .action.state_unknown a:link,
 .actionstate_failed a:link,
-.alert.live a:link {
-  color: #e0493b;
-}
-
+.alert.live a:link,
 .action.state_unknown a:visited,
 .actionstate_failed a:visited,
 .alert.live a:visited {
-  color: #b83c31;
+  color: var(--red-watermark);
 }
 
 .action.state_unknown a:hover,
@@ -370,78 +460,66 @@ a.load.danger:visited {
 .actionstate_failed a:active,
 .alert.live a:hover,
 .alert.live a:active {
-  color: #e56a5e;
+  color: var(--red-highlight);
 }
 
-.action.state_halp a:link {
-  color: #f9dddb;
-}
-
+.action.state_halp a:link,
 .action.state_halp a:visited {
-  color: #fceae9;
+  color: var(--scarlet-watermark);
 }
 
 .action.state_halp a:hover,
 .actionstate_halp a:active {
-  color: #e56a5e;
+  color: var(--scarlet-highlight);
 }
 
 .action.state_halp td {
-  color: #fff;
+  color: white;
 }
 
 .action.state_halp th {
-  color: #f9dddb;
+  color: var(--scarlet-watermark);
 }
 
 .action.state_halp tr:hover {
-  background-color: #e0493b;
+  background-color: var(--red-watermark);
 }
 
 .action.state_queued a:link,
-.action.state_inflight a:link {
-  color: #04aa9d;
-}
-
+.action.state_inflight a:link,
 .action.state_queued a:visited,
 .action.state_inflight a:visited {
-  color: #048c81;
+  color: var(--cyan-watermark);
 }
 
 .action.state_queued a:hover,
 .action.state_inflight a:hover,
 .action.state_queued a:active,
 .action.state_inflight a:active {
-  color: #31b9ae;
+  color: var(--cyan-highlight);
 }
 
 .action.state_throttled a:link,
-.action.state_waiting a:link {
-  color: #f0c808;
-}
-
+.action.state_waiting a:link,
 .action.state_throttled a:visited,
 .action.state_waiting a:visited {
-  color: #c5a407;
+  color: var(--yellow-watermark);
 }
 
 .action.state_throttled a:hover,
 .action.state_waiting a:hover,
 .action.state_throttled a:active,
 .action.state_waiting a:active {
-  color: #f2d234;
+  color: var(--yellow-highlight);
 }
 
 .action.state_succeeded a:link,
 .action.state_simulated a:link,
-.alert.expired a:link {
-  color: #06aed5;
-}
-
+.alert.expired a:link,
 .action.state_succeeded a:visited,
 .action.state_simulated a:visited,
 .alert.expired a:visited {
-  color: #058faf;
+  color: var(--blue-watermark);
 }
 
 .action.state_succeeded a:hover,
@@ -450,20 +528,17 @@ a.load.danger:visited {
 .action.state_succeeded a:active,
 .alert.expired a:hover,
 .alert.expired a:active {
-  color: #33bcdc;
+  color: var(--blue-highlight);
 }
 
-.action.state_zombie a:link {
-  color: #444;
-}
-
+.action.state_zombie a:link,
 .action.state_zombie a:visited {
-  color: #666;
+  color: var(--grey-watermark);
 }
 
-.action.state_zombie a:hover,
-.action.state_zombie a:active {
-  color: #888;
+.action.state_zombie a:active,
+.action.state_zombie a:hover {
+  color: var(--grey-highlight);
 }
 
 .action > :first-child::before,
@@ -475,67 +550,67 @@ a.load.danger:visited {
 
 .action.state_unknown > :first-child::before {
   content: "Unknown 🤷";
-  color: #e0493b;
+  color: var(--red-watermark);
 }
 
 .action.state_failed > :first-child::before {
   content: "Failed 💔";
-  color: #e0493b;
+  color: var(--red-watermark);
 }
 
 .action.state_halp > :first-child::before {
   content: "Halp 🚒";
-  color: #f9dddb;
+  color: var(--scarlet-watermark);
 }
 
 .action.state_queued > :first-child::before {
   content: "Queued ⌛";
-  color: #04aa9d;
+  color: var(--cyan-watermark);
 }
 
 .action.state_inflight > :first-child::before {
   content: "Inflight ✈";
-  color: #04aa9d;
+  color: var(--cyan-watermark);
 }
 
 .action.state_throttled > :first-child::before {
   content: "Throttled ✋";
-  color: #f0c808;
+  color: var(--yellow-watermark);
 }
 
 .action.state_waiting > :first-child::before {
   content: "Waiting ⌛";
-  color: #f0c808;
+  color: var(--yellow-watermark);
 }
 
 .action.state_succeeded > :first-child::before {
   content: "Succeeded ✓";
-  color: #06aed5;
+  color: var(--blue-watermark);
 }
 
 .action.state_simulated > :first-child::before {
   content: "Simulated 🤖";
-  color: #06aed5;
+  color: var(--blue-watermark);
 }
 
 .action.state_zombie > :first-child::before {
   content: "Zombie 🧟";
-  color: #aaa;
+  color: var(--grey-watermark);
 }
 
 .alert.expired > :first-child::before {
   content: "Expired 😴";
-  color: #06aed5;
+  color: var(--blue-watermark);
 }
 
 .action.live > :first-child::before {
   content: "Firing 🔔";
-  color: #e0493b;
+  color: var(--red-watermark);
 }
 
 .filterlist > span {
-  color: #fff;
-  background-color: #06aed5;
+  color: white;
+  background-color: var(--blue-watermark);
 }
 
 .filterlist .state_failed,
@@ -546,20 +621,20 @@ a.load.danger:visited {
 .filterlist .state_unknown,
 .filterlist .state_waiting,
 .filterlist .state_zombie,
-.load.state_failed,
-.load.state_inflight,
-.load.state_queued,
-.load.state_succeeded,
-.load.state_throttled,
-.load.state_unknown,
-.load.state_waiting,
-.load.state_zombie {
-  color: #000;
+.button.state_failed,
+.button.state_inflight,
+.button.state_queued,
+.button.state_succeeded,
+.button.state_throttled,
+.button.state_unknown,
+.button.state_waiting,
+.button.state_zombie {
+  color: black;
 }
 
 .filterlist > span {
   padding: 0.2em;
-  border: 1px solid #058faf;
+  border: 1px solid var(--link-highlight);
   margin: 0.2em;
   white-space: nowrap;
   border-radius: 0.1em;
@@ -575,7 +650,7 @@ a.load.danger:visited {
 }
 
 .filters {
-  border: 1px solid #058faf;
+  border: 1px solid var(--widget-lowlight);
   box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
   display: inline-block;
   min-width: 25vw;
@@ -600,27 +675,27 @@ a.load.danger:visited {
 }
 
 .filters > span:nth-child(even) {
-  background-color: #eaf5f7;
+  background-color: var(--widget-zebra);
 }
 
 .tab {
   display: inline-block;
   margin: 0.5em;
   padding: 1em;
-  border-bottom: 0.1em solid #06aed5;
-  color: #058faf;
+  border-bottom: 0.1em solid var(--widget-highlight);
+  color: var(--widget-lowlight);
   transition: background 0.3s ease-in-out;
 }
 
 .tab.selected {
-  background-color: #d1f0f7;
-  border-bottom: 0.1em solid #058faf;
+  background-color: var(--widget-zebra);
+  border-bottom: 0.1em solid var(--widget-lowlight);
 }
 
 .tab:hover {
-  background-color: #06aed5;
-  color: #fff;
-  border-bottom: 0.1em solid #06aed5;
+  background-color: var(--blue-watermark);
+  color: white;
+  border-bottom: 0.1em solid var(--blue-watermark);
 }
 
 .label {
@@ -628,32 +703,8 @@ a.load.danger:visited {
   margin: 0.2em;
   padding: 0.2em;
   box-shadow: 0.1em 0.1em 5px 0px rgba(0, 0, 0, 0.1);
-  border: 1px solid #06aed5;
-  background-color: #d1f0f7;
-}
-
-.live {
-  background-color: #f9dddb;
-}
-
-div.olive {
-  padding: 0.2em;
-}
-
-div.olive:target {
-  background-color: #d2ebee;
-}
-
-div.olive:target feFlood {
-  flood-color: #d2ebee;
-}
-
-div.olive:hover {
-  background-color: #eaf5f7;
-}
-
-div.olive:hover feFlood {
-  flood-color: #eaf5f7;
+  border: 1px solid var(--blue-watermark);
+  background-color: var(--blue-background);
 }
 
 .modal,
@@ -673,10 +724,10 @@ div.olive:hover feFlood {
 }
 
 .modal.close > div {
-  background-color: #fefefe;
+  background-color: var(--dialog-background);
   margin: 5vh auto;
   padding: 20px;
-  border: 1px solid #888;
+  border: 1px solid var(--dialog-border);
   width: 80%;
   max-height: 90vh;
   border-radius: 0.2em;
@@ -692,7 +743,7 @@ div.olive:hover feFlood {
 }
 
 .modal.close > div > :first-child:hover {
-  color: #b83c31;
+  color: var(--widget-danger-lowlight);
 }
 
 .modal.close > div > :nth-child(2) {
@@ -703,20 +754,20 @@ div.olive:hover feFlood {
 .menucapture > div,
 .helpcapture > div {
   position: absolute;
-  background: #fff;
-  border: 1px solid #000;
+  background: var(--widget-negative);
+  border: 1px solid var(--widget-text);
   border-radius: 0.1em;
 }
 .menucapture > div > div {
-  color: #000;
-  background-color: #fff;
+  color: var(--widget-text);
+  background-color: var(--widget-negative);
   padding: 0.5em;
   cursor: pointer;
 }
 
 .menucapture > div > div:hover {
-  color: #fff;
-  background-color: #06aed5;
+  color: var(--widget-negative);
+  background-color: var(--widget-highlight);
 }
 
 th {
@@ -726,7 +777,7 @@ th {
   padding: 1em;
 }
 .helpcapture hr {
-  border: 1px solid #aaa;
+  border: 1px solid var(--dialog-border);
   width: 1px;
   height: 1px;
 }
@@ -789,7 +840,7 @@ table.errors {
 }
 
 .active {
-  background-color: #d1efed;
+  background-color: var(--cyan-background);
 }
 
 .throbber span {
@@ -799,7 +850,7 @@ table.errors {
   height: 1em;
   border-radius: 50%;
   vertical-align: middle;
-  background-color: #06aed5;
+  background-color: var(--widget-highlight);
   animation: throbber-pulse 1.2s linear infinite;
 }
 .throbber span:nth-child(1) {

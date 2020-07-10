@@ -1572,7 +1572,7 @@ function searchBasic(
           )
       ),
       buttonAccessory(
-        "⌫ Clear",
+        "⌫ Clear Filters",
         "Remove all search filters and view everything.",
         () => {
           current = {};

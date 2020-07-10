@@ -30,6 +30,7 @@ import {
   statefulListBind,
   refreshButton,
   sharedPane,
+  buttonAccessory,
 } from "./html.js";
 import {
   SourceLocation,
@@ -194,7 +195,7 @@ export function alertNavigator<L, A extends Alert<L>>(
 
   return {
     toolbar: group(
-      button(
+      buttonAccessory(
         "➕ Add Filter",
         "Add a filter to limit the alerts displayed.",
         () =>
@@ -675,7 +676,7 @@ function showFilter(
       break;
     case "sourcelocation":
       return tile(
-        ["load"],
+        ["button"],
         "Source Location",
         table(
           userFilter.locations,
@@ -692,7 +693,7 @@ function showFilter(
       name = "Unknown";
   }
   return tile(
-    ["load"],
+    ["button"],
     name,
     buttonClose("Remove filter.", () =>
       list.keepOnly(

@@ -20,7 +20,7 @@ public class NothingAction extends Action {
       new ActionCommand<NothingAction>(
           NothingAction.class,
           "NOTHING-COMPLAIN",
-          "📢 Complain loudly",
+          "📢 Write to Server Console",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
