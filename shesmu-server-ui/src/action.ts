@@ -247,33 +247,36 @@ export function actionDisplay(
                       }),
                       action.actionId
                     ),
-                    button(
+                    buttonAccessory(
                       "⎘ Copy Id",
                       "Copy action identifier to clipboard.",
                       () => saveClipboard(action.actionId)
                     ),
-                    buttonDanger("☠️ PURGE ACTION", "Remove this action.", () =>
-                      fetchJsonWithBusyDialog(
-                        "purge",
-                        {
-                          body: JSON.stringify([
-                            {
-                              type: "id",
-                              ids: [action.actionId],
-                            },
-                          ]),
-                          method: "POST",
-                        },
-                        (count: number) => {
-                          if (count > 1) {
-                            dialog((close) => [
-                              `Purged ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
-                              img("ohno.gif"),
-                            ]);
+                    buttonDanger(
+                      "☠️ Purge Action",
+                      "Remove this action from Shesmu. This does not stop an olive from generating it again.",
+                      () =>
+                        fetchJsonWithBusyDialog(
+                          "purge",
+                          {
+                            body: JSON.stringify([
+                              {
+                                type: "id",
+                                ids: [action.actionId],
+                              },
+                            ]),
+                            method: "POST",
+                          },
+                          (count: number) => {
+                            if (count > 1) {
+                              dialog((close) => [
+                                `Purged ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
+                                img("ohno.gif"),
+                              ]);
+                            }
+                            reload();
                           }
-                          reload();
-                        }
-                      )
+                        )
                     ),
                     action.commands.map(
                       ({ command, buttonText, showPrompt }) => {
@@ -362,41 +365,6 @@ export function actionDisplay(
                       )
                   )
               ),
-              buttonDanger("☠️ PURGE", "Remove actions.", () =>
-                fetchJsonWithBusyDialog(
-                  "purge",
-                  {
-                    body: JSON.stringify(filters),
-                    method: "POST",
-                  },
-                  (count: number) => {
-                    let imgSrc: string;
-                    if (count == 0) {
-                      imgSrc = "shrek.gif";
-                    } else if (count < 5) {
-                      imgSrc = "holtburn.gif";
-                    } else if (count < 20) {
-                      imgSrc = "vacuum.gif";
-                    } else if (count < 100) {
-                      imgSrc = "car.gif";
-                    } else if (count < 500) {
-                      imgSrc = "flamethrower.gif";
-                    } else if (count < 1000) {
-                      imgSrc = "thorshchariot.gif";
-                    } else if (count < 5000) {
-                      imgSrc = "volcano.gif";
-                    } else {
-                      imgSrc = "starwars.gif";
-                    }
-                    dialog((_close) => [
-                      `Removed ${count} actions.`,
-                      br(),
-                      img(imgSrc),
-                    ]);
-                    reload();
-                  }
-                )
-              ),
               response.bulkCommands.length
                 ? buttonAccessory(
                     "🡇 Export Command",
@@ -428,6 +396,44 @@ export function actionDisplay(
                       )
                   )
                 : blank(),
+              buttonDanger(
+                "☠️ Purge Actions",
+                "Remove actions from Shesmu. This does not stop an olive from generating them again.",
+                () =>
+                  fetchJsonWithBusyDialog(
+                    "purge",
+                    {
+                      body: JSON.stringify(filters),
+                      method: "POST",
+                    },
+                    (count: number) => {
+                      let imgSrc: string;
+                      if (count == 0) {
+                        imgSrc = "shrek.gif";
+                      } else if (count < 5) {
+                        imgSrc = "holtburn.gif";
+                      } else if (count < 20) {
+                        imgSrc = "vacuum.gif";
+                      } else if (count < 100) {
+                        imgSrc = "car.gif";
+                      } else if (count < 500) {
+                        imgSrc = "flamethrower.gif";
+                      } else if (count < 1000) {
+                        imgSrc = "thorshchariot.gif";
+                      } else if (count < 5000) {
+                        imgSrc = "volcano.gif";
+                      } else {
+                        imgSrc = "starwars.gif";
+                      }
+                      dialog((_close) => [
+                        `Removed ${count} actions.`,
+                        br(),
+                        img(imgSrc),
+                      ]);
+                      reload();
+                    }
+                  )
+              ),
               response.bulkCommands.map(
                 ({ buttonText, count, command, showPrompt, annoyUser }) => {
                   let performCommand = () =>
