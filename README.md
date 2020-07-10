@@ -263,6 +263,10 @@ where `url` is the Shesmu server to copy and `allow` is a regular expression of
 which actions to copy. An optional `prefix` can be applied to the names of all
 the actions.
 
+If the remote server is not accessible, download the `/actions` endpoint to a
+file ending in `.fakeactiondefs`. This will create a similar set of fake
+actions, though statically.
+
 ### Input Definitions
 A _input format_ is the type of data that Shesmu olives process--that is, the
 variables that are available to Shesmu programs. The actual data comes from a
