@@ -190,7 +190,7 @@ export function button(
   title: string,
   callback: ClickHandler
 ) {
-  return buttonCustom(label, title, [], callback);
+  return buttonCustom(label, title, ["regular"], callback);
 }
 
 /**
@@ -216,7 +216,7 @@ export function buttonCustom(
   callback: ClickHandler
 ) {
   const button = document.createElement("span");
-  button.classList.add("load");
+  button.classList.add("button");
   for (const name of className) {
     button.classList.add(name);
   }
@@ -1166,7 +1166,7 @@ export function pager(
         const index = i;
         page.innerText = `${index + 1}`;
         if (index != current) {
-          page.className = "load accessory";
+          page.className = "button accessory";
           page.addEventListener("click", () => drawPager(index));
         }
         pager.appendChild(page);
