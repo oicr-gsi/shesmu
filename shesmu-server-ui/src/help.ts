@@ -137,17 +137,19 @@ function helpButton(
     const markReadOnClose: Map<number, Set<number>> = new Map();
     addElements(
       popup,
-      buttonIcon("✓ Read", readTooltip, () => {
-        document.body.removeChild(popupContainer);
-        model.statusChanged({
-          version: input.version,
-          tips: input.tips.filter(([version, index]) => {
-            const tip = tips[version]?.[index];
-            return tip != null && !predicate(version, index, tip);
-          }),
-        });
-      }),
-      readAllEnabled
+      hasNew
+        ? buttonIcon("✓ Read", readTooltip, () => {
+            document.body.removeChild(popupContainer);
+            model.statusChanged({
+              version: input.version,
+              tips: input.tips.filter(([version, index]) => {
+                const tip = tips[version]?.[index];
+                return tip != null && !predicate(version, index, tip);
+              }),
+            });
+          })
+        : blank(),
+      readAllEnabled && hasNew
         ? [
             " | ",
             buttonIcon(
