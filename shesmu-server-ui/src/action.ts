@@ -32,6 +32,8 @@ import {
   checkRandomSequence,
   makeUrl,
   butter,
+  tableFromRows,
+  tableRow,
 } from "./html.js";
 import {
   StatefulModel,
@@ -371,29 +373,37 @@ export function actionDisplay(
                     "🡇 Export Command",
                     "Generate a command line to perform a command command.",
                     () =>
-                      dialog((close) =>
-                        response.bulkCommands.map(({ buttonText, command }) => [
-                          buttonText,
-                          button(
-                            "cUrl",
-                            `Copy a cURL command to invoke the ${command} command on the actions selected.`,
-                            () =>
-                              copyCUrlCommand("command", {
-                                command: command,
-                                filters: filters,
-                              })
-                          ),
-                          button(
-                            "Wget",
-                            `Copy a Wget command to invoke the ${command} command on the actions selected.`,
-                            () =>
-                              copyWgetCommand("command", {
-                                command: command,
-                                filters: filters,
-                              })
-                          ),
-                          br(),
-                        ])
+                      dialog((_close) =>
+                        tableFromRows(
+                          response.bulkCommands.map(({ buttonText, command }) =>
+                            tableRow(
+                              null,
+                              { contents: buttonText },
+                              {
+                                contents: button(
+                                  "cUrl",
+                                  `Copy a cURL command to invoke the ${command} command on the actions selected.`,
+                                  () =>
+                                    copyCUrlCommand("command", {
+                                      command: command,
+                                      filters: filters,
+                                    })
+                                ),
+                              },
+                              {
+                                contents: button(
+                                  "Wget",
+                                  `Copy a Wget command to invoke the ${command} command on the actions selected.`,
+                                  () =>
+                                    copyWgetCommand("command", {
+                                      command: command,
+                                      filters: filters,
+                                    })
+                                ),
+                              }
+                            )
+                          )
+                        )
                       )
                   )
                 : blank(),
