@@ -1798,6 +1798,135 @@ export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
     },
   };
 }
+
+/**
+ * Create a tabbed area which can be updated
+ *
+ * @param groups the number of tab groups to create; each group can contain multiple tabs, but they must be updated as a unit
+ * @param tabs a set of tabs to display at the beginning (these cannot be updated)
+ */
+export function tabsModel(
+  groups: number,
+  ...tabs: Tab[]
+): { ui: UIElement; find: FindHandler; models: StatefulModel<Tab[]>[] } {
+  type Group = {
+    panes: HTMLElement[];
+    buttons: HTMLElement[];
+    finds: FindHandler[];
+  };
+  let findHandler: FindHandler = null;
+  let current: [number, number] = [0, 0];
+  const tabGroups: Group[] = [];
+  const generate = (group: number, tabs: Tab[]): Group => ({
+    panes: tabs.map(({ contents }) => {
+      const pane = document.createElement("div");
+      addElements(pane, contents);
+      return pane;
+    }),
+    buttons: tabs.map(({ name, find }, index) => {
+      const button = document.createElement("span");
+      button.innerText = name;
+      button.addEventListener("click", () => {
+        current = [group, index];
+        tabGroups.forEach(({ panes, buttons }, groupIndex) => {
+          panes.forEach((pane, i) => {
+            pane.style.display =
+              groupIndex == group && i == index ? "block" : "none";
+          });
+          buttons.forEach((button, i) => {
+            button.className =
+              groupIndex == group && i == index ? "tab selected" : "tab";
+          });
+          findHandler = find || null;
+        });
+      });
+      return button;
+    }),
+    finds: tabs.map((t) => t.find || null),
+  });
+  const container = document.createElement("div");
+  const paneHolder = document.createElement("div");
+  const buttonBar = document.createElement("div");
+  container.appendChild(buttonBar);
+  container.appendChild(paneHolder);
+
+  const update = (group: number) => {
+    clearChildren(buttonBar);
+    addElements(buttonBar, ...tabGroups.map((tg) => tg.buttons));
+    clearChildren(paneHolder);
+    addElements(paneHolder, ...tabGroups.map((tg) => tg.panes));
+    const [targetGroup, targetIndex] = tabGroups[group].panes.length
+      ? [group, 0]
+      : current;
+    tabGroups.forEach(({ panes, buttons, finds }, groupIndex) => {
+      panes.forEach((pane, i) => {
+        pane.style.display =
+          groupIndex == targetGroup && i == targetIndex ? "block" : "none";
+      });
+      buttons.forEach((button, i) => {
+        button.className =
+          groupIndex == targetGroup && i == targetIndex
+            ? "tab selected"
+            : "tab";
+      });
+      if (groupIndex == targetGroup) {
+        findHandler = targetIndex < finds.length ? finds[targetIndex] : null;
+      }
+    });
+  };
+
+  tabGroups.push(generate(0, tabs));
+  const models: StatefulModel<Tab[]>[] = [];
+  for (let i = 0; i < groups; i++) {
+    const group = i + 1;
+    tabGroups.push({ panes: [], buttons: [], finds: [] });
+    models.push({
+      reload: () => {},
+      statusChanged: (input) => {
+        tabGroups[group] = generate(group, input);
+        update(group);
+      },
+      statusFailed: (message, retry) => {
+        const buttonElement = document.createElement("span");
+        addElements(
+          buttonElement,
+          text(message),
+          retry ? button("Retry", "Try the operation again.", retry) : blank()
+        );
+        const pane = document.createElement("div");
+        addElements(pane, img("dead.svg", "deadolive"));
+        tabGroups[group] = {
+          panes: [pane],
+          buttons: [buttonElement],
+          finds: [null],
+        };
+        update(group);
+      },
+      statusWaiting: () => {
+        const button = document.createElement("span");
+        addElements(button, throbberSmall());
+        const pane = document.createElement("div");
+        addElements(pane, throbber());
+        tabGroups[group] = { panes: [pane], buttons: [button], finds: [null] };
+        update(group);
+      },
+    });
+  }
+
+  update(0);
+  return {
+    ui: container,
+    models: models,
+    find: () => {
+      if (findHandler) {
+        return findHandler();
+      } else {
+        return false;
+      }
+    },
+  };
+}
+
 /**
  * Create a UI element with a bunch of fake buttons for tags/types
  */
