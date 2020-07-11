@@ -54,7 +54,11 @@ import {
   AlertFilter,
   loadFilterRegex,
 } from "./alert.js";
-import { actionDisplay, ExportSearchCommand } from "./action.js";
+import {
+  actionDisplay,
+  ExportSearchCommand,
+  standardExports,
+} from "./action.js";
 import { actionStats } from "./stats.js";
 import { helpArea } from "./help.js";
 
@@ -285,7 +289,8 @@ export function initialiseOliveDash(
   );
   const { ui: statsUi, model: statsModel } = actionStats(
     (...limits) => search.addPropertySearch(...limits),
-    (typeName, start, end) => search.addRangeSearch(typeName, start, end)
+    (typeName, start, end) => search.addRangeSearch(typeName, start, end),
+    standardExports.concat(exportSearches)
   );
   const { actions, bulkCommands, model: actionsModel } = actionDisplay(
     exportSearches

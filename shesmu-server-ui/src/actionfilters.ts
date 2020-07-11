@@ -33,7 +33,7 @@ import {
   preformatted,
   butter,
 } from "./html.js";
-import { AddRangeSearch, AddPropertySearch } from "./stats.js";
+import { AddRangeSearch, AddPropertySearch, PropertySearch } from "./stats.js";
 import { Status, statusButton, statusDescription, statuses } from "./action.js";
 import { actionRender } from "./actions.js";
 import {
@@ -758,6 +758,27 @@ function editTimeHorizon(
     ];
   });
 }
+/** Convert the format used for property search descriptions into action filters */
+export function filtersForPropertySearch(
+  ...limits: PropertySearch[]
+): ActionFilter[] {
+  return limits.map(
+    (limit): ActionFilter => {
+      switch (limit.type) {
+        case "status":
+          return { type: "status", states: [limit.value] };
+        case "tag":
+          return { type: "tag", tags: [limit.value] };
+        case "sourcefile":
+          return { type: "sourcefile", files: [limit.value] };
+        case "type":
+          return { type: "type", types: [limit.value] };
+        default:
+          throw new Error("Unhandled limit");
+      }
+    }
+  );
+}
 
 /**
  * Get the name for a time property
@@ -1421,24 +1442,7 @@ function searchAdvanced(
       updateFromClick({ type: typeName, start: start, end: end });
     },
     addPropertySearch: (...limits) => {
-      updateFromClick(
-        ...limits.map(
-          (limit): ActionFilter => {
-            switch (limit.type) {
-              case "status":
-                return { type: "status", states: [limit.value] };
-              case "tag":
-                return { type: "tag", tags: [limit.value] };
-              case "sourcefile":
-                return { type: "sourcefile", files: [limit.value] };
-              case "type":
-                return { type: "type", types: [limit.value] };
-              default:
-                throw new Error("Unhandled limit");
-            }
-          }
-        )
-      );
+      updateFromClick(...filtersForPropertySearch(...limits));
     },
   };
 }
@@ -1604,17 +1608,12 @@ function searchBasic(
     },
 
     addPropertySearch: (...limits) => {
-      for (const limit of limits) {
-        if (limit.type == "status") {
-          current[limit.type] = combineSet(current[limit.type], limit.value);
-        } else {
-          current[limit.type] = combineSet(current[limit.type], limit.value);
-        }
-      }
+      updateBasicQueryForPropertySearch(limits, current);
       searchModel.statusChanged({ ...current });
     },
   };
 }
+
 function timeDialog(
   callback: (accessor: BasicQueryTimeAccessor) => void
 ): void {
@@ -1638,5 +1637,18 @@ function timeRangeAnchor(
     return text(leader + ago + trailer, absolute);
   } else {
     return blank();
+  }
+}
+
+export function updateBasicQueryForPropertySearch(
+  limits: PropertySearch[],
+  current: BasicQuery
+): void {
+  for (const limit of limits) {
+    if (limit.type == "status") {
+      current[limit.type] = combineSet(current[limit.type], limit.value);
+    } else {
+      current[limit.type] = combineSet(current[limit.type], limit.value);
+    }
   }
 }

@@ -5,6 +5,11 @@ import {
   tableRow,
   blank,
   singleState,
+  popup,
+  ClickHandler,
+  dialog,
+  button,
+  makeUrl,
 } from "./html.js";
 import {
   StatefulModel,
@@ -18,9 +23,12 @@ import {
   ActionFilter,
   PropertyType,
   TimeRangeType,
+  filtersForPropertySearch,
+  BasicQuery,
+  updateBasicQueryForPropertySearch,
 } from "./actionfilters.js";
 import { refreshable } from "./io.js";
-import { Status } from "./action.js";
+import { Status, ExportSearchCommand } from "./action.js";
 import { helpHotspot, helpArea } from "./help.js";
 
 interface TableStatRow {
@@ -107,8 +115,42 @@ export type PropertySearch =
 function renderStat(
   stat: Stat,
   addPropertySearch: AddPropertySearch,
-  addRangeSearch: AddRangeSearch
+  addRangeSearch: AddRangeSearch,
+  exportSearches: ExportSearchCommand[]
 ): UIElement {
+  function popupForProperty(...limits: PropertySearch[]): ClickHandler {
+    return popup(
+      {
+        label: "Drill Down",
+        action: () => addPropertySearch(...limits),
+      },
+      {
+        label: "Open Search for Only This Selection",
+        action: () => {
+          const basic: BasicQuery = {};
+          updateBasicQueryForPropertySearch(limits, basic);
+          window.open(
+            makeUrl("actiondash", {
+              filters: basic,
+              saved: "All Actions",
+            })
+          );
+        },
+      },
+      {
+        label: "Export Search for Only This Condition",
+        action: () =>
+          dialog((close) =>
+            exportSearches.map(([label, title, command]) =>
+              button(label, title, () => {
+                close();
+                command(filtersForPropertySearch(...limits));
+              })
+            )
+          ),
+      }
+    );
+  }
   switch (stat.type) {
     case "text":
       return stat.value;
@@ -118,13 +160,12 @@ function renderStat(
           stat.table.map(
             (row: TableStatRow): HTMLTableRowElement => {
               let prettyTitle: string;
-              let click: (() => void) | null = null;
+              let click: ClickHandler | null = null;
               if (row.kind == null) {
                 prettyTitle = row.title;
               } else if (row.kind == "property") {
                 prettyTitle = `${row.title} ${row.property}`;
-                click = () =>
-                  addPropertySearch({ type: row.type, value: row.json });
+                click = popupForProperty({ type: row.type, value: row.json });
               } else {
                 prettyTitle = `Unknown entry for ${row.kind}`;
               }
@@ -149,8 +190,7 @@ function renderStat(
               contents: breakSlashes(c.name),
               header: true,
               cell: c.name,
-              click: () =>
-                addPropertySearch({ type: stat.column, value: c.value }),
+              click: popupForProperty({ type: stat.column, value: c.value }),
             }))
           )
         )
@@ -173,8 +213,7 @@ function renderStat(
               {
                 contents: breakSlashes(rowKey) as UIElement,
                 header: true,
-                click: () =>
-                  addPropertySearch({ type: stat.row, value: rowValue }),
+                click: popupForProperty({ type: stat.row, value: rowValue }),
               },
             ].concat(
               stat.columns.map((col) => {
@@ -190,11 +229,10 @@ function renderStat(
                     : blank(),
                   header: false,
                   intensity: (value || 0) / maximum,
-                  click: () =>
-                    addPropertySearch(
-                      { type: col.name, value: col.value },
-                      { type: stat.row, value: rowValue }
-                    ),
+                  click: popupForProperty(
+                    { type: col.name, value: col.value },
+                    { type: stat.row, value: rowValue }
+                  ),
                 };
               })
             )
@@ -258,7 +296,8 @@ function renderStat(
  */
 export function actionStats(
   addPropertySeach: AddPropertySearch,
-  addRangeSearch: AddRangeSearch
+  addRangeSearch: AddRangeSearch,
+  exportSearches: ExportSearchCommand[]
 ): { ui: UIElement; model: StatefulModel<ActionFilter[]> } {
   const { model, ui } = singleState(
     (stats: Stat[] | null): UIElement => {
@@ -266,7 +305,7 @@ export function actionStats(
         return [
           text("Click any cell or table heading to filter results."),
           stats.map((stat) =>
-            renderStat(stat, addPropertySeach, addRangeSearch)
+            renderStat(stat, addPropertySeach, addRangeSearch, exportSearches)
           ),
         ];
       }
