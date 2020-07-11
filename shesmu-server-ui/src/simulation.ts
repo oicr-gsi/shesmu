@@ -40,6 +40,7 @@ import {
   temporaryState,
   singleState,
   mono,
+  tabsModel,
 } from "./html.js";
 import {
   formatTimeSpan,
@@ -48,6 +49,7 @@ import {
   matchKeywordInArbitraryData,
   validIdentifier,
   combineModels,
+  mapModel,
 } from "./util.js";
 import { specialImports } from "./actions.js";
 import { helpArea } from "./help.js";
@@ -299,304 +301,301 @@ export function initialiseSimulationDashboard(
   });
 
   const waitForData = inputCheckbox("Wait for fresh data", false);
-  const dashboardState = singleState((response: SimulationResponse | null) => {
-    const tabList: Tab[] = [
-      {
-        name: "Script",
-        contents: group(script, errorTable.ui),
-      },
-      {
-        name: "Extra Definitions",
-        contents: group(
-          button(
-            "➕ Import Action",
-            "Uploads a file containing an action.",
-            () =>
-              loadFile((name, data) =>
-                importAction(fakeActionDefinitions, name.split(".")[0], data)
-              )
-          ),
-          button("➕ Add Action", "Adds an action from a definition.", () =>
-            dialog((close) => {
-              const actionJson = inputTextArea();
-              return [
-                "Action definition:",
-                br(),
-                actionJson.ui,
-                br(),
-                button("Add", "Save to fake action collection.", () => {
-                  importAction(
-                    fakeActionDefinitions,
-                    null,
-                    actionJson.getter()
-                  );
-                  close();
-                }),
-              ];
-            })
-          ),
-          fakeActionsUi
+  const tabbedArea = tabsModel(
+    1,
+    {
+      name: "Script",
+      contents: group(script, errorTable.ui),
+    },
+    {
+      name: "Extra Definitions",
+      contents: group(
+        button("➕ Import Action", "Uploads a file containing an action.", () =>
+          loadFile((name, data) =>
+            importAction(fakeActionDefinitions, name.split(".")[0], data)
+          )
         ),
-      },
-    ];
-    if (response) {
-      if (document.visibilityState == "hidden") {
-        completeSound.play();
-      }
-
-      if (response.alerts?.length) {
-        const { main, toolbar, find } = alertNavigator(
-          response.alerts,
-          (a) => [],
-          temporaryState([] as AlertFilter<RegExp>[]),
-          [
-            ["Line", (l: SimulatedLocation) => l.line.toString()],
-            ["Column", (l: SimulatedLocation) => l.column.toString()],
-          ]
-        );
-        tabList.push({
-          name: "Alerts",
-          contents: [toolbar, br(), main],
-          find: find,
-        });
-      }
-      if (response.actions?.length) {
-        tabList.push({
-          name: "Actions",
-          contents: renderActions(response.actions),
-        });
-      }
-      if (response.olives?.length) {
-        const alertFindProxy = findProxy();
-        type SimulatedOliveRenderer = (olive: SimulatedOlive) => UIElement;
-        const oliveState = multipaneState<
-          SimulatedOlive,
-          {
-            actions: SimulatedOliveRenderer;
-            alerts: SimulatedOliveRenderer;
-            overview: SimulatedOliveRenderer;
-            dataflow: SimulatedOliveRenderer;
-          }
-        >("overview", {
-          actions: (olive: SimulatedOlive) => {
-            const oliveActions = (response.actions || []).filter((a) =>
-              a.locations.some(
-                (l) => l.line == olive.line && l.column == l.column
-              )
-            );
-            return oliveActions.length
-              ? renderActions(oliveActions)
-              : text("No actions found.");
-          },
-          alerts: (olive: SimulatedOlive) => {
-            const oliveAlerts = (response.alerts || []).filter((a) =>
-              a.locations.some(
-                (l) => l.line == olive.line && l.column == l.column
-              )
-            );
-            if (oliveAlerts.length) {
-              const { main, toolbar, find } = alertNavigator(
-                oliveAlerts,
-                (a) => [],
-                temporaryState([] as AlertFilter<RegExp>[]),
-                [
-                  ["Line", (l: SimulatedLocation) => l.line.toString()],
-                  ["Column", (l: SimulatedLocation) => l.column.toString()],
-                ]
-              );
-              alertFindProxy.updateHandle(find);
-              return [toolbar, br(), main];
-            } else {
-              return text("No alerts found.");
-            }
-          },
-          overview: (olive: SimulatedOlive) =>
-            table(
-              Object.entries({
-                Runtime: formatTimeSpan(olive.duration / 1e6),
+        button("➕ Add Action", "Adds an action from a definition.", () =>
+          dialog((close) => {
+            const actionJson = inputTextArea();
+            return [
+              "Action definition:",
+              br(),
+              actionJson.ui,
+              br(),
+              button("Add", "Save to fake action collection.", () => {
+                importAction(fakeActionDefinitions, null, actionJson.getter());
+                close();
               }),
-              ["Information", (x) => x[0]],
-              ["Value", (x) => x[1]]
-            ),
-          dataflow: (olive: SimulatedOlive) =>
-            document.adoptNode(
-              new DOMParser().parseFromString(olive.diagram, "image/svg+xml")
-                .documentElement
-            ),
-        });
-        const oliveSelection = dropdown(
-          (olive) => [
-            infoForProduces(olive.produces).icon,
-            " ",
-            italic(olive.syntax),
-            " – ",
-            olive.description || "No description.",
-          ],
-          null,
-          oliveState.model,
-          null,
-          ...response.olives
-        );
-        const oliveTabs = tabs(
-          {
-            name: "Overview",
-            contents: oliveState.components.overview,
-          },
-          { name: "Actions", contents: oliveState.components.actions },
-          {
-            name: "Alerts",
-            contents: oliveState.components.alerts,
-            find: alertFindProxy.find,
-          },
-          { name: "Dataflow", contents: oliveState.components.dataflow }
-        );
-        tabList.push({
-          name: "Olive",
-          contents: [oliveSelection, br(), oliveTabs.ui],
-          find: oliveTabs.find,
-        });
-      }
-      if (response.exports?.length) {
-        tabList.push({
-          name: "Exports",
-          contents: response.exports.map((ex) => {
-            switch (ex.type) {
-              case "constant":
-                return [
-                  header(ex.name),
-                  table(
-                    [["Returns", ex.returns]],
-                    ["Position", (x) => x[0]],
-                    ["Type", (x) => x[0]]
-                  ),
-                ];
-              case "function":
-                return [
-                  header(ex.name),
-                  table(
-                    [["Return", ex.returns]].concat(
-                      ex.parameters.map((type, index) => [
-                        `Parameter ${index + 1}`,
-                        type,
-                      ])
-                    ),
-                    ["Position", (x) => x[0]],
-                    ["Type", (x) => x[0]]
-                  ),
-                ];
-              default:
-                return blank();
-            }
-          }),
-        });
-      }
-      if (response.refillers && Object.keys(response.refillers).length) {
-        const refillerState = singleState(
-          ([name, entries]: [string, RefillerRecord[]]) =>
-            entries.length > 0
-              ? renderJsonTable<RefillerRecord>(
-                  name + ".refiller.json",
-                  entries,
-                  ...Object.keys(entries[0])
-                    .sort((a, b) => a.localeCompare(b))
-                    .map(
-                      (name) =>
-                        [name, (row: RefillerRecord) => row[name]] as [
-                          string,
-                          (row: RefillerRecord) => any
-                        ]
-                    )
-                )
-              : ["Olive provided no records to ", mono(name), " refiller."]
-        );
-        tabList.push({
-          name: "Refill Output",
-          contents: [
-            dropdown(
-              ([name, declaration]) => name,
-              Object.entries(response.refillers)[0],
-              refillerState.model,
-              null,
-              ...Object.entries(response.refillers)
-            ),
-            br(),
-            refillerState.ui,
-          ],
-        });
-      }
-      if (response.dumpers && Object.entries(response.dumpers).length) {
-        const dumpState = singleState((input: [string, any[][]] | null) =>
-          input && input[1].length > 0
-            ? renderJsonTable<any[]>(
-                name + ".dump.json",
-                input[1],
-                ...Array.from(input[1][0].keys()).map(
-                  (i) =>
-                    [`Column ${i + 1}`, (row) => row[i]] as [
-                      string,
-                      (input: any[]) => any
-                    ]
-                )
-              )
-            : ["Olive provided no records to ", mono(name), " dumper."]
-        );
-        tabList.push({
-          name: "Dumpers",
-          contents: group(
-            dropdown(
-              (input) => (input ? input[0] : blank()),
-              Object.entries(response.dumpers)[0],
-              dumpState.model,
-              null,
-              ...Object.entries(response.dumpers)
-            ),
-            br(),
-            dumpState.ui
-          ),
-        });
-      }
-      if (response.overloadedInputs?.length) {
-        tabList.push({
-          name: "Overloaded Inputs",
-          contents: [
-            text(
-              "The following input formats are unavailable and prevented the simulation from running:"
-            ),
-            br(),
-            table(response.overloadedInputs, ["Input Format", (x) => x]),
-          ],
-        });
-      }
-
-      if (response.overloadedServices?.length) {
-        tabList.push({
-          name: "Overloaded Services",
-          contents: [
-            text(
-              "The following services are unavailable and prevented the simulation from running:"
-            ),
-            br(),
-            table(response.overloadedServices, ["Service", (x) => x]),
-          ],
-        });
-      }
-      if (response.metrics) {
-        tabList.push({
-          name: "Prometheus Metrics",
-          contents: preformatted(response.metrics),
-        });
-      }
-      if (response.bytecode) {
-        tabList.push({
-          name: "Bytecode",
-          contents: preformatted(response.bytecode),
-        });
-      }
+            ];
+          })
+        ),
+        fakeActionsUi
+      ),
     }
-    const dashboardTabs = tabs(...tabList);
-    setFindHandler(dashboardTabs.find);
-    return dashboardTabs.ui;
-  });
+  );
+  const dashboardState = mapModel(
+    tabbedArea.models[0],
+    (response: SimulationResponse | null) => {
+      const tabList: Tab[] = [];
+      if (response) {
+        if (document.visibilityState == "hidden") {
+          completeSound.play();
+        }
+
+        if (response.alerts?.length) {
+          const { main, toolbar, find } = alertNavigator(
+            response.alerts,
+            (a) => [],
+            temporaryState([] as AlertFilter<RegExp>[]),
+            [
+              ["Line", (l: SimulatedLocation) => l.line.toString()],
+              ["Column", (l: SimulatedLocation) => l.column.toString()],
+            ]
+          );
+          tabList.push({
+            name: "Alerts",
+            contents: [toolbar, br(), main],
+            find: find,
+          });
+        }
+        if (response.actions?.length) {
+          tabList.push({
+            name: "Actions",
+            contents: renderActions(response.actions),
+          });
+        }
+        if (response.olives?.length) {
+          const alertFindProxy = findProxy();
+          type SimulatedOliveRenderer = (olive: SimulatedOlive) => UIElement;
+          const oliveState = multipaneState<
+            SimulatedOlive,
+            {
+              actions: SimulatedOliveRenderer;
+              alerts: SimulatedOliveRenderer;
+              overview: SimulatedOliveRenderer;
+              dataflow: SimulatedOliveRenderer;
+            }
+          >("overview", {
+            actions: (olive: SimulatedOlive) => {
+              const oliveActions = (response.actions || []).filter((a) =>
+                a.locations.some(
+                  (l) => l.line == olive.line && l.column == l.column
+                )
+              );
+              return oliveActions.length
+                ? renderActions(oliveActions)
+                : text("No actions found.");
+            },
+            alerts: (olive: SimulatedOlive) => {
+              const oliveAlerts = (response.alerts || []).filter((a) =>
+                a.locations.some(
+                  (l) => l.line == olive.line && l.column == l.column
+                )
+              );
+              if (oliveAlerts.length) {
+                const { main, toolbar, find } = alertNavigator(
+                  oliveAlerts,
+                  (a) => [],
+                  temporaryState([] as AlertFilter<RegExp>[]),
+                  [
+                    ["Line", (l: SimulatedLocation) => l.line.toString()],
+                    ["Column", (l: SimulatedLocation) => l.column.toString()],
+                  ]
+                );
+                alertFindProxy.updateHandle(find);
+                return [toolbar, br(), main];
+              } else {
+                return text("No alerts found.");
+              }
+            },
+            overview: (olive: SimulatedOlive) =>
+              table(
+                Object.entries({
+                  Runtime: formatTimeSpan(olive.duration / 1e6),
+                }),
+                ["Information", (x) => x[0]],
+                ["Value", (x) => x[1]]
+              ),
+            dataflow: (olive: SimulatedOlive) =>
+              document.adoptNode(
+                new DOMParser().parseFromString(olive.diagram, "image/svg+xml")
+                  .documentElement
+              ),
+          });
+          const oliveSelection = dropdown(
+            (olive) => [
+              infoForProduces(olive.produces).icon,
+              " ",
+              italic(olive.syntax),
+              " – ",
+              olive.description || "No description.",
+            ],
+            null,
+            oliveState.model,
+            null,
+            ...response.olives
+          );
+          const oliveTabs = tabs(
+            {
+              name: "Overview",
+              contents: oliveState.components.overview,
+            },
+            { name: "Actions", contents: oliveState.components.actions },
+            {
+              name: "Alerts",
+              contents: oliveState.components.alerts,
+              find: alertFindProxy.find,
+            },
+            { name: "Dataflow", contents: oliveState.components.dataflow }
+          );
+          tabList.push({
+            name: "Olive",
+            contents: [oliveSelection, br(), oliveTabs.ui],
+            find: oliveTabs.find,
+          });
+        }
+        if (response.exports?.length) {
+          tabList.push({
+            name: "Exports",
+            contents: response.exports.map((ex) => {
+              switch (ex.type) {
+                case "constant":
+                  return [
+                    header(ex.name),
+                    table(
+                      [["Returns", ex.returns]],
+                      ["Position", (x) => x[0]],
+                      ["Type", (x) => x[0]]
+                    ),
+                  ];
+                case "function":
+                  return [
+                    header(ex.name),
+                    table(
+                      [["Return", ex.returns]].concat(
+                        ex.parameters.map((type, index) => [
+                          `Parameter ${index + 1}`,
+                          type,
+                        ])
+                      ),
+                      ["Position", (x) => x[0]],
+                      ["Type", (x) => x[0]]
+                    ),
+                  ];
+                default:
+                  return blank();
+              }
+            }),
+          });
+        }
+        if (response.refillers && Object.keys(response.refillers).length) {
+          const refillerState = singleState(
+            ([name, entries]: [string, RefillerRecord[]]) =>
+              entries.length > 0
+                ? renderJsonTable<RefillerRecord>(
+                    name + ".refiller.json",
+                    entries,
+                    ...Object.keys(entries[0])
+                      .sort((a, b) => a.localeCompare(b))
+                      .map(
+                        (name) =>
+                          [name, (row: RefillerRecord) => row[name]] as [
+                            string,
+                            (row: RefillerRecord) => any
+                          ]
+                      )
+                  )
+                : ["Olive provided no records to ", mono(name), " refiller."]
+          );
+          tabList.push({
+            name: "Refill Output",
+            contents: [
+              dropdown(
+                ([name, declaration]) => name,
+                Object.entries(response.refillers)[0],
+                refillerState.model,
+                null,
+                ...Object.entries(response.refillers)
+              ),
+              br(),
+              refillerState.ui,
+            ],
+          });
+        }
+        if (response.dumpers && Object.entries(response.dumpers).length) {
+          const dumpState = singleState((input: [string, any[][]] | null) =>
+            input && input[1].length > 0
+              ? renderJsonTable<any[]>(
+                  name + ".dump.json",
+                  input[1],
+                  ...Array.from(input[1][0].keys()).map(
+                    (i) =>
+                      [`Column ${i + 1}`, (row) => row[i]] as [
+                        string,
+                        (input: any[]) => any
+                      ]
+                  )
+                )
+              : ["Olive provided no records to ", mono(name), " dumper."]
+          );
+          tabList.push({
+            name: "Dumpers",
+            contents: group(
+              dropdown(
+                (input) => (input ? input[0] : blank()),
+                Object.entries(response.dumpers)[0],
+                dumpState.model,
+                null,
+                ...Object.entries(response.dumpers)
+              ),
+              br(),
+              dumpState.ui
+            ),
+          });
+        }
+        if (response.overloadedInputs?.length) {
+          tabList.push({
+            name: "Overloaded Inputs",
+            contents: [
+              text(
+                "The following input formats are unavailable and prevented the simulation from running:"
+              ),
+              br(),
+              table(response.overloadedInputs, ["Input Format", (x) => x]),
+            ],
+          });
+        }
+
+        if (response.overloadedServices?.length) {
+          tabList.push({
+            name: "Overloaded Services",
+            contents: [
+              text(
+                "The following services are unavailable and prevented the simulation from running:"
+              ),
+              br(),
+              table(response.overloadedServices, ["Service", (x) => x]),
+            ],
+          });
+        }
+        if (response.metrics) {
+          tabList.push({
+            name: "Prometheus Metrics",
+            contents: preformatted(response.metrics),
+          });
+        }
+        if (response.bytecode) {
+          tabList.push({
+            name: "Bytecode",
+            contents: preformatted(response.bytecode),
+          });
+        }
+      }
+      return tabList;
+    }
+  );
+  setFindHandler(tabbedArea.find);
   const main = refreshable(
     "/simulate",
     (request) => {
@@ -611,7 +610,7 @@ export function initialiseSimulationDashboard(
         method: "POST",
       };
     },
-    combineModels(dashboardState.model, errorTable.model),
+    combineModels(dashboardState, errorTable.model),
     true
   );
 
@@ -666,7 +665,7 @@ export function initialiseSimulationDashboard(
       helpArea("simulator")
     ),
     br(),
-    dashboardState.ui
+    tabbedArea.ui
   );
   document.addEventListener(
     "keydown",

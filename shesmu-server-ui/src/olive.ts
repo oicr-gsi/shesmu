@@ -25,6 +25,8 @@ import {
   buttonDanger,
   textInline,
   refreshButton,
+  tabsModel,
+  Tab,
 } from "./html.js";
 import {
   SourceLocation,
@@ -373,6 +375,11 @@ export function initialiseOliveDash(
       selected ? preformatted(selected.script.bytecode) : "No olive selected.",
   });
 
+  const { ui, find, models: tabsModels } = tabsModel(1, {
+    name: "Overview",
+    contents: [components.overview, statsUi],
+  });
+
   const model = combineModels(
     serverStateModel(
       "pauseolive",
@@ -441,27 +448,43 @@ export function initialiseOliveDash(
       } else {
         return [];
       }
-    })
-  );
+    }),
+    mapModel(tabsModels[0], (selected: OliveReference) => {
+      if (!selected) return [];
+      const tabList: Tab[] = [];
+      if (
+        selected.olive
+          ? selected.olive?.olive.produces == "ACTIONS"
+          : selected.script.olives.some((o) => o.produces == "ACTIONS")
+      ) {
+        tabList.push({
+          name: "Actions",
+          contents: [search.buttons, br(), search.entryBar, br(), actions],
+          find: actionFindProxy.find,
+        });
+      }
+      if (
+        selected.olive
+          ? selected.olive?.olive.produces == "ALERTS"
+          : selected.script.olives.some((o) => o.produces == "ALERTS")
+      ) {
+        tabList.push({
+          name: "Alerts",
+          contents: [
+            alertModel.components.toolbar,
+            br(),
+            alertModel.components.main,
+          ],
+          find: alertFindProxy.find,
+        });
+      }
+      if (selected.olive || selected.script.olives.length == 1) {
+        tabList.push({ name: "Dataflow", contents: metroModel.ui });
+      }
+      tabList.push({ name: "Bytecode", contents: components.bytecode });
 
-  const { ui, find } = tabs(
-    { name: "Overview", contents: [components.overview, statsUi] },
-    {
-      name: "Actions",
-      contents: [search.buttons, br(), search.entryBar, br(), actions],
-      find: actionFindProxy.find,
-    },
-    {
-      name: "Alerts",
-      contents: [
-        alertModel.components.toolbar,
-        br(),
-        alertModel.components.main,
-      ],
-      find: alertFindProxy.find,
-    },
-    { name: "Dataflow", contents: metroModel.ui },
-    { name: "Bytecode", contents: components.bytecode }
+      return tabList;
+    })
   );
   const oliveSelector = dropdownTable(
     model,
