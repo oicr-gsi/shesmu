@@ -1320,8 +1320,6 @@ export function popup(
     modal.className = "menucapture";
     document.body.appendChild(modal);
     const menu = document.createElement("div");
-    menu.style.left = `${e.pageX}px`;
-    menu.style.top = `${e.pageY}px`;
     for (const { label, action } of items) {
       const item = document.createElement("div");
       item.innerText = label;
@@ -1334,6 +1332,14 @@ export function popup(
       menu.appendChild(item);
     }
     modal.appendChild(menu);
+    menu.style.left = `${Math.min(
+      e.pageX,
+      document.body.clientWidth - menu.scrollWidth
+    )}px`;
+    menu.style.top = `${Math.min(
+      e.pageY,
+      document.body.clientHeight - menu.clientHeight
+    )}px`;
     modal.addEventListener("click", () => document.body.removeChild(modal));
   };
 }
