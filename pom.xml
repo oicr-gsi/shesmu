@@ -47,6 +47,13 @@
       </snapshots>
     </repository>
   </repositories>
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/oicr-gsi/shesmu</url>
+    </repository>
+  </distributionManagement>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -162,11 +169,11 @@
   </modules>
   <build>
     <plugins>
-    <plugin>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>build-helper-maven-plugin</artifactId>
-      <version>3.0.0</version>
-    </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+      </plugin>
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
