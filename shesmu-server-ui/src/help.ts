@@ -220,9 +220,15 @@ function helpButton(
       hasNew ? "New tips are available!" : "Previous tips and advice.",
       (e) => {
         e.stopPropagation();
-        popup.style.left = `${e.pageX}px`;
-        popup.style.top = `${e.pageY}px`;
         document.body.appendChild(popupContainer);
+        popup.style.left = `${Math.min(
+          e.pageX,
+          document.body.clientWidth - popup.scrollWidth
+        )}px`;
+        popup.style.top = `${Math.min(
+          e.pageY,
+          document.body.clientHeight - popup.clientHeight
+        )}px`;
       }
     );
   });
