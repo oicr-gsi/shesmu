@@ -13,6 +13,7 @@ RUN cd /build && \
     cp shesmu-pluginapi/target/shesmu-pluginapi.jar shesmu-server/target/shesmu.jar plugin-*/target/shesmu-plugin-*.jar /usr/share/shesmu
 
 FROM openjdk:8-jre-alpine
+RUN apk add --update ttf-dejavu && rm -rf /var/cache/apk/*
 COPY --from=0 /usr/share/shesmu /usr/share/shesmu
 COPY docker-shesmu /usr/bin/shesmu
 EXPOSE 8081
