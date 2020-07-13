@@ -1052,7 +1052,7 @@ export function italic(text: string): UIElement {
  */
 export function jsonParameters(action: { parameters: object }): UIElement {
   return objectTable(action.parameters, "Parameters", (x: any) =>
-    JSON.stringify(x, null, 2)
+    preformatted(JSON.stringify(x, null, 2))
   );
 }
 
@@ -1172,7 +1172,7 @@ export function multipaneState<
 export function objectTable<T>(
   object: { [propertyName: string]: T },
   title: string,
-  valueFormatter: (value: T) => string
+  valueFormatter: (value: T) => UIElement
 ) {
   return collapsible(
     title,
