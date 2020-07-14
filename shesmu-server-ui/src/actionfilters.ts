@@ -31,6 +31,7 @@ import {
   buttonClose,
   buttonEdit,
   preformatted,
+  butter,
 } from "./html.js";
 import { AddRangeSearch, AddPropertySearch } from "./stats.js";
 import { Status, statusButton, statusDescription, statuses } from "./action.js";
@@ -364,9 +365,7 @@ function addFilterDialog(
               close();
               addSet("id", ids);
             } else {
-              dialog(
-                (_close) => "The text you entered has no valid identifiers."
-              );
+              butter(3000, "The text you entered has no valid identifiers.");
             }
           }
         ),
@@ -717,7 +716,7 @@ function editTimeRange(
         const startTime = start.getter();
         const endTime = end.getter();
         if (startTime === null && endTime === null) {
-          dialog((_close) => "You have selected neither a start nor end time.");
+          butter(3000, "You have selected neither a start nor end time.");
         } else {
           close();
           callback(start.getter(), end.getter());
@@ -1104,7 +1103,7 @@ function searchAdvanced(
             doUpdate([existing]);
             return Promise.resolve(existing);
           } else {
-            dialog((_close) => "Can't add conditions to a broken query.");
+            butter(3000, "Can't add conditions to a broken query.");
             return Promise.reject("Can't add conditions to a broken query.");
           }
         }

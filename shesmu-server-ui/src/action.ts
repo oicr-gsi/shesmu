@@ -31,6 +31,7 @@ import {
   checkRandomPermutation,
   checkRandomSequence,
   makeUrl,
+  butter,
 } from "./html.js";
 import {
   StatefulModel,
@@ -425,11 +426,12 @@ export function actionDisplay(
                       } else {
                         imgSrc = "starwars.gif";
                       }
-                      dialog((_close) => [
+                      butter(
+                        3000,
                         `Removed ${count} actions.`,
                         br(),
-                        img(imgSrc),
-                      ]);
+                        img(imgSrc)
+                      );
                       reload();
                     }
                   )
@@ -447,8 +449,9 @@ export function actionDisplay(
                         method: "POST",
                       },
                       (count: number) => {
-                        dialog(
-                          (close) => `The command executed on ${count} actions.`
+                        butter(
+                          5000,
+                          `The command executed on ${count} actions.`
                         );
                         reload();
                       }

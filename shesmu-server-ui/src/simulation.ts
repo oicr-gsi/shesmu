@@ -41,6 +41,7 @@ import {
   singleState,
   mono,
   tabsModel,
+  butter,
 } from "./html.js";
 import {
   formatTimeSpan,
@@ -243,9 +244,9 @@ export function initialiseSimulationDashboard(
                       fakeActionDefinitions.delete(name);
                       fakeActionDefinitions.set(rename.getter(), declaration);
                     } else {
-                      dialog(
-                        (c) =>
-                          "I know that seems like a cool name, but it's not a valid Shesmu identifier (letters, numbers, and underscore, starting with a lower case letter)."
+                      butter(
+                        3000,
+                        "I know that seems like a cool name, but it's not a valid Shesmu identifier (letters, numbers, and underscore, starting with a lower case letter)."
                       );
                     }
                   }),

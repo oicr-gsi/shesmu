@@ -181,6 +181,45 @@ export function busyDialog(): () => void {
   document.body.appendChild(modal);
   return () => document.body.removeChild(modal);
 }
+/**
+ * Create a self-closing popup notification (aka butter bar)
+ * @param delay the number of milliseconds the bar should be displayed for
+ * @param contents what to display in the bar
+ */
+export function butter(delay: number, ...contents: UIElement[]): void {
+  const bar = document.createElement("div");
+  bar.className = "butter";
+  addElements(bar, ...contents);
+  document.body.appendChild(bar);
+  let timeout = 0;
+  const startClose = (delay: number) => {
+    if (timeout) {
+      window.clearTimeout(timeout);
+    }
+
+    timeout = window.setTimeout(() => {
+      bar.style.opacity = "0";
+      timeout = window.setTimeout(() => document.body.removeChild(bar), 300);
+    }, Math.max(300, delay - 300));
+  };
+  startClose(delay);
+  bar.addEventListener("click", () => {
+    document.body.removeChild(bar);
+    if (timeout) {
+      window.clearTimeout(timeout);
+    }
+  });
+  bar.addEventListener("mouseenter", () => {
+    if (timeout) {
+      window.clearTimeout(timeout);
+      timeout = 0;
+      bar.style.opacity = "1";
+    }
+  });
+  bar.addEventListener("mouseleave", () => {
+    startClose(1000);
+  });
+}
 
 /**
  * Create a normal button
