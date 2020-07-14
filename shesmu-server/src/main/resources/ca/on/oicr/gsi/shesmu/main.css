@@ -1,5 +1,4 @@
 :root {
-  --widget-zebra: #eaf5f7;
   --blue-background: #d2ebee;
   --blue-desaturated: #baecf7;
   --blue-highlight: #33bcdc;
@@ -24,6 +23,7 @@
   --scarlet-background: #b83c31;
   --scarlet-desaturated: #b84e44;
   --scarlet-watermark: #e0493b;
+  --widget-butter: #fcf5d2;
   --widget-danger-highlight: #e0493b;
   --widget-danger-lowlight: #b83c31;
   --widget-danger-negative: #fff;
@@ -33,6 +33,7 @@
   --widget-negative: #fff;
   --widget-shadow: #e5faff;
   --widget-text: #000;
+  --widget-zebra: #eaf5f7;
   --yellow-background: #fcf5d2;
   --yellow-desaturated: #fcf1b8;
   --yellow-highlight: #f2d234;
@@ -875,4 +876,22 @@ table.errors {
 img.deadolive {
   height: 2em;
   vertical-align: middle;
+}
+
+.butter {
+  background: var(--widget-butter);
+  padding: 1em;
+  border: 1px solid var(--widget-lowlight);
+  border-radius: 0.5em;
+  position: absolute;
+  max-width: 40vw;
+  top: 2vh;
+  right: 2vw;
+  color: var(--widget-text);
+  z-index: 2000;
+  transition: opacity 0.3s linear;
+}
+
+.butter img {
+  max-width: calc(40vw - 2em);
 }
