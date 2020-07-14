@@ -12,6 +12,12 @@
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss.SSSZ</maven.build.timestamp.format>
   </properties>
+  <scm>
+    <connection>scm:git:https://www.github.com/oicr-gsi/shesmu</connection>
+    <developerConnection>scm:git:git@github.com:oicr-gsi/shesmu</developerConnection>
+    <url>http://www.github.com/oicr-gsi/shesmu-gsi</url>
+    <tag>v0.0.1</tag>
+  </scm>
   <repositories>
     <repository>
       <id>release.gsi</id>
@@ -162,11 +168,11 @@
   </modules>
   <build>
     <plugins>
-    <plugin>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>build-helper-maven-plugin</artifactId>
-      <version>3.0.0</version>
-    </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+      </plugin>
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
