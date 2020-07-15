@@ -100,6 +100,20 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "from_seconds"),
+            Instant.class,
+            "ofEpochSecond",
+            "Get create a date from the number of seconds since the UNIX epoch.",
+            Imyhat.DATE,
+            new FunctionParameter("date", Imyhat.INTEGER)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "from_millis"),
+            Instant.class,
+            "ofEpochMilli",
+            "Get create a date from the number of milliseconds since the UNIX epoch.",
+            Imyhat.DATE,
+            new FunctionParameter("date", Imyhat.INTEGER)),
+        FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "is_infinite"),
             Double.class,
             "isInfinite",
