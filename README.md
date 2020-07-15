@@ -234,10 +234,10 @@ These input formats are available on any instance:
 #### Signatures
 These signatures are available on any instance:
 
-- `json_signature` signer: all used signable variables and their values as a JSON object
-- `sha1_signature` signer: a SHA1 hash of all the used signable variables and their values
-- `signature_count` signer: the number of all the used signable variables
-- `signature_names` signer: the names of all the used signable variables
+- `std::json::signature` signer: all used signable variables and their values as a JSON object
+- `std::signature::sha1` signer: a SHA1 hash of all the used signable variables and their values
+- `std::signature::count` signer: the number of all the used signable variables
+- `std::signature::names` signer: the names of all the used signable variables
 
 ### Constants from JSON
 Simple boolean, integer, strings, and sets of the former can be stored as
