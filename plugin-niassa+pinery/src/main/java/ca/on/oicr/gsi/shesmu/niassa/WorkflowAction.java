@@ -553,13 +553,6 @@ public final class WorkflowAction extends Action {
               Collections.singletonList("Workflow has already been attempted. Purge to try again.");
           return ActionState.FAILED;
         }
-        if (!launchLock.isLive()) {
-          this.cacheCollision = true;
-          this.errors =
-              Collections.singletonList(
-                  "Another action is scheduling a workflow for the same input LIMS keys.");
-          return ActionState.WAITING;
-        }
         try {
           // Check if there are already too many copies of this workflow running; if so, wait until
           // later.
@@ -597,6 +590,13 @@ public final class WorkflowAction extends Action {
           this.errors =
               Collections.singletonList("Another workflow is fetching max-in-flight data.");
           cacheCollision = true;
+          return ActionState.WAITING;
+        }
+        if (!launchLock.isLive()) {
+          this.cacheCollision = true;
+          this.errors =
+              Collections.singletonList(
+                  "Another action is scheduling a workflow for the same input LIMS keys.");
           return ActionState.WAITING;
         }
 

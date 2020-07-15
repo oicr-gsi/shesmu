@@ -259,11 +259,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     @Override
     public void close() throws Exception {
       if (isLive) {
-        final Set<Pair<String, String>> stale =
-            staleKeys.computeIfAbsent(workflowAccession, k -> new HashSet<>());
-        synchronized (stale) {
-          stale.addAll(lockedLimsKeys.keySet());
-        }
         synchronized (activeLimsKeys) {
           activeLimsKeys.removeAll(lockedLimsKeys.keySet());
         }
@@ -290,6 +285,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                 .forEach(k -> logger.log(k, "Lock is stale after refresh; backing out."));
             return false;
           }
+          // At this point, we assume the workflow is going to launch, which means this LIMS keys
+          // are now unavailable for another launching workflow.
+          stale.addAll(lockedLimsKeys.keySet());
         }
         return true;
       }
