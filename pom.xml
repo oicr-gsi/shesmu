@@ -55,10 +55,15 @@
   </repositories>
   <distributionManagement>
     <repository>
-      <id>github</id>
-      <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/oicr-gsi/shesmu</url>
+      <id>deploy.artifacts.oicr</id>
+      <name>GSI Releases</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/gsi-release</url>
     </repository>
+    <snapshotRepository>
+      <id>deploy.artifacts.oicr</id>
+      <name>GSI Snapshots</name>
+      <url>https://artifacts.oicr.on.ca/artifactory/gsi-snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
   <dependencyManagement>
     <dependencies>

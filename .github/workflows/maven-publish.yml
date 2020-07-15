@@ -26,10 +26,6 @@ jobs:
       run: tsc -p shesmu-server-ui
     - name: Build Shesmu with Maven
       run: mvn -B package --file pom.xml
-    - name: Publish to GitHub Packages Apache Maven
-      run: mvn -B deploy
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
     - name: Build and push Docker images
       uses: docker/build-push-action@v1.1.0
       with:
