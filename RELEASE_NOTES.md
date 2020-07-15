@@ -1,5 +1,10 @@
 # Unreleased
 
+# [1.0.1] - 2020-07-15T21:06+00:00
+
+Changes:
+  * Fix bug in Docker build process
+
 # [1.0.0] - 2020-07-15T20:42+00:00
 
 First official release
