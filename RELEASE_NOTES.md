@@ -1,5 +1,16 @@
 # Unreleased
 
+# [1.0.0] - 2020-07-15T20:42+00:00
+
+First official release
+
+Changes:
+  * Fix LIMS key locking issues in Niassa plugin
+  * Create a demo configuration
+  * Add date-from-integer library functions
+  * Fix incorrect start up time on status page
+  * Misc UI fixes and improvements
+
 # [0.0.4] - 2020-07-14T18:39+00:00
 
 Changes:
