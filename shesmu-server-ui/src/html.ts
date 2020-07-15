@@ -1309,9 +1309,11 @@ export function paragraph(...contents: UIElement[]): UIElement {
 
 /**
  * Create a click handler that will show a pop up menu
+ * @param underOwner if true, the pop up menu will appear under the widget that it is connected to; if false, the menu will appear at the position where the user clicked.
  * @param items the items to be shown in the menu
  */
 export function popup(
+  underOwner: boolean,
   ...items: { label: string; action: () => void }[]
 ): ClickHandler {
   return (e) => {
@@ -1332,14 +1334,21 @@ export function popup(
       menu.appendChild(item);
     }
     modal.appendChild(menu);
-    menu.style.left = `${Math.min(
-      e.pageX,
-      document.body.clientWidth - menu.scrollWidth
-    )}px`;
-    menu.style.top = `${Math.min(
-      e.pageY,
-      document.body.clientHeight - menu.clientHeight
-    )}px`;
+    if (underOwner && e.currentTarget instanceof HTMLElement) {
+      menu.style.left = `${e.currentTarget.offsetLeft}px`;
+      menu.style.top = `${
+        e.currentTarget.offsetTop + e.currentTarget.clientHeight
+      }px`;
+    } else {
+      menu.style.left = `${Math.min(
+        e.pageX,
+        document.body.clientWidth - menu.scrollWidth
+      )}px`;
+      menu.style.top = `${Math.min(
+        e.pageY,
+        document.body.clientHeight - menu.clientHeight
+      )}px`;
+    }
     modal.addEventListener("click", () => document.body.removeChild(modal));
   };
 }

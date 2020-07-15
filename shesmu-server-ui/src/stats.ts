@@ -120,6 +120,7 @@ function renderStat(
 ): UIElement {
   function popupForProperty(...limits: PropertySearch[]): ClickHandler {
     return popup(
+      false,
       {
         label: "Drill Down",
         action: () => addPropertySearch(...limits),

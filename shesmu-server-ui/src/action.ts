@@ -34,6 +34,7 @@ import {
   butter,
   tableFromRows,
   tableRow,
+  popup,
 } from "./html.js";
 import {
   StatefulModel,
@@ -446,72 +447,29 @@ export function actionDisplay(
                     }
                   )
               ),
-              response.bulkCommands.map(
-                ({ buttonText, count, command, showPrompt, annoyUser }) => {
-                  let performCommand = () =>
-                    fetchJsonWithBusyDialog(
-                      "command",
-                      {
-                        body: JSON.stringify({
-                          command: command,
-                          filters: filters,
-                        }),
-                        method: "POST",
-                      },
-                      (count: number) => {
-                        butter(
-                          5000,
-                          `The command executed on ${count} actions.`
-                        );
-                        reload();
-                      }
-                    );
-                  if (annoyUser) {
-                    const realPerform = performCommand;
-                    const annoyFunction: (
-                      count: number,
-                      callback: () => void
-                    ) => UIElement =
-                      Math.random() < 0.5
-                        ? checkRandomPermutation
-                        : checkRandomSequence;
-                    performCommand = () =>
-                      dialog((close) => [
-                        "It's not that I don't trust that you know what you want to do, but solve this riddle.",
-                        annoyFunction(count, () => {
-                          close();
-                          realPerform();
-                        }),
-                      ]);
-                  }
-                  return buttonDanger(
-                    buttonText,
-                    `Perform special command ${command} on ${count} actions.`,
-                    showPrompt
-                      ? () => {
-                          dialog((close) => [
-                            `Perform command ${command} on ${count} actions? This is your moment of sober second thought.`,
-                            br(),
-                            buttonDanger(
-                              buttonText.toUpperCase(),
-                              "Really do it!",
-                              () => {
-                                close();
-                                performCommand();
-                              }
-                            ),
-                            br(),
-                            button(
-                              "Back away slowly",
-                              "Don't do anything.",
-                              close
-                            ),
-                          ]);
-                        }
-                      : performCommand
-                  );
-                }
-              ),
+              response.bulkCommands.length < 6
+                ? response.bulkCommands.map((command) =>
+                    buttonDanger(
+                      command.buttonText,
+                      `Perform special command ${command.command} on ${command.count} actions.`,
+                      createCallbackForCommand(command, filters, reload)
+                    )
+                  )
+                : buttonDanger(
+                    "🔧 Bulk Commands ▼",
+                    "Perform a number of action-specific commands.",
+                    popup(
+                      true,
+                      ...response.bulkCommands.map((command) => ({
+                        label: command.buttonText,
+                        action: createCallbackForCommand(
+                          command,
+                          filters,
+                          reload
+                        ),
+                      }))
+                    )
+                  ),
             ]
           : blank(),
     },
@@ -538,6 +496,57 @@ export function actionDisplay(
     bulkCommands: components.bulkCommands,
     model: io.model,
   };
+}
+
+function createCallbackForCommand(
+  command: BulkCommand,
+  filters: ActionFilter[],
+  reload: () => void
+): () => void {
+  let performCommand = () =>
+    fetchJsonWithBusyDialog(
+      "command",
+      {
+        body: JSON.stringify({
+          command: command.command,
+          filters: filters,
+        }),
+        method: "POST",
+      },
+      (count: number) => {
+        butter(5000, `The command executed on ${count} actions.`);
+        reload();
+      }
+    );
+  if (command.annoyUser) {
+    const realPerform = performCommand;
+    const annoyFunction: (count: number, callback: () => void) => UIElement =
+      Math.random() < 0.5 ? checkRandomPermutation : checkRandomSequence;
+    performCommand = () =>
+      dialog((close) => [
+        "It's not that I don't trust that you know what you want to do, but solve this riddle.",
+        annoyFunction(command.count, () => {
+          close();
+          realPerform();
+        }),
+      ]);
+  }
+  if (command.showPrompt) {
+    const realPerform = performCommand;
+    performCommand = () => {
+      dialog((close) => [
+        `Perform command ${command.command} on ${command.count} actions? This is your moment of sober second thought.`,
+        br(),
+        buttonDanger(command.buttonText.toUpperCase(), "Really do it!", () => {
+          close();
+          realPerform();
+        }),
+        br(),
+        button("Back away slowly", "Don't do anything.", close),
+      ]);
+    };
+  }
+  return performCommand;
 }
 
 function copyCUrlCommand(slug: string, request: any) {
