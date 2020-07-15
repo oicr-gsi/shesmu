@@ -16,7 +16,6 @@ jobs:
       with:
         java-version: 1.8
         server-id: github
-    - uses: actions/checkout@v1
     - name: Install NodeJS
       uses: actions/setup-node@v1
       with:
