@@ -1,5 +1,7 @@
 # Unreleased
 
+# [1.0.3] - 2020-07-15T21:19+00:00
+
 Changes:
   * Remove deployment to non-functional GitHub Packages Maven
 
