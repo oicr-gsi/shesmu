@@ -1,4 +1,4 @@
-# Shesmu Decision-Action Server
+# ![ Shesmu Decision-Action Server](https://raw.githubusercontent.com/oicr-gsi/shesmu/master/wordmark.svg)
 Shesmu is part of a bioinformatics workflow launching system. It does _not_ do
 workflow launching in the usual sense.
 
