@@ -974,7 +974,7 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeEndElement();
                             writer.writeStartElement("td");
                             writer.writeStartElement("span");
-                            writer.writeAttribute("class", "load");
+                            writer.writeAttribute("class", "button accessory");
                             writer.writeAttribute(
                                 "onclick", String.format("fetchConstant('%s')", constant.name()));
                             writer.writeCharacters("▶ Get");
@@ -1058,7 +1058,7 @@ public final class Server implements ServerConfig, ActionServices {
                             writer.writeEndElement();
                             writer.writeStartElement("td");
                             writer.writeStartElement("span");
-                            writer.writeAttribute("class", "load");
+                            writer.writeAttribute("class", "button accessory");
                             writer.writeAttribute(
                                 "onclick",
                                 String.format(
@@ -1239,7 +1239,8 @@ public final class Server implements ServerConfig, ActionServices {
                           try {
                             writer.writeStartElement("option");
                             writer.writeAttribute("value", format.name());
-                            writer.writeCharacters("Human-field with types from " + format.name());
+                            writer.writeCharacters(
+                                "Human-friendly with types from " + format.name());
                             writer.writeEndElement();
                           } catch (XMLStreamException e) {
                             throw new RuntimeException(e);
@@ -1260,7 +1261,7 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeAttribute("id", "typeValue");
                 writer.writeEndElement();
                 writer.writeStartElement("span");
-                writer.writeAttribute("class", "load");
+                writer.writeAttribute("class", "button regular");
                 writer.writeAttribute("onclick", "parseType();");
                 writer.writeCharacters("Parse");
                 writer.writeEndElement();
