@@ -2,6 +2,7 @@
 
 Changes:
   * Fix problem in _Actions_ dashboard causing 400s using server searches
+  * Fix bug causing saved search to default to _All Actions_ on _Actions_ dashboard
 
 # [1.0.3] - 2020-07-15T21:19+00:00
 

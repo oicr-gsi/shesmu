@@ -671,7 +671,6 @@ export function initialiseActionDash(
     sources,
     tags
   );
-  const currentName = savedSynchonizer.get();
   const {
     model: deleteModel,
     ui: deleteUi,
@@ -688,12 +687,7 @@ export function initialiseActionDash(
     (saved: Iterable<SearchDefinition>): UIElement =>
       dropdown(
         ([name, _filters]: SearchDefinition) => name,
-        currentName == "All Actions"
-          ? (["All Actions", []] as SearchDefinition)
-          : [
-              currentName,
-              serverSearches[currentName] || [localSearches.get(currentName)!],
-            ],
+        ([name, _filters]) => name == savedSynchonizer.get(),
         combineModels(
           deleteModel,
           mapModel(model, ([_name, filters]) => filters)

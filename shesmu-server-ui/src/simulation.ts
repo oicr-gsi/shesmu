@@ -514,7 +514,7 @@ export function initialiseSimulationDashboard(
             contents: [
               dropdown(
                 ([name, declaration]) => name,
-                Object.entries(response.refillers)[0],
+                null,
                 refillerState.model,
                 null,
                 ...Object.entries(response.refillers)
@@ -545,7 +545,7 @@ export function initialiseSimulationDashboard(
             contents: group(
               dropdown(
                 (input) => (input ? input[0] : blank()),
-                Object.entries(response.dumpers)[0],
+                null,
                 dumpState.model,
                 null,
                 ...Object.entries(response.dumpers)
@@ -652,7 +652,7 @@ export function initialiseSimulationDashboard(
               return "Unknown";
           }
         },
-        lastTheme,
+        (theme) => theme == lastTheme,
         combineModels(savedTheme, {
           reload: () => {},
           statusChanged: (input: string) => editor.setTheme(input),

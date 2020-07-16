@@ -737,7 +737,7 @@ function editTimeHorizon(
       offset.ui,
       dropdown(
         ([, n]) => n,
-        units.get(),
+        (unit) => unit == units.get(),
         units,
         null,
         [1, "milliseconds"],

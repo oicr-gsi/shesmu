@@ -493,7 +493,7 @@ export function dateEditor(
   const monthModel = temporaryState(initialMonth);
   const month = dropdown(
     ([_month, name]: [number, string]) => name,
-    initialMonth,
+    (m) => m == initialMonth,
     monthModel,
     null,
     ...months.entries()
@@ -583,7 +583,7 @@ export function dialog(
  */
 export function dropdown<T, S>(
   labelMaker: (input: T) => UIElement,
-  initial: T | null,
+  initial: ((item: T) => boolean) | null,
   model: StatefulModel<T>,
   synchronizer: {
     synchronizer: StateSynchronizer<S>;
@@ -629,7 +629,9 @@ export function dropdown<T, S>(
     }
   });
   const synchronizerCallbacks: ((state: S) => void)[] = [];
-  for (const item of items) {
+  const initialIndex =
+    initial === null ? 0 : Math.max(items.findIndex(initial), 0);
+  items.forEach((item, index) => {
     const element = document.createElement("span");
     const label = labelMaker(item);
     addElements(element, label);
@@ -644,7 +646,7 @@ export function dropdown<T, S>(
         synchronizer.synchronizer.statusChanged(synchronizer.extract(item));
       }
     });
-    if (item == initial || item == items[0]) {
+    if (index == initialIndex) {
       clearChildren(activeElement);
       addElements(activeElement, label);
       model.statusChanged(item);
@@ -660,7 +662,7 @@ export function dropdown<T, S>(
       }
     });
     listElement.appendChild(element);
-  }
+  });
   if (synchronizer) {
     synchronizer.synchronizer.listen((value) =>
       synchronizerCallbacks.forEach((callback) => callback(value))
