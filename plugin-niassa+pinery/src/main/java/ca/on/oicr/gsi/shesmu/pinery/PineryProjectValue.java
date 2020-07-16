@@ -5,9 +5,11 @@ import ca.on.oicr.ws.dto.SampleProjectDto;
 
 public class PineryProjectValue {
   private final SampleProjectDto backing;
+  private final String provider;
 
-  public PineryProjectValue(SampleProjectDto backing) {
+  public PineryProjectValue(SampleProjectDto backing, String provider) {
     this.backing = backing;
+    this.provider = provider;
   }
 
   @ShesmuVariable
@@ -23,6 +25,11 @@ public class PineryProjectValue {
   @ShesmuVariable
   public String name() {
     return backing.getName();
+  }
+
+  @ShesmuVariable
+  public String provider() {
+    return provider;
   }
 
   @ShesmuVariable
