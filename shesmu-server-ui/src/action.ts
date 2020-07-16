@@ -115,7 +115,7 @@ type SearchDefinition = [string, ActionFilter[]];
 /**
  * The format of searches provided by the server
  */
-type ServerSearches = { [name: string]: ActionFilter };
+type ServerSearches = { [name: string]: ActionFilter[] };
 /**
  * The status of an action
  */
@@ -581,7 +581,7 @@ function collectSearches(
   return [["All Actions", []] as SearchDefinition].concat(
     [
       ...Object.entries(serverSearches).map(
-        ([name, filter]) => [name, [filter]] as SearchDefinition
+        ([name, filter]) => [name, filter] as SearchDefinition
       ),
       ...saved,
     ].sort((a, b) => a[0].localeCompare(b[0]))
@@ -692,10 +692,7 @@ export function initialiseActionDash(
           ? (["All Actions", []] as SearchDefinition)
           : [
               currentName,
-              [
-                (serverSearches[currentName] ||
-                  localSearches.get(currentName))!,
-              ],
+              serverSearches[currentName] || [localSearches.get(currentName)!],
             ],
         combineModels(
           deleteModel,

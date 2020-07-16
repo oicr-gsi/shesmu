@@ -1,5 +1,8 @@
 # Unreleased
 
+Changes:
+  * Fix problem in _Actions_ dashboard causing 400s using server searches
+
 # [1.0.3] - 2020-07-15T21:19+00:00
 
 Changes:
