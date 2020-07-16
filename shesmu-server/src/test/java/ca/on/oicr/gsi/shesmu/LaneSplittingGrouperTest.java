@@ -5,8 +5,8 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
 import ca.on.oicr.gsi.shesmu.runtime.LaneSplittingGrouper;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class LaneSplittingGrouperTest {
 
@@ -31,7 +31,7 @@ public class LaneSplittingGrouperTest {
                     new Pair<>(2L, "2")))
             .map(s -> s.build(i -> new TreeSet<>()).size())
             .collect(Collectors.toSet());
-    Assert.assertEquals(new TreeSet<>(Arrays.asList(3, 1)), outputs);
+    Assertions.assertEquals(new TreeSet<>(Arrays.asList(3, 1)), outputs);
   }
 
   @Test
@@ -57,7 +57,7 @@ public class LaneSplittingGrouperTest {
                     new Pair<>(2L, "C")))
             .map(s -> s.build(i -> new TreeSet<>()).size())
             .collect(Collectors.toSet());
-    Assert.assertEquals(Collections.emptySet(), outputs);
+    Assertions.assertEquals(Collections.emptySet(), outputs);
   }
 
   @Test
@@ -82,7 +82,7 @@ public class LaneSplittingGrouperTest {
                     new Pair<>(2L, "2")))
             .map(s -> s.build(i -> new TreeSet<>()).size())
             .collect(Collectors.toSet());
-    Assert.assertEquals(new TreeSet<>(Collections.singletonList(4)), outputs);
+    Assertions.assertEquals(new TreeSet<>(Collections.singletonList(4)), outputs);
   }
 
   @Test
@@ -109,7 +109,7 @@ public class LaneSplittingGrouperTest {
                     new Pair<>(2L, "B")))
             .map(s -> s.build(i -> new TreeSet<>()).size())
             .collect(Collectors.toSet());
-    Assert.assertEquals(new TreeSet<>(Collections.singletonList(4)), outputs);
+    Assertions.assertEquals(new TreeSet<>(Collections.singletonList(4)), outputs);
   }
 
   @Test
@@ -135,6 +135,6 @@ public class LaneSplittingGrouperTest {
                     new Pair<>(2L, "2")))
             .map(s -> s.build(i -> new TreeSet<>()).size())
             .collect(Collectors.toSet());
-    Assert.assertEquals(new TreeSet<>(Arrays.asList(3, 1)), outputs);
+    Assertions.assertEquals(new TreeSet<>(Arrays.asList(3, 1)), outputs);
   }
 }

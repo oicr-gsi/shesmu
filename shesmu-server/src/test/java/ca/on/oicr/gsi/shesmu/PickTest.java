@@ -6,8 +6,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class PickTest {
 
@@ -25,8 +25,8 @@ public class PickTest {
                 (a, b) -> a.first().equals(b.first()),
                 Comparator.comparing(Pair::second))
             .collect(Collectors.toMap(Pair::first, Pair::second));
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals(3, results.get(true).intValue());
-    Assert.assertEquals(5, results.get(false).intValue());
+    Assertions.assertEquals(2, results.size());
+    Assertions.assertEquals(3, results.get(true).intValue());
+    Assertions.assertEquals(5, results.get(false).intValue());
   }
 }
