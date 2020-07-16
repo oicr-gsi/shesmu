@@ -424,7 +424,9 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuInputSource
   public Stream<PineryProjectValue> streamProjects(boolean readStale) {
-    return (readStale ? projects.getStale() : projects.get()).map(PineryProjectValue::new);
+    final String provider = config.map(PineryConfiguration::getProvider).orElse("unknown");
+    return (readStale ? projects.getStale() : projects.get())
+        .map(backing -> new PineryProjectValue(backing, provider));
   }
 
   @Override
