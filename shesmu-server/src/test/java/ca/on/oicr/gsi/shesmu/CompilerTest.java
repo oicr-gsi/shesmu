@@ -29,8 +29,8 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -234,8 +234,7 @@ public class CompilerTest {
   public void testCompiler() throws IOException {
     try (Stream<Path> files =
         Files.walk(Paths.get(this.getClass().getResource("/compiler").getPath()), 1)) {
-      Assert.assertTrue(
-          "Compilation output not as expected!",
+      Assertions.assertTrue(
           files
                   .filter(Files::isRegularFile)
                   .filter(p -> p.getFileName().getFileName().toString().endsWith(".shesmu"))
@@ -247,7 +246,8 @@ public class CompilerTest {
                             return !ok;
                           }))
                   .count()
-              == 0);
+              == 0,
+          "Compilation output not as expected!");
     }
   }
 

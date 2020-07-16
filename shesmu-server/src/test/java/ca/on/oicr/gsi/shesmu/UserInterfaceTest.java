@@ -8,8 +8,9 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -17,13 +18,14 @@ import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.remote.CapabilityType;
 
+@DisabledIfSystemProperty(named = "skipIT", matches = "true")
 public class UserInterfaceTest {
 
   private final String baseUrl = "http://localhost:" + System.getProperty("shesmu.server.port");
   private static WebDriver driver;
   private static Server server;
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws IOException, ParseException {
     TimeZone.setDefault(TimeZone.getTimeZone("Canada/Eastern"));
     WebDriverManager.chromedriver().setup();

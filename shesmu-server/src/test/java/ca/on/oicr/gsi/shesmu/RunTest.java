@@ -43,8 +43,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -378,15 +378,15 @@ public class RunTest {
     System.err.println("Testing data-handling code");
     try (Stream<Path> files =
         Files.walk(Paths.get(this.getClass().getResource("/run").getPath()), 1)) {
-      Assert.assertTrue(
-          "Sample program failed to run!",
+      Assertions.assertTrue(
           files
                   .filter(Files::isRegularFile)
                   .filter(f -> f.getFileName().toString().endsWith(".shesmu"))
                   .sorted(Comparator.comparing(Path::getFileName))
                   .filter(this::testFile)
                   .count()
-              == 0);
+              == 0,
+          "Sample program failed to run!");
     }
   }
 

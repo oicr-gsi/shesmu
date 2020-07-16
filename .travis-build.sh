@@ -12,7 +12,7 @@ case "${JAVA_HOME}" in
 		;;
 esac
 
-mvn clean install
+mvn -DskipIT=false clean install
 echo ${SONAR} ${TRAVIS_PULL_REQUEST}  ${TRAVIS_PULL_REQUEST_SLUG} ${TRAVIS_REPO_SLUG}
 if ${SONAR}
 then

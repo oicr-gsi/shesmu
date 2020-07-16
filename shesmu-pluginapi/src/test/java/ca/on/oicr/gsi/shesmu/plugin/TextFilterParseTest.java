@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TextFilterParseTest {
   private abstract static class TestFilterBuilder implements ActionFilterBuilder<Boolean> {
@@ -80,7 +80,7 @@ public class TextFilterParseTest {
 
   @Test
   public void testGoodBoth() {
-    Assert.assertTrue(
+    Assertions.assertTrue(
         ActionFilter.extractFromText(
                 "Random stuff \nshesmu:799AEF722968FF2D5433515989dc565e5ab54AAA shesmusearch:W3sidHlwZSI6InRleHQiLCJtYXRjaENhc2UiOmZhbHNlLCJ0ZXh0IjoidGVzdCJ9XQ==  ",
                 MAPPER)
@@ -105,7 +105,7 @@ public class TextFilterParseTest {
 
   @Test
   public void testGoodID() {
-    Assert.assertTrue(
+    Assertions.assertTrue(
         ActionFilter.extractFromText(
                 "Hot garbage shesmu:799AEF722968FF2D5433515989DC565E5AB54AAA  ", MAPPER)
             .map(
@@ -129,7 +129,7 @@ public class TextFilterParseTest {
 
   @Test
   public void testGoodQuery() {
-    Assert.assertTrue(
+    Assertions.assertTrue(
         ActionFilter.extractFromText(
                 "So much garbage shesmusearch:W3sidHlwZSI6InRleHQiLCJtYXRjaENhc2UiOmZhbHNlLCJ0ZXh0IjoidGVzdCJ9XQ==  ",
                 MAPPER)
@@ -152,7 +152,7 @@ public class TextFilterParseTest {
 
   @Test
   public void testNothing() {
-    Assert.assertFalse(
+    Assertions.assertFalse(
         ActionFilter.extractFromText("NOTHING OF VALUE!!! SADNESS!!! DESPAIR!!!", MAPPER)
             .isPresent());
   }
