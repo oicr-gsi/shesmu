@@ -757,8 +757,8 @@ a.button.danger:visited {
   background: var(--widget-negative);
   border: 1px solid var(--widget-text);
   border-radius: 0.1em;
-  max-height: 90vh;
-  max-width: 90vw;
+  max-height: 80%;
+  max-width: 80%;
   overflow: auto;
 }
 .menucapture > div > div {

@@ -222,12 +222,12 @@ function helpButton(
         e.stopPropagation();
         document.body.appendChild(popupContainer);
         popup.style.left = `${Math.min(
-          e.pageX,
-          document.body.clientWidth - popup.scrollWidth
+          e.clientX,
+          document.body.clientWidth - popup.offsetWidth - 10
         )}px`;
         popup.style.top = `${Math.min(
-          e.pageY,
-          document.body.clientHeight - popup.clientHeight
+          e.clientY,
+          document.body.clientHeight - popup.offsetHeight - 10
         )}px`;
       }
     );
