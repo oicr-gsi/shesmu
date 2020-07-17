@@ -1339,16 +1339,16 @@ export function popup(
     if (underOwner && e.currentTarget instanceof HTMLElement) {
       menu.style.left = `${e.currentTarget.offsetLeft}px`;
       menu.style.top = `${
-        e.currentTarget.offsetTop + e.currentTarget.clientHeight
+        e.currentTarget.offsetTop + e.currentTarget.offsetHeight
       }px`;
     } else {
       menu.style.left = `${Math.min(
-        e.pageX,
-        document.body.clientWidth - menu.scrollWidth
+        e.clientX,
+        document.body.clientWidth - menu.offsetWidth - 10
       )}px`;
       menu.style.top = `${Math.min(
-        e.pageY,
-        document.body.clientHeight - menu.clientHeight
+        e.clientY,
+        document.body.clientHeight - menu.offsetHeight - 10
       )}px`;
     }
     modal.addEventListener("click", () => document.body.removeChild(modal));
