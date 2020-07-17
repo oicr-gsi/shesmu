@@ -218,7 +218,7 @@ public final class WorkflowAction extends Action {
               action
                   .matches
                   .stream()
-                  .filter(m -> m.state().workflowAccession() == action.runAccession)
+                  .filter(m -> m.state().workflowRunAccession() == action.runAccession)
                   .findAny()
                   .map(m -> m.state().workflowAccession())
                   .orElse(action.workflowAccession));
