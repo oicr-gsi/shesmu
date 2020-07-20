@@ -1092,9 +1092,11 @@ function searchAdvanced(
   search.type = "search";
   search.value = filter;
   search.style.width = "100%";
-  search.addEventListener("search", () =>
-    searchModel.statusChanged(search.value)
-  );
+  search.addEventListener("keydown", (e) => {
+    if (e.keyCode == 13) {
+      searchModel.statusChanged(search.value);
+    }
+  });
   searchModel.statusChanged(filter);
   const updateFromClick = (...filters: ActionFilter[]) => {
     const doUpdate = (existingQuery: ActionFilter[]) => {
