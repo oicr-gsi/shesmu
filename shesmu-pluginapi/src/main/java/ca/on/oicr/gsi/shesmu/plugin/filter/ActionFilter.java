@@ -818,7 +818,13 @@ public abstract class ActionFilter {
                     String.format("Unrecognised value “%s”.", matches.get().second().get(i)));
               }
             }
-            return ok ? Optional.of(constructor.apply(buffer)) : Optional.empty();
+            if (ok) {
+              final ActionFilter filter = constructor.apply(buffer);
+              filter.setNegate(matches.get().first());
+              return Optional.of(filter);
+            } else {
+              return Optional.empty();
+            }
           });
     }
     return result;
