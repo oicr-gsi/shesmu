@@ -278,7 +278,7 @@ public interface ActionFilterBuilder<F> {
         @Override
         public Pair<String, Integer> negate(Pair<String, Integer> filter) {
           return new Pair<>(
-              "!" + (filter.second() > 1 ? "(" + filter.first() + ")" : filter.first()), 1);
+              "not " + (filter.second() > 1 ? "(" + filter.first() + ")" : filter.first()), 1);
         }
 
         @Override
