@@ -618,7 +618,7 @@ export function initialiseActionDash(
   const { actions: actionUi, bulkCommands, model: actionModel } = actionDisplay(
     exportSearches
   );
-  const { ui: statsUi, model: statsModel } = actionStats(
+  const { ui: statsUi, model: statsModel, reveal: statsReveal } = actionStats(
     (...limits) => addPropertySearch(...limits),
     (typeName, start, end) => addRangeSearch(typeName, start, end),
     standardExports.concat(exportSearches)
@@ -707,7 +707,7 @@ export function initialiseActionDash(
   );
 
   const { ui: tabsUi, find: tabFind } = tabs(
-    { contents: statsUi, name: "Overview" },
+    { contents: statsUi, name: "Overview", reveal: statsReveal },
     { contents: actionUi, name: "Actions", find: searchFind }
   );
   setFindHandler(tabFind);

@@ -117,7 +117,7 @@ function renderStat(
   addPropertySearch: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
   exportSearches: ExportSearchCommand[]
-): UIElement {
+): { ui: UIElement; reveal: () => void } {
   function popupForProperty(...limits: PropertySearch[]): ClickHandler {
     return popup(
       false,
@@ -154,32 +154,35 @@ function renderStat(
   }
   switch (stat.type) {
     case "text":
-      return stat.value;
+      return { ui: stat.value, reveal: () => {} };
     case "table":
-      return [
-        tableFromRows(
-          stat.table.map(
-            (row: TableStatRow): HTMLTableRowElement => {
-              let prettyTitle: string;
-              let click: ClickHandler | null = null;
-              if (row.kind == null) {
-                prettyTitle = row.title;
-              } else if (row.kind == "property") {
-                prettyTitle = `${row.title} ${row.property}`;
-                click = popupForProperty({ type: row.type, value: row.json });
-              } else {
-                prettyTitle = `Unknown entry for ${row.kind}`;
+      return {
+        ui: [
+          tableFromRows(
+            stat.table.map(
+              (row: TableStatRow): HTMLTableRowElement => {
+                let prettyTitle: string;
+                let click: ClickHandler | null = null;
+                if (row.kind == null) {
+                  prettyTitle = row.title;
+                } else if (row.kind == "property") {
+                  prettyTitle = `${row.title} ${row.property}`;
+                  click = popupForProperty({ type: row.type, value: row.json });
+                } else {
+                  prettyTitle = `Unknown entry for ${row.kind}`;
+                }
+                return tableRow(
+                  click,
+                  { contents: prettyTitle },
+                  { contents: row.value.toString() }
+                );
               }
-              return tableRow(
-                click,
-                { contents: prettyTitle },
-                { contents: row.value.toString() }
-              );
-            }
-          )
-        ),
-        helpHotspot("stats-table"),
-      ];
+            )
+          ),
+          helpHotspot("stats-table"),
+        ],
+        reveal: () => {},
+      };
     case "crosstab": {
       const rows: HTMLTableRowElement[] = [];
 
@@ -240,55 +243,56 @@ function renderStat(
           )
         );
       }
-      return [tableFromRows(rows), helpHotspot("stats-crosstab")];
+      return {
+        ui: [tableFromRows(rows), helpHotspot("stats-crosstab")],
+        reveal: () => {},
+      };
     }
 
     case "histogram": {
       const boundaryLabels = stat.boundaries.map((x) => computeDuration(x));
       const boundaries = stat.boundaries;
-      return [
-        histogram(
-          Math.PI / 4,
-          boundaryLabels.map((l) => l.ago),
-          Object.entries(stat.counts).map(([bin, counts]) => ({
-            label: " " + nameForBin(bin as TimeRangeType),
-            counts: counts,
-            selected(start: number, end: number): void {
-              addRangeSearch(
-                bin as TimeRangeType,
-                boundaries[start],
-                Math.max(boundaries[end], boundaries[start] + 60_000) // Time is rounded to minutes for some situations, so if the window is too small, the start and end times will be the same and nothing matches; this kicks the end range a bit into the future
-              );
-            },
-            selectionDisplay(start: number, end: number): string {
-              const sum = counts.reduce(
-                (acc, value, index) =>
-                  index >= start && index < end ? acc + value : acc,
-                0
-              );
-              return (
-                sum +
-                " actions over " +
-                formatTimeSpan(boundaries[end] - boundaries[start]) +
-                " (" +
-                boundaryLabels[start].ago +
-                +" / " +
-                boundaryLabels[start].absolute +
-                " to " +
-                boundaryLabels[end].ago +
-                +" / " +
-                boundaryLabels[end].absolute +
-                ")"
-              );
-            },
-          }))
-        ),
-        helpHotspot("stats-histogram"),
-      ];
+      const { ui, redraw } = histogram(
+        Math.PI / 4,
+        boundaryLabels.map((l) => l.ago),
+        Object.entries(stat.counts).map(([bin, counts]) => ({
+          label: " " + nameForBin(bin as TimeRangeType),
+          counts: counts,
+          selected(start: number, end: number): void {
+            addRangeSearch(
+              bin as TimeRangeType,
+              boundaries[start],
+              Math.max(boundaries[end], boundaries[start] + 60_000) // Time is rounded to minutes for some situations, so if the window is too small, the start and end times will be the same and nothing matches; this kicks the end range a bit into the future
+            );
+          },
+          selectionDisplay(start: number, end: number): string {
+            const sum = counts.reduce(
+              (acc, value, index) =>
+                index >= start && index < end ? acc + value : acc,
+              0
+            );
+            return (
+              sum +
+              " actions over " +
+              formatTimeSpan(boundaries[end] - boundaries[start]) +
+              " (" +
+              boundaryLabels[start].ago +
+              +" / " +
+              boundaryLabels[start].absolute +
+              " to " +
+              boundaryLabels[end].ago +
+              +" / " +
+              boundaryLabels[end].absolute +
+              ")"
+            );
+          },
+        }))
+      );
+      return { ui: [ui, helpHotspot("stats-histogram")], reveal: redraw };
     }
 
     default:
-      return "Unknown stat type";
+      return { ui: "Unknown stat type", reveal: () => {} };
   }
 }
 
@@ -299,15 +303,18 @@ export function actionStats(
   addPropertySeach: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
   exportSearches: ExportSearchCommand[]
-): { ui: UIElement; model: StatefulModel<ActionFilter[]> } {
+): { ui: UIElement; model: StatefulModel<ActionFilter[]>; reveal: () => void } {
+  let revealers: (() => void)[] = [];
   const { model, ui } = singleState(
     (stats: Stat[] | null): UIElement => {
       if (stats?.length) {
+        const results = stats.map((stat) =>
+          renderStat(stat, addPropertySeach, addRangeSearch, exportSearches)
+        );
+        revealers = results.map((r) => r.reveal);
         return [
           text("Click any cell or table heading to filter results."),
-          stats.map((stat) =>
-            renderStat(stat, addPropertySeach, addRangeSearch, exportSearches)
-          ),
+          results.map((r) => r.ui),
         ];
       }
       return "No statistics are available.";
@@ -325,5 +332,8 @@ export function actionStats(
   return {
     ui: ui,
     model: io,
+    reveal: () => {
+      for (const reveal of revealers) reveal();
+    },
   };
 }
