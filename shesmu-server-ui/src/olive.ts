@@ -287,7 +287,7 @@ export function initialiseOliveDash(
     "toolbar",
     "main"
   );
-  const { ui: statsUi, model: statsModel } = actionStats(
+  const { ui: statsUi, model: statsModel, reveal: statsReveal } = actionStats(
     (...limits) => search.addPropertySearch(...limits),
     (typeName, start, end) => search.addRangeSearch(typeName, start, end),
     standardExports.concat(exportSearches)
@@ -383,6 +383,7 @@ export function initialiseOliveDash(
   const { ui, find, models: tabsModels } = tabsModel(1, {
     name: "Overview",
     contents: [components.overview, statsUi],
+    reveal: statsReveal,
   });
 
   const model = combineModels(

@@ -87,6 +87,8 @@ export interface Tab {
   find?: FindHandler;
   /** If true, this tab will be selected by default*/
   selected?: boolean;
+  /** Called when the tab is displayed. This is best effort and it may be multiply called.*/
+  reveal?: () => void;
 }
 /**
  * The contents of a table cell
@@ -1820,6 +1822,10 @@ export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
       buttons.forEach((button, i) => {
         button.className = i == index ? "tab selected" : "tab";
       });
+      const reveal = tabs[index].reveal;
+      if (reveal) {
+        reveal();
+      }
       findHandler = find || null;
       original = false;
     });
@@ -1842,6 +1848,11 @@ export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
   for (let i = 0; i < tabs.length; i++) {
     buttons[i].className = i == selectedTab ? "tab selected" : "tab";
     panes[i].style.display = i == selectedTab ? "block" : "none";
+  }
+
+  const reveal = tabs[selectedTab].reveal;
+  if (reveal) {
+    reveal();
   }
   return {
     ui: container,
@@ -1869,6 +1880,7 @@ export function tabsModel(
     panes: HTMLElement[];
     buttons: HTMLElement[];
     finds: FindHandler[];
+    reveals: ((() => void) | null)[];
   };
   let findHandler: FindHandler = null;
   let current: [number, number] = [0, 0];
@@ -1894,11 +1906,16 @@ export function tabsModel(
               groupIndex == group && i == index ? "tab selected" : "tab";
           });
           findHandler = find || null;
+          const reveal = tabs[index].reveal;
+          if (reveal) {
+            reveal();
+          }
         });
       });
       return button;
     }),
     finds: tabs.map((t) => t.find || null),
+    reveals: tabs.map((t) => t.reveal || null),
   });
   const container = document.createElement("div");
   const paneHolder = document.createElement("div");
@@ -1914,7 +1931,7 @@ export function tabsModel(
     const [targetGroup, targetIndex] = tabGroups[group].panes.length
       ? [group, 0]
       : current;
-    tabGroups.forEach(({ panes, buttons, finds }, groupIndex) => {
+    tabGroups.forEach(({ panes, buttons, finds, reveals }, groupIndex) => {
       panes.forEach((pane, i) => {
         pane.style.display =
           groupIndex == targetGroup && i == targetIndex ? "block" : "none";
@@ -1927,6 +1944,10 @@ export function tabsModel(
       });
       if (groupIndex == targetGroup) {
         findHandler = targetIndex < finds.length ? finds[targetIndex] : null;
+        const reveal = reveals[targetIndex];
+        if (reveal) {
+          reveal();
+        }
       }
     });
   };
@@ -1935,7 +1956,7 @@ export function tabsModel(
   const models: StatefulModel<Tab[]>[] = [];
   for (let i = 0; i < groups; i++) {
     const group = i + 1;
-    tabGroups.push({ panes: [], buttons: [], finds: [] });
+    tabGroups.push({ panes: [], buttons: [], finds: [], reveals: [] });
     models.push({
       reload: () => {},
       statusChanged: (input) => {
@@ -1955,6 +1976,7 @@ export function tabsModel(
           panes: [pane],
           buttons: [buttonElement],
           finds: [null],
+          reveals: [null],
         };
         update(group);
       },
@@ -1963,7 +1985,12 @@ export function tabsModel(
         addElements(button, throbberSmall());
         const pane = document.createElement("div");
         addElements(pane, throbber());
-        tabGroups[group] = { panes: [pane], buttons: [button], finds: [null] };
+        tabGroups[group] = {
+          panes: [pane],
+          buttons: [button],
+          finds: [null],
+          reveals: [null],
+        };
         update(group);
       },
     });
