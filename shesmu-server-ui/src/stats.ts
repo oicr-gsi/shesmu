@@ -241,7 +241,7 @@ function renderStat(
                   header: false,
                   intensity: (value || 0) / maximum,
                   click: popupForProperty(
-                    { type: col.name, value: col.value },
+                    { type: stat.column, value: col.value },
                     { type: stat.row, value: rowValue }
                   ),
                 };
