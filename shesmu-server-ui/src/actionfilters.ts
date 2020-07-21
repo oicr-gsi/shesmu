@@ -81,97 +81,115 @@ export type ActionFilter =
   | ActionFilterText
   | ActionFilterType;
 export interface ActionFilterAddedAgo {
+  negate?: boolean;
   offset: number;
   type: "addedago";
 }
 
 export interface ActionFilterAdded {
   end: number | null;
+  negate?: boolean;
   start: number | null;
   type: "added";
 }
 
 export interface ActionFilterAnd {
   filters: ActionFilter[];
+  negate?: boolean;
   type: "and";
 }
 
 export interface ActionFilterCheckedAgo {
+  negate?: boolean;
   offset: number;
   type: "checkedago";
 }
 
 export interface ActionFilterChecked {
   end: number | null;
+  negate?: boolean;
   start: number | null;
   type: "checked";
 }
 
 export interface ActionFilterExternalAgo {
+  negate?: boolean;
   offset: number;
   type: "externalago";
 }
 
 export interface ActionFilterExternal {
   end: number | null;
+  negate?: boolean;
   start: number | null;
   type: "external";
 }
 
 export interface ActionFilterIds {
   ids: string[];
+  negate?: boolean;
   type: "id";
 }
 
 export interface ActionFilterOr {
   filters: ActionFilter[];
+  negate?: boolean;
   type: "or";
 }
 
 export interface ActionFilterRegex {
   matchCase: boolean;
+  negate?: boolean;
   pattern: string;
   type: "regex";
 }
 
 export interface ActionFilterSourceFile {
   files: string[];
+  negate?: boolean;
   type: "sourcefile";
 }
 
 export interface ActionFilterSourceLocation {
   locations: SourceLocation[];
+  negate?: boolean;
   type: "sourcelocation";
 }
 
 export interface ActionFilterStatusChangedAgo {
   offset: number;
+  negate?: boolean;
   type: "statuschangedago";
 }
 
 export interface ActionFilterStatusChanged {
   end: number | null;
   start: number | null;
+  negate?: boolean;
   type: "statuschanged";
 }
 
 export interface ActionFilterStatus {
+  negate?: boolean;
   states: Status[];
   type: "status";
 }
 
 export interface ActionFilterTag {
+  negate?: boolean;
   tags: string[];
   type: "tag";
 }
 
 export interface ActionFilterText {
   matchCase: boolean;
+  negate?: boolean;
   text: string;
   type: "text";
 }
 
 export interface ActionFilterType {
+  negate?: boolean;
   types: string[];
   type: "type";
 }
@@ -801,6 +819,113 @@ export function nameForBin(name: TimeAgoType | TimeRangeType): string {
       return name;
   }
 }
+function recomposeFilter(filter: ActionFilter): BasicQuery | null {
+  const result: BasicQuery = {};
+  return recomposeFilterHelper(filter, result) ? result : null;
+}
+function recomposeFilterHelper(
+  filter: ActionFilter,
+  result: BasicQuery
+): boolean {
+  if (filter.negate) {
+    return false;
+  }
+  switch (filter.type) {
+    case "added":
+    case "checked":
+    case "external":
+    case "statuschanged":
+      if (result[filter.type]) {
+        return false;
+      } else {
+        result[filter.type] = { start: filter.start, end: filter.end };
+        return true;
+      }
+    case "addedago":
+    case "checkedago":
+    case "externalago":
+    case "statuschangedago":
+      if (result[filter.type]) {
+        return false;
+      } else {
+        result[filter.type] = filter.offset;
+        return true;
+      }
+    case "id":
+      if (result.id) {
+        return false;
+      } else {
+        result.id = filter.ids;
+        return true;
+      }
+    case "sourcefile":
+      if (result.sourcefile) {
+        return false;
+      } else {
+        result.sourcefile = filter.files;
+        return true;
+      }
+    case "sourcelocation":
+      if (result.sourcelocation) {
+        return false;
+      } else {
+        result.sourcelocation = filter.locations;
+        return true;
+      }
+    case "tag":
+      if (result.tag) {
+        return false;
+      } else {
+        result.tag = filter.tags;
+        return true;
+      }
+    case "status":
+      if (result.status) {
+        return false;
+      } else {
+        result.status = filter.states;
+        return true;
+      }
+    case "type":
+      if (result.type) {
+        return false;
+      } else {
+        result.type = filter.types;
+        return true;
+      }
+    case "regex":
+      result.regex = [
+        ...(result.regex || []),
+        { pattern: filter.pattern, matchCase: filter.matchCase },
+      ];
+      return true;
+    case "text":
+      result.text = [
+        ...(result.text || []),
+        { text: filter.text, matchCase: filter.matchCase },
+      ];
+      return true;
+    case "and":
+      for (const child of filter.filters) {
+        if (!recomposeFilterHelper(child, result)) {
+          return false;
+        }
+      }
+      return true;
+    case "or":
+      switch (filter.filters.length) {
+        case 0:
+          return true;
+        case 1:
+          return recomposeFilterHelper(filter.filters[0], result);
+        default:
+          return false;
+      }
+
+    default:
+      return false;
+  }
+}
 function renderFilters(
   query: BasicQuery,
   filenameFormatter: FilenameFormatter,
@@ -1138,20 +1263,48 @@ function searchAdvanced(
       button(
         "🖱️ Basic",
         "Switch to basic query interface. Current query will be lost.",
-        () =>
-          dialog((close) => [
-            "Switching to basic query interface will discard current query.",
-            br(),
-            button("Stay here", "Stay in the advanced query interface.", close),
-            button(
-              "Switch to basic",
-              "Switch to the basic query interface.",
-              () => {
-                close();
-                synchronizer.statusChanged({});
+        () => {
+          if (search.value.trim()) {
+            fetchJsonWithBusyDialog<ParseQueryRespose>(
+              "parsequery",
+              {
+                method: "POST",
+                body: JSON.stringify(search.value),
+              },
+              (result) => {
+                const existing = result.filter;
+                const convertedQuery = existing
+                  ? recomposeFilter(existing)
+                  : null;
+                if (convertedQuery) {
+                  synchronizer.statusChanged(convertedQuery);
+                } else {
+                  dialog((close) => [
+                    "Switching to basic query interface will discard current query.",
+                    br(),
+                    "The query does not have an equivalent basic form.",
+                    br(),
+                    button(
+                      "Stay here",
+                      "Stay in the advanced query interface.",
+                      close
+                    ),
+                    button(
+                      "Discard and Switch",
+                      "Switch to the basic query interface.",
+                      () => {
+                        close();
+                        synchronizer.statusChanged({});
+                      }
+                    ),
+                  ]);
+                }
               }
-            ),
-          ])
+            );
+          } else {
+            synchronizer.statusChanged({});
+          }
+        }
       ),
       buttonAccessory(
         "➕ Add Filter",
