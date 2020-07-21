@@ -1608,8 +1608,12 @@ function searchBasic(
     },
 
     addPropertySearch: (...limits) => {
-      updateBasicQueryForPropertySearch(limits, current);
-      searchModel.statusChanged({ ...current });
+      const result = updateBasicQueryForPropertySearch(limits, current);
+      if (result instanceof Promise) {
+        promiseModel(synchronizer).statusChanged(result);
+      } else {
+        searchModel.statusChanged(result);
+      }
     },
   };
 }
@@ -1643,12 +1647,42 @@ function timeRangeAnchor(
 export function updateBasicQueryForPropertySearch(
   limits: PropertySearch[],
   current: BasicQuery
-): void {
+): Promise<string> | BasicQuery {
+  // If we have to switch to advanced mode, collect all those filters here
+  let advancedFilters: ActionFilter[] = [];
   for (const limit of limits) {
     if (limit.type == "status") {
       current[limit.type] = combineSet(current[limit.type], limit.value);
     } else {
-      current[limit.type] = combineSet(current[limit.type], limit.value);
+      if (limit.type == "tag" && current.tag?.length) {
+        advancedFilters.push({ type: "tag", tags: [limit.value] });
+      } else {
+        current[limit.type] = combineSet(current[limit.type], limit.value);
+      }
     }
+  }
+  if (advancedFilters.length) {
+    butter(
+      5000,
+      "Switching to advanced mode. Use the browser's back button to return to the previous basic-mode search."
+    );
+    // Take what we have and switch to advanced mode
+    return fetch("/printquery", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "and",
+        filters: createFilters(current).concat(advancedFilters),
+      } as ActionFilter),
+    }).then((response) =>
+      response.ok
+        ? response.text()
+        : Promise.reject(
+            new Error(
+              `Failed to load: ${response.status} ${response.statusText}`
+            )
+          )
+    );
+  } else {
+    return { ...current };
   }
 }

@@ -128,14 +128,24 @@ function renderStat(
       {
         label: "Open Search for Only This Selection",
         action: () => {
-          const basic: BasicQuery = {};
-          updateBasicQueryForPropertySearch(limits, basic);
-          window.open(
-            makeUrl("actiondash", {
-              filters: basic,
-              saved: "All Actions",
-            })
-          );
+          const result = updateBasicQueryForPropertySearch(limits, {});
+          if (result instanceof Promise) {
+            result.then((query) =>
+              window.open(
+                makeUrl("actiondash", {
+                  filters: query,
+                  saved: "All Actions",
+                })
+              )
+            );
+          } else {
+            window.open(
+              makeUrl("actiondash", {
+                filters: result,
+                saved: "All Actions",
+              })
+            );
+          }
         },
       },
       {
