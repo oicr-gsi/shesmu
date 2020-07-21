@@ -31,7 +31,7 @@ public class LaneSplittingGrouperTest {
                     new Pair<>(2L, "2")))
             .map(s -> s.build(i -> new TreeSet<>()).size())
             .collect(Collectors.toSet());
-    Assertions.assertEquals(new TreeSet<>(Arrays.asList(3, 1)), outputs);
+    Assertions.assertEquals(Collections.emptySet(), outputs);
   }
 
   @Test

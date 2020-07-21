@@ -49,6 +49,12 @@ public class LaneSplittingGrouper<I, T, O> implements Grouper<I, O> {
       }
     }
 
+    // If we failed to get information from Run Scanner, then the flow cell geometry is the empty
+    // list and we should not try to group this row.
+    if (canMerge.isEmpty()) {
+      return Stream.empty();
+    }
+
     // Bin input by the lane it claims to be
     final Map<Long, List<I>> groups =
         inputs
