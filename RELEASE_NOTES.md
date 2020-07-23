@@ -1,5 +1,33 @@
 # Unreleased
 
+# [1.1.0] - 2020-07-23T17:32+00:00
+
+UI:
+* Fix bug with advanced search
+  The not-equals/in flag from the queries in the advanced search was being
+  incorrectly disregarded.
+* Fix event listener on advanced searches
+* Fix bug where hidden histograms aren't rendered
+* Fix filter type in crosstab cells
+* Upgrade to advanced search when basic won't do
+* Fix popup menu calculations
+
+Niassa/Pinery plugin:
+* Expose Pinery provider in `pinery_project` source
+* Fix HALP state for fixable actions
+  Actions that are fixable (updatable by signatures) should transition to the
+  match's state rather than HALP.
+* Fix comparison when getting workflow SWID for logging
+
+RunScanner plugin:
+
+* Fix incorrect splitting when Run Scanner returns an error
+  The Run Scanner plugin makes the assumption that if it fails to fetch the
+  flowcell geometry, it can return an empty list and downstream processes will
+  consider this an error state. The lane splitting grouper however, did not
+  reject such records. This change rejects them.
+
+
 # [1.0.5] - 2020-07-16T17:03+00:00
 
 Changes:
