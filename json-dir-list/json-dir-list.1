@@ -1,0 +1,17 @@
+.TH json-dir-list 1 "Jul 2020" "1.0" "USER COMMANDS"
+.SH NAME
+json-dir-list \- Produce Shesmu-compatible JSON directory listings
+.SH SYNOPSIS
+.B json-dir-list directory ...
+.I directory
+.SH DESCRIPTION
+Perform a recursive search for files in the directories specified in a format
+compatible with Shesmu's \fBunix_file\fR input format in JSON. This is meant to
+be available to Shesmu's SSH plugin so that it can pull in the file information
+in a safe format. Normally, Shesmu tries to use a \fBfind\fR command to
+generate a JSON description of the directory structure, but this requires all
+file, user, and group names be valid JSON strings without escaping. This
+command does correct JSON encoding no matter the names involved.
+.SH SEE ALSO
+.BR find (1).
+

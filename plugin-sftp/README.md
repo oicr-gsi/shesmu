@@ -9,6 +9,7 @@ To configure an SFTP server, create a file ending in `.sftp` as follows:
       "port": 22,
       "user": "myuser",
       "jsonSources": [],
+      "listCommand": null,
       "fileRoots": [],
       "fileRootsTtl": null,
       "functions": {},
@@ -126,8 +127,15 @@ be ignored.
 
 ## File Roots
 It is possible to gather file information in the `unix_file` format from a
-remote file system via SSH. GNU findutils must be installed on the remote
-system; this is standard with Linux. `"fileRoots"` list the paths to scan.
+remote file system via SSH. `"fileRoots"` list the paths to scan.
 
 `"fileRootsTtl"` sets the number of minutes to cache the results. If null, a
 default value of 60 minutes is used.
+
+Shesmu tries to use GNU findutils to explore the remote directory. This is
+convenient because it is standard with Linux. However, if file have names which
+are not allowed in JSON strings, it falls apart rather quickly. If this is the
+case, use the [JSON directory listing tool](../json-dir-list) to ensure the
+output is always correctly encoded. Install it on the target system and then
+set `"listCommand"` to the path to the program or just `"json-dir-list"` if
+it's installed into a location on the `PATH`.

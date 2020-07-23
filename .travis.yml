@@ -13,6 +13,7 @@ matrix:
   include:
     - jdk: openjdk11
       before_install:
+        - sudo apt-get -y install build-essential pkg-config libjsoncpp-dev
         - rm "${JAVA_HOME}/lib/security/cacerts"
         - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
 
@@ -20,6 +21,7 @@ git:
   depth: 3
 
 before_install:
+    - sudo apt-get -y install build-essential pkg-config libjsoncpp-dev
     - git clone https://github.com/oicr-gsi/gsi-config.git "${MAVEN_SETTINGS}"
     - cp "${MAVEN_SETTINGS}/settings.xml" "${HOME}/.m2/settings.xml"
 
