@@ -23,3 +23,8 @@ then
 		echo "[WARN] SonarCloud cannot run on pull requests from forks."
 	fi
 fi
+
+cd json-dir-list
+autoreconf -i
+./configure
+make

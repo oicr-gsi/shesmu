@@ -149,25 +149,30 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     return this.configuration
         .filter(c -> !c.getFileRoots().isEmpty())
         .<JsonInputSource>map(
-            c ->
-                new SshJsonInputSource(
-                    c.getHost(),
-                    c.getPort(),
-                    c.getUser(),
-                    Optional.ofNullable(c.getFileRootsTtl()).filter(x -> x > 0),
-                    String.format(
-                        "echo '['; find %s -not -type d -printf ',\\n{\"file\":\"%%p\",\"size\":%%s,\"atime\":%%A@,\"ctime\":%%C@,\"mtime\":%%T@,\"user\":\"%%u\",\"group\":\"%%g\",\"perms\":%%m,\"host\":\"'$(hostname -f)'\"}'| tail -n +2; echo ']'",
-                        c.getFileRoots()
-                            .stream()
-                            .map(
-                                p -> {
-                                  try {
-                                    return MAPPER.writeValueAsString(p);
-                                  } catch (JsonProcessingException e) {
-                                    throw new RuntimeException(e);
-                                  }
-                                })
-                            .collect(Collectors.joining(" ")))))
+            c -> {
+              final String roots =
+                  c.getFileRoots()
+                      .stream()
+                      .map(
+                          p -> {
+                            try {
+                              return MAPPER.writeValueAsString(p);
+                            } catch (JsonProcessingException e) {
+                              throw new RuntimeException(e);
+                            }
+                          })
+                      .collect(Collectors.joining(" "));
+              return new SshJsonInputSource(
+                  c.getHost(),
+                  c.getPort(),
+                  c.getUser(),
+                  Optional.ofNullable(c.getFileRootsTtl()).filter(x -> x > 0),
+                  c.getListCommand() == null
+                      ? String.format(
+                          "echo '['; find %s -not -type d -printf ',\\n{\"file\":\"%%p\",\"size\":%%s,\"atime\":%%A@,\"ctime\":%%C@,\"mtime\":%%T@,\"user\":\"%%u\",\"group\":\"%%g\",\"perms\":%%m,\"host\":\"'$(hostname -f)'\"}'| tail -n +2; echo ']'",
+                          roots)
+                      : (c.getListCommand() + " " + roots));
+            })
         .orElse(JsonInputSource.EMPTY)
         .fetch();
   }
