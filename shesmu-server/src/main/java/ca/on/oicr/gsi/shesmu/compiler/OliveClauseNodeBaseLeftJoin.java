@@ -263,7 +263,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             inputFormat,
             outerKey.type(),
             (signatureDefinition, renderer) -> {
-              oliveBuilder.renderSigner(prefix, signatureDefinition, renderer);
+              BaseOliveBuilder.renderSigner(oliveBuilder.owner, inputFormat, prefix, signatureDefinition, renderer);
             },
             oliveBuilder
                 .loadableValues()

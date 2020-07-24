@@ -149,11 +149,9 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
     methodGen.visitCode();
     methodGen.visitLineNumber(line, methodGen.mark());
     body.render(
-        new Renderer(
+        new RendererNoStream(
             builder,
             methodGen,
-            -1,
-            null,
             Stream.concat(
                 parameters.stream().map(Pair.number()).map(Pair.transform(LoadParameter::new)),
                 builder.constants(false)),

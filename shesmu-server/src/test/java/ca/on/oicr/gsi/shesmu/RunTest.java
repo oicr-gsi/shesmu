@@ -517,7 +517,9 @@ public class RunTest {
       final InputProviderChecker input = new InputProviderChecker();
       REFILL_OKAY.set(false);
       generator.run(checker, input);
-      if ((checker.ok() || REFILL_OKAY.get()) && input.ok(generator)) {
+      if ((checker.ok() || REFILL_OKAY.get())
+              != file.getFileName().toString().endsWith("-fail.shesmu")
+          && input.ok(generator)) {
         System.err.printf("OK %s\n", file.getFileName());
         return false;
       } else {

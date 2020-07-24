@@ -176,6 +176,23 @@ public final class RuntimeSupport {
     return result;
   }
 
+  /**
+   * Group items in to outer groups, then apply a complex subgrouping operation to produce subgroups
+   * from this input
+   *
+   * @param input the stream of input items
+   * @param collect a way to create subgroups for each outer group.
+   * @param makeKey a value for a key that is common across the bulk groups
+   */
+  @RuntimeInterop
+  public static <I, O> O everything(
+      Stream<I> input, BiConsumer<O, I> collect, Supplier<O> makeKey) {
+    final O output = makeKey.get();
+    input.forEach(i -> collect.accept(output, i));
+    input.close();
+    return output;
+  }
+
   @RuntimeInterop
   public static <I, T, O> Stream<O> flatten(
       Stream<I> input, Function<I, Stream<T>> explode, BiFunction<I, T, O> make) {
@@ -486,7 +503,6 @@ public final class RuntimeSupport {
     callsites.put(id, callsite);
     return callsite;
   }
-
   /**
    * Group items in to outer groups, then apply a complex subgrouping operation to produce subgroups
    * from this input

@@ -102,10 +102,42 @@ public abstract class PragmaNode {
           }
           return result;
         });
+
+    DISPATCH.addKeyword(
+        "Check",
+        (p, o) -> {
+          final AtomicReference<String> format = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> check = new AtomicReference<>();
+          final AtomicReference<GroupNode> collect = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .identifier(format::set)
+                  .whitespace()
+                  .keyword("Into")
+                  .whitespace()
+                  .then(GroupNode::parse, collect::set)
+                  .whitespace()
+                  .keyword("Require")
+                  .whitespace()
+                  .then(ExpressionNode::parse, check::set)
+                  .whitespace()
+                  .symbol(";")
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                new PragmaNodeInputGuard(
+                    p.line(), p.column(), format.get(), collect.get(), check.get()));
+          }
+          return result;
+        });
   }
 
   public static Parser parse(Parser parser, Consumer<PragmaNode> output) {
     return parser.whitespace().dispatch(DISPATCH, output).whitespace();
+  }
+
+  public boolean check(OliveCompilerServices services, Consumer<String> errorHandler) {
+    return true;
   }
 
   public abstract Stream<ImportRewriter> imports();

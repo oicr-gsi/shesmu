@@ -142,6 +142,44 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_STREAM__PEEK =
       new Method("peek", A_STREAM_TYPE, new Type[] {A_CONSUMER_TYPE});
   public static final String SIGNER_ACCESSOR_NAME = "Signer Accessor";
+
+  public static void createSignatureInfrastructure(
+      RootBuilder owner,
+      String prefix,
+      InputFormatDefinition inputFormat,
+      List<Target> signables,
+      SignatureDefinition signer) {
+    final String name = prefix + signer.name();
+    switch (signer.storage()) {
+      case STATIC:
+        owner.classVisitor.visitField(
+            Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
+            name,
+            signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
+            null,
+            null);
+        signer.build(owner.classInitMethod, inputFormat.type(), signables.stream());
+        owner.classInitMethod.putStatic(
+            owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
+        break;
+      case DYNAMIC:
+        final Method method =
+            new Method(
+                name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
+        final GeneratorAdapter methodGen =
+            new GeneratorAdapter(
+                Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor);
+        methodGen.visitCode();
+        signer.build(methodGen, inputFormat.type(), signables.stream());
+        methodGen.returnValue();
+        methodGen.visitMaxs(0, 0);
+        methodGen.visitEnd();
+        break;
+      default:
+        throw new UnsupportedOperationException();
+    }
+  }
+
   private Type currentType;
   protected final InputFormatDefinition initialFormat;
   protected final RootBuilder owner;
@@ -192,35 +230,7 @@ public abstract class BaseOliveBuilder {
       InputFormatDefinition inputFormat,
       List<Target> signables,
       SignatureDefinition signer) {
-    final String name = prefix + signer.name();
-    switch (signer.storage()) {
-      case STATIC:
-        owner.classVisitor.visitField(
-            Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
-            name,
-            signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
-            null,
-            null);
-        signer.build(owner.classInitMethod, inputFormat.type(), signables.stream());
-        owner.classInitMethod.putStatic(
-            owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
-        break;
-      case DYNAMIC:
-        final Method method =
-            new Method(
-                name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
-        final GeneratorAdapter methodGen =
-            new GeneratorAdapter(
-                Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor);
-        methodGen.visitCode();
-        signer.build(methodGen, inputFormat.type(), signables.stream());
-        methodGen.returnValue();
-        methodGen.visitMaxs(0, 0);
-        methodGen.visitEnd();
-        break;
-      default:
-        throw new UnsupportedOperationException();
-    }
+    createSignatureInfrastructure(owner, prefix, inputFormat, signables, signer);
   }
 
   /**
@@ -901,7 +911,12 @@ public abstract class BaseOliveBuilder {
         capturedVariables.length + collectorBuilderType.parameters());
   }
 
-  public void renderSigner(String prefix, SignatureDefinition signer, Renderer renderer) {
+  public static void renderSigner(
+      RootBuilder owner,
+      InputFormatDefinition format,
+      String prefix,
+      SignatureDefinition signer,
+      Renderer renderer) {
     switch (signer.storage()) {
       case DYNAMIC:
         renderer.loadStream();
@@ -912,7 +927,7 @@ public abstract class BaseOliveBuilder {
                 new Method(
                     prefix + signer.name(),
                     signer.type().apply(TypeUtils.TO_ASM),
-                    new Type[] {initialFormat.type()}));
+                    new Type[] {format.type()}));
         break;
       case STATIC:
         renderer

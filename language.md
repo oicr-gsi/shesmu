@@ -46,7 +46,7 @@ As pathify;` will make `pathify` the same as `std::string::to_path`).
 
 - `Import` _qname_`::{` _name1_ [`As` _name1P_]  [`,` _name2_ ...]`};`
 
-Perform mutltiple of the above access patterns at once. That is:
+Perform multiple of the above access patterns at once. That is:
 
     Import std::string::{length As strlen, to_path};
 
@@ -82,6 +82,19 @@ is the default and others such as `minutes` and `hours` can be used.
 
 Ensures that the olive will only run if the specified services are not
 throttled. Multiple services are separated by a comma.
+
+## Data Checks
+- `Check` _format_ `Into` _name_ `=` _collector_ `Require` _expr_`;`
+
+This prevents the script from running based on input data. It takes all the
+input data from the format _format_ and sorts it into one giant group using
+_collector_ to aggregate the records. Once done, it evaluates _expr_ with
+_name_ defined to that aggregate value. If _expr_ is true, the script can run;
+otherwise, it will be blocked.
+
+This can be useful to require temperamental data sources to have provided input:
+
+    Check unix_file Into c = Count Require c > 0;
 
 ## Type Aliases
 Since tuple types can get unwieldy, a type alias can be created:
