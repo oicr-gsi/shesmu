@@ -288,13 +288,16 @@ public class ProgramNode {
     }
 
     boolean ok =
-        olives
-                .stream()
-                .filter(
-                    olive ->
-                        olive.collectDefinitions(definedOlives, userDefinedConstants, errorHandler))
-                .count()
-            == olives.size();
+        pragmas.stream().filter(pragma -> pragma.check(compilerServices, errorHandler)).count()
+                == pragmas.size()
+            & olives
+                    .stream()
+                    .filter(
+                        olive ->
+                            olive.collectDefinitions(
+                                definedOlives, userDefinedConstants, errorHandler))
+                    .count()
+                == olives.size();
     ok =
         ok && olives.stream().allMatch(olive -> olive.resolveTypes(compilerServices, errorHandler));
     ok =

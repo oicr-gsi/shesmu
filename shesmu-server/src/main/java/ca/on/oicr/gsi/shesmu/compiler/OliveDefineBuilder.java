@@ -106,11 +106,9 @@ public final class OliveDefineBuilder extends BaseOliveBuilder {
    */
   public void finish() {
     final Renderer renderer =
-        new Renderer(
+        new RendererNoStream(
             owner,
             new GeneratorAdapter(Opcodes.ACC_PRIVATE, method, null, null, owner.classVisitor),
-            0,
-            null,
             Stream.concat(parameters.stream(), Stream.of(SIGNER_ACCESSOR_LOADABLE_VALUE)),
             this::emitSigner);
     renderer.methodGen().visitCode();

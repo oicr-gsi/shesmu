@@ -1,0 +1,5 @@
+Version 1;
+Input test;
+Check test Into c = Count Require c > 0;
+
+Olive Run ok With ok = True;

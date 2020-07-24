@@ -22,6 +22,7 @@ syn keyword shesmuKeyword ArgumentType
 syn keyword shesmuKeyword As
 syn keyword shesmuKeyword Begin
 syn keyword shesmuKeyword By
+syn keyword shesmuKeyword Check
 syn keyword shesmuKeyword Count
 syn keyword shesmuKeyword Default
 syn keyword shesmuKeyword Define

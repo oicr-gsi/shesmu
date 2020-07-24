@@ -20,7 +20,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 /** Helper class to hold state and context for bytecode generation. */
-public class Renderer {
+public abstract class Renderer {
 
   public static void loadImyhatInMethod(GeneratorAdapter methodGen, String descriptor) {
     methodGen.invokeDynamic(descriptor, METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
@@ -63,44 +63,34 @@ public class Renderer {
 
   private final BiConsumer<SignatureDefinition, Renderer> signerEmitter;
 
-  private final int streamArg;
-  private final Type streamType;
-
   public Renderer(
       RootBuilder rootBuilder,
       GeneratorAdapter methodGen,
-      int streamArg,
-      Type streamType,
       Stream<LoadableValue> loadables,
       BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
     this.rootBuilder = rootBuilder;
     this.methodGen = methodGen;
-    this.streamArg = streamArg;
-    this.streamType = streamType;
     this.signerEmitter = signerEmitter;
     this.loadables =
         loadables.collect(Collectors.toMap(LoadableValue::name, Function.identity(), (a, b) -> a));
   }
 
-  public Stream<LoadableValue> allValues() {
+  public final Stream<LoadableValue> allValues() {
     return loadables.values().stream();
   }
 
-  public JavaStreamBuilder buildStream(Imyhat initialType) {
+  public final JavaStreamBuilder buildStream(Imyhat initialType) {
     return new JavaStreamBuilder(rootBuilder, this, initialType);
   }
 
-  public void define(String name, LoadableValue value) {
+  public final void define(String name, LoadableValue value) {
     loadables.put(name, value);
   }
 
-  public Renderer duplicate() {
-    return new Renderer(
-        root(), methodGen, streamArg, streamType, loadables.values().stream(), signerEmitter);
-  }
+  public abstract Renderer duplicate();
 
   /** Find a known variable by name and load it on the stack. */
-  public void emitNamed(String name) {
+  public final void emitNamed(String name) {
     final LoadableValue value = loadables.get(name);
     if (value == null) {
       throw new IllegalStateException(
@@ -109,15 +99,15 @@ public class Renderer {
     value.accept(this);
   }
 
-  public void emitSigner(SignatureDefinition name) {
+  public final void emitSigner(SignatureDefinition name) {
     signerEmitter.accept(name, this);
   }
 
-  public LoadableValue getNamed(String name) {
+  public final LoadableValue getNamed(String name) {
     return loadables.get(name);
   }
 
-  public void invokeInterfaceStatic(Type interfaceType, Method method) {
+  public final void invokeInterfaceStatic(Type interfaceType, Method method) {
     methodGen.visitMethodInsn(
         Opcodes.INVOKESTATIC,
         interfaceType.getInternalName(),
@@ -126,7 +116,7 @@ public class Renderer {
         true);
   }
 
-  public void loadImyhat(String descriptor) {
+  public final void loadImyhat(String descriptor) {
     loadImyhatInMethod(methodGen, descriptor);
   }
 
@@ -135,13 +125,9 @@ public class Renderer {
    *
    * <p>This is a no-op in the contexts where the stream hasn't started.
    */
-  public void loadStream() {
-    if (streamType != null) {
-      methodGen.loadArg(streamArg);
-    }
-  }
+  public abstract void loadStream();
 
-  public void loadTarget(Target target) {
+  public final void loadTarget(Target target) {
     if (target.flavour() == Target.Flavour.STREAM_SIGNATURE) {
 
       emitSigner((SignatureDefinition) target);
@@ -162,25 +148,25 @@ public class Renderer {
   }
 
   /** Write the line number into the debugger for future reference. */
-  public void mark(int line) {
+  public final void mark(int line) {
     methodGen.visitLineNumber(line, methodGen.mark());
   }
 
   /** Get the method currently being written. */
-  public GeneratorAdapter methodGen() {
+  public final GeneratorAdapter methodGen() {
     return methodGen;
   }
 
-  public void regex(String regex, int flags) {
+  public final void regex(String regex, int flags) {
     methodGen.invokeDynamic("regex", METHOD_REGEX, REGEX_BSM, regex, flags);
   }
 
   /** The the owner of this method */
-  public RootBuilder root() {
+  public final RootBuilder root() {
     return rootBuilder;
   }
 
-  public BiConsumer<SignatureDefinition, Renderer> signerEmitter() {
+  public final BiConsumer<SignatureDefinition, Renderer> signerEmitter() {
     return signerEmitter;
   }
 
@@ -189,7 +175,5 @@ public class Renderer {
    *
    * <p>This will vary if the stream has been grouped.
    */
-  public Type streamType() {
-    return streamType;
-  }
+  public abstract Type streamType();
 }

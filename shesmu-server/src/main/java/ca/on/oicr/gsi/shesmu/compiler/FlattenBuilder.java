@@ -139,7 +139,7 @@ public class FlattenBuilder {
                   new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
               getter.visitCode();
               loader.accept(
-                  new Renderer(
+                  new RendererArgumentStream(
                       owner,
                       getter,
                       0,

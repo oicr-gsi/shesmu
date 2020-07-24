@@ -1129,7 +1129,7 @@ public final class LambdaBuilder {
    * @param signerEmitter the signature loader/generator
    */
   public Renderer renderer(BiConsumer<SignatureDefinition, Renderer> signerEmitter) {
-    return new Renderer(
+    return new RendererArgumentStream(
         owner,
         methodGen(),
         0,
@@ -1162,7 +1162,7 @@ public final class LambdaBuilder {
     if (this.streamType != null) {
       throw new IllegalArgumentException("Attempt to replace a stream value in a lambda.");
     }
-    return new Renderer(
+    return new RendererArgumentStream(
         owner,
         methodGen(),
         capturedVariables.length + streamOffset,

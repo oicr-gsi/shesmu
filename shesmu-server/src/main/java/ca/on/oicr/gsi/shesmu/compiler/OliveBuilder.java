@@ -139,7 +139,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   @Override
   protected void emitSigner(SignatureDefinition signer, Renderer renderer) {
-    renderSigner(signerPrefix, signer, renderer);
+    renderSigner(owner, initialFormat, signerPrefix, signer, renderer);
   }
 
   private void finish(Consumer<Renderer> finishStream) {

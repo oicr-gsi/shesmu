@@ -82,6 +82,11 @@ public abstract class RootBuilder {
   private static final Method METHOD_ACTION_GENERATOR__INPUTS =
       new Method("inputs", A_STREAM_TYPE, new Type[] {});
 
+  public static void invalidSignerEmitter(SignatureDefinition renderer, Renderer name) {
+    throw new IllegalArgumentException(
+        String.format("Signature variable %s not defined in root context.", name));
+  }
+
   public static Stream<LoadableValue> proxyCaptured(
       int offset, LoadableValue... capturedVariables) {
     return IntStream.range(0, capturedVariables.length)
@@ -411,16 +416,8 @@ public abstract class RootBuilder {
    * <p>No stream variables are available in this context
    */
   public final Renderer rootRenderer(boolean allowUserDefined) {
-    return new Renderer(
-        this,
-        runMethod,
-        -1,
-        null,
-        constants(allowUserDefined),
-        (renderer, name) -> {
-          throw new IllegalArgumentException(
-              String.format("Signature variable %s not defined in root context.", name));
-        });
+    return new RendererNoStream(
+        this, runMethod, constants(allowUserDefined), RootBuilder::invalidSignerEmitter);
   }
 
   /** Get the type of the class being generated */

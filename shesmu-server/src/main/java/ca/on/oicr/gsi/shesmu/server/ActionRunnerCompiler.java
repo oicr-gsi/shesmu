@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.server;
 
-import ca.on.oicr.gsi.shesmu.compiler.Renderer;
+import ca.on.oicr.gsi.shesmu.compiler.RendererNoStream;
 import ca.on.oicr.gsi.shesmu.compiler.TypeUtils;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -96,11 +96,9 @@ public final class ActionRunnerCompiler extends BaseHotloadingCompiler {
                 handle.ifZCmp(GeneratorAdapter.EQ, end);
               }
               parameter.store(
-                  new Renderer(
+                  new RendererNoStream(
                       null,
                       handle,
-                      0,
-                      null,
                       Stream.empty(),
                       (n, r) -> {
                         throw new UnsupportedOperationException(
