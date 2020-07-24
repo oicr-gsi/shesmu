@@ -1962,7 +1962,7 @@ public final class Server implements ServerConfig, ActionServices {
                       script,
                       "shesmu/dyn/Checker",
                       "Uploaded Check Script.shesmu",
-                      definitionRepository::constants,
+                      () -> Stream.concat(definitionRepository.constants(), compiler.constants()),
                       definitionRepository::signatures,
                       null,
                       x -> {},
@@ -2038,7 +2038,7 @@ public final class Server implements ServerConfig, ActionServices {
                       script,
                       "shesmu/dyn/Checker",
                       "Uploaded Check Script.shesmu",
-                      definitionRepository::constants,
+                      () -> Stream.concat(definitionRepository.constants(), compiler.constants()),
                       definitionRepository::signatures,
                       new ExportConsumer() {
                         @Override
