@@ -34,7 +34,7 @@ public final class FileTicket extends BaseTicketAction {
     if (matches.isEmpty()) {
       return createIssue(services, description, assignee);
     }
-    return transitionIssues(services, matches.stream(), null);
+    return transitionIssues(services, matches.stream(), "Still not fixed:\n" + description);
   }
 
   /**
