@@ -169,8 +169,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                   Optional.ofNullable(c.getFileRootsTtl()).filter(x -> x > 0),
                   c.getListCommand() == null
                       ? String.format(
-                          "echo '['; find %s -not -type d -printf ',\\n{\"file\":\"%%p\",\"size\":%%s,\"atime\":%%A@,\"ctime\":%%C@,\"mtime\":%%T@,\"user\":\"%%u\",\"group\":\"%%g\",\"perms\":%%m,\"host\":\"'$(hostname -f)'\"}'| tail -n +2; echo ']'",
-                          roots)
+                          "echo '['; find %s -not -type d -printf ',\\n{\"fetched\":%d,\"file\":\"%%p\",\"size\":%%s,\"atime\":%%A@,\"ctime\":%%C@,\"mtime\":%%T@,\"user\":\"%%u\",\"group\":\"%%g\",\"perms\":%%m,\"host\":\"'$(hostname -f)'\"}'| tail -n +2; echo ']'",
+                          roots, Instant.now().toEpochMilli())
                       : (c.getListCommand() + " " + roots));
             })
         .orElse(JsonInputSource.EMPTY)

@@ -13,6 +13,9 @@ public interface UnixFileData {
   Instant ctime();
 
   @ShesmuVariable
+  Instant fetched();
+
+  @ShesmuVariable
   Path file();
 
   @ShesmuVariable
