@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.runscanner;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.runscanner.dto.IlluminaNotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.NotificationDto;
 import ca.on.oicr.gsi.runscanner.dto.type.IlluminaChemistry;
@@ -14,9 +13,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.codec.net.URLCodec;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -80,8 +76,6 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
   }
 
   static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-  private static final Map<Pair<Integer, Boolean>, Set<Set<Long>>> LANE_GEOMETRY_CACHE =
-      new ConcurrentHashMap<>();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   static {
@@ -103,28 +97,8 @@ public final class RunScannerClient extends JsonPluginFile<Configuration> {
         run.getChemistry() == IlluminaChemistry.NS_HIGH
             || run.getChemistry() == IlluminaChemistry.NS_MID
             || run.getWorkflowType() != null
-                && (run.getWorkflowType().equals("NovaSeqStandard")
-                    || run.getWorkflowType().equals("OnBoardClustering"));
-    return LANE_GEOMETRY_CACHE.computeIfAbsent(
-        new Pair<>(run.getLaneCount(), isJoined), RunScannerClient::createFlowCellLayout);
-  }
-
-  /**
-   * Create a set of sets, where all lanes that are merged are in a set together
-   *
-   * @param format the number of lanes and whether the lanes are joined or not
-   */
-  private static Set<Set<Long>> createFlowCellLayout(Pair<Integer, Boolean> format) {
-    if (format.second()) {
-      return Collections.singleton(
-          LongStream.rangeClosed(1, format.first())
-              .boxed()
-              .collect(Collectors.toCollection(TreeSet::new)));
-    } else {
-      return LongStream.rangeClosed(1, format.first())
-          .mapToObj(Collections::singleton)
-          .collect(Collectors.toSet());
-    }
+                && RunScannerPluginType.isWorkflowTypeJoined(run.getWorkflowType());
+    return RunScannerPluginType.getFlowcellLayout(run.getLaneCount(), isJoined);
   }
 
   private final RunCache runCache;
