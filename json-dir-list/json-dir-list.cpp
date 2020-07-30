@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstring>
 #include <deque>
 #include <dirent.h>
@@ -30,6 +31,11 @@ int main(int argc, const char **argv) {
   for (auto i = 1; i < argc; i++) {
     roots.push_back(argv[i]);
   }
+
+  const Json::LargestInt fetched =
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::system_clock::now().time_since_epoch())
+          .count();
 
   // The JSON library can't do streaming writes, so we're going to write the
   // array manually, and write the objects using the library.
@@ -68,6 +74,7 @@ int main(int argc, const char **argv) {
           }
           struct passwd *pw = getpwuid(info.st_uid);
           struct group *gr = getgrgid(info.st_gid);
+          record["fetched"] = fetched;
           record["file"] = path.str();
           record["size"] = (Json::LargestInt)info.st_size;
           record["atime"] = to_seconds(info.st_atim);
