@@ -1,0 +1,8 @@
+Version 1;
+Input test;
+
+Olive
+ Let p = project
+ LeftIntersectionJoin [True] To inner_test [True, False]
+    ls = Where p != "" List l
+ Run ok With ok = (For l In ls: Count) == 2;

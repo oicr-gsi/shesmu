@@ -210,6 +210,44 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop
+  public static <I, N, K, O> Stream<O> joinIntersection(
+      Stream<I> input,
+      Stream<N> inner,
+      Function<I, Set<K>> makeOuterKey,
+      Function<N, Set<K>> makeInnerKey,
+      BiFunction<I, N, O> joiner) {
+    final List<I> inputs = input.collect(Collectors.toList());
+    input.close();
+    final Map<K, Set<Integer>> inputGroups = new HashMap<>();
+    for (int i = 0; i < inputs.size(); i++) {
+      for (final K key : makeOuterKey.apply(inputs.get(i))) {
+        inputGroups.computeIfAbsent(key, k -> new TreeSet<>()).add(i);
+      }
+    }
+
+    final List<N> inners = inner.collect(Collectors.toList());
+    inner.close();
+    final Map<K, Set<Integer>> innerGroups = new HashMap<>();
+    for (int i = 0; i < inners.size(); i++) {
+      for (final K key : makeInnerKey.apply(inners.get(i))) {
+        innerGroups.computeIfAbsent(key, k -> new TreeSet<>()).add(i);
+      }
+    }
+
+    final Set<Pair<Integer, Integer>> joins = new HashSet<>();
+    for (final Entry<K, Set<Integer>> entry : inputGroups.entrySet()) {
+      for (final Integer innerId :
+          innerGroups.getOrDefault(entry.getKey(), Collections.emptySet())) {
+        for (final Integer inputId : entry.getValue()) {
+          joins.add(new Pair<>(inputId, innerId));
+        }
+      }
+    }
+
+    return joins.stream().map(p -> joiner.apply(inputs.get(p.first()), inners.get(p.second())));
+  }
+
+  @RuntimeInterop
   public static Stream<JsonNode> jsonElements(JsonNode node) {
     return Utils.stream(node.elements());
   }
@@ -252,7 +290,51 @@ public final class RuntimeSupport {
    *     the right side will be null
    * @param collector a function that processes joined inputs with both right and left values to an
    *     output
-   * @return
+   */
+  @RuntimeInterop
+  public static <I, N, K, J, O> Stream<O> leftIntersectionJoin(
+      Stream<I> input,
+      Stream<N> inner,
+      Function<I, Set<K>> makeOuterKey,
+      Function<N, Set<K>> makeInnerKey,
+      BiFunction<I, N, J> joiner,
+      Function<J, O> makeOutput,
+      BiConsumer<O, J> collector) {
+    final List<N> inners = inner.collect(Collectors.toList());
+    inner.close();
+    final Map<K, Set<Integer>> innerGroups = new HashMap<>();
+    for (int i = 0; i < inners.size(); i++) {
+      for (final K key : makeInnerKey.apply(inners.get(i))) {
+        innerGroups.computeIfAbsent(key, k -> new TreeSet<>()).add(i);
+      }
+    }
+
+    return input.map(
+        outer -> {
+          final O output = makeOutput.apply(joiner.apply(outer, null));
+          makeOuterKey
+              .apply(outer)
+              .stream()
+              .flatMap(k -> innerGroups.getOrDefault(k, Collections.emptySet()).stream())
+              .distinct()
+              .map(inners::get)
+              .forEach(right -> collector.accept(output, joiner.apply(outer, right)));
+          return output;
+        });
+  }
+
+  /**
+   * Left join a stream of input against another input format
+   *
+   * @param input the stream to be joined against
+   * @param inner the type of the inner (right) input stream
+   * @param joiner a function to create an intermediate joined type from the two types
+   * @param makeOuterKey create the joining key from an outer record
+   * @param makeInnerKey create the joining key from an inner record
+   * @param makeOutput a function to create a new output type; it must accept a joined type where
+   *     the right side will be null
+   * @param collector a function that processes joined inputs with both right and left values to an
+   *     output
    */
   @RuntimeInterop
   public static <I, N, K, J, O> Stream<O> leftJoin(

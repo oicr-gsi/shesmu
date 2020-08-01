@@ -1,27 +1,28 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ListImyhat;
 import java.util.Optional;
 
-public class OliveClauseNodeJoin extends OliveClauseNodeBaseJoin {
+public class OliveClauseNodeIntersectionJoin extends OliveClauseNodeBaseJoin {
 
-  public OliveClauseNodeJoin(
+  public OliveClauseNodeIntersectionJoin(
       int line, int column, String format, ExpressionNode outerKey, ExpressionNode innerKey) {
     super(line, column, format, outerKey, innerKey);
   }
 
   @Override
   protected boolean intersection() {
-    return false;
+    return true;
   }
 
   @Override
   public String syntax() {
-    return "Join";
+    return "IntersectionJoin";
   }
 
   @Override
   protected Optional<Imyhat> typeCheckExtra(Imyhat type) {
-    return Optional.empty();
+    return type instanceof ListImyhat ? Optional.empty() : Optional.of(type.asList());
   }
 }

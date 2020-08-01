@@ -47,10 +47,12 @@ syn keyword shesmuKeyword Group
 syn keyword shesmuKeyword If
 syn keyword shesmuKeyword Import
 syn keyword shesmuKeyword In
-syn keyword shesmuKeyword Into
 syn keyword shesmuKeyword Input
+syn keyword shesmuKeyword IntersectionJoin
+syn keyword shesmuKeyword Into
 syn keyword shesmuKeyword Join
 syn keyword shesmuKeyword Labels
+syn keyword shesmuKeyword LeftIntersectionJoin
 syn keyword shesmuKeyword LeftJoin
 syn keyword shesmuKeyword Let
 syn keyword shesmuKeyword LexicalConcat
@@ -62,8 +64,8 @@ syn keyword shesmuKeyword Min
 syn keyword shesmuKeyword Monitor
 syn keyword shesmuKeyword None
 syn keyword shesmuKeyword Olive
-syn keyword shesmuKeyword OnlyIf
 syn keyword shesmuKeyword OnReject
+syn keyword shesmuKeyword OnlyIf
 syn keyword shesmuKeyword PartitionCount
 syn keyword shesmuKeyword Pick
 syn keyword shesmuKeyword Prefix

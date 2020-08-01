@@ -225,15 +225,34 @@ collectors by providing _condition_.
 
 This reshapes the data.
 
-- `Join` _input_
+- `Join` _outerkey_ `To` _input_ _innerkey_
+- `IntersectionJoin` _outerkey_ `To` _input_ _innerkey_
 
-Does a Cartesian (cross) join with all the data provided by _input_. This is a
-very expensive operation if the dataset is large. Names between the two data
-sources must not overlap.
+Does a join where incoming rows are joined against rows from the _input_ data
+source. Names between the two data sources must not overlap. Rows are joined if
+_outerkey_ and _innerkey_ match:
+
+| Operation          | Outer Key | Inner Key | Behaviour |
+|--------------------|-----------|-----------|---|
+| `Join`             | _k_       | _i_       | Matches if _k_ = _i_. |
+| `IntersectionJoin` | _k_       | _i_       | Matches if `For x In `_k`_`: Any x In `_i_ |
+| `IntersectionJoin` | `[`_k_`]` | _i_       | Matches if _k`_` In `_i_ |
+| `IntersectionJoin` | _k_       | `[`_i_`]` | Matches if _i_` In `_k_ |
+
+In `Join`, keys are values that must match exactly. In `IntersectionJoin`, the
+keys are lists of values and the join occurs if any items found in both inner
+and outer key lists. Consider a situation where a process outputs several files
+and another process ingests a subset of them; a `IntersectionJoin` could be
+used to find output process that used some of the input.
+
+If an set-to-single value join is required, use `IntersectionJoin` and put the
+single element in a list.
+
 
 This reshapes the data.
 
  - `LeftJoin` _outerkey_ `To` [`Prefix` _prefix_]  _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
+ - `LeftIntersectionJoin` _outerkey_ `To` [`Prefix` _prefix_]  _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
 
 Does a left-join operation between the current data and the data from the
 _input_ data format. This is done using a merge join where keys are computed
@@ -251,6 +270,23 @@ When doing left join, there will likely be collisions between many variables,
 including all the signatures. While it is possible to reshape the data to avoid
 this conflict, the `Prefix` option allows renaming the joined data rather than
 the source data.
+
+| Operation              | Outer Key | Inner Key | Behaviour |
+|------------------------|-----------|-----------|---|
+| `LeftJoin`             | _k_       | _i_       | Matches if _k_ = _i_. |
+| `LeftIntersectionJoin` | _k_       | _i_       | Matches if `For x In `_k`_`: Any x In `_i_ |
+| `LeftIntersectionJoin` | `[`_k_`]` | _i_       | Matches if _k`_` In `_i_ |
+| `LeftIntersectionJoin` | _k_       | `[`_i_`]` | Matches if _i_` In `_k_ |
+
+In `LeftJoin`, keys are values and must match exactly.  In
+`LeftIntersectionJoin`, the keys are lists of values and the join occurs if any
+items are found in both inner and outer key lists. Consider a situation where a
+process outputs several files and another process ingests a subset of them; a
+`LeftIntersectionJoin` could be used to find output process that used some of
+the input.
+
+If an set-to-single value join is required, use `LeftIntersectionJoin` and put
+the single element in a list.
 
 This reshapes the data.
 
