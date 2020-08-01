@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.Parser.Rule;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -17,65 +18,29 @@ public abstract class OliveClauseNode {
     OliveClauseNodeBaseDump create(int line, int column, String dumperName);
   }
 
-  public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
-    return input.whitespace().dispatch(CLAUSES, output);
+  interface JoinConstructor {
+    OliveClauseNode create(
+        int line, int column, String format, ExpressionNode outerKey, ExpressionNode innerKey);
   }
 
-  private static Parser parseDump(Parser input, Consumer<? super OliveClauseNodeBaseDump> output) {
-    final DumpConstructor constructor;
-    final Parser allResult = input.whitespace().keyword("All").whitespace();
-    final Parser intermediateParser;
-    if (allResult.isGood()) {
-      constructor = OliveClauseNodeDumpAll::new;
-      intermediateParser = allResult;
-    } else {
-      final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
-      intermediateParser =
-          input.whitespace().listEmpty(columns::set, ExpressionNode::parse, ',').whitespace();
-      constructor = (l, c, d) -> new OliveClauseNodeDump(l, c, d, columns.get());
-    }
-    final AtomicReference<String> dumper = new AtomicReference<>();
-    final Parser result =
-        intermediateParser.keyword("To").whitespace().identifier(dumper::set).whitespace();
-
-    if (result.isGood()) {
-      output.accept(constructor.create(input.line(), input.column(), dumper.get()));
-    }
-    return result;
-  }
-
-  private static Parser parseMonitor(
-      Parser input, Consumer<? super OliveClauseNodeMonitor> output) {
-    final AtomicReference<String> metricName = new AtomicReference<>();
-    final AtomicReference<String> help = new AtomicReference<>();
-    final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
-
-    final Parser result =
-        input
-            .whitespace()
-            .identifier(metricName::set)
-            .whitespace()
-            .regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")
-            .whitespace()
-            .symbol("{")
-            .listEmpty(labels::set, MonitorArgumentNode::parse, ',')
-            .symbol("}")
-            .whitespace();
-
-    if (result.isGood()) {
-      output.accept(
-          new OliveClauseNodeMonitor(
-              input.line(), input.column(), metricName.get(), help.get(), labels.get()));
-    }
-    return result;
+  private interface LeftJoinConstructor {
+    OliveClauseNode create(
+        int line,
+        int column,
+        String format,
+        ExpressionNode outerKey,
+        String prefix,
+        ExpressionNode innerKey,
+        List<GroupNode> groups,
+        Optional<ExpressionNode> where);
   }
 
   private static final Parser.ParseDispatch<OliveClauseNode> CLAUSES = new Parser.ParseDispatch<>();
-  private static final Parser.ParseDispatch<String> PREFIX = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Optional<ExpressionNode>> GROUP_WHERE =
       new Parser.ParseDispatch<>();
   private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
   private static final Pattern OPTIMA = Pattern.compile("^(Min|Max)");
+  private static final Parser.ParseDispatch<String> PREFIX = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<RejectNode> REJECT_CLAUSES =
       new Parser.ParseDispatch<>();
 
@@ -195,44 +160,8 @@ public abstract class OliveClauseNode {
           }
           return result;
         });
-    CLAUSES.addKeyword(
-        "LeftJoin",
-        (leftJoinParser, output) -> {
-          final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
-          final AtomicReference<String> format = new AtomicReference<>();
-          final AtomicReference<String> prefix = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
-          final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
-          final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
-          final Parser result =
-              leftJoinParser
-                  .whitespace()
-                  .then(ExpressionNode::parse, outerKey::set)
-                  .whitespace()
-                  .keyword("To")
-                  .whitespace()
-                  .dispatch(PREFIX, prefix::set)
-                  .identifier(format::set)
-                  .whitespace()
-                  .then(ExpressionNode::parse, innerKey::set)
-                  .whitespace()
-                  .dispatch(GROUP_WHERE, where::set)
-                  .list(groups::set, GroupNode::parse, ',')
-                  .whitespace();
-          if (result.isGood()) {
-            output.accept(
-                new OliveClauseNodeLeftJoin(
-                    leftJoinParser.line(),
-                    leftJoinParser.column(),
-                    format.get(),
-                    outerKey.get(),
-                    prefix.get(),
-                    innerKey.get(),
-                    groups.get(),
-                    where.get()));
-          }
-          return result;
-        });
+    CLAUSES.addKeyword("LeftJoin", leftJoin(OliveClauseNodeLeftJoin::new));
+    CLAUSES.addKeyword("LeftIntersectionJoin", leftJoin(OliveClauseNodeLeftIntersectionJoin::new));
     CLAUSES.addKeyword(
         "Let",
         (letParser, output) -> {
@@ -328,35 +257,8 @@ public abstract class OliveClauseNode {
           }
           return result;
         });
-    CLAUSES.addKeyword(
-        "Join",
-        (joinParser, output) -> {
-          final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
-          final AtomicReference<String> format = new AtomicReference<>();
-          final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
-          final Parser result =
-              joinParser
-                  .whitespace()
-                  .then(ExpressionNode::parse, outerKey::set)
-                  .whitespace()
-                  .keyword("To")
-                  .whitespace()
-                  .identifier(format::set)
-                  .whitespace()
-                  .then(ExpressionNode::parse, innerKey::set)
-                  .whitespace();
-
-          if (result.isGood()) {
-            output.accept(
-                new OliveClauseNodeJoin(
-                    joinParser.line(),
-                    joinParser.column(),
-                    format.get(),
-                    outerKey.get(),
-                    innerKey.get()));
-          }
-          return result;
-        });
+    CLAUSES.addKeyword("Join", join(OliveClauseNodeJoin::new));
+    CLAUSES.addKeyword("IntersectionJoin", join(OliveClauseNodeIntersectionJoin::new));
     CLAUSES.addKeyword(
         "Pick",
         (pickParser, output) -> {
@@ -435,6 +337,128 @@ public abstract class OliveClauseNode {
           o.accept("");
           return p;
         });
+  }
+
+  private static Rule<OliveClauseNode> join(JoinConstructor constructor) {
+    return (joinParser, output) -> {
+      final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
+      final AtomicReference<String> format = new AtomicReference<>();
+      final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
+      final Parser result =
+          joinParser
+              .whitespace()
+              .then(ExpressionNode::parse, outerKey::set)
+              .whitespace()
+              .keyword("To")
+              .whitespace()
+              .identifier(format::set)
+              .whitespace()
+              .then(ExpressionNode::parse, innerKey::set)
+              .whitespace();
+
+      if (result.isGood()) {
+        output.accept(
+            constructor.create(
+                joinParser.line(),
+                joinParser.column(),
+                format.get(),
+                outerKey.get(),
+                innerKey.get()));
+      }
+      return result;
+    };
+  }
+
+  private static Rule<OliveClauseNode> leftJoin(LeftJoinConstructor constructor) {
+    return (leftJoinParser, output) -> {
+      final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
+      final AtomicReference<String> format = new AtomicReference<>();
+      final AtomicReference<String> prefix = new AtomicReference<>();
+      final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
+      final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
+      final AtomicReference<Optional<ExpressionNode>> where = new AtomicReference<>();
+      final Parser result =
+          leftJoinParser
+              .whitespace()
+              .then(ExpressionNode::parse, outerKey::set)
+              .whitespace()
+              .keyword("To")
+              .whitespace()
+              .dispatch(PREFIX, prefix::set)
+              .identifier(format::set)
+              .whitespace()
+              .then(ExpressionNode::parse, innerKey::set)
+              .whitespace()
+              .dispatch(GROUP_WHERE, where::set)
+              .list(groups::set, GroupNode::parse, ',')
+              .whitespace();
+      if (result.isGood()) {
+        output.accept(
+            constructor.create(
+                leftJoinParser.line(),
+                leftJoinParser.column(),
+                format.get(),
+                outerKey.get(),
+                prefix.get(),
+                innerKey.get(),
+                groups.get(),
+                where.get()));
+      }
+      return result;
+    };
+  }
+
+  public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
+    return input.whitespace().dispatch(CLAUSES, output);
+  }
+
+  private static Parser parseDump(Parser input, Consumer<? super OliveClauseNodeBaseDump> output) {
+    final DumpConstructor constructor;
+    final Parser allResult = input.whitespace().keyword("All").whitespace();
+    final Parser intermediateParser;
+    if (allResult.isGood()) {
+      constructor = OliveClauseNodeDumpAll::new;
+      intermediateParser = allResult;
+    } else {
+      final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
+      intermediateParser =
+          input.whitespace().listEmpty(columns::set, ExpressionNode::parse, ',').whitespace();
+      constructor = (l, c, d) -> new OliveClauseNodeDump(l, c, d, columns.get());
+    }
+    final AtomicReference<String> dumper = new AtomicReference<>();
+    final Parser result =
+        intermediateParser.keyword("To").whitespace().identifier(dumper::set).whitespace();
+
+    if (result.isGood()) {
+      output.accept(constructor.create(input.line(), input.column(), dumper.get()));
+    }
+    return result;
+  }
+
+  private static Parser parseMonitor(
+      Parser input, Consumer<? super OliveClauseNodeMonitor> output) {
+    final AtomicReference<String> metricName = new AtomicReference<>();
+    final AtomicReference<String> help = new AtomicReference<>();
+    final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
+
+    final Parser result =
+        input
+            .whitespace()
+            .identifier(metricName::set)
+            .whitespace()
+            .regex(HELP, m -> help.set(m.group(1)), "Failed to parse help text")
+            .whitespace()
+            .symbol("{")
+            .listEmpty(labels::set, MonitorArgumentNode::parse, ',')
+            .symbol("}")
+            .whitespace();
+
+    if (result.isGood()) {
+      output.accept(
+          new OliveClauseNodeMonitor(
+              input.line(), input.column(), metricName.get(), help.get(), labels.get()));
+    }
+    return result;
   }
 
   public abstract boolean checkUnusedDeclarations(Consumer<String> errorHandler);

@@ -67,6 +67,19 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_HASH_CODE = new Method("hashCode", INT_TYPE, new Type[] {});
   protected static final Method METHOD_INPUT_PROVIDER__FETCH =
       new Method("fetch", A_STREAM_TYPE, new Type[] {A_STRING_TYPE});
+  private static final Method METHOD_LEFT_INTERSECTION_JOIN =
+      new Method(
+          "leftIntersectionJoin",
+          A_STREAM_TYPE,
+          new Type[] {
+            A_STREAM_TYPE,
+            A_STREAM_TYPE,
+            A_FUNCTION_TYPE,
+            A_FUNCTION_TYPE,
+            A_BIFUNCTION_TYPE,
+            A_FUNCTION_TYPE,
+            A_BICONSUMER_TYPE
+          });
   private static final Method METHOD_LEFT_JOIN =
       new Method(
           "leftJoin",
@@ -107,6 +120,13 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_RUNTIME_SUPPORT__JOIN =
       new Method(
           "join",
+          A_STREAM_TYPE,
+          new Type[] {
+            A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE
+          });
+  private static final Method METHOD_RUNTIME_SUPPORT__JOIN_INTERSECTION =
+      new Method(
+          "joinIntersection",
           A_STREAM_TYPE,
           new Type[] {
             A_STREAM_TYPE, A_STREAM_TYPE, A_FUNCTION_TYPE, A_FUNCTION_TYPE, A_BIFUNCTION_TYPE
@@ -319,6 +339,7 @@ public abstract class BaseOliveBuilder {
   public final JoinBuilder join(
       int line,
       int column,
+      boolean intersection,
       InputFormatDefinition innerType,
       Imyhat keyType,
       LoadableValue... capturedVariables) {
@@ -354,7 +375,13 @@ public abstract class BaseOliveBuilder {
           LambdaBuilder.pushNew(
               renderer, LambdaBuilder.bifunction(newType, oldType, innerType.type()));
 
-          renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JOIN);
+          renderer
+              .methodGen()
+              .invokeStatic(
+                  A_RUNTIME_SUPPORT_TYPE,
+                  intersection
+                      ? METHOD_RUNTIME_SUPPORT__JOIN_INTERSECTION
+                      : METHOD_RUNTIME_SUPPORT__JOIN);
         });
 
     final Renderer outerKeyMethodGen = outerKeyLambda.renderer(oldType, this::emitSigner);
@@ -366,6 +393,7 @@ public abstract class BaseOliveBuilder {
   public final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin(
       int line,
       int column,
+      boolean intersection,
       InputFormatDefinition innerType,
       Imyhat keyType,
       BiConsumer<SignatureDefinition, Renderer> innerSigner,
@@ -419,7 +447,11 @@ public abstract class BaseOliveBuilder {
           newMethod.push(renderer);
           collectLambda.push(renderer);
 
-          renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_LEFT_JOIN);
+          renderer
+              .methodGen()
+              .invokeStatic(
+                  A_RUNTIME_SUPPORT_TYPE,
+                  intersection ? METHOD_LEFT_INTERSECTION_JOIN : METHOD_LEFT_JOIN);
 
           LambdaBuilder.pushVirtual(
               renderer,
