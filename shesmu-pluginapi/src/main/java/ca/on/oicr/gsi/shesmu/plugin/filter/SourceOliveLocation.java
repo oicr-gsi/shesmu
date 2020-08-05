@@ -1,8 +1,10 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.function.Predicate;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class SourceOliveLocation implements Predicate<SourceLocation> {
   private Integer column;
   private String file;
