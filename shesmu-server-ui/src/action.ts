@@ -17,6 +17,7 @@ import {
   historyState,
   img,
   inputText,
+  inputTextArea,
   link,
   makeUrl,
   multipaneState,
@@ -46,7 +47,9 @@ import {
 } from "./util.js";
 import { ActionFilter, BasicQuery, createSearch } from "./actionfilters.js";
 import {
+  fetchCustomWithBusyDialog,
   fetchJsonWithBusyDialog,
+  loadFile,
   mutableLocalStore,
   paginatedRefreshable,
   saveClipboard,
@@ -708,7 +711,98 @@ export function initialiseActionDash(
   );
   setRootDashboard(
     "actiondash",
-    tile([], searchSelector, saveUi, deleteUi, helpArea("action")),
+    tile(
+      [],
+      buttonAccessory(
+        "⬆️ Import Search",
+        "Add a previously exported search.",
+        () =>
+          dialog((close) => {
+            const addSearch = (
+              name: string,
+              search: string,
+              closeOnFailure: boolean
+            ) => {
+              let filters: ActionFilter[] | null = null;
+              if (search.startsWith("shesmusearch:")) {
+                try {
+                  filters = JSON.parse(
+                    atob(search.substring("shesmusearch:".length))
+                  );
+                } catch (e) {
+                  console.log(e);
+                }
+              } else {
+                filters = JSON.parse(search);
+              }
+              if (filters) {
+                fetchCustomWithBusyDialog(
+                  "printquery",
+                  {
+                    method: "POST",
+                    body: JSON.stringify({
+                      type: "and",
+                      filters: filters,
+                    } as ActionFilter),
+                  },
+                  (p) =>
+                    p
+                      .then((response) => response.text())
+                      .then((_r) => {
+                        // We don't really want this value from the server, but it has validated the filter for us.
+                        localSearches.set(name, filters!);
+                      })
+                );
+                close();
+              } else {
+                if (closeOnFailure) {
+                  close();
+                }
+                dialog((_close) => "Provided search is invalid.");
+              }
+            };
+            const name = inputText();
+            const search = inputTextArea();
+            return [
+              "Name for Search: ",
+              name.ui,
+              br(),
+              search.ui,
+              br(),
+              "Load a search that was generated using ",
+              italic("Export Search"),
+              " and then one of ",
+              italic("To Clipboard"),
+              ", ",
+              italic("To Clipboard for Ticket"),
+              ", or ",
+              italic("To File"),
+              " will accepteded here.",
+              br(),
+              buttonAccessory(
+                "⬆️ Upload File",
+                "Use the contents of a file for the search.",
+                () => loadFile((name, data) => addSearch(name, data, true))
+              ),
+              button(
+                "💾 Add to My Searches",
+                "Save this search to the local search collection.",
+                () => {
+                  const nameStr = name.value.trim();
+                  const searchStr = search.value.trim();
+                  if (nameStr && searchStr) {
+                    addSearch(nameStr, searchStr, false);
+                  }
+                }
+              ),
+            ];
+          })
+      ),
+      searchSelector,
+      saveUi,
+      deleteUi,
+      helpArea("action")
+    ),
     tile([], refreshButton(combinedActionsModel.reload), buttons, bulkCommands),
     tile([], entryBar),
     tabsUi
