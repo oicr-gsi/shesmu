@@ -81,11 +81,11 @@ export type FindHandler = (() => boolean) | null;
  */
 export interface FormattedElement {
   type:
-    | "b" // bold
-    | "i" // italic
-    | "p" //paragraph
-    | "s" //strike through
-    | "tt"; // typewriter/monospace
+  | "b" // bold
+  | "i" // italic
+  | "p" //paragraph
+  | "s" //strike through
+  | "tt"; // typewriter/monospace
   contents: DisplayElement;
 }
 /**
@@ -654,14 +654,14 @@ export function dateEditor(
       enabled.value
         ? null
         : new Date(
-            year.value,
-            monthModel.get()[0],
-            day.value,
-            hour.value,
-            minute.value,
-            0,
-            0
-          ).getTime(),
+          year.value,
+          monthModel.get()[0],
+          day.value,
+          hour.value,
+          minute.value,
+          0,
+          0
+        ).getTime(),
   };
 }
 
@@ -822,73 +822,73 @@ export function dropdownTable<T, S>(
         items.length == 0
           ? "No items."
           : [
-              "Filter: ",
-              inputFilter,
-              br(),
-              items.map(({ value, label, children }) => {
-                const groupLabel = createUiFromTag("p", label);
-                groupLabel.element.addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  selectionModel.statusChanged(value);
-                  if (synchronizer) {
-                    synchronizer.synchronzier.statusChanged(
-                      synchronizer.extract(value)
-                    );
-                  }
-                  close();
-                });
+            "Filter: ",
+            inputFilter,
+            br(),
+            items.map(({ value, label, children }) => {
+              const groupLabel = createUiFromTag("p", label);
+              groupLabel.element.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectionModel.statusChanged(value);
+                if (synchronizer) {
+                  synchronizer.synchronzier.statusChanged(
+                    synchronizer.extract(value)
+                  );
+                }
+                close();
+              });
 
-                const block = createUiFromTag(
-                  "div",
-                  groupLabel,
-                  children.length
-                    ? tableFromRows(
-                        children.map((child) => {
-                          const row = tableRow(() => {
-                            selectionModel.statusChanged(child.value);
-                            if (synchronizer) {
-                              synchronizer.synchronzier.statusChanged(
-                                synchronizer.extract(child.value)
-                              );
-                            }
-                            close();
-                          }, ...child.label);
-                          searchFilters.push((keywords) => {
-                            row.element.style.display = searchPredicate(
-                              child.value,
-                              keywords
-                            )
-                              ? "block"
-                              : "none";
-                          });
-                          synchronizerCallbacks.push((state) => {
-                            if (synchronizer?.predicate(state, child.value)) {
-                              selectionModel.statusChanged(child.value);
-                            }
-                          });
-                          return row;
-                        })
-                      )
-                    : blank()
-                );
-                searchFilters.push((keywords) => {
-                  block.element.style.display =
-                    searchPredicate(value, keywords) ||
+              const block = createUiFromTag(
+                "div",
+                groupLabel,
+                children.length
+                  ? tableFromRows(
+                    children.map((child) => {
+                      const row = tableRow(() => {
+                        selectionModel.statusChanged(child.value);
+                        if (synchronizer) {
+                          synchronizer.synchronzier.statusChanged(
+                            synchronizer.extract(child.value)
+                          );
+                        }
+                        close();
+                      }, ...child.label);
+                      searchFilters.push((keywords) => {
+                        row.element.style.display = searchPredicate(
+                          child.value,
+                          keywords
+                        )
+                          ? "block"
+                          : "none";
+                      });
+                      synchronizerCallbacks.push((state) => {
+                        if (synchronizer?.predicate(state, child.value)) {
+                          selectionModel.statusChanged(child.value);
+                        }
+                      });
+                      return row;
+                    })
+                  )
+                  : blank()
+              );
+              searchFilters.push((keywords) => {
+                block.element.style.display =
+                  searchPredicate(value, keywords) ||
                     children.some((child) =>
                       searchPredicate(child.value, keywords)
                     )
-                      ? "block"
-                      : "none";
-                });
-                synchronizerCallbacks.push((state) => {
-                  if (synchronizer?.predicate(state, value)) {
-                    selectionModel.statusChanged(value);
-                  }
-                });
-                return block;
-              }),
-            ],
-      () => {}
+                    ? "block"
+                    : "none";
+              });
+              synchronizerCallbacks.push((state) => {
+                if (synchronizer?.predicate(state, value)) {
+                  selectionModel.statusChanged(value);
+                }
+              });
+              return block;
+            }),
+          ],
+      () => { }
     )
   );
   selectionModel.statusChanged(null);
@@ -969,7 +969,7 @@ export function historyState<T extends { [name: string]: any }>(
   });
 
   return {
-    reload: () => {},
+    reload: () => { },
     statusChanged: (input: T) => {
       if (input != current) {
         current = input;
@@ -984,7 +984,7 @@ export function historyState<T extends { [name: string]: any }>(
       }
     },
     statusFailed: (message, _retry) => console.log(message),
-    statusWaiting: () => {},
+    statusWaiting: () => { },
     get(): T {
       return current;
     },
@@ -1240,8 +1240,8 @@ export function multipaneState<
         silentOnChange.includes(name)
           ? "blank"
           : (primary == null ? index == 0 : name == primary)
-          ? "large"
-          : "small"
+            ? "large"
+            : "small"
       );
       models.push(mapModel(model, (input) => formatter(input)));
       return [name, ui];
@@ -1406,7 +1406,7 @@ export function pane(
       type: "ui",
     },
     model: {
-      reload: () => {},
+      reload: () => { },
       statusChanged: update,
       statusWaiting: () => {
         switch (mode) {
@@ -1480,7 +1480,7 @@ export function popup(
       inner.element.style.left = `${e.currentTarget.offsetLeft}px`;
       inner.element.style.top = `${
         e.currentTarget.offsetTop + e.currentTarget.offsetHeight
-      }px`;
+        }px`;
     } else {
       inner.element.style.left = `${Math.min(
         e.clientX,
@@ -1523,7 +1523,7 @@ export function popupMenu(
           action();
         })
       ),
-    () => {}
+    () => { }
   );
 }
 
@@ -1590,7 +1590,8 @@ export function pickFromSet<T>(
   setItems: (results: T[]) => void,
   render: (item: T) => { label: DisplayElement; title: string },
   predicate: (item: T, keywords: string[]) => boolean,
-  breakLines: boolean
+  breakLines: boolean,
+  ...extra: DisplayElement[]
 ) {
   pickFromSetCustom(
     items,
@@ -1600,7 +1601,8 @@ export function pickFromSet<T>(
       return button(label, title, click);
     },
     predicate,
-    breakLines
+    breakLines,
+    ...extra
   );
 }
 /** Create a dialog of buttons that can be multi-selected and filtered
@@ -1615,25 +1617,26 @@ export function pickFromSetCustom<T>(
   setItems: (results: T[]) => void,
   render: ActiveItemRenderer<T>,
   predicate: (item: T, keywords: string[]) => boolean,
-  breakLines: boolean
+  breakLines: boolean,
+  ...extra: DisplayElement[]
 ) {
   dialog((close) => {
     const selected: T[] = [];
     const { ui, model } = singleState<T[]>((items) =>
       items.length
         ? items.map((item) => {
-            return [
-              render(item, (e) => {
-                selected.push(item);
-                if (!e.ctrlKey) {
-                  setItems(selected);
-                  e.stopPropagation();
-                  close();
-                }
-              }),
-              breakLines ? br() : blank(),
-            ];
-          })
+          return [
+            render(item, (e) => {
+              selected.push(item);
+              if (!e.ctrlKey) {
+                setItems(selected);
+                e.stopPropagation();
+                close();
+              }
+            }),
+            breakLines ? br() : blank(),
+          ];
+        })
         : "No matches."
     );
     const showItems = (p: (input: T) => boolean) =>
@@ -1660,6 +1663,8 @@ export function pickFromSetCustom<T>(
           }
         })
       ),
+      extra,
+      br(),
       ui,
       paragraph("Control-click to select multiple."),
     ];
@@ -1817,11 +1822,11 @@ export function synchronizerFields<
       return [
         key,
         {
-          reload: () => {},
+          reload: () => { },
           statusChanged(state: T[K]): void {
             parent.statusChanged({ ...parent.get(), [key]: state });
           },
-          statusWaiting(): void {},
+          statusWaiting(): void { },
           statusFailed(message: string, _retry: () => void): void {
             console.log(message);
           },
@@ -2094,7 +2099,7 @@ export function tabsModel(
     const group = i + 1;
     tabGroups.push({ panes: [], buttons: [] });
     models.push({
-      reload: () => {},
+      reload: () => { },
       statusChanged: (input) => {
         tabGroups[group] = generate(group, input);
         update(group);
@@ -2188,7 +2193,7 @@ export function temporaryState<T>(initial: T): StateSynchronizer<T> {
   let current: T = initial;
   let listener: StateListener<T> = null;
   return {
-    reload: () => {},
+    reload: () => { },
     statusChanged: (input: T) => {
       current = input;
       if (listener) {
@@ -2196,7 +2201,7 @@ export function temporaryState<T>(initial: T): StateSynchronizer<T> {
       }
     },
     statusFailed: (message, _retry) => console.log(message),
-    statusWaiting: () => {},
+    statusWaiting: () => { },
     get(): T {
       return current;
     },

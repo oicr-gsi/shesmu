@@ -543,7 +543,16 @@ function addFilterDialog(
                 keywords.every(
                   (k) => sourceLocation.file.toLowerCase().indexOf(k) != -1
                 ),
-              true
+              true,
+              "Entries like ",
+              mono("foo.shesmu"),
+              " will match any action produced by any olive from that file. Entires like ",
+              mono("foo.shesmu:5"),
+              " and ",
+              mono("foo.shesmu:5:3"),
+              " match specific olives by line and columns.",
+              mono("foo.shesmu:5:3[0123456789ABCDEF]"),
+              " matches a specific version of script, even if it has been replaced."
             );
           }
         )
