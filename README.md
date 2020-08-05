@@ -26,6 +26,7 @@ the provenance data.
 - [Olive Language Reference](language.md)
 - [Complex Olive Cookbook](olive-complex-cookbook.md)
 - [The Mandatory Guide to Optional Values](optionalguide.md)
+- [Training Guide for Operators](ops-guide.md)
 - [Shesmu Glossary](glossary.md)
 - [Shesmu FAQ](faq.md)
 - [Ask your doctor if Shesmu is right for you](ask-your-doctor.md)
