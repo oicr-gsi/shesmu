@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.core;
 
+import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
+
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
@@ -36,51 +38,64 @@ import org.objectweb.asm.commons.Method;
 
 /** The standard library of Shesmu */
 public final class StandardDefinitions implements DefinitionRepository {
+  private static class ClampFunction implements FunctionDefinition {
 
-  @RuntimeInterop
-  public static JsonNode jsonObject(Set<Tuple> fields) {
-    final ObjectNode result = RuntimeSupport.MAPPER.createObjectNode();
-    for (final Tuple field : fields) {
-      result.set((String) field.get(0), (JsonNode) field.get(1));
-    }
-    return result;
-  }
+    private static final Type A_MATH_TYPE = Type.getType(Math.class);
+    private final String name;
+    private final Imyhat type;
 
-  @RuntimeInterop
-  public static Path replaceHome(Path original, Path homedir) {
-    if (original.getNameCount() == 0) {
-      return original;
+    private ClampFunction(String namespace, Imyhat type) {
+      this.type = type;
+      name = String.join(Parser.NAMESPACE_SEPARATOR, "std", namespace, "clamp");
     }
-    final String start = original.getName(0).toString();
-    if (start.equals("$HOME") || start.equals("~")) {
-      return homedir.resolve(original.subpath(1, original.getNameCount()));
-    }
-    return original;
-  }
 
-  /** Truncate a time stamp to midnight */
-  @RuntimeInterop
-  public static Instant start_of_day(Instant input) {
-    return input.truncatedTo(ChronoUnit.DAYS);
-  }
+    @Override
+    public String description() {
+      return "Passes through a value with a minimum and maximum limit.";
+    }
 
-  @RuntimeInterop
-  public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
-    if ((Long) version.get(0) < major) {
-      return false;
+    @Override
+    public Path filename() {
+      return null;
     }
-    if ((Long) version.get(1) < minor) {
-      return false;
+
+    @Override
+    public String name() {
+      return name;
     }
-    return (Long) version.get(2) >= patch;
+
+    @Override
+    public Stream<FunctionParameter> parameters() {
+      return Stream.of(
+          new FunctionParameter("lower limit", type),
+          new FunctionParameter("value to use", type),
+          new FunctionParameter("upper limit", type));
+    }
+
+    @Override
+    public void render(GeneratorAdapter methodGen) {
+      final Type t = type.apply(TO_ASM);
+      methodGen.invokeStatic(A_MATH_TYPE, new Method("min", t, new Type[] {t, t}));
+      methodGen.invokeStatic(A_MATH_TYPE, new Method("max", t, new Type[] {t, t}));
+    }
+
+    @Override
+    public void renderStart(GeneratorAdapter methodGen) {
+      // Do nothing
+    }
+
+    @Override
+    public Imyhat returnType() {
+      return type;
+    }
   }
 
   private static final Type A_CHAR_SEQUENCE_TYPE = Type.getType(CharSequence.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
   private static final Type A_JSON_SIGNATURE_TYPE = Type.getType(JsonSigner.class);
   private static final Type A_NOTHING_ACTION_TYPE = Type.getType(NothingAction.class);
-  private static final Type A_PATH_TYPE = Type.getType(Path.class);
   private static final Type A_PATHS_TYPE = Type.getType(Paths.class);
+  private static final Type A_PATH_TYPE = Type.getType(Path.class);
   private static final Type A_SHA1_SIGNATURE_TYPE = Type.getType(SHA1DigestSigner.class);
   protected static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -127,6 +142,40 @@ public final class StandardDefinitions implements DefinitionRepository {
             "Check if the number is not-a-number.",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "max"),
+            Math.class,
+            "max",
+            "Pick the maximum between two numbers",
+            Imyhat.FLOAT,
+            new FunctionParameter("input number", Imyhat.FLOAT),
+            new FunctionParameter("input number", Imyhat.FLOAT)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "min"),
+            Math.class,
+            "min",
+            "Pick the minimum between two numbers",
+            Imyhat.FLOAT,
+            new FunctionParameter("input number", Imyhat.FLOAT),
+            new FunctionParameter("input number", Imyhat.FLOAT)),
+        new ClampFunction("float", Imyhat.FLOAT),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "max"),
+            Math.class,
+            "max",
+            "Pick the maximum between two numbers",
+            Imyhat.INTEGER,
+            new FunctionParameter("input number", Imyhat.INTEGER),
+            new FunctionParameter("input number", Imyhat.INTEGER)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "min"),
+            Math.class,
+            "min",
+            "Pick the minimum between two numbers",
+            Imyhat.INTEGER,
+            new FunctionParameter("input number", Imyhat.INTEGER),
+            new FunctionParameter("input number", Imyhat.INTEGER)),
+        new ClampFunction("integer", Imyhat.INTEGER),
         FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "start_of_day"),
             StandardDefinitions.class,
@@ -579,6 +628,44 @@ public final class StandardDefinitions implements DefinitionRepository {
           }
         }
       };
+
+  @RuntimeInterop
+  public static JsonNode jsonObject(Set<Tuple> fields) {
+    final ObjectNode result = RuntimeSupport.MAPPER.createObjectNode();
+    for (final Tuple field : fields) {
+      result.set((String) field.get(0), (JsonNode) field.get(1));
+    }
+    return result;
+  }
+
+  @RuntimeInterop
+  public static Path replaceHome(Path original, Path homedir) {
+    if (original.getNameCount() == 0) {
+      return original;
+    }
+    final String start = original.getName(0).toString();
+    if (start.equals("$HOME") || start.equals("~")) {
+      return homedir.resolve(original.subpath(1, original.getNameCount()));
+    }
+    return original;
+  }
+
+  /** Truncate a time stamp to midnight */
+  @RuntimeInterop
+  public static Instant start_of_day(Instant input) {
+    return input.truncatedTo(ChronoUnit.DAYS);
+  }
+
+  @RuntimeInterop
+  public static boolean version_at_least(Tuple version, long major, long minor, long patch) {
+    if ((Long) version.get(0) < major) {
+      return false;
+    }
+    if ((Long) version.get(1) < minor) {
+      return false;
+    }
+    return (Long) version.get(2) >= patch;
+  }
 
   @Override
   public Stream<ActionDefinition> actions() {
