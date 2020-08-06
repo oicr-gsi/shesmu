@@ -39,7 +39,7 @@ export function histogram(
   headerAngle: number,
   labels: string[],
   rows: HistogramRow[]
-): { ui: UIElement; redraw: () => void } {
+): UIElement {
   const div = document.createElement("div");
   div.className = "histogram";
   let selectionStart: HistogramSelection = null;
@@ -207,5 +207,5 @@ export function histogram(
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
-  return { ui: div, redraw: redraw };
+  return { element: div, find: null, reveal: redraw, type: "ui" };
 }

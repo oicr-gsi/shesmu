@@ -1,7 +1,7 @@
 /**
  * A function which converts file names to something with linebreaks
  */
-export type FilenameFormatter = (path: string) => Node[] | string;
+export type FilenameFormatter = (path: string) => (string | null)[] | string;
 
 /**
  * An interface for dealing with an updatable data store. It is a subset of the standard Map type
@@ -80,15 +80,9 @@ export const validIdentifier = /[a-z][a-zA-Z0-9_]*/;
 /**
  * Join items with a soft line-break at every delimiter.
  */
-export function softJoin(delimiter: string, text: string[]): Node[] {
+export function softJoin(delimiter: string, text: string[]): (string | null)[] {
   return text.flatMap((chunk: string, index: number) =>
-    index == 0
-      ? [document.createTextNode(chunk)]
-      : [
-          document.createTextNode(delimiter),
-          document.createElement("WBR"),
-          document.createTextNode(chunk),
-        ]
+    index == 0 ? [chunk] : [delimiter, null, chunk]
   );
 }
 
@@ -107,7 +101,7 @@ export function shuffle<T>(array: T[]): void {
 /**
  * Break text containing slashes into text with soft breaks to wrap long paths.
  */
-export function breakSlashes(text: string): Node[] {
+export function breakSlashes(text: string): (string | null)[] {
   return softJoin("/", text.split(/\//g));
 }
 /**

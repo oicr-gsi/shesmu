@@ -1,57 +1,55 @@
 import {
-  UIElement,
-  collapsible,
-  link,
-  text,
-  blank,
-  table,
-  tile,
-  preformatted,
-  paragraph,
-  button,
-  buttonDanger,
-  dialog,
-  img,
-  br,
-  singleState,
-  buttonCustom,
   ClickHandler,
-  addElements,
-  setFindHandler,
-  tabs,
-  synchronizerFields,
-  historyState,
-  dropdown,
-  tagList,
-  initialise,
-  multipaneState,
-  refreshButton,
+  UIElement,
+  blank,
+  br,
+  butter,
+  button,
   buttonAccessory,
-  inputText,
+  buttonCustom,
+  buttonDanger,
   checkRandomPermutation,
   checkRandomSequence,
+  collapsible,
+  dialog,
+  dropdown,
+  group,
+  historyState,
+  img,
+  inputText,
+  link,
   makeUrl,
-  butter,
+  multipaneState,
+  popupMenu,
+  preformatted,
+  refreshButton,
+  setRootDashboard,
+  singleState,
+  synchronizerFields,
+  table,
   tableFromRows,
   tableRow,
-  popup,
+  tabs,
+  tagList,
+  text,
+  tile,
 } from "./html.js";
 import {
-  StatefulModel,
+  MutableStore,
   SourceLocation,
-  computeDuration,
-  commonPathPrefix,
+  StatefulModel,
   combineModels,
+  commonPathPrefix,
+  computeDuration,
   mapModel,
   mutableStoreWatcher,
-  MutableStore,
 } from "./util.js";
 import { ActionFilter, BasicQuery, createSearch } from "./actionfilters.js";
 import {
-  paginatedRefreshable,
-  saveClipboard,
   fetchJsonWithBusyDialog,
   mutableLocalStore,
+  paginatedRefreshable,
+  saveClipboard,
   saveClipboardJson,
   saveFile,
 } from "./io.js";
@@ -243,7 +241,7 @@ export function actionDisplay(
 
                 return tile(
                   css,
-                  paragraph(
+                  group(
                     link(
                       makeUrl("actiondash", {
                         filters: { id: [action.actionId] },
@@ -273,7 +271,7 @@ export function actionDisplay(
                           },
                           (count: number) => {
                             if (count > 1) {
-                              dialog((close) => [
+                              dialog(() => [
                                 `Purged ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
                                 img("ohno.gif"),
                               ]);
@@ -301,12 +299,12 @@ export function actionDisplay(
                             },
                             (count: number) => {
                               if (count == 0) {
-                                dialog((close) => [
+                                dialog(() => [
                                   "This action is indifferent to your pleas. Maybe the action's internal state has changed? Try refreshing.",
                                   img("indifferent.gif"),
                                 ]);
                               } else if (count > 1) {
-                                dialog((close) => [
+                                dialog(() => [
                                   `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
                                   img("ohno.gif"),
                                 ]);
@@ -458,7 +456,7 @@ export function actionDisplay(
                 : buttonDanger(
                     "🔧 Bulk Commands ▼",
                     "Perform a number of action-specific commands.",
-                    popup(
+                    popupMenu(
                       true,
                       ...response.bulkCommands.map((command) => ({
                         label: command.buttonText,
@@ -596,7 +594,6 @@ export function initialiseActionDash(
   userFilters: string | BasicQuery | null,
   exportSearches: ExportSearchCommand[]
 ) {
-  initialise();
   const filenameFormatter = commonPathPrefix(sources.map((s) => s.file));
   const {
     filters: filterSynchonizer,
@@ -618,7 +615,7 @@ export function initialiseActionDash(
   const { actions: actionUi, bulkCommands, model: actionModel } = actionDisplay(
     exportSearches
   );
-  const { ui: statsUi, model: statsModel, reveal: statsReveal } = actionStats(
+  const { ui: statsUi, model: statsModel } = actionStats(
     (...limits) => addPropertySearch(...limits),
     (typeName, start, end) => addRangeSearch(typeName, start, end),
     standardExports.concat(exportSearches)
@@ -630,16 +627,16 @@ export function initialiseActionDash(
         "Save this search to the local search collection.",
         () =>
           dialog((close) => {
-            const { ui, getter } = inputText();
+            const nameBox = inputText();
             return [
               "Name for Search: ",
-              ui,
+              nameBox.ui,
               br(),
               button(
                 "💾 Add to My Searches",
                 "Save this search to the local search collection.",
                 () => {
-                  const name = getter().trim();
+                  const name = nameBox.value.trim();
                   if (name) {
                     localSearches.set(name, input);
                     close();
@@ -660,7 +657,6 @@ export function initialiseActionDash(
     buttons,
     entryBar,
     model,
-    find: searchFind,
     addPropertySearch,
     addRangeSearch,
   } = createSearch(
@@ -706,13 +702,12 @@ export function initialiseActionDash(
     searchModel
   );
 
-  const { ui: tabsUi, find: tabFind } = tabs(
-    { contents: statsUi, name: "Overview", reveal: statsReveal },
-    { contents: actionUi, name: "Actions", find: searchFind }
+  const tabsUi = tabs(
+    { contents: statsUi, name: "Overview" },
+    { contents: actionUi, name: "Actions" }
   );
-  setFindHandler(tabFind);
-  addElements(
-    document.getElementById("actiondash")!,
+  setRootDashboard(
+    "actiondash",
     tile([], searchSelector, saveUi, deleteUi, helpArea("action")),
     tile([], refreshButton(combinedActionsModel.reload), buttons, bulkCommands),
     tile([], entryBar),

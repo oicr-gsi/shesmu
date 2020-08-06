@@ -1,62 +1,58 @@
 import {
-  initialise,
-  tableRow,
+  Tab,
   TableCell,
+  UIElement,
+  blank,
+  br,
+  buttonDanger,
+  dropdownTable,
+  group,
+  historyState,
+  italic,
   link,
-  tableFromRows,
-  tagList,
   multipaneState,
   preformatted,
-  UIElement,
-  findProxy,
-  tabs,
-  addElements,
-  setFindHandler,
-  br,
-  group,
-  dropdownTable,
-  italic,
-  pane,
-  blank,
-  singleState,
-  sharedPane,
-  synchronizerFields,
-  historyState,
-  buttonDanger,
-  textInline,
   refreshButton,
+  setRootDashboard,
+  sharedPane,
+  singleState,
+  synchronizerFields,
+  tableFromRows,
+  tableRow,
   tabsModel,
-  Tab,
+  tagList,
+  textInline,
 } from "./html.js";
 import {
   SourceLocation,
-  computeDuration,
-  commonPathPrefix,
-  copyLocation,
+  StatefulModel,
   combineModels,
-  mapModel,
+  commonPathPrefix,
+  computeDuration,
+  copyLocation,
   filterModel,
   formatTimeSpan,
+  mapModel,
 } from "./util.js";
 import { ActionFilter, createSearch, BasicQuery } from "./actionfilters.js";
 import {
-  refreshableSvg,
-  refreshable,
-  serverStateModel,
   MutableServerInfo,
   iterableModel,
+  refreshable,
+  refreshableSvg,
+  serverStateModel,
 } from "./io.js";
 import {
+  AlertFilter,
   PrometheusAlert,
   alertNavigator,
+  loadFilterRegex,
   prometheusAlertHeader,
   prometheusAlertLocation,
-  AlertFilter,
-  loadFilterRegex,
 } from "./alert.js";
 import {
-  actionDisplay,
   ExportSearchCommand,
+  actionDisplay,
   standardExports,
 } from "./action.js";
 import { actionStats } from "./stats.js";
@@ -94,12 +90,10 @@ interface Olive extends SourceLocation {
 }
 type OliveReference = {
   script: ScriptFile;
-  playPause: UIElement;
-  updatePaused: (state: boolean | null) => void;
+  playPaused: StatefulModel<boolean | null>;
   olive: {
     olive: Olive;
-    playPause: UIElement;
-    updatePaused: (state: boolean | null) => void;
+    playPaused: StatefulModel<boolean | null>;
   } | null;
   keywords: string[];
 } | null;
@@ -169,20 +163,19 @@ function keywordsForScript(script: ScriptFile): string[] {
     .concat(script.olives.flatMap((olive) => keywordsForOlive(olive)));
 }
 
-function makePauseUpdater(
-  updater: (...elements: UIElement[]) => void
-): (isPaused: boolean | null) => void {
-  return (state) => {
+function makePauseUpdater(): {
+  ui: UIElement;
+  model: StatefulModel<boolean | null>;
+} {
+  return singleState((state) => {
     if (typeof state == "boolean") {
-      updater(
-        state
-          ? textInline(" ⏸", "Actions Paused")
-          : textInline(" ▶", "Actions Running")
-      );
+      return state
+        ? textInline(" ⏸", "Actions Paused")
+        : textInline(" ▶", "Actions Running");
     } else {
-      updater(blank());
+      return blank();
     }
-  };
+  });
 }
 
 function overview(file: ScriptFile, olive: Olive | null) {
@@ -194,7 +187,7 @@ function overview(file: ScriptFile, olive: Olive | null) {
     lastRun = { contents: "Never" };
   }
 
-  const info: HTMLTableRowElement[] = [
+  const info = [
     tableRow(null, { contents: "Status" }, { contents: file.status }),
     tableRow(null, { contents: "Last Run" }, lastRun),
     tableRow(
@@ -252,7 +245,6 @@ export function initialiseOliveDash(
   alertFilters: AlertFilter<string>[] | null,
   exportSearches: ExportSearchCommand[]
 ): void {
-  initialise();
   const container = document.getElementById("olives")!;
   const filenameFormatter = commonPathPrefix(oliveFiles.map((f) => f.file));
   const dashboardState = historyState(
@@ -267,27 +259,24 @@ export function initialiseOliveDash(
     dashboardState
   );
 
-  const alertFindProxy = findProxy();
-  const actionFindProxy = findProxy();
   const metroModel = singleState(
     (element: UIElement | null) => element || "No olive selected."
   );
   const alertModel = sharedPane(
     "main",
     (alerts: PrometheusAlert[]) => {
-      const { toolbar, main, find } = alertNavigator(
+      const { toolbar, main } = alertNavigator(
         alerts,
         prometheusAlertHeader,
         alertState,
         prometheusAlertLocation(filenameFormatter)
       );
-      alertFindProxy.updateHandle(find);
       return { toolbar: toolbar, main: main };
     },
     "toolbar",
     "main"
   );
-  const { ui: statsUi, model: statsModel, reveal: statsReveal } = actionStats(
+  const { ui: statsUi, model: statsModel } = actionStats(
     (...limits) => search.addPropertySearch(...limits),
     (typeName, start, end) => search.addRangeSearch(typeName, start, end),
     standardExports.concat(exportSearches)
@@ -304,7 +293,6 @@ export function initialiseOliveDash(
     [],
     dynamicTags
   );
-  actionFindProxy.updateHandle(search.find);
   const metroRequest = refreshableSvg(
     "metrodiagram",
     (location: SourceLocation) => ({
@@ -330,7 +318,7 @@ export function initialiseOliveDash(
   const { model: pauseOliveModel, ui: pauseOliveButton } = singleState(
     (state: MutableServerInfo<OliveReference, boolean> | null) => {
       if (state && state.input?.olive?.olive.produces == "ACTIONS") {
-        state.input?.olive?.updatePaused(state.response);
+        state.input?.olive?.playPaused.statusChanged(state.response);
         return buttonDanger(
           state.response
             ? "▶ Resume Olive's Actions"
@@ -349,7 +337,7 @@ export function initialiseOliveDash(
   const { model: pauseFileModel, ui: pauseFileButton } = singleState(
     (state: MutableServerInfo<OliveReference, boolean> | null) => {
       if (state) {
-        state.input?.updatePaused(state.response);
+        state.input?.playPaused.statusChanged(state.response);
         return buttonDanger(
           state.response
             ? "▶ Resume Script's Actions"
@@ -380,10 +368,9 @@ export function initialiseOliveDash(
       selected ? preformatted(selected.script.bytecode) : "No olive selected.",
   });
 
-  const { ui, find, models: tabsModels } = tabsModel(1, {
+  const { ui, models: tabsModels } = tabsModel(1, {
     name: "Overview",
     contents: [components.overview, statsUi],
-    reveal: statsReveal,
   });
 
   const model = combineModels(
@@ -466,7 +453,6 @@ export function initialiseOliveDash(
         tabList.push({
           name: "Actions",
           contents: [search.buttons, br(), search.entryBar, br(), actions],
-          find: actionFindProxy.find,
         });
       }
       if (
@@ -481,7 +467,6 @@ export function initialiseOliveDash(
             br(),
             alertModel.components.main,
           ],
-          find: alertFindProxy.find,
         });
       }
       if (selected.olive || selected.script.olives.length == 1) {
@@ -536,32 +521,27 @@ export function initialiseOliveDash(
           )
         : false,
     ...oliveFiles.map((script) => {
-      const { ui: scriptPlayPause, update: update } = pane();
-      const scriptUpdatePaused = makePauseUpdater(update);
-      scriptUpdatePaused(script.isPaused);
+      const scriptPlayPause = makePauseUpdater();
+      scriptPlayPause.model.statusChanged(script.isPaused);
       return {
         value: {
           script: script,
-          playPause: scriptPlayPause,
-          updatePaused: scriptUpdatePaused,
+          playPaused: scriptPlayPause.model,
           olive: null,
           keywords: [...new Set(keywordsForScript(script))],
         } as OliveReference,
-        label: [filenameFormatter(script.file), scriptPlayPause],
+        label: [filenameFormatter(script.file), scriptPlayPause.ui],
         children: script.olives.map((olive) => {
-          const { ui: olivePlayPause, update } = pane();
-          const updatePaused = makePauseUpdater(update);
-          updatePaused(olive.paused);
+          const olivePlayPause = makePauseUpdater();
+          olivePlayPause.model.statusChanged(olive.paused);
           const produces = infoForProduces(olive.produces);
           return {
             value: {
               script: script,
-              playPause: scriptPlayPause,
-              updatePaused: scriptUpdatePaused,
+              playPaused: scriptPlayPause.model,
               olive: {
                 olive: olive,
-                playPause: olivePlayPause,
-                updatePaused: updatePaused,
+                playPaused: olivePlayPause.model,
               },
               keywords: [...new Set(keywordsForOlive(olive))],
             },
@@ -571,7 +551,7 @@ export function initialiseOliveDash(
               {
                 contents: [
                   textInline(produces.icon, produces.description),
-                  olive.produces == "ACTIONS" ? olivePlayPause : blank(),
+                  olive.produces == "ACTIONS" ? olivePlayPause.ui : blank(),
                 ],
               },
             ],
@@ -580,7 +560,7 @@ export function initialiseOliveDash(
       };
     })
   );
-  addElements(container, [
+  setRootDashboard(container, [
     group(
       oliveSelector,
       refreshButton(model.reload),
@@ -592,5 +572,4 @@ export function initialiseOliveDash(
     br(),
     ui,
   ]);
-  setFindHandler(find);
 }

@@ -1,35 +1,34 @@
 import {
+  ClickHandler,
   UIElement,
-  text,
+  blank,
+  button,
+  dialog,
+  makeUrl,
+  popupMenu,
+  singleState,
   tableFromRows,
   tableRow,
-  blank,
-  singleState,
-  popup,
-  ClickHandler,
-  dialog,
-  button,
-  makeUrl,
+  text,
 } from "./html.js";
 import {
   StatefulModel,
   breakSlashes,
-  formatTimeSpan,
   computeDuration,
+  formatTimeSpan,
 } from "./util.js";
 import { histogram } from "./histogram.js";
 import {
-  nameForBin,
   ActionFilter,
   PropertyType,
   TimeRangeType,
   filtersForPropertySearch,
-  BasicQuery,
+  nameForBin,
   updateBasicQueryForPropertySearch,
 } from "./actionfilters.js";
 import { refreshable } from "./io.js";
 import { Status, ExportSearchCommand } from "./action.js";
-import { helpHotspot, helpArea } from "./help.js";
+import { helpHotspot } from "./help.js";
 
 interface TableStatRow {
   /** The human-friendly name of the thing being recorded (_e.g._, Total)
@@ -117,9 +116,9 @@ function renderStat(
   addPropertySearch: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
   exportSearches: ExportSearchCommand[]
-): { ui: UIElement; reveal: () => void } {
+): UIElement {
   function popupForProperty(...limits: PropertySearch[]): ClickHandler {
-    return popup(
+    return popupMenu(
       false,
       {
         label: "Drill Down",
@@ -164,37 +163,32 @@ function renderStat(
   }
   switch (stat.type) {
     case "text":
-      return { ui: stat.value, reveal: () => {} };
+      return stat.value;
     case "table":
-      return {
-        ui: [
-          tableFromRows(
-            stat.table.map(
-              (row: TableStatRow): HTMLTableRowElement => {
-                let prettyTitle: string;
-                let click: ClickHandler | null = null;
-                if (row.kind == null) {
-                  prettyTitle = row.title;
-                } else if (row.kind == "property") {
-                  prettyTitle = `${row.title} ${row.property}`;
-                  click = popupForProperty({ type: row.type, value: row.json });
-                } else {
-                  prettyTitle = `Unknown entry for ${row.kind}`;
-                }
-                return tableRow(
-                  click,
-                  { contents: prettyTitle },
-                  { contents: row.value.toString() }
-                );
-              }
-            )
-          ),
-          helpHotspot("stats-table"),
-        ],
-        reveal: () => {},
-      };
+      return [
+        tableFromRows(
+          stat.table.map((row: TableStatRow) => {
+            let prettyTitle: string;
+            let click: ClickHandler | null = null;
+            if (row.kind == null) {
+              prettyTitle = row.title;
+            } else if (row.kind == "property") {
+              prettyTitle = `${row.title} ${row.property}`;
+              click = popupForProperty({ type: row.type, value: row.json });
+            } else {
+              prettyTitle = `Unknown entry for ${row.kind}`;
+            }
+            return tableRow(
+              click,
+              { contents: prettyTitle },
+              { contents: row.value.toString() }
+            );
+          })
+        ),
+        helpHotspot("stats-table"),
+      ];
     case "crosstab": {
-      const rows: HTMLTableRowElement[] = [];
+      const rows = [];
 
       rows.push(
         tableRow(
@@ -253,16 +247,13 @@ function renderStat(
           )
         );
       }
-      return {
-        ui: [tableFromRows(rows), helpHotspot("stats-crosstab")],
-        reveal: () => {},
-      };
+      return [tableFromRows(rows), helpHotspot("stats-crosstab")];
     }
 
     case "histogram": {
       const boundaryLabels = stat.boundaries.map((x) => computeDuration(x));
       const boundaries = stat.boundaries;
-      const { ui, redraw } = histogram(
+      const ui = histogram(
         Math.PI / 4,
         boundaryLabels.map((l) => l.ago),
         Object.entries(stat.counts).map(([bin, counts]) => ({
@@ -298,11 +289,11 @@ function renderStat(
           },
         }))
       );
-      return { ui: [ui, helpHotspot("stats-histogram")], reveal: redraw };
+      return [ui, helpHotspot("stats-histogram")];
     }
 
     default:
-      return { ui: "Unknown stat type", reveal: () => {} };
+      return "Unknown stat type";
   }
 }
 
@@ -313,18 +304,16 @@ export function actionStats(
   addPropertySeach: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
   exportSearches: ExportSearchCommand[]
-): { ui: UIElement; model: StatefulModel<ActionFilter[]>; reveal: () => void } {
-  let revealers: (() => void)[] = [];
+): { ui: UIElement; model: StatefulModel<ActionFilter[]> } {
   const { model, ui } = singleState(
     (stats: Stat[] | null): UIElement => {
       if (stats?.length) {
         const results = stats.map((stat) =>
           renderStat(stat, addPropertySeach, addRangeSearch, exportSearches)
         );
-        revealers = results.map((r) => r.reveal);
         return [
           text("Click any cell or table heading to filter results."),
-          results.map((r) => r.ui),
+          results,
         ];
       }
       return "No statistics are available.";
@@ -342,8 +331,5 @@ export function actionStats(
   return {
     ui: ui,
     model: io,
-    reveal: () => {
-      for (const reveal of revealers) reveal();
-    },
   };
 }
