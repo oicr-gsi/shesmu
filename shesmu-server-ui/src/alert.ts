@@ -1,42 +1,41 @@
 import { fetchJsonWithBusyDialog, refreshable } from "./io.js";
 import {
+  ComplexElement,
   StateSynchronizer,
-  tile,
-  FindHandler,
-  addElements,
-  buttonClose,
-  initialise,
-  setFindHandler,
-  blank,
-  group,
-  br,
-  inputText,
-  button,
-  dialog,
-  link,
-  table,
-  text,
-  objectTable,
   UIElement,
-  multipaneState,
-  historyState,
   UpdateableList,
-  pager,
-  synchronizerFields,
-  pane,
-  tableRow,
-  flexGroup,
-  tableFromRows,
-  statefulListBind,
-  refreshButton,
-  sharedPane,
+  blank,
+  br,
+  button,
   buttonAccessory,
+  buttonClose,
+  dialog,
+  flexGroup,
+  group,
+  groupWithFind,
+  historyState,
+  inputText,
+  link,
+  multipaneState,
+  objectTable,
+  pager,
+  refreshButton,
+  setRootDashboard,
+  sharedPane,
+  singleState,
+  statefulListBind,
+  synchronizerFields,
+  table,
+  tableFromRows,
+  tableRow,
+  text,
+  tile,
 } from "./html.js";
 import {
+  FilenameFormatter,
   SourceLocation,
   commonPathPrefix,
   computeDuration,
-  FilenameFormatter,
 } from "./util.js";
 import { helpArea } from "./help.js";
 
@@ -144,7 +143,6 @@ export function alertNavigator<L, A extends Alert<L>>(
 ): {
   main: UIElement;
   toolbar: UIElement;
-  find: FindHandler;
 } {
   const { list: filterList, register } = statefulListBind(filterState);
   const state = multipaneState<
@@ -169,15 +167,19 @@ export function alertNavigator<L, A extends Alert<L>>(
       }
       const numPerPage = 10;
 
-      const { ui, update } = pane();
-      const drawPager = (current: number) =>
-        update(
-          pager(Math.ceil(selectedAlerts.length / numPerPage), 0, drawPager),
+      const { ui, model } = singleState(
+        (current: number): UIElement => [
+          pager(
+            Math.ceil(selectedAlerts.length / numPerPage),
+            0,
+            model.statusChanged
+          ),
           selectedAlerts
             .slice(current * numPerPage, (current + 1) * numPerPage)
-            .map((a) => renderAlert(a, makeHeader, locationColumns))
-        );
-      drawPager(0);
+            .map((a) => renderAlert(a, makeHeader, locationColumns)),
+        ]
+      );
+      model.statusChanged(0);
       return [
         selectedAlerts.length == 1
           ? "Found 1 alert."
@@ -194,7 +196,18 @@ export function alertNavigator<L, A extends Alert<L>>(
   register(state.model);
 
   return {
-    toolbar: group(
+    toolbar: groupWithFind(
+      () => {
+        createLabelValueFilterDialog((label, value) =>
+          filterList.add({
+            type: "eq",
+            value: value,
+            label: label,
+          })
+        );
+        return true;
+      },
+
       buttonAccessory(
         "➕ Add Filter",
         "Add a filter to limit the alerts displayed.",
@@ -272,20 +285,6 @@ export function alertNavigator<L, A extends Alert<L>>(
       state.components.filterbar
     ),
     main: state.components.alertlist,
-    find: () => {
-      createLabelValueFilter(
-        "= Value Matches Text",
-        "Find actions with labels that match a particular value.",
-        close,
-        (label, value) =>
-          filterList.add({
-            type: "eq",
-            value: value,
-            label: label,
-          })
-      );
-      return true;
-    },
   };
 }
 function applyFilters<L, A extends Alert<L>>(
@@ -374,44 +373,67 @@ function breakdown(
           [...x[1].values.values()].some((c) => c > 1 && c > x[1].total * 0.1)
       );
     bestBreakdown.length = Math.min(bestBreakdown.length, 10);
-    let { ui, update } = pane();
-    let activeBreakdown: HTMLTableRowElement | null = null;
+    let { ui, model } = singleState(
+      (
+        breakdown: {
+          label: string;
+          total: number;
+          values: Map<string, number>;
+        } | null
+      ): UIElement =>
+        breakdown
+          ? [
+              breakdown.label,
+              button(
+                "🏷️ Has Label",
+                "Show alerts that have this label with any value.",
+                () =>
+                  list.add({ label: breakdown.label, value: null, type: "has" })
+              ),
+              table(
+                [...breakdown.values],
+                ["Value", ([value]) => value || "<blank>"],
+                [
+                  "Count",
+                  ([, count]) => percentAndCount(count, breakdown.total),
+                ],
+                [
+                  "",
+                  ([value]) => [
+                    button("=", "Show alerts that match this value.", () =>
+                      list.add({
+                        label: breakdown.label,
+                        value: value,
+                        type: "eq",
+                      })
+                    ),
+                    button("≠", "Hide alerts that match this value.", () =>
+                      list.add({
+                        label: breakdown.label,
+                        value: value,
+                        type: "ne",
+                      })
+                    ),
+                  ],
+                ]
+              ),
+            ]
+          : blank()
+    );
+    let activeBreakdown: ComplexElement<HTMLTableRowElement> | null = null;
     const breakdownRows = bestBreakdown.map(([label, { total, values }]) => {
       const row = tableRow(
         () => {
           if (activeBreakdown == row) {
             activeBreakdown = null;
-            row.classList.remove("active");
-            update();
+            row.element.classList.remove("active");
+            model.statusChanged(null);
           } else {
             if (activeBreakdown != null) {
-              activeBreakdown.classList.remove("active");
+              activeBreakdown.element.classList.remove("active");
             }
             activeBreakdown = row;
-            update(
-              label,
-              button(
-                "🏷️ Has Label",
-                "Show alerts that have this label with any value.",
-                () => list.add({ label: label, value: null, type: "has" })
-              ),
-              table(
-                [...values],
-                ["Value", ([value]) => value || "<blank>"],
-                ["Count", ([, count]) => percentAndCount(count, total)],
-                [
-                  "",
-                  ([value]) => [
-                    button("=", "Show alerts that match this value.", () =>
-                      list.add({ label: label, value: value, type: "eq" })
-                    ),
-                    button("≠", "Hide alerts that match this value.", () =>
-                      list.add({ label: label, value: value, type: "ne" })
-                    ),
-                  ],
-                ]
-              )
-            );
+            model.statusChanged({ label, total, values });
           }
         },
         { contents: label },
@@ -442,9 +464,9 @@ function createLabelFilter(
         label.ui,
         br(),
         button("Add", "Add alert filter.", () => {
-          if (label.getter().trim()) {
+          if (label.value.trim()) {
             close();
-            add(label.getter().trim());
+            add(label.value.trim());
           }
         }),
       ];
@@ -460,38 +482,41 @@ function createLabelValueFilter(
 ): UIElement {
   return button(name, tooltip, () => {
     close();
-    dialog((close) => {
-      const label = inputText();
-      const value = inputText();
-      return [
-        "Label: ",
-        label.ui,
-        br(),
-        "Value: ",
-        value.ui,
-        br(),
-        button("Add", "Add alert filter.", () => {
-          if (label.getter().trim() && value.getter().trim()) {
-            close();
-            add(label.getter().trim(), value.getter().trim());
-          }
-        }),
-      ];
-    });
+    createLabelValueFilterDialog(add);
+  });
+}
+function createLabelValueFilterDialog(
+  add: (label: string, value: string) => void
+) {
+  dialog((close) => {
+    const label = inputText();
+    const value = inputText();
+    return [
+      "Label: ",
+      label.ui,
+      br(),
+      "Value: ",
+      value.ui,
+      br(),
+      button("Add", "Add alert filter.", () => {
+        if (label.value.trim() && value.value.trim()) {
+          close();
+          add(label.value.trim(), value.value.trim());
+        }
+      }),
+    ];
   });
 }
 export function initialiseAlertDashboard(
   initialFilters: AlertFilter<string>[],
   output: HTMLElement
 ) {
-  initialise();
-
   if (location.hash) {
     fetchJsonWithBusyDialog<PrometheusAlert | null>(
       "/getalert",
       { body: JSON.stringify(location.hash.substring(1)), method: "POST" },
       (selectedAlert) =>
-        addElements(
+        setRootDashboard(
           output,
           selectedAlert
             ? renderAlert(
@@ -518,13 +543,12 @@ export function initialiseAlertDashboard(
           const fileNameFormatter = commonPathPrefix(
             alerts.flatMap((a) => a.locations || []).map((l) => l.file)
           );
-          const { main, toolbar, find } = alertNavigator(
+          const { main, toolbar } = alertNavigator(
             alerts,
             prometheusAlertHeader,
             filterState.filters,
             prometheusAlertLocation(fileNameFormatter)
           );
-          setFindHandler(find);
           return { main: main, toolbar: toolbar };
         } else {
           return {
@@ -542,7 +566,7 @@ export function initialiseAlertDashboard(
       alertState.model,
       true
     );
-    addElements(
+    setRootDashboard(
       output,
       refreshButton(refresher.reload),
       alertState.components.toolbar,

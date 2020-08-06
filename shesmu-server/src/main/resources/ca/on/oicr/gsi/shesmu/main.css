@@ -71,7 +71,7 @@ a.button:visited {
 .button,
 a.button,
 .dropdown,
-.olivemenu {
+.tablemenucapture > div {
   margin: 0.2em;
   padding: 0.4em;
   border: 1px solid var(--widget-lowlight);
@@ -85,11 +85,11 @@ a.button {
 }
 
 .dropdown,
-.olivemenu {
+.tablemenucapture > div {
   color: var(--widget-negative);
   background-color: var(--widget-lowlight);
 }
-.olivemenu {
+.tablemenucapture > div {
   font-weight: bold;
 }
 
@@ -185,31 +185,9 @@ a.button.danger:visited {
   font-size: 90%;
 }
 
-.dropdown > div,
-.olivemenu > div {
+.dropdowncapture > div > *,
+.tablemenucapture > div {
   position: absolute;
-  min-width: 200px;
-  background-color: var(--widget-negative);
-  border: 1px solid var(--widget-lowlight);
-  box-shadow: 0.2em 0.2em 5px 0px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  visibility: hidden;
-  opacity: 0;
-  border-radius: 0.1em;
-  font-weight: normal;
-  transition: visibility 0s linear 0s, opacity 0.3s linear;
-}
-
-.dropdown:hover > div.ready,
-.dropdown > div.forceOpen,
-.olivemenu:hover > div.ready,
-.olivemenu > div.forceOpen {
-  visibility: visible;
-  opacity: 1;
-}
-
-.dropdown > div > *,
-.olivemenu > div {
   display: block;
   max-width: 50vw;
   color: var(--widget-lowlight);
@@ -217,17 +195,17 @@ a.button.danger:visited {
   padding: 0.5em;
 }
 
-.dropdown > div > * {
+.dropdowncapture > div > * {
   overflow-wrap: break-word;
   word-break: break-all;
 }
 
-.dropdown > div > span:hover {
+.dropdowncapture > div > span:hover {
   background-color: var(--widget-highlight);
   color: var(--widget-negative);
 }
 
-.olivemenu table {
+.tablemenucapture table {
   width: auto;
 }
 
@@ -708,10 +686,12 @@ a.button.danger:visited {
 }
 
 .modal,
+.dropdowncapture,
 .menucapture,
+.tablemenucapture,
 .helpcapture {
   position: fixed;
-  z-index: 10;
+  z-index: 1000;
   left: 0;
   top: 0;
   margin: 0;
@@ -761,14 +741,15 @@ a.button.danger:visited {
   max-width: 80%;
   overflow: auto;
 }
-.menucapture > div > div {
+.menucapture > div > span {
   color: var(--widget-text);
   background-color: var(--widget-negative);
   padding: 0.5em;
   cursor: pointer;
+  display: block;
 }
 
-.menucapture > div > div:hover {
+.menucapture > div > span:hover {
   color: var(--widget-negative);
   background-color: var(--widget-highlight);
 }
@@ -831,7 +812,7 @@ table.errors {
   width: 100%;
 }
 
-.olivemenu div.olivelist {
+.tablemenucapture div.olivelist {
   margin-top: 1em;
   max-height: 80vh;
   overflow-y: auto;

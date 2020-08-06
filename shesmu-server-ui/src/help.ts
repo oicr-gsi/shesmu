@@ -1,11 +1,12 @@
 import {
   UIElement,
-  buttonIcon,
-  subscribedState,
-  addElements,
-  br,
   blank,
+  br,
+  buttonIcon,
+  createUiFromTag,
   hr,
+  popup,
+  subscribedState,
 } from "./html.js";
 import { locallyStored } from "./io.js";
 import { Publisher, pubSubModel } from "./util.js";
@@ -131,105 +132,91 @@ function helpButton(
       const tip = tips[version]?.[index];
       return tip && predicate(version, index, tip);
     });
-    const popupContainer = document.createElement("div");
-    popupContainer.className = "helpcapture";
-    const popup = document.createElement("div");
     const markReadOnClose: Map<number, Set<number>> = new Map();
-    addElements(
-      popup,
-      hasNew
-        ? buttonIcon("✓ Read", readTooltip, () => {
-            document.body.removeChild(popupContainer);
-            model.statusChanged({
-              version: input.version,
-              tips: input.tips.filter(([version, index]) => {
-                const tip = tips[version]?.[index];
-                return tip != null && !predicate(version, index, tip);
-              }),
-            });
-          })
-        : blank(),
-      readAllEnabled && hasNew
-        ? [
-            " | ",
-            buttonIcon(
-              "🙈 Ignore All Tips",
-              "Mark all tips everywhere as read.",
-              () => {
-                document.body.removeChild(popupContainer);
-                model.statusChanged({
-                  version: input.version,
-                  tips: [],
-                });
-              }
-            ),
-          ]
-        : blank(),
-      br(),
-      tips
-        .flatMap((tips, version) =>
-          tips.map((tip, index) => ({
-            version: version,
-            index: index,
-            tip: tip,
-          }))
-        )
-        .filter(
-          ({ index, tip, version }) => tip && predicate(version, index, tip)
-        )
-        .sort((a, b) => b.version - a.version || a.index - b.index)
-        .map(({ index, tip, version }) => {
-          if (tip == null) return blank();
-          const isNew = input.tips.some(([v, i]) => v == version && i == index);
-          const header = document.createElement("p");
-          const more = document.createElement("span");
-          addElements(header, "💡 ", tip.summary, more);
-          more.innerText = " (more)";
-          more.style.color = "#aaa";
-          header.style.fontWeight = isNew ? "bold" : "normal";
-          const body = document.createElement("div");
-          body.innerText = tip.description;
-          body.style.display = "none";
-          header.addEventListener("click", () => {
-            body.style.display = "block";
-            more.innerText = "";
-            if (!markReadOnClose.has(version)) {
-              markReadOnClose.set(version, new Set());
-            }
-            markReadOnClose.get(version)?.add(index);
-          });
-          return [hr(), header, body];
-        })
-    );
-    popup.addEventListener("click", (e) => e.stopPropagation());
-    popupContainer.appendChild(popup);
-    popupContainer.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.body.removeChild(popupContainer);
-      if (hasNew) {
-        model.statusChanged({
-          version: input.version,
-          tips: input.tips.filter(
-            ([version, index]) => !markReadOnClose.get(version)?.has(index)
-          ),
-        });
-      }
-    });
     return buttonIcon(
       hasNew ? "ⓘ️✨" : "ⓘ️",
       hasNew ? "New tips are available!" : "Previous tips and advice.",
-      (e) => {
-        e.stopPropagation();
-        document.body.appendChild(popupContainer);
-        popup.style.left = `${Math.min(
-          e.clientX,
-          document.body.clientWidth - popup.offsetWidth - 10
-        )}px`;
-        popup.style.top = `${Math.min(
-          e.clientY,
-          document.body.clientHeight - popup.offsetHeight - 10
-        )}px`;
-      }
+      popup(
+        "helpcapture",
+        true,
+        (close) =>
+          createUiFromTag(
+            "div",
+            hasNew
+              ? buttonIcon("✓ Read", readTooltip, () => {
+                  close();
+                  model.statusChanged({
+                    version: input.version,
+                    tips: input.tips.filter(([version, index]) => {
+                      const tip = tips[version]?.[index];
+                      return tip != null && !predicate(version, index, tip);
+                    }),
+                  });
+                })
+              : blank(),
+            readAllEnabled && hasNew
+              ? [
+                  " | ",
+                  buttonIcon(
+                    "🙈 Ignore All Tips",
+                    "Mark all tips everywhere as read.",
+                    () => {
+                      close();
+                      model.statusChanged({
+                        version: input.version,
+                        tips: [],
+                      });
+                    }
+                  ),
+                ]
+              : blank(),
+            br(),
+            tips
+              .flatMap((tips, version) =>
+                tips.map((tip, index) => ({
+                  version: version,
+                  index: index,
+                  tip: tip,
+                }))
+              )
+              .filter(
+                ({ index, tip, version }) =>
+                  tip && predicate(version, index, tip)
+              )
+              .sort((a, b) => b.version - a.version || a.index - b.index)
+              .map(({ index, tip, version }) => {
+                if (tip == null) return blank();
+                const isNew = input.tips.some(
+                  ([v, i]) => v == version && i == index
+                );
+                const more = createUiFromTag("span", " (more)");
+                const header = createUiFromTag("p", "💡 ", tip.summary, more);
+                more.element.style.color = "#aaa";
+                header.element.style.fontWeight = isNew ? "bold" : "normal";
+                const body = createUiFromTag("div", tip.description);
+                body.element.style.display = "none";
+                header.element.addEventListener("click", () => {
+                  body.element.style.display = "block";
+                  more.element.innerText = "";
+                  if (!markReadOnClose.has(version)) {
+                    markReadOnClose.set(version, new Set());
+                  }
+                  markReadOnClose.get(version)?.add(index);
+                });
+                return [hr(), header, body];
+              })
+          ),
+        () => {
+          if (hasNew) {
+            model.statusChanged({
+              version: input.version,
+              tips: input.tips.filter(
+                ([version, index]) => !markReadOnClose.get(version)?.has(index)
+              ),
+            });
+          }
+        }
+      )
     );
   });
 }
@@ -264,14 +251,16 @@ export function helpHotspot(hotspot: HotSpot): UIElement {
  */
 export function initialiseStatusHelp(): void {
   const root = document.body.children.item(1)!;
-  const div = document.createElement("div");
-  root.insertBefore(div, root.firstChild);
-  addElements(
-    div,
+  const div = createUiFromTag(
+    "div",
     helpButton(
       "Mark all tips from this release as read.",
       true,
       (version, _index, _tip) => version == tips.length - 1
     )
   );
+  root.insertBefore(div.element, root.firstChild);
+  if (div.reveal) {
+    div.reveal();
+  }
 }

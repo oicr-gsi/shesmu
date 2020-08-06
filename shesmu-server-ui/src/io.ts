@@ -1,24 +1,25 @@
 import {
+  UIElement,
+  blank,
+  busyDialog,
   button,
   dialog,
-  busyDialog,
-  text,
-  UIElement,
   pager,
-  blank,
   singleState,
+  text,
+  svgFromStr,
 } from "./html.js";
 import {
   MutableStore,
-  StatefulModel,
   SplitStatefulModel,
-  splitModel,
-  mapModel,
-  promiseModel,
-  mapSplitModel,
+  StatefulModel,
   combineModels,
-  promiseTupleModel,
+  mapModel,
+  mapSplitModel,
   mapTupleModel,
+  promiseModel,
+  promiseTupleModel,
+  splitModel,
 } from "./util.js";
 
 /**
@@ -333,15 +334,7 @@ export function refreshableSvg<I>(
       requestModel(
         input,
         mapModel(promiseModel(output), (promise: Promise<Response>) =>
-          promise
-            .then((response) => response.text())
-            .then((data: string) => {
-              const svg = new window.DOMParser().parseFromString(
-                data,
-                "image/svg+xml"
-              );
-              return document.adoptNode(svg.documentElement);
-            })
+          promise.then((response) => response.text()).then(svgFromStr)
         ),
         false
       ),

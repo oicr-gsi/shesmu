@@ -1,5 +1,12 @@
 import { saveFile } from "./io.js";
-import { computeDuration, StatefulModel, shuffle, Publisher } from "./util.js";
+import {
+  Publisher,
+  StatefulModel,
+  combineModels,
+  computeDuration,
+  mapModel,
+  shuffle,
+} from "./util.js";
 /**
  * A function to render an item that can handle click events.
  */
@@ -8,6 +15,32 @@ export type ActiveItemRenderer<T> = (item: T, click: ClickHandler) => UIElement;
  * The callback for handling mouse events
  */
 export type ClickHandler = (e: MouseEvent) => void;
+/**
+ * A UI element associated with a DOM node and additinal behaviours
+ */
+export interface ComplexElement<T extends HTMLElement> {
+  type: "ui";
+  /**
+   * The DOM node
+   */
+  element: T;
+  /**
+   * A callback to handle pressing Ctrl-F
+   */
+  find: FindHandler;
+  /**
+   * A callback to invoke when the element is displayed (either initially or in case of switching tabs)
+   */
+  reveal: (() => void) | null;
+}
+/** UI elements that can be duplicate at will (_i.e_, they are not associated with any DOM nodes) */
+export type DisplayElement =
+  | DisplayElement[]
+  | string
+  | number
+  | null // Use for a WBR element
+  | FormattedElement
+  | LinkElement;
 
 /**
  * A row in a drop down table
@@ -33,11 +66,40 @@ export interface DropdownTableSection<T> {
    */
   children: DropdownTableRow<T>[];
 }
+export interface InputField<T> {
+  ui: UIElement;
+  value: T;
+  enabled: boolean;
+}
 /**
  * A function which will intercept Ctrl-F
  * @returns true if it wishes to intercept the browser's default behaviour
  */
 export type FindHandler = (() => boolean) | null;
+/**
+ * Text with simple formatting
+ */
+export interface FormattedElement {
+  type:
+    | "b" // bold
+    | "i" // italic
+    | "p" //paragraph
+    | "s" //strike through
+    | "tt"; // typewriter/monospace
+  contents: DisplayElement;
+}
+/**
+ * A hyperlink
+ */
+export interface LinkElement {
+  type: "a";
+  /** The URL to link to */
+  url: string;
+  /** The display text to use */
+  contents: string;
+  /** The tooltop for the link */
+  title: string;
+}
 
 /**
  * A mapping type for UI elements that have a multi-pane display
@@ -80,15 +142,11 @@ type SynchronizedFields<T> = {
  */
 export interface Tab {
   /** The header title for the tab */
-  name: string;
+  name: DisplayElement;
   /** The contents the body of the tab */
   contents: UIElement;
-  /**Find a function to replace Ctrl-F when the tab is active */
-  find?: FindHandler;
   /** If true, this tab will be selected by default*/
   selected?: boolean;
-  /** Called when the tab is displayed. This is best effort and it may be multiply called.*/
-  reveal?: () => void;
 }
 /**
  * The contents of a table cell
@@ -124,7 +182,14 @@ export interface TableCell {
 /**
  * A bit of data that can be placed in a GUI element.
  */
-export type UIElement = UIElement[] | string | number | Node;
+export type UIElement =
+  | UIElement[]
+  | string
+  | number
+  | null
+  | FormattedElement
+  | LinkElement
+  | ComplexElement<HTMLElement>;
 
 /**
  * A list that can be updated
@@ -134,26 +199,95 @@ export interface UpdateableList<T> {
   keepOnly(predicate: (item: T) => boolean): void;
   replace(items: T[]): void;
 }
-let activeMenu: HTMLElement | null = null;
-let closeActiveMenu: (isExternal: boolean) => void = (v) => {};
-let findOverride: FindHandler = null;
 
 /**
  * Add all GUI elements to an existing HTML element
  */
-export function addElements(
+function addElements(
   target: HTMLElement,
   ...elements: UIElement[]
-): void {
-  elements.flat(Number.MAX_VALUE).forEach((result: string | number | Node) => {
-    if (typeof result == "string") {
-      target.appendChild(document.createTextNode(result));
-    } else if (typeof result == "number") {
-      target.appendChild(document.createTextNode(result.toString()));
-    } else {
-      target.appendChild(result);
-    }
-  });
+): { find: FindHandler; reveal: (() => void) | null } {
+  const reveals: (() => void)[] = [];
+  let find: FindHandler = null;
+  elements
+    .flat(Number.MAX_VALUE)
+    .forEach((result: Exclude<UIElement, UIElement[]>) => {
+      if (result === null) {
+        target.appendChild(document.createElement("wbr"));
+      } else if (typeof result == "string") {
+        target.appendChild(document.createTextNode(result));
+      } else if (typeof result == "number") {
+        target.appendChild(document.createTextNode(result.toString()));
+      } else {
+        switch (result.type) {
+          case "a":
+            {
+              const element = document.createElement("a");
+              element.innerText = `${result.contents} 🔗`;
+              element.target = "_blank";
+              element.href = result.url;
+              element.title = result.title;
+              target.appendChild(element);
+            }
+            break;
+          case "b":
+          case "i":
+          case "p":
+            {
+              const element = createUiFromTag(result.type, result.contents);
+              // Safe to discard find and reveal since only display elements should be present
+              target.appendChild(element.element);
+            }
+            break;
+          case "tt":
+            {
+              const element = createUiFromTag("span", result.contents);
+              // Safe to discard find and reveal since only display elements should be present
+              target.appendChild(element.element);
+              element.element.style.fontFamily = "mono-space";
+            }
+            break;
+
+          case "s":
+            {
+              const element = createUiFromTag("span", result.contents);
+              // Safe to discard find and reveal since only display elements should be present
+              target.appendChild(element.element);
+              element.element.style.textDecoration = "line-through";
+            }
+            break;
+          case "ui":
+            {
+              target.appendChild(result.element);
+              if (result.reveal) {
+                reveals.push(result.reveal);
+              }
+              if (result.find) {
+                if (find) {
+                  const oldFind = find;
+                  const newFind = result.find;
+                  find = () => oldFind() || newFind();
+                } else {
+                  find = result.find;
+                }
+              }
+            }
+            break;
+        }
+      }
+    });
+  return {
+    find: find,
+    reveal: reveals.length ? () => reveals.forEach((r) => r()) : null,
+  };
+}
+export function createUiFromTag<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  ...elements: UIElement[]
+): ComplexElement<HTMLElementTagNameMap[K]> {
+  const target = document.createElement(tag);
+  const { reveal, find } = addElements(target, ...elements);
+  return { element: target, find: find, reveal: reveal, type: "ui" };
 }
 
 /**
@@ -161,14 +295,14 @@ export function addElements(
  *
  * This isn't very useful, but simplifies some code paths in the action tile building.
  */
-export function blank(): UIElement {
+export function blank(): DisplayElement {
   return [];
 }
 /**
  * Create a line break
  */
 export function br(): UIElement {
-  return document.createElement("br");
+  return createUiFromTag("br");
 }
 
 /**
@@ -177,11 +311,13 @@ export function br(): UIElement {
  * It returns a function to close this dialog
  */
 export function busyDialog(): () => void {
-  const modal = document.createElement("div");
-  modal.className = "modal";
-  addElements(modal, throbber());
-  document.body.appendChild(modal);
-  return () => document.body.removeChild(modal);
+  const modal = createUiFromTag("div", throbber());
+  modal.element.className = "modal";
+  document.body.appendChild(modal.element);
+  if (modal.reveal) {
+    modal.reveal();
+  }
+  return () => document.body.removeChild(modal.element);
 }
 /**
  * Create a self-closing popup notification (aka butter bar)
@@ -189,10 +325,9 @@ export function busyDialog(): () => void {
  * @param contents what to display in the bar
  */
 export function butter(delay: number, ...contents: UIElement[]): void {
-  const bar = document.createElement("div");
-  bar.className = "butter";
-  addElements(bar, ...contents);
-  document.body.appendChild(bar);
+  const bar = createUiFromTag("div", contents);
+  bar.element.className = "butter";
+  document.body.appendChild(bar.element);
   let timeout = 0;
   const startClose = (delay: number) => {
     if (timeout) {
@@ -200,34 +335,40 @@ export function butter(delay: number, ...contents: UIElement[]): void {
     }
 
     timeout = window.setTimeout(() => {
-      bar.style.opacity = "0";
-      timeout = window.setTimeout(() => document.body.removeChild(bar), 300);
+      bar.element.style.opacity = "0";
+      timeout = window.setTimeout(
+        () => document.body.removeChild(bar.element),
+        300
+      );
     }, Math.max(300, delay - 300));
   };
   startClose(delay);
-  bar.addEventListener("click", () => {
-    document.body.removeChild(bar);
+  bar.element.addEventListener("click", () => {
+    document.body.removeChild(bar.element);
     if (timeout) {
       window.clearTimeout(timeout);
     }
   });
-  bar.addEventListener("mouseenter", () => {
+  bar.element.addEventListener("mouseenter", () => {
     if (timeout) {
       window.clearTimeout(timeout);
       timeout = 0;
-      bar.style.opacity = "1";
+      bar.element.style.opacity = "1";
     }
   });
-  bar.addEventListener("mouseleave", () => {
+  bar.element.addEventListener("mouseleave", () => {
     startClose(1000);
   });
+  if (bar.reveal) {
+    bar.reveal();
+  }
 }
 
 /**
  * Create a normal button
  */
 export function button(
-  label: UIElement,
+  label: DisplayElement,
   title: string,
   callback: ClickHandler
 ) {
@@ -240,7 +381,7 @@ export function button(
  * In the Shesmu UI, some features (such as exporting searches) as considered less important, and get a softer colour than the normal buttons.
  */
 export function buttonAccessory(
-  label: UIElement,
+  label: DisplayElement,
   title: string,
   callback: ClickHandler
 ) {
@@ -251,19 +392,18 @@ export function buttonAccessory(
  * Create a button with a custom UI design
  */
 export function buttonCustom(
-  label: UIElement,
+  label: DisplayElement,
   title: string,
   className: string[],
   callback: ClickHandler
 ) {
-  const button = document.createElement("span");
-  button.classList.add("button");
+  const button = createUiFromTag("span", label);
+  button.element.classList.add("button");
   for (const name of className) {
-    button.classList.add(name);
+    button.element.classList.add(name);
   }
-  addElements(button, label);
-  button.title = title;
-  button.addEventListener("click", (e) => {
+  button.element.title = title;
+  button.element.addEventListener("click", (e) => {
     e.stopPropagation();
     callback(e);
   });
@@ -280,7 +420,7 @@ export function buttonClose(title: string, callback: ClickHandler): UIElement {
  * Create a button for a dangerous feature
  */
 export function buttonDanger(
-  label: UIElement,
+  label: DisplayElement,
   title: string,
   callback: ClickHandler
 ) {
@@ -296,16 +436,15 @@ export function buttonEdit(title: string, callback: ClickHandler): UIElement {
  * Create a button that has no “button” styling, used for features where naked icons are helpful
  */
 export function buttonIcon(
-  icon: string,
+  icon: DisplayElement,
   title: string,
   callback: ClickHandler
 ): UIElement {
-  const button = document.createElement("span");
-  button.className = "close";
-  button.innerText = icon;
-  button.title = title;
-  button.style.cursor = "pointer";
-  button.addEventListener("click", (e) => {
+  const button = createUiFromTag("span", icon);
+  button.element.className = "close";
+  button.element.title = title;
+  button.element.style.cursor = "pointer";
+  button.element.addEventListener("click", (e) => {
     e.stopPropagation();
     callback(e);
   });
@@ -358,14 +497,6 @@ export function checkRandomPermutation(
   const sequence = [...mapping.entries()];
   shuffle(sequence);
   const answer = sequence.map(([_index, x]) => x).join("");
-  const input = document.createElement("input");
-  input.type = "text";
-  input.addEventListener("change", () => {
-    input.value = input.value.replace(/[^A-Za-z]/g, "").toUpperCase();
-    if (input.value == answer) {
-      callback();
-    }
-  });
 
   return [
     "Substitute each number in the sequence:",
@@ -377,7 +508,11 @@ export function checkRandomPermutation(
     code,
     br(),
     "into this box: ",
-    input,
+    inputSearch((input) => {
+      if (input.replace(/[^A-Za-z]/g, "").toUpperCase() == answer) {
+        callback();
+      }
+    }),
     br(),
     "and hit Enter.",
   ];
@@ -394,22 +529,23 @@ export function checkRandomSequence(
     .fill(0)
     .map((x) => Math.floor(Math.random() * 9));
   let index = 0;
-  let { ui, update } = pane();
-  const display = () =>
-    update(`Press ${sequence[index] + 1} (${index + 1} of ${sequence.length})`);
-  display();
+  let { ui, model } = singleState(
+    (index: number) =>
+      `Press ${sequence[index] + 1} (${index + 1} of ${sequence.length})`
+  );
+  model.statusChanged(0);
   const indexButton = (value: number) =>
     button((value + 1).toString(), "", () => {
       if (index < sequence.length && value == sequence[index]) {
         index++;
         if (index < sequence.length) {
-          display();
+          model.statusChanged(index);
         } else {
           callback();
         }
       } else {
         index = 0;
-        display();
+        model.statusChanged(index);
       }
     });
   return tile(
@@ -434,7 +570,7 @@ export function checkRandomSequence(
 /**
  * Remove all child nodes from an element
  */
-export function clearChildren(container: HTMLElement) {
+function clearChildren(container: HTMLElement) {
   while (container.hasChildNodes()) {
     container.removeChild(container.lastChild!);
   }
@@ -446,21 +582,19 @@ export function clearChildren(container: HTMLElement) {
  * @param inner the contents of the section
  */
 export function collapsible(title: string, ...inner: UIElement[]): UIElement {
-  const contents = document.createElement("div");
-  addElements(contents, ...inner);
-  if (!contents.hasChildNodes()) {
+  const contents = createUiFromTag("div", ...inner);
+  if (!contents.element.hasChildNodes()) {
     return [];
   }
-  const showHide = document.createElement("p");
-  showHide.innerText = title;
-  showHide.className = "collapse close";
-  contents.style.maxHeight = "0px";
-  showHide.addEventListener("click", (e) => {
+  const showHide = createUiFromTag("p", title);
+  showHide.element.className = "collapse close";
+  contents.element.style.maxHeight = "0px";
+  showHide.element.addEventListener("click", (e) => {
     e.stopPropagation();
-    const visible = contents.style.maxHeight != "none";
+    const visible = contents.element.style.maxHeight != "none";
 
-    showHide.className = visible ? "collapse open" : "collapse close";
-    contents.style.maxHeight = visible ? "none" : "0px";
+    showHide.element.className = visible ? "collapse open" : "collapse close";
+    contents.element.style.maxHeight = visible ? "none" : "0px";
   });
   return [showHide, contents];
 }
@@ -517,14 +651,14 @@ export function dateEditor(
       minute.ui,
     ],
     getter: () =>
-      enabled.getter()
+      enabled.value
         ? null
         : new Date(
-            year.getter(),
+            year.value,
             monthModel.get()[0],
-            day.getter(),
-            hour.getter(),
-            minute.getter(),
+            day.value,
+            hour.value,
+            minute.value,
             0,
             0
           ).getTime(),
@@ -553,8 +687,14 @@ export function dialog(
 
   dialog.appendChild(closeButton);
 
-  const inner = document.createElement("div");
-  dialog.appendChild(inner);
+  const close = () => {
+    document.body.removeChild(modal);
+    if (afterClose) {
+      afterClose();
+    }
+  };
+  const inner = createUiFromTag("div", contents(close));
+  dialog.appendChild(inner.element);
 
   document.body.appendChild(modal);
   modal.addEventListener("click", (e) => {
@@ -565,15 +705,11 @@ export function dialog(
       }
     }
   });
-  const close = () => {
-    document.body.removeChild(modal);
-    if (afterClose) {
-      afterClose();
-    }
-  };
   closeButton.addEventListener("click", close);
-  inner.addEventListener("click", (e) => e.stopPropagation());
-  addElements(inner, contents(close));
+  inner.element.addEventListener("click", (e) => e.stopPropagation());
+  if (inner.reveal) {
+    inner.reveal();
+  }
 }
 /**
  * Create a drop down list
@@ -584,7 +720,7 @@ export function dialog(
  * @returns the UI element to change
  */
 export function dropdown<T, S>(
-  labelMaker: (input: T) => UIElement,
+  labelMaker: (input: T) => DisplayElement,
   initial: ((item: T) => boolean) | null,
   model: StatefulModel<T>,
   synchronizer: {
@@ -594,76 +730,43 @@ export function dropdown<T, S>(
   } | null,
   ...items: T[]
 ): UIElement {
-  const container = document.createElement("span");
-  container.className = "dropdown";
-  const activeElement = document.createElement("span");
-  container.appendChild(activeElement);
-  container.appendChild(document.createTextNode(" ▼"));
-  const listElement = document.createElement("div");
-  container.appendChild(listElement);
-  let open = false;
-  container.addEventListener("click", (e) => {
-    if (e.target == activeElement.parentNode || e.target == activeElement) {
-      if (open) {
-        open = false;
-        closeActiveMenu(false);
-        return;
-      }
-      closeActiveMenu(true);
-      open = true;
-      listElement.className = "forceOpen";
-      activeMenu = activeElement;
-      closeActiveMenu = (external) => {
-        listElement.className = external ? "ready" : "";
-        open = false;
-        activeMenu = null;
-      };
-    }
-  });
-  container.addEventListener("mouseover", (e) => {
-    if (e.target == listElement.parentNode && !open) {
-      closeActiveMenu(true);
-    }
-  });
-  container.addEventListener("mouseout", () => {
-    if (!open) {
-      listElement.className = "ready";
-    }
-  });
+  const activeElement = pane("blank");
   const synchronizerCallbacks: ((state: S) => void)[] = [];
+  const selectionModel = combineModels(
+    model,
+    mapModel(activeElement.model, labelMaker)
+  );
+  const container = createUiFromTag("span", activeElement.ui, " ▼");
+  container.element.className = "dropdown";
+  container.element.addEventListener(
+    "click",
+    popupMenu(
+      true,
+      ...items.map((item) => ({
+        label: labelMaker(item),
+        action: () => {
+          selectionModel.statusChanged(item);
+          if (synchronizer) {
+            synchronizer.synchronizer.statusChanged(synchronizer.extract(item));
+          }
+        },
+      }))
+    )
+  );
   const initialIndex =
     initial === null ? 0 : Math.max(items.findIndex(initial), 0);
   items.forEach((item, index) => {
-    const element = document.createElement("span");
-    const label = labelMaker(item);
-    addElements(element, label);
-    element.addEventListener("click", (e) => {
-      model.statusChanged(item);
-      clearChildren(activeElement);
-      addElements(activeElement, label);
-      if (open) {
-        closeActiveMenu(false);
-      }
-      if (synchronizer) {
-        synchronizer.synchronizer.statusChanged(synchronizer.extract(item));
-      }
-    });
     if (index == initialIndex) {
-      clearChildren(activeElement);
-      addElements(activeElement, label);
-      model.statusChanged(item);
+      selectionModel.statusChanged(item);
       if (synchronizer) {
         synchronizer.synchronizer.statusChanged(synchronizer.extract(item));
       }
     }
     synchronizerCallbacks.push((state) => {
       if (synchronizer?.predicate(state, item)) {
-        clearChildren(activeElement);
-        addElements(activeElement, label);
-        model.statusChanged(item);
+        selectionModel.statusChanged(item);
       }
     });
-    listElement.appendChild(element);
   });
   if (synchronizer) {
     synchronizer.synchronizer.listen((value) =>
@@ -692,129 +795,103 @@ export function dropdownTable<T, S>(
   searchPredicate: (input: T | null, keywords: string[]) => boolean,
   ...items: DropdownTableSection<T | null>[]
 ): UIElement {
-  const container = document.createElement("span");
-  container.className = "dropdown";
-  const activeElement = document.createElement("span");
-  addElements(activeElement, activeLabelMaker(null));
-  container.appendChild(activeElement);
-  container.appendChild(document.createTextNode(" ▼"));
-  const listElement = document.createElement("div");
-  container.appendChild(listElement);
+  const activeElement = pane("blank");
+  const synchronizerCallbacks: ((state: S) => void)[] = [];
+  const selectionModel = combineModels(
+    model,
+    mapModel(activeElement.model, activeLabelMaker)
+  );
+  const container = createUiFromTag("span", activeElement.ui, " ▼");
+  container.element.className = "dropdown";
   const searchFilters: ((keywords: string[]) => void)[] = [];
-  addElements(
-    listElement,
-    group(
-      "Filter: ",
-      inputSearch((input) => {
-        const keywords = input
-          .toLowerCase()
-          .split(/\W+/)
-          .filter((s) => s);
-        for (const searchFilter of searchFilters) {
-          searchFilter(keywords);
-        }
-      })
+  const inputFilter = inputSearch((input) => {
+    const keywords = input
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((s) => s);
+    for (const searchFilter of searchFilters) {
+      searchFilter(keywords);
+    }
+  });
+  container.element.addEventListener(
+    "click",
+    popup(
+      "tablemenucapture",
+      true,
+      (close) =>
+        items.length == 0
+          ? "No items."
+          : [
+              "Filter: ",
+              inputFilter,
+              br(),
+              items.map(({ value, label, children }) => {
+                const groupLabel = createUiFromTag("p", label);
+                groupLabel.element.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  selectionModel.statusChanged(value);
+                  if (synchronizer) {
+                    synchronizer.synchronzier.statusChanged(
+                      synchronizer.extract(value)
+                    );
+                  }
+                  close();
+                });
+
+                const block = createUiFromTag(
+                  "div",
+                  groupLabel,
+                  children.length
+                    ? tableFromRows(
+                        children.map((child) => {
+                          const row = tableRow(() => {
+                            selectionModel.statusChanged(child.value);
+                            if (synchronizer) {
+                              synchronizer.synchronzier.statusChanged(
+                                synchronizer.extract(child.value)
+                              );
+                            }
+                            close();
+                          }, ...child.label);
+                          searchFilters.push((keywords) => {
+                            row.element.style.display = searchPredicate(
+                              child.value,
+                              keywords
+                            )
+                              ? "block"
+                              : "none";
+                          });
+                          synchronizerCallbacks.push((state) => {
+                            if (synchronizer?.predicate(state, child.value)) {
+                              selectionModel.statusChanged(child.value);
+                            }
+                          });
+                          return row;
+                        })
+                      )
+                    : blank()
+                );
+                searchFilters.push((keywords) => {
+                  block.element.style.display =
+                    searchPredicate(value, keywords) ||
+                    children.some((child) =>
+                      searchPredicate(child.value, keywords)
+                    )
+                      ? "block"
+                      : "none";
+                });
+                synchronizerCallbacks.push((state) => {
+                  if (synchronizer?.predicate(state, value)) {
+                    selectionModel.statusChanged(value);
+                  }
+                });
+                return block;
+              }),
+            ],
+      () => {}
     )
   );
-  let open = false;
-  container.addEventListener("click", (e) => {
-    if (e.target == activeElement.parentNode || e.target == activeElement) {
-      if (open) {
-        open = false;
-        closeActiveMenu(false);
-        return;
-      }
-      closeActiveMenu(true);
-      open = true;
-      listElement.className = "forceOpen";
-      activeMenu = activeElement;
-      closeActiveMenu = (external) => {
-        listElement.className = external ? "ready" : "";
-        open = false;
-        activeMenu = null;
-      };
-    }
-  });
-  container.addEventListener("mouseover", (e) => {
-    if (e.target == listElement.parentNode && !open) {
-      closeActiveMenu(true);
-    }
-  });
-  container.addEventListener("mouseout", () => {
-    if (!open) {
-      listElement.className = "ready";
-    }
-  });
-  const synchronizerCallbacks: ((state: S) => void)[] = [];
-  if (items.length) {
-    for (const { value, label, children } of items) {
-      const block = document.createElement("div");
-      const groupLabel = document.createElement("span");
-      addElements(groupLabel, label);
-      groupLabel.addEventListener("click", (e) => {
-        model.statusChanged(value);
-        if (synchronizer) {
-          synchronizer.synchronzier.statusChanged(synchronizer.extract(value));
-        }
-        clearChildren(activeElement);
-        addElements(activeElement, activeLabelMaker(value));
-        if (open) {
-          closeActiveMenu(false);
-        }
-      });
-      searchFilters.push((keywords) => {
-        block.style.display =
-          searchPredicate(value, keywords) ||
-          children.some((child) => searchPredicate(child.value, keywords))
-            ? "block"
-            : "none";
-      });
-      block.appendChild(groupLabel);
-      synchronizerCallbacks.push((state) => {
-        if (synchronizer?.predicate(state, value)) {
-          clearChildren(activeElement);
-          addElements(activeElement, activeLabelMaker(value));
-          model.statusChanged(value);
-        }
-      });
-      if (children.length) {
-        addElements(
-          block,
-          tableFromRows(
-            children.map((child) => {
-              const row = tableRow(() => {
-                model.statusChanged(child.value);
-                if (synchronizer) {
-                  synchronizer.synchronzier.statusChanged(
-                    synchronizer.extract(child.value)
-                  );
-                }
-                clearChildren(activeElement);
-                addElements(activeElement, activeLabelMaker(child.value));
-              }, ...child.label);
-              searchFilters.push((keywords) => {
-                row.style.display = searchPredicate(child.value, keywords)
-                  ? "block"
-                  : "none";
-              });
-              synchronizerCallbacks.push((state) => {
-                if (synchronizer?.predicate(state, child.value)) {
-                  clearChildren(activeElement);
-                  addElements(activeElement, activeLabelMaker(child.value));
-                  model.statusChanged(child.value);
-                }
-              });
-              return row;
-            })
-          )
-        );
-      }
-      listElement.appendChild(block);
-    }
-  } else {
-    addElements(listElement, "No items.");
-  }
-  model.statusChanged(null);
+  selectionModel.statusChanged(null);
   if (synchronizer) {
     synchronizer.synchronzier.listen((value) =>
       synchronizerCallbacks.forEach((callback) => callback(value))
@@ -824,53 +901,40 @@ export function dropdownTable<T, S>(
 }
 
 /**
- * In some update contexts, the find handler may need to be replocated between split context. This create a proxy to allow rewiriting a find handler.
- */
-export function findProxy(): {
-  find: FindHandler;
-  updateHandle: (original: FindHandler) => void;
-  update: (original: { ui: UIElement; find: FindHandler }) => UIElement;
-  updateMany: <T>(original: { components: T; find: FindHandler }) => T;
-} {
-  let findHandler: FindHandler | null = null;
-  return {
-    find: () => (findHandler ? findHandler() : false),
-    updateHandle: (replacement) => (findHandler = replacement),
-    update: (original) => {
-      findHandler = original.find;
-      return original.ui;
-    },
-    updateMany: (original) => {
-      findHandler = original.find;
-      return original.components;
-    },
-  };
-}
-
-/**
  * Create a group of elements with flexbox layout
  */
 export function flexGroup(...contents: UIElement[]): UIElement {
-  const element = document.createElement("span");
-  element.style.display = "flex";
-  addElements(element, ...contents);
+  const element = createUiFromTag("span", ...contents);
+  element.element.style.display = "flex";
   return element;
 }
 /**
  * Create a group of elements
  */
 export function group(...contents: UIElement[]): UIElement {
-  const element = document.createElement("span");
-  addElements(element, ...contents);
+  return createUiFromTag("span", ...contents);
+}
+/**
+ * Create a group of elements
+ */
+export function groupWithFind(
+  handler: FindHandler,
+  ...contents: UIElement[]
+): UIElement {
+  const element = createUiFromTag("span", ...contents);
+  if (element.find && handler) {
+    const oldFind = element.find;
+    element.find = () => handler() || oldFind();
+  } else if (handler) {
+    element.find = handler;
+  }
   return element;
 }
 /**
  * Display items in section header
  */
 export function header(title: string): UIElement {
-  const element = document.createElement("h2");
-  element.innerText = title;
-  return element;
+  return createUiFromTag("h2", title);
 }
 
 /**
@@ -926,47 +990,19 @@ export function historyState<T extends { [name: string]: any }>(
  * Create a line break
  */
 export function hr(): UIElement {
-  return document.createElement("hr");
+  return createUiFromTag("hr");
 }
 
 /**
  * Create an image
  */
 export function img(src: string, className?: string): UIElement {
-  const image = document.createElement("img");
-  image.src = src;
+  const image = createUiFromTag("img");
+  image.element.src = src;
   if (className) {
-    image.className = className;
+    image.element.className = className;
   }
   return image;
-}
-/**
- * Set up the general handlers for the UI
- */
-export function initialise() {
-  document.addEventListener("click", (e: MouseEvent) => {
-    if (activeMenu != null) {
-      for (
-        let targetElement: Node | null = e.target as Node;
-        targetElement;
-        targetElement = targetElement.parentNode
-      ) {
-        if (targetElement == activeMenu.parentNode) {
-          return;
-        }
-      }
-      closeActiveMenu(true);
-    }
-  });
-  window.addEventListener("keydown", (e) => {
-    if (
-      findOverride &&
-      (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) &&
-      findOverride()
-    ) {
-      e.preventDefault();
-    }
-  });
 }
 /**
  * Create a checkbox
@@ -977,78 +1013,152 @@ export function initialise() {
 export function inputCheckbox(
   label: string,
   initial: boolean
-): { ui: UIElement; getter: () => boolean } {
+): InputField<boolean> {
   const labelElement = document.createElement("label");
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = initial;
   labelElement.appendChild(checkbox);
   labelElement.appendChild(document.createTextNode(label));
-  return { ui: labelElement, getter: () => checkbox.checked };
+  return {
+    ui: { element: labelElement, reveal: null, find: null, type: "ui" },
+    get value() {
+      return checkbox.checked;
+    },
+    set value(v) {
+      checkbox.checked = v;
+    },
+    get enabled() {
+      return !checkbox.disabled;
+    },
+    set enabled(v) {
+      checkbox.disabled = !v;
+    },
+  };
 }
 /**
  * Create a search input box.
  */
 export function inputSearch(updateHandler: (input: string) => void): UIElement {
-  const input = document.createElement("input");
-  input.type = "search";
-  input.addEventListener("input", (e) => {
-    updateHandler(input.value.trim());
+  const input = createUiFromTag("input");
+  input.element.type = "search";
+  input.element.addEventListener("input", () => {
+    updateHandler(input.element.value.trim());
   });
 
   return input;
+}
+export function inputSearchBar(
+  initial: string,
+  model: StatefulModel<string>
+): InputField<string> {
+  const input = createUiFromTag("input");
+  input.element.type = "search";
+  input.element.value = initial;
+  input.element.style.width = "100%";
+  input.element.addEventListener("input", () =>
+    model.statusChanged(input.element.value)
+  );
+
+  return {
+    ui: input,
+    get value() {
+      return input.element.value;
+    },
+    set value(v) {
+      input.element.value = v;
+    },
+    get enabled() {
+      return !input.element.disabled;
+    },
+    set enabled(v) {
+      input.element.disabled = !v;
+    },
+  };
 }
 export function inputNumber(
   value: number,
   min: number,
   max: number | null
-): { ui: UIElement; getter: () => number; enable: (state: boolean) => void } {
-  const input = document.createElement("input");
-  input.type = "number";
-  input.min = min.toString();
+): InputField<number> {
+  const input = createUiFromTag("input");
+  input.element.type = "number";
+  input.element.min = min.toString();
   if (max) {
-    input.max = max.toString();
+    input.element.max = max.toString();
   }
-  input.value = value.toString();
+  input.element.value = value.toString();
   return {
     ui: input,
-    getter: () => input.valueAsNumber,
-    enable: (state) => (input.disabled = !state),
+    get value() {
+      return input.element.valueAsNumber;
+    },
+    set value(v) {
+      input.element.value = v.toString();
+    },
+    get enabled() {
+      return !input.element.disabled;
+    },
+    set enabled(v) {
+      input.element.disabled = !v;
+    },
   };
 }
 
 /**
  * Create a text input box.
  */
-export function inputText(
-  initial?: string
-): { ui: UIElement; getter: () => string } {
-  const input = document.createElement("input");
-  input.type = "text";
+export function inputText(initial?: string): InputField<string> {
+  const input = createUiFromTag("input");
+  input.element.type = "text";
   if (initial) {
-    input.value = initial;
+    input.element.value = initial;
   }
-  return { ui: input, getter: () => input.value };
+  return {
+    ui: input,
+    get value() {
+      return input.element.value;
+    },
+    set value(v) {
+      input.element.value = v;
+    },
+    get enabled() {
+      return !input.element.disabled;
+    },
+    set enabled(v) {
+      input.element.disabled = !v;
+    },
+  };
 }
 /**
  * Create a big text input box.
  */
-export function inputTextArea(
-  initial?: string
-): { ui: UIElement; getter: () => string } {
-  const input = document.createElement("textarea");
+export function inputTextArea(initial?: string): InputField<string> {
+  const input = createUiFromTag("textarea");
   if (initial) {
-    input.value = initial;
+    input.element.value = initial;
   }
-  return { ui: input, getter: () => input.value };
+  return {
+    ui: input,
+    get value() {
+      return input.element.value;
+    },
+    set value(v) {
+      input.element.value = v;
+    },
+    get enabled() {
+      return !input.element.disabled;
+    },
+    set enabled(v) {
+      input.element.disabled = !v;
+    },
+  };
 }
 /**
  * Display some italic text.
  */
-export function italic(text: string): UIElement {
-  const element = document.createElement("i");
-  element.innerText = text;
-  return element;
+export function italic(text: string): DisplayElement {
+  return { type: "i", contents: text };
 }
 
 /**
@@ -1070,13 +1180,8 @@ export function link(
   url: string,
   contents: string | number,
   title?: string
-): UIElement {
-  const element = document.createElement("a");
-  element.innerText = `${contents} 🔗`;
-  element.target = "_blank";
-  element.href = url;
-  element.title = title || "";
-  return element;
+): DisplayElement {
+  return { type: "a", url, contents: contents.toString(), title: title || "" };
 }
 /**
  * Create a URL with query parameters
@@ -1100,11 +1205,8 @@ export function makeUrl(
 /**
  * Display some monospaced text.
  */
-export function mono(text: string): UIElement {
-  const element = document.createElement("span");
-  element.style.fontFamily = "monospace";
-  element.innerText = text;
-  return element;
+export function mono(text: string): DisplayElement {
+  return { type: "tt", contents: text };
 }
 /**
  * This create multiple panels with some shared state that can be updated
@@ -1120,49 +1222,23 @@ export function multipaneState<
   formatters: F,
   ...silentOnChange: (keyof F)[]
 ): { model: StatefulModel<T>; components: NamedComponents<F> } {
-  const updaters: ((input: T) => void)[] = [];
-  const rawUpdaters: ((input: UIElement) => void)[] = [];
-  let primaryUpdater: (input: UIElement) => void = () => {};
+  const models: StatefulModel<T>[] = [];
   const panes = Object.fromEntries(
     Object.entries(formatters).map(([name, formatter], index) => {
-      const { ui, update } = pane();
-      updaters.push((input) => update(formatter(input)));
-      if (silentOnChange.includes(name)) {
-        rawUpdaters.push((_element) => update(blank()));
-      } else {
-        rawUpdaters.push(update);
-      }
-      if (index == 0 || name == primary) {
-        primaryUpdater = update;
-      }
+      const { ui, model } = pane(
+        silentOnChange.includes(name)
+          ? "blank"
+          : (primary == null ? index == 0 : name == primary)
+          ? "large"
+          : "small"
+      );
+      models.push(mapModel(model, (input) => formatter(input)));
       return [name, ui];
     })
   ) as NamedComponents<F>;
 
   return {
-    model: {
-      reload: () => {},
-      statusChanged: (input: T) => {
-        for (const updater of updaters) {
-          updater(input);
-        }
-      },
-      statusWaiting: () => {
-        for (const updater of rawUpdaters) {
-          updater(throbberSmall());
-        }
-        primaryUpdater(throbber());
-      },
-      statusFailed: (message: string, retry: (() => void) | null) => {
-        for (const updater of rawUpdaters) {
-          updater(img("dead.svg", "deadolive"));
-        }
-        primaryUpdater([
-          text(message),
-          retry ? button("Retry", "Attempt operation again.", retry) : blank(),
-        ]);
-      },
-    },
+    model: combineModels(...models),
     components: panes,
   };
 }
@@ -1224,7 +1300,7 @@ export function pager(
       }
     }
   }
-  return pager;
+  return { element: pager, find: null, reveal: null, type: "ui" };
 }
 /**
  * Create a paginated list of downloadable data
@@ -1240,18 +1316,18 @@ export function paginatedList<T>(
   predicate: (item: T, keywords: string[]) => boolean
 ): UIElement {
   let condition = (x: T) => true;
-  const { ui, update } = pane();
+  const { ui, model } = pane("blank");
   const showData = () => {
     const selectedData = data.filter(condition);
     const numPerPage = 10;
     const numButtons = Math.ceil(selectedData.length / numPerPage);
     const drawPager = (current: number) => {
-      update(
+      model.statusChanged([
         pager(numButtons, current, drawPager),
         render(
           selectedData.slice(current * numPerPage, (current + 1) * numPerPage)
-        )
-      );
+        ),
+      ]);
     };
     drawPager(0);
   };
@@ -1289,26 +1365,78 @@ export function paginatedList<T>(
 /**
  * Create a mutable section of UI.
  */
-export function pane(): {
-  ui: UIElement;
-  update: (...elements: UIElement[]) => void;
+export function pane(
+  mode: "blank" | "small" | "large"
+): {
+  ui: ComplexElement<HTMLElement>;
+  model: StatefulModel<UIElement>;
 } {
   const element = document.createElement("span");
+  let find: FindHandler = null;
+  let reveal: (() => void) | null = null;
+  const update = (input: UIElement) => {
+    clearChildren(element);
+    const result = addElements(element, input);
+    find = result.find;
+    reveal = result.reveal;
+    if (reveal) {
+      reveal();
+    }
+  };
   return {
-    ui: element,
-    update: (...contents) => {
-      clearChildren(element);
-      addElements(element, ...contents);
+    ui: {
+      element: element,
+      find: () => (find ? find() : false),
+      reveal: () => {
+        if (reveal) {
+          reveal();
+        }
+      },
+      type: "ui",
+    },
+    model: {
+      reload: () => {},
+      statusChanged: update,
+      statusWaiting: () => {
+        switch (mode) {
+          case "blank":
+            update(blank());
+            break;
+          case "small":
+            update(throbberSmall());
+            break;
+          case "large":
+            update(throbber());
+            break;
+        }
+      },
+      statusFailed: (message: string, retry: (() => void) | null) => {
+        switch (mode) {
+          case "blank":
+            update(blank());
+            break;
+          case "small":
+            update(img("dead.svg", "deadolive"));
+            break;
+          case "large":
+            update([
+              img("dead.svg", "deadolive"),
+              text(message),
+              retry
+                ? button("Retry", "Attempt operation again.", retry)
+                : blank(),
+            ]);
+            break;
+        }
+      },
     },
   };
 }
 /**
  * Display items in a paragraph node
  */
-export function paragraph(...contents: UIElement[]): UIElement {
-  const element = document.createElement("p");
-  addElements(element, ...contents);
-  return element;
+export function paragraph(...contents: DisplayElement[]): DisplayElement {
+  return { type: "p", contents: contents };
 }
 
 /**
@@ -1317,53 +1445,83 @@ export function paragraph(...contents: UIElement[]): UIElement {
  * @param items the items to be shown in the menu
  */
 export function popup(
+  className: string,
   underOwner: boolean,
-  ...items: { label: string; action: () => void }[]
+  populate: (close: () => void) => UIElement,
+  afterClose: () => void
 ): ClickHandler {
   return (e) => {
-    e.preventDefault();
+    e.stopPropagation();
     const modal = document.createElement("div");
-    modal.className = "menucapture";
+    modal.className = className;
     document.body.appendChild(modal);
-    const menu = document.createElement("div");
-    for (const { label, action } of items) {
-      const item = document.createElement("div");
-      item.innerText = label;
-      item.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        document.body.removeChild(modal);
-        action();
-      });
-      menu.appendChild(item);
-    }
-    modal.appendChild(menu);
+    const inner = createUiFromTag(
+      "div",
+      populate(() => {
+        if (modal.isConnected) {
+          document.body.removeChild(modal);
+        }
+        afterClose();
+      })
+    );
+    modal.appendChild(inner.element);
     if (underOwner && e.currentTarget instanceof HTMLElement) {
-      menu.style.left = `${e.currentTarget.offsetLeft}px`;
-      menu.style.top = `${
+      inner.element.style.left = `${e.currentTarget.offsetLeft}px`;
+      inner.element.style.top = `${
         e.currentTarget.offsetTop + e.currentTarget.offsetHeight
       }px`;
     } else {
-      menu.style.left = `${Math.min(
+      inner.element.style.left = `${Math.min(
         e.clientX,
-        document.body.clientWidth - menu.offsetWidth - 10
+        document.body.clientWidth - inner.element.offsetWidth - 10
       )}px`;
-      menu.style.top = `${Math.min(
+      inner.element.style.top = `${Math.min(
         e.clientY,
-        document.body.clientHeight - menu.offsetHeight - 10
+        document.body.clientHeight - inner.element.offsetHeight - 10
       )}px`;
     }
-    modal.addEventListener("click", () => document.body.removeChild(modal));
+    inner.element.addEventListener("click", (e) => e.stopPropagation());
+    modal.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (modal.isConnected) {
+        document.body.removeChild(modal);
+      }
+      afterClose();
+    });
+    if (inner.reveal) {
+      inner.reveal();
+    }
   };
+}
+/**
+ * Create a click handler that will show a pop up menu
+ * @param underOwner if true, the pop up menu will appear under the widget that it is connected to; if false, the menu will appear at the position where the user clicked.
+ * @param items the items to be shown in the menu
+ */
+export function popupMenu(
+  underOwner: boolean,
+  ...items: { label: DisplayElement; action: () => void }[]
+): ClickHandler {
+  return popup(
+    "menucapture",
+    underOwner,
+    (close) =>
+      items.map(({ label, action }) =>
+        buttonIcon(label, "", () => {
+          close();
+          action();
+        })
+      ),
+    () => {}
+  );
 }
 
 /**
  * Display preformatted text.
  */
 export function preformatted(text: string): UIElement {
-  const pre = document.createElement("pre");
-  pre.style.overflowX = "scroll";
-  pre.innerText = text;
+  const pre = createUiFromTag("pre", text);
+  pre.element.style.overflowX = "auto";
   return pre;
 }
 /**
@@ -1378,10 +1536,36 @@ export function refreshButton(callback: () => void): UIElement {
 }
 
 /**
- * Set the global Ctrl-F interceptor
+ * Set up the global state for a dashboard
+ *
+ * This should only be called once per page execution
+ * @param container the existing HTML node that will host the dashboard
+ * @param contents the widgets that make up the dashboard
  */
-export function setFindHandler(handler: FindHandler | null) {
-  findOverride = handler;
+export function setRootDashboard(
+  container: HTMLElement | string,
+  ...elements: UIElement[]
+) {
+  let findOverride: FindHandler = null;
+  window.addEventListener("keydown", (e) => {
+    if (
+      findOverride &&
+      (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) &&
+      findOverride()
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  let root = createUiFromTag("div", ...elements);
+  (typeof container == "string"
+    ? document.getElementById(container)!
+    : container
+  ).appendChild(root.element);
+  findOverride = root.find;
+  if (root.reveal) {
+    root.reveal();
+  }
 }
 /** Create a dialog of buttons that can be multi-selected and filtered
  * @param items the items to display
@@ -1393,7 +1577,7 @@ export function setFindHandler(handler: FindHandler | null) {
 export function pickFromSet<T>(
   items: readonly T[],
   setItems: (results: T[]) => void,
-  render: (item: T) => { label: UIElement; title: string },
+  render: (item: T) => { label: DisplayElement; title: string },
   predicate: (item: T, keywords: string[]) => boolean,
   breakLines: boolean
 ) {
@@ -1424,31 +1608,33 @@ export function pickFromSetCustom<T>(
 ) {
   dialog((close) => {
     const selected: T[] = [];
-    const list = pane();
-    const showItems = (p: (input: T) => boolean) => {
-      const filteredItems = items
-        .filter((item) => selected.indexOf(item) == -1)
-        .filter(p)
-        .map((item) => {
-          return [
-            render(item, (e) => {
-              selected.push(item);
-              if (!e.ctrlKey) {
-                setItems(selected);
-                e.stopPropagation();
-                close();
-              }
-            }),
-            breakLines ? br() : blank(),
-          ];
-        });
-      list.update(filteredItems.length ? filteredItems : "No matches.");
-    };
+    const { ui, model } = singleState<T[]>((items) =>
+      items.length
+        ? items.map((item) => {
+            return [
+              render(item, (e) => {
+                selected.push(item);
+                if (!e.ctrlKey) {
+                  setItems(selected);
+                  e.stopPropagation();
+                  close();
+                }
+              }),
+              breakLines ? br() : blank(),
+            ];
+          })
+        : "No matches."
+    );
+    const showItems = (p: (input: T) => boolean) =>
+      model.statusChanged(
+        items.filter((item) => selected.indexOf(item) == -1).filter(p)
+      );
 
     showItems((x) => true);
 
     return [
-      paragraph(
+      createUiFromTag(
+        "p",
         "Filter: ",
         inputSearch((search) => {
           const keywords = search
@@ -1463,7 +1649,7 @@ export function pickFromSetCustom<T>(
           }
         })
       ),
-      list.ui,
+      ui,
       paragraph("Control-click to select multiple."),
     ];
   });
@@ -1487,45 +1673,19 @@ export function sharedPane<T, F extends { [name: string]: UIElement }>(
   formatter: (input: T) => F,
   ...keys: (keyof F)[]
 ): { model: StatefulModel<T>; components: NamedComponents<F> } {
-  const updaters: ((input: F) => void)[] = [];
-  const rawUpdaters: ((input: UIElement) => void)[] = [];
-  let primaryUpdater: (input: UIElement) => void = () => {};
+  const models: StatefulModel<F>[] = [];
   const panes = Object.fromEntries(
     keys.map((name, index) => {
-      const { ui, update } = pane();
-      updaters.push((input) => update(input[name]));
-      rawUpdaters.push(update);
-      if (index == 0 || name == primary) {
-        primaryUpdater = update;
-      }
+      const { ui, model } = pane(
+        (primary === null ? index == 0 : name == primary) ? "large" : "small"
+      );
+      models.push(mapModel(model, (input) => input[name]));
       return [name, ui];
     })
   ) as NamedComponents<F>;
 
   return {
-    model: {
-      reload: () => {},
-      statusChanged: (input: T) => {
-        const state = formatter(input);
-        for (const updater of updaters) {
-          updater(state);
-        }
-      },
-      statusWaiting: () => {
-        for (const updater of rawUpdaters) {
-          updater(throbberSmall());
-        }
-      },
-      statusFailed: (message: string, retry: (() => void) | null) => {
-        for (const updater of rawUpdaters) {
-          updater(img("dead.svg", "deadolive"));
-        }
-        primaryUpdater([
-          text(message),
-          retry ? button("Retry", "Attempt operation again.", retry) : blank(),
-        ]);
-      },
-    },
+    model: mapModel(combineModels(...models), formatter),
     components: panes,
   };
 }
@@ -1537,27 +1697,9 @@ export function singleState<T>(
   formatter: (input: T) => UIElement,
   hideErrors?: boolean
 ): { model: StatefulModel<T>; ui: UIElement } {
-  const { ui, update } = pane();
+  const { ui, model } = pane(hideErrors ? "blank" : "small");
   return {
-    model: {
-      reload: () => {},
-      statusChanged: (input: T) => {
-        update(formatter(input));
-      },
-      statusWaiting: () => {
-        update(throbberSmall());
-      },
-      statusFailed: (message: string, retry: (() => void) | null) => {
-        if (hideErrors) {
-          update(img("dead.svg", "deadolive"));
-        } else {
-          update(
-            text(message),
-            retry ? button("Retry", "Attempt operation again.", retry) : blank()
-          );
-        }
-      },
-    },
+    model: mapModel(model, formatter),
     ui: ui,
   };
 }
@@ -1636,13 +1778,9 @@ export function statefulListBind<T>(
 export function strikeout(
   strike: boolean,
   contents: string | number
-): UIElement {
-  const element = document.createElement("p");
-  element.innerText = `${contents}`.replace(/\n/g, "⏎");
-  if (strike) {
-    element.style.textDecoration = "line-through";
-  }
-  return element;
+): DisplayElement {
+  const text = `${contents}`.replace(/\n/g, "⏎");
+  return strike ? { type: "s", contents: text } : text;
 }
 /**
  * Allow synchronising the fields in an object separately
@@ -1699,31 +1837,25 @@ export function subscribedState<T>(
   publisher: Publisher<T>,
   formatter: (input: T) => UIElement
 ): UIElement {
-  const ui = document.createElement("span");
-  addElements(ui, formatter(initial));
+  const { ui, model } = pane("blank");
+  model.statusChanged(formatter(initial));
   publisher.subscribe({
-    reload: () => {},
+    ...mapModel(model, formatter),
     get isAlive() {
-      return ui.isConnected;
-    },
-    statusChanged: (input: T) => {
-      clearChildren(ui);
-      addElements(ui, formatter(input));
-    },
-    statusWaiting: () => {
-      clearChildren(ui);
-      addElements(ui, throbberSmall());
-    },
-    statusFailed: (message: string, retry: (() => void) | null) => {
-      clearChildren(ui);
-      addElements(
-        ui,
-        text(message),
-        retry ? button("Retry", "Attempt operation again.", retry) : blank()
-      );
+      return ui.element.isConnected;
     },
   });
   return ui;
+}
+
+export function svgFromStr(data: string): UIElement {
+  const svg = new window.DOMParser().parseFromString(data, "image/svg+xml");
+  return {
+    element: document.adoptNode(svg.documentElement),
+    reveal: null,
+    find: null,
+    type: "ui",
+  };
 }
 /**
  * Display a table from the supplied items.
@@ -1735,35 +1867,28 @@ export function table<T>(
   ...headers: [string, (value: T) => UIElement][]
 ): UIElement {
   if (rows.length == 0) return [];
-  const table = document.createElement("table");
-  const headerRow = document.createElement("tr");
-  table.appendChild(headerRow);
-  for (const [name, _func] of headers) {
-    const column = document.createElement("th");
-    column.innerText = name;
-    headerRow.appendChild(column);
-  }
-  for (const row of rows) {
-    const dataRow = document.createElement("tr");
-    for (const [_name, func] of headers) {
-      const cell = document.createElement("td");
-      addElements(cell, func(row));
-      dataRow.appendChild(cell);
-    }
-    table.appendChild(dataRow);
-  }
-  return table;
+  return createUiFromTag(
+    "table",
+    createUiFromTag(
+      "tr",
+      headers.map(([name, _func]) => createUiFromTag("th", name))
+    ),
+    rows.map((row) =>
+      createUiFromTag(
+        "tr",
+        headers.map(([_name, func]) => createUiFromTag("td", func(row)))
+      )
+    )
+  );
 }
 /**
  * Create a table from a collection of rows
  */
-export function tableFromRows(rows: HTMLTableRowElement[]): UIElement {
+export function tableFromRows(
+  rows: ComplexElement<HTMLTableRowElement>[]
+): UIElement {
   if (rows.length == 0) return [];
-  const table = document.createElement("table");
-  for (const row of rows) {
-    table.appendChild(row);
-  }
-  return table;
+  return createUiFromTag("table", ...rows);
 }
 /**
  * Create a single row to put in a table
@@ -1773,32 +1898,36 @@ export function tableFromRows(rows: HTMLTableRowElement[]): UIElement {
 export function tableRow(
   click: ClickHandler | null,
   ...cells: TableCell[]
-): HTMLTableRowElement {
-  const row = document.createElement("tr");
-  for (const { contents, span, header, click, intensity, title } of cells) {
-    const cell = document.createElement(header ? "th" : "td");
-    addElements(cell, contents);
-    if (span) {
-      cell.colSpan = span;
-    }
-    if (click) {
-      cell.style.cursor = "pointer";
-      cell.addEventListener("click", click);
-    }
-    if (intensity != null) {
-      cell.style.backgroundColor = `hsl(191, 95%, ${Math.ceil(
-        97 - Math.max(0, Math.min(1, intensity)) * 20
-      )}%)`;
-    }
-    if (title) {
-      cell.title = title;
-    }
+): ComplexElement<HTMLTableRowElement> {
+  const row = createUiFromTag(
+    "tr",
+    cells.map(({ contents, span, header, click, intensity, title }) => {
+      const cell = createUiFromTag(header ? "th" : "td", contents);
+      if (span) {
+        cell.element.colSpan = span;
+      }
+      if (click) {
+        cell.element.style.cursor = "pointer";
+        cell.element.addEventListener("click", (e) => {
+          e.stopPropagation();
+          click(e);
+        });
+      }
+      if (intensity != null) {
+        cell.element.style.backgroundColor = `hsl(191, 95%, ${Math.ceil(
+          97 - Math.max(0, Math.min(1, intensity)) * 20
+        )}%)`;
+      }
+      if (title) {
+        cell.element.title = title;
+      }
 
-    row.appendChild(cell);
-  }
+      return cell;
+    })
+  );
   if (click) {
-    row.style.cursor = "pointer";
-    row.addEventListener("click", click);
+    row.element.style.cursor = "pointer";
+    row.element.addEventListener("click", click);
   }
   return row;
 }
@@ -1807,27 +1936,23 @@ export function tableRow(
  *
  * @param tabs each tab to display; each tabe has a name, contents, and an optional Ctrl-F handler. One tab may be marked as selected to be active by default
  */
-export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
-  let original = true;
+export function tabs(...tabs: Tab[]): UIElement {
   let findHandler: FindHandler = null;
-  const panes = tabs.map((t) => document.createElement("div"));
-  const buttons = tabs.map(({ name, contents, find }, index) => {
-    const button = document.createElement("span");
-    button.innerText = name;
-    addElements(panes[index], contents);
-    button.addEventListener("click", (e) => {
+  const panes = tabs.map(({ contents }) => createUiFromTag("div", contents));
+  const buttons = tabs.map(({ name }, index) => {
+    const button = createUiFromTag("span", name);
+    button.element.addEventListener("click", (e) => {
       panes.forEach((pane, i) => {
-        pane.style.display = i == index ? "block" : "none";
+        pane.element.style.display = i == index ? "block" : "none";
       });
       buttons.forEach((button, i) => {
-        button.className = i == index ? "tab selected" : "tab";
+        button.element.className = i == index ? "tab selected" : "tab";
       });
-      const reveal = tabs[index].reveal;
+      const reveal = panes[index].reveal;
       if (reveal) {
         reveal();
       }
-      findHandler = find || null;
-      original = false;
+      findHandler = panes[index].find;
     });
     return button;
   });
@@ -1836,26 +1961,27 @@ export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
   const buttonBar = document.createElement("div");
   container.appendChild(buttonBar);
   for (const button of buttons) {
-    buttonBar.appendChild(button);
+    buttonBar.appendChild(button.element);
   }
   for (const pane of panes) {
-    container.appendChild(pane);
+    container.appendChild(pane.element);
   }
   let selectedTab = Math.max(
     0,
     tabs.findIndex((t) => t.selected || false)
   );
   for (let i = 0; i < tabs.length; i++) {
-    buttons[i].className = i == selectedTab ? "tab selected" : "tab";
-    panes[i].style.display = i == selectedTab ? "block" : "none";
+    buttons[i].element.className = i == selectedTab ? "tab selected" : "tab";
+    panes[i].element.style.display = i == selectedTab ? "block" : "none";
   }
 
-  const reveal = tabs[selectedTab].reveal;
+  const reveal = panes[selectedTab].reveal;
   if (reveal) {
     reveal();
   }
+  findHandler = panes[selectedTab].find;
   return {
-    ui: container,
+    element: container,
     find: () => {
       if (findHandler) {
         return findHandler();
@@ -1863,6 +1989,8 @@ export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
         return false;
       }
     },
+    reveal: null,
+    type: "ui",
   };
 }
 
@@ -1875,47 +2003,40 @@ export function tabs(...tabs: Tab[]): { ui: UIElement; find: FindHandler } {
 export function tabsModel(
   groups: number,
   ...tabs: Tab[]
-): { ui: UIElement; find: FindHandler; models: StatefulModel<Tab[]>[] } {
+): { ui: ComplexElement<HTMLElement>; models: StatefulModel<Tab[]>[] } {
   type Group = {
-    panes: HTMLElement[];
-    buttons: HTMLElement[];
-    finds: FindHandler[];
-    reveals: ((() => void) | null)[];
+    panes: ComplexElement<HTMLDivElement>[];
+    buttons: ComplexElement<HTMLSpanElement>[];
   };
   let findHandler: FindHandler = null;
   let current: [number, number] = [0, 0];
   const tabGroups: Group[] = [];
   const generate = (group: number, tabs: Tab[]): Group => ({
-    panes: tabs.map(({ contents }) => {
-      const pane = document.createElement("div");
-      addElements(pane, contents);
-      return pane;
-    }),
-    buttons: tabs.map(({ name, find }, index) => {
-      const button = document.createElement("span");
-      button.innerText = name;
-      button.addEventListener("click", () => {
+    panes: tabs.map(({ contents }) => createUiFromTag("div", contents)),
+    buttons: tabs.map(({ name }, index) => {
+      const button = createUiFromTag("span", name);
+      button.element.addEventListener("click", () => {
         current = [group, index];
         tabGroups.forEach(({ panes, buttons }, groupIndex) => {
           panes.forEach((pane, i) => {
-            pane.style.display =
+            pane.element.style.display =
               groupIndex == group && i == index ? "block" : "none";
           });
           buttons.forEach((button, i) => {
-            button.className =
+            button.element.className =
               groupIndex == group && i == index ? "tab selected" : "tab";
           });
-          findHandler = find || null;
-          const reveal = tabs[index].reveal;
-          if (reveal) {
-            reveal();
+          if (groupIndex == group) {
+            findHandler = panes[index].find;
+            const reveal = panes[index].reveal;
+            if (reveal) {
+              reveal();
+            }
           }
         });
       });
       return button;
     }),
-    finds: tabs.map((t) => t.find || null),
-    reveals: tabs.map((t) => t.reveal || null),
   });
   const container = document.createElement("div");
   const paneHolder = document.createElement("div");
@@ -1925,26 +2046,30 @@ export function tabsModel(
 
   const update = (group: number) => {
     clearChildren(buttonBar);
-    addElements(buttonBar, ...tabGroups.map((tg) => tg.buttons));
     clearChildren(paneHolder);
-    addElements(paneHolder, ...tabGroups.map((tg) => tg.panes));
+    tabGroups
+      .flatMap((tg) => tg.buttons)
+      .forEach((button) => buttonBar.appendChild(button.element));
+    tabGroups
+      .flatMap((tg) => tg.panes)
+      .forEach((pane) => buttonBar.appendChild(pane.element));
     const [targetGroup, targetIndex] = tabGroups[group].panes.length
       ? [group, 0]
       : current;
-    tabGroups.forEach(({ panes, buttons, finds, reveals }, groupIndex) => {
+    tabGroups.forEach(({ panes, buttons }, groupIndex) => {
       panes.forEach((pane, i) => {
-        pane.style.display =
+        pane.element.style.display =
           groupIndex == targetGroup && i == targetIndex ? "block" : "none";
       });
       buttons.forEach((button, i) => {
-        button.className =
+        button.element.className =
           groupIndex == targetGroup && i == targetIndex
             ? "tab selected"
             : "tab";
       });
       if (groupIndex == targetGroup) {
-        findHandler = targetIndex < finds.length ? finds[targetIndex] : null;
-        const reveal = reveals[targetIndex];
+        findHandler = panes[targetIndex].find;
+        const reveal = panes[targetIndex].reveal;
         if (reveal) {
           reveal();
         }
@@ -1956,7 +2081,7 @@ export function tabsModel(
   const models: StatefulModel<Tab[]>[] = [];
   for (let i = 0; i < groups; i++) {
     const group = i + 1;
-    tabGroups.push({ panes: [], buttons: [], finds: [], reveals: [] });
+    tabGroups.push({ panes: [], buttons: [] });
     models.push({
       reload: () => {},
       statusChanged: (input) => {
@@ -1964,32 +2089,24 @@ export function tabsModel(
         update(group);
       },
       statusFailed: (message, retry) => {
-        const buttonElement = document.createElement("span");
-        addElements(
-          buttonElement,
-          text(message),
-          retry ? button("Retry", "Try the operation again.", retry) : blank()
-        );
-        const pane = document.createElement("div");
-        addElements(pane, img("dead.svg", "deadolive"));
         tabGroups[group] = {
-          panes: [pane],
-          buttons: [buttonElement],
-          finds: [null],
-          reveals: [null],
+          panes: [createUiFromTag("div", img("dead.svg", "deadolive"))],
+          buttons: [
+            createUiFromTag(
+              "span",
+              text(message),
+              retry
+                ? button("Retry", "Try the operation again.", retry)
+                : blank()
+            ),
+          ],
         };
         update(group);
       },
       statusWaiting: () => {
-        const button = document.createElement("span");
-        addElements(button, throbberSmall());
-        const pane = document.createElement("div");
-        addElements(pane, throbber());
         tabGroups[group] = {
-          panes: [pane],
-          buttons: [button],
-          finds: [null],
-          reveals: [null],
+          panes: [createUiFromTag("div", throbber())],
+          buttons: [createUiFromTag("span", throbberSmall())],
         };
         update(group);
       },
@@ -1998,15 +2115,19 @@ export function tabsModel(
 
   update(0);
   return {
-    ui: container,
-    models: models,
-    find: () => {
-      if (findHandler) {
-        return findHandler();
-      } else {
-        return false;
-      }
+    ui: {
+      element: container,
+      find: () => {
+        if (findHandler) {
+          return findHandler();
+        } else {
+          return false;
+        }
+      },
+      reveal: null,
+      type: "ui",
     },
+    models: models,
   };
 }
 
@@ -2015,16 +2136,11 @@ export function tabsModel(
  */
 export function tagList(title: string, entries: string[]): UIElement {
   if (entries.length) {
-    const output = document.createElement("span");
-    output.className = "filterlist";
-    output.innerText = title;
-    entries.forEach((entry) => {
-      const button = document.createElement("span");
-      button.innerText = entry;
-      output.appendChild(button);
-      output.appendChild(document.createTextNode(" "));
-    });
-    return output;
+    return tile(
+      ["filterlist"],
+      title,
+      entries.map((entry) => [textInline(entry, ""), " "])
+    );
   } else {
     return blank();
   }
@@ -2040,7 +2156,7 @@ export function throbber(): UIElement {
   throbber.className = "throbber";
   throbber.style.visibility = "hidden";
   window.setTimeout(() => (throbber.style.visibility = "visible"), 500);
-  return throbber;
+  return { element: throbber, reveal: null, find: null, type: "ui" };
 }
 /**
  * Display a throbber to indicate that the user should be patient that's limited to the line height.
@@ -2051,7 +2167,7 @@ export function throbberSmall(): UIElement {
   throbber.appendChild(document.createElement("span"));
   throbber.appendChild(document.createElement("span"));
   throbber.appendChild(document.createElement("span"));
-  return throbber;
+  return { element: throbber, reveal: null, find: null, type: "ui" };
 }
 
 /**
@@ -2089,7 +2205,7 @@ export function text(contents: string | number, title?: string): UIElement {
   const element = document.createElement("p");
   element.innerText = `${contents}`.replace(/\n/g, "⏎");
   element.title = title || "";
-  return element;
+  return { element: element, reveal: null, find: null, type: "ui" };
 }
 /**
  * Display text as a paragraph
@@ -2101,17 +2217,16 @@ export function textInline(
   const element = document.createElement("span");
   element.innerText = `${contents}`.replace(/\n/g, "⏎");
   element.title = title;
-  return element;
+  return { element: element, reveal: null, find: null, type: "ui" };
 }
 /**
  * Create a block with specific CSS styling
  */
 export function tile(classes: string[], ...contents: UIElement[]): UIElement {
-  const element = document.createElement("div");
+  const element = createUiFromTag("div", ...contents);
   for (const c of classes) {
-    element.classList.add(c);
+    element.element.classList.add(c);
   }
-  addElements(element, ...contents);
   return element;
 }
 /**

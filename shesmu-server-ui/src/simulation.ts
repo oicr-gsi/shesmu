@@ -1,56 +1,54 @@
 import { Alert, alertNavigator, AlertFilter } from "./alert.js";
 import { infoForProduces, OliveType } from "./olive.js";
 import {
-  mutableLocalStore,
+  loadFile,
   locallyStoredString,
+  mutableLocalStore,
   refreshable,
   saveClipboardJson,
-  loadFile,
   saveFile,
 } from "./io.js";
 import {
-  addElements,
-  buttonAccessory,
-  button,
-  br,
-  tabs,
-  collapsible,
-  table,
-  group,
-  initialise,
-  dropdown,
-  tagList,
-  text,
-  tile,
+  Tab,
   UIElement,
   blank,
-  preformatted,
+  br,
+  butter,
+  button,
+  buttonAccessory,
+  buttonClose,
+  collapsible,
+  dialog,
+  dropdown,
+  group,
   header,
   inputCheckbox,
-  Tab,
-  italic,
-  multipaneState,
-  findProxy,
-  setFindHandler,
-  dialog,
   inputText,
-  buttonClose,
   inputTextArea,
-  paginatedList,
-  temporaryState,
-  singleState,
+  italic,
   mono,
+  multipaneState,
+  paginatedList,
+  preformatted,
+  setRootDashboard,
+  singleState,
+  table,
+  tabs,
   tabsModel,
-  butter,
+  tagList,
+  temporaryState,
+  text,
+  tile,
+  svgFromStr,
 } from "./html.js";
 import {
-  formatTimeSpan,
   MutableStore,
-  mutableStoreWatcher,
-  matchKeywordInArbitraryData,
-  validIdentifier,
   combineModels,
+  formatTimeSpan,
   mapModel,
+  matchKeywordInArbitraryData,
+  mutableStoreWatcher,
+  validIdentifier,
 } from "./util.js";
 import { specialImports } from "./actions.js";
 import { helpArea } from "./help.js";
@@ -164,7 +162,7 @@ function importAction(
     const result = importReads(data);
     if (result) {
       if (result.errors.length) {
-        dialog((c) => result.errors.map((e) => text(e)));
+        dialog(() => result.errors.map((e) => text(e)));
       } else {
         const givenName = result.name || name;
         if (givenName) {
@@ -177,11 +175,11 @@ function importAction(
               newName.ui,
               br(),
               button("Add", "Save to fake action collection.", () => {
-                if (validIdentifier.test(newName.getter())) {
-                  store.set(newName.getter(), result.parameters);
+                if (validIdentifier.test(newName.value)) {
+                  store.set(newName.value, result.parameters);
                   close();
                 } else {
-                  dialog((c) => "This name isn't a valid Shesmu identifier.");
+                  dialog(() => "This name isn't a valid Shesmu identifier.");
                 }
               }),
             ];
@@ -191,7 +189,7 @@ function importAction(
       return;
     }
   }
-  dialog((c) => "Cannot identify uploaded action format. Sorry.");
+  dialog(() => "Cannot identify uploaded action format. Sorry.");
 }
 
 export function initialiseSimulationDashboard(
@@ -201,7 +199,6 @@ export function initialiseSimulationDashboard(
   scriptName: string,
   scriptBody: string
 ) {
-  initialise();
   let fileName = scriptName || "unknown.shesmu";
   let fakeActionDefinitions: MutableStore<
     string,
@@ -239,10 +236,10 @@ export function initialiseSimulationDashboard(
                   rename.ui,
                   br(),
                   button("Rename", "Rename action.", () => {
-                    if (validIdentifier.test(rename.getter())) {
+                    if (validIdentifier.test(rename.value)) {
                       close();
                       fakeActionDefinitions.delete(name);
-                      fakeActionDefinitions.set(rename.getter(), declaration);
+                      fakeActionDefinitions.set(rename.value, declaration);
                     } else {
                       butter(
                         3000,
@@ -306,7 +303,10 @@ export function initialiseSimulationDashboard(
     1,
     {
       name: "Script",
-      contents: group(script, errorTable.ui),
+      contents: group(
+        { element: script, find: null, reveal: null, type: "ui" },
+        errorTable.ui
+      ),
     },
     {
       name: "Extra Definitions",
@@ -325,7 +325,7 @@ export function initialiseSimulationDashboard(
               actionJson.ui,
               br(),
               button("Add", "Save to fake action collection.", () => {
-                importAction(fakeActionDefinitions, null, actionJson.getter());
+                importAction(fakeActionDefinitions, null, actionJson.value);
                 close();
               }),
             ];
@@ -345,9 +345,9 @@ export function initialiseSimulationDashboard(
         }
 
         if (response.alerts?.length) {
-          const { main, toolbar, find } = alertNavigator(
+          const { main, toolbar } = alertNavigator(
             response.alerts,
-            (a) => [],
+            () => [],
             temporaryState([] as AlertFilter<RegExp>[]),
             [
               ["Line", (l: SimulatedLocation) => l.line.toString()],
@@ -357,7 +357,6 @@ export function initialiseSimulationDashboard(
           tabList.push({
             name: "Alerts",
             contents: [toolbar, br(), main],
-            find: find,
           });
         }
         if (response.actions?.length) {
@@ -367,7 +366,6 @@ export function initialiseSimulationDashboard(
           });
         }
         if (response.olives?.length) {
-          const alertFindProxy = findProxy();
           type SimulatedOliveRenderer = (olive: SimulatedOlive) => UIElement;
           const oliveState = multipaneState<
             SimulatedOlive,
@@ -395,16 +393,15 @@ export function initialiseSimulationDashboard(
                 )
               );
               if (oliveAlerts.length) {
-                const { main, toolbar, find } = alertNavigator(
+                const { main, toolbar } = alertNavigator(
                   oliveAlerts,
-                  (a) => [],
+                  () => [],
                   temporaryState([] as AlertFilter<RegExp>[]),
                   [
                     ["Line", (l: SimulatedLocation) => l.line.toString()],
                     ["Column", (l: SimulatedLocation) => l.column.toString()],
                   ]
                 );
-                alertFindProxy.updateHandle(find);
                 return [toolbar, br(), main];
               } else {
                 return text("No alerts found.");
@@ -418,11 +415,7 @@ export function initialiseSimulationDashboard(
                 ["Information", (x) => x[0]],
                 ["Value", (x) => x[1]]
               ),
-            dataflow: (olive: SimulatedOlive) =>
-              document.adoptNode(
-                new DOMParser().parseFromString(olive.diagram, "image/svg+xml")
-                  .documentElement
-              ),
+            dataflow: (olive: SimulatedOlive) => svgFromStr(olive.diagram),
           });
           const oliveSelection = dropdown(
             (olive) => [
@@ -446,14 +439,12 @@ export function initialiseSimulationDashboard(
             {
               name: "Alerts",
               contents: oliveState.components.alerts,
-              find: alertFindProxy.find,
             },
             { name: "Dataflow", contents: oliveState.components.dataflow }
           );
           tabList.push({
             name: "Olive",
-            contents: [oliveSelection, br(), oliveTabs.ui],
-            find: oliveTabs.find,
+            contents: [oliveSelection, br(), oliveTabs],
           });
         }
         if (response.exports?.length) {
@@ -513,7 +504,7 @@ export function initialiseSimulationDashboard(
             name: "Refill Output",
             contents: [
               dropdown(
-                ([name, declaration]) => name,
+                ([name]) => name,
                 null,
                 refillerState.model,
                 null,
@@ -596,7 +587,6 @@ export function initialiseSimulationDashboard(
       return tabList;
     }
   );
-  setFindHandler(tabbedArea.find);
   const main = refreshable(
     "/simulate",
     (request) => {
@@ -605,7 +595,7 @@ export function initialiseSimulationDashboard(
         body: JSON.stringify({
           fakeActions: Object.fromEntries(fakeActionDefinitions),
           dryRun: false,
-          readStale: !waitForData.getter(),
+          readStale: !waitForData.value,
           script: request,
         }),
         method: "POST",
@@ -619,7 +609,7 @@ export function initialiseSimulationDashboard(
     "shesmu_theme",
     "ace/theme/chrome"
   );
-  addElements(
+  setRootDashboard(
     container,
     group(
       button("🤖 Simulate", "Run olive simulation and fetch results", () =>
@@ -768,7 +758,7 @@ function renderJsonTable<T>(
       ),
     (item, keywords) =>
       keywords.every((k) =>
-        columns.some(([name, extractor]) =>
+        columns.some(([, extractor]) =>
           matchKeywordInArbitraryData(k, extractor(item))
         )
       )

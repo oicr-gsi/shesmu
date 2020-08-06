@@ -1,61 +1,63 @@
 import {
-  UIElement,
-  StateSynchronizer,
+  ActiveItemRenderer,
+  DisplayElement,
   FindHandler,
-  inputText,
-  collapsible,
-  paragraph,
-  italic,
-  mono,
+  StateSynchronizer,
+  UIElement,
+  blank,
+  br,
+  butter,
   button,
   buttonAccessory,
-  text,
-  pane,
-  dialog,
-  br,
-  findProxy,
-  singleState,
-  blank,
-  inputTextArea,
-  tableFromRows,
-  tableRow,
-  dateEditor,
-  inputNumber,
-  temporaryState,
-  dropdown,
-  pickFromSet,
-  pickFromSetCustom,
-  inputCheckbox,
-  tile,
-  ActiveItemRenderer,
   buttonClose,
   buttonEdit,
+  collapsible,
+  dateEditor,
+  dialog,
+  dropdown,
+  groupWithFind,
+  inputCheckbox,
+  inputNumber,
+  inputSearchBar,
+  inputText,
+  inputTextArea,
+  italic,
+  mono,
+  pane,
+  paragraph,
+  pickFromSet,
+  pickFromSetCustom,
   preformatted,
-  butter,
+  singleState,
+  tableFromRows,
+  tableRow,
+  temporaryState,
+  text,
+  tile,
 } from "./html.js";
 import { AddRangeSearch, AddPropertySearch, PropertySearch } from "./stats.js";
 import { Status, statusButton, statusDescription, statuses } from "./action.js";
 import { actionRender } from "./actions.js";
 import {
-  StatefulModel,
-  SourceLocation,
-  mergingModel,
-  filterModel,
-  combineModels,
-  mapModel,
-  errorModel,
-  promiseModel,
-  commonPathPrefix,
   FilenameFormatter,
-  formatTimeSpan,
-  computeDuration,
-  mergeLocations,
+  SourceLocation,
+  StatefulModel,
   bypassModel,
+  combineModels,
+  commonPathPrefix,
+  computeDuration,
+  errorModel,
+  filterModel,
+  formatTimeSpan,
+  mapModel,
+  mergeLocations,
+  mergingModel,
+  promiseModel,
 } from "./util.js";
 import {
-  refreshable,
-  fetchJsonWithBusyDialog,
   fetchCustomWithBusyDialog,
+  fetchJsonWithBusyDialog,
+  refreshable,
 } from "./io.js";
 
 /**
@@ -362,21 +364,21 @@ function addFilterDialog(
     ),
     button("👾 Action Identifier", "Add a unique action identifier.", () => {
       close();
-      const { ui, getter } = inputTextArea();
+      const input = inputTextArea();
       dialog((close) => [
         "Action Identifiers (",
         mono("shesmu:"),
         italic("40 hex characters"),
         " - other text will be ignored):",
         br(),
-        ui,
+        input.ui,
         br(),
         button(
           "Add All",
           "Add any action IDs in the text to the filter.",
           () => {
             const ids = Array.from(
-              getter().matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
+              input.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
               (m) => "shesmu:" + m[1].toUpperCase()
             );
             if (ids.length) {
@@ -520,7 +522,7 @@ function addFilterDialog(
                 }),
               addLocations,
               (sourceLocation) => {
-                const label: UIElement[] = [
+                const label: DisplayElement[] = [
                   fileNameFormatter(sourceLocation.file),
                 ];
                 if (sourceLocation.line) {
@@ -622,11 +624,9 @@ export function createSearch(
   model: StatefulModel<ActionFilter[]>;
   addRangeSearch: AddRangeSearch;
   addPropertySearch: AddPropertySearch;
-  find: FindHandler;
 } {
-  const buttons = pane();
-  const entryBar = pane();
-  const find = findProxy();
+  const buttons = pane("blank");
+  const entryBar = pane("blank");
   const [baseModel, queryModel] = mergingModel(
     filterModel(model, "Missing base search."),
     (left: ActionFilter[] | null, right: ActionFilter[] | null) =>
@@ -660,18 +660,19 @@ export function createSearch(
         tags
       );
     }
-    buttons.update(search.buttons);
-    entryBar.update(search.entryBar);
-    find.updateHandle(search.find);
+    buttons.model.statusChanged(search.buttons);
+    entryBar.model.statusChanged(search.entryBar);
   });
   return {
     buttons: buttons.ui,
-    entryBar: entryBar.ui,
+    entryBar: groupWithFind(() => {
+      const find = search?.find;
+      return find ? find() : false;
+    }, entryBar.ui),
     model: baseModel,
     addRangeSearch: (typeName, start, end) =>
       search?.addRangeSearch(typeName, start, end),
     addPropertySearch: (...limits) => search?.addPropertySearch(...limits),
-    find: find.find,
   };
 }
 function editText(original: BasicText, callback: TextHandler): void {
@@ -686,7 +687,7 @@ function editText(original: BasicText, callback: TextHandler): void {
       br(),
       button("Save", "Update text search filter in current search.", () => {
         close();
-        callback(text.getter(), matched.getter());
+        callback(text.value, matched.value);
       }),
     ];
   });
@@ -694,7 +695,7 @@ function editText(original: BasicText, callback: TextHandler): void {
 function editRegex(original: BasicRegex, callback: TextHandler) {
   dialog((close) => {
     const pattern = inputText(original.pattern);
-    const error = pane();
+    const error = pane("blank");
     const matched = inputCheckbox("Case sensitive", original.matchCase);
     return [
       "Search for regex: ",
@@ -706,13 +707,13 @@ function editRegex(original: BasicRegex, callback: TextHandler) {
       br(),
       button("Save", "Update text search filter in current search.", () => {
         try {
-          new RegExp(pattern.getter());
+          new RegExp(pattern.value);
         } catch (e) {
-          error.update(e.message);
+          error.model.statusChanged(e.message);
           return;
         }
         close();
-        callback(pattern.getter(), matched.getter());
+        callback(pattern.value, matched.value);
       }),
     ];
   });
@@ -768,9 +769,7 @@ function editTimeHorizon(
       button("Save", "Update time range filter in current search.", () => {
         close();
         callback(
-          Number.isNaN(offset.getter())
-            ? null
-            : offset.getter() * units.get()[0]
+          Number.isNaN(offset.value) ? null : offset.value * units.get()[0]
         );
       }),
     ];
@@ -1159,8 +1158,6 @@ function searchAdvanced(
   sources: SourceLocation[],
   tags: Iterable<string>
 ): SearchPlatform {
-  const search = document.createElement("input");
-
   const searchModel: StatefulModel<string> = bypassModel(
     combineModels(
       errorModel(model, (response: ParseQueryRespose | null) => {
@@ -1214,14 +1211,8 @@ function searchAdvanced(
     }
   );
 
-  search.type = "search";
-  search.value = filter;
-  search.style.width = "100%";
-  search.addEventListener("keydown", (e) => {
-    if (e.keyCode == 13) {
-      searchModel.statusChanged(search.value);
-    }
-  });
+  const search = inputSearchBar(filter, searchModel);
+
   searchModel.statusChanged(filter);
   const updateFromClick = (...filters: ActionFilter[]) => {
     const doUpdate = (existingQuery: ActionFilter[]) => {
@@ -1428,7 +1419,7 @@ function searchAdvanced(
     ],
     entryBar: [
       "Action query: ",
-      search,
+      search.ui,
       br(),
       collapsible(
         "Help",
