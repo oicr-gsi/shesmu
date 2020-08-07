@@ -33,6 +33,7 @@ public final class PineryIUSValue {
   private final String project;
   private final Optional<String> reference_slide_id;
   private final Optional<Double> rin;
+  private final long run_lane_count;
   private final String run_status;
   private final String sequencing_control_type;
   private final Optional<String> sequencing_kit;
@@ -76,6 +77,7 @@ public final class PineryIUSValue {
       String project,
       Optional<String> reference_slide_id,
       Optional<Double> rin,
+      long run_lane_count,
       String run_status,
       String sequencing_control_type,
       Optional<String> sequencing_kit,
@@ -107,6 +109,7 @@ public final class PineryIUSValue {
     this.group_desc = group_desc;
     this.group_id = group_id;
     this.instrumentModel = instrumentModel;
+    this.run_lane_count = run_lane_count;
     this.is_sample = is_sample;
     this.ius = ius;
     this.kit = kit;
@@ -359,6 +362,11 @@ public final class PineryIUSValue {
   @ShesmuVariable(signable = true)
   public String run_name() {
     return (String) ius.get(0);
+  }
+
+  @ShesmuVariable
+  public long run_lane_count() {
+    return run_lane_count;
   }
 
   @ShesmuVariable
