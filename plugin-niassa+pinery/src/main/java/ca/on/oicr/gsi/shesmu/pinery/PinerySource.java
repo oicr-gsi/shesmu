@@ -18,6 +18,7 @@ import ca.on.oicr.pinery.client.HttpResponseException;
 import ca.on.oicr.pinery.client.PineryClient;
 import ca.on.oicr.ws.dto.InstrumentModelDto;
 import ca.on.oicr.ws.dto.RunDto;
+import ca.on.oicr.ws.dto.RunDtoPosition;
 import ca.on.oicr.ws.dto.SampleProjectDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 
 public class PinerySource extends JsonPluginFile<PineryConfiguration> {
+
   private final class ItemCache extends ValueCache<Stream<PineryIUSValue>, Stream<PineryIUSValue>> {
     private ItemCache(Path fileName) {
       super("pinery " + fileName.toString(), 30, ReplacingRecord::new);
@@ -149,6 +151,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     "",
                     Optional.empty(),
                     Optional.empty(),
+                    runLaneCount(run),
                     getRunField(run, RunDto::getState),
                     "",
                     maybeGetRunField(run, RunDto::getSequencingKit),
@@ -228,6 +231,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getStudyTitle(),
                         limsAttr(sp, "reference_slide_id", badSetInRecord::add, false),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
+                        runLaneCount(run),
                         getRunField(run, RunDto::getState),
                         limsAttr(sp, "sequencing_control_type", badSetInRecord::add, false)
                             .orElse(""),
@@ -312,6 +316,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     }
   }
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final Gauge badSetMap =
+      Gauge.build(
+              "shesmu_pinery_bad_set",
+              "The number of provenace records with sets not containing exactly one item.")
+          .labelNames("target", "property", "reason")
+          .register();
+
   private static boolean isRunValid(RunDto run) {
     return run != null
         && run.getCreatedDate() != null
@@ -325,13 +337,14 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
         sp.getSampleAttributes().get(key), reason -> isBad.accept(key + ":" + reason), required);
   }
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final Gauge badSetMap =
-      Gauge.build(
-              "shesmu_pinery_bad_set",
-              "The number of provenace records with sets not containing exactly one item.")
-          .labelNames("target", "property", "reason")
-          .register();
+  private static long runLaneCount(RunDto dto) {
+    return dto.getPositions()
+        .stream()
+        .map(RunDtoPosition::getPosition)
+        .max(Comparator.naturalOrder())
+        .orElse(0);
+  }
+
   private final ItemCache cache;
   private Optional<PineryConfiguration> config = Optional.empty();
   private final PlatformCache platforms;
@@ -351,18 +364,6 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
     return projects
         .get()
         .filter(SampleProjectDto::isActive)
-        .map(SampleProjectDto::getName)
-        .collect(Collectors.toSet());
-  }
-
-  @ShesmuMethod(
-      name = "projects_with_secondary_scheme",
-      description =
-          "Projects marked with the secondary naming scheme from in Pinery defined in {file}.")
-  public Set<String> secondaryProjects() {
-    return projects
-        .get()
-        .filter(SampleProjectDto::isSecondaryNamingSCheme)
         .map(SampleProjectDto::getName)
         .collect(Collectors.toSet());
   }
@@ -410,6 +411,18 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       @ShesmuParameter(description = "The instrument model name as found in Pinery")
           String instrumentModel) {
     return platforms.get().orElse(Collections.emptyMap()).getOrDefault(instrumentModel, "UNKNOWN");
+  }
+
+  @ShesmuMethod(
+      name = "projects_with_secondary_scheme",
+      description =
+          "Projects marked with the secondary naming scheme from in Pinery defined in {file}.")
+  public Set<String> secondaryProjects() {
+    return projects
+        .get()
+        .filter(SampleProjectDto::isSecondaryNamingSCheme)
+        .map(SampleProjectDto::getName)
+        .collect(Collectors.toSet());
   }
 
   @Override
