@@ -196,8 +196,8 @@ public class BasesMask {
   public static BasesMask fromString(String basesMaskString) {
     Pattern p =
         Pattern.compile(
-            "y(?<readOneInclude>\\*|\\d+)(n(?<readOneIgnore>\\*|\\d+))?,"
-                + "(i(?<indexOneInclude>\\*|\\d+))?(n(?<indexOneIgnore>\\*|\\d+))?"
+            "y(?<readOneInclude>\\*|\\d+)(n(?<readOneIgnore>\\*|\\d+))?"
+                + "(,(i(?<indexOneInclude>\\*|\\d+))?(n(?<indexOneIgnore>\\*|\\d+))?)?"
                 + "(,?(i(?<indexTwoInclude>\\*|\\d+))?(n(?<indexTwoIgnore>\\*|\\d+))?)?"
                 + "(,?(y(?<readTwoInclude>\\*|\\d+))?(n(?<readTwoIgnore>\\*|\\d+))?)?",
             Pattern.CASE_INSENSITIVE);
