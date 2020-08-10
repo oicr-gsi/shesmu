@@ -1,5 +1,29 @@
 # Unreleased
 
+# [1.2.0] - 2020-08-10T15:05+00:00
+
+Changes:
+ * Create a Check pragma
+ * Create intersection join operations
+ * Add `min`, `max` and `clamp` functions
+ * Ignore unknown fields on source locations in REST API
+ * Allow converting advanced searches back into basic
+ * Make exported constants available to script checker
+
+Niassa/Pinery Plugin
+ * Add `run_lane_count` to `pinery_ius`
+ * Allow bases masks like `y51` to be parsed
+
+Run Scanner plugin:
+ * Expose RunScanner flowcell geometry functions
+
+JIRA plugin:
+ * Add a comment when reopening tickets
+
+SFTP plugin:
+ * Add a fetched date to `unix_file`
+ * Create a native program to scan directories over SFTP
+
 # [1.1.0] - 2020-07-23T17:32+00:00
 
 UI:
