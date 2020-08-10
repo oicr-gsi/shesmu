@@ -101,14 +101,20 @@ public class BarcodeAndBasesMask {
     basesMaskBuilder.setReadOneIgnoreLength(runBasesMask.getReadOneIgnoreLength());
 
     // index one
-    if (barcodeBasesMask.getIndexOneIncludeLength() != null) {
-      basesMaskBuilder.setIndexOneIncludeLength(barcodeBasesMask.getIndexOneIncludeLength());
-      basesMaskBuilder.setIndexOneIgnoreLength(barcodeBasesMask.getIndexOneIgnoreLength());
+    if (runBasesMask.getIndexOneIncludeLength() != null) {
+      if (barcodeBasesMask.getIndexOneIncludeLength() == null) {
+        if (runBasesMask.getIndexOneIncludeLength() != null) {
+          basesMaskBuilder.setIndexOneIgnoreLength(Integer.MAX_VALUE);
+        } else {
+          basesMaskBuilder.setIndexOneIgnoreLength(null);
+        }
+      } else {
+        basesMaskBuilder.setIndexOneIncludeLength(barcodeBasesMask.getIndexOneIncludeLength());
+        basesMaskBuilder.setIndexOneIgnoreLength(barcodeBasesMask.getIndexOneIgnoreLength());
+      }
     }
     if (runBasesMask.getIndexOneIgnoreLength() != null) {
       basesMaskBuilder.setIndexOneIgnoreLength(runBasesMask.getIndexOneIgnoreLength());
-    } else {
-      basesMaskBuilder.setIndexOneIgnoreLength(Integer.MAX_VALUE);
     }
 
     // index two
