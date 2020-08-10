@@ -1,5 +1,10 @@
 # Unreleased
 
+# [1.2.1] - 2020-08-10T18:23+00:00
+
+Niassa/Pinery plugin:
+ * Allow bases masks like `y51` to be produced
+
 # [1.2.0] - 2020-08-10T15:05+00:00
 
 Changes:
