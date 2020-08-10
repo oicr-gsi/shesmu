@@ -124,9 +124,11 @@ public class BasesMask {
     StringBuilder sb = new StringBuilder();
     sb.append(getVal("y", readOneIncludeLength));
     sb.append(getVal("n", readOneIgnoreLength));
-    sb.append(",");
-    sb.append(getVal("i", indexOneIncludeLength));
-    sb.append(getVal("n", indexOneIgnoreLength));
+    if (indexOneIncludeLength != null || indexOneIgnoreLength != null) {
+      sb.append(",");
+      sb.append(getVal("i", indexOneIncludeLength));
+      sb.append(getVal("n", indexOneIgnoreLength));
+    }
     if (indexTwoIncludeLength != null || indexTwoIgnoreLength != null) {
       sb.append(",");
       sb.append(getVal("i", indexTwoIncludeLength));
