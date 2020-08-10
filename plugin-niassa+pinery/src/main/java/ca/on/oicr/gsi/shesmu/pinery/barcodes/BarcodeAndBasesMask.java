@@ -101,9 +101,7 @@ public class BarcodeAndBasesMask {
     basesMaskBuilder.setReadOneIgnoreLength(runBasesMask.getReadOneIgnoreLength());
 
     // index one
-    if (barcodeBasesMask.getIndexOneIncludeLength() == null) {
-      return null;
-    } else {
+    if (barcodeBasesMask.getIndexOneIncludeLength() != null) {
       basesMaskBuilder.setIndexOneIncludeLength(barcodeBasesMask.getIndexOneIncludeLength());
       basesMaskBuilder.setIndexOneIgnoreLength(barcodeBasesMask.getIndexOneIgnoreLength());
     }
