@@ -36,6 +36,8 @@ public class BasesMaskTest {
     Assertions.assertEquals(BasesMask.fromString("y*,i6n*").toString(), "y*,i6n*");
     Assertions.assertEquals(BasesMask.fromString("y*,i6n2").toString(), "y*,i6n2");
     Assertions.assertEquals(BasesMask.fromString("y*,i6").toString(), "y*,i6");
+    Assertions.assertEquals(BasesMask.fromString("y*").toString(), "y*");
+    Assertions.assertEquals(BasesMask.fromString("y51").toString(), "y51");
   }
 
   @Test
