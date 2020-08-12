@@ -251,8 +251,9 @@ public class CompiledGenerator implements DefinitionRepository {
       if (!live) {
         return "Deleted while waiting to run.";
       }
-      try {
-        generator.run(consumer, input);
+      try (final MonitoredOliveServices monitoredConsumer =
+          new MonitoredOliveServices(consumer, fileName.toString())) {
+        generator.run(monitoredConsumer, input);
         return "Completed normally";
       } catch (final Exception e) {
         e.printStackTrace();
