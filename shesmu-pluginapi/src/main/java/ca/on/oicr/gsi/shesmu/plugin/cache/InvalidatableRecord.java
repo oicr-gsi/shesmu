@@ -56,7 +56,7 @@ public class InvalidatableRecord<V> implements Record<Optional<V>> {
   }
 
   @Override
-  public synchronized Optional<V> refresh() {
+  public synchronized Optional<V> refresh(String context) {
     value = value.filter(isValid);
     if (value.isPresent()) {
       return value;

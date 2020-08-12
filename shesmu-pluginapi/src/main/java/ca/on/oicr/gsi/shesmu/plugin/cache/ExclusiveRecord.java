@@ -1,6 +1,5 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
-import ca.on.oicr.gsi.shesmu.plugin.cache.ExclusiveRecord.Lifetime;
 import java.io.Closeable;
 import java.time.Instant;
 import java.util.concurrent.Semaphore;
@@ -68,8 +67,8 @@ public class ExclusiveRecord<T> implements Record<ExclusiveRecord<T>.Lifetime> {
   }
 
   @Override
-  public Lifetime refresh() {
-    final T value = inner.refresh();
+  public Lifetime refresh(String context) {
+    final T value = inner.refresh(context);
     lock.acquireUninterruptibly();
     return new Lifetime(value);
   }
