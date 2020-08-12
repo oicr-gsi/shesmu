@@ -89,7 +89,7 @@ public abstract class ValueCache<I, V> implements Owner {
    *     is in an error state
    */
   public V get() {
-    final V item = value.refresh();
+    final V item = value.refresh(name);
     innerCount.labels(name).set(value.collectionSize());
     return item;
   }

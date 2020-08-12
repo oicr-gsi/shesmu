@@ -112,7 +112,7 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
     maxCount = Math.max(maxCount, record.collectionSize());
     innerCount.labels(name).set(maxCount);
     count.labels(name).set(records.size());
-    return record.refresh();
+    return record.refresh(String.format("%s [key=%s]", name, key));
   }
   /**
    * Get an item from cache without updating it

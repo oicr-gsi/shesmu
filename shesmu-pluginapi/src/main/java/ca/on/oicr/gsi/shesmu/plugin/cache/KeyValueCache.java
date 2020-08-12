@@ -105,7 +105,7 @@ public abstract class KeyValueCache<K, I, V> implements Owner, Iterable<Map.Entr
     maxCount = Math.max(maxCount, record.collectionSize());
     innerCount.labels(name).set(maxCount);
     count.labels(name).set(records.size());
-    return record.refresh();
+    return record.refresh(String.format("%s [key=%s]", name, key));
   }
 
   /**

@@ -34,8 +34,12 @@ public interface Record<V> {
   /** Get the current item value, but do not fetch */
   V readStale();
 
-  /** Get the current item value, fetching if necessary */
-  V refresh();
+  /**
+   * Get the current item value, fetching if necessary
+   *
+   * @param context information about the owner's cache to log if an exception occurs
+   */
+  V refresh(String context);
 
   /** The callback used by this record to fetch data */
   Updater<?> updater();

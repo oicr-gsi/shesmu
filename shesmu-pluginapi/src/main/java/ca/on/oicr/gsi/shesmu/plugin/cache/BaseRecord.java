@@ -45,7 +45,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
   }
 
   @Override
-  public final R refresh() {
+  public final R refresh(String context) {
     final boolean doRefresh;
     boolean shouldThrow;
     synchronized (this) {
@@ -69,6 +69,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
           shouldThrow = false;
         }
       } catch (final Exception e) {
+        System.err.printf("Exception occured while refreshing cache %s is as follows:\n", context);
         e.printStackTrace();
         staleRefreshError.labels(fetcher.owner().name()).inc();
       } finally {

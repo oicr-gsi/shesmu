@@ -112,14 +112,14 @@ public class TimeoutRecord<V> implements Record<V> {
   }
 
   @Override
-  public V refresh() {
+  public V refresh(String context) {
     try {
       LOCK.acquire();
       TIMEOUTS.put(
           Thread.currentThread(),
           new Pair<>(Instant.now().plus(maxRuntime, ChronoUnit.MINUTES), this));
       LOCK.release();
-      final V result = inner.refresh();
+      final V result = inner.refresh(context);
       LOCK.acquire();
       TIMEOUTS.remove(Thread.currentThread());
       LOCK.release();
