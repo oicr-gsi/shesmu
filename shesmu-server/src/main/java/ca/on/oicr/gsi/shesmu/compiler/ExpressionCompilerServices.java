@@ -15,4 +15,6 @@ public interface ExpressionCompilerServices {
   Imyhat imyhat(String name);
 
   InputFormatDefinition inputFormat();
+
+  InputFormatDefinition inputFormat(String format);
 }

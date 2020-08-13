@@ -68,6 +68,11 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
     }
 
     @Override
+    public InputFormatDefinition inputFormat(String format) {
+      return expressionCompilerServices.inputFormat(format);
+    }
+
+    @Override
     public Imyhat imyhat(String name) {
       return expressionCompilerServices.imyhat(name);
     }

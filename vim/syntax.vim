@@ -50,6 +50,7 @@ syn keyword shesmuKeyword If
 syn keyword shesmuKeyword Import
 syn keyword shesmuKeyword In
 syn keyword shesmuKeyword Input
+syn keyword shesmuKeyword InputType
 syn keyword shesmuKeyword IntersectionJoin
 syn keyword shesmuKeyword Into
 syn keyword shesmuKeyword Join

@@ -55,6 +55,7 @@ ace.define(
             "Import",
             "In",
             "Input",
+            "InputType",
             "IntersectionJoin",
             "Into",
             "Join",
