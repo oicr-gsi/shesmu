@@ -1132,6 +1132,12 @@ Provides the type of an argument to a function. The number is the zero-based ind
 
 Provides the inner type of a list or optional.
 
+- `InputType` _format_ _variable_
+
+Provides the type of _variable_ from the input format _format_. Variables from
+the current input format selected with `Input` are also available as
+_variable_`_type`.
+
 - `ReturnType` _name_
 
 Provides the return type of function

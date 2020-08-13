@@ -2450,6 +2450,11 @@ public final class Server implements ServerConfig, ActionServices {
                                           }
 
                                           @Override
+                                          public InputFormatDefinition inputFormat(String format) {
+                                            return CompiledGenerator.SOURCES.get(format);
+                                          }
+
+                                          @Override
                                           public Imyhat imyhat(String name) {
                                             return types.apply(name);
                                           }

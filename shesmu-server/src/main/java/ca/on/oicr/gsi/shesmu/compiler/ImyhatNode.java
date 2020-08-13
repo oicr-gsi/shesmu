@@ -134,6 +134,22 @@ public abstract class ImyhatNode {
       output.accept(new ImyhatNodeTuple(inner.get()));
       return result;
     }
+    final Parser inputVariableParser = input.keyword("InputType");
+    if (inputVariableParser.isGood()) {
+      final AtomicReference<String> inputFormat = new AtomicReference<>();
+      final AtomicReference<String> variable = new AtomicReference<>();
+      final Parser result =
+          inputVariableParser
+              .whitespace()
+              .qualifiedIdentifier(inputFormat::set)
+              .whitespace()
+              .qualifiedIdentifier(variable::set)
+              .whitespace();
+      output.accept(
+          new ImyhatNodeInputVariable(
+              input.line(), input.column(), inputFormat.get(), variable.get()));
+      return result;
+    }
     final Parser unlistParser = input.keyword("In");
     if (unlistParser.isGood()) {
       final AtomicReference<ImyhatNode> inner = new AtomicReference<>();
