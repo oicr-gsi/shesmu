@@ -254,8 +254,12 @@ public final class AnnotatedInputFormatDefinition implements InputFormatDefiniti
           new ConfigurationSection(fileName.toString()) {
             @Override
             public void emit(SectionRenderer sectionRenderer) throws XMLStreamException {
-              sectionRenderer.line(
-                  "Count", values.get().map(l -> Integer.toString(l.size())).orElse("Invalid"));
+              try {
+                sectionRenderer.line(
+                    "Count", values.get().map(l -> Integer.toString(l.size())).orElse("Invalid"));
+              } catch (InitialCachePopulationException e) {
+                sectionRenderer.line("Count", "Invalid");
+              }
             }
           };
     }
