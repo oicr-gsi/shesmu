@@ -903,9 +903,20 @@ export function dropdownTable<T, S>(
 /**
  * Create a group of elements with flexbox layout
  */
-export function flexGroup(...contents: UIElement[]): UIElement {
-  const element = createUiFromTag("span", ...contents);
+export function flexGroup(
+  direction: "row" | "column",
+  ...blocks: { contents: UIElement; width: number }[]
+): UIElement {
+  const element = createUiFromTag(
+    "div",
+    ...blocks.map(({ contents, width }) => {
+      const x = createUiFromTag("div", contents);
+      x.element.style.flex = width.toString();
+      return x;
+    })
+  );
   element.element.style.display = "flex";
+  element.element.style.flexDirection = direction;
   return element;
 }
 /**

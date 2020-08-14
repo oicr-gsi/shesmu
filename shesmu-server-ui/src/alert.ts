@@ -187,6 +187,7 @@ export function alertNavigator<L, A extends Alert<L>>(
         br(),
         breakdown(selectedAlerts, filterList),
         total,
+        br(),
         ui,
       ];
     },
@@ -383,12 +384,18 @@ function breakdown(
       ): UIElement =>
         breakdown
           ? [
-              breakdown.label,
-              button(
-                "🏷️ Has Label",
-                "Show alerts that have this label with any value.",
-                () =>
-                  list.add({ label: breakdown.label, value: null, type: "has" })
+              group(
+                breakdown.label,
+                button(
+                  "🏷️ Has Label",
+                  "Show alerts that have this label with any value.",
+                  () =>
+                    list.add({
+                      label: breakdown.label,
+                      value: null,
+                      type: "has",
+                    })
+                )
               ),
               table(
                 [...breakdown.values],
@@ -444,7 +451,11 @@ function breakdown(
       );
       return row;
     });
-    return flexGroup(tableFromRows(commonRows.concat(breakdownRows)), ui);
+    return flexGroup(
+      "row",
+      { contents: tableFromRows(commonRows.concat(breakdownRows)), width: 1 },
+      { contents: ui, width: 1 }
+    );
   }
   return blank();
 }
