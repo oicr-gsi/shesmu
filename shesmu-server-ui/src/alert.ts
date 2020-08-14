@@ -49,8 +49,8 @@ export interface Alert<L> {
   annotations: { [label: string]: string };
   labels: { [label: string]: string };
   locations: L[];
-  startsAt: number;
-  endsAt: number;
+  startsAt: string;
+  endsAt: string;
 }
 /**
  * An alert filter
@@ -675,7 +675,7 @@ function renderAlert<L, A extends Alert<L>>(
     ].map(({ name, getter }) => {
       const time = getter(a);
       if (time) {
-        const { ago, absolute } = computeDuration(time);
+        const { ago, absolute } = computeDuration(new Date(time).getTime());
         return text(`${name} ${ago}`, absolute);
       } else {
         return blank();
