@@ -13,6 +13,52 @@ import java.util.stream.Stream;
  */
 public interface ImyhatTransformer<R> {
 
+  /** Transform an algebraic type */
+  interface AlgebraicTransformer {
+
+    String name();
+
+    <R> R visit(AlgebraicVisitor<R> visitor);
+  }
+
+  /**
+   * Convert an algebraic type
+   *
+   * @param <R>
+   */
+  interface AlgebraicVisitor<R> {
+
+    /**
+     * Convert an empty algebraic type
+     *
+     * @param name the type tag of the type
+     */
+    R empty(String name);
+
+    /**
+     * Convert an object algebraic type
+     *
+     * @param name the type tag of the type
+     * @param contents a list of fields in the object and their types
+     */
+    R object(String name, Stream<Pair<String, Imyhat>> contents);
+
+    /**
+     * Convert a tuple algebraic type
+     *
+     * @param name the type tag of the type
+     * @param contents the types of the items in the tuple, in order
+     */
+    R tuple(String name, Stream<Imyhat> contents);
+  }
+
+  /**
+   * Convert an algebraic type
+   *
+   * @param contents all of the different types that are permitted in this algebraic type
+   */
+  R algebraic(Stream<AlgebraicTransformer> contents);
+
   /** Convert a <tt>boolean</tt> type */
   R bool();
 

@@ -144,7 +144,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
                     return false;
                   }
                   final boolean isSame =
-                      arguments.get(index).type().isSame(target.parameterType(index));
+                      target.parameterType(index).isAssignableFrom(arguments.get(index).type());
                   if (!isSame) {
                     errorHandler.accept(
                         String.format(

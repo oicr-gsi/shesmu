@@ -97,26 +97,25 @@ public class ExpressionNodeContains extends ExpressionNode {
     final boolean ok = needle.typeCheck(errorHandler) & haystack.typeCheck(errorHandler);
     if (ok) {
       if (haystack.type() instanceof Imyhat.ListImyhat) {
-        if (needle.type().asList().isSame(haystack.type())) {
+        if (haystack.type().isAssignableFrom(needle.type().asList())) {
           mode = Mode.LIST;
           return true;
         }
-        typeError(needle.type().asList(), haystack.type(), errorHandler);
+        typeError(haystack.type(), needle.type(), errorHandler);
         return false;
       }
       if (haystack.type() instanceof Imyhat.DictionaryImyhat) {
         final Imyhat.DictionaryImyhat haystackType = (Imyhat.DictionaryImyhat) haystack.type();
-        if (needle.type().isSame(haystackType.key())) {
+        if (haystackType.key().isAssignableFrom(needle.type())) {
           mode = Mode.MAP;
           return true;
         }
-        typeError(
-            Imyhat.dictionary(needle.type(), haystackType.value()), haystack.type(), errorHandler);
+        typeError(needle.type(), haystackType.key(), errorHandler);
         return false;
       }
       typeError("list or dictionary", haystack.type(), errorHandler);
       return false;
     }
-    return ok;
+    return false;
   }
 }

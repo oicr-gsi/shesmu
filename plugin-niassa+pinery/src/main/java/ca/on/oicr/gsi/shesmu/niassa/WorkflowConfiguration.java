@@ -32,6 +32,11 @@ public class WorkflowConfiguration {
               .apply(
                   new ImyhatFunction<String>() {
                     @Override
+                    public String apply(String name, AccessContents accessor) {
+                      return name + ":" + accessor.apply(this);
+                    }
+
+                    @Override
                     public String apply(boolean value) {
                       return Boolean.toString(value);
                     }

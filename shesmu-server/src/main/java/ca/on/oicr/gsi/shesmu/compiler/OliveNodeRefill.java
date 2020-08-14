@@ -313,7 +313,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
                               .filter(
                                   t -> {
                                     final Imyhat requiredType = parameterInfo.get(t.name()).type();
-                                    if (requiredType.isSame(t.type())) {
+                                    if (requiredType.isAssignableFrom(t.type())) {
                                       return false;
                                     }
                                     ExpressionNode.generateTypeError(

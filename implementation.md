@@ -105,6 +105,9 @@ olives cannot handle null values. If you need nullable values, use
 | Empty List | `java.lang.Set`                            | `[]`                     | `A`        |
 | Tuple      | `ca.on.oicr.gsi.shesmu.Tuple`              | `{`_t1_`,`_t2_`,` ...`}` | `t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
 | Object     | `ca.on.oicr.gsi.shesmu.Tuple`              | `{`_f1_` = `_t1_`,`_f2_` = `_t2_`,` ...`}` | `o` _n_ _f1_`$`_t1_ _f2_`$`_t2_ Where _n_ is the number of elements in the object. Fields must be sorted alphabetically. |
+| Algebraic  | `ca.on.oicr.gsi.shesmu.AlgebraicValue`     | _NAME_ | `u1`_NAME_`$t0` |
+| Algebraic  | `ca.on.oicr.gsi.shesmu.AlgebraicValue`     | _NAME_ `{`_t1_`,`_t2_`,` ...`}` | `u1`_NAME_`$t` _n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Algebraic  | `ca.on.oicr.gsi.shesmu.AlgebraicValue`     | _NAME_ `{`_f1_` = `_t1_`,`_f2_` = `_t2_`,` ...`}` | `u1`_NAME_`$o` _n_ _f1_`$`_t1_ _f2_`$`_t2_ Where _n_ is the number of elements in the object. Fields must be sorted alphabetically. |
 | Optional   | `java.util.Optional`                       | _inner_`?`               | `q`_inner_ |
 | Optional   | `java.util.Optional`                       | `nothing`                | `Q`        |
 | Dict       | `java.util.Map`                            | _k_` -> `_v_             | `m` _k_ _v_ |
@@ -130,6 +133,7 @@ necessary to convert a JSON document back into an interpretable format.
 | List      | array                              |
 | Tuple     | array                              |
 | Object    | object                             |
+| Algebraic | object; see [Algebraic Values without Algebra](algebraicguide.md) |
 | Dict      | object (if key is a string) or array of arrays containing key-value pairs |
 
 ## Writing an Input Format Plugin

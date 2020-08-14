@@ -1,0 +1,7 @@
+Version 1;
+Input test;
+
+Function x(string p)
+  If p == "the_foo_study" Then OK Else SOMETHING {False};
+
+Olive Run ok With ok = Match x(project) When OK Then True;

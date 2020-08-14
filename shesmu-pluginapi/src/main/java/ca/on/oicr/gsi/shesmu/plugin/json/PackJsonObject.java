@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /** Add a Shesmu value into a JSON object */
@@ -68,6 +69,13 @@ public class PackJsonObject implements ImyhatConsumer {
     } else {
       node.putNull(name);
     }
+  }
+
+  @Override
+  public void accept(String typeName, Consumer<ImyhatConsumer> accessor) {
+    final ObjectNode algebraic = node.putObject(name);
+    algebraic.put("type", typeName);
+    accessor.accept(createObject(algebraic, "contents"));
   }
 
   @Override

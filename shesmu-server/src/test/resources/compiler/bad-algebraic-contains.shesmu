@@ -1,0 +1,5 @@
+Version 1;
+Input test;
+
+Export Function x([FOO|BAR] p)
+  BAZ In p;

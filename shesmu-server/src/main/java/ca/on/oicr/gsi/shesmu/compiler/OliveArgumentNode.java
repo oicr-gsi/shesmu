@@ -140,11 +140,11 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
                 errorHandler.accept(
                     String.format("%d:%d: Argument “%s” is required.", line, column, name));
                 return false;
-              } else if (definition.type().isSame(target.type())) {
+              } else if (definition.type().isAssignableFrom(target.type())) {
                 definitions.put(target.name(), new Unmodified(definition));
                 return true;
               } else if (!definition.required()
-                  && definition.type().asOptional().isSame(target.type())) {
+                  && definition.type().asOptional().isAssignableFrom(target.type())) {
                 definitions.put(target.name(), new OptionalProvided(definition));
                 return true;
               } else {

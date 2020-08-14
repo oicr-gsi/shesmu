@@ -528,6 +528,53 @@ will produce:
 | `"a"`  | `` `1` `` | `` `True` `` |
 | `"b"`  | `` `2` `` | `` ` ` ``    |
 
+- `Match` _refexpr_ (`When` _algmatch_ `Then` _valueexpr_)\* (`Else` _altexpr_ | `Remainder (`_name_`)` _altexpr_)?
+
+Allows separating the algebraic value returned by _refexpr_ and accessing its
+contents. A `When` branch can be provided for every possible algebraic type
+returned by _refexpr_. If all possible types are matched, the matching is
+_exhaustive_. If the matching is not exhaustive, the remaining cases can be
+handled via `Else` or `Remainder`. `Else` allows an expression to be used in
+all other cases, much like the `Else` in a `Switch`. `Remainder` provides
+access to the case being handled.
+
+For example:
+
+
+    Function analysis_for_project(string project)
+		  Switch project
+			  When "a" Then CANCER {"hg38"}
+			  When "b" Then CANCER {"hg19"}
+			  When "c" Then VIRAL {"hpv", "hg19"}
+			  When "d" Then VIRAL {"hpv", "hg19"}
+        Else SEQUENCING_ONLY;
+
+     Function reference_for_analysis(CANCER{string} | VIRAL{string, string} analysis)
+        # Match is exhaustive, so no Else/Remainder
+        Match analysis
+          When CANCER{genome} Then genome
+          When VIRAL{_, genome} Then genome;
+
+    ...
+      # Determine if this olive should run on this data; use Else to cover other cases
+      Where Match analysis_for_project(project)
+          When CANCER {_} Then True
+          Else False
+    ...
+
+    ...
+       Let
+         project, sample,
+         reference = OnlyIf
+           # We remove the SEQUENCING_ONLY case and pass the other values to reference_for_analysis
+           Match analysis_for_project(project)
+             When SEQUENCING_ONLY Then ``
+             Remainder (a) `reference_for_analysis(a)`
+    ...
+
+
+For details on algebraic values, see [Algebraic Values without Algebra](algebraicguide.md).
+
 ### JSON Conversion
 - _expr_ `As` _type_
 
@@ -765,6 +812,23 @@ the result will be an optional of the appropriate type.
 
 Get the name of the action being executed as a `string?`. In the case of
 `Refill` and `Alert` olives, this will be the missing optional value.
+
+#### Algebraic Values
+- _NAME_
+- _NAME_`{`_expr_`, `_expr_`, `...`}`
+- _NAME_`{@`_name_`}`
+- _NAME_`{`_field_` = `_expr_`, `_field_` = `_expr_`, `...`}`
+
+Shesmu supports creating algebraic values. The name of an algebraic type is a
+combination of uppercase letters, digits, and underscore. It must start with an
+uppercase letter and be at least two characters. Algebraic values come in three
+types: ones which contain no information (and work something like an `enum` in
+other languages), types that are associated with a sequence of values, much
+like a tuple, and ones which contained named fields, much like a named
+tuple/object. It is also possible to use a gang to create a tuple-like
+algebraic value.
+
+For details on algebraic values, see [Algebraic Values without Algebra](algebraicguide.md).
 
 #### Date Literal
 - `Date` _YYYY_`-`_mm_`-`_dd_
@@ -1131,8 +1195,15 @@ machine-to-machine communication.
 | Optional   | _inner_`?`                                         | `q`_inner_ or `Q` |
 | Path       | `path`                                             | `p`         |
 | JSON       | `json`                                             | `j`         |
+| Algebraic  | _NAME_                                             | `u1`_NAME_`$t01` |
+| Algebraic  | _NAME_ `{`_t1_`, `_t2_`, `...`}`                   | `u1`_NAME_`$t`_n_ _t1_ _t2_ Where _n_ is the number of elements in the tuple. |
+| Algebraic  | _NAME_ `{`_field1_` = `_t1_`,`_field2_` = `_t2_`,` ...`}` | `u1`_NAME_`$o` _n_ _field1_`$`_t1_ _field2_`$`_t2_ Where _n_ is the number of elements in the tuple. |
 
 All the variables are already available as _variable_`_type`.
+
+For details on optional values, see [the Mandatory Guide to Optional
+Values](optionalguide.md).  For details on algebraic values, see [Algebraic
+Values without Algebra](algebraicguide.md).
 
 - `ArgumentType` _name_`(`_number_`)`
 

@@ -22,6 +22,14 @@ public class JsonWrapper implements ImyhatFunction<JsonNode> {
   private static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
   @Override
+  public JsonNode apply(String name, AccessContents accessor) {
+    final ObjectNode objectNode = FACTORY.objectNode();
+    objectNode.put("type", name);
+    objectNode.put("value", accessor.apply(this));
+    return objectNode;
+  }
+
+  @Override
   public JsonNode apply(boolean value) {
     return FACTORY.booleanNode(value);
   }

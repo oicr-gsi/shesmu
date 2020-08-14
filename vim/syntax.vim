@@ -61,6 +61,7 @@ syn keyword shesmuKeyword Let
 syn keyword shesmuKeyword LexicalConcat
 syn keyword shesmuKeyword Limit
 syn keyword shesmuKeyword List
+syn keyword shesmuKeyword Match
 syn keyword shesmuKeyword Location
 syn keyword shesmuKeyword Max
 syn keyword shesmuKeyword Min
@@ -75,13 +76,13 @@ syn keyword shesmuKeyword Prefix
 syn keyword shesmuKeyword Reduce
 syn keyword shesmuKeyword Refill
 syn keyword shesmuKeyword Reject
+syn keyword shesmuKeyword Remainder
 syn keyword shesmuKeyword Require
+syn keyword shesmuKeyword RequiredServices
 syn keyword shesmuKeyword Return
 syn keyword shesmuKeyword ReturnType
 syn keyword shesmuKeyword Reverse
-syn keyword shesmuKeyword RequiredServices
 syn keyword shesmuKeyword Run
-syn keyword shesmuKeyword Univalued
 syn keyword shesmuKeyword Skip
 syn keyword shesmuKeyword Sort
 syn keyword shesmuKeyword Splitting
@@ -90,6 +91,7 @@ syn keyword shesmuKeyword Subsample
 syn keyword shesmuKeyword Sum
 syn keyword shesmuKeyword Switch
 syn keyword shesmuKeyword Tag
+syn keyword shesmuKeyword Univalued
 syn keyword shesmuKeyword Then
 syn keyword shesmuKeyword Timeout
 syn keyword shesmuKeyword To
@@ -111,6 +113,7 @@ syn match shesmuConstant "\<\d\+\>" display
 syn match shesmuConstant "\<\d\+[kMG]i\=\>" display
 syn match shesmuConstant "\<\d\+\(weeks\|days\|hours\|mins\)\>" display
 syn match shesmuConstant "'\([^\\']\|\\'\)\+\'" display
+syn match shesmuConstant "[A-Z][A-Z_0-9]\+" display
 syn match shesmuIdentifier "\<[a-z][a-zA-Z0-9_]*\>\s*=[^=>]" display
 syn match shesmuDate "Date\s*\d\d\d\d-\d\d-\d\d\(T\d\d\:\d\d:\d\d\(Z\|[+-]\d\d\(:\d\d\)\=\)\)\=" display
 syn match shesmuComment /#.*$/ contains=shesmuTodo,@Spell display

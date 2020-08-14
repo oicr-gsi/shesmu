@@ -137,15 +137,15 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
       return IntStream.range(0, argumentTypes.size())
               .filter(
                   index -> {
-                    final boolean isSame =
-                        argumentTypes.get(index).isSame(arguments.get(index).type());
-                    if (!isSame) {
+                    final boolean isAssignable =
+                        argumentTypes.get(index).isAssignableFrom(arguments.get(index).type());
+                    if (!isAssignable) {
                       arguments
                           .get(index)
                           .typeError(
                               argumentTypes.get(index), arguments.get(index).type(), errorHandler);
                     }
-                    return isSame;
+                    return isAssignable;
                   })
               .count()
           == argumentTypes.size();

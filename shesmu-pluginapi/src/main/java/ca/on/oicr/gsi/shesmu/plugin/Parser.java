@@ -308,6 +308,8 @@ public abstract class Parser {
     }
   }
 
+  public static final Pattern ALGEBRAIC_NAME = Pattern.compile("[A-Z][A-Z_0-9]+");
+
   private static final Pattern COMMENT = Pattern.compile("#[^\\n]*");
   public static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-zA-Z0-9_]*");
   public static final Pattern QUALIFIED_IDENTIFIER =
@@ -420,6 +422,11 @@ public abstract class Parser {
     this.line = line;
     this.column = column;
     this.errorConsumer = errorConsumer;
+  }
+
+  /** Parse an algebraic name/type tag. */
+  public final Parser algebraicIdentifier(Consumer<String> name) {
+    return regex(Parser.ALGEBRAIC_NAME, m -> name.accept(m.group()), "algebraic value name");
   }
 
   /** The current column in the input. */
