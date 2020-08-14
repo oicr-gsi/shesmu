@@ -670,17 +670,38 @@ export function initialiseActionDash(
     sources,
     tags
   );
-  const {
-    model: deleteModel,
-    ui: deleteUi,
-  } = singleState((input: SearchDefinition) =>
-    localSearches.get(input[0])
-      ? button(
-          "✖ Delete Search",
-          "Remove this search from your local search collection.",
-          () => localSearches.delete(input[0])
-        )
-      : blank()
+  const { model: deleteModel, ui: deleteUi } = singleState(
+    (input: SearchDefinition) =>
+      localSearches.get(input[0])
+        ? [
+            button(
+              "✎ Rename Search",
+              "Change the name of this search in the local search collection.",
+              () =>
+                dialog((close) => {
+                  const { ui, getter } = inputText(input[0]);
+                  return [
+                    "New name: ",
+                    ui,
+                    br(),
+                    button("✎ Rename", "Change searchs name.", () => {
+                      const newName = getter().trim();
+                      if (newName && newName != input[0]) {
+                        localSearches.delete(input[0]);
+                        localSearches.set(newName, input[1]);
+                        close();
+                      }
+                    }),
+                  ];
+                })
+            ),
+            button(
+              "✖ Delete Search",
+              "Remove this search from your local search collection.",
+              () => localSearches.delete(input[0])
+            ),
+          ]
+        : blank()
   );
   const { model: searchModel, ui: searchSelector } = singleState(
     (saved: Iterable<SearchDefinition>): UIElement =>
