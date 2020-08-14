@@ -352,127 +352,124 @@ export function actionDisplay(
                 );
               })
           : "Actions not loaded yet.",
-      bulkCommands: ([filters, response]: QueryState) =>
-        response && response.results.length
-          ? [
-              buttonAccessory(
-                "🡇 Export Search",
-                "Export this search to a file or the clipboard or for use in other software.",
-                () =>
-                  dialog((close) =>
-                    standardExports
-                      .concat(exportSearches)
-                      .map(([name, description, callback]) =>
-                        button(name, description, () => {
-                          callback(filters);
-                          close();
-                        })
+      bulkCommands: ([filters, response]: QueryState) => [
+        buttonAccessory(
+          "🡇 Export Search",
+          "Export this search to a file or the clipboard or for use in other software.",
+          () =>
+            dialog((close) =>
+              standardExports
+                .concat(exportSearches)
+                .map(([name, description, callback]) =>
+                  button(name, description, () => {
+                    callback(filters);
+                    close();
+                  })
+                )
+            )
+        ),
+        response && response.bulkCommands.length
+          ? buttonAccessory(
+              "🡇 Export Command",
+              "Generate a command line to perform a command command.",
+              () =>
+                dialog((_close) =>
+                  tableFromRows(
+                    response.bulkCommands.map(({ buttonText, command }) =>
+                      tableRow(
+                        null,
+                        { contents: buttonText },
+                        {
+                          contents: button(
+                            "cUrl",
+                            `Copy a cURL command to invoke the ${command} command on the actions selected.`,
+                            () =>
+                              copyCUrlCommand("command", {
+                                command: command,
+                                filters: filters,
+                              })
+                          ),
+                        },
+                        {
+                          contents: button(
+                            "Wget",
+                            `Copy a Wget command to invoke the ${command} command on the actions selected.`,
+                            () =>
+                              copyWgetCommand("command", {
+                                command: command,
+                                filters: filters,
+                              })
+                          ),
+                        }
                       )
-                  )
-              ),
-              response.bulkCommands.length
-                ? buttonAccessory(
-                    "🡇 Export Command",
-                    "Generate a command line to perform a command command.",
-                    () =>
-                      dialog((_close) =>
-                        tableFromRows(
-                          response.bulkCommands.map(({ buttonText, command }) =>
-                            tableRow(
-                              null,
-                              { contents: buttonText },
-                              {
-                                contents: button(
-                                  "cUrl",
-                                  `Copy a cURL command to invoke the ${command} command on the actions selected.`,
-                                  () =>
-                                    copyCUrlCommand("command", {
-                                      command: command,
-                                      filters: filters,
-                                    })
-                                ),
-                              },
-                              {
-                                contents: button(
-                                  "Wget",
-                                  `Copy a Wget command to invoke the ${command} command on the actions selected.`,
-                                  () =>
-                                    copyWgetCommand("command", {
-                                      command: command,
-                                      filters: filters,
-                                    })
-                                ),
-                              }
-                            )
-                          )
-                        )
-                      )
-                  )
-                : blank(),
-              buttonDanger(
-                "☠️ Purge Actions",
-                "Remove actions from Shesmu. This does not stop an olive from generating them again.",
-                () =>
-                  fetchJsonWithBusyDialog(
-                    "purge",
-                    {
-                      body: JSON.stringify(filters),
-                      method: "POST",
-                    },
-                    (count: number) => {
-                      let imgSrc: string;
-                      if (count == 0) {
-                        imgSrc = "shrek.gif";
-                      } else if (count < 5) {
-                        imgSrc = "holtburn.gif";
-                      } else if (count < 20) {
-                        imgSrc = "vacuum.gif";
-                      } else if (count < 100) {
-                        imgSrc = "car.gif";
-                      } else if (count < 500) {
-                        imgSrc = "flamethrower.gif";
-                      } else if (count < 1000) {
-                        imgSrc = "thorshchariot.gif";
-                      } else if (count < 5000) {
-                        imgSrc = "volcano.gif";
-                      } else {
-                        imgSrc = "starwars.gif";
-                      }
-                      butter(
-                        3000,
-                        `Removed ${count} actions.`,
-                        br(),
-                        img(imgSrc)
-                      );
-                      reload();
-                    }
-                  )
-              ),
-              response.bulkCommands.length < 6
-                ? response.bulkCommands.map((command) =>
-                    buttonDanger(
-                      command.buttonText,
-                      `Perform special command ${command.command} on ${command.count} actions.`,
-                      createCallbackForCommand(command, filters, reload)
                     )
                   )
-                : buttonDanger(
-                    "🔧 Bulk Commands ▼",
-                    "Perform a number of action-specific commands.",
-                    popupMenu(
-                      true,
-                      ...response.bulkCommands.map((command) => ({
-                        label: command.buttonText,
-                        action: createCallbackForCommand(
-                          command,
-                          filters,
-                          reload
-                        ),
-                      }))
-                    )
-                  ),
-            ]
+                )
+            )
           : blank(),
+        response && response.total
+          ? buttonDanger(
+              "☠️ Purge Actions",
+              "Remove actions from Shesmu. This does not stop an olive from generating them again.",
+              () =>
+                fetchJsonWithBusyDialog(
+                  "purge",
+                  {
+                    body: JSON.stringify(filters),
+                    method: "POST",
+                  },
+                  (count: number) => {
+                    let imgSrc: string;
+                    if (count == 0) {
+                      imgSrc = "shrek.gif";
+                    } else if (count < 5) {
+                      imgSrc = "holtburn.gif";
+                    } else if (count < 20) {
+                      imgSrc = "vacuum.gif";
+                    } else if (count < 100) {
+                      imgSrc = "car.gif";
+                    } else if (count < 500) {
+                      imgSrc = "flamethrower.gif";
+                    } else if (count < 1000) {
+                      imgSrc = "thorshchariot.gif";
+                    } else if (count < 5000) {
+                      imgSrc = "volcano.gif";
+                    } else {
+                      imgSrc = "starwars.gif";
+                    }
+                    butter(
+                      3000,
+                      `Removed ${count} actions.`,
+                      br(),
+                      img(imgSrc)
+                    );
+                    reload();
+                  }
+                )
+            )
+          : blank(),
+        response
+          ? response.bulkCommands.length < 6
+            ? response.bulkCommands.map((command) =>
+                buttonDanger(
+                  command.buttonText,
+                  `Perform special command ${command.command} on ${command.count} actions.`,
+                  createCallbackForCommand(command, filters, reload)
+                )
+              )
+            : buttonDanger(
+                "🔧 Bulk Commands ▼",
+                "Perform a number of action-specific commands.",
+                popup(
+                  true,
+                  ...response.bulkCommands.map((command) => ({
+                    label: command.buttonText,
+                    action: createCallbackForCommand(command, filters, reload),
+                  }))
+                )
+              )
+          : blank(),
+      ],
     },
     "bulkCommands"
   );
