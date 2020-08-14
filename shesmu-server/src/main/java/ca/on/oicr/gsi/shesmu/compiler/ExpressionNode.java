@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
@@ -308,6 +309,26 @@ public abstract class ExpressionNode implements Renderable {
           return result;
         });
     OUTER.addKeyword(
+        "Match",
+        (p, o) -> {
+          final AtomicReference<List<MatchBranchNode>> cases = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> test = new AtomicReference<>();
+          final AtomicReference<MatchAlternativeNode> alternative = new AtomicReference<>();
+          final Parser result =
+              parse(p.whitespace(), test::set)
+                  .whitespace()
+                  .list(cases::set, MatchBranchNode::parse)
+                  .whitespace()
+                  .then(MatchAlternativeNode::parse, alternative::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                new ExpressionNodeMatch(
+                    p.line(), p.column(), test.get(), cases.get(), alternative.get()));
+          }
+          return result;
+        });
+    OUTER.addKeyword(
         "For",
         (p, o) -> {
           final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
@@ -593,41 +614,13 @@ public abstract class ExpressionNode implements Renderable {
                 .whitespace());
     TERMINAL.addSymbol(
         "{",
-        (p, o) -> {
-          final Parser gangParser = p.whitespace().symbol("@");
-          if (gangParser.isGood()) {
-            final AtomicReference<String> name = new AtomicReference<>();
-            final Parser gangResult =
-                gangParser.whitespace().identifier(name::set).whitespace().symbol("}").whitespace();
-            if (gangResult.isGood()) {
-              o.accept(new ExpressionNodeGangTuple(p.line(), p.column(), name.get()));
-            }
-            return gangResult;
-          }
-          final AtomicReference<List<ObjectElementNode>> fields = new AtomicReference<>();
-          final Parser objectResult =
-              p.whitespace()
-                  .list(fields::set, ObjectElementNode::parse, ',')
-                  .whitespace()
-                  .symbol("}")
-                  .whitespace();
-          if (objectResult.isGood()) {
-            o.accept(new ExpressionNodeObject(p.line(), p.column(), fields.get()));
-            return objectResult;
-          }
-
-          final AtomicReference<List<TupleElementNode>> items = new AtomicReference<>();
-          final Parser result =
-              p.whitespace()
-                  .list(items::set, TupleElementNode::parse, ',')
-                  .whitespace()
-                  .symbol("}")
-                  .whitespace();
-          if (p.isGood()) {
-            o.accept(new ExpressionNodeTuple(p.line(), p.column(), items.get()));
-          }
-          return result;
-        });
+        (p, o) ->
+            parseTupleOrObject(
+                p,
+                o,
+                (n) -> new ExpressionNodeGangTuple(p.line(), p.column(), n),
+                f -> new ExpressionNodeObject(p.line(), p.column(), f),
+                e -> new ExpressionNodeTuple(p.line(), p.column(), e)));
     TERMINAL.addKeyword(
         "Dict",
         (p, o) -> {
@@ -759,9 +752,26 @@ public abstract class ExpressionNode implements Renderable {
           return p.whitespace();
         });
     TERMINAL.addRaw(
-        "function call, variable",
+        "function call, variable, algebraic value",
         (p, o) -> {
           final AtomicReference<String> name = new AtomicReference<>();
+          final Parser algebraicResult = p.algebraicIdentifier(name::set).whitespace();
+          if (algebraicResult.isGood()) {
+            if (algebraicResult.lookAhead('{')) {
+              return parseTupleOrObject(
+                  algebraicResult.symbol("{"),
+                  o,
+                  (n) -> new ExpressionNodeAlgebraicGangTuple(p.line(), p.column(), name.get(), n),
+                  f -> new ExpressionNodeAlgebraicObject(p.line(), p.column(), name.get(), f),
+                  e -> new ExpressionNodeAlgebraicTuple(p.line(), p.column(), name.get(), e));
+            } else {
+              o.accept(
+                  new ExpressionNodeAlgebraicTuple(
+                      p.line(), p.column(), name.get(), Collections.emptyList()));
+            }
+            return algebraicResult;
+          }
+
           Parser result = p.qualifiedIdentifier(name::set);
           if (result.isGood()) {
             if (result.lookAhead('(')) {
@@ -792,6 +802,49 @@ public abstract class ExpressionNode implements Renderable {
         "valid characters",
         (p, o) ->
             p.regex(PATH_CHUNK, m -> o.accept(m.group(0)), "Valid path characters required."));
+  }
+
+  private static Parser parseTupleOrObject(
+      Parser parser,
+      Consumer<ExpressionNode> output,
+      Function<String, ExpressionNode> gangConstructor,
+      Function<List<ObjectElementNode>, ExpressionNode> objectContsructor,
+      Function<List<TupleElementNode>, ExpressionNode> tupleConstructor) {
+    final Parser gangParser = parser.whitespace().symbol("@");
+    if (gangParser.isGood()) {
+      final AtomicReference<String> name = new AtomicReference<>();
+      final Parser gangResult =
+          gangParser.whitespace().identifier(name::set).whitespace().symbol("}").whitespace();
+      if (gangResult.isGood()) {
+        output.accept(gangConstructor.apply(name.get()));
+      }
+      return gangResult;
+    }
+    final AtomicReference<List<ObjectElementNode>> fields = new AtomicReference<>();
+    final Parser objectResult =
+        parser
+            .whitespace()
+            .list(fields::set, ObjectElementNode::parse, ',')
+            .whitespace()
+            .symbol("}")
+            .whitespace();
+    if (objectResult.isGood()) {
+      output.accept(objectContsructor.apply(fields.get()));
+      return objectResult;
+    }
+
+    final AtomicReference<List<TupleElementNode>> items = new AtomicReference<>();
+    final Parser result =
+        parser
+            .whitespace()
+            .list(items::set, TupleElementNode::parse, ',')
+            .whitespace()
+            .symbol("}")
+            .whitespace();
+    if (parser.isGood()) {
+      output.accept(tupleConstructor.apply(items.get()));
+    }
+    return result;
   }
 
   public static Consumer<Matcher> regexParser(AtomicReference<Pair<String, Integer>> regex) {

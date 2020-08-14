@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /** Convert a value to JSON using the streaming interface */
@@ -135,6 +136,19 @@ public class PackStreaming implements ImyhatConsumer {
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
+    }
+  }
+
+  @Override
+  public void accept(String name, Consumer<ImyhatConsumer> accessor) {
+    try {
+      generator.writeStartObject();
+      generator.writeStringField("type", name);
+      generator.writeObjectFieldStart("contents");
+      accessor.accept(this);
+      generator.writeEndObject();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

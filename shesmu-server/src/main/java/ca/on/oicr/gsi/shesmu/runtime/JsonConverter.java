@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -16,6 +18,49 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
 
   public JsonConverter(JsonNode input) {
     this.input = input;
+  }
+
+  @Override
+  public Optional<Object> algebraic(Stream<AlgebraicTransformer> contents) {
+    if (!input.isObject()) {
+      contents.close();
+      return Optional.empty();
+    }
+    if (input.has("type") && input.get("type").isTextual() && input.has("contents")) {
+      final String type = input.get("type").asText();
+      final JsonNode arguments = input.get("contents");
+      return contents
+          .filter(t -> t.name().equals(type))
+          .findFirst()
+          .flatMap(
+              t ->
+                  t.visit(
+                      new AlgebraicVisitor<Optional<Object>>() {
+                        @Override
+                        public Optional<Object> empty(String name) {
+                          return arguments.isNull()
+                                  || (arguments.isObject() || arguments.isArray())
+                                      && arguments.isEmpty()
+                              ? Optional.of(new AlgebraicValue(type))
+                              : Optional.empty();
+                        }
+
+                        @Override
+                        public Optional<Object> object(
+                            String name, Stream<Pair<String, Imyhat>> contents) {
+                          return JsonConverter.this.object(
+                              arguments, contents, a -> new AlgebraicValue(name, a));
+                        }
+
+                        @Override
+                        public Optional<Object> tuple(String name, Stream<Imyhat> contents) {
+                          return JsonConverter.this.tuple(
+                              arguments, contents, a -> new AlgebraicValue(name, a));
+                        }
+                      }));
+    }
+    contents.close();
+    return Optional.empty();
   }
 
   @Override
@@ -99,6 +144,13 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
 
   @Override
   public Optional<Object> object(Stream<Pair<String, Imyhat>> contents) {
+    return object(input, contents, Tuple::new);
+  }
+
+  private Optional<Object> object(
+      JsonNode input,
+      Stream<Pair<String, Imyhat>> contents,
+      Function<Object[], Object> constructor) {
     if (!input.isObject()) {
       contents.close();
       return Optional.empty();
@@ -119,7 +171,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
             return element.isPresent();
           }
         })) {
-      return Optional.of(new Tuple(output));
+      return Optional.of(constructor.apply(output));
     }
     return Optional.empty();
   }
@@ -141,6 +193,11 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
 
   @Override
   public Optional<Object> tuple(Stream<Imyhat> contents) {
+    return tuple(input, contents, Tuple::new);
+  }
+
+  private Optional<Object> tuple(
+      JsonNode input, Stream<Imyhat> contents, Function<Object[], Object> constructor) {
     if (!input.isArray()) {
       contents.close();
       return Optional.empty();
@@ -161,7 +218,7 @@ public class JsonConverter implements ImyhatTransformer<Optional<Object>> {
             return element.isPresent();
           }
         })) {
-      return Optional.of(new Tuple(output));
+      return Optional.of(constructor.apply(output));
     }
     return Optional.empty();
   }

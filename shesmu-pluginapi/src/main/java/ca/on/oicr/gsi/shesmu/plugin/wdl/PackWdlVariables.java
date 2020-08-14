@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -116,6 +117,11 @@ public class PackWdlVariables implements ImyhatConsumer {
   @Override
   public void accept(Imyhat inner, Optional<?> value) {
     value.ifPresent(o -> inner.accept(this, o));
+  }
+
+  @Override
+  public void accept(String name, Consumer<ImyhatConsumer> accessor) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

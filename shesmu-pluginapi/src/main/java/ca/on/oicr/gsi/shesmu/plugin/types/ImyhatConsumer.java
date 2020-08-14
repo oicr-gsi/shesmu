@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -43,6 +44,18 @@ public interface ImyhatConsumer {
 
   /** Collect a JSON value */
   void accept(JsonNode value);
+
+  /** Collects an optional */
+  void accept(Imyhat inner, Optional<?> value);
+
+  /**
+   * Collect an algebraic type
+   *
+   * @param name the algebraic type tag
+   * @param accessor a function which access the contents of the algebraic type
+   */
+  void accept(String name, Consumer<ImyhatConsumer> accessor);
+
   /** Collect a map type */
   void acceptMap(Map<?, ?> map, Imyhat key, Imyhat value);
 
@@ -59,7 +72,4 @@ public interface ImyhatConsumer {
    * @param fields the indices, values, and types in the tuple
    */
   void acceptTuple(Stream<Field<Integer>> fields);
-
-  /** Collects an optional */
-  void accept(Imyhat inner, Optional<?> value);
 }

@@ -159,6 +159,12 @@ public final class WdlInputType {
       new ImyhatTransformer<String>() {
 
         @Override
+        public String algebraic(Stream<AlgebraicTransformer> contents) {
+          return "mixed"; // The WDL spec is unclear if this is a real type name or an indication of
+          // a hidden generic
+        }
+
+        @Override
         public String bool() {
           return "Boolean";
         }

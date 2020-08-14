@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -76,6 +77,13 @@ public abstract class ToBytesConverter implements ImyhatConsumer {
     } else {
       add(new byte[] {(byte) 'Q'});
     }
+  }
+
+  @Override
+  public final void accept(String name, Consumer<ImyhatConsumer> accessor) {
+    add(name.getBytes(StandardCharsets.UTF_8));
+    add(new byte[] {(byte) 0});
+    accessor.accept(this);
   }
 
   @Override

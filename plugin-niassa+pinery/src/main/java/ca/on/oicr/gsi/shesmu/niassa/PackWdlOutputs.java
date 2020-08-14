@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -73,6 +74,11 @@ class PackWdlOutputs implements ImyhatConsumer {
   @Override
   public void accept(Imyhat inner, Optional<?> value) {
     value.ifPresent(o -> inner.accept(this, o));
+  }
+
+  @Override
+  public void accept(String name, Consumer<ImyhatConsumer> accessor) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

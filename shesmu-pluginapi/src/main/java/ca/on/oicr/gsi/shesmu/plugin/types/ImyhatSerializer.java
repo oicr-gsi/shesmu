@@ -33,6 +33,67 @@ public class ImyhatSerializer extends JsonSerializer<Imyhat> {
         .apply(
             new ImyhatTransformer<Generator>() {
               @Override
+              public Generator algebraic(Stream<AlgebraicTransformer> contents) {
+                final List<Generator> generators =
+                    contents
+                        .map(
+                            t ->
+                                t.visit(
+                                    new AlgebraicVisitor<Generator>() {
+                                      @Override
+                                      public Generator empty(String name) {
+                                        return g -> g.writeNullField(name);
+                                      }
+
+                                      @Override
+                                      public Generator object(
+                                          String name, Stream<Pair<String, Imyhat>> contents) {
+                                        final List<Generator> members =
+                                            contents
+                                                .<Generator>map(
+                                                    p ->
+                                                        g -> {
+                                                          g.writeFieldName(p.first());
+                                                          serialize(
+                                                              p.second(), g, serializerProvider);
+                                                        })
+                                                .collect(Collectors.toList());
+                                        return g -> {
+                                          g.writeObjectFieldStart(name);
+                                          for (final Generator member : members) {
+                                            member.generate(g);
+                                          }
+                                          g.writeEndObject();
+                                        };
+                                      }
+
+                                      @Override
+                                      public Generator tuple(String name, Stream<Imyhat> contents) {
+                                        final List<Imyhat> members =
+                                            contents.collect(Collectors.toList());
+                                        return g -> {
+                                          g.writeArrayFieldStart(name);
+                                          for (final Imyhat member : members) {
+                                            serialize(member, g, serializerProvider);
+                                          }
+                                          g.writeEndArray();
+                                        };
+                                      }
+                                    }))
+                        .collect(Collectors.toList());
+                return g -> {
+                  g.writeStartObject();
+                  g.writeStringField("is", "algebraic");
+                  g.writeObjectFieldStart("union");
+                  for (final Generator union : generators) {
+                    union.generate(g);
+                  }
+                  g.writeEndObject();
+                  g.writeEndObject();
+                };
+              }
+
+              @Override
               public Generator bool() {
                 return just(Imyhat.BOOLEAN);
               }

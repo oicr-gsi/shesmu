@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.json;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.TimeFormat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -27,6 +28,43 @@ public class UnpackJson implements ImyhatTransformer<Object> {
   public UnpackJson(JsonNode value, TimeFormat format) {
     this.value = value;
     this.format = format;
+  }
+
+  @Override
+  public Object algebraic(Stream<AlgebraicTransformer> contents) {
+    final String type = value.get("type").asText();
+    return contents
+        .filter(a -> a.name().equals(type))
+        .findFirst()
+        .get()
+        .visit(
+            new AlgebraicVisitor<Object>() {
+              @Override
+              public Object empty(String name) {
+                return new AlgebraicValue(name);
+              }
+
+              @Override
+              public Object object(String name, Stream<Pair<String, Imyhat>> contents) {
+                final JsonNode object = value.get("contents");
+                return new AlgebraicValue(
+                    name,
+                    contents
+                        .map(p -> p.second().apply(new UnpackJson(object.get(p.first()), format)))
+                        .toArray());
+              }
+
+              @Override
+              public Object tuple(String name, Stream<Imyhat> contents) {
+                final JsonNode tuple = value.get("contents");
+                return new AlgebraicValue(
+                    name,
+                    contents
+                        .map(Pair.number())
+                        .map(p -> p.second().apply(new UnpackJson(tuple.get(p.first()), format)))
+                        .toArray());
+              }
+            });
   }
 
   @Override

@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +33,36 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
   public interface Pack5<T, U, V, W, X, R> {
     R pack(T first, U second, V third, W fourth, X fifth);
+  }
+
+  @SafeVarargs
+  public static <T> TypeGuarantee<T> algebraic(AlgebraicGuarantee<? extends T>... inner) {
+    return algebraic(Stream.of(inner));
+  }
+
+  public static <T> TypeGuarantee<T> algebraic(Stream<AlgebraicGuarantee<? extends T>> inner) {
+    final Map<String, AlgebraicGuarantee<? extends T>> processors =
+        inner.collect(Collectors.toMap(AlgebraicGuarantee::name, Function.identity()));
+    final Imyhat innerType =
+        processors.values().stream().map(AlgebraicGuarantee::type).reduce(Imyhat::unify).get();
+    return new TypeGuarantee<T>() {
+      @Override
+      public Imyhat type() {
+        return innerType;
+      }
+
+      @Override
+      public T unpack(Object value) {
+        final AlgebraicValue algebraicValue = (AlgebraicValue) value;
+        return processors.get(algebraicValue.name()).unpack(algebraicValue);
+      }
+    };
+  }
+
+  public static <E extends Enum<E>> TypeGuarantee<E> algebraicForEnum(Class<E> clazz) {
+    return algebraic(
+        Stream.of(clazz.getEnumConstants())
+            .map(e -> AlgebraicGuarantee.empty(e.name().toUpperCase(), e)));
   }
 
   public static <T> TypeGuarantee<List<T>> list(TypeGuarantee<T> inner) {
@@ -368,7 +400,7 @@ public abstract class TypeGuarantee<T> extends GenericTypeGuarantee<T> {
 
   @Override
   public final boolean check(Map<String, Imyhat> variables, Imyhat reference) {
-    return type().isSame(reference);
+    return type().isAssignableFrom(reference);
   }
 
   @Override

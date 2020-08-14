@@ -1,9 +1,12 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
+import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,6 +17,121 @@ import java.util.stream.Stream;
  * @param <T> the Java type being exported to Shesmu
  */
 public abstract class GenericTypeGuarantee<T> {
+
+  public static <T> GenericTypeGuarantee<T> genericAlgebraic(
+      GenericAlgebraicGuarantee<? extends T>... inner) {
+    final Map<String, GenericAlgebraicGuarantee<? extends T>> processors =
+        Stream.of(inner)
+            .collect(Collectors.toMap(GenericAlgebraicGuarantee::name, Function.identity()));
+    return new GenericTypeGuarantee<T>() {
+
+      @Override
+      public <R> R apply(GenericTransformer<R> transformer) {
+        return transformer.genericAlgebraic(processors.values().stream());
+      }
+
+      @Override
+      public boolean check(Map<String, Imyhat> variables, Imyhat reference) {
+        return reference.apply(
+            new ImyhatTransformer<Boolean>() {
+              @Override
+              public Boolean algebraic(Stream<AlgebraicTransformer> contents) {
+                return contents.allMatch(
+                    t -> {
+                      final GenericAlgebraicGuarantee<? extends T> processor =
+                          processors.get(t.name());
+                      return processor != null && processor.check(variables, t);
+                    });
+              }
+
+              @Override
+              public Boolean bool() {
+                return false;
+              }
+
+              @Override
+              public Boolean date() {
+                return false;
+              }
+
+              @Override
+              public Boolean floating() {
+                return false;
+              }
+
+              @Override
+              public Boolean integer() {
+                return false;
+              }
+
+              @Override
+              public Boolean json() {
+                return false;
+              }
+
+              @Override
+              public Boolean list(Imyhat inner) {
+                return false;
+              }
+
+              @Override
+              public Boolean map(Imyhat key, Imyhat value) {
+                return false;
+              }
+
+              @Override
+              public Boolean object(Stream<Pair<String, Imyhat>> contents) {
+                return false;
+              }
+
+              @Override
+              public Boolean optional(Imyhat inner) {
+                return false;
+              }
+
+              @Override
+              public Boolean path() {
+                return false;
+              }
+
+              @Override
+              public Boolean string() {
+                return false;
+              }
+
+              @Override
+              public Boolean tuple(Stream<Imyhat> contents) {
+                return false;
+              }
+            });
+      }
+
+      @Override
+      public Imyhat render(Map<String, Imyhat> variables) {
+        return processors
+            .values()
+            .stream()
+            .map(v -> v.render(variables))
+            .reduce(Imyhat::unify)
+            .get();
+      }
+
+      @Override
+      public String toString(Map<String, Imyhat> typeVariables) {
+        return processors
+            .values()
+            .stream()
+            .map(v -> v.toString(typeVariables))
+            .collect(Collectors.joining(" | "));
+      }
+
+      @Override
+      public T unpack(Object value) {
+        final AlgebraicValue algebraicValue = (AlgebraicValue) value;
+        return processors.get(algebraicValue.name()).unpack(algebraicValue);
+      }
+    };
+  }
   /**
    * Create a list containing a generic type
    *

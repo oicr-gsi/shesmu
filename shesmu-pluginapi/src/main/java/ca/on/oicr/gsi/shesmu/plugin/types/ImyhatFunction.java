@@ -19,11 +19,24 @@ import java.util.stream.Stream;
  */
 public interface ImyhatFunction<R> {
 
+  interface AccessContents {
+    <R> R apply(ImyhatFunction<R> function);
+  }
+
+  /**
+   * Convert an algebraic type
+   *
+   * @param name the algebraic type tag
+   * @param accessor a function which access the contents of the algebraic type
+   */
+  R apply(String name, AccessContents accessor);
+
   /** Convert a Boolean value */
   R apply(boolean value);
 
   /** Convert a floating point value */
   R apply(double value);
+
   /** Convert a date value */
   R apply(Instant value);
 
@@ -53,16 +66,16 @@ public interface ImyhatFunction<R> {
   R applyMap(Map<?, ?> map, Imyhat key, Imyhat value);
 
   /**
-   * Convert a tuple
-   *
-   * @param contents the values, types, and indices of items in the tuple
-   */
-  R applyTuple(Stream<Field<Integer>> contents);
-
-  /**
    * Convert a object
    *
    * @param contents the values, types, and field names of items in the object
    */
   R applyObject(Stream<Field<String>> contents);
+
+  /**
+   * Convert a tuple
+   *
+   * @param contents the values, types, and indices of items in the tuple
+   */
+  R applyTuple(Stream<Field<Integer>> contents);
 }

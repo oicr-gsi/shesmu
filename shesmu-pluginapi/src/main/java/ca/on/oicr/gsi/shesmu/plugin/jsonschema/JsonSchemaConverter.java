@@ -15,9 +15,73 @@ import com.fasterxml.jackson.module.jsonSchema.types.NumberSchema;
 import com.fasterxml.jackson.module.jsonSchema.types.ObjectSchema;
 import com.fasterxml.jackson.module.jsonSchema.types.ObjectSchema.SchemaAdditionalProperties;
 import com.fasterxml.jackson.module.jsonSchema.types.StringSchema;
+import com.fasterxml.jackson.module.jsonSchema.types.UnionTypeSchema;
+import com.fasterxml.jackson.module.jsonSchema.types.ValueTypeSchema;
 import java.util.stream.Stream;
 
 final class JsonSchemaConverter implements ImyhatTransformer<JsonSchema> {
+
+  @Override
+  public JsonSchema algebraic(Stream<AlgebraicTransformer> contents) {
+    final UnionTypeSchema result = new UnionTypeSchema();
+    result.setElements(
+        contents
+            .map(
+                c ->
+                    c.visit(
+                        new AlgebraicVisitor<ValueTypeSchema>() {
+                          @Override
+                          public ValueTypeSchema empty(String name) {
+                            final ObjectSchema object = new ObjectSchema();
+                            object.rejectAdditionalProperties();
+                            final StringSchema nameSchema = new StringSchema();
+                            nameSchema.setPattern(name);
+                            object.putProperty("type", nameSchema.asValueTypeSchema());
+                            object.putProperty("contents", new NullSchema());
+                            return object.asValueTypeSchema();
+                          }
+
+                          @Override
+                          public ValueTypeSchema object(
+                              String name, Stream<Pair<String, Imyhat>> contents) {
+                            final ObjectSchema contentObject = new ObjectSchema();
+                            contentObject.rejectAdditionalProperties();
+                            contents.forEach(
+                                field ->
+                                    contentObject.putProperty(
+                                        field.first(),
+                                        field.second().apply(JsonSchemaConverter.this)));
+
+                            final ObjectSchema object = new ObjectSchema();
+                            object.rejectAdditionalProperties();
+                            final StringSchema nameSchema = new StringSchema();
+                            nameSchema.setPattern(name);
+                            object.putProperty("type", nameSchema.asValueTypeSchema());
+                            object.putProperty("contents", contentObject);
+                            return object.asValueTypeSchema();
+                          }
+
+                          @Override
+                          public ValueTypeSchema tuple(String name, Stream<Imyhat> contents) {
+                            final ArraySchema contentArray = new ArraySchema();
+                            contentArray.setItems(
+                                new ArrayItems(
+                                    contents
+                                        .map(element -> element.apply(JsonSchemaConverter.this))
+                                        .toArray(JsonSchema[]::new)));
+
+                            final ObjectSchema object = new ObjectSchema();
+                            object.rejectAdditionalProperties();
+                            final StringSchema nameSchema = new StringSchema();
+                            nameSchema.setPattern(name);
+                            object.putProperty("type", nameSchema.asValueTypeSchema());
+                            object.putProperty("contents", contentArray);
+                            return object.asValueTypeSchema();
+                          }
+                        }))
+            .toArray(ValueTypeSchema[]::new));
+    return result;
+  }
 
   @Override
   public JsonSchema bool() {

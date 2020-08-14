@@ -197,12 +197,21 @@ public abstract class ImyhatNode {
           .whitespace();
     }
 
+    final AtomicReference<List<AlgebraicImyhatNode>> unions =
+        new AtomicReference<>(Collections.emptyList());
+    final Parser algebraicParser = input.listEmpty(unions::set, AlgebraicImyhatNode::parse, '|');
+    if (!unions.get().isEmpty()) {
+      if (algebraicParser.isGood()) {
+        output.accept(new ImyhatNodeAlgebraic(input.line(), input.column(), unions.get()));
+      }
+      return algebraicParser;
+    }
+
     final AtomicReference<String> name = new AtomicReference<>();
     final Parser result = input.identifier(name::set).whitespace();
     if (!result.isGood()) {
       return result;
     }
-
     output.accept(
         Imyhat.baseTypes()
             .filter(base -> base.name().equals(name.get()))

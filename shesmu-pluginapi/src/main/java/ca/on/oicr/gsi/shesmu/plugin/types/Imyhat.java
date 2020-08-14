@@ -1,7 +1,11 @@
 package ca.on.oicr.gsi.shesmu.plugin.types;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatFunction.AccessContents;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer.AlgebraicTransformer;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer.AlgebraicVisitor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -21,6 +25,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
@@ -40,10 +45,297 @@ import java.util.stream.Stream;
 @JsonDeserialize(using = ImyhatDeserializer.class)
 @JsonSerialize(using = ImyhatSerializer.class)
 public abstract class Imyhat {
+  public static final class AlgebraicImyhat extends Imyhat {
+    private final Map<String, Imyhat> unions;
+
+    private AlgebraicImyhat(String name, Imyhat tuple) {
+      unions = new TreeMap<>();
+      unions.put(name, tuple);
+    }
+
+    private AlgebraicImyhat(Map<String, Imyhat> unions) {
+
+      this.unions = unions;
+    }
+
+    @Override
+    public void accept(ImyhatConsumer dispatcher, Object value) {
+      final AlgebraicValue algebraicValue = (AlgebraicValue) value;
+      final Imyhat inner = unions.get(algebraicValue.name());
+      final Consumer<ImyhatConsumer> consumer;
+      if (inner instanceof TupleImyhat) {
+        final TupleImyhat tupleInner = (TupleImyhat) inner;
+        consumer =
+            d ->
+                d.acceptTuple(
+                    IntStream.range(0, tupleInner.types.length)
+                        .mapToObj(i -> new Field<>(i, algebraicValue.get(i), tupleInner.types[i])));
+      } else {
+        final ObjectImyhat objectInner = (ObjectImyhat) inner;
+        consumer =
+            d ->
+                d.acceptObject(
+                    objectInner
+                        .fields
+                        .entrySet()
+                        .stream()
+                        .map(
+                            e ->
+                                new Field<>(
+                                    e.getKey(),
+                                    algebraicValue.get(e.getValue().second()),
+                                    e.getValue().first())));
+      }
+      dispatcher.accept(algebraicValue.name(), consumer);
+    }
+
+    @Override
+    public <R> R apply(ImyhatFunction<R> dispatcher, Object value) {
+      final AlgebraicValue algebraicValue = (AlgebraicValue) value;
+      final Imyhat inner = unions.get(algebraicValue.name());
+      final ImyhatFunction.AccessContents converter;
+      if (inner instanceof TupleImyhat) {
+        final TupleImyhat tupleInner = (TupleImyhat) inner;
+        converter =
+            new AccessContents() {
+              @Override
+              public <C> C apply(ImyhatFunction<C> function) {
+                return function.applyTuple(
+                    IntStream.range(0, tupleInner.types.length)
+                        .mapToObj(i -> new Field<>(i, algebraicValue.get(i), tupleInner.types[i])));
+              }
+            };
+      } else {
+        final ObjectImyhat objectInner = (ObjectImyhat) inner;
+        converter =
+            new AccessContents() {
+              @Override
+              public <C> C apply(ImyhatFunction<C> function) {
+                return function.applyObject(
+                    objectInner
+                        .fields
+                        .entrySet()
+                        .stream()
+                        .map(
+                            e ->
+                                new Field<>(
+                                    e.getKey(),
+                                    algebraicValue.get(e.getValue().second()),
+                                    e.getValue().first())));
+              }
+            };
+      }
+      return dispatcher.apply(algebraicValue.name(), converter);
+    }
+
+    @Override
+    public <R> R apply(ImyhatTransformer<R> transformer) {
+      return transformer.algebraic(
+          unions
+              .entrySet()
+              .stream()
+              .map(
+                  e -> {
+                    if (e.getValue() instanceof TupleImyhat) {
+                      final TupleImyhat tupleImyhat = (TupleImyhat) e.getValue();
+                      if (tupleImyhat.types.length == 0) {
+                        return new AlgebraicTransformer() {
+                          @Override
+                          public String name() {
+                            return e.getKey();
+                          }
+
+                          @Override
+                          public <T> T visit(AlgebraicVisitor<T> visitor) {
+                            return visitor.empty(e.getKey());
+                          }
+                        };
+                      } else {
+                        return new AlgebraicTransformer() {
+                          @Override
+                          public String name() {
+                            return e.getKey();
+                          }
+
+                          @Override
+                          public <T> T visit(AlgebraicVisitor<T> visitor) {
+                            return visitor.tuple(e.getKey(), Stream.of(tupleImyhat.types));
+                          }
+                        };
+                      }
+                    } else {
+                      final ObjectImyhat objectImyhat = (ObjectImyhat) e.getValue();
+                      if (objectImyhat.fields.isEmpty()) {
+                        return new AlgebraicTransformer() {
+                          @Override
+                          public String name() {
+                            return e.getKey();
+                          }
+
+                          @Override
+                          public <T> T visit(AlgebraicVisitor<T> visitor) {
+                            return visitor.empty(e.getKey());
+                          }
+                        };
+                      } else {
+                        return new AlgebraicTransformer() {
+                          @Override
+                          public String name() {
+                            return e.getKey();
+                          }
+
+                          @Override
+                          public <T> T visit(AlgebraicVisitor<T> visitor) {
+                            return visitor.object(
+                                e.getKey(),
+                                objectImyhat
+                                    .fields
+                                    .entrySet()
+                                    .stream()
+                                    .map(e -> new Pair<>(e.getKey(), e.getValue().first())));
+                          }
+                        };
+                      }
+                    }
+                  }));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Comparator<?> comparator() {
+      final Map<String, Comparator<AlgebraicValue>> comparators = new TreeMap<>();
+      for (final Entry<String, Imyhat> union : unions.entrySet()) {
+        Comparator<AlgebraicValue> comparator;
+        if (union.getValue() instanceof TupleImyhat) {
+          final TupleImyhat tupleImyhat = (TupleImyhat) union.getValue();
+          comparator =
+              IntStream.range(0, tupleImyhat.types.length)
+                  .mapToObj(
+                      index ->
+                          Comparator.comparing(
+                              (AlgebraicValue t) -> t.get(index),
+                              (Comparator<Object>) tupleImyhat.types[index].comparator()))
+                  .reduce(Comparator::thenComparing)
+                  .orElse((a, b) -> 0);
+        } else {
+          comparator =
+              ((ObjectImyhat) union.getValue())
+                  .fields
+                  .values()
+                  .stream()
+                  .sorted(Comparator.comparing(Pair::second))
+                  .map(
+                      p ->
+                          Comparator.comparing(
+                              (AlgebraicValue t) -> t.get(p.second()),
+                              (Comparator<Object>) p.first().comparator()))
+                  .reduce(Comparator::thenComparing)
+                  .get();
+        }
+        comparators.put(union.getKey(), comparator);
+      }
+      return Comparator.comparing(AlgebraicValue::name)
+          .thenComparing((a, b) -> comparators.get(a.name()).compare(a, b));
+    }
+
+    @Override
+    public String descriptor() {
+      return "u"
+          + unions.size()
+          + unions
+              .entrySet()
+              .stream()
+              .map(u -> u.getKey() + "$" + u.getValue().descriptor())
+              .collect(Collectors.joining());
+    }
+
+    @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      if (other instanceof AlgebraicImyhat) {
+        final AlgebraicImyhat algebraicOther = (AlgebraicImyhat) other;
+        if (!unions.keySet().containsAll(algebraicOther.unions.keySet())) {
+          return false;
+        }
+        for (final Entry<String, Imyhat> union : unions.entrySet()) {
+          if (algebraicOther.unions.containsKey(union.getKey())) {
+            if (!union.getValue().isAssignableFrom(algebraicOther.unions.get(union.getKey()))) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    @Override
+    public boolean isBad() {
+      return unions.values().stream().anyMatch(Imyhat::isBad);
+    }
+
+    @Override
+    public boolean isOrderable() {
+      return false;
+    }
+
+    @Override
+    public boolean isSame(Imyhat other) {
+      if (other instanceof AlgebraicImyhat) {
+        final AlgebraicImyhat algebraicOther = (AlgebraicImyhat) other;
+        for (final Entry<String, Imyhat> union : unions.entrySet()) {
+          if (algebraicOther.unions.containsKey(union.getKey())) {
+            if (!union.getValue().isSame(algebraicOther.unions.get(union.getKey()))) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    @Override
+    public Class<?> javaType() {
+      return AlgebraicValue.class;
+    }
+
+    @Override
+    public String name() {
+      return unions
+          .entrySet()
+          .stream()
+          .map(
+              e -> {
+                if (e.getValue() instanceof TupleImyhat
+                        && ((TupleImyhat) e.getValue()).types.length == 0
+                    || e.getValue() instanceof ObjectImyhat
+                        && ((ObjectImyhat) e.getValue()).fields.isEmpty()) {
+                  return e.getKey();
+                }
+                return e.getKey() + " " + e.getValue().name();
+              })
+          .collect(Collectors.joining(" | "));
+    }
+
+    @Override
+    public Imyhat unify(Imyhat other) {
+      final Map<String, Imyhat> shared = new TreeMap<>(((AlgebraicImyhat) other).unions);
+      for (final Entry<String, Imyhat> union : unions.entrySet()) {
+        shared.merge(union.getKey(), union.getValue(), Imyhat::unify);
+      }
+      return new AlgebraicImyhat(shared);
+    }
+  }
+
   /** A subclass of types for base types */
   public abstract static class BaseImyhat extends Imyhat {
 
     public abstract Object defaultValue();
+
+    @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      return isSame(other);
+    }
 
     @Override
     public final boolean isBad() {
@@ -141,6 +433,15 @@ public abstract class Imyhat {
     @Override
     public int hashCode() {
       return Objects.hash(key, value);
+    }
+
+    @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      if (other instanceof DictionaryImyhat) {
+        final DictionaryImyhat otherMap = (DictionaryImyhat) other;
+        return key.isAssignableFrom(otherMap.key) && value.isAssignableFrom(otherMap.value);
+      }
+      return false;
     }
 
     @Override
@@ -254,6 +555,14 @@ public abstract class Imyhat {
 
     public Imyhat inner() {
       return inner;
+    }
+
+    @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      if (other instanceof ListImyhat) {
+        return inner.isAssignableFrom(((ListImyhat) other).inner);
+      }
+      return other == EMPTY;
     }
 
     @Override
@@ -399,6 +708,26 @@ public abstract class Imyhat {
     }
 
     @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      if (!(other instanceof ObjectImyhat)) {
+        return false;
+      }
+      final Map<String, Pair<Imyhat, Integer>> otherFields = ((ObjectImyhat) other).fields;
+      if (fields.size() != otherFields.size()) {
+        return false;
+      }
+      return fields
+          .entrySet()
+          .stream()
+          .allMatch(
+              e ->
+                  otherFields
+                      .getOrDefault(e.getKey(), new Pair<>(Imyhat.BAD, 0))
+                      .first()
+                      .isAssignableFrom(e.getValue().first()));
+    }
+
+    @Override
     public boolean isBad() {
       return fields.values().stream().map(Pair::first).anyMatch(Imyhat::isBad);
     }
@@ -522,6 +851,18 @@ public abstract class Imyhat {
     }
 
     @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      if (other == NOTHING) {
+        return true;
+      }
+
+      if (other instanceof OptionalImyhat) {
+        return inner.isAssignableFrom(((OptionalImyhat) other).inner);
+      }
+      return false;
+    }
+
+    @Override
     public boolean isBad() {
       return inner.isBad();
     }
@@ -639,6 +980,23 @@ public abstract class Imyhat {
     }
 
     @Override
+    public boolean isAssignableFrom(Imyhat other) {
+      if (other instanceof TupleImyhat) {
+        final Imyhat[] others = ((TupleImyhat) other).types;
+        if (others.length != types.length) {
+          return false;
+        }
+        for (int i = 0; i < types.length; i++) {
+          if (!others[i].isAssignableFrom(types[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    @Override
     public boolean isBad() {
       return Arrays.stream(types).anyMatch(Imyhat::isBad);
     }
@@ -711,6 +1069,11 @@ public abstract class Imyhat {
         @Override
         public String descriptor() {
           return "$";
+        }
+
+        @Override
+        public boolean isAssignableFrom(Imyhat other) {
+          return false;
         }
 
         @Override
@@ -889,6 +1252,11 @@ public abstract class Imyhat {
         @Override
         public String descriptor() {
           return "A";
+        }
+
+        @Override
+        public boolean isAssignableFrom(Imyhat other) {
+          return other == this;
         }
 
         @Override
@@ -1105,7 +1473,6 @@ public abstract class Imyhat {
       };
   public static final BaseImyhat NOTHING =
       new BaseImyhat() {
-
         @Override
         public void accept(ImyhatConsumer dispatcher, Object value) {
           dispatcher.accept(null, Optional.empty());
@@ -1139,6 +1506,11 @@ public abstract class Imyhat {
         @Override
         public String descriptor() {
           return "Q";
+        }
+
+        @Override
+        public boolean isAssignableFrom(Imyhat other) {
+          return other == this;
         }
 
         @Override
@@ -1295,6 +1667,14 @@ public abstract class Imyhat {
         }
       };
   private static final Map<String, CallSite> callsites = new HashMap<>();
+
+  public static Imyhat algebraicObject(String name, Stream<Pair<String, Imyhat>> fields) {
+    return new AlgebraicImyhat(name, new ObjectImyhat(fields));
+  }
+
+  public static Imyhat algebraicTuple(String name, Imyhat... types) {
+    return new AlgebraicImyhat(name, tuple(types));
+  }
 
   public static Stream<BaseImyhat> baseTypes() {
     return Stream.of(BOOLEAN, DATE, FLOAT, INTEGER, JSON, PATH, STRING);
@@ -1483,6 +1863,8 @@ public abstract class Imyhat {
         return parse(input.subSequence(1, input.length()), output, allowEmpty).asOptional();
       case 't':
       case 'o':
+        return parseComplex(input, output, allowEmpty, false);
+      case 'u':
         int count = 0;
         int index;
         for (index = 1; Character.isDigit(input.charAt(index)); index++) {
@@ -1491,30 +1873,57 @@ public abstract class Imyhat {
         if (count == 0) {
           return BAD;
         }
-        output.set(input.subSequence(index, input.length()));
-        if (input.charAt(0) == 't') {
-          final Imyhat[] inner = new Imyhat[count];
-          for (int i = 0; i < count; i++) {
-            inner[i] = parse(output.get(), output, allowEmpty);
+        final Map<String, Imyhat> unions = new TreeMap<>();
+        for (int i = 0; i < count; i++) {
+          final StringBuilder name = new StringBuilder();
+          int dollar = 0;
+          while (output.get().charAt(dollar) != '$') {
+            name.append(output.get().charAt(dollar));
+            dollar++;
           }
-          return tuple(inner);
-        } else {
-          final List<Pair<String, Imyhat>> fields = new ArrayList<>();
-          for (int i = 0; i < count; i++) {
-            final StringBuilder name = new StringBuilder();
-            int dollar = 0;
-            while (output.get().charAt(dollar) != '$') {
-              name.append(output.get().charAt(dollar));
-              dollar++;
-            }
-            output.set(output.get().subSequence(dollar + 1, output.get().length()));
-            fields.add(new Pair<>(name.toString(), parse(output.get(), output, allowEmpty)));
-          }
-          return new ObjectImyhat(fields.stream());
+          output.set(output.get().subSequence(dollar + 1, output.get().length()));
+          unions.put(name.toString(), parseComplex(input, output, allowEmpty, true));
         }
+        return new AlgebraicImyhat(unions);
       default:
         output.set(input);
         return BAD;
+    }
+  }
+
+  private static Imyhat parseComplex(
+      CharSequence input,
+      AtomicReference<CharSequence> output,
+      boolean allowEmpty,
+      boolean noZero) {
+    int count = 0;
+    int index;
+    for (index = 1; Character.isDigit(input.charAt(index)); index++) {
+      count = 10 * count + Character.digit(input.charAt(index), 10);
+    }
+    if (count == 0 && noZero) {
+      return BAD;
+    }
+    output.set(input.subSequence(index, input.length()));
+    if (input.charAt(0) == 't') {
+      final Imyhat[] inner = new Imyhat[count];
+      for (int i = 0; i < count; i++) {
+        inner[i] = parse(output.get(), output, allowEmpty);
+      }
+      return tuple(inner);
+    } else {
+      final List<Pair<String, Imyhat>> fields = new ArrayList<>();
+      for (int i = 0; i < count; i++) {
+        final StringBuilder name = new StringBuilder();
+        int dollar = 0;
+        while (output.get().charAt(dollar) != '$') {
+          name.append(output.get().charAt(dollar));
+          dollar++;
+        }
+        output.set(output.get().subSequence(dollar + 1, output.get().length()));
+        fields.add(new Pair<>(name.toString(), parse(output.get(), output, allowEmpty)));
+      }
+      return new ObjectImyhat(fields.stream());
     }
   }
 
@@ -1567,6 +1976,9 @@ public abstract class Imyhat {
    * @see #parse(CharSequence)
    */
   public abstract String descriptor();
+
+  /** Checks if a value of the parameter type can be assigned to a slot of the receiver type */
+  public abstract boolean isAssignableFrom(Imyhat other);
 
   /** Check if this type is malformed */
   public abstract boolean isBad();

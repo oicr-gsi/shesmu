@@ -2,8 +2,10 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.GangDefinition;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.*;
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -22,6 +24,7 @@ public class TypeUtils {
     T apply(Target input, Imyhat expectedType, boolean dropIfEmpty);
   }
 
+  private static final Type A_ALGEBRAIC_VALUE_TYPE = Type.getType(AlgebraicValue.class);
   private static final Type A_BOOLEAN_TYPE = Type.getType(Boolean.class);
   private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
@@ -36,6 +39,12 @@ public class TypeUtils {
   private static final Type A_TUPLE_TYPE = Type.getType(Tuple.class);
   public static final GenericTransformer<Type> TO_ASM =
       new GenericTransformer<Type>() {
+
+        @Override
+        public Type algebraic(Stream<AlgebraicTransformer> contents) {
+          contents.close();
+          return A_ALGEBRAIC_VALUE_TYPE;
+        }
 
         @Override
         public Type bool() {
@@ -55,6 +64,12 @@ public class TypeUtils {
         @Override
         public Type generic(String id) {
           return A_OBJECT_TYPE;
+        }
+
+        @Override
+        public <T> Type genericAlgebraic(Stream<GenericAlgebraicGuarantee<? extends T>> inner) {
+          inner.close();
+          return A_ALGEBRAIC_VALUE_TYPE;
         }
 
         @Override
@@ -127,6 +142,12 @@ public class TypeUtils {
       new ImyhatTransformer<Type>() {
 
         @Override
+        public Type algebraic(Stream<AlgebraicTransformer> contents) {
+          contents.close();
+          return A_ALGEBRAIC_VALUE_TYPE;
+        }
+
+        @Override
         public Type bool() {
           return A_BOOLEAN_TYPE;
         }
@@ -195,6 +216,54 @@ public class TypeUtils {
       new ImyhatTransformer<String>() {
 
         @Override
+        public String algebraic(Stream<AlgebraicTransformer> contents) {
+          return contents
+              .map(
+                  c ->
+                      c.visit(
+                          new AlgebraicVisitor<String>() {
+                            @Override
+                            public String empty(String name) {
+                              return "parser.u_e(" + quote(name) + ")";
+                            }
+
+                            @Override
+                            public String object(
+                                String name, Stream<Pair<String, Imyhat>> contents) {
+                              return "parser.u_o("
+                                  + quote(name)
+                                  + ","
+                                  + contents
+                                      .map(
+                                          f ->
+                                              "["
+                                                  + quote(f.first())
+                                                  + ","
+                                                  + f.second().apply(TO_JS_PARSER)
+                                                  + "]")
+                                      .collect(Collectors.joining(","))
+                                  + ")";
+                            }
+
+                            @Override
+                            public String tuple(String name, Stream<Imyhat> contents) {
+                              return "parser.u_t("
+                                  + quote(name)
+                                  + ","
+                                  + contents
+                                      .map(c -> c.apply(TO_JS_PARSER))
+                                      .collect(Collectors.joining(","))
+                                  + ")";
+                            }
+                          }))
+              .collect(Collectors.joining(",", "parser.u(", ")"));
+        }
+
+        private String quote(String name) {
+          return new String(JsonStringEncoder.getInstance().quoteAsString(name));
+        }
+
+        @Override
         public String bool() {
           return "parser.b";
         }
@@ -232,7 +301,7 @@ public class TypeUtils {
         @Override
         public String object(Stream<Pair<String, Imyhat>> fields) {
           return fields
-              .map(e -> e.first() + ":" + e.second().apply(this))
+              .map(e -> quote(e.first()) + ":" + e.second().apply(this))
               .collect(Collectors.joining(", ", "parser.o({", "})"));
         }
 
