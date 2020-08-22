@@ -29,6 +29,8 @@ import org.objectweb.asm.commons.Method;
 
 /** Helper to build bytecode for “olives” (decision-action stanzas) */
 public abstract class BaseOliveBuilder {
+
+  public static final String ACTION_NAME = "Action Name";
   private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
   private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
   private static final Type A_BIPREDICATE_TYPE = Type.getType(BiPredicate.class);
@@ -42,6 +44,7 @@ public abstract class BaseOliveBuilder {
   private static final Type A_OBJECT_ARRAY_TYPE = Type.getType(Object[].class);
   protected static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   protected static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
+  protected static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
   protected static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
@@ -213,6 +216,7 @@ public abstract class BaseOliveBuilder {
           defineOlive.generatePreamble(renderer.methodGen());
           loadOliveServices(renderer.methodGen());
           loadInputProvider(renderer.methodGen());
+          renderer.emitNamed(ACTION_NAME);
           loadOwnerSourceLocation(renderer.methodGen());
           loadAccessor(renderer);
           for (Consumer<Renderer> rendererConsumer : arglist) {

@@ -32,6 +32,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
   private static final Type A_RUNTIME_EXCEPTION_TYPE = Type.getType(RuntimeException.class);
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
   private static final Type A_SYSTEM_TYPE = Type.getType(System.class);
+  private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
   protected static final Handle LAMBDA_METAFACTORY_BSM =
       new Handle(
           Opcodes.H_INVOKESTATIC,
@@ -92,8 +93,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
     methodGen.pop();
   }
 
-  private final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
   private final Type accessorType;
+  private final String actionName;
   private final int column;
   private boolean hasAccessor;
   private final int line;
@@ -104,10 +105,12 @@ public final class OliveBuilder extends BaseOliveBuilder {
       InputFormatDefinition initialFormat,
       int line,
       int column,
+      String actionName,
       Stream<SignableRenderer> signableNames) {
     super(owner, initialFormat);
     this.line = line;
     this.column = column;
+    this.actionName = actionName;
     accessorType =
         Type.getObjectType(String.format("shesmu/dyn/Signer Accessor %d:%d", line, column));
     signerPrefix = String.format("Olive %d:%d ", line, column);
@@ -144,7 +147,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
   }
 
   private void finish(Consumer<Renderer> finishStream) {
-    final Renderer runMethod = owner.rootRenderer(true);
+    final Renderer runMethod = owner.rootRenderer(true, actionName);
     final int startTime = runMethod.methodGen().newLocal(LONG_TYPE);
     runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
     runMethod.methodGen().storeLocal(startTime);
@@ -153,7 +156,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
     runMethod.methodGen().push(initialFormat.name());
     runMethod.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
-    steps.forEach(step -> step.accept(owner.rootRenderer(true)));
+    steps.forEach(step -> step.accept(owner.rootRenderer(true, actionName)));
 
     runMethod.methodGen().dup();
     finishStream.accept(runMethod);
@@ -173,11 +176,11 @@ public final class OliveBuilder extends BaseOliveBuilder {
   }
 
   /** Generate bytecode for the olive and create a method to consume the result. */
-  public final Renderer finish(String actionName, Stream<LoadableValue> captures) {
+  public final Renderer finish(String actionType, Stream<LoadableValue> captures) {
     final LambdaBuilder consumer =
         new LambdaBuilder(
             owner,
-            String.format("%s %d:%d", actionName, line, column),
+            String.format("%s %d:%d", actionType, line, column),
             LambdaBuilder.consumer(currentType()),
             Stream.concat(
                     Stream.of(
@@ -381,6 +384,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   @Override
   public Stream<LoadableValue> loadableValues() {
-    return owner.constants(true);
+    return Stream.concat(
+        owner.constants(true), Stream.of(RootBuilder.actionNameSpecial(actionName)));
   }
 }

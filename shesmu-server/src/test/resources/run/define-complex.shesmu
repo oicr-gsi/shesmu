@@ -5,7 +5,7 @@ Input test;
 # it; however, it does exercise all the bytecode generation pathways involved
 # in exporting.
 Export Define foo({string, integer} s, [string] projects)
- Where project In projects || project == s[0];
+ Where project In projects || project == s[0] && ActionName == `"ok"`;
 
 Olive
  foo({"a", 3}, ["the_foo_study"])

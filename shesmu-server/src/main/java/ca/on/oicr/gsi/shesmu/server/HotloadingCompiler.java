@@ -214,6 +214,7 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                                       Stream.class,
                                                       OliveServices.class,
                                                       InputProvider.class,
+                                                      Optional.class,
                                                       int.class,
                                                       int.class,
                                                       SignatureAccessor.class),

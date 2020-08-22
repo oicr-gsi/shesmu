@@ -182,7 +182,6 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     discriminators.forEach(
         group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
-    final Renderer rootRenderer = builder.rootRenderer(true);
     LoadableValue[] grouperCaptures = new LoadableValue[inputExpressions.size()];
     for (int i = 0; i < grouperCaptures.length; i++) {
       final int local = i;
@@ -220,8 +219,8 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
                   String.format("Grouper Function %d:%d %d", line, column, i),
                   LambdaBuilder.function(
                       inputExpressions.get(i).type(), oliveBuilder.currentType()),
-                  rootRenderer
-                      .allValues()
+                  oliveBuilder
+                      .loadableValues()
                       .filter(value -> freeVariablesForLambda.contains(value.name()))
                       .toArray(LoadableValue[]::new));
           final Renderer lambdaRenderer =

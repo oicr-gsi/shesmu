@@ -29,7 +29,7 @@ public class PragmaNodeFrequency extends PragmaNode {
 
   @Override
   public void renderAtExit(RootBuilder builder) {
-    Renderer renderer = builder.rootRenderer(false);
+    Renderer renderer = builder.rootRenderer(false, null);
     renderer.methodGen().loadThis();
     renderer
         .methodGen()

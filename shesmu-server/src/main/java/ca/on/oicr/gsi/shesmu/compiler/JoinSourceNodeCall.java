@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.ACTION_NAME;
+
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import java.nio.file.Path;
 import java.util.List;
@@ -66,6 +68,7 @@ public class JoinSourceNodeCall extends JoinSourceNode {
         defineOlive.generatePreamble(renderer.methodGen());
         oliveBuilder.loadOliveServices(renderer.methodGen());
         oliveBuilder.loadInputProvider(renderer.methodGen());
+        renderer.emitNamed(ACTION_NAME);
         oliveBuilder.loadOwnerSourceLocation(renderer.methodGen());
         oliveBuilder.loadAccessor(renderer);
         for (final ExpressionNode rendererConsumer : arguments) {
