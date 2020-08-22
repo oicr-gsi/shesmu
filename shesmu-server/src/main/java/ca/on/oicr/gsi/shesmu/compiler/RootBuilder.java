@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.ACTION_NAME;
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.A_OPTIONAL_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
@@ -34,7 +36,6 @@ import org.objectweb.asm.commons.Method;
 /** Helper to build an {@link ActionGenerator} */
 public abstract class RootBuilder {
 
-  private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Type A_ACTION_GENERATOR_TYPE = Type.getType(ActionGenerator.class);
   private static final Type A_DUMPER_TYPE = Type.getType(Dumper.class);
   private static final Type A_GAUGE_TYPE = Type.getType(Gauge.class);
@@ -42,6 +43,7 @@ public abstract class RootBuilder {
   private static final Type A_INPUT_PROVIDER_TYPE = Type.getType(InputProvider.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
+  private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
 
   private static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -60,6 +62,8 @@ public abstract class RootBuilder {
           false);
   private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE =
       new Method("clearGauge", VOID_TYPE, new Type[] {});
+  private static final Method METHOD_ACTION_GENERATOR__INPUTS =
+      new Method("inputs", A_STREAM_TYPE, new Type[] {});
   private static final Method METHOD_ACTION_GENERATOR__RUN =
       new Method("run", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE, A_INPUT_PROVIDER_TYPE});
   private static final Method METHOD_ACTION_GENERATOR__RUN_PREPARE =
@@ -82,8 +86,10 @@ public abstract class RootBuilder {
   private static final Method METHOD_OLIVE_SERVICES__FIND_DUMPER =
       new Method(
           "findDumper", A_DUMPER_TYPE, new Type[] {A_STRING_TYPE, Type.getType(Imyhat[].class)});
-  private static final Method METHOD_ACTION_GENERATOR__INPUTS =
-      new Method("inputs", A_STREAM_TYPE, new Type[] {});
+  private static final Method METHOD_OPTIONAL__EMPTY =
+      new Method("empty", A_OPTIONAL_TYPE, new Type[] {});
+  private static final Method METHOD_OPTIONAL__OF =
+      new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
 
   public static void invalidSignerEmitter(SignatureDefinition renderer, Renderer name) {
     throw new IllegalArgumentException(
@@ -232,7 +238,7 @@ public abstract class RootBuilder {
    */
   public final OliveBuilder buildRunOlive(
       int line,
-      int column,
+      int column,String actionName,
       Set<String> signableNames,
       List<SignableVariableCheck> signableVariableChecks) {
     final Map<String, List<SignableVariableCheck>> checks =
@@ -244,7 +250,7 @@ public abstract class RootBuilder {
         this,
         inputFormatDefinition,
         line,
-        column,
+        column, actionName,
         inputFormatDefinition
             .baseStreamVariables()
             .filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE)
@@ -396,10 +402,6 @@ public abstract class RootBuilder {
     methodGen.getField(selfType, fieldName, A_DUMPER_TYPE);
   }
 
-  public final void useInputFormat(InputFormatDefinition format) {
-    usedFormats.add(format.name());
-  }
-
   public final void loadGauge(
       String metricName, String help, List<String> labelNames, GeneratorAdapter methodGen) {
     final String fieldName = "g$" + metricName;
@@ -432,9 +434,49 @@ public abstract class RootBuilder {
    *
    * <p>No stream variables are available in this context
    */
-  public final Renderer rootRenderer(boolean allowUserDefined) {
+  public final Renderer rootRenderer(boolean allowUserDefined, String actionName) {
     return new RendererNoStream(
-        this, runMethod, constants(allowUserDefined), RootBuilder::invalidSignerEmitter);
+        this,
+        runMethod,
+        Stream.concat(constants(allowUserDefined), Stream.of(actionNameSpecial(actionName))),
+        RootBuilder::invalidSignerEmitter);
+  }
+
+  public static LoadableValue actionNameSpecial(String actionName) {
+    return actionName == null
+        ? new LoadableValue() {
+          @Override
+          public void accept(Renderer renderer) {
+            renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);
+          }
+
+          @Override
+          public String name() {
+            return ACTION_NAME;
+          }
+
+          @Override
+          public Type type() {
+            return A_OPTIONAL_TYPE;
+          }
+        }
+        : new LoadableValue() {
+          @Override
+          public void accept(Renderer renderer) {
+            renderer.methodGen().push(actionName);
+            renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
+          }
+
+          @Override
+          public String name() {
+            return ACTION_NAME;
+          }
+
+          @Override
+          public Type type() {
+            return A_OPTIONAL_TYPE;
+          }
+        };
   }
 
   /** Get the type of the class being generated */
@@ -448,5 +490,9 @@ public abstract class RootBuilder {
 
   public String sourcePath() {
     return path;
+  }
+
+  public final void useInputFormat(InputFormatDefinition format) {
+    usedFormats.add(format.name());
   }
 }

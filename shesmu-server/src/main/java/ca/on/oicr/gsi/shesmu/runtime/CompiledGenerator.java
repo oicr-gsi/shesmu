@@ -303,6 +303,7 @@ public class CompiledGenerator implements DefinitionRepository {
                                 A_STREAM_TYPE,
                                 A_OLIVE_SERVICES_TYPE,
                                 A_INPUT_PROVIDER_TYPE,
+                                A_OPTIONAL_TYPE,
                                 Type.INT_TYPE,
                                 Type.INT_TYPE,
                                 A_SIGNATURE_ACCESSOR_TYPE),
@@ -676,6 +677,7 @@ public class CompiledGenerator implements DefinitionRepository {
   public static final Type A_METHOD_TYPE_TYPE = Type.getType(MethodType.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
   private static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
+  private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   public static final Type A_STRING_TYPE = Type.getType(String.class);

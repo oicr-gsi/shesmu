@@ -19,13 +19,25 @@ import org.objectweb.asm.commons.Method;
 public final class OliveDefineBuilder extends BaseOliveBuilder
     implements CallableDefinitionRenderer {
 
-  public static final LoadableValue SIGNER_ACCESSOR_LOADABLE_VALUE =
+  public static final LoadableValue ACTION_NAME_LOADABLE_VALUE =
       new LoadableValue() {
         @Override
-        public void accept(Renderer renderer) {
-          renderer.methodGen().loadArg(5);
+        public String name() {
+          return ACTION_NAME;
         }
 
+        @Override
+        public Type type() {
+          return A_OPTIONAL_TYPE;
+        }
+
+        @Override
+        public void accept(Renderer renderer) {
+          renderer.methodGen().loadArg(3);
+        }
+      };
+  public static final LoadableValue SIGNER_ACCESSOR_LOADABLE_VALUE =
+      new LoadableValue() {
         @Override
         public String name() {
           return SIGNER_ACCESSOR_NAME;
@@ -34,6 +46,11 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
         @Override
         public Type type() {
           return A_SIGNATURE_ACCESSOR_TYPE;
+        }
+
+        @Override
+        public void accept(Renderer renderer) {
+          renderer.methodGen().loadArg(6);
         }
       };
   private final Method method;
@@ -47,7 +64,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
     this.name = name;
     this.parameters =
         parameters
-            .map(Pair.number(6))
+            .map(Pair.number(7))
             .map(Pair.transform(LoadParameter::new))
             .collect(Collectors.toList());
     method =
@@ -59,6 +76,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
                         A_STREAM_TYPE,
                         A_OLIVE_SERVICES_TYPE,
                         A_INPUT_PROVIDER_TYPE,
+                        A_OPTIONAL_TYPE,
                         Type.INT_TYPE,
                         Type.INT_TYPE,
                         A_SIGNATURE_ACCESSOR_TYPE),
@@ -151,7 +169,9 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
         new RendererNoStream(
             owner,
             new GeneratorAdapter(Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor),
-            Stream.concat(parameters.stream(), Stream.of(SIGNER_ACCESSOR_LOADABLE_VALUE)),
+            Stream.concat(
+                parameters.stream(),
+                Stream.of(ACTION_NAME_LOADABLE_VALUE, SIGNER_ACCESSOR_LOADABLE_VALUE)),
             this::emitSigner);
     renderer.methodGen().visitCode();
     renderer.methodGen().loadArg(0);
@@ -190,8 +210,8 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
 
   @Override
   protected void loadOwnerSourceLocation(GeneratorAdapter method) {
-    method.loadArg(3);
     method.loadArg(4);
+    method.loadArg(5);
   }
 
   @Override
@@ -204,7 +224,9 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
   @Override
   public Stream<LoadableValue> loadableValues() {
     return Stream.of(
-            Stream.of(SIGNER_ACCESSOR_LOADABLE_VALUE), parameters.stream(), owner.constants(true))
+            Stream.of(ACTION_NAME_LOADABLE_VALUE, SIGNER_ACCESSOR_LOADABLE_VALUE),
+            parameters.stream(),
+            owner.constants(true))
         .flatMap(Function.identity());
   }
 

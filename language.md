@@ -759,6 +759,13 @@ The _expr_ can also be an optional of a named tuple or JSON object. If it is,
 the result will be an optional of the appropriate type.
 
 ### Terminals
+
+#### Action Name Literal
+- `ActionName`
+
+Get the name of the action being executed as a `string?`. In the case of
+`Refill` and `Alert` olives, this will be the missing optional value.
+
 #### Date Literal
 - `Date` _YYYY_`-`_mm_`-`_dd_
 - `Date` _YYYY_`-`_mm_`-`_dd_`T`_HH_`:`_MM_`:`_SS_`Z`

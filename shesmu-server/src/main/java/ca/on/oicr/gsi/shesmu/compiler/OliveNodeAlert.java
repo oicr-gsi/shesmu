@@ -234,7 +234,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
     annotations.forEach(
         annotation -> annotation.collectFreeVariables(captures, Flavour::needsCapture));
     final OliveBuilder oliveBuilder =
-        builder.buildRunOlive(line, column, signableNames, signableVariableChecks);
+        builder.buildRunOlive(line, column, null, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
     final Renderer action =
