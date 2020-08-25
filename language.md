@@ -240,10 +240,12 @@ This reshapes the data.
 
 - `Join` _outerkey_ `To` _input_ _innerkey_
 - `IntersectionJoin` _outerkey_ `To` _input_ _innerkey_
+- `Join` _outerkey_ `To Call` _name_`(`_args_`)` _innerkey_
+- `IntersectionJoin` _outerkey_ `To Call` _name_`(`_args_`)` _innerkey_
 
 Does a join where incoming rows are joined against rows from the _input_ data
-source. Names between the two data sources must not overlap. Rows are joined if
-_outerkey_ and _innerkey_ match:
+source or the output of the `Define` olive _name_. Names between the two data
+sources must not overlap. Rows are joined if _outerkey_ and _innerkey_ match:
 
 | Operation          | Outer Key | Inner Key | Behaviour |
 |--------------------|-----------|-----------|---|
@@ -261,23 +263,24 @@ used to find output process that used some of the input.
 If an set-to-single value join is required, use `IntersectionJoin` and put the
 single element in a list.
 
-
 This reshapes the data.
 
  - `LeftJoin` _outerkey_ `To` [`Prefix` _prefix_]  _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
  - `LeftIntersectionJoin` _outerkey_ `To` [`Prefix` _prefix_]  _input_ _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
+ - `LeftJoin` _outerkey_ `To` [`Prefix` _prefix_]  `Call` _name_`(`_args_`)` _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
+ - `LeftIntersectionJoin` _outerkey_ `To` [`Prefix` _prefix_]  `Call` _name_ `(`_args_`)` _innerkey_ [`Where` _condition_] _collectionname1_ `=` _collector1_ [`,` ...]
 
 Does a left-join operation between the current data and the data from the
-_input_ data format. This is done using a merge join where keys are computed
-for both datasets and then only matching entries are processed. _outerkey_ is
-the key on the incoming data and _innerkey_ is the key on the data being joined
-against. A tuple can be used if joining on multiple keys is required. Each row
-in the outer data is treated as a kind of group and the matching inner keys are
-processed through the _collectors_. This means that outer data is used only
-once but inner data maybe reused multiple times if multiple outer rows have the
-same key. Each collector can have `Where` filters that limit the collected
-data. Optionally, a `Where` filter can be applied to all the collectors by
-providing _condition_.
+_input_ data format or the output of the `Define` olive _name_. This is done
+using a merge join where keys are computed for both datasets and then only
+matching entries are processed. _outerkey_ is the key on the incoming data and
+_innerkey_ is the key on the data being joined against. A tuple can be used if
+joining on multiple keys is required. Each row in the outer data is treated as
+a kind of group and the matching inner keys are processed through the
+_collectors_. This means that outer data is used only once but inner data maybe
+reused multiple times if multiple outer rows have the same key. Each collector
+can have `Where` filters that limit the collected data. Optionally, a `Where`
+filter can be applied to all the collectors by providing _condition_.
 
 When doing left join, there will likely be collisions between many variables,
 including all the signatures. While it is possible to reshape the data to avoid

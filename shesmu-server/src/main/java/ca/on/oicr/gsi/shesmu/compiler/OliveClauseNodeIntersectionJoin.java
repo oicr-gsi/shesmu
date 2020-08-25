@@ -7,8 +7,12 @@ import java.util.Optional;
 public class OliveClauseNodeIntersectionJoin extends OliveClauseNodeBaseJoin {
 
   public OliveClauseNodeIntersectionJoin(
-      int line, int column, String format, ExpressionNode outerKey, ExpressionNode innerKey) {
-    super(line, column, format, outerKey, innerKey);
+      int line,
+      int column,
+      JoinSourceNode source,
+      ExpressionNode outerKey,
+      ExpressionNode innerKey) {
+    super(line, column, source, outerKey, innerKey);
   }
 
   @Override

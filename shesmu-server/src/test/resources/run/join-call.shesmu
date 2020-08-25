@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Define foo()
+ Let a = accession, p = project;
+
+Olive
+ Join accession To Call foo() a
+ Run ok With ok = p == project;

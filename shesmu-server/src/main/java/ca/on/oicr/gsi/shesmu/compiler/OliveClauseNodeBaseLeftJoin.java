@@ -3,7 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
@@ -14,7 +13,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -37,8 +35,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     }
 
     @Override
-    public void build(GeneratorAdapter method, Type streamType,
-        Stream<SignableRenderer> variables) {
+    public void build(
+        GeneratorAdapter method, Type streamType, Stream<SignableRenderer> variables) {
       backing.build(method, streamType, variables);
     }
 
@@ -67,7 +65,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
     @Override
     public void read() {
-      // Whatever. Don't care.
+      backing.read();
     }
 
     @Override
@@ -100,7 +98,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
     @Override
     public void read() {
-      // Whatever. Don't care.
+      backing.read();
     }
 
     @Override
@@ -112,19 +110,19 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   private final List<GroupNode> children;
   protected final int column;
   private List<Target> discriminators;
-  private final String format;
   private final ExpressionNode innerKey;
-  private InputFormatDefinition inputFormat;
+  private List<? extends Target> innerVariables;
   private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
   protected final int line;
   private final ExpressionNode outerKey;
+  private final JoinSourceNode source;
   private final String variablePrefix;
   private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeBaseLeftJoin(
       int line,
       int column,
-      String format,
+      JoinSourceNode source,
       ExpressionNode outerKey,
       String variablePrefix,
       ExpressionNode innerKey,
@@ -132,7 +130,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       Optional<ExpressionNode> where) {
     this.line = line;
     this.column = column;
-    this.format = format;
+    this.source = source;
     this.outerKey = outerKey;
     this.variablePrefix = variablePrefix;
     this.innerKey = innerKey;
@@ -159,6 +157,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   public final void collectPlugins(Set<Path> pluginFileNames) {
     outerKey.collectPlugins(pluginFileNames);
     innerKey.collectPlugins(pluginFileNames);
+    source.collectPlugins(pluginFileNames);
     children.forEach(child -> child.collectPlugins(pluginFileNames));
     where.ifPresent(w -> w.collectPlugins(pluginFileNames));
   }
@@ -171,8 +170,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   @Override
   public final Stream<OliveClauseRow> dashboard() {
     final Set<String> joinedNames =
-        inputFormat
-            .baseStreamVariables()
+        innerVariables
+            .stream()
             .map(Target::name)
             .map(variablePrefix::concat)
             .collect(Collectors.toSet());
@@ -209,7 +208,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames,
+      ClauseStreamOrder state,
+      Set<String> signableNames,
       Consumer<SignableVariableCheck> addSignableCheck,
       Consumer<String> errorHandler) {
     if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
@@ -230,34 +230,31 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       RootBuilder builder,
       BaseOliveBuilder oliveBuilder,
       Function<String, CallableDefinitionRenderer> definitions) {
-    final String prefix = String.format("LeftJoin %d:%d To %s ", line, column, inputFormat.name());
     final Set<String> freeVariables = new HashSet<>();
     children.forEach(group -> group.collectFreeVariables(freeVariables, Flavour::needsCapture));
     outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
     where.ifPresent(w -> w.collectFreeVariables(freeVariables, Flavour::needsCapture));
     final Set<String> innerSignatures = new HashSet<>();
-    children.forEach(
-        group -> group.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals));
-    innerKey.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals);
     final Set<String> innerSignables = new HashSet<>();
-    children.forEach(
-        group -> group.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals));
-    innerKey.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals);
+    if (source.canSign()) {
+      children.forEach(
+          group -> group.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals));
+      innerKey.collectFreeVariables(innerSignatures, Flavour.STREAM_SIGNATURE::equals);
+      children.forEach(
+          group -> group.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals));
+      innerKey.collectFreeVariables(innerSignables, Flavour.STREAM_SIGNABLE::equals);
+    }
 
-    builder
-        .signatureVariables()
-        .filter(signature -> innerSignatures.contains(variablePrefix + signature.name()))
-        .forEach(
-            signatureDefinition ->
-                oliveBuilder.createSignature(
-                    prefix,
-                    inputFormat,
-                    inputFormat
-                        .baseStreamVariables()
-                        .filter(input -> innerSignables.contains(variablePrefix + input.name()))
-                        .map(SignableRenderer::always),
-                    signatureDefinition));
+    final String prefix = String.format("LeftJoin %d:%d", line, column);
+    final JoinInputSource inputSource =
+        source.render(
+            oliveBuilder,
+            definitions,
+            prefix,
+            variablePrefix,
+            innerSignatures::contains,
+            innerSignables::contains);
 
     oliveBuilder.line(line);
     final Pair<JoinBuilder, RegroupVariablesBuilder> leftJoin =
@@ -265,10 +262,11 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             line,
             column,
             intersection(),
-            inputFormat,
+            inputSource,
             outerKey.type(),
             (signatureDefinition, renderer) -> {
-              BaseOliveBuilder.renderSigner(oliveBuilder.owner, inputFormat, prefix, signatureDefinition, renderer);
+              BaseOliveBuilder.renderSigner(
+                  oliveBuilder.owner, inputSource.format(), prefix, signatureDefinition, renderer);
             },
             oliveBuilder
                 .loadableValues()
@@ -324,15 +322,16 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    inputFormat = oliveCompilerServices.inputFormat(format);
-    if (inputFormat == null) {
-      errorHandler.accept(
-          String.format("%d:%d: Unknown input format “%s” in %s.", line, column, format, syntax()));
+    final Stream<? extends Target> innerVariables =
+        source.resolve("LeftJoin", oliveCompilerServices, defs, errorHandler);
+    if (innerVariables == null) {
       return defs.fail(false);
     }
+    this.innerVariables = innerVariables.collect(Collectors.toList());
 
     final Set<String> newNames =
-        Stream.concat(inputFormat.baseStreamVariables(), oliveCompilerServices.signatures())
+        this.innerVariables
+            .stream()
             .map(Target::name)
             .map(variablePrefix::concat)
             .collect(Collectors.toSet());
@@ -348,9 +347,8 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       defs.stream()
           .filter(n -> n.flavour().isStream())
           .forEach(n -> joins.add(jb -> jb.add(n, true)));
-      inputFormat
-          .baseStreamVariables()
-          .forEach(n -> joins.add(jb -> jb.add(n, variablePrefix + n.name(), false)));
+      this.innerVariables.forEach(
+          n -> joins.add(jb -> jb.add(n, variablePrefix + n.name(), false)));
     } else {
       errorHandler.accept(
           String.format(
@@ -376,11 +374,15 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
     final NameDefinitions joinedDefs =
         defs.replaceStream(
-            Stream.of(
-                    discriminators.stream(),
-                    inputFormat.baseStreamVariables().map(PrefixedTarget::new),
-                    oliveCompilerServices.signatures().map(PrefixedSignatureDefinition::new))
-                .flatMap(Function.identity()),
+            Stream.concat(
+                discriminators.stream(),
+                this.innerVariables
+                    .stream()
+                    .map(
+                        t ->
+                            t instanceof SignatureDefinition
+                                ? new PrefixedSignatureDefinition((SignatureDefinition) t)
+                                : new PrefixedTarget(t))),
             true);
 
     final boolean ok =
@@ -403,7 +405,15 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
             & outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
                 defs.replaceStream(
-                    inputFormat.baseStreamVariables().map(PrefixedVariable::new), true),
+                    this.innerVariables
+                        .stream()
+                        .flatMap(
+                            v ->
+                                Stream.of(
+                                    v instanceof InputVariable
+                                        ? new PrefixedVariable((InputVariable) v)
+                                        : new PrefixedTarget(v))),
+                    true),
                 errorHandler)
             & where.map(w -> w.resolve(joinedDefs, errorHandler)).orElse(true);
 
@@ -438,14 +448,18 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     return ok
         & outerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
         & innerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
-        & where.map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler)).orElse(true);
+        & where.map(w -> w.resolveDefinitions(oliveCompilerServices, errorHandler)).orElse(true)
+        & source.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   protected abstract String syntax();
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = outerKey.typeCheck(errorHandler) & innerKey.typeCheck(errorHandler);
+    boolean ok =
+        source.typeCheck(errorHandler)
+            & outerKey.typeCheck(errorHandler)
+            & innerKey.typeCheck(errorHandler);
     if (ok && !outerKey.type().isSame(innerKey.type())) {
       innerKey.typeError(outerKey.type(), innerKey.type(), errorHandler);
       ok = false;

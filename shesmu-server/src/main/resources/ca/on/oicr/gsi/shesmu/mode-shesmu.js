@@ -28,6 +28,7 @@ ace.define(
             "As",
             "Begin",
             "By",
+            "Call",
             "Check",
             "Count",
             "Default",

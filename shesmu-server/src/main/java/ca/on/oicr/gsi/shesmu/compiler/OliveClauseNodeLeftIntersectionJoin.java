@@ -10,13 +10,13 @@ public final class OliveClauseNodeLeftIntersectionJoin extends OliveClauseNodeBa
   public OliveClauseNodeLeftIntersectionJoin(
       int line,
       int column,
-      String format,
+      JoinSourceNode source,
       ExpressionNode outerKey,
       String variablePrefix,
       ExpressionNode innerKey,
       List<GroupNode> children,
       Optional<ExpressionNode> where) {
-    super(line, column, format, outerKey, variablePrefix, innerKey, children, where);
+    super(line, column, source, outerKey, variablePrefix, innerKey, children, where);
   }
 
   @Override

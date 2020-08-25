@@ -1,0 +1,12 @@
+Version 1;
+Input test;
+
+Define foo()
+ Let ls = library_size
+ LeftJoin ls To inner_test l
+    num = Count;
+
+Olive
+ LeftJoin library_size To Call foo() ls
+   x = Univalued num Default 0
+ Run ok With ok = x == 1;
