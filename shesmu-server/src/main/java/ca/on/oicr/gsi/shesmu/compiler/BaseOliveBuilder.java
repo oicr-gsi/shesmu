@@ -229,7 +229,8 @@ public abstract class BaseOliveBuilder {
       InputFormatDefinition inputFormat,
       Stream<SignableRenderer> signables,
       SignatureDefinition signer) {
-    createSignatureInfrastructure(owner, prefix, inputFormat, signables.collect(Collectors.toList()), signer);
+    createSignatureInfrastructure(
+        owner, prefix, inputFormat, signables.collect(Collectors.toList()), signer);
   }
 
   /**
@@ -311,7 +312,23 @@ public abstract class BaseOliveBuilder {
           new LambdaBuilder(
               owner,
               String.format("Flatten %d:%d✨", line, column),
-              LambdaBuilder.bifunction(newType, oldType, unrollType));
+              LambdaBuilder.bifunction(newType, oldType, unrollType),
+              new LoadableValue() {
+                @Override
+                public String name() {
+                  return SIGNER_ACCESSOR_NAME;
+                }
+
+                @Override
+                public Type type() {
+                  return A_SIGNATURE_ACCESSOR_TYPE;
+                }
+
+                @Override
+                public void accept(Renderer renderer) {
+                  loadAccessor(renderer);
+                }
+              });
 
       final Renderer constructorRenderer = constructLambda.renderer(oldType, 0, this::emitSigner);
       constructorRenderer.methodGen().visitCode();

@@ -1,0 +1,16 @@
+Version 1;
+Input test;
+
+Define do_the_thing()
+  Require
+    whatever = If project == "the_foo_study" Then `project` Else ``
+  OnReject
+    Alert
+      alertname = "Whatever",
+      project = project
+    For 30mins
+  Resume;
+
+Olive
+  do_the_thing()
+  Run ok With ok = whatever != "";
