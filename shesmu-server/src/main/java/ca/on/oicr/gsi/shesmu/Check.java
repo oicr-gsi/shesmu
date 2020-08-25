@@ -424,6 +424,7 @@ public final class Check extends Compiler {
     return new CallableDefinition() {
       final boolean isRoot = node.get("isRoot").asBoolean();
       final String name = node.get("name").asText();
+      final String format = node.get("format").asText();
       final List<Imyhat> parameters =
           Utils.stream(node.get("parameters").elements())
               .map(parameter -> Imyhat.parse(parameter.asText()))
@@ -472,6 +473,11 @@ public final class Check extends Compiler {
       @Override
       public Path filename() {
         return null;
+      }
+
+      @Override
+      public String format() {
+        return format;
       }
 
       @Override

@@ -111,6 +111,15 @@ public class OliveClauseNodeCall extends OliveClauseNode {
             == arguments.size();
     target = oliveCompilerServices.olive(name);
     if (target != null) {
+      // Format is only ever null in a cycle.
+      if (target.format() != null
+          && !target.format().equals(oliveCompilerServices.inputFormat().name())) {
+        errorHandler.accept(
+            String.format(
+                "%d:%d: “Define %s” is for %s, but olive is processing %s.",
+                line, column, name, target.format(), oliveCompilerServices.inputFormat().name()));
+        return false;
+      }
       if (target.parameterCount() != arguments.size()) {
         errorHandler.accept(
             String.format(
