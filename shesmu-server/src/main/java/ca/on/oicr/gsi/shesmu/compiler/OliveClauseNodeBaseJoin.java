@@ -2,7 +2,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -11,7 +10,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -22,19 +20,23 @@ import java.util.stream.Stream;
 public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
 
   private final int column;
-  private final String format;
-  private InputFormatDefinition innerInputFormat;
   private final ExpressionNode innerKey;
+  private List<? extends Target> innerVariables;
   private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
   private final int line;
   private final ExpressionNode outerKey;
+  private final JoinSourceNode source;
 
   public OliveClauseNodeBaseJoin(
-      int line, int column, String format, ExpressionNode outerKey, ExpressionNode innerKey) {
+      int line,
+      int column,
+      JoinSourceNode source,
+      ExpressionNode outerKey,
+      ExpressionNode innerKey) {
     super();
     this.line = line;
     this.column = column;
-    this.format = format;
+    this.source = source;
     this.outerKey = outerKey;
     this.innerKey = innerKey;
   }
@@ -48,6 +50,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
   public final void collectPlugins(Set<Path> pluginFileNames) {
     outerKey.collectPlugins(pluginFileNames);
     innerKey.collectPlugins(pluginFileNames);
+    source.collectPlugins(pluginFileNames);
   }
 
   @Override
@@ -64,8 +67,8 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
             column,
             true,
             false,
-            innerInputFormat
-                .baseStreamVariables()
+            innerVariables
+                .stream()
                 .map(
                     variable ->
                         new VariableInformation(
@@ -77,7 +80,8 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
 
   @Override
   public final ClauseStreamOrder ensureRoot(
-      ClauseStreamOrder state, Set<String> signableNames,
+      ClauseStreamOrder state,
+      Set<String> signableNames,
       Consumer<SignableVariableCheck> addSignableCheck,
       Consumer<String> errorHandler) {
     return state == ClauseStreamOrder.PURE ? ClauseStreamOrder.TRANSFORMED : state;
@@ -96,15 +100,19 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
       BaseOliveBuilder oliveBuilder,
       Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> freeVariables = new HashSet<>();
-    outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
-    innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
+    if (source.canSign()) {
+      outerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
+      innerKey.collectFreeVariables(freeVariables, Flavour::needsCapture);
+    }
+    final JoinInputSource inputSource =
+        source.render(oliveBuilder, definitions, "", "", v -> false, v -> false);
 
     final JoinBuilder join =
         oliveBuilder.join(
             line,
             column,
             intersection(),
-            innerInputFormat,
+            inputSource,
             outerKey.type(),
             oliveBuilder
                 .loadableValues()
@@ -134,15 +142,15 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,
       Consumer<String> errorHandler) {
-    innerInputFormat = oliveCompilerServices.inputFormat(format);
-    if (innerInputFormat == null) {
-      errorHandler.accept(
-          String.format("%d:%d: Unknown input format “%s” in %s.", line, column, format, syntax()));
+    final Stream<? extends Target> innerVariables =
+        source.resolve("Join", oliveCompilerServices, defs, errorHandler);
+    if (innerVariables == null) {
       return defs.fail(false);
     }
+    this.innerVariables = innerVariables.collect(Collectors.toList());
 
     final Set<String> newNames =
-        innerInputFormat.baseStreamVariables().map(Target::name).collect(Collectors.toSet());
+        this.innerVariables.stream().map(Target::name).collect(Collectors.toSet());
 
     final List<String> duplicates =
         defs.stream()
@@ -155,7 +163,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
       defs.stream()
           .filter(n -> n.flavour().isStream())
           .forEach(n -> joins.add(jb -> jb.add(n, true)));
-      innerInputFormat.baseStreamVariables().forEach(n -> joins.add(jb -> jb.add(n, false)));
+      this.innerVariables.forEach(n -> joins.add(jb -> jb.add(n, false)));
     } else {
       errorHandler.accept(
           String.format(
@@ -166,11 +174,10 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
     boolean ok =
         outerKey.resolve(defs, errorHandler)
             & innerKey.resolve(
-                defs.replaceStream(innerInputFormat.baseStreamVariables(), true), errorHandler);
+                defs.replaceStream(this.innerVariables.stream(), true), errorHandler);
     return defs.replaceStream(
         Stream.concat(
-                defs.stream().filter(n -> n.flavour().isStream()),
-                innerInputFormat.baseStreamVariables())
+                defs.stream().filter(n -> n.flavour().isStream()), this.innerVariables.stream())
             .map(Target::wrap),
         ok);
   }
@@ -179,14 +186,18 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
   public final boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return outerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
-        & innerKey.resolveDefinitions(oliveCompilerServices, errorHandler);
+        & innerKey.resolveDefinitions(oliveCompilerServices, errorHandler)
+        & source.resolveDefinitions(oliveCompilerServices, errorHandler);
   }
 
   public abstract String syntax();
 
   @Override
   public final boolean typeCheck(Consumer<String> errorHandler) {
-    boolean ok = outerKey.typeCheck(errorHandler) & innerKey.typeCheck(errorHandler);
+    boolean ok =
+        outerKey.typeCheck(errorHandler)
+            & innerKey.typeCheck(errorHandler)
+            & source.typeCheck(errorHandler);
     if (ok && !outerKey.type().isSame(innerKey.type())) {
       innerKey.typeError(outerKey.type(), innerKey.type(), errorHandler);
       ok = false;

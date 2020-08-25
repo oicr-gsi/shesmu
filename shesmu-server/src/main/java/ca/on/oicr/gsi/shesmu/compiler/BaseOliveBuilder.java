@@ -44,7 +44,6 @@ public abstract class BaseOliveBuilder {
   protected static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   private static final Type A_PREDICATE_TYPE = Type.getType(Predicate.class);
   private static final Type A_RUNTIME_SUPPORT_TYPE = Type.getType(RuntimeSupport.class);
-  private static final Type A_SET_TYPE = Type.getType(Set.class);
   protected static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
   protected static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   protected static final Type A_STRING_TYPE = Type.getType(String.class);
@@ -216,8 +215,8 @@ public abstract class BaseOliveBuilder {
           loadInputProvider(renderer.methodGen());
           loadOwnerSourceLocation(renderer.methodGen());
           loadAccessor(renderer);
-          for (int i = 0; i < arglist.size(); i++) {
-            arglist.get(i).accept(renderer);
+          for (Consumer<Renderer> rendererConsumer : arglist) {
+            rendererConsumer.accept(renderer);
           }
           defineOlive.generateCall(renderer.methodGen());
         });
@@ -229,7 +228,8 @@ public abstract class BaseOliveBuilder {
       InputFormatDefinition inputFormat,
       Stream<SignableRenderer> signables,
       SignatureDefinition signer) {
-    createSignatureInfrastructure(owner, prefix, inputFormat, signables.collect(Collectors.toList()), signer);
+    createSignatureInfrastructure(
+        owner, prefix, inputFormat, signables.collect(Collectors.toList()), signer);
   }
 
   /**
@@ -251,7 +251,6 @@ public abstract class BaseOliveBuilder {
    *     These will be available in the resulting method
    * @return a method generator for the body of the clause
    */
-  @SafeVarargs
   public final Renderer filter(int line, int column, LoadableValue... capturedVariables) {
     final Type type = currentType;
     final LambdaBuilder lambda =
@@ -349,7 +348,7 @@ public abstract class BaseOliveBuilder {
       int line,
       int column,
       boolean intersection,
-      InputFormatDefinition innerType,
+      JoinInputSource innerType,
       Imyhat keyType,
       LoadableValue... capturedVariables) {
     final String className = String.format("shesmu/dyn/Join %d:%d", line, column);
@@ -358,7 +357,7 @@ public abstract class BaseOliveBuilder {
     final Type newType = Type.getObjectType(className);
     currentType = newType;
 
-    owner.useInputFormat(innerType);
+    owner.useInputFormat(innerType.format());
 
     final LambdaBuilder outerKeyLambda =
         new LambdaBuilder(
@@ -376,8 +375,7 @@ public abstract class BaseOliveBuilder {
     steps.add(
         renderer -> {
           loadInputProvider(renderer.methodGen());
-          renderer.methodGen().push(innerType.name());
-          renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
+          innerType.render(renderer);
 
           outerKeyLambda.push(renderer);
           innerKeyLambda.push(renderer);
@@ -403,7 +401,7 @@ public abstract class BaseOliveBuilder {
       int line,
       int column,
       boolean intersection,
-      InputFormatDefinition innerType,
+      JoinInputSource innerType,
       Imyhat keyType,
       BiConsumer<SignatureDefinition, Renderer> innerSigner,
       LoadableValue... capturedVariables) {
@@ -416,7 +414,7 @@ public abstract class BaseOliveBuilder {
     final Type newType = Type.getObjectType(outputClassName);
     currentType = newType;
 
-    owner.useInputFormat(innerType);
+    owner.useInputFormat(innerType.format());
 
     final LambdaBuilder newMethod =
         new LambdaBuilder(
@@ -446,8 +444,7 @@ public abstract class BaseOliveBuilder {
     steps.add(
         renderer -> {
           loadInputProvider(renderer.methodGen());
-          renderer.methodGen().push(innerType.name());
-          renderer.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
+          innerType.render(renderer);
 
           outerKeyLambda.push(renderer);
           innerKeyLambda.push(renderer);

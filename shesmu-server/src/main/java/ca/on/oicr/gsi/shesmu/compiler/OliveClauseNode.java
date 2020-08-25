@@ -21,14 +21,18 @@ public abstract class OliveClauseNode {
 
   interface JoinConstructor {
     OliveClauseNode create(
-        int line, int column, String format, ExpressionNode outerKey, ExpressionNode innerKey);
+        int line,
+        int column,
+        JoinSourceNode source,
+        ExpressionNode outerKey,
+        ExpressionNode innerKey);
   }
 
   private interface LeftJoinConstructor {
     OliveClauseNode create(
         int line,
         int column,
-        String format,
+        JoinSourceNode source,
         ExpressionNode outerKey,
         String prefix,
         ExpressionNode innerKey,
@@ -343,7 +347,7 @@ public abstract class OliveClauseNode {
   private static Rule<OliveClauseNode> join(JoinConstructor constructor) {
     return (joinParser, output) -> {
       final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
-      final AtomicReference<String> format = new AtomicReference<>();
+      final AtomicReference<JoinSourceNode> source = new AtomicReference<>();
       final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
       final Parser result =
           joinParser
@@ -352,7 +356,7 @@ public abstract class OliveClauseNode {
               .whitespace()
               .keyword("To")
               .whitespace()
-              .identifier(format::set)
+              .then(JoinSourceNode::parse, source::set)
               .whitespace()
               .then(ExpressionNode::parse, innerKey::set)
               .whitespace();
@@ -362,7 +366,7 @@ public abstract class OliveClauseNode {
             constructor.create(
                 joinParser.line(),
                 joinParser.column(),
-                format.get(),
+                source.get(),
                 outerKey.get(),
                 innerKey.get()));
       }
@@ -373,7 +377,7 @@ public abstract class OliveClauseNode {
   private static Rule<OliveClauseNode> leftJoin(LeftJoinConstructor constructor) {
     return (leftJoinParser, output) -> {
       final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
-      final AtomicReference<String> format = new AtomicReference<>();
+      final AtomicReference<JoinSourceNode> source = new AtomicReference<>();
       final AtomicReference<String> prefix = new AtomicReference<>();
       final AtomicReference<ExpressionNode> innerKey = new AtomicReference<>();
       final AtomicReference<List<GroupNode>> groups = new AtomicReference<>();
@@ -386,7 +390,7 @@ public abstract class OliveClauseNode {
               .keyword("To")
               .whitespace()
               .dispatch(PREFIX, prefix::set)
-              .identifier(format::set)
+              .then(JoinSourceNode::parse, source::set)
               .whitespace()
               .then(ExpressionNode::parse, innerKey::set)
               .whitespace()
@@ -398,7 +402,7 @@ public abstract class OliveClauseNode {
             constructor.create(
                 leftJoinParser.line(),
                 leftJoinParser.column(),
-                format.get(),
+                source.get(),
                 outerKey.get(),
                 prefix.get(),
                 innerKey.get(),
