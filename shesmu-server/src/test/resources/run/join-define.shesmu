@@ -2,6 +2,7 @@ Version 1;
 Input test;
 
 Define foo()
+ Let accession
  Join True To inner_test True
  Group By accession Into ls = List l;
 
