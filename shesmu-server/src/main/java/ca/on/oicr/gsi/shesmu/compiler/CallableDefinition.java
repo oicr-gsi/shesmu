@@ -21,6 +21,8 @@ public interface CallableDefinition {
 
   Path filename();
 
+  String format();
+
   boolean isRoot();
 
   String name();

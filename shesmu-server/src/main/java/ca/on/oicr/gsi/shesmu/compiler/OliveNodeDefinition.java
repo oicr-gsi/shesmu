@@ -104,6 +104,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
     return null;
   }
 
+  @Override
+  public String format() {
+    return inputFormat;
+  }
+
   public boolean isRoot() {
     return clauses().stream().noneMatch(OliveClauseNodeGroup.class::isInstance);
   }
@@ -166,7 +171,6 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
     if (outputStreamVariables != null) {
       return true;
     }
-    inputFormat = oliveCompilerServices.inputFormat().name();
     resolveLock = true;
     final NameDefinitions result =
         clauses()
@@ -194,6 +198,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   @Override
   protected boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
+    inputFormat = oliveCompilerServices.inputFormat().name();
     return true;
   }
 

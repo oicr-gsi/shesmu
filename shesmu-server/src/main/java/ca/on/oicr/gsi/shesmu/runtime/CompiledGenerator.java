@@ -288,6 +288,11 @@ public class CompiledGenerator implements DefinitionRepository {
           }
 
           @Override
+          public String format() {
+            return inputFormatName;
+          }
+
+          @Override
           public void generateCall(GeneratorAdapter methodGen) {
             methodGen.invokeDynamic(
                 qualifiedName,
