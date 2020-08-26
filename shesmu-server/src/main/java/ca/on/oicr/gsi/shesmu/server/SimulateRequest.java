@@ -313,8 +313,6 @@ public class SimulateRequest {
 
   public void run(
       DefinitionRepository definitionRepository,
-      Supplier<Stream<FunctionDefinition>> importableFunctions,
-      Supplier<Stream<CallableOliveDefinition>> importableOliveDefinitions,
       ActionServices actionServices,
       InputSource inputSource,
       HttpExchange http)
@@ -370,13 +368,12 @@ public class SimulateRequest {
 
                 @Override
                 public Stream<CallableOliveDefinition> oliveDefinitions() {
-                  return Stream.concat(
-                      definitionRepository.oliveDefinitions(), importableOliveDefinitions.get());
+                  return definitionRepository.oliveDefinitions();
                 }
 
                 @Override
                 public Stream<FunctionDefinition> functions() {
-                  return Stream.concat(definitionRepository.functions(), importableFunctions.get());
+                  return definitionRepository.functions();
                 }
 
                 @Override
