@@ -18,6 +18,7 @@ import {
   img,
   inputText,
   inputTextArea,
+  italic,
   link,
   makeUrl,
   multipaneState,
@@ -460,7 +461,7 @@ export function actionDisplay(
             : buttonDanger(
                 "🔧 Bulk Commands ▼",
                 "Perform a number of action-specific commands.",
-                popup(
+                popupMenu(
                   true,
                   ...response.bulkCommands.map((command) => ({
                     label: command.buttonText,
@@ -676,13 +677,13 @@ export function initialiseActionDash(
               "Change the name of this search in the local search collection.",
               () =>
                 dialog((close) => {
-                  const { ui, getter } = inputText(input[0]);
+                  const newNameEntry = inputText(input[0]);
                   return [
                     "New name: ",
-                    ui,
+                    newNameEntry.ui,
                     br(),
                     button("✎ Rename", "Change searchs name.", () => {
-                      const newName = getter().trim();
+                      const newName = newNameEntry.value.trim();
                       if (newName && newName != input[0]) {
                         localSearches.delete(input[0]);
                         localSearches.set(newName, input[1]);
