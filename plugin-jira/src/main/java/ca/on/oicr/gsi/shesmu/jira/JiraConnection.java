@@ -173,13 +173,14 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
               IssueFieldId.LABELS_FIELD)
           .map(x -> x.id)
           .collect(Collectors.toSet());
-  private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm");
+  private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private JiraRestClient client;
 
   private List<String> closeActions = Collections.emptyList();
 
   private List<String> closedStatuses = Collections.emptyList();
+  private Map<String, String> defaultFieldValues = Collections.emptyMap();
   private final Supplier<JiraConnection> definer;
   private final FilterCache filters;
   private long issueTypeId;
@@ -237,6 +238,10 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       @ShesmuParameter(description = "keyword") String keyword,
       @ShesmuParameter(description = "is ticket open") boolean open) {
     return issues().filter(new IssueFilter(keyword, open)).count();
+  }
+
+  final String defaultFieldValues(String key) {
+    return defaultFieldValues.get(key);
   }
 
   @Override
@@ -334,6 +339,7 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       closeActions = config.getCloseActions();
       reopenActions = config.getReopenActions();
       searches = config.getSearches();
+      defaultFieldValues = config.getDefaultFieldValues();
       issues.invalidate();
       filters.invalidateAll();
       final Project project = client.getProjectClient().getProject(projectKey).claim();

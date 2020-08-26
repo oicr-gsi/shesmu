@@ -18,6 +18,7 @@ To set up a JIRA integration, create a file ending in `.jira` as follows:
           "CLOSED",
           "RESOLVED"
         ],
+        "defaultFieldValues": {},
         "issueType": "Bug",
         "passwordFile": "/path/to/jira/password",
         "projectKey": "PK",
@@ -42,10 +43,13 @@ the `closeActions`, `reopenActions`, and `closedStatuses` will be the same for
 most projects on a JIRA server, but they need not be, hence the need for
 separate configuration files.
 
-Shesmu needs to create and reopen tickets, but it can only do so if there is no
-mandatory fields to fill in beyond the summary and description. Shesmu allows
-setting an assignee on new tickets, but the assignee field must be available in
-the _Create Ticket_ window or an error will occur.
+Shesmu needs to create and reopen tickets, but it can only do so if there are
+either no mandatory fields to fill in beyond the summary and description or it
+has the required fields.  `defaultFieldValues` provides values to use on
+required fields. Fields which are not required are not sent even if a default
+is provided. Shesmu allows setting an assignee on new tickets, but the assignee
+field must be available in the _Create Ticket_ window or an error will occur.
+
 
 The `searches` section allow JIRA tickets to be integrated with Shesmu's action
 searches on the _Actions_ page. The idea is meant for the following use case:

@@ -2,10 +2,12 @@ package ca.on.oicr.gsi.shesmu.jira;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public final class Configuration {
   private List<String> closeActions;
   private List<String> closedStatuses;
+  private Map<String, String> defaultFieldValues = Collections.emptyMap();
   private String issueType;
   private String passwordFile;
   private String projectKey;
@@ -20,6 +22,10 @@ public final class Configuration {
 
   public List<String> getClosedStatuses() {
     return closedStatuses;
+  }
+
+  public Map<String, String> getDefaultFieldValues() {
+    return defaultFieldValues;
   }
 
   public String getIssueType() {
@@ -56,6 +62,10 @@ public final class Configuration {
 
   public void setClosedStatuses(List<String> closedStatuses) {
     this.closedStatuses = closedStatuses;
+  }
+
+  public void setDefaultFieldValues(Map<String, String> defaultFieldValues) {
+    this.defaultFieldValues = defaultFieldValues;
   }
 
   public void setIssueType(String issueType) {

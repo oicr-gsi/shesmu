@@ -253,13 +253,16 @@ public abstract class BaseTicketAction extends Action {
     if (isInTargetState(issue)) {
       return Optional.of(ActionState.SUCCEEDED);
     }
-    return Utils.stream(
-            connection.get().client().getIssueClient().getTransitions(issue).claim()) //
+    return Utils.stream(connection.get().client().getIssueClient().getTransitions(issue).claim())
         .filter(
             t ->
                 transitionActions(connection.get()).anyMatch(t.getName()::equalsIgnoreCase)
-                    && Utils.stream(t.getFields()).noneMatch(Field::isRequired)) //
-        .findAny() //
+                    && Utils.stream(t.getFields())
+                        .noneMatch(
+                            f ->
+                                f.isRequired()
+                                    && connection.get().defaultFieldValues(f.getId()) == null))
+        .findAny()
         .map(
             t -> {
               final Set<String> overloadedServices =
@@ -278,12 +281,19 @@ public abstract class BaseTicketAction extends Action {
                           Stream.of(
                               Instant.ofEpochMilli(issue.getUpdateDate().toInstant().getMillis())))
                       .max(Comparator.naturalOrder());
+              final List<FieldInput> fields = new ArrayList<>();
+              for (final Field field : t.getFields()) {
+                if (field.isRequired()) {
+                  final String value = connection.get().defaultFieldValues(field.getId());
+                  fields.add(new FieldInput(field.getId(), value));
+                }
+              }
 
               connection
                   .get()
                   .client()
                   .getIssueClient()
-                  .transition(issue, new TransitionInput(t.getId(), comment))
+                  .transition(issue, new TransitionInput(t.getId(), fields, comment))
                   .claim();
               connection
                   .get()
