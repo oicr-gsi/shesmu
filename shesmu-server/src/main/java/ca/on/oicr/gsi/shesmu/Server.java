@@ -2087,12 +2087,7 @@ public final class Server implements ServerConfig, ActionServices {
           final SimulateRequest request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateRequest.class);
           request.run(
-              definitionRepository,
-              compiler::functions,
-              compiler::oliveDefinitions,
-              this,
-              inputSource,
-              t);
+              DefinitionRepository.concat(definitionRepository, compiler), this, inputSource, t);
         });
 
     add(
