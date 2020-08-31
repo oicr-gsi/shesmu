@@ -332,45 +332,16 @@ public final class StandardDefinitions implements DefinitionRepository {
             Imyhat.BOOLEAN,
             new FunctionParameter("The path to check", Imyhat.PATH),
             new FunctionParameter("The prefix directory", Imyhat.PATH)),
-        new FunctionDefinition() {
-
-          @Override
-          public String description() {
-            return "Gets the length of a string.";
-          }
-
-          @Override
-          public Path filename() {
-            return null;
-          }
-
-          @Override
-          public String name() {
-            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "length");
-          }
-
-          @Override
-          public Stream<FunctionParameter> parameters() {
-            return Stream.of(new FunctionParameter("input to measure", Imyhat.STRING));
-          }
-
-          @Override
-          public void render(GeneratorAdapter methodGen) {
-            methodGen.invokeVirtual(
-                A_STRING_TYPE, new Method("length", Type.INT_TYPE, new Type[] {}));
-            methodGen.cast(Type.INT_TYPE, Type.LONG_TYPE);
-          }
-
-          @Override
-          public void renderStart(GeneratorAdapter methodGen) {
-            // None required.
-          }
-
-          @Override
-          public Imyhat returnType() {
-            return Imyhat.INTEGER;
-          }
-        },
+        FunctionDefinition.virtualIntegerFunction(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "length"),
+            "length",
+            "Gets the length of a string.",
+            new FunctionParameter("input to measure", Imyhat.STRING)),
+        FunctionDefinition.virtualIntegerFunction(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "hash"),
+            "hashCode",
+            "Compute the hash of a string (equivalent to Java's hashCode).",
+            new FunctionParameter("string to hash", Imyhat.STRING)),
         new FunctionDefinition() {
 
           @Override
@@ -457,80 +428,16 @@ public final class StandardDefinitions implements DefinitionRepository {
             return Imyhat.PATH;
           }
         },
-        new FunctionDefinition() {
-
-          @Override
-          public String description() {
-            return "Truncates a floating point number of an integer.";
-          }
-
-          @Override
-          public Path filename() {
-            return null;
-          }
-
-          @Override
-          public String name() {
-            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "to_integer");
-          }
-
-          @Override
-          public Stream<FunctionParameter> parameters() {
-            return Stream.of(new FunctionParameter("floating point number", Imyhat.FLOAT));
-          }
-
-          @Override
-          public void render(GeneratorAdapter methodGen) {
-            methodGen.cast(Type.DOUBLE_TYPE, Type.LONG_TYPE);
-          }
-
-          @Override
-          public void renderStart(GeneratorAdapter methodGen) {
-            // None required.
-          }
-
-          @Override
-          public Imyhat returnType() {
-            return Imyhat.INTEGER;
-          }
-        },
-        new FunctionDefinition() {
-
-          @Override
-          public String description() {
-            return "Converts an integer to a floating point number.";
-          }
-
-          @Override
-          public Path filename() {
-            return null;
-          }
-
-          @Override
-          public String name() {
-            return String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "to_float");
-          }
-
-          @Override
-          public Stream<FunctionParameter> parameters() {
-            return Stream.of(new FunctionParameter("integer", Imyhat.INTEGER));
-          }
-
-          @Override
-          public void render(GeneratorAdapter methodGen) {
-            methodGen.cast(Type.LONG_TYPE, Type.DOUBLE_TYPE);
-          }
-
-          @Override
-          public void renderStart(GeneratorAdapter methodGen) {
-            // None required.
-          }
-
-          @Override
-          public Imyhat returnType() {
-            return Imyhat.FLOAT;
-          }
-        }
+        FunctionDefinition.cast(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "to_integer"),
+            Imyhat.INTEGER,
+            Imyhat.FLOAT,
+            "Truncates a floating point number of an integer."),
+        FunctionDefinition.cast(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "to_float"),
+            Imyhat.FLOAT,
+            Imyhat.INTEGER,
+            "Converts an integer to a floating point number.")
       };
   private static final Method METHOD_INSTANT__NOW =
       new Method("now", A_INSTANT_TYPE, new Type[] {});

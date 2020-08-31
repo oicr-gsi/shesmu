@@ -11,7 +11,46 @@ import org.objectweb.asm.commons.Method;
 
 /** A multi-keyed map that functions a value based on rules/tables */
 public interface FunctionDefinition {
+  static FunctionDefinition cast(
+      String name, Imyhat returnType, Imyhat argumentType, String description) {
+    return new FunctionDefinition() {
 
+      @Override
+      public String description() {
+        return description;
+      }
+
+      @Override
+      public Path filename() {
+        return null;
+      }
+
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public Stream<FunctionParameter> parameters() {
+        return Stream.of(new FunctionParameter("argument", argumentType));
+      }
+
+      @Override
+      public void render(GeneratorAdapter methodGen) {
+        methodGen.cast(argumentType.apply(TypeUtils.TO_ASM), returnType.apply(TypeUtils.TO_ASM));
+      }
+
+      @Override
+      public void renderStart(GeneratorAdapter methodGen) {
+        // None required.
+      }
+
+      @Override
+      public Imyhat returnType() {
+        return returnType;
+      }
+    };
+  }
   /**
    * Define a function that binds to a static method
    *
@@ -37,13 +76,13 @@ public interface FunctionDefinition {
       }
 
       @Override
-      public String name() {
-        return name;
+      public Path filename() {
+        return null;
       }
 
       @Override
-      public Path filename() {
-        return null;
+      public String name() {
+        return name;
       }
 
       @Override
@@ -75,11 +114,11 @@ public interface FunctionDefinition {
     };
   }
 
-  public static FunctionDefinition virtualMethod(
+  public static FunctionDefinition virtualIntegerFunction(
       String name,
       String methodName,
       String description,
-      Imyhat returnType,
+      FunctionParameter firstParameter,
       FunctionParameter... parameters) {
     return new FunctionDefinition() {
 
@@ -89,8 +128,62 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public Path filename() {
+        return null;
+      }
+
+      @Override
       public String name() {
         return name;
+      }
+
+      @Override
+      public Stream<FunctionParameter> parameters() {
+        return Stream.concat(Stream.of(firstParameter), Stream.of(parameters));
+      }
+
+      @Override
+      public void render(GeneratorAdapter methodGen) {
+        Method method =
+            new Method(
+                methodName,
+                Type.INT_TYPE,
+                Stream.of(parameters)
+                    .map(p -> p.type().apply(TypeUtils.TO_ASM))
+                    .toArray(Type[]::new));
+        Imyhat owner = firstParameter.type();
+        if (owner.javaType().isInterface()) {
+          methodGen.invokeInterface(owner.apply(TypeUtils.TO_ASM), method);
+        } else {
+          methodGen.invokeVirtual(owner.apply(TypeUtils.TO_ASM), method);
+        }
+        methodGen.cast(Type.INT_TYPE, Type.LONG_TYPE);
+      }
+
+      @Override
+      public void renderStart(GeneratorAdapter methodGen) {
+        // None required.
+      }
+
+      @Override
+      public Imyhat returnType() {
+        return Imyhat.INTEGER;
+      }
+    };
+  }
+
+  public static FunctionDefinition virtualMethod(
+      String name,
+      String methodName,
+      String description,
+      Imyhat returnType,
+      FunctionParameter firstParameter,
+      FunctionParameter... parameters) {
+    return new FunctionDefinition() {
+
+      @Override
+      public String description() {
+        return description;
       }
 
       @Override
@@ -99,8 +192,13 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
       public Stream<FunctionParameter> parameters() {
-        return Stream.of(parameters);
+        return Stream.concat(Stream.of(firstParameter), Stream.of(parameters));
       }
 
       @Override
@@ -110,10 +208,9 @@ public interface FunctionDefinition {
                 methodName,
                 returnType.apply(TypeUtils.TO_ASM),
                 Stream.of(parameters)
-                    .skip(1)
                     .map(p -> p.type().apply(TypeUtils.TO_ASM))
                     .toArray(Type[]::new));
-        Imyhat owner = parameters[0].type();
+        Imyhat owner = firstParameter.type();
         if (owner.javaType().isInterface()) {
           methodGen.invokeInterface(owner.apply(TypeUtils.TO_ASM), method);
         } else {
@@ -136,10 +233,10 @@ public interface FunctionDefinition {
   /** Documentation about how this function works */
   String description();
 
+  Path filename();
+
   /** The name of the function. */
   String name();
-
-  Path filename();
 
   /** The parameters of the function, in order */
   Stream<FunctionParameter> parameters();
