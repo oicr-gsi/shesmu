@@ -7,6 +7,8 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ReturnTypeGuarantee;
+import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
@@ -120,6 +122,13 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
         type.asOptional(),
         args -> values.getOrDefault(args[0], missingResult),
         new FunctionParameter("Lookup key", Imyhat.STRING));
+    definer.defineFunction(
+        "has",
+        "JSON configuration from " + fileName(),
+        ReturnTypeGuarantee.BOOLEAN,
+        "Lookup key",
+        TypeGuarantee.STRING,
+        values::containsKey);
     return Optional.empty();
   }
 }
