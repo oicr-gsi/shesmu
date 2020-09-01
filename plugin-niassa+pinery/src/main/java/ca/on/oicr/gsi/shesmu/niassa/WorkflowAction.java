@@ -56,6 +56,22 @@ import org.apache.http.entity.ContentType;
  */
 public final class WorkflowAction extends Action {
 
+  private static final ActionCommand<WorkflowAction> IGNORE_LOCK_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-IGNORE-LOCK",
+          "🔓️ Ignore LIMS Key Lock",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (!action.overrideLock) {
+            action.overrideLock = true;
+            return true;
+          }
+          return false;
+        }
+      };
   private static final ActionCommand<WorkflowAction> IGNORE_MAX_IN_FLIGHT_COMMAND =
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
@@ -130,6 +146,21 @@ public final class WorkflowAction extends Action {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
           return action.resetWorkflowRun();
+        }
+      };
+  private static final ActionCommand<WorkflowAction> RESPECT_LOCK_COMMAND =
+      new ActionCommand<WorkflowAction>(
+          WorkflowAction.class,
+          "NIASSA-RESPECT-LOCK",
+          "🔒️ Respect LIMS Key Lock",
+          Preference.ALLOW_BULK) {
+        @Override
+        protected boolean execute(WorkflowAction action, Optional<String> user) {
+          if (action.overrideLock) {
+            action.overrideLock = false;
+            return true;
+          }
+          return false;
         }
       };
   private static final ActionCommand<WorkflowAction> RESPECT_MAX_IN_FLIGHT_COMMAND =
@@ -260,6 +291,7 @@ public final class WorkflowAction extends Action {
   private InputLimsCollection limsKeysCollection;
   private long majorOliveVersion;
   private List<WorkflowRunMatch> matches = Collections.emptyList();
+  private boolean overrideLock;
   private final long[] previousAccessions;
 
   @ActionParameter(required = false)
@@ -308,7 +340,8 @@ public final class WorkflowAction extends Action {
     return Stream.concat(
         Stream.of(
             ignoreMaxInFlight ? RESPECT_MAX_IN_FLIGHT_COMMAND : IGNORE_MAX_IN_FLIGHT_COMMAND,
-            priorityBoost ? PRIORITY_NICE_COMMAND : PRIORITY_BOOST_COMMAND),
+            priorityBoost ? PRIORITY_NICE_COMMAND : PRIORITY_BOOST_COMMAND,
+            overrideLock ? RESPECT_LOCK_COMMAND : IGNORE_LOCK_COMMAND),
         runAccession == 0
             ? (matches.isEmpty() ? Stream.empty() : Stream.of(SKIP_CANDIDATES_COMMAND))
             : Stream.concat(
@@ -592,11 +625,11 @@ public final class WorkflowAction extends Action {
           cacheCollision = true;
           return ActionState.WAITING;
         }
-        if (!launchLock.isLive()) {
+        if (!launchLock.isLive() && !overrideLock) {
           this.cacheCollision = true;
           this.errors =
               Collections.singletonList(
-                  "Another action is scheduling a workflow for the same input LIMS keys.");
+                  "Another action is scheduling a workflow for the same input LIMS keys. Use “Ignore LIMS Key Lock” to make this run anyway. May cause duplicate workflow runs.");
           return ActionState.WAITING;
         }
 
