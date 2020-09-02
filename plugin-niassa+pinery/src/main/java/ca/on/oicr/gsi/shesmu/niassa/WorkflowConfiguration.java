@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
@@ -130,8 +131,10 @@ public class WorkflowConfiguration {
   private List<String> services = Collections.emptyList();
   private InputLimsKeyProvider type;
   private Map<String, Imyhat> userAnnotations = Collections.emptyMap();
+  private String kind = "UNKNOWN";
 
-  public void define(String name, Definer<NiassaServer> definer) {
+  public void define(
+      String name, Definer<NiassaServer> definer, Map<String, AlgebraicValue> workflowKind) {
     final String description =
         String.format(
                 "Runs SeqWare/Niassa workflow %d with settings in %s.",
@@ -143,31 +146,33 @@ public class WorkflowConfiguration {
                     .mapToObj(Long::toString)
                     .collect(
                         Collectors.joining(", ", " Considered equivalent to workflows: ", "")));
-    definer.defineAction(
-        name,
-        description,
-        WorkflowAction.class,
-        () -> {
-          final WorkflowAction action =
-              new WorkflowAction(
-                  definer,
-                  name,
-                  accession,
-                  previousAccessions,
-                  fileMatchingPolicy,
-                  services,
-                  annotations,
-                  relaunchFailedOnUpgrade);
-          for (final IniParam<?> param : getParameters()) {
-            param.writeDefault(action);
-          }
-          return action;
-        },
-        Stream.of(
-                Stream.of(getType().parameter()),
-                Stream.of(getParameters()).map(IniParam::parameter),
-                userAnnotations.entrySet().stream().map(UserAnnotationParameter::new))
-            .flatMap(Function.identity()));
+    workflowKind.put(
+        definer.defineAction(
+            name,
+            description,
+            WorkflowAction.class,
+            () -> {
+              final WorkflowAction action =
+                  new WorkflowAction(
+                      definer,
+                      name,
+                      accession,
+                      previousAccessions,
+                      fileMatchingPolicy,
+                      services,
+                      annotations,
+                      relaunchFailedOnUpgrade);
+              for (final IniParam<?> param : getParameters()) {
+                param.writeDefault(action);
+              }
+              return action;
+            },
+            Stream.of(
+                    Stream.of(getType().parameter()),
+                    Stream.of(getParameters()).map(IniParam::parameter),
+                    userAnnotations.entrySet().stream().map(UserAnnotationParameter::new))
+                .flatMap(Function.identity())),
+        new AlgebraicValue(kind.toUpperCase()));
   }
 
   public long getAccession() {
@@ -180,6 +185,10 @@ public class WorkflowConfiguration {
 
   public FileMatchingPolicy getFileMatchingPolicy() {
     return fileMatchingPolicy;
+  }
+
+  public String getKind() {
+    return kind;
   }
 
   public int getMaxFailed() {
@@ -224,6 +233,10 @@ public class WorkflowConfiguration {
 
   public void setFileMatchingPolicy(FileMatchingPolicy fileMatchingPolicy) {
     this.fileMatchingPolicy = fileMatchingPolicy;
+  }
+
+  public void setKind(String kind) {
+    this.kind = kind;
   }
 
   public void setMaxFailed(int maxFailed) {
