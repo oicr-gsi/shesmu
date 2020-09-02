@@ -1,5 +1,47 @@
 # Unreleased
 
+# [1.3.0] - 2020-09-02T17:52+00:00
+
+Changes:
+
+* Create an operations training guide
+* Don't break status page if loading invalid on-disk input data
+* Log cache information during exceptions
+* Make sure all exported definitions are available in simulation
+* Track the number of unique actions produced for each file
+* Update demo `pinery_ius` data to match new format
+
+Language changes:
+
+* Add function to get a string's hashcode
+* Allow exporting and sharing Define olives
+* Allow getting the action name
+* Allow joining against `Define` olive output
+* Create type accessor for input formats (`InputType`)
+* Fix signer accessor hoisting bug
+
+UI changes:
+
+* Add search import button
+* Allow renaming a saved search
+* Fix flex layout problems in alerts dashboard
+* Fix start/end times on alerts
+* Show Export Search button even if there are no actions matched
+* Streamline UI internals
+
+Config plugin changes:
+
+* Add `has` function for jsonconfig
+
+Niassa plugin changes:
+
+* Add override for LIMS key lock
+* Add additional tests for basesmaks with no indices
+* Make index 1 handled the same way as index 2 when grouping basemasks
+
+JIRA plugin changes:
+* Allow default values for required JIRA fields
+
 # [1.2.1] - 2020-08-10T18:23+00:00
 
 Niassa/Pinery plugin:
