@@ -82,6 +82,19 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                 }
                 return true;
               })
+          .filter(ap -> ap.getWorkflowId() != null)
+          .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
+          .entrySet()
+          .stream()
+          .map(
+              e ->
+                  new AnalysisState(
+                      e.getKey(),
+                      () -> metadata.getWorkflowRunWithIuses(e.getKey()),
+                      iusAccession ->
+                          limsKeyCache.computeIfAbsent(iusAccession, metadata::getLimsKeyFrom),
+                      e.getValue(),
+                      incrementSlowFetch))
           .onClose(
               () -> {
                 badStatus.labels(url, Long.toString(key)).set(badStatusCount.get());
@@ -99,20 +112,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                               Collections.emptyMap()));
                   stale.clear();
                 }
-              })
-          .filter(ap -> ap.getWorkflowId() != null)
-          .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
-          .entrySet()
-          .stream()
-          .map(
-              e ->
-                  new AnalysisState(
-                      e.getKey(),
-                      () -> metadata.getWorkflowRunWithIuses(e.getKey()),
-                      iusAccession ->
-                          limsKeyCache.computeIfAbsent(iusAccession, metadata::getLimsKeyFrom),
-                      e.getValue(),
-                      incrementSlowFetch));
+              });
     }
   }
 
