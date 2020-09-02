@@ -440,7 +440,7 @@ public final class PluginManager
       }
 
       @Override
-      public <A extends Action> void defineAction(
+      public <A extends Action> String defineAction(
           String name,
           String description,
           Class<A> clazz,
@@ -448,14 +448,13 @@ public final class PluginManager
           Stream<CustomActionParameter<A>> parameters) {
         final MethodHandle handle =
             MH_SUPPLIER_GET.bindTo(supplier).asType(MethodType.methodType(clazz));
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         actions.put(
             name,
             new ArbitraryActionDefintition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 handle,
                 description,
                 instance.fileName(),
@@ -463,104 +462,109 @@ public final class PluginManager
                     parameters.map(p -> new InvokeDynamicActionParameterDescriptor(name, p)),
                     InvokeDynamicActionParameterDescriptor.findActionDefinitionsByAnnotation(
                         clazz, fileFormat.lookup()))));
+        return qualifiedName;
       }
 
       @Override
-      public void defineConstant(String name, String description, Imyhat type, Object value) {
+      public String defineConstant(String name, String description, Imyhat type, Object value) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MethodHandles.constant(type.javaType(), value),
                 type,
                 description,
                 instance.fileName()));
+        return qualifiedName;
       }
 
       @Override
-      public <R> void defineConstant(
+      public <R> String defineConstant(
           String name, String description, ReturnTypeGuarantee<R> type, R value) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MethodHandles.constant(type.type().javaType(), value),
                 type.type(),
                 description,
                 instance.fileName()));
+        return qualifiedName;
       }
 
       @Override
-      public <R> void defineConstant(
+      public <R> String defineConstant(
           String name,
           String description,
           ReturnTypeGuarantee<R> returnType,
           Supplier<R> constant) {
-
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MH_SUPPLIER_GET.bindTo(constant),
                 returnType.type(),
                 description,
                 instance.fileName()));
+        return qualifiedName;
       }
 
       @Override
-      public void defineConstantBySupplier(
+      public String defineConstantBySupplier(
           String name, String description, Imyhat type, Supplier<Object> supplier) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
+
         constants.put(
             name,
             new ArbitraryConstantDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MH_SUPPLIER_GET.bindTo(supplier),
                 type,
                 description,
                 instance.fileName()));
+        return qualifiedName;
       }
 
       @Override
-      public <R> void defineDynamicSigner(
+      public <R> String defineDynamicSigner(
           String name,
           ReturnTypeGuarantee<R> returnType,
           Supplier<? extends DynamicSigner<R>> signer) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
+
         signatures.put(
             name,
             new ArbitraryDynamicSignatureDefintion(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MH_SUPPLIER_GET.bindTo(signer),
                 returnType.type(),
                 instance.fileName()));
+        return qualifiedName;
       }
 
       @Override
-      public void defineFunction(
+      public String defineFunction(
           String name,
           String description,
           Imyhat returnType,
           VariadicFunction function,
           FunctionParameter... parameters) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         final MethodHandle handle =
             MH_VARIADICFUNCTION_APPLY
                 .bindTo(function)
@@ -572,26 +576,21 @@ public final class PluginManager
         functions.put(
             name,
             new ArbitraryFunctionDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
-                description,
-                instance.fileName(),
-                handle,
-                returnType,
-                parameters));
+                qualifiedName, description, instance.fileName(), handle, returnType, parameters));
+        return qualifiedName;
       }
 
       @Override
-      public <A, R> void defineFunction(
+      public <A, R> String defineFunction(
           String name,
           String description,
           ReturnTypeGuarantee<R> returnType,
           String parameterDescription,
           TypeGuarantee<A> parameterType,
           Function<A, R> function) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         final MethodHandle handle =
             MH_FUNCTION_APPLY
                 .bindTo(function)
@@ -601,20 +600,17 @@ public final class PluginManager
         functions.put(
             name,
             new ArbitraryFunctionDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 description,
                 instance.fileName(),
                 handle,
                 returnType.type(),
                 new FunctionParameter(parameterDescription, parameterType.type())));
+        return qualifiedName;
       }
 
       @Override
-      public <A, B, R> void defineFunction(
+      public <A, B, R> String defineFunction(
           String name,
           String description,
           ReturnTypeGuarantee<R> returnType,
@@ -623,6 +619,8 @@ public final class PluginManager
           String parameter2Description,
           TypeGuarantee<B> parameter2Type,
           BiFunction<A, B, R> function) {
+        final String qualifiedName =
+            String.join(Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, name);
         final MethodHandle handle =
             MH_BIFUNCTION_APPLY
                 .bindTo(function)
@@ -656,8 +654,7 @@ public final class PluginManager
 
               @Override
               public String name() {
-                return String.join(
-                    Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, name);
+                return qualifiedName;
               }
 
               @Override
@@ -688,19 +685,19 @@ public final class PluginManager
                 return returnType.type();
               }
             });
+        return qualifiedName;
       }
 
       @Override
-      public void defineRefiller(String name, String description, RefillDefiner refillerDefiner) {
+      public String defineRefiller(String name, String description, RefillDefiner refillerDefiner) {
         final RefillInfo<?, ?> info = refillerDefiner.info(Object.class);
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         refillers.put(
             name,
             new ArbitraryRefillerDefinition(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MH_REFILL_INFO_CREATE.bindTo(info),
                 instance.fileName(),
                 description,
@@ -710,6 +707,7 @@ public final class PluginManager
                         InvokeDynamicRefillerParameterDescriptor
                             .findRefillerDefinitionsByAnnotation(info.type(), fileFormat.lookup()))
                     .collect(Collectors.toList())));
+        return qualifiedName;
       }
 
       @Override
@@ -724,21 +722,21 @@ public final class PluginManager
       }
 
       @Override
-      public <R> void defineStaticSigner(
+      public <R> String defineStaticSigner(
           String name,
           ReturnTypeGuarantee<R> returnType,
           Supplier<? extends StaticSigner<R>> signer) {
+        final String qualifiedName =
+            String.join(
+                Parser.NAMESPACE_SEPARATOR, fileFormat.namespace(), instanceName, validate(name));
         signatures.put(
             name,
             new ArbitraryStaticSignatureDefintion(
-                String.join(
-                    Parser.NAMESPACE_SEPARATOR,
-                    fileFormat.namespace(),
-                    instanceName,
-                    validate(name)),
+                qualifiedName,
                 MH_SUPPLIER_GET.bindTo(signer),
                 returnType.type(),
                 instance.fileName()));
+        return qualifiedName;
       }
 
       public Stream<Object> fetch(String format, boolean readStale) {

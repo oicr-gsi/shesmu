@@ -79,8 +79,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param clazz the class which implements the actions
    * @param supplier a generator of new instances of this action
    * @param parameters the parameters that cannot be inferred by annotations
+   * @return the full-qualified name to the action
    */
-  <A extends Action> void defineAction(
+  <A extends Action> String defineAction(
       String name,
       String description,
       Class<A> clazz,
@@ -94,8 +95,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param description the help text for the constant
    * @param type the Shesmu type for the object
    * @param value the current value of the object
+   * @return the full-qualified name to the constant
    */
-  void defineConstant(String name, String description, Imyhat type, Object value);
+  String defineConstant(String name, String description, Imyhat type, Object value);
 
   /**
    * Define a constant using a particular value
@@ -104,8 +106,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param description the help text for the constant
    * @param returnType the Shesmu type for the constant
    * @param value the current value of the object
+   * @return the full-qualified name to the constant
    */
-  <R> void defineConstant(
+  <R> String defineConstant(
       String name, String description, ReturnTypeGuarantee<R> returnType, R value);
 
   /**
@@ -115,8 +118,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param description the help text for the constant
    * @param returnType the Shesmu type for the constant
    * @param constant a callback to compute the current value of the constant
+   * @return the full-qualified name to the constant
    */
-  <R> void defineConstant(
+  <R> String defineConstant(
       String name, String description, ReturnTypeGuarantee<R> returnType, Supplier<R> constant);
 
   /**
@@ -126,8 +130,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param description the help text for the constant
    * @param type the Shesmu type for the object
    * @param supplier a callback to compute the current value of the constant
+   * @return the full-qualified name to the constant
    */
-  void defineConstantBySupplier(
+  String defineConstantBySupplier(
       String name, String description, Imyhat type, Supplier<Object> supplier);
 
   /**
@@ -136,8 +141,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param name the name of the signature
    * @param returnType the return type of the signature
    * @param signer a function to construct new signers
+   * @return the full-qualified name to the signer
    */
-  <R> void defineDynamicSigner(
+  <R> String defineDynamicSigner(
       String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends DynamicSigner<R>> signer);
 
   /**
@@ -148,8 +154,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param returnType the returned Shesmu type of the function
    * @param function the implementation of the function
    * @param parameters the Shesmu types and help text of the parameters of the function
+   * @return the full-qualified name to the function
    */
-  void defineFunction(
+  String defineFunction(
       String name,
       String description,
       Imyhat returnType,
@@ -165,8 +172,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param parameterName the help text of the parameter
    * @param parameterType the type of the parameter
    * @param function the implementation of the function
+   * @return the full-qualified name to the function
    */
-  <A, R> void defineFunction(
+  <A, R> String defineFunction(
       String name,
       String description,
       ReturnTypeGuarantee<R> returnType,
@@ -185,8 +193,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param parameter2Name the help text of the second parameter
    * @param parameter2Type the type of the second parameter
    * @param function the implementation of the function
+   * @return the full-qualified name to the function
    */
-  <A, B, R> void defineFunction(
+  <A, B, R> String defineFunction(
       String name,
       String description,
       ReturnTypeGuarantee<R> returnType,
@@ -201,8 +210,9 @@ public interface Definer<T> extends Supplier<T> {
    *
    * @param name the name of the refiller
    * @param description the help text for the refiller
+   * @return the full-qualified name to the refiller
    */
-  void defineRefiller(String name, String description, RefillDefiner definer);
+  String defineRefiller(String name, String description, RefillDefiner definer);
 
   /**
    * Define a new dynamic input source
@@ -223,8 +233,9 @@ public interface Definer<T> extends Supplier<T> {
    * @param name the name of the signature
    * @param returnType the return type of the signature
    * @param signer a function to construct new signers
+   * @return the full-qualified name to the signer
    */
-  <R> void defineStaticSigner(
+  <R> String defineStaticSigner(
       String name, ReturnTypeGuarantee<R> returnType, Supplier<? extends StaticSigner<R>> signer);
 
   /**
