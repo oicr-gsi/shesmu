@@ -72,6 +72,7 @@ Each workflow is configured in a separate file named
       "accession": 1234,
       "annotations": {},
       "type": "FILES",
+      "kind": "FOO",
       "maxInFlight": 3,
       "parameters": [],
       "previousAccessions": [],
@@ -110,6 +111,9 @@ consistent way. For example:
     "userAnnotations": { "foo": "i" }
 
 will create a new required parameter `foo`, which must be an integer.
+
+The `"kind"` value will be used to populate the `workflow_kinds` dictionary. It
+has no bearing on how the workflow operates.
 
 The `parameters` array describes all the INI parameters and how they should be
 available to olives. Each parameter is defined as follows:

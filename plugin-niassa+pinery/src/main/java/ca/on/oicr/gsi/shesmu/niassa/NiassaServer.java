@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.FileProvenanceFilter;
 import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.CerberusAnalysisProvenanceValue;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
@@ -15,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuInputSource;
 import ca.on.oicr.gsi.shesmu.plugin.json.JsonPluginFile;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.prometheus.client.Gauge;
@@ -681,6 +683,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   private void updateWorkflows() {
     definer.clearActions();
+    definer.clearConstants();
+    final Map<String, AlgebraicValue> workflowKind = new TreeMap<>();
 
     configuration
         .map(Configuration::getPrefix)
@@ -692,8 +696,22 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                     .forEach(
                         wc -> {
                           maxInFlight.put(prefix + wc.first(), wc.second().getMaxInFlight());
-                          wc.second().define(prefix + wc.first(), definer);
+                          wc.second().define(prefix + wc.first(), definer, workflowKind);
                         }));
+
+    definer.defineConstant(
+        "workflow_kind",
+        "The kind/category of workflow for a particular action name",
+        Imyhat.dictionary(
+            Imyhat.STRING,
+            workflowKind
+                .values()
+                .stream()
+                .map(AlgebraicValue::name)
+                .map(Imyhat::algebraicTuple)
+                .reduce(Imyhat::unify)
+                .orElse(Imyhat.BAD)),
+        workflowKind);
   }
 
   public String url() {
