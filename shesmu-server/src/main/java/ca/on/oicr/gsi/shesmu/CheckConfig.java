@@ -58,6 +58,7 @@ public class CheckConfig {
       System.exit(1);
       return;
     }
+    @SuppressWarnings("rawtypes")
     final ServiceLoader<PluginFileType> pluginFileTypes = ServiceLoader.load(PluginFileType.class);
     for (final String file : files) {
       final Path path = Paths.get(file);
@@ -116,46 +117,52 @@ public class CheckConfig {
               }
 
               @Override
-              public <A extends Action> void defineAction(
+              public <A extends Action> String defineAction(
                   String name,
                   String description,
                   Class<A> clazz,
                   Supplier<A> supplier,
                   Stream<CustomActionParameter<A>> parameters) {
                 System.out.printf("Action %s bound to %s.\n", name, clazz.getName());
+                return name;
               }
 
               @Override
-              public void defineConstant(
+              public String defineConstant(
                   String name, String description, Imyhat type, Object value) {
                 System.out.printf("Constant %s of type %s.\n", name, type.name());
+                return name;
               }
 
               @Override
-              public <R> void defineConstant(
+              public <R> String defineConstant(
                   String name, String description, ReturnTypeGuarantee<R> returnType, R value) {
                 System.out.printf("Constant %s of type %s.\n", name, returnType.type().name());
+                return name;
               }
 
               @Override
-              public <R> void defineConstant(
+              public <R> String defineConstant(
                   String name,
                   String description,
                   ReturnTypeGuarantee<R> returnType,
                   Supplier<R> constant) {
                 System.out.printf("Constant %s of type %s.\n", name, returnType.type().name());
+                return name;
               }
 
               @Override
-              public void defineConstantBySupplier(
+              public String defineConstantBySupplier(
                   String name, String description, Imyhat type, Supplier<Object> supplier) {
                 System.out.printf("Constant %s of type %s.\n", name, type.name());
+                return name;
               }
 
               @Override
-              public void defineRefiller(String name, String description, RefillDefiner definer) {
+              public String defineRefiller(String name, String description, RefillDefiner definer) {
                 RefillInfo<Object, ?> info = definer.info(Object.class);
                 System.out.printf("Refiller %s bound to %s.\n", name, info.type().getName());
+                return name;
               }
 
               @Override
@@ -164,15 +171,16 @@ public class CheckConfig {
               }
 
               @Override
-              public <R> void defineDynamicSigner(
+              public <R> String defineDynamicSigner(
                   String name,
                   ReturnTypeGuarantee<R> returnType,
                   Supplier<? extends DynamicSigner<R>> signer) {
                 System.out.printf("Signer %s of type %s.\n", name, returnType.type().name());
+                return name;
               }
 
               @Override
-              public void defineFunction(
+              public String defineFunction(
                   String name,
                   String description,
                   Imyhat returnType,
@@ -185,10 +193,11 @@ public class CheckConfig {
                         .map(p -> p.type().name())
                         .collect(Collectors.joining(",")),
                     returnType.name());
+                return name;
               }
 
               @Override
-              public <A, R> void defineFunction(
+              public <A, R> String defineFunction(
                   String name,
                   String description,
                   ReturnTypeGuarantee<R> returnType,
@@ -198,12 +207,11 @@ public class CheckConfig {
                 System.out.printf(
                     "Function %s of type (%s) %s.\n",
                     name, parameterType.type().name(), returnType.type().name());
-                // Dummy.
-
+                return name;
               }
 
               @Override
-              public <A, B, R> void defineFunction(
+              public <A, B, R> String defineFunction(
                   String name,
                   String description,
                   ReturnTypeGuarantee<R> returnType,
@@ -218,14 +226,16 @@ public class CheckConfig {
                     parameter1Type.type().name(),
                     parameter2Type.type().name(),
                     returnType.type().name());
+                return name;
               }
 
               @Override
-              public <R> void defineStaticSigner(
+              public <R> String defineStaticSigner(
                   String name,
                   ReturnTypeGuarantee<R> returnType,
                   Supplier<? extends StaticSigner<R>> signer) {
                 System.out.printf("Signer %s of type %s.\n", name, returnType.type().name());
+                return name;
               }
 
               @Override
