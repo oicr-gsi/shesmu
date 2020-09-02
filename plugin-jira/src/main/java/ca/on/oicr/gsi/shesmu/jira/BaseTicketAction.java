@@ -285,7 +285,9 @@ public abstract class BaseTicketAction extends Action {
               for (final Field field : t.getFields()) {
                 if (field.isRequired()) {
                   final String value = connection.get().defaultFieldValues(field.getId());
-                  fields.add(new FieldInput(field.getId(), value));
+                  fields.add(
+                      new FieldInput(
+                          field.getId(), ComplexIssueInputFieldValue.with("name", value)));
                 }
               }
 
