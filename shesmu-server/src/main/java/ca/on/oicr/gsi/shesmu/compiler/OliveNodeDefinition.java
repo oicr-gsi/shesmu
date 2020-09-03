@@ -48,6 +48,9 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
 
   @Override
   public boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler) {
+    if (export) {
+      return true;
+    }
     boolean ok = true;
     for (final OliveParameter parameter : parameters) {
       if (!parameter.isRead()) {
