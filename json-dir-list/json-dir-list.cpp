@@ -60,18 +60,25 @@ int main(int argc, const char **argv) {
         }
         std::stringstream path;
         path << roots.front() << "/" << entry->d_name;
+        auto is_dir = entry->d_type == DT_DIR;
+        struct stat info = {0};
+        // We might get something we can't identify, in which case we need to do
+        // stat to determine if it's a directory. If it isn't a directory, we
+        // need to stat it anyway for later.
+        if (entry->d_type == DT_UNKNOWN || !is_dir) {
+          if (stat(path.str().c_str(), &info) != 0) {
+            continue;
+          }
+          is_dir = S_ISDIR(info.st_mode);
+        }
 
-        if (entry->d_type == DT_DIR) {
+        if (is_dir) {
           // Any child directories should be explored later
           roots.push_back(path.str());
         } else {
           // For anything that's a file (or pipe or symlink or whatever), write
           // out a record
           Json::Value record(Json::objectValue);
-          struct stat info = {0};
-          if (stat(path.str().c_str(), &info) != 0) {
-            continue;
-          }
           struct passwd *pw = getpwuid(info.st_uid);
           struct group *gr = getgrgid(info.st_gid);
           record["fetched"] = fetched;
