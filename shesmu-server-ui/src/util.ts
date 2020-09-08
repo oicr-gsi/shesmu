@@ -384,10 +384,10 @@ export function mergeLocations(
     .filter(
       (location, index, arr) =>
         index == 0 ||
-        location.file != arr[index].file ||
-        (arr[index].line && location.line != arr[index].line) ||
-        (arr[index].column && location.column != arr[index].column) ||
-        (arr[index].hash && location.hash != arr[index].hash)
+        location.file != arr[index - 1].file ||
+        (arr[index - 1].line && location.line != arr[index - 1].line) ||
+        (arr[index - 1].column && location.column != arr[index - 1].column) ||
+        (arr[index - 1].hash && location.hash != arr[index - 1].hash)
     );
 }
 /**
