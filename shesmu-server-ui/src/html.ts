@@ -81,11 +81,11 @@ export type FindHandler = (() => boolean) | null;
  */
 export interface FormattedElement {
   type:
-  | "b" // bold
-  | "i" // italic
-  | "p" //paragraph
-  | "s" //strike through
-  | "tt"; // typewriter/monospace
+    | "b" // bold
+    | "i" // italic
+    | "p" //paragraph
+    | "s" //strike through
+    | "tt"; // typewriter/monospace
   contents: DisplayElement;
 }
 /**
@@ -317,7 +317,11 @@ export function busyDialog(): () => void {
   if (modal.reveal) {
     modal.reveal();
   }
-  return () => document.body.removeChild(modal.element);
+  return () => {
+    if (modal.element.isConnected) {
+      document.body.removeChild(modal.element);
+    }
+  };
 }
 /**
  * Create a self-closing popup notification (aka butter bar)
@@ -654,14 +658,14 @@ export function dateEditor(
       enabled.value
         ? null
         : new Date(
-          year.value,
-          monthModel.get()[0],
-          day.value,
-          hour.value,
-          minute.value,
-          0,
-          0
-        ).getTime(),
+            year.value,
+            monthModel.get()[0],
+            day.value,
+            hour.value,
+            minute.value,
+            0,
+            0
+          ).getTime(),
   };
 }
 
@@ -688,7 +692,9 @@ export function dialog(
   dialog.appendChild(closeButton);
 
   const close = () => {
-    document.body.removeChild(modal);
+    if (modal.isConnected) {
+      document.body.removeChild(modal);
+    }
     if (afterClose) {
       afterClose();
     }
@@ -699,7 +705,10 @@ export function dialog(
   document.body.appendChild(modal);
   modal.addEventListener("click", (e) => {
     if (e.target == modal) {
-      document.body.removeChild(modal);
+      if (modal.isConnected) {
+        document.body.removeChild(modal);
+      }
+      e.stopPropagation();
       if (afterClose) {
         afterClose();
       }
@@ -822,73 +831,73 @@ export function dropdownTable<T, S>(
         items.length == 0
           ? "No items."
           : [
-            "Filter: ",
-            inputFilter,
-            br(),
-            items.map(({ value, label, children }) => {
-              const groupLabel = createUiFromTag("p", label);
-              groupLabel.element.addEventListener("click", (e) => {
-                e.stopPropagation();
-                selectionModel.statusChanged(value);
-                if (synchronizer) {
-                  synchronizer.synchronzier.statusChanged(
-                    synchronizer.extract(value)
-                  );
-                }
-                close();
-              });
+              "Filter: ",
+              inputFilter,
+              br(),
+              items.map(({ value, label, children }) => {
+                const groupLabel = createUiFromTag("p", label);
+                groupLabel.element.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  selectionModel.statusChanged(value);
+                  if (synchronizer) {
+                    synchronizer.synchronzier.statusChanged(
+                      synchronizer.extract(value)
+                    );
+                  }
+                  close();
+                });
 
-              const block = createUiFromTag(
-                "div",
-                groupLabel,
-                children.length
-                  ? tableFromRows(
-                    children.map((child) => {
-                      const row = tableRow(() => {
-                        selectionModel.statusChanged(child.value);
-                        if (synchronizer) {
-                          synchronizer.synchronzier.statusChanged(
-                            synchronizer.extract(child.value)
-                          );
-                        }
-                        close();
-                      }, ...child.label);
-                      searchFilters.push((keywords) => {
-                        row.element.style.display = searchPredicate(
-                          child.value,
-                          keywords
-                        )
-                          ? "block"
-                          : "none";
-                      });
-                      synchronizerCallbacks.push((state) => {
-                        if (synchronizer?.predicate(state, child.value)) {
-                          selectionModel.statusChanged(child.value);
-                        }
-                      });
-                      return row;
-                    })
-                  )
-                  : blank()
-              );
-              searchFilters.push((keywords) => {
-                block.element.style.display =
-                  searchPredicate(value, keywords) ||
+                const block = createUiFromTag(
+                  "div",
+                  groupLabel,
+                  children.length
+                    ? tableFromRows(
+                        children.map((child) => {
+                          const row = tableRow(() => {
+                            selectionModel.statusChanged(child.value);
+                            if (synchronizer) {
+                              synchronizer.synchronzier.statusChanged(
+                                synchronizer.extract(child.value)
+                              );
+                            }
+                            close();
+                          }, ...child.label);
+                          searchFilters.push((keywords) => {
+                            row.element.style.display = searchPredicate(
+                              child.value,
+                              keywords
+                            )
+                              ? "block"
+                              : "none";
+                          });
+                          synchronizerCallbacks.push((state) => {
+                            if (synchronizer?.predicate(state, child.value)) {
+                              selectionModel.statusChanged(child.value);
+                            }
+                          });
+                          return row;
+                        })
+                      )
+                    : blank()
+                );
+                searchFilters.push((keywords) => {
+                  block.element.style.display =
+                    searchPredicate(value, keywords) ||
                     children.some((child) =>
                       searchPredicate(child.value, keywords)
                     )
-                    ? "block"
-                    : "none";
-              });
-              synchronizerCallbacks.push((state) => {
-                if (synchronizer?.predicate(state, value)) {
-                  selectionModel.statusChanged(value);
-                }
-              });
-              return block;
-            }),
-          ],
-      () => { }
+                      ? "block"
+                      : "none";
+                });
+                synchronizerCallbacks.push((state) => {
+                  if (synchronizer?.predicate(state, value)) {
+                    selectionModel.statusChanged(value);
+                  }
+                });
+                return block;
+              }),
+            ],
+      () => {}
     )
   );
   selectionModel.statusChanged(null);
@@ -969,7 +978,7 @@ export function historyState<T extends { [name: string]: any }>(
   });
 
   return {
-    reload: () => { },
+    reload: () => {},
     statusChanged: (input: T) => {
       if (input != current) {
         current = input;
@@ -984,7 +993,7 @@ export function historyState<T extends { [name: string]: any }>(
       }
     },
     statusFailed: (message, _retry) => console.log(message),
-    statusWaiting: () => { },
+    statusWaiting: () => {},
     get(): T {
       return current;
     },
@@ -1239,9 +1248,11 @@ export function multipaneState<
       const { ui, model } = pane(
         silentOnChange.includes(name)
           ? "blank"
-          : (primary == null ? index == 0 : name == primary)
-            ? "large"
-            : "small"
+          : (primary == null
+            ? index == 0
+            : name == primary)
+          ? "large"
+          : "small"
       );
       models.push(mapModel(model, (input) => formatter(input)));
       return [name, ui];
@@ -1406,7 +1417,7 @@ export function pane(
       type: "ui",
     },
     model: {
-      reload: () => { },
+      reload: () => {},
       statusChanged: update,
       statusWaiting: () => {
         switch (mode) {
@@ -1478,9 +1489,8 @@ export function popup(
     modal.appendChild(inner.element);
     if (underOwner && e.currentTarget instanceof HTMLElement) {
       inner.element.style.left = `${e.currentTarget.offsetLeft}px`;
-      inner.element.style.top = `${
-        e.currentTarget.offsetTop + e.currentTarget.offsetHeight
-        }px`;
+      inner.element.style.top = `${e.currentTarget.offsetTop +
+        e.currentTarget.offsetHeight}px`;
     } else {
       inner.element.style.left = `${Math.min(
         e.clientX,
@@ -1523,7 +1533,7 @@ export function popupMenu(
           action();
         })
       ),
-    () => { }
+    () => {}
   );
 }
 
@@ -1625,18 +1635,18 @@ export function pickFromSetCustom<T>(
     const { ui, model } = singleState<T[]>((items) =>
       items.length
         ? items.map((item) => {
-          return [
-            render(item, (e) => {
-              selected.push(item);
-              if (!e.ctrlKey) {
-                setItems(selected);
-                e.stopPropagation();
-                close();
-              }
-            }),
-            breakLines ? br() : blank(),
-          ];
-        })
+            return [
+              render(item, (e) => {
+                selected.push(item);
+                if (!e.ctrlKey) {
+                  setItems(selected);
+                  e.stopPropagation();
+                  close();
+                }
+              }),
+              breakLines ? br() : blank(),
+            ];
+          })
         : "No matches."
     );
     const showItems = (p: (input: T) => boolean) =>
@@ -1675,7 +1685,10 @@ export function pickFromSetCustom<T>(
  * Make text that makes whitespace visible
  */
 export function revealWhitespace(text: string): string {
-  return text.replace("\n", "⏎").replace("\t", "⇨").replace(/\s/, "␣");
+  return text
+    .replace("\n", "⏎")
+    .replace("\t", "⇨")
+    .replace(/\s/, "␣");
 }
 
 /**
@@ -1822,11 +1835,11 @@ export function synchronizerFields<
       return [
         key,
         {
-          reload: () => { },
+          reload: () => {},
           statusChanged(state: T[K]): void {
             parent.statusChanged({ ...parent.get(), [key]: state });
           },
-          statusWaiting(): void { },
+          statusWaiting(): void {},
           statusFailed(message: string, _retry: () => void): void {
             console.log(message);
           },
@@ -2099,7 +2112,7 @@ export function tabsModel(
     const group = i + 1;
     tabGroups.push({ panes: [], buttons: [] });
     models.push({
-      reload: () => { },
+      reload: () => {},
       statusChanged: (input) => {
         tabGroups[group] = generate(group, input);
         update(group);
@@ -2193,7 +2206,7 @@ export function temporaryState<T>(initial: T): StateSynchronizer<T> {
   let current: T = initial;
   let listener: StateListener<T> = null;
   return {
-    reload: () => { },
+    reload: () => {},
     statusChanged: (input: T) => {
       current = input;
       if (listener) {
@@ -2201,7 +2214,7 @@ export function temporaryState<T>(initial: T): StateSynchronizer<T> {
       }
     },
     statusFailed: (message, _retry) => console.log(message),
-    statusWaiting: () => { },
+    statusWaiting: () => {},
     get(): T {
       return current;
     },
