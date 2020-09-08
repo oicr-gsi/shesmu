@@ -4,7 +4,7 @@
   <parent>
     <groupId>ca.on.oicr.gsi</groupId>
     <artifactId>shesmu</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
+    <version>1.4.1</version>
   </parent>
   <artifactId>shesmu-plugin-github</artifactId>
   <packaging>jar</packaging>
@@ -17,7 +17,7 @@
     <dependency>
       <groupId>ca.on.oicr.gsi</groupId>
       <artifactId>shesmu-pluginapi</artifactId>
-      <version>1.4.1-SNAPSHOT</version>
+      <version>1.4.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
