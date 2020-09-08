@@ -1,5 +1,11 @@
 # Unreleased
 
+# [1.4.1] - 2020-09-08T19:51+00:00
+
+Changes:
+
+* Fix type assignability for tuples and objects
+
 # [1.4.0] - 2020-09-08T17:30+00:00
 
 Changes:
