@@ -1,5 +1,33 @@
 # Unreleased
 
+# [1.4.0] - 2020-09-08T17:30+00:00
+
+Changes:
+
+* Return full-qualified names during binding
+
+UI changes:
+
+* Fix error when close callback is called twice
+* Fix bug where source locations don't get added properly
+
+Language changes:
+
+* Add algebraic data types
+* Allow unused variables if definition is exported
+
+SFTP plugin changes:
+
+* Fix `json-dir-list` thinking some directories were files
+
+Niassa plugin changes:
+
+* Fix bug where LIMS key locks are not purged
+
+JIRA plugin changes:
+
+* Use complex input field values when transitioning required JIRA fields
+
 # [1.3.0] - 2020-09-02T17:52+00:00
 
 Changes:
