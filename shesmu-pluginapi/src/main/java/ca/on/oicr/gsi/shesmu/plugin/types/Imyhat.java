@@ -721,10 +721,10 @@ public abstract class Imyhat {
           .stream()
           .allMatch(
               e ->
-                  otherFields
-                      .getOrDefault(e.getKey(), new Pair<>(Imyhat.BAD, 0))
+                  e.getValue()
                       .first()
-                      .isAssignableFrom(e.getValue().first()));
+                      .isAssignableFrom(
+                          otherFields.getOrDefault(e.getKey(), new Pair<>(Imyhat.BAD, 0)).first()));
     }
 
     @Override
@@ -987,7 +987,7 @@ public abstract class Imyhat {
           return false;
         }
         for (int i = 0; i < types.length; i++) {
-          if (!others[i].isAssignableFrom(types[i])) {
+          if (!types[i].isAssignableFrom(others[i])) {
             return false;
           }
         }
