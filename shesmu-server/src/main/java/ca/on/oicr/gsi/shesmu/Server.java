@@ -518,12 +518,10 @@ public final class Server implements ServerConfig, ActionServices {
               public Stream<Header> headers() {
                 String savedSearches;
                 String savedSearch;
-                String tags;
                 String locations;
                 String userFilter;
                 try {
                   savedSearches = RuntimeSupport.MAPPER.writeValueAsString(savedSearches());
-                  tags = RuntimeSupport.MAPPER.writeValueAsString(activeTags());
                   locations = RuntimeSupport.MAPPER.writeValueAsString(activeLocations());
                   savedSearch =
                       RuntimeSupport.MAPPER.writeValueAsString(
@@ -537,7 +535,6 @@ public final class Server implements ServerConfig, ActionServices {
                   e.printStackTrace();
                   savedSearches = "{}";
                   savedSearch = "null";
-                  tags = "[]";
                   locations = "[]";
                   userFilter = "'{}'";
                 }
@@ -549,8 +546,6 @@ public final class Server implements ServerConfig, ActionServices {
                             + "} from \"./action.js\";"
                             + "initialiseActionDash("
                             + savedSearches
-                            + ", "
-                            + tags
                             + ", "
                             + locations
                             + ", "
@@ -1454,14 +1449,37 @@ public final class Server implements ServerConfig, ActionServices {
                   });
           return array;
         });
-    addJson(
+    add(
         "/tags",
-        (mapper, query) -> {
-          final ArrayNode array = mapper.createArrayNode();
-          for (final String tag : activeTags()) {
-            array.add(tag);
+        t -> {
+          final ActionProcessor.Filter[] filters;
+          if (t.getRequestMethod().equals("GET")) {
+            filters = new ActionProcessor.Filter[0];
+          } else {
+            try {
+              filters =
+                  Stream.of(
+                          RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class))
+                      .map(f -> f.convert(processor))
+                      .toArray(Filter[]::new);
+            } catch (final Exception e) {
+              e.printStackTrace();
+              t.sendResponseHeaders(400, 0);
+              try (OutputStream os = t.getResponseBody()) {}
+              return;
+            }
           }
-          return array;
+          t.sendResponseHeaders(200, 0);
+          try (final OutputStream os = t.getResponseBody();
+              final JsonGenerator jsonOutput =
+                  new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+            jsonOutput.writeStartArray();
+            for (final String tag :
+                processor.tags(filters).collect(Collectors.toCollection(TreeSet::new))) {
+              jsonOutput.writeString(tag);
+            }
+            jsonOutput.writeEndArray();
+          }
         });
     addJson("/locations", (mapper, query) -> activeLocations());
     addJson("/deadpauses", (mapper, query) -> deadPauses());
@@ -2695,17 +2713,6 @@ public final class Server implements ServerConfig, ActionServices {
     return locationArray;
   }
 
-  public Set<String> activeTags() {
-    return Stream.concat(
-            compiler
-                .dashboard()
-                .map(Pair::second)
-                .flatMap(FileTable::olives)
-                .flatMap(OliveTable::tags),
-            processor.tags())
-        .collect(Collectors.toSet());
-  }
-
   /** Add a new service endpoint with Prometheus monitoring */
   private void add(String url, HttpHandler handler) {
     server.createContext(
@@ -2955,12 +2962,6 @@ public final class Server implements ServerConfig, ActionServices {
                           oliveNode.put("paused", processor.isPaused(location));
                         }
                         olive.tags().sorted().forEach(oliveNode.putArray("tags")::add);
-                        final Set<String> dynamicTags =
-                            processor
-                                .tags(processor.fromSourceLocation(location))
-                                .collect(Collectors.toSet());
-                        olive.tags().forEach(dynamicTags::remove);
-                        dynamicTags.forEach(oliveNode.putArray("tagsDynamic")::add);
                         final ArrayNode clauseArray = oliveNode.putArray("clauses");
                         olive
                             .clauses()

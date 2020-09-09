@@ -284,14 +284,12 @@ export function initialiseOliveDash(
   const { actions, bulkCommands, model: actionsModel } = actionDisplay(
     exportSearches
   );
-  let dynamicTags = iterableModel<string>();
   const search = createSearch(
     actionFilterState,
     combineModels(statsModel, actionsModel),
     false,
     filenameFormatter,
-    [],
-    dynamicTags
+    []
   );
   const metroRequest = refreshableSvg(
     "metrodiagram",
@@ -428,20 +426,6 @@ export function initialiseOliveDash(
         }
       }
     ),
-    mapModel(dynamicTags, (selected: OliveReference) => {
-      if (selected) {
-        if (selected.olive) {
-          return selected.olive.olive.tagsDynamic;
-        }
-        return [
-          ...new Set(
-            selected.script.olives.flatMap((olive) => olive.tagsDynamic)
-          ),
-        ];
-      } else {
-        return [];
-      }
-    }),
     mapModel(tabsModels[0], (selected: OliveReference) => {
       if (!selected) return [];
       const tabList: Tab[] = [];
