@@ -900,7 +900,25 @@ export function dropdownTable<T, S>(
       () => {}
     )
   );
-  selectionModel.statusChanged(null);
+  if (synchronizer) {
+    const matches = items
+      .flatMap((item) => [
+        item.value,
+        ...item.children.map((child) => child.value),
+      ])
+      .filter(
+        (v) =>
+          v != null &&
+          synchronizer.predicate(synchronizer.synchronzier.get(), v)
+      );
+    if (matches.length) {
+      selectionModel.statusChanged(matches[0]);
+    } else {
+      selectionModel.statusChanged(null);
+    }
+  } else {
+    selectionModel.statusChanged(null);
+  }
   if (synchronizer) {
     synchronizer.synchronzier.listen((value) =>
       synchronizerCallbacks.forEach((callback) => callback(value))
