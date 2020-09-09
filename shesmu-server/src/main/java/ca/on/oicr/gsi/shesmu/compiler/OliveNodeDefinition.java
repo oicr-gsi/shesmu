@@ -48,9 +48,6 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
 
   @Override
   public boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler) {
-    if (export) {
-      return true;
-    }
     boolean ok = true;
     for (final OliveParameter parameter : parameters) {
       if (!parameter.isRead()) {
@@ -203,6 +200,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     inputFormat = oliveCompilerServices.inputFormat().name();
     return true;
+  }
+
+  @Override
+  public boolean skipCheckUnusedDeclarations() {
+    return export;
   }
 
   @Override

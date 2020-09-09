@@ -341,6 +341,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
+  public boolean skipCheckUnusedDeclarations() {
+    return false;
+  }
+
+  @Override
   public boolean resolveTypes(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return true;

@@ -125,7 +125,8 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
     arguments.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
     variableTags.forEach(arg -> arg.collectFreeVariables(captures, Flavour::needsCapture));
     final OliveBuilder oliveBuilder =
-        builder.buildRunOlive(line, column, definition.name(), signableNames, signableVariableChecks);
+        builder.buildRunOlive(
+            line, column, definition.name(), signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
     final Renderer action =
@@ -283,6 +284,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
                 .filter(tag -> tag.resolveDefinitions(oliveCompilerServices, errorHandler))
                 .count()
             == variableTags.size();
+  }
+
+  @Override
+  public boolean skipCheckUnusedDeclarations() {
+    return false;
   }
 
   @Override

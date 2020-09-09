@@ -25,9 +25,9 @@ public abstract class OliveNodeWithClauses extends OliveNode {
 
   @Override
   public final boolean checkUnusedDeclarations(Consumer<String> errorHandler) {
-    return clauses.stream().filter(c -> c.checkUnusedDeclarations(errorHandler)).count()
-            == clauses.size()
-        & checkUnusedDeclarationsExtra(errorHandler);
+    return checkUnusedDeclarationsExtra(errorHandler) & skipCheckUnusedDeclarations()
+        || clauses.stream().filter(c -> c.checkUnusedDeclarations(errorHandler)).count()
+            == clauses.size();
   }
 
   public abstract boolean checkUnusedDeclarationsExtra(Consumer<String> errorHandler);
@@ -98,6 +98,8 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   /** Do any further non-variable definition resolution specific to this class */
   protected abstract boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
+
+  public abstract boolean skipCheckUnusedDeclarations();
 
   /** Type check this olive and all its constituent parts */
   @Override
