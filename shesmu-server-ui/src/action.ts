@@ -589,7 +589,6 @@ function collectSearches(
 
 export function initialiseActionDash(
   serverSearches: ServerSearches,
-  tags: string[],
   sources: SourceLocation[],
   savedQueryName: string | null,
   userFilters: string | BasicQuery | null,
@@ -665,8 +664,7 @@ export function initialiseActionDash(
     combinedActionsModel,
     true,
     filenameFormatter,
-    sources,
-    tags
+    sources
   );
   const { model: deleteModel, ui: deleteUi } = singleState(
     (input: SearchDefinition) =>

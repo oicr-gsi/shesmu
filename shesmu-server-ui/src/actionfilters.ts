@@ -324,7 +324,7 @@ interface TimeSpan {
 function addFilterDialog(
   onActionPage: boolean,
   sources: SourceLocation[],
-  tags: Iterable<string>,
+  getFilters: (callback: (filters: ActionFilter[]) => void) => void,
   timeRange: (
     accessor: BasicQueryTimeAccessor,
     start: number | null,
@@ -423,7 +423,9 @@ function addFilterDialog(
             keywords.every(
               (k) =>
                 status.toLowerCase().indexOf(k) != -1 ||
-                statusDescription(status).toLowerCase().indexOf(k) != -1
+                statusDescription(status)
+                  .toLowerCase()
+                  .indexOf(k) != -1
             ),
           true
         );
@@ -446,23 +448,36 @@ function addFilterDialog(
           }
         )
       : blank(),
-    tags[Symbol.iterator]().next().done
-      ? blank()
-      : button(
-          "🏷️ Tags",
-          "Add a filter that searches for actions marked with a particular tag by an olive.",
-          () => {
-            close();
-            pickFromSet(
-              [...tags].sort(),
-              (tag) => addSet("tag", tag),
-              (tag) => ({ label: tag, title: "" }),
-              (tag, keywords) =>
-                keywords.every((k) => tag.toLowerCase().indexOf(k) != -1),
-              false
-            );
-          }
-        ),
+    button(
+      "🏷️ Tags",
+      "Add a filter that searches for actions marked with a particular tag by an olive.",
+      () => {
+        close();
+        getFilters((filters) =>
+          fetchJsonWithBusyDialog(
+            "/tags",
+            {
+              method: "POST",
+              body: JSON.stringify(filters),
+            },
+            (tags: string[]) => {
+              if (tags.length) {
+                pickFromSet(
+                  tags.sort(),
+                  (tag) => addSet("tag", tag),
+                  (tag) => ({ label: tag, title: "" }),
+                  (tag, keywords) =>
+                    keywords.every((k) => tag.toLowerCase().indexOf(k) != -1),
+                  false
+                );
+              } else {
+                dialog((_close) => text("No tags are available."));
+              }
+            }
+          )
+        );
+      }
+    ),
     sources.length
       ? button(
           "📍 Source Olive",
@@ -625,8 +640,7 @@ export function createSearch(
   model: StatefulModel<ActionFilter[]>,
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
-  sources: SourceLocation[],
-  tags: Iterable<string>
+  sources: SourceLocation[]
 ): {
   buttons: UIElement;
   entryBar: UIElement;
@@ -655,8 +669,7 @@ export function createSearch(
         queryModel,
         synchronizer,
         onActionPage,
-        sources,
-        tags
+        sources
       );
     } else {
       search = searchBasic(
@@ -665,8 +678,7 @@ export function createSearch(
         synchronizer,
         onActionPage,
         filenameFormatter,
-        sources,
-        tags
+        sources
       );
     }
     buttons.model.statusChanged(search.buttons);
@@ -1164,8 +1176,7 @@ function searchAdvanced(
   model: StatefulModel<ActionFilter[]>,
   synchronizer: StateSynchronizer<string | BasicQuery>,
   onActionPage: boolean,
-  sources: SourceLocation[],
-  tags: Iterable<string>
+  sources: SourceLocation[]
 ): SearchPlatform {
   const searchModel: StatefulModel<string> = bypassModel(
     combineModels(
@@ -1334,7 +1345,16 @@ function searchAdvanced(
             addFilterDialog(
               onActionPage,
               sources,
-              tags,
+              (filterCallback) =>
+                fetchJsonWithBusyDialog<ParseQueryRespose>(
+                  "parsequery",
+                  {
+                    method: "POST",
+                    body: JSON.stringify(search.value),
+                  },
+                  (result) =>
+                    filterCallback(result.filter ? [result.filter] : [])
+                ),
               (accessor, start, end) =>
                 callback({ start: start, end: end, type: accessor.rangeType }),
               (accessor, value) => {
@@ -1608,8 +1628,7 @@ function searchBasic(
   synchronizer: StateSynchronizer<string | BasicQuery>,
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
-  sources: SourceLocation[],
-  tags: Iterable<string>
+  sources: SourceLocation[]
 ): SearchPlatform {
   let current = { ...initial };
   const { ui: searchView, model: viewModel } = singleState(
@@ -1638,7 +1657,7 @@ function searchBasic(
           addFilterDialog(
             onActionPage,
             sources,
-            tags,
+            (filterCallback) => filterCallback(createFilters(current)),
             (type, start, end) => {
               current[type.rangeType] = {
                 start: start,
