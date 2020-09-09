@@ -161,7 +161,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   public void render(
       RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     final OliveBuilder oliveBuilder =
-        builder.buildRunOlive(line, column, null,  signableNames, signableVariableChecks);
+        builder.buildRunOlive(line, column, null, signableNames, signableVariableChecks);
     clauses().forEach(clause -> clause.render(builder, oliveBuilder, definitions));
     oliveBuilder.line(line);
     oliveBuilder.finish(
@@ -276,6 +276,11 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
       ok = false;
     }
     return ok;
+  }
+
+  @Override
+  public boolean skipCheckUnusedDeclarations() {
+    return false;
   }
 
   @Override
