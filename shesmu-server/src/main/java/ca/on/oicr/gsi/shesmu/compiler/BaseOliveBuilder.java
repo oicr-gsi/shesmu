@@ -400,7 +400,9 @@ public abstract class BaseOliveBuilder {
           outerKeyLambda.push(renderer);
           innerKeyLambda.push(renderer);
           LambdaBuilder.pushNew(
-              renderer, LambdaBuilder.bifunction(newType, oldType, innerType.type()));
+              renderer,
+              LambdaBuilder.bifunction(newType, oldType, innerType.type()),
+              renderer.getNamed(SIGNER_ACCESSOR_NAME));
 
           renderer
               .methodGen()
@@ -469,7 +471,9 @@ public abstract class BaseOliveBuilder {
           outerKeyLambda.push(renderer);
           innerKeyLambda.push(renderer);
           LambdaBuilder.pushNew(
-              renderer, LambdaBuilder.bifunction(joinedType, oldType, innerType.type()));
+              renderer,
+              LambdaBuilder.bifunction(joinedType, oldType, innerType.type()),
+              renderer.getNamed(SIGNER_ACCESSOR_NAME));
           newMethod.push(renderer);
           collectLambda.push(renderer);
 

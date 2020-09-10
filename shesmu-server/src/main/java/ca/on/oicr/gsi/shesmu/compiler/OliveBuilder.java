@@ -26,6 +26,111 @@ import org.objectweb.asm.commons.Method;
 /** An olive that will result in an action being performed */
 public final class OliveBuilder extends BaseOliveBuilder {
 
+  public static void buildSignerAccessor(
+      RootBuilder owner, Type accessorType, String signerPrefix, InputFormatDefinition format) {
+    final ClassVisitor signerClass = owner.createClassVisitor();
+    signerClass.visit(
+        Opcodes.V1_8,
+        Opcodes.ACC_PUBLIC,
+        accessorType.getInternalName(),
+        null,
+        A_OBJECT_TYPE.getInternalName(),
+        new String[] {A_SIGNATURE_ACCESSOR_TYPE.getInternalName()});
+
+    final GeneratorAdapter ctor =
+        new GeneratorAdapter(Opcodes.ACC_PUBLIC, CTOR_DEFAULT, null, null, signerClass);
+    ctor.visitCode();
+    ctor.loadThis();
+    ctor.invokeConstructor(A_OBJECT_TYPE, CTOR_DEFAULT);
+    ctor.visitInsn(Opcodes.RETURN);
+    ctor.endMethod();
+
+    final GeneratorAdapter dynamicMethod =
+        new GeneratorAdapter(
+            Opcodes.ACC_PUBLIC,
+            METHOD_SIGNATURE_ACCESSOR__DYNAMIC_SIGNATURE,
+            null,
+            null,
+            signerClass);
+    dynamicMethod.visitCode();
+    final GeneratorAdapter staticMethod =
+        new GeneratorAdapter(
+            Opcodes.ACC_PUBLIC,
+            METHOD_SIGNATURE_ACCESSOR__STATIC_SIGNATURE,
+            null,
+            null,
+            signerClass);
+    staticMethod.visitCode();
+    owner
+        .signatureVariables()
+        .forEach(
+            signer -> {
+              final Type resultType = signer.type().apply(TypeUtils.TO_ASM);
+              switch (signer.storage()) {
+                case STATIC:
+                  final Label staticNext = staticMethod.newLabel();
+                  staticMethod.loadArg(0);
+                  staticMethod.push(signer.name());
+                  staticMethod.invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
+                  staticMethod.ifZCmp(GeneratorAdapter.EQ, staticNext);
+                  staticMethod.getStatic(
+                      owner.selfType(), signerPrefix + signer.name(), resultType);
+                  staticMethod.valueOf(resultType);
+                  staticMethod.returnValue();
+                  staticMethod.mark(staticNext);
+                  break;
+                case DYNAMIC:
+                  final Label dynamicNext = dynamicMethod.newLabel();
+                  dynamicMethod.loadArg(0);
+                  dynamicMethod.push(signer.name());
+                  dynamicMethod.invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
+                  dynamicMethod.ifZCmp(GeneratorAdapter.EQ, dynamicNext);
+                  dynamicMethod.loadArg(1);
+                  dynamicMethod.unbox(format.type());
+                  dynamicMethod.invokeStatic(
+                      owner.selfType(),
+                      new Method(
+                          signerPrefix + signer.name(),
+                          signer.type().apply(TypeUtils.TO_ASM),
+                          new Type[] {format.type()}));
+                  dynamicMethod.valueOf(resultType);
+                  dynamicMethod.returnValue();
+                  dynamicMethod.mark(dynamicNext);
+                  break;
+              }
+            });
+
+    dynamicMethod.throwException(
+        A_RUNTIME_EXCEPTION_TYPE, "Unknown signer; this olive probably needs recompilation.");
+    dynamicMethod.endMethod();
+
+    staticMethod.throwException(
+        A_RUNTIME_EXCEPTION_TYPE, "Unknown signer; this olive probably needs recompilation.");
+    staticMethod.endMethod();
+
+    signerClass.visitEnd();
+  }
+
+  public static void emitAlert(
+      GeneratorAdapter methodGen,
+      int labelLocal,
+      int annotationLocal,
+      int ttlLocal,
+      String filename,
+      int column,
+      int line,
+      String hash) {
+    methodGen.loadLocal(labelLocal);
+    methodGen.loadLocal(annotationLocal);
+    methodGen.loadLocal(ttlLocal);
+    methodGen.push(filename);
+    methodGen.push(column);
+    methodGen.push(line);
+    methodGen.push(hash);
+    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_OLIVE_SERVICES__ACCEPT_ALERT);
+    methodGen.pop();
+  }
+
   private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(OliveServices.class);
   private static final Type A_ACTION_TYPE = Type.getType(Action.class);
   private static final Type A_REFILLER_TYPE = Type.getType(Refiller.class);
@@ -72,27 +177,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
       new Method("forEach", VOID_TYPE, new Type[] {A_CONSUMER_TYPE});
   private static final Method METHOD_SYSTEM__NANO_TIME =
       new Method("nanoTime", LONG_TYPE, new Type[] {});
-
-  public static void emitAlert(
-      GeneratorAdapter methodGen,
-      int labelLocal,
-      int annotationLocal,
-      int ttlLocal,
-      String filename,
-      int column,
-      int line,
-      String hash) {
-    methodGen.loadLocal(labelLocal);
-    methodGen.loadLocal(annotationLocal);
-    methodGen.loadLocal(ttlLocal);
-    methodGen.push(filename);
-    methodGen.push(column);
-    methodGen.push(line);
-    methodGen.push(hash);
-    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_OLIVE_SERVICES__ACCEPT_ALERT);
-    methodGen.pop();
-  }
-
   private final Type accessorType;
   private final String actionName;
   private final int column;
@@ -156,7 +240,28 @@ public final class OliveBuilder extends BaseOliveBuilder {
     runMethod.methodGen().push(initialFormat.name());
     runMethod.methodGen().invokeInterface(A_INPUT_PROVIDER_TYPE, METHOD_INPUT_PROVIDER__FETCH);
 
-    steps.forEach(step -> step.accept(owner.rootRenderer(true, actionName)));
+    steps.forEach(
+        step ->
+            step.accept(
+                owner.rootRenderer(
+                    true,
+                    actionName,
+                    new LoadableValue() {
+                      @Override
+                      public String name() {
+                        return SIGNER_ACCESSOR_NAME;
+                      }
+
+                      @Override
+                      public Type type() {
+                        return A_SIGNATURE_ACCESSOR_TYPE;
+                      }
+
+                      @Override
+                      public void accept(Renderer renderer) {
+                        loadAccessor(renderer);
+                      }
+                    })));
 
     runMethod.methodGen().dup();
     finishStream.accept(runMethod);
@@ -242,87 +347,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
   @Override
   protected void loadAccessor(Renderer renderer) {
     if (!hasAccessor) {
-      final ClassVisitor signerClass = owner.createClassVisitor();
-      signerClass.visit(
-          Opcodes.V1_8,
-          Opcodes.ACC_PUBLIC,
-          accessorType.getInternalName(),
-          null,
-          A_OBJECT_TYPE.getInternalName(),
-          new String[] {A_SIGNATURE_ACCESSOR_TYPE.getInternalName()});
-
-      final GeneratorAdapter ctor =
-          new GeneratorAdapter(Opcodes.ACC_PUBLIC, CTOR_DEFAULT, null, null, signerClass);
-      ctor.visitCode();
-      ctor.loadThis();
-      ctor.invokeConstructor(A_OBJECT_TYPE, CTOR_DEFAULT);
-      ctor.visitInsn(Opcodes.RETURN);
-      ctor.endMethod();
-
-      final GeneratorAdapter dynamicMethod =
-          new GeneratorAdapter(
-              Opcodes.ACC_PUBLIC,
-              METHOD_SIGNATURE_ACCESSOR__DYNAMIC_SIGNATURE,
-              null,
-              null,
-              signerClass);
-      dynamicMethod.visitCode();
-      final GeneratorAdapter staticMethod =
-          new GeneratorAdapter(
-              Opcodes.ACC_PUBLIC,
-              METHOD_SIGNATURE_ACCESSOR__STATIC_SIGNATURE,
-              null,
-              null,
-              signerClass);
-      staticMethod.visitCode();
-      owner
-          .signatureVariables()
-          .forEach(
-              signer -> {
-                final Type resultType = signer.type().apply(TypeUtils.TO_ASM);
-                switch (signer.storage()) {
-                  case STATIC:
-                    final Label staticNext = staticMethod.newLabel();
-                    staticMethod.loadArg(0);
-                    staticMethod.push(signer.name());
-                    staticMethod.invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
-                    staticMethod.ifZCmp(GeneratorAdapter.EQ, staticNext);
-                    staticMethod.getStatic(
-                        owner.selfType(), signerPrefix + signer.name(), resultType);
-                    staticMethod.valueOf(resultType);
-                    staticMethod.returnValue();
-                    staticMethod.mark(staticNext);
-                    break;
-                  case DYNAMIC:
-                    final Label dynamicNext = dynamicMethod.newLabel();
-                    dynamicMethod.loadArg(0);
-                    dynamicMethod.push(signer.name());
-                    dynamicMethod.invokeVirtual(A_STRING_TYPE, METHOD_OBJECT__EQUALS);
-                    dynamicMethod.ifZCmp(GeneratorAdapter.EQ, dynamicNext);
-                    dynamicMethod.loadArg(1);
-                    dynamicMethod.unbox(initialFormat.type());
-                    dynamicMethod.invokeStatic(
-                        owner.selfType(),
-                        new Method(
-                            signerPrefix + signer.name(),
-                            signer.type().apply(TypeUtils.TO_ASM),
-                            new Type[] {initialFormat.type()}));
-                    dynamicMethod.valueOf(resultType);
-                    dynamicMethod.returnValue();
-                    dynamicMethod.mark(dynamicNext);
-                    break;
-                }
-              });
-
-      dynamicMethod.throwException(
-          A_RUNTIME_EXCEPTION_TYPE, "Unknown signer; this olive probably needs recompilation.");
-      dynamicMethod.endMethod();
-
-      staticMethod.throwException(
-          A_RUNTIME_EXCEPTION_TYPE, "Unknown signer; this olive probably needs recompilation.");
-      staticMethod.endMethod();
-
-      signerClass.visitEnd();
+      buildSignerAccessor(owner, accessorType, signerPrefix, initialFormat);
       hasAccessor = true;
     }
     renderer.methodGen().newInstance(accessorType);

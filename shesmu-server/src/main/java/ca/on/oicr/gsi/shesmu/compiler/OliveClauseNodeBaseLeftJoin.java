@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
@@ -25,26 +24,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
-
-  private class PrefixedSignatureDefinition extends SignatureDefinition {
-    private final SignatureDefinition backing;
-
-    private PrefixedSignatureDefinition(SignatureDefinition backing) {
-      super(variablePrefix + backing.name(), backing.storage(), backing.type());
-      this.backing = backing;
-    }
-
-    @Override
-    public void build(
-        GeneratorAdapter method, Type streamType, Stream<SignableRenderer> variables) {
-      backing.build(method, streamType, variables);
-    }
-
-    @Override
-    public Path filename() {
-      return backing.filename();
-    }
-  }
 
   private class PrefixedTarget implements Target {
     private final Target backing;
@@ -358,7 +337,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     }
 
     /*
-     * This code uses PrefixedTarget, PrefixedSignatureDefinition, and PrefixedInputVariable and you might wonder why
+     * This code uses PrefixedTarget, and PrefixedInputVariable and you might wonder why
      * three given they all just slap a prefix on the name and why are they where they are. The answer is that when
      * reading a variable, the code behaves differently for three cases. If the variable is coming from the outside
      * world, it will be of type Object and we need to do a little dance to load it since it might be from a
@@ -375,14 +354,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     final NameDefinitions joinedDefs =
         defs.replaceStream(
             Stream.concat(
-                discriminators.stream(),
-                this.innerVariables
-                    .stream()
-                    .map(
-                        t ->
-                            t instanceof SignatureDefinition
-                                ? new PrefixedSignatureDefinition((SignatureDefinition) t)
-                                : new PrefixedTarget(t))),
+                discriminators.stream(), this.innerVariables.stream().map(PrefixedTarget::new)),
             true);
 
     final boolean ok =

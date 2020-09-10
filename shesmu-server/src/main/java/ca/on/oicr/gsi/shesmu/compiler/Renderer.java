@@ -128,8 +128,7 @@ public abstract class Renderer {
   public abstract void loadStream();
 
   public final void loadTarget(Target target) {
-    if (target.flavour() == Target.Flavour.STREAM_SIGNATURE) {
-
+    if (target instanceof SignatureDefinition) {
       emitSigner((SignatureDefinition) target);
     } else if (target.flavour().isStream()) {
 
