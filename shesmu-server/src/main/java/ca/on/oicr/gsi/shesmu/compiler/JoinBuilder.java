@@ -1,6 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.A_SIGNATURE_ACCESSOR_TYPE;
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.SIGNER_ACCESSOR_NAME;
+
+import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -9,6 +12,39 @@ import org.objectweb.asm.commons.Method;
 
 /** Build a new class for holding the new variables defined by a <tt>Join</tt> clause */
 public class JoinBuilder {
+  private class JoinHalfRenderer extends Renderer {
+    private final GeneratorAdapter getter;
+    private final boolean outer;
+    private final Type targetType;
+
+    public JoinHalfRenderer(GeneratorAdapter getter, boolean outer, LoadableValue signerAccessor) {
+      super(
+          JoinBuilder.this.innerKey().root(),
+          getter,
+          Stream.of(signerAccessor),
+          JoinBuilder.this.innerKey().signerEmitter());
+      this.getter = getter;
+      this.outer = outer;
+      targetType = outer ? outerType : innerType;
+    }
+
+    @Override
+    public Renderer duplicate() {
+      return new JoinHalfRenderer(getter, outer, this.getNamed(SIGNER_ACCESSOR_NAME));
+    }
+
+    @Override
+    public void loadStream() {
+      this.methodGen().loadThis();
+      getter.getField(joinType, outer ? "outer" : "inner", targetType);
+    }
+
+    @Override
+    public Type streamType() {
+      return targetType;
+    }
+  }
+
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
 
   private static final Method DEFAULT_CTOR = new Method("<init>", Type.VOID_TYPE, new Type[] {});
@@ -45,7 +81,9 @@ public class JoinBuilder {
         null,
         A_OBJECT_TYPE.getInternalName(),
         null);
-    final Method ctorType = new Method("<init>", Type.VOID_TYPE, new Type[] {outerType, innerType});
+    final Method ctorType =
+        new Method(
+            "<init>", Type.VOID_TYPE, new Type[] {A_SIGNATURE_ACCESSOR_TYPE, outerType, innerType});
     final GeneratorAdapter ctor =
         new GeneratorAdapter(Opcodes.ACC_PUBLIC, ctorType, null, null, classVisitor);
     ctor.visitCode();
@@ -54,13 +92,25 @@ public class JoinBuilder {
 
     ctor.loadThis();
     ctor.loadArg(0);
+    ctor.putField(joinType, SIGNER_ACCESSOR_NAME, A_SIGNATURE_ACCESSOR_TYPE);
+    classVisitor
+        .visitField(
+            Opcodes.ACC_PRIVATE,
+            SIGNER_ACCESSOR_NAME,
+            A_SIGNATURE_ACCESSOR_TYPE.getDescriptor(),
+            null,
+            null)
+        .visitEnd();
+
+    ctor.loadThis();
+    ctor.loadArg(1);
     ctor.putField(joinType, "outer", outerType);
     classVisitor
         .visitField(Opcodes.ACC_PRIVATE, "outer", outerType.getDescriptor(), null, null)
         .visitEnd();
 
     ctor.loadThis();
-    ctor.loadArg(1);
+    ctor.loadArg(2);
     ctor.putField(joinType, "inner", innerType);
     classVisitor
         .visitField(Opcodes.ACC_PRIVATE, "inner", innerType.getDescriptor(), null, null)
@@ -76,22 +126,36 @@ public class JoinBuilder {
   }
 
   public void add(Target target, String alias, boolean outer) {
-    final Type targetType = outer ? outerType : innerType;
     final Method getMethod =
         new Method(alias, target.type().apply(TypeUtils.TO_ASM), new Type[] {});
-    final GeneratorAdapter getter =
-        new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor);
-    getter.visitCode();
-    getter.loadThis();
-    getter.getField(joinType, outer ? "outer" : "inner", targetType);
-    if (target instanceof InputVariable) {
-      ((InputVariable) target).extract(getter);
-    } else {
-      getter.invokeVirtual(targetType, getMethod);
-    }
-    getter.returnValue();
-    getter.visitMaxs(0, 0);
-    getter.visitEnd();
+    final Renderer renderer =
+        new JoinHalfRenderer(
+            new GeneratorAdapter(Opcodes.ACC_PUBLIC, getMethod, null, null, classVisitor),
+            outer,
+            new LoadableValue() {
+              @Override
+              public String name() {
+                return SIGNER_ACCESSOR_NAME;
+              }
+
+              @Override
+              public Type type() {
+                return A_SIGNATURE_ACCESSOR_TYPE;
+              }
+
+              @Override
+              public void accept(Renderer renderer) {
+                renderer.methodGen().loadThis();
+                renderer
+                    .methodGen()
+                    .getField(joinType, SIGNER_ACCESSOR_NAME, A_SIGNATURE_ACCESSOR_TYPE);
+              }
+            });
+    renderer.methodGen().visitCode();
+    renderer.loadTarget(target);
+    renderer.methodGen().returnValue();
+    renderer.methodGen().visitMaxs(0, 0);
+    renderer.methodGen().visitEnd();
   }
 
   public void finish() {

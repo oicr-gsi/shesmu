@@ -1,17 +1,20 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.ACTION_NAME;
+import static org.objectweb.asm.Type.VOID_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
 public class JoinSourceNodeCall extends JoinSourceNode {
 
@@ -39,6 +42,8 @@ public class JoinSourceNodeCall extends JoinSourceNode {
     arguments.forEach(arg -> arg.collectPlugins(pluginFileNames));
   }
 
+  private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
+
   @Override
   public JoinInputSource render(
       BaseOliveBuilder oliveBuilder,
@@ -46,8 +51,41 @@ public class JoinSourceNodeCall extends JoinSourceNode {
       String prefix,
       String variablePrefix,
       Predicate<String> signatureUsed,
-      Predicate<String> singableUsed) {
-
+      Predicate<String> signableUsed) {
+    final Type accessorType =
+        Type.getObjectType(String.format("shesmu/dyn/Join Signer Accessor %d:%d", line, column));
+    final Set<String> signablesAlwaysUsed =
+        format
+            .baseStreamVariables()
+            .filter(v -> v.flavour() == Target.Flavour.STREAM_SIGNABLE)
+            .map(InputVariable::name)
+            .filter(signableUsed)
+            .collect(Collectors.toSet());
+    final List<SignableVariableCheck> checks = new ArrayList<>();
+    target.collectSignables(signablesAlwaysUsed, checks::add);
+    final List<SignableRenderer> signables =
+        format
+            .baseStreamVariables()
+            .filter(v -> v.flavour() == Target.Flavour.STREAM_SIGNABLE)
+            .map(
+                v ->
+                    signablesAlwaysUsed.contains(v.name())
+                        ? SignableRenderer.always(v)
+                        : SignableRenderer.conditional(
+                            v,
+                            checks
+                                .stream()
+                                .filter(c -> c.name().equals(v.name()))
+                                .collect(Collectors.toList())))
+            .collect(Collectors.toList());
+    oliveBuilder
+        .owner
+        .signatureVariables()
+        .forEach(
+            signer ->
+                OliveBuilder.createSignatureInfrastructure(
+                    oliveBuilder.owner, prefix, format, signables, signer));
+    OliveBuilder.buildSignerAccessor(oliveBuilder.owner, accessorType, prefix, format);
     return new JoinInputSource() {
       private final CallableDefinitionRenderer defineOlive = definitions.apply(name);
 
@@ -70,7 +108,9 @@ public class JoinSourceNodeCall extends JoinSourceNode {
         oliveBuilder.loadInputProvider(renderer.methodGen());
         renderer.emitNamed(ACTION_NAME);
         oliveBuilder.loadOwnerSourceLocation(renderer.methodGen());
-        oliveBuilder.loadAccessor(renderer);
+        renderer.methodGen().newInstance(accessorType);
+        renderer.methodGen().dup();
+        renderer.methodGen().invokeConstructor(accessorType, CTOR_DEFAULT);
         for (final ExpressionNode rendererConsumer : arguments) {
           rendererConsumer.render(renderer);
         }

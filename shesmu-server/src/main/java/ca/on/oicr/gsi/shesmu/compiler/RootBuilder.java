@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -238,7 +239,8 @@ public abstract class RootBuilder {
    */
   public final OliveBuilder buildRunOlive(
       int line,
-      int column,String actionName,
+      int column,
+      String actionName,
       Set<String> signableNames,
       List<SignableVariableCheck> signableVariableChecks) {
     final Map<String, List<SignableVariableCheck>> checks =
@@ -250,7 +252,8 @@ public abstract class RootBuilder {
         this,
         inputFormatDefinition,
         line,
-        column, actionName,
+        column,
+        actionName,
         inputFormatDefinition
             .baseStreamVariables()
             .filter(t -> t.flavour() == Flavour.STREAM_SIGNABLE)
@@ -434,11 +437,16 @@ public abstract class RootBuilder {
    *
    * <p>No stream variables are available in this context
    */
-  public final Renderer rootRenderer(boolean allowUserDefined, String actionName) {
+  public final Renderer rootRenderer(
+      boolean allowUserDefined, String actionName, LoadableValue... captures) {
     return new RendererNoStream(
         this,
         runMethod,
-        Stream.concat(constants(allowUserDefined), Stream.of(actionNameSpecial(actionName))),
+        Stream.of(
+                constants(allowUserDefined),
+                Stream.of(actionNameSpecial(actionName)),
+                Stream.of(captures))
+            .flatMap(Function.identity()),
         RootBuilder::invalidSignerEmitter);
   }
 

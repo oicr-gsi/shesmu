@@ -69,7 +69,7 @@ public abstract class BaseRecord<R, S> implements Record<R> {
           shouldThrow = false;
         }
       } catch (final Exception e) {
-        System.err.printf("Exception occured while refreshing cache %s is as follows:\n", context);
+        System.err.printf("Exception occurred while refreshing cache %s is as follows:\n", context);
         e.printStackTrace();
         staleRefreshError.labels(fetcher.owner().name()).inc();
       } finally {
