@@ -7,6 +7,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.InputVariable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -354,7 +355,14 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     final NameDefinitions joinedDefs =
         defs.replaceStream(
             Stream.concat(
-                discriminators.stream(), this.innerVariables.stream().map(PrefixedTarget::new)),
+                discriminators.stream(),
+                this.innerVariables
+                    .stream()
+                    .map(
+                        v ->
+                            v.name().contains(Parser.NAMESPACE_SEPARATOR)
+                                ? v
+                                : new PrefixedTarget(v))),
             true);
 
     final boolean ok =
@@ -380,11 +388,15 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
                     this.innerVariables
                         .stream()
                         .flatMap(
-                            v ->
-                                Stream.of(
-                                    v instanceof InputVariable
-                                        ? new PrefixedVariable((InputVariable) v)
-                                        : new PrefixedTarget(v))),
+                            v -> {
+                              if (v instanceof InputVariable) {
+                                return Stream.of(new PrefixedVariable((InputVariable) v));
+                              } else if (v.name().contains(Parser.NAMESPACE_SEPARATOR)) {
+                                return Stream.of(v);
+                              } else {
+                                return Stream.of(new PrefixedTarget(v));
+                              }
+                            }),
                     true),
                 errorHandler)
             & where.map(w -> w.resolve(joinedDefs, errorHandler)).orElse(true);
