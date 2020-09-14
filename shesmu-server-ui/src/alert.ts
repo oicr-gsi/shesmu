@@ -171,7 +171,7 @@ export function alertNavigator<L, A extends Alert<L>>(
         (current: number): UIElement => [
           pager(
             Math.ceil(selectedAlerts.length / numPerPage),
-            0,
+            current,
             model.statusChanged
           ),
           selectedAlerts
