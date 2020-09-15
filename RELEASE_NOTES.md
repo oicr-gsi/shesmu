@@ -1,5 +1,20 @@
 # Unreleased
 
+# [1.4.2] - 2020-09-15T18:29+00:00
+
+Changes:
+
+* Don't prefix qualified names in join.
+* Create a new signer accessor when joining against a call (fixes bug using `Call`)
+* Fix invalid bytecode generated for `Match`
+* Don't require output be used in Export Define olives
+
+UI changes:
+
+* Asynchronously fetch tags
+* Update alert pager UI correctly
+* Correctly restore state on the _Olives_ page
+
 # [1.4.1] - 2020-09-08T19:51+00:00
 
 Changes:
