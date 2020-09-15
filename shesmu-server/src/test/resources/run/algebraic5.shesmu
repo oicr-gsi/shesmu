@@ -1,0 +1,17 @@
+Version 1;
+Input test;
+
+Function x(string p)
+  If p == "the_foo_study" Then OK Else SOMETHING {False};
+
+Function y(BAD | SOMETHING {boolean} x)
+  Match x
+    When BAD Then False
+    When SOMETHING {v} Then v;
+# The underlying lookupswitch is sensitive to the order of keys, so make sure we've sorted them in the compiler.
+Function y2(BAD | SOMETHING {boolean} x)
+  Match x
+    When SOMETHING {v} Then v
+    When BAD Then False;
+
+Olive Run ok With ok = Match x(project) When OK Then True Remainder (r) y(r) && y2(r);

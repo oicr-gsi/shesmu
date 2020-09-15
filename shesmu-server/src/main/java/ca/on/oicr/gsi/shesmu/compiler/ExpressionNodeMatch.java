@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -67,7 +68,8 @@ public class ExpressionNodeMatch extends ExpressionNode {
     final Map<Integer, List<MatchBranchNode>> paths =
         cases
             .stream()
-            .collect(Collectors.groupingBy(b -> b.name().hashCode(), Collectors.toList()));
+            .collect(
+                Collectors.groupingBy(b -> b.name().hashCode(), TreeMap::new, Collectors.toList()));
 
     final Label alternativePath = renderer.methodGen().newLabel();
     final int[] pathValues = new int[paths.size()];
