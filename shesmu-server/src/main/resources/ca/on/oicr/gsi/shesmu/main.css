@@ -878,3 +878,9 @@ img.deadolive {
 .butter img {
   max-width: calc(40vw - 2em);
 }
+
+.filters > div {
+  margin:.2em;
+  border:1px dotted var(--widget-highlight);
+  padding:.5em
+}
