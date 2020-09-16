@@ -66,6 +66,20 @@ export interface DropdownTableSection<T> {
    */
   children: DropdownTableRow<T>[];
 }
+/**
+ * A flexible element in a flex box
+ */
+export interface FlexElement {
+  /**
+   * The UI to show in the flex box
+   */
+  contents: UIElement;
+  /**
+   * The relative width of the element
+   */
+  width: number;
+}
+
 export interface InputField<T> {
   ui: UIElement;
   value: T;
@@ -941,7 +955,7 @@ export function dropdownTable<T, S>(
  */
 export function flexGroup(
   direction: "row" | "column",
-  ...blocks: { contents: UIElement; width: number }[]
+  ...blocks: FlexElement[]
 ): UIElement {
   const element = createUiFromTag(
     "div",
