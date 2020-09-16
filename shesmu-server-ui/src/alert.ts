@@ -19,6 +19,7 @@ import {
   multipaneState,
   objectTable,
   pager,
+  radioSelector,
   refreshButton,
   setRootDashboard,
   sharedPane,
@@ -161,9 +162,10 @@ export function alertNavigator<L, A extends Alert<L>>(
       } else if (liveCount == selectedAlerts.length) {
         total = `🔔 ${selectedAlerts.length} firing alerts`;
       } else {
-        total = `${selectedAlerts.length} alerts 🔔 ${liveCount} firing 💤 ${
-          selectedAlerts.length - liveCount
-        } expired`;
+        total = `${
+          selectedAlerts.length
+        } alerts 🔔 ${liveCount} firing 💤 ${selectedAlerts.length -
+          liveCount} expired`;
       }
       const numPerPage = 10;
 
@@ -344,7 +346,12 @@ function breakdown(
     }
   });
   const commonRows = Object.entries(commonLabels).map(([label, value]) =>
-    tableRow(null, { contents: label }, { contents: value, span: 2 })
+    tableRow(
+      null,
+      { contents: label },
+      { contents: "Same for All" },
+      { contents: value }
+    )
   );
 
   const uselessLabels = Object.keys(commonLabels);
@@ -384,24 +391,11 @@ function breakdown(
       ): UIElement =>
         breakdown
           ? [
-              group(
-                breakdown.label,
-                button(
-                  "🏷️ Has Label",
-                  "Show alerts that have this label with any value.",
-                  () =>
-                    list.add({
-                      label: breakdown.label,
-                      value: null,
-                      type: "has",
-                    })
-                )
-              ),
               table(
                 [...breakdown.values],
-                ["Value", ([value]) => value || "<blank>"],
+                [breakdown.label, ([value]) => value || "<blank>"],
                 [
-                  "Count",
+                  "Value",
                   ([, count]) => percentAndCount(count, breakdown.total),
                 ],
                 [
@@ -427,33 +421,61 @@ function breakdown(
             ]
           : blank()
     );
-    let activeBreakdown: ComplexElement<HTMLTableRowElement> | null = null;
-    const breakdownRows = bestBreakdown.map(([label, { total, values }]) => {
-      const row = tableRow(
-        () => {
-          if (activeBreakdown == row) {
-            activeBreakdown = null;
-            row.element.classList.remove("active");
-            model.statusChanged(null);
-          } else {
-            if (activeBreakdown != null) {
-              activeBreakdown.element.classList.remove("active");
-            }
-            activeBreakdown = row;
-            model.statusChanged({ label, total, values });
-          }
-        },
+    const selectors = radioSelector(
+      "Show Values ▶",
+      "Hide Values ◀",
+      model,
+      ...bestBreakdown.map(([label, { total, values }]) => ({
+        label,
+        total,
+        values,
+      }))
+    );
+    const breakdownRows = bestBreakdown.map(([label, { total }], index) =>
+      tableRow(
+        null,
         { contents: label },
         {
-          contents: percentAndCount(total, alerts.length),
+          contents:
+            total == alerts.length
+              ? "Always Present"
+              : "Present in " + percentAndCount(total, alerts.length),
         },
-        { contents: "Details ▶" }
-      );
-      return row;
-    });
+        {
+          contents: [
+            button(
+              "🏷️ Has Label",
+              "Show alerts that have this label with any value.",
+              () =>
+                list.add({
+                  label: label,
+                  value: null,
+                  type: "has",
+                })
+            ),
+            selectors[index],
+          ],
+        }
+      )
+    );
     return flexGroup(
       "row",
-      { contents: tableFromRows(commonRows.concat(breakdownRows)), width: 1 },
+      {
+        contents: tableFromRows(
+          [
+            tableRow(
+              null,
+              { contents: "Label", header: true },
+              { contents: "Type", header: true },
+              { contents: "Value", header: true },
+              { contents: blank(), header: true }
+            ),
+            commonRows,
+            breakdownRows,
+          ].flat()
+        ),
+        width: 1,
+      },
       { contents: ui, width: 1 }
     );
   }
