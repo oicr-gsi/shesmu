@@ -1337,33 +1337,65 @@ export function pager(
   current: number,
   drawPager: (index: number) => void
 ): UIElement {
-  const pager = document.createElement("span");
+  if (numButtons < 2) {
+    return blank();
+  }
+  const blocks: FlexElement[] = [];
   let rendering = true;
-  if (numButtons > 1) {
-    for (let i = 0; i < numButtons; i++) {
-      if (
-        i <= 2 ||
-        i >= numButtons - 2 ||
-        (i >= current - 2 && i <= current + 2)
-      ) {
-        rendering = true;
-        const page = document.createElement("span");
-        const index = i;
-        page.innerText = `${index + 1}`;
-        if (index != current) {
-          page.className = "button accessory";
-          page.addEventListener("click", () => drawPager(index));
-        }
-        pager.appendChild(page);
-      } else if (rendering) {
-        const ellipsis = document.createElement("span");
-        ellipsis.innerText = "...";
-        pager.appendChild(ellipsis);
-        rendering = false;
-      }
+  blocks.push({
+    contents:
+      current > 0
+        ? buttonAccessory("< Previous", "", () => drawPager(current - 1))
+        : buttonDisabled("< Previous", ""),
+    width: 2,
+  });
+  let scoringScheme: (n: number) => boolean;
+  // To make the layout consistent, we need to have every permutation show 15 units, where numbers are 1 and an ellipsis is 2. Remember the number is zero-based but the buttons are 1-based.
+  if (numButtons < 15) {
+    // If the total is less than 13, just show everything
+    scoringScheme = (_n) => true;
+  } else if (current < 9) {
+    // Should display as 1 2 3 4 5 6 7 8 9 10 ... N-2 N-1 N
+    scoringScheme = (n) => n < 10 || n >= numButtons - 3;
+  } else if (current > numButtons - 9) {
+    // Should display as 1 2 3 ... N-9 N-8 N-7 N-6 N-5 N-4 N-3 N-2 N-1 N
+    scoringScheme = (n) => n < 3 || n >= numButtons - 9;
+  } else {
+    // Should display as 1 2 3 ... C-2 C-1 C C+1 C+2 ... N-2 N-1 N
+    scoringScheme = (n) =>
+      n < 3 || (n >= current - 2 && n <= current + 2) || n >= numButtons - 3;
+  }
+
+  const maxDigits = Math.ceil(Math.log10(numButtons));
+
+  for (let i = 0; i < numButtons; i++) {
+    if (scoringScheme(i)) {
+      const index = i;
+      rendering = true;
+      // Left pad the label with figure space
+      const label = `${" ".repeat(
+        maxDigits - Math.ceil(Math.log10(index + 2))
+      )}${index + 1}`;
+      blocks.push({
+        contents:
+          index == current
+            ? buttonDisabled(label, "")
+            : buttonAccessory(label, "", () => drawPager(index)),
+        width: 1,
+      });
+    } else if (rendering) {
+      blocks.push({ contents: "...", width: 2 });
+      rendering = false;
     }
   }
-  return { element: pager, find: null, reveal: null, type: "ui" };
+  blocks.push({
+    contents:
+      current < numButtons - 1
+        ? buttonAccessory("Next >", "", () => drawPager(current + 1))
+        : buttonDisabled("Next >", ""),
+    width: 2,
+  });
+  return flexGroup("row", ...blocks);
 }
 /**
  * Create a paginated list of downloadable data
