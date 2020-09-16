@@ -145,6 +145,18 @@ a.button.regular:visited,
   );
 }
 
+.button.disabled {
+  background-color: var(--grey-background);
+  color: var(--grey-highlight);
+  border-color: var(--grey-highlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--grey-desaturated),
+    var(--grey-background)
+  );
+}
+
+
 .button.danger,
 a.button.danger:link,
 a.button.danger:visited {
