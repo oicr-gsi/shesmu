@@ -141,7 +141,7 @@ a.button.regular:visited,
   background-image: linear-gradient(
     to bottom,
     var(--widget-lowlight),
-    var(--widget-highlighth)
+    var(--widget-highlight)
   );
 }
 
