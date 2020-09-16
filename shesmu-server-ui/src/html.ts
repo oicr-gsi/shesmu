@@ -1755,6 +1755,50 @@ export function pickFromSetCustom<T>(
 }
 
 /**
+ * Create a set of radio buttons that can be turned off
+ * @param inactiveLabel the label when a button is not active
+ * @param activeLabel the label when when one of the button is active
+ * @param model the model to update with the selected button or null if none are active
+ * @param values the values
+ * @returns the button corresponding to each value
+ */
+export function radioSelector<T>(
+  inactiveLabel: DisplayElement,
+  activeLabel: DisplayElement,
+  model: StatefulModel<T | null>,
+  ...values: T[]
+): UIElement[] {
+  let active: ComplexElement<HTMLSpanElement> | null = null;
+  return values.map((value) => {
+    const button = createUiFromTag("span", inactiveLabel);
+    button.element.classList.add("button");
+    button.element.classList.add("accessory");
+    button.element.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (active == button) {
+        active = null;
+        button.element.classList.remove("active");
+        clearChildren(button.element);
+        addElements(button.element, inactiveLabel);
+        model.statusChanged(null);
+      } else {
+        if (active != null) {
+          active.element.classList.remove("active");
+          clearChildren(active.element);
+          addElements(active.element, inactiveLabel);
+        }
+        button.element.classList.add("active");
+        clearChildren(button.element);
+        addElements(button.element, activeLabel);
+        active = button;
+        model.statusChanged(value);
+      }
+    });
+    return button;
+  });
+}
+
+/**
  * Make text that makes whitespace visible
  */
 export function revealWhitespace(text: string): string {

@@ -118,6 +118,27 @@ a.button.accessory:visited {
   border-color: var(--widget-lowlight);
 }
 
+.button.accessory.active
+{
+  background-color: var(--widget-lowlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-lowlight),
+    var(--widget-highlight)
+  );
+  color: var(--widget-negative);
+}
+
+.button.accessory.active:hover{
+  background-color: var(--widget-lowlight);
+  background-image: linear-gradient(
+    to bottom,
+    var(--widget-shadow),
+    var(--widget-zebra)
+  );
+  color: var(--widget-text);
+}
+
 .button.regular,
 a.button.regular:link,
 a.button.regular:visited,
