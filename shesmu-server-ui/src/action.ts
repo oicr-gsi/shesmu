@@ -284,66 +284,33 @@ export function actionDisplay(
                           }
                         )
                     ),
-                    action.commands.map(
-                      ({ command, buttonText, showPrompt }) => {
-                        const performCommand = () =>
-                          fetchJsonWithBusyDialog(
-                            "command",
-                            {
-                              body: JSON.stringify({
-                                command: command,
-                                filters: [
-                                  {
-                                    type: "id",
-                                    ids: [action.actionId],
-                                  },
-                                ],
-                              }),
-                              method: "POST",
-                            },
-                            (count: number) => {
-                              if (count == 0) {
-                                dialog(() => [
-                                  "This action is indifferent to your pleas. Maybe the action's internal state has changed? Try refreshing.",
-                                  img("indifferent.gif"),
-                                ]);
-                              } else if (count > 1) {
-                                dialog(() => [
-                                  `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
-                                  img("ohno.gif"),
-                                ]);
-                              }
-                              reload();
-                            }
-                          );
-                        return buttonDanger(
-                          buttonText,
-                          `Perform special command ${command} on this action.`,
-                          showPrompt
-                            ? () => {
-                                dialog((close) => [
-                                  `Perform command ${command} on this action? This is your moment of sober second thought.`,
-                                  br(),
-                                  buttonDanger(
-                                    buttonText.toUpperCase(),
-                                    "Really do it!",
-                                    () => {
-                                      close();
-                                      performCommand();
-                                    }
-                                  ),
-                                  br(),
-                                  button(
-                                    "Back away slowly",
-                                    "Don't do anything.",
-                                    close
-                                  ),
-                                ]);
-                              }
-                            : performCommand
-                        );
-                      }
-                    )
+                    action.commands.length < 3
+                      ? action.commands.map((command) =>
+                          buttonDanger(
+                            command.buttonText,
+                            `Perform special command ${command.command} on this action.`,
+                            createCallbackForActionCommand(
+                              command,
+                              action.actionId,
+                              reload
+                            )
+                          )
+                        )
+                      : buttonDanger(
+                          "🔧 Commands ▼",
+                          "Perform an action-specific command.",
+                          popupMenu(
+                            true,
+                            ...action.commands.map((command) => ({
+                              label: command.buttonText,
+                              action: createCallbackForActionCommand(
+                                command,
+                                action.actionId,
+                                reload
+                              ),
+                            }))
+                          )
+                        )
                   ),
                   (actionRender.get(action.type) || defaultRenderer)(action),
                   collapsible(
@@ -455,7 +422,7 @@ export function actionDisplay(
                 buttonDanger(
                   command.buttonText,
                   `Perform special command ${command.command} on ${command.count} actions.`,
-                  createCallbackForCommand(command, filters, reload)
+                  createCallbackForBulkCommand(command, filters, reload)
                 )
               )
             : buttonDanger(
@@ -465,7 +432,11 @@ export function actionDisplay(
                   true,
                   ...response.bulkCommands.map((command) => ({
                     label: command.buttonText,
-                    action: createCallbackForCommand(command, filters, reload),
+                    action: createCallbackForBulkCommand(
+                      command,
+                      filters,
+                      reload
+                    ),
                   }))
                 )
               )
@@ -497,7 +468,60 @@ export function actionDisplay(
   };
 }
 
-function createCallbackForCommand(
+function createCallbackForActionCommand(
+  command: ActionCommand,
+  id: string,
+  reload: () => void
+): () => void {
+  let performCommand = () =>
+    fetchJsonWithBusyDialog(
+      "command",
+      {
+        body: JSON.stringify({
+          command: command.command,
+          filters: [
+            {
+              type: "id",
+              ids: [id],
+            },
+          ] as ActionFilter[],
+        }),
+        method: "POST",
+      },
+      (count: number) => {
+        if (count == 0) {
+          dialog(() => [
+            "This action is indifferent to your pleas. Maybe the action's internal state has changed? Try refreshing.",
+            img("indifferent.gif"),
+          ]);
+        } else if (count > 1) {
+          dialog(() => [
+            `The command executed on ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
+            img("ohno.gif"),
+          ]);
+        }
+        reload();
+      }
+    );
+  if (command.showPrompt) {
+    const realPerform = performCommand;
+    performCommand = () => {
+      dialog((close) => [
+        `Perform command ${command.command} on ${id}? This is your moment of sober second thought.`,
+        br(),
+        buttonDanger(command.buttonText.toUpperCase(), "Really do it!", () => {
+          close();
+          realPerform();
+        }),
+        br(),
+        button("Back away slowly", "Don't do anything.", close),
+      ]);
+    };
+  }
+  return performCommand;
+}
+
+function createCallbackForBulkCommand(
   command: BulkCommand,
   filters: ActionFilter[],
   reload: () => void
