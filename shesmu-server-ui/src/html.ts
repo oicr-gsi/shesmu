@@ -2010,7 +2010,7 @@ export function svgFromStr(data: string): UIElement {
  */
 export function table<T>(
   rows: T[],
-  ...headers: [string, (value: T) => UIElement][]
+  ...headers: [UIElement, (value: T) => UIElement][]
 ): UIElement {
   if (rows.length == 0) return [];
   return createUiFromTag(
