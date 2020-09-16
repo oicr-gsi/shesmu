@@ -414,6 +414,15 @@ export function buttonCustom(
   return button;
 }
 
+export function buttonDisabled(label: DisplayElement, title: string) {
+  const button = createUiFromTag("span", label);
+  button.element.classList.add("button");
+  button.element.classList.add("disabled");
+  button.element.title = title;
+  button.element.addEventListener("click", (e) => e.stopPropagation());
+  return button;
+}
+
 /**
  * Create a close button
  */
