@@ -463,13 +463,15 @@ function breakdown(
       {
         contents: tableFromRows(
           [
-            tableRow(
-              null,
-              { contents: "Label", header: true },
-              { contents: "Type", header: true },
-              { contents: "Value", header: true },
-              { contents: blank(), header: true }
-            ),
+            [
+              tableRow(
+                null,
+                { contents: "Label", header: true },
+                { contents: "Type", header: true },
+                { contents: "Value", header: true },
+                { contents: blank(), header: true }
+              ),
+            ],
             commonRows,
             breakdownRows,
           ].flat()
