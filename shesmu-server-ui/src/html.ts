@@ -1704,7 +1704,7 @@ export function pickFromSetCustom<T>(
   ...extra: DisplayElement[]
 ) {
   dialog((close) => {
-    const selected: T[] = [];
+    let selected: T[] = [];
     const { ui, model } = singleState<T[]>((items) =>
       items.length
         ? items.map((item) => {
@@ -1715,6 +1715,8 @@ export function pickFromSetCustom<T>(
                   setItems(selected);
                   e.stopPropagation();
                   close();
+                } else {
+                  selectedModel.statusChanged(selected);
                 }
               }),
               breakLines ? br() : blank(),
@@ -1722,6 +1724,34 @@ export function pickFromSetCustom<T>(
           })
         : "No matches."
     );
+    const { ui: selectedUi, model: selectedModel } = singleState<T[]>((items) =>
+      items.length
+        ? [
+            "Going to add:",
+            br(),
+            items.map((item) => {
+              return [
+                render(item, (e) => {
+                  selected = selected.filter((i) => i != item);
+                  selectedModel.statusChanged(selected);
+                }),
+                breakLines ? br() : blank(),
+              ];
+            }),
+            br(),
+            buttonAccessory("➕ Add Selected", "Add selected items.", () => {
+              setItems(selected);
+              close();
+            }),
+            buttonAccessory("⌫ Clear Selected", "Clear selected items.", () => {
+              selected = [];
+              selectedModel.statusChanged([]);
+              close();
+            }),
+          ]
+        : blank()
+    );
+
     const showItems = (p: (input: T) => boolean) =>
       model.statusChanged(
         items.filter((item) => selected.indexOf(item) == -1).filter(p)
@@ -1750,6 +1780,7 @@ export function pickFromSetCustom<T>(
       br(),
       ui,
       paragraph("Control-click to select multiple."),
+      selectedUi,
     ];
   });
 }
