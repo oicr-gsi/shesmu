@@ -44,6 +44,16 @@ export interface Publisher<T> extends StatefulModel<T> {
 }
 
 /**
+ * A stateful model that allows access to the current value of the model.
+ */
+export interface ObservableModel<T> extends StatefulModel<T> {
+  /**
+   * The current/last value observed by the model.
+   */
+  value: T;
+}
+
+/**
  * An interface for something that can render itself using a preferred type or a secondary type
  *
  * This can be useful when the update is a slow operation
@@ -452,6 +462,24 @@ export function mutableStoreWatcher<K, V>(
       store.set(key, value);
       model.statusChanged(store);
     },
+  };
+}
+/**
+ * Create a model that holds the last value pushed into the model.
+ *
+ * Error states are ignored and the last good value is returned.
+ * @param initial the value before the model is updated
+ */
+export function observableModel<T>(initial: T): ObservableModel<T> {
+  let value = initial;
+  return {
+    reload: () => {},
+    get value(): T {
+      return value;
+    },
+    statusChanged: (input: T) => (value = input),
+    statusFailed: (message, retry) => console.log(message),
+    statusWaiting: () => {},
   };
 }
 
