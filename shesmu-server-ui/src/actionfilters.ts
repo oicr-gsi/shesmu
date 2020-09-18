@@ -53,6 +53,8 @@ import {
   mergeLocations,
   mergingModel,
   promiseModel,
+  observableModel,
+  ObservableModel,
 } from "./util.js";
 import {
   fetchCustomWithBusyDialog,
@@ -650,6 +652,7 @@ export function createSearch(
 } {
   const buttons = pane("blank");
   const entryBar = pane("blank");
+  const baseFilters = observableModel<ActionFilter[]>([]);
   const [baseModel, queryModel] = mergingModel(
     filterModel(model, "Missing base search."),
     (left: ActionFilter[] | null, right: ActionFilter[] | null) =>
@@ -669,7 +672,8 @@ export function createSearch(
         queryModel,
         synchronizer,
         onActionPage,
-        sources
+        sources,
+        baseFilters
       );
     } else {
       search = searchBasic(
@@ -678,7 +682,8 @@ export function createSearch(
         synchronizer,
         onActionPage,
         filenameFormatter,
-        sources
+        sources,
+        baseFilters
       );
     }
     buttons.model.statusChanged(search.buttons);
@@ -690,7 +695,7 @@ export function createSearch(
       const find = search?.find;
       return find ? find() : false;
     }, entryBar.ui),
-    model: baseModel,
+    model: combineModels(baseModel, baseFilters),
     addRangeSearch: (typeName, start, end) =>
       search?.addRangeSearch(typeName, start, end),
     addPropertySearch: (...limits) => search?.addPropertySearch(...limits),
@@ -1176,7 +1181,8 @@ function searchAdvanced(
   model: StatefulModel<ActionFilter[]>,
   synchronizer: StateSynchronizer<string | BasicQuery>,
   onActionPage: boolean,
-  sources: SourceLocation[]
+  sources: SourceLocation[],
+  baseFilters: ObservableModel<ActionFilter[]>
 ): SearchPlatform {
   const searchModel: StatefulModel<string> = bypassModel(
     combineModels(
@@ -1353,7 +1359,11 @@ function searchAdvanced(
                     body: JSON.stringify(search.value),
                   },
                   (result) =>
-                    filterCallback(result.filter ? [result.filter] : [])
+                    filterCallback(
+                      result.filter
+                        ? baseFilters.value.concat([result.filter])
+                        : []
+                    )
                 ),
               (accessor, start, end) =>
                 callback({ start: start, end: end, type: accessor.rangeType }),
@@ -1628,7 +1638,8 @@ function searchBasic(
   synchronizer: StateSynchronizer<string | BasicQuery>,
   onActionPage: boolean,
   filenameFormatter: FilenameFormatter,
-  sources: SourceLocation[]
+  sources: SourceLocation[],
+  baseFilters: ObservableModel<ActionFilter[]>
 ): SearchPlatform {
   let current = { ...initial };
   const { ui: searchView, model: viewModel } = singleState(
@@ -1657,7 +1668,8 @@ function searchBasic(
           addFilterDialog(
             onActionPage,
             sources,
-            (filterCallback) => filterCallback(createFilters(current)),
+            (filterCallback) =>
+              filterCallback(baseFilters.value.concat(createFilters(current))),
             (type, start, end) => {
               current[type.rangeType] = {
                 start: start,
