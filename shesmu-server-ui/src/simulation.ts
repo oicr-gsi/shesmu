@@ -630,7 +630,7 @@ export function initialiseSimulationDashboard(
           });
         }
       }
-      return tabList;
+      return { tabs: tabList, activate: true };
     }
   );
   const main = refreshable(
