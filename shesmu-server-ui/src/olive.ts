@@ -427,7 +427,7 @@ export function initialiseOliveDash(
       }
     ),
     mapModel(tabsModels[0], (selected: OliveReference) => {
-      if (!selected) return [];
+      if (!selected) return { tabs: [], activate: false };
       const tabList: Tab[] = [];
       if (
         selected.olive
@@ -458,7 +458,7 @@ export function initialiseOliveDash(
       }
       tabList.push({ name: "Bytecode", contents: components.bytecode });
 
-      return tabList;
+      return { tabs: tabList, activate: false };
     })
   );
   const oliveSelector = dropdownTable(

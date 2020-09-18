@@ -163,6 +163,19 @@ export interface Tab {
   selected?: boolean;
 }
 /**
+ * Replacement tabs for a {@link tabsModel}.
+ */
+export interface TabUpdate {
+  /**
+   * The tabs to insert into the selector
+   */
+  tabs: Tab[];
+  /**
+   * If true, the tab will immediately switch to the first of the new tabs. If false, the user's current view will be maintained.
+   */
+  activate: boolean;
+}
+/**
  * The contents of a table cell
  */
 export interface TableCell {
@@ -2180,7 +2193,7 @@ export function tabs(...tabs: Tab[]): UIElement {
 export function tabsModel(
   groups: number,
   ...tabs: Tab[]
-): { ui: ComplexElement<HTMLElement>; models: StatefulModel<Tab[]>[] } {
+): { ui: ComplexElement<HTMLElement>; models: StatefulModel<TabUpdate>[] } {
   type Group = {
     panes: ComplexElement<HTMLDivElement>[];
     buttons: ComplexElement<HTMLSpanElement>[];
@@ -2221,7 +2234,7 @@ export function tabsModel(
   container.appendChild(buttonBar);
   container.appendChild(paneHolder);
 
-  const update = (group: number) => {
+  const update = (group: number, activate: boolean) => {
     clearChildren(buttonBar);
     clearChildren(paneHolder);
     tabGroups
@@ -2230,9 +2243,26 @@ export function tabsModel(
     tabGroups
       .flatMap((tg) => tg.panes)
       .forEach((pane) => buttonBar.appendChild(pane.element));
-    const [targetGroup, targetIndex] = tabGroups[group].panes.length
-      ? [group, 0]
-      : current;
+    if (current[0] == group || activate) {
+      if (tabGroups[group].panes.length) {
+        current = [group, 0];
+      } else {
+        const viableGroups = tabGroups
+          .map((g, i) => ({ index: i, len: g.panes.length }))
+          .filter((c) => c.len)
+          .sort(
+            (a, b) => Math.abs(a.index - group) - Math.abs(b.index - group)
+          );
+        if (viableGroups.length) {
+          current = [
+            viableGroups[0].index,
+            viableGroups[0].index < group ? viableGroups[0].len - 1 : 0,
+          ];
+        }
+      }
+    }
+
+    const [targetGroup, targetIndex] = current;
     tabGroups.forEach(({ panes, buttons }, groupIndex) => {
       panes.forEach((pane, i) => {
         pane.element.style.display =
@@ -2255,15 +2285,15 @@ export function tabsModel(
   };
 
   tabGroups.push(generate(0, tabs));
-  const models: StatefulModel<Tab[]>[] = [];
+  const models: StatefulModel<TabUpdate>[] = [];
   for (let i = 0; i < groups; i++) {
     const group = i + 1;
     tabGroups.push({ panes: [], buttons: [] });
     models.push({
       reload: () => {},
-      statusChanged: (input) => {
-        tabGroups[group] = generate(group, input);
-        update(group);
+      statusChanged: ({ tabs, activate }) => {
+        tabGroups[group] = generate(group, tabs);
+        update(group, activate);
       },
       statusFailed: (message, retry) => {
         tabGroups[group] = {
@@ -2278,19 +2308,19 @@ export function tabsModel(
             ),
           ],
         };
-        update(group);
+        update(group, false);
       },
       statusWaiting: () => {
         tabGroups[group] = {
           panes: [createUiFromTag("div", throbber())],
           buttons: [createUiFromTag("span", throbberSmall())],
         };
-        update(group);
+        update(group, false);
       },
     });
   }
 
-  update(0);
+  update(0, true);
   return {
     ui: {
       element: container,
