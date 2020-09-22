@@ -387,30 +387,7 @@ export function actionDisplay(
                     method: "POST",
                   },
                   (count: number) => {
-                    let imgSrc: string;
-                    if (count == 0) {
-                      imgSrc = "shrek.gif";
-                    } else if (count < 5) {
-                      imgSrc = "holtburn.gif";
-                    } else if (count < 20) {
-                      imgSrc = "vacuum.gif";
-                    } else if (count < 100) {
-                      imgSrc = "car.gif";
-                    } else if (count < 500) {
-                      imgSrc = "flamethrower.gif";
-                    } else if (count < 1000) {
-                      imgSrc = "thorshchariot.gif";
-                    } else if (count < 5000) {
-                      imgSrc = "volcano.gif";
-                    } else {
-                      imgSrc = "starwars.gif";
-                    }
-                    butter(
-                      3000,
-                      `Removed ${count} actions.`,
-                      br(),
-                      img(imgSrc)
-                    );
+                    butterForPurgeCount(count);
                     reload();
                   }
                 )
@@ -466,6 +443,28 @@ export function actionDisplay(
     bulkCommands: components.bulkCommands,
     model: io.model,
   };
+}
+
+export function butterForPurgeCount(count: number) {
+  let imgSrc: string;
+  if (count == 0) {
+    imgSrc = "shrek.gif";
+  } else if (count < 5) {
+    imgSrc = "holtburn.gif";
+  } else if (count < 20) {
+    imgSrc = "vacuum.gif";
+  } else if (count < 100) {
+    imgSrc = "car.gif";
+  } else if (count < 500) {
+    imgSrc = "flamethrower.gif";
+  } else if (count < 1000) {
+    imgSrc = "thorshchariot.gif";
+  } else if (count < 5000) {
+    imgSrc = "volcano.gif";
+  } else {
+    imgSrc = "starwars.gif";
+  }
+  butter(3000, `Removed ${count} actions.`, br(), img(imgSrc));
 }
 
 function createCallbackForActionCommand(

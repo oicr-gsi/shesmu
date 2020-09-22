@@ -15,6 +15,7 @@ shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/html.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/io.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/olive.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/parser.js
+shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/pause.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/simulation.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/stats.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/util.js

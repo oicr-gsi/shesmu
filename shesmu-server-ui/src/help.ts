@@ -82,6 +82,13 @@ const tips: (HelpTip | null)[][] = [
       hotspot: null,
       area: "simulator",
     },
+    {
+      summary: "Pauses can outlive files",
+      description:
+        "When a pause is created, it is locked to a particular version of an olive. If the script is modified, the pause will not apply to future olives and no longer be visible on the olive dashboards. The Pauses dashboard will show it as “dead”.",
+      hotspot: null,
+      area: "pauses",
+    },
   ],
 ];
 

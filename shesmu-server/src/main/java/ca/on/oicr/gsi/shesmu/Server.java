@@ -567,6 +567,48 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/pausedash",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          final Map<String, String> parameters = getParameters(t);
+
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+              @Override
+              public String activeUrl() {
+                return "pausedash";
+              }
+
+              @Override
+              public Stream<Header> headers() {
+                String pauses;
+                try {
+                  pauses = RuntimeSupport.MAPPER.writeValueAsString(pauses());
+                } catch (JsonProcessingException e) {
+                  e.printStackTrace();
+                  pauses = "null";
+                }
+                return Stream.of(
+                    Header.jsModule(
+                        "import {"
+                            + "initialisePauseDashboard"
+                            + "} from \"./pause.js\";"
+                            + "initialisePauseDashboard("
+                            + pauses
+                            + ");"));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "pausedash");
+                writer.writeEndElement();
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
         "/olivedefs",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -1482,8 +1524,7 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     addJson("/locations", (mapper, query) -> activeLocations());
-    addJson("/deadpauses", (mapper, query) -> deadPauses());
-    addJson("/deadfilepauses", (mapper, query) -> deadFilePauses());
+    addJson("/pauses", (mapper, query) -> pauses());
     addJson("/savedsearches", (mapper, query) -> savedSearches());
 
     addJson(
@@ -2636,6 +2677,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("io.js", "text/javascript;charset=utf-8");
     add("olive.js", "text/javascript;charset=utf-8");
     add("parser.js", "text/javascript;charset=utf-8");
+    add("pause.js", "text/javascript;charset=utf-8");
     add("simulation.js", "text/javascript;charset=utf-8");
     add("stats.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
@@ -2769,28 +2811,6 @@ public final class Server implements ServerConfig, ActionServices {
         });
   }
 
-  public ArrayNode deadFilePauses() {
-    final Set<String> currentFiles =
-        compiler.dashboard().map(p -> p.second().filename()).collect(Collectors.toSet());
-    final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
-    processor.pausedFiles().filter(file -> !currentFiles.contains(file)).forEach(deadPauses::add);
-    return deadPauses;
-  }
-
-  public ArrayNode deadPauses() {
-    final Map<String, String> currentOlives =
-        compiler
-            .dashboard()
-            .map(Pair::second)
-            .collect(Collectors.toMap(FileTable::filename, FileTable::hash));
-    final ArrayNode deadPauses = RuntimeSupport.MAPPER.createArrayNode();
-    processor
-        .pauses()
-        .filter(pause -> !currentOlives.getOrDefault(pause.fileName(), "").equals(pause.hash()))
-        .forEach(location -> location.toJson(deadPauses, pluginManager));
-    return deadPauses;
-  }
-
   public void downloadInputData(
       HttpExchange t,
       InputSource inputSource,
@@ -2890,6 +2910,7 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.item("olivedash", "Olives"),
         NavigationMenu.item("actiondash", "Actions"),
         NavigationMenu.item("alerts", "Alerts"),
+        NavigationMenu.item("pausedash", "Pauses"),
         NavigationMenu.submenu(
             "Definitions",
             NavigationMenu.item("actiondefs", "Actions"),
@@ -2974,6 +2995,32 @@ public final class Server implements ServerConfig, ActionServices {
                                 });
                       });
             });
+  }
+
+  public ObjectNode pauses() {
+    final Map<String, String> currentOlives =
+        compiler
+            .dashboard()
+            .map(Pair::second)
+            .collect(Collectors.toMap(FileTable::filename, FileTable::hash));
+    final ObjectNode pauseInfo = RuntimeSupport.MAPPER.createObjectNode();
+    final ArrayNode liveOlives = pauseInfo.putArray("liveOlives");
+    final ArrayNode deadOlives = pauseInfo.putArray("deadOlives");
+    processor
+        .pauses()
+        .forEach(
+            location ->
+                location.toJson(
+                    currentOlives.getOrDefault(location.fileName(), "").equals(location.hash())
+                        ? liveOlives
+                        : deadOlives,
+                    pluginManager));
+    final ArrayNode liveFiles = pauseInfo.putArray("liveFiles");
+    final ArrayNode deadFiles = pauseInfo.putArray("deadFiles");
+    processor
+        .pausedFiles()
+        .forEach(file -> (currentOlives.containsKey(file) ? liveFiles : deadFiles).add(file));
+    return pauseInfo;
   }
 
   public ObjectNode savedSearches() {
