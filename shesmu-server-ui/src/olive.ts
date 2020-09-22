@@ -22,6 +22,7 @@ import {
   tabsModel,
   tagList,
   textInline,
+  hidden,
 } from "./html.js";
 import {
   SourceLocation,
@@ -366,12 +367,15 @@ export function initialiseOliveDash(
       selected ? preformatted(selected.script.bytecode) : "No olive selected.",
   });
 
-  const { ui, models: tabsModels } = tabsModel(1, {
+  const { ui: tabsUi, models: tabsModels } = tabsModel(1, {
     name: "Overview",
     contents: [components.overview, statsUi],
   });
 
+  const { ui, model: hiddenModel } = hidden(tabsUi);
+
   const model = combineModels(
+    mapModel(hiddenModel, (reference) => reference !== null),
     serverStateModel(
       "pauseolive",
       pauseOliveModel,

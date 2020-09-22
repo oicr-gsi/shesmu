@@ -6,6 +6,7 @@ import {
   computeDuration,
   mapModel,
   shuffle,
+  filterModel,
 } from "./util.js";
 /**
  * A function to render an item that can handle click events.
@@ -1010,7 +1011,45 @@ export function groupWithFind(
 export function header(title: string): UIElement {
   return createUiFromTag("h2", title);
 }
-
+/**
+ * Create a section of UI that can be hidden or revealed
+ * @param ui the UI elements to enclose
+ * @returns a new UI element and a model that, when set to true, will show the inner UI elements
+ */
+export function hidden(
+  ...ui: UIElement[]
+): { ui: UIElement; model: StatefulModel<boolean> } {
+  const container = createUiFromTag("span", ...ui);
+  container.element.style.display = "none";
+  return {
+    ui: container,
+    model: {
+      reload: () => {},
+      statusChanged: (input) => {
+        container.element.style.display = input ? "inline" : "none";
+      },
+      statusFailed: (_message, _error) => {},
+      statusWaiting: () => {},
+    },
+  };
+}
+/**
+ * Create a section of UI that is connected to a model that cannot be null and is hidden when it is
+ * @param input the UI element and model
+ */
+export function hiddenOnNull<T>(
+  model: StatefulModel<T>,
+  ...ui: UIElement[]
+): { ui: UIElement; model: StatefulModel<T | null> } {
+  const inner = hidden(...ui);
+  return {
+    ui: inner.ui,
+    model: combineModels(
+      filterModel(model, "Not available."),
+      mapModel(inner.model, (input) => input !== null)
+    ),
+  };
+}
 /**
  * Create a way to synchronize the browser history with an object
  * @param initial the state to use on start up
