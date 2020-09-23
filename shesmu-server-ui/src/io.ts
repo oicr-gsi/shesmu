@@ -1,3 +1,4 @@
+import { ActionFilter, ParseQueryResponse } from "./actionfilters.js";
 import {
   UIElement,
   blank,
@@ -21,6 +22,11 @@ import {
   promiseTupleModel,
   splitModel,
 } from "./util.js";
+import { PauseRequest, Pauses } from "./pause.js";
+import { PrometheusAlert, AlertFilter } from "./alert.js";
+import { TypeResponse, ValueResponse } from "./definitions.js";
+import { SimulationRequest, SimulationResponse } from "./simulation.js";
+import { Stat } from "./stats.js";
 
 /**
  * The result of loading locally stored data
@@ -49,32 +55,89 @@ export interface MutableServerInfo<I, R> {
 }
 
 /**
- * Perform a JSON fetch operation which will display a modal dialog while working
+ * These are the request types for all the endpoints where JSON requests can be made to the server
+ *
+ * Null entires are GET requests; all others are treated as POST requests
  */
-export function fetchJsonWithBusyDialog<T>(
-  url: RequestInfo,
-  parameters: RequestInit,
-  callback: (result: T) => void
-): void {
-  fetchCustomWithBusyDialog(url, parameters, (p) =>
-    p
-      .then((response) => response.json())
-      .then((response) => {
-        callback(response as T);
-      })
-  );
+interface ShesmuRequestType {
+  allalerts: null;
+  command: { command: string; filters: ActionFilter[] };
+  constant: string;
+  function: { name: string; args: any[] };
+  getalert: string;
+  parsequery: string;
+  pausefile: PauseRequest;
+  pauseolive: PauseRequest;
+  pauses: null;
+  printquery: ActionFilter;
+  purge: ActionFilter[];
+  queryalerts: AlertFilter<RegExp>;
+  simulate: SimulationRequest;
+  stats: ActionFilter[];
+  tags: ActionFilter[];
+  type: { value: string; format: string };
 }
 /**
- * Perform a fetch operation which will display a modal dialog while working
+ * These are the response types for all the endpoints where JSON requests can be made to the server
  */
-export function fetchCustomWithBusyDialog<T>(
-  url: RequestInfo,
-  parameters: RequestInit,
-  process: (promise: Promise<Response>) => Promise<T>
+interface ShesmuResponseType {
+  allalerts: PrometheusAlert[];
+  command: number;
+  constant: ValueResponse;
+  function: ValueResponse;
+  getalert: PrometheusAlert | null;
+  parsequery: ParseQueryResponse;
+  pausefile: boolean;
+  pauseolive: boolean;
+  pauses: Pauses;
+  printquery: string;
+  purge: number;
+  queryalerts: PrometheusAlert[];
+  simulate: SimulationResponse;
+  stats: Stat[];
+  tags: string[];
+  type: TypeResponse;
+}
+
+/**
+ * Perform a JSON fetch operation which will display a modal dialog while working
+ */
+export function fetchJsonWithBusyDialog<
+  R extends keyof ShesmuRequestType & keyof ShesmuResponseType
+>(
+  url: R,
+  parameters: ShesmuRequestType[R],
+  callback: (result: ShesmuResponseType[R]) => void
 ): void {
   const closeBusy = busyDialog();
-  process(
-    fetch(url, parameters).then((response) => {
+
+  fetchAsPromise(url, parameters)
+    .then(callback)
+    .catch((error) => {
+      closeBusy();
+      if (error) {
+        dialog((close) => [
+          text(error.message),
+          button("Retry", "Attempt operation again.", () => {
+            close();
+            fetchJsonWithBusyDialog(url, parameters, callback);
+          }),
+        ]);
+      }
+    })
+    .finally(closeBusy);
+}
+
+export function fetchAsPromise<
+  R extends keyof ShesmuRequestType & keyof ShesmuResponseType
+>(url: R, parameters: ShesmuRequestType[R]): Promise<ShesmuResponseType[R]> {
+  return fetch(
+    url,
+    parameters === null
+      ? { method: "GET" }
+      : { method: "POST", body: JSON.stringify(parameters) }
+  )
+    .then((response) => {
       if (response.ok) {
         return Promise.resolve(response);
       } else if (response.status == 503) {
@@ -85,20 +148,8 @@ export function fetchCustomWithBusyDialog<T>(
         );
       }
     })
-  )
-    .catch((error) => {
-      closeBusy();
-      if (error) {
-        dialog((close) => [
-          text(error.message),
-          button("Retry", "Attempt operation again.", () => {
-            close();
-            fetchCustomWithBusyDialog(url, parameters, process);
-          }),
-        ]);
-      }
-    })
-    .finally(closeBusy);
+    .then((response) => response.json())
+    .then((response) => response as ShesmuResponseType[R]);
 }
 
 /**
@@ -289,17 +340,17 @@ export function paginatedRefreshable<I, O>(
  * Create a collection of GUI elements backed by a server callback
  *
  * @param input the request to make
- * @param makeRequest a function to create an HTTP request from the state provided
  * @param formatters a collection of functions to display the output for a widget; the output will have a matching UI element and they will be updated simultaneously
  * @param modal display a modal dialog to lock out the whole UI
  * @returns an object with a callback to force update of the GUI (the GUI elements are also given this), a prepared refresh button, and all the GUI elements requested
  */
-export function refreshable<I, O>(
-  input: RequestInfo,
-  makeRequest: (request: I) => RequestInit,
-  model: StatefulModel<O>,
+export function refreshable<
+  R extends keyof ShesmuRequestType & keyof ShesmuResponseType
+>(
+  input: R,
+  model: StatefulModel<ShesmuResponseType[R] | null>,
   modal: boolean
-): SplitStatefulModel<I, O> {
+): SplitStatefulModel<ShesmuRequestType[R], ShesmuResponseType[R] | null> {
   return splitModel(model, (output) =>
     mapModel(
       requestModel(
@@ -307,11 +358,15 @@ export function refreshable<I, O>(
         mapModel(promiseModel(output), (promise: Promise<Response>) =>
           promise
             .then((response) => response.json())
-            .then((data: any) => data as O)
+            .then((data: any) => data as ShesmuResponseType[R])
         ),
         modal
       ),
-      makeRequest
+      (input) => {
+        return input === null
+          ? { method: "GET" }
+          : { method: "POST", body: JSON.stringify(input) };
+      }
     )
   );
 }
@@ -451,20 +506,28 @@ export function saveFile(
  * @param model the target of the server's response; it may be null if the input was null
  * @param makeRequest create an HTTP request or null to bypass the server state
  */
-export function serverStateModel<I, R>(
-  input: RequestInfo,
-  model: StatefulModel<MutableServerInfo<I, R> | null>,
-  makeRequest: (request: I, value: R | null) => RequestInit | null
+export function serverStateModel<
+  I,
+  R extends keyof ShesmuRequestType & keyof ShesmuResponseType
+>(
+  input: R,
+  model: StatefulModel<MutableServerInfo<I, ShesmuResponseType[R]> | null>,
+  makeRequest: (
+    request: I,
+    value: ShesmuResponseType[R] | null
+  ) => ShesmuRequestType[R] | null
 ): StatefulModel<I | null> {
-  const split: StatefulModel<[I, R | null] | null> = splitModel(
-    model,
-    (output) =>
-      mapModel(
-        requestTupleModel(
-          input,
-          mapTupleModel(
-            promiseTupleModel(
-              mapModel(output, (info: [I | null, R | null] | null) => {
+  const split: StatefulModel<
+    [I, ShesmuResponseType[R] | null] | null
+  > = splitModel(model, (output) =>
+    mapModel(
+      requestTupleModel(
+        input,
+        mapTupleModel(
+          promiseTupleModel(
+            mapModel(
+              output,
+              (info: [I | null, ShesmuResponseType[R] | null] | null) => {
                 const input = info?.[0];
                 const response = info?.[1];
                 if (
@@ -481,31 +544,37 @@ export function serverStateModel<I, R>(
                     setter: (value) => split.statusChanged([input, value]),
                   };
                 }
-              })
-            ),
-            (promise: Promise<Response | null>) =>
-              promise
-                .then((response) =>
-                  response ? response.json() : Promise.resolve(null)
-                )
-                .then((data: any) => data as R)
-          )
-        ),
-        (info: [I, R | null] | null) => {
-          if (info) {
-            const serverRequest = makeRequest(info[0], info[1]);
-            if (serverRequest === null) {
-              return [info[0], null] as [I, R | null];
-            } else {
-              return [info[0], serverRequest] as [I, R | null];
-            }
+              }
+            )
+          ),
+          (promise: Promise<Response | null>) =>
+            promise
+              .then((response) =>
+                response ? response.json() : Promise.resolve(null)
+              )
+              .then((data: any) => data as ShesmuResponseType[R])
+        )
+      ),
+      (
+        info: [I, ShesmuResponseType[R] | null] | null
+      ): [I | null, RequestInit | null] => {
+        if (info) {
+          const serverRequest = makeRequest(info[0], info[1]);
+          if (serverRequest === null) {
+            return [info[0], null];
           } else {
-            return [null, null] as [I | null, R | null];
+            return [
+              info[0],
+              { method: "POST", body: JSON.stringify(serverRequest) },
+            ];
           }
+        } else {
+          return [null, null];
         }
-      )
+      }
+    )
   );
   return mapModel(split, (input: I | null) =>
-    input ? ([input, null] as [I, R | null]) : null
+    input ? ([input, null] as [I, ShesmuResponseType[R] | null]) : null
   );
 }

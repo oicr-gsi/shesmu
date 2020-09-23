@@ -48,7 +48,6 @@ import {
 } from "./util.js";
 import { ActionFilter, BasicQuery, createSearch } from "./actionfilters.js";
 import {
-  fetchCustomWithBusyDialog,
   fetchJsonWithBusyDialog,
   loadFile,
   mutableLocalStore,
@@ -264,16 +263,13 @@ export function actionDisplay(
                       () =>
                         fetchJsonWithBusyDialog(
                           "purge",
-                          {
-                            body: JSON.stringify([
-                              {
-                                type: "id",
-                                ids: [action.actionId],
-                              },
-                            ]),
-                            method: "POST",
-                          },
-                          (count: number) => {
+                          [
+                            {
+                              type: "id",
+                              ids: [action.actionId],
+                            },
+                          ],
+                          (count) => {
                             if (count > 1) {
                               dialog(() => [
                                 `Purged ${count} actions!!! This is awkward. The unique action IDs aren't unique!`,
@@ -380,17 +376,10 @@ export function actionDisplay(
               "☠️ Purge Actions",
               "Remove actions from Shesmu. This does not stop an olive from generating them again.",
               () =>
-                fetchJsonWithBusyDialog(
-                  "purge",
-                  {
-                    body: JSON.stringify(filters),
-                    method: "POST",
-                  },
-                  (count: number) => {
-                    butterForPurgeCount(count);
-                    reload();
-                  }
-                )
+                fetchJsonWithBusyDialog("purge", filters, (count) => {
+                  butterForPurgeCount(count);
+                  reload();
+                })
             )
           : blank(),
         response
@@ -476,18 +465,15 @@ function createCallbackForActionCommand(
     fetchJsonWithBusyDialog(
       "command",
       {
-        body: JSON.stringify({
-          command: command.command,
-          filters: [
-            {
-              type: "id",
-              ids: [id],
-            },
-          ] as ActionFilter[],
-        }),
-        method: "POST",
+        command: command.command,
+        filters: [
+          {
+            type: "id",
+            ids: [id],
+          },
+        ],
       },
-      (count: number) => {
+      (count) => {
         if (count == 0) {
           dialog(() => [
             "This action is indifferent to your pleas. Maybe the action's internal state has changed? Try refreshing.",
@@ -529,13 +515,10 @@ function createCallbackForBulkCommand(
     fetchJsonWithBusyDialog(
       "command",
       {
-        body: JSON.stringify({
-          command: command.command,
-          filters: filters,
-        }),
-        method: "POST",
+        command: command.command,
+        filters: filters,
       },
-      (count: number) => {
+      (count) => {
         butter(5000, `The command executed on ${count} actions.`);
         reload();
       }
@@ -776,22 +759,16 @@ export function initialiseActionDash(
                 filters = JSON.parse(search);
               }
               if (filters) {
-                fetchCustomWithBusyDialog(
+                fetchJsonWithBusyDialog(
                   "printquery",
                   {
-                    method: "POST",
-                    body: JSON.stringify({
-                      type: "and",
-                      filters: filters,
-                    } as ActionFilter),
+                    type: "and",
+                    filters: filters,
                   },
-                  (p) =>
-                    p
-                      .then((response) => response.text())
-                      .then((_r) => {
-                        // We don't really want this value from the server, but it has validated the filter for us.
-                        localSearches.set(name, filters!);
-                      })
+                  (_r) => {
+                    // We don't really want this value from the server, but it has validated the filter for us.
+                    localSearches.set(name, filters!);
+                  }
                 );
                 close();
               } else {

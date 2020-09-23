@@ -56,11 +56,7 @@ import {
   observableModel,
   ObservableModel,
 } from "./util.js";
-import {
-  fetchCustomWithBusyDialog,
-  fetchJsonWithBusyDialog,
-  refreshable,
-} from "./io.js";
+import { fetchJsonWithBusyDialog, refreshable, fetchAsPromise } from "./io.js";
 
 /**
  * A filter that the server can use to limit the actions returned.
@@ -270,12 +266,12 @@ interface LogicalOperator {
 /**
  * The response format from the server when attempting to parse a text query
  */
-interface ParseQueryRespose {
+export interface ParseQueryResponse {
   errors: ParseQueryError[];
   formatted?: string;
   filter?: ActionFilter;
 }
-interface ParseQueryError {
+export interface ParseQueryError {
   line: number;
   column: number;
   message: string;
@@ -456,27 +452,20 @@ function addFilterDialog(
       () => {
         close();
         getFilters((filters) =>
-          fetchJsonWithBusyDialog(
-            "/tags",
-            {
-              method: "POST",
-              body: JSON.stringify(filters),
-            },
-            (tags: string[]) => {
-              if (tags.length) {
-                pickFromSet(
-                  tags.sort(),
-                  (tag) => addSet("tag", tag),
-                  (tag) => ({ label: tag, title: "" }),
-                  (tag, keywords) =>
-                    keywords.every((k) => tag.toLowerCase().indexOf(k) != -1),
-                  false
-                );
-              } else {
-                dialog((_close) => text("No tags are available."));
-              }
+          fetchJsonWithBusyDialog("tags", filters, (tags) => {
+            if (tags.length) {
+              pickFromSet(
+                tags.sort(),
+                (tag) => addSet("tag", tag),
+                (tag) => ({ label: tag, title: "" }),
+                (tag, keywords) =>
+                  keywords.every((k) => tag.toLowerCase().indexOf(k) != -1),
+                false
+              );
+            } else {
+              dialog((_close) => text("No tags are available."));
             }
-          )
+          })
         );
       }
     ),
@@ -1186,7 +1175,7 @@ function searchAdvanced(
 ): SearchPlatform {
   const searchModel: StatefulModel<string> = bypassModel(
     combineModels(
-      errorModel(model, (response: ParseQueryRespose | null) => {
+      errorModel(model, (response: ParseQueryResponse | null) => {
         if (!response) {
           return { type: "ok", value: [] };
         }
@@ -1206,7 +1195,7 @@ function searchAdvanced(
       ),
       {
         reload: () => {},
-        statusChanged: (response: ParseQueryRespose | null) => {
+        statusChanged: (response: ParseQueryResponse | null) => {
           if (response?.formatted) {
             search.value = response.formatted;
           }
@@ -1215,16 +1204,8 @@ function searchAdvanced(
         statusWaiting: () => {},
       }
     ),
-    (output: StatefulModel<ParseQueryRespose | null>) =>
-      refreshable(
-        "parsequery",
-        (query) => ({
-          method: "POST",
-          body: JSON.stringify(query),
-        }),
-        output,
-        true
-      ),
+    (output: StatefulModel<ParseQueryResponse | null>) =>
+      refreshable("parsequery", output, true),
     (input: string) => {
       if (input.trim().length) {
         return { bypass: false, value: input };
@@ -1242,37 +1223,26 @@ function searchAdvanced(
   searchModel.statusChanged(filter);
   const updateFromClick = (...filters: ActionFilter[]) => {
     const doUpdate = (existingQuery: ActionFilter[]) => {
-      fetchCustomWithBusyDialog(
+      fetchJsonWithBusyDialog(
         "printquery",
         {
-          method: "POST",
-          body: JSON.stringify({
-            type: "and",
-            filters: filters.concat(existingQuery),
-          }),
+          type: "and",
+          filters: filters.concat(existingQuery),
         },
-        (p) =>
-          p.then((response) => response.text()).then(searchModel.statusChanged)
+        searchModel.statusChanged
       );
     };
     if (search.value.trim()) {
-      fetchJsonWithBusyDialog<ParseQueryRespose>(
-        "parsequery",
-        {
-          method: "POST",
-          body: JSON.stringify(search.value),
-        },
-        (result) => {
-          const existing = result.filter;
-          if (existing) {
-            doUpdate([existing]);
-            return Promise.resolve(existing);
-          } else {
-            butter(3000, "Can't add conditions to a broken query.");
-            return Promise.reject("Can't add conditions to a broken query.");
-          }
+      fetchJsonWithBusyDialog("parsequery", search.value, (result) => {
+        const existing = result.filter;
+        if (existing) {
+          doUpdate([existing]);
+          return Promise.resolve(existing);
+        } else {
+          butter(3000, "Can't add conditions to a broken query.");
+          return Promise.reject("Can't add conditions to a broken query.");
         }
-      );
+      });
     } else {
       doUpdate([]);
     }
@@ -1284,42 +1254,35 @@ function searchAdvanced(
         "Switch to basic query interface. Current query will be lost.",
         () => {
           if (search.value.trim()) {
-            fetchJsonWithBusyDialog<ParseQueryRespose>(
-              "parsequery",
-              {
-                method: "POST",
-                body: JSON.stringify(search.value),
-              },
-              (result) => {
-                const existing = result.filter;
-                const convertedQuery = existing
-                  ? recomposeFilter(existing)
-                  : null;
-                if (convertedQuery) {
-                  synchronizer.statusChanged(convertedQuery);
-                } else {
-                  dialog((close) => [
-                    "Switching to basic query interface will discard current query.",
-                    br(),
-                    "The query does not have an equivalent basic form.",
-                    br(),
-                    button(
-                      "Stay here",
-                      "Stay in the advanced query interface.",
-                      close
-                    ),
-                    button(
-                      "Discard and Switch",
-                      "Switch to the basic query interface.",
-                      () => {
-                        close();
-                        synchronizer.statusChanged({});
-                      }
-                    ),
-                  ]);
-                }
+            fetchJsonWithBusyDialog("parsequery", search.value, (result) => {
+              const existing = result.filter;
+              const convertedQuery = existing
+                ? recomposeFilter(existing)
+                : null;
+              if (convertedQuery) {
+                synchronizer.statusChanged(convertedQuery);
+              } else {
+                dialog((close) => [
+                  "Switching to basic query interface will discard current query.",
+                  br(),
+                  "The query does not have an equivalent basic form.",
+                  br(),
+                  button(
+                    "Stay here",
+                    "Stay in the advanced query interface.",
+                    close
+                  ),
+                  button(
+                    "Discard and Switch",
+                    "Switch to the basic query interface.",
+                    () => {
+                      close();
+                      synchronizer.statusChanged({});
+                    }
+                  ),
+                ]);
               }
-            );
+            });
           } else {
             synchronizer.statusChanged({});
           }
@@ -1333,37 +1296,25 @@ function searchAdvanced(
             operator: "and" | "or",
             ...filters: ActionFilter[]
           ) =>
-            fetchCustomWithBusyDialog(
+            fetchJsonWithBusyDialog(
               "printquery",
               {
-                method: "POST",
-                body: JSON.stringify({
-                  type: operator,
-                  filters: filters,
-                } as ActionFilter),
+                type: operator,
+                filters: filters,
               },
-              (p) =>
-                p
-                  .then((response) => response.text())
-                  .then(searchModel.statusChanged)
+              searchModel.statusChanged
             );
           const showDialog = (callback: (...filters: ActionFilter[]) => void) =>
             addFilterDialog(
               onActionPage,
               sources,
               (filterCallback) =>
-                fetchJsonWithBusyDialog<ParseQueryRespose>(
-                  "parsequery",
-                  {
-                    method: "POST",
-                    body: JSON.stringify(search.value),
-                  },
-                  (result) =>
-                    filterCallback(
-                      result.filter
-                        ? baseFilters.value.concat([result.filter])
-                        : []
-                    )
+                fetchJsonWithBusyDialog("parsequery", search.value, (result) =>
+                  filterCallback(
+                    result.filter
+                      ? baseFilters.value.concat([result.filter])
+                      : []
+                  )
                 ),
               (accessor, start, end) =>
                 callback({ start: start, end: end, type: accessor.rangeType }),
@@ -1407,49 +1358,41 @@ function searchAdvanced(
                 })
             );
           if (search.value.trim()) {
-            fetchJsonWithBusyDialog<ParseQueryRespose>(
-              "parsequery",
-              {
-                method: "POST",
-                body: JSON.stringify(search.value),
-              },
-              (result) => {
-                const existing = result.filter;
-                if (existing) {
-                  showDialog((filter) =>
-                    dialog((close) =>
-                      [
-                        {
-                          operator: "and",
-                          tip:
-                            "Add a filter that restricts the existing query.",
-                        } as LogicalOperator,
-                        {
-                          operator: "or",
-                          tip: "Add a filter that expands the existing query.",
-                        } as LogicalOperator,
-                      ].map((operation) =>
-                        button(
-                          [
-                            "Existing Query ",
-                            italic(operation.operator),
-                            " New Filter",
-                          ],
-                          operation.tip,
-                          () => {
-                            close();
-                            replaceQuery(operation.operator, existing, filter);
-                          }
-                        )
+            fetchJsonWithBusyDialog("parsequery", search.value, (result) => {
+              const existing = result.filter;
+              if (existing) {
+                showDialog((filter) =>
+                  dialog((close) =>
+                    [
+                      {
+                        operator: "and",
+                        tip: "Add a filter that restricts the existing query.",
+                      } as LogicalOperator,
+                      {
+                        operator: "or",
+                        tip: "Add a filter that expands the existing query.",
+                      } as LogicalOperator,
+                    ].map((operation) =>
+                      button(
+                        [
+                          "Existing Query ",
+                          italic(operation.operator),
+                          " New Filter",
+                        ],
+                        operation.tip,
+                        () => {
+                          close();
+                          replaceQuery(operation.operator, existing, filter);
+                        }
                       )
                     )
-                  );
-                  return Promise.resolve(existing);
-                } else {
-                  return Promise.reject("Can't add clauses to a broken query.");
-                }
+                  )
+                );
+                return Promise.resolve(existing);
+              } else {
+                return Promise.reject("Can't add clauses to a broken query.");
               }
-            );
+            });
           } else {
             showDialog((filter) => replaceQuery("and", filter));
           }
@@ -1743,21 +1686,10 @@ function searchBasic(
         "Switch to advanced query interface. Query will be saved, but cannot be converted back.",
         () =>
           promiseModel(synchronizer).statusChanged(
-            fetch("/printquery", {
-              method: "POST",
-              body: JSON.stringify({
-                type: "and",
-                filters: createFilters(current),
-              }),
-            }).then((response) =>
-              response.ok
-                ? response.text()
-                : Promise.reject(
-                    new Error(
-                      `Failed to load: ${response.status} ${response.statusText}`
-                    )
-                  )
-            )
+            fetchAsPromise("printquery", {
+              type: "and",
+              filters: createFilters(current),
+            })
           )
       ),
       buttonAccessory(
@@ -1853,21 +1785,10 @@ export function updateBasicQueryForPropertySearch(
       "Switching to advanced mode. Use the browser's back button to return to the previous basic-mode search."
     );
     // Take what we have and switch to advanced mode
-    return fetch("/printquery", {
-      method: "POST",
-      body: JSON.stringify({
-        type: "and",
-        filters: createFilters(current).concat(advancedFilters),
-      } as ActionFilter),
-    }).then((response) =>
-      response.ok
-        ? response.text()
-        : Promise.reject(
-            new Error(
-              `Failed to load: ${response.status} ${response.statusText}`
-            )
-          )
-    );
+    return fetchAsPromise("printquery", {
+      type: "and",
+      filters: createFilters(current).concat(advancedFilters),
+    });
   } else {
     return { ...current };
   }
