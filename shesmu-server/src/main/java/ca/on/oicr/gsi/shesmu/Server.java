@@ -2656,11 +2656,10 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final ActionFilter input =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter.class);
-          t.getResponseHeaders().set("Content-type", "text/plain");
+          t.getResponseHeaders().set("Content-type", "application/json");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            os.write(
-                input.convert(ActionFilterBuilder.QUERY).first().getBytes(StandardCharsets.UTF_8));
+            RuntimeSupport.MAPPER.writeValue(os, input.convert(ActionFilterBuilder.QUERY).first());
           }
         });
     add("/resume", new EmergencyThrottlerHandler(false));

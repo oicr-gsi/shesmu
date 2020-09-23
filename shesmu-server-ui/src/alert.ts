@@ -1,6 +1,5 @@
 import { fetchJsonWithBusyDialog, refreshable } from "./io.js";
 import {
-  ComplexElement,
   StateSynchronizer,
   UIElement,
   UpdateableList,
@@ -547,9 +546,9 @@ export function initialiseAlertDashboard(
   output: HTMLElement
 ) {
   if (location.hash) {
-    fetchJsonWithBusyDialog<PrometheusAlert | null>(
-      "/getalert",
-      { body: JSON.stringify(location.hash.substring(1)), method: "POST" },
+    fetchJsonWithBusyDialog(
+      "getalert",
+      location.hash.substring(1),
       (selectedAlert) =>
         setRootDashboard(
           output,
@@ -595,12 +594,7 @@ export function initialiseAlertDashboard(
       "main",
       "toolbar"
     );
-    const refresher = refreshable(
-      "/allalerts",
-      (input: string) => ({ method: input }),
-      alertState.model,
-      true
-    );
+    const refresher = refreshable("allalerts", alertState.model, true);
     setRootDashboard(
       output,
       refreshButton(refresher.reload),
@@ -609,7 +603,7 @@ export function initialiseAlertDashboard(
       br(),
       alertState.components.main
     );
-    refresher.statusChanged("GET");
+    refresher.statusChanged(null);
   }
 }
 

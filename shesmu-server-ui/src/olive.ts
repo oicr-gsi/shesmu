@@ -38,7 +38,6 @@ import {
 import { ActionFilter, createSearch, BasicQuery } from "./actionfilters.js";
 import {
   MutableServerInfo,
-  iterableModel,
   refreshable,
   refreshableSvg,
   serverStateModel,
@@ -301,17 +300,16 @@ export function initialiseOliveDash(
     metroModel.model
   );
 
-  const alertRequest = refreshable(
-    "queryalerts",
-    (location: SourceLocation) => ({
-      body: JSON.stringify({
-        type: "sourcelocation",
-        locations: [copyLocation(location)],
-      } as AlertFilter<RegExp>),
-      method: "POST",
-    }),
-    alertModel.model,
-    false
+  const alertRequest = mapModel(
+    refreshable(
+      "queryalerts",
+      mapModel(alertModel.model, (alerts) => alerts || []),
+      false
+    ),
+    (location: SourceLocation): AlertFilter<RegExp> => ({
+      type: "sourcelocation",
+      locations: [copyLocation(location)],
+    })
   );
 
   const { model: pauseOliveModel, ui: pauseOliveButton } = singleState(
@@ -382,11 +380,8 @@ export function initialiseOliveDash(
       (reference: OliveReference, desired: boolean | null) =>
         reference?.olive
           ? {
-              method: "POST",
-              body: JSON.stringify({
-                ...copyLocation(reference.olive.olive),
-                pause: desired,
-              }),
+              ...copyLocation(reference.olive.olive),
+              pause: desired,
             }
           : null
     ),
@@ -394,13 +389,13 @@ export function initialiseOliveDash(
       "pausefile",
       pauseFileModel,
       (reference: OliveReference, desired: boolean | null) =>
-        reference
+        reference && desired !== null
           ? {
-              method: "POST",
-              body: JSON.stringify({
-                file: reference.script.file,
-                pause: desired,
-              }),
+              file: reference.script.file,
+              line: null,
+              column: null,
+              hash: null,
+              pause: desired,
             }
           : null
     ),

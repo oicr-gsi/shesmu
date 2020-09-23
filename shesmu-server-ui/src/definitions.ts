@@ -9,23 +9,24 @@ type JsonDescriptor =
   | { is: "list"; inner: JsonDescriptor }
   | { is: "dictionary"; key: JsonDescriptor; value: JsonDescriptor };
 
-interface TypeResponse {
+export interface TypeResponse {
   humanName: string;
   descriptor: string;
   wdlType: string;
   jsonDescriptor: JsonDescriptor;
 }
+export interface ValueResponse {
+  value?: any;
+  error?: string;
+}
 
 export function parseType() {
   const format = document.getElementById("format") as HTMLSelectElement;
-  fetchJsonWithBusyDialog<TypeResponse>(
-    "/type",
+  fetchJsonWithBusyDialog(
+    "type",
     {
-      body: JSON.stringify({
-        value: (document.getElementById("typeValue") as HTMLInputElement).value,
-        format: format.options[format.selectedIndex].value,
-      }),
-      method: "POST",
+      value: (document.getElementById("typeValue") as HTMLInputElement).value,
+      format: format.options[format.selectedIndex].value,
     },
     (data) => {
       document.getElementById("humanType")!.innerText = data.humanName;
@@ -38,24 +39,16 @@ export function parseType() {
   );
 }
 
-function fetchValue(url: string, body: any): void {
-  fetchJsonWithBusyDialog<{ value?: any; error?: string }>(
-    url,
-    {
-      body: JSON.stringify(body),
-      method: "POST",
-    },
-    (data) =>
-      dialog((close) =>
-        data.hasOwnProperty("value")
-          ? preformatted(JSON.stringify(data.value, null, 2))
-          : text(data.error || "Unknown error")
-      )
+function showValue(data: ValueResponse): void {
+  dialog((_close) =>
+    data.hasOwnProperty("value")
+      ? preformatted(JSON.stringify(data.value, null, 2))
+      : text(data.error || "Unknown error")
   );
 }
 
 export function fetchConstant(name: string): void {
-  fetchValue("/constant", name);
+  fetchJsonWithBusyDialog("constant", name, showValue);
 }
 
 export function runFunction(name: string, parameterTypes: Parser[]) {
@@ -72,8 +65,12 @@ export function runFunction(name: string, parameterTypes: Parser[]) {
       )
     )
   ) {
-    dialog((close) => errors);
+    dialog((_close) => errors);
     return;
   }
-  fetchValue("/function", { name: name, args: parameters });
+  fetchJsonWithBusyDialog(
+    "function",
+    { name: name, args: parameters },
+    showValue
+  );
 }

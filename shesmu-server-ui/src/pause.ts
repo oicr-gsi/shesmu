@@ -171,10 +171,7 @@ export function initialisePauseDashboard(pauses: Pauses) {
                       () =>
                         fetchJsonWithBusyDialog(
                           pause.line ? "pauseolive" : "pausefile",
-                          {
-                            method: "POST",
-                            body: JSON.stringify({ ...pause, pause: false }),
-                          },
+                          { ...pause, pause: false },
                           (isPause) => {
                             if (!isPause) {
                               refresher.statusChanged(null);
@@ -190,24 +187,18 @@ export function initialisePauseDashboard(pauses: Pauses) {
                       () =>
                         fetchJsonWithBusyDialog(
                           "purge",
-                          {
-                            method: "POST",
-                            body: JSON.stringify([
-                              {
-                                type: "sourcelocation",
-                                locations: [copyLocation(pause)],
-                              },
-                            ]),
-                          },
-                          (count: number) =>
+                          [
+                            {
+                              type: "sourcelocation",
+                              locations: [copyLocation(pause)],
+                            },
+                          ],
+                          (count) =>
                             fetchJsonWithBusyDialog(
                               pause.line ? "pauseolive" : "pausefile",
                               {
-                                method: "POST",
-                                body: JSON.stringify({
-                                  ...pause,
-                                  pause: false,
-                                }),
+                                ...pause,
+                                pause: false,
                               },
                               (isPause) => {
                                 if (!isPause) {
@@ -229,12 +220,7 @@ export function initialisePauseDashboard(pauses: Pauses) {
       : "No pauses set right now.";
   });
 
-  const refresher = refreshable(
-    "pauses",
-    (input: null) => ({ method: "GET" }),
-    selectorTable.model,
-    true
-  );
+  const refresher = refreshable("pauses", selectorTable.model, true);
 
   setRootDashboard(
     document.getElementById("pausedash")!,

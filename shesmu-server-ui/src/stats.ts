@@ -91,7 +91,7 @@ interface StatText {
 /**
  * A statistic value computed by the server
  */
-type Stat = StatCrosstab | StatHistogram | StatTable | StatText;
+export type Stat = StatCrosstab | StatHistogram | StatTable | StatText;
 /**
  * A callback to add a property limit to the existing search filter
  */
@@ -319,15 +319,7 @@ export function actionStats(
       return "No statistics are available.";
     }
   );
-  const io = refreshable(
-    "stats",
-    (filters: ActionFilter[]) => ({
-      body: JSON.stringify(filters),
-      method: "POST",
-    }),
-    model,
-    false
-  );
+  const io = refreshable("stats", model, false);
   return {
     ui: ui,
     model: io,

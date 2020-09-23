@@ -7,6 +7,7 @@ import {
   refreshable,
   saveClipboardJson,
   saveFile,
+  fetchAsPromise,
 } from "./io.js";
 import {
   Tab,
@@ -156,10 +157,16 @@ interface SimulatedOlive {
   column: number;
   duration: number;
 }
+export interface SimulationRequest {
+  fakeActions: { [name: string]: FakeActionParameters };
+  dryRun: boolean;
+  readStale: boolean;
+  script: string;
+}
 /**
  * The response from the sever after attempting simulation
  */
-interface SimulationResponse {
+export interface SimulationResponse {
   alerts?: SimulatedAlert[];
   exports?: Export[];
   errors: string[];
@@ -369,7 +376,7 @@ export function initialiseSimulationDashboard(
           const { main, toolbar } = alertNavigator(
             response.alerts,
             () => [],
-            temporaryState([] as AlertFilter<RegExp>[]),
+            temporaryState<AlertFilter<RegExp>[]>([]),
             [
               ["Line", (l: SimulatedLocation) => l.line.toString()],
               ["Column", (l: SimulatedLocation) => l.column.toString()],
@@ -417,7 +424,7 @@ export function initialiseSimulationDashboard(
                 const { main, toolbar } = alertNavigator(
                   oliveAlerts,
                   () => [],
-                  temporaryState([] as AlertFilter<RegExp>[]),
+                  temporaryState<AlertFilter<RegExp>[]>([]),
                   [
                     ["Line", (l: SimulatedLocation) => l.line.toString()],
                     ["Column", (l: SimulatedLocation) => l.column.toString()],
@@ -630,26 +637,23 @@ export function initialiseSimulationDashboard(
           });
         }
       }
-      return { tabs: tabList, activate: true };
+      return { tabs: tabList, activate: response?.errors.length === 0 };
     }
   );
   const main = refreshable(
-    "/simulate",
-    (request) => {
-      editor.getSession().clearAnnotations();
-      return {
-        body: JSON.stringify({
-          fakeActions: Object.fromEntries(fakeActionDefinitions),
-          dryRun: false,
-          readStale: !waitForData.value,
-          script: request,
-        }),
-        method: "POST",
-      };
-    },
+    "simulate",
     combineModels(dashboardState, errorTable.model),
     true
   );
+  const simulationModel = mapModel(main, (request: string) => {
+    editor.getSession().clearAnnotations();
+    return {
+      fakeActions: Object.fromEntries(fakeActionDefinitions),
+      dryRun: false,
+      readStale: !waitForData.value,
+      script: request,
+    };
+  });
 
   const { last: lastTheme, model: savedTheme } = locallyStoredString(
     "shesmu_theme",
@@ -659,7 +663,7 @@ export function initialiseSimulationDashboard(
     container,
     group(
       button("🤖 Simulate", "Run olive simulation and fetch results", () =>
-        main.statusChanged(editor.getValue())
+        simulationModel.statusChanged(editor.getValue())
       ),
       waitForData.ui,
       buttonAccessory(
@@ -725,16 +729,12 @@ export function initialiseSimulationDashboard(
     if (!checking) {
       checking = true;
       // This does not check for overload because editor is best-effort
-      fetch("/simulate", {
-        body: JSON.stringify({
-          fakeActions: Object.fromEntries(fakeActionDefinitions),
-          dryRun: true,
-          readStale: true,
-          script: editor.getValue(),
-        }),
-        method: "POST",
+      fetchAsPromise("simulate", {
+        fakeActions: Object.fromEntries(fakeActionDefinitions),
+        dryRun: true,
+        readStale: true,
+        script: editor.getValue(),
       })
-        .then((response) => response.json())
         .then(errorTable.model.statusChanged)
         .finally(() => (checking = false));
     }
