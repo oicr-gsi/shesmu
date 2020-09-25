@@ -138,8 +138,17 @@ public final class MonitoredOliveServices implements OliveServices, AutoCloseabl
 
   @Override
   public <T> Stream<T> measureFlow(
-      Stream<T> input, String filename, int line, int column, int oliveLine, int oliveColumn) {
-    return backing.measureFlow(input, filename, line, column, oliveLine, oliveColumn);
+      Stream<T> input,
+      String filename,
+      int line,
+      int column,
+      String hash,
+      String oliveFile,
+      int oliveLine,
+      int oliveColumn,
+      String oliveHash) {
+    return backing.measureFlow(
+        input, filename, line, column, hash, oliveFile, oliveLine, oliveColumn, oliveHash);
   }
 
   @Override

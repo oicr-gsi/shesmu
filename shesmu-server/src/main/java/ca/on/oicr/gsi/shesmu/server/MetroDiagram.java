@@ -30,11 +30,18 @@ public class MetroDiagram {
      * @param filename the file name containing the olive
      * @param line the source line of the clause being measured
      * @param column the source column of the clause being measured
-     * @param oliveLine the source line of the olive
-     * @param oliveColumn the source column of the olive
+     * @param hash the source hash
      * @return the number of rows or null if unknown
      */
-    Long read(String filename, int line, int column, int oliveLine, int oliveColumn);
+    Long read(
+        String filename,
+        int line,
+        int column,
+        String hash,
+        String oliveFilename,
+        int oliveLine,
+        int oliveColumn,
+        String oliveHash);
   }
 
   private static final class DeathChecker implements Predicate<OliveClauseRow> {
@@ -270,8 +277,11 @@ public class MetroDiagram {
                                 filename,
                                 clause.line(),
                                 clause.column(),
+                                hash,
+                                filename,
                                 olive.line(),
-                                olive.column())
+                                olive.column(),
+                                hash)
                             : null,
                         new SourceLocation(filename, clause.line(), clause.column(), hash));
                   } catch (XMLStreamException e) {

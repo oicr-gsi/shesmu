@@ -35,7 +35,7 @@ public final class OliveNodeConstant extends OliveNode implements Target {
     builder.defineConstant(
         name,
         body.type().apply(TypeUtils.TO_ASM),
-        method -> body.render(builder.rootRenderer(false, null)));
+        method -> body.render(builder.rootRenderer(false, null, Stream.empty())));
   }
 
   @Override

@@ -134,7 +134,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
 
     join.finish();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override

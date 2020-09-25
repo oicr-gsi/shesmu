@@ -8,7 +8,6 @@ import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
-import ca.on.oicr.gsi.shesmu.compiler.definitions.DefinitionRepository.CallableOliveDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.actions.fake.FakeAction;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
@@ -493,7 +492,7 @@ public class SimulateRequest {
               final ArrayNode overloadedServices = response.putArray("overloadedServices");
               final Map<Pair<Integer, Integer>, Long> durations = new HashMap<>();
 
-              final Map<List<Integer>, AtomicLong> flow = new HashMap<>();
+              final Map<Pair<SourceLocation, SourceLocation>, AtomicLong> flow = new HashMap<>();
               RESULTS.set(response.putObject("refillers"));
               final Map<String, Long> counts = new HashMap<>();
 
@@ -578,10 +577,17 @@ public class SimulateRequest {
                           String filename,
                           int line,
                           int column,
+                          String hash,
+                          String oliveFile,
                           int oliveLine,
-                          int oliveColumn) {
+                          int oliveColumn,
+                          String oliveHash) {
                         final AtomicLong counter = new AtomicLong();
-                        flow.put(Arrays.asList(line, column, oliveLine, oliveColumn), counter);
+                        flow.put(
+                            new Pair<>(
+                                new SourceLocation(filename, line, column, hash),
+                                new SourceLocation(oliveFile, oliveLine, oliveColumn, oliveHash)),
+                            counter);
                         return input.peek(i -> counter.incrementAndGet());
                       }
 
@@ -624,10 +630,23 @@ public class SimulateRequest {
                               olive,
                               counts.get(fileTable.get().format().name()),
                               fileTable.get().format(),
-                              (filename, line, column, oliveLine, oliveColumn) ->
-                                  Optional.of(
+                              (filename,
+                                  line,
+                                  column,
+                                  hash,
+                                  oliveFilename,
+                                  oliveLine,
+                                  oliveColumn,
+                                  oliveHash) ->
+                                  Optional.ofNullable(
                                           flow.get(
-                                              Arrays.asList(line, column, oliveLine, oliveColumn)))
+                                              new Pair<>(
+                                                  new SourceLocation(filename, line, column, hash),
+                                                  new SourceLocation(
+                                                      oliveFilename,
+                                                      oliveLine,
+                                                      oliveColumn,
+                                                      oliveHash))))
                                       .map(AtomicLong::get)
                                       .orElse(null));
                           xmlWriter.writeEndDocument();

@@ -30,6 +30,72 @@ import org.objectweb.asm.commons.Method;
 /** Helper to build bytecode for “olives” (decision-action stanzas) */
 public abstract class BaseOliveBuilder {
 
+  public static void createSignatureInfrastructure(
+      RootBuilder owner,
+      String prefix,
+      InputFormatDefinition inputFormat,
+      List<SignableRenderer> signables,
+      SignatureDefinition signer) {
+    final String name = prefix + signer.name();
+    switch (signer.storage()) {
+      case STATIC:
+        owner.classVisitor.visitField(
+            Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
+            name,
+            signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
+            null,
+            null);
+        signer.build(owner.classInitMethod, inputFormat.type(), signables.stream());
+        owner.classInitMethod.putStatic(
+            owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
+        break;
+      case DYNAMIC:
+        final Method method =
+            new Method(
+                name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
+        final GeneratorAdapter methodGen =
+            new GeneratorAdapter(
+                Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor);
+        methodGen.visitCode();
+        signer.build(methodGen, inputFormat.type(), signables.stream());
+        methodGen.returnValue();
+        methodGen.visitMaxs(0, 0);
+        methodGen.visitEnd();
+        break;
+      default:
+        throw new UnsupportedOperationException();
+    }
+  }
+
+  public static void renderSigner(
+      RootBuilder owner,
+      InputFormatDefinition format,
+      String prefix,
+      SignatureDefinition signer,
+      Renderer renderer) {
+    switch (signer.storage()) {
+      case DYNAMIC:
+        renderer.loadStream();
+        renderer
+            .methodGen()
+            .invokeStatic(
+                owner.selfType(),
+                new Method(
+                    prefix + signer.name(),
+                    signer.type().apply(TypeUtils.TO_ASM),
+                    new Type[] {format.type()}));
+        break;
+      case STATIC:
+        renderer
+            .methodGen()
+            .getStatic(
+                owner.selfType(), prefix + signer.name(), signer.type().apply(TypeUtils.TO_ASM));
+        break;
+      default:
+        throw new UnsupportedOperationException();
+    }
+  }
+
   public static final String ACTION_NAME = "Action Name";
   private static final Type A_BICONSUMER_TYPE = Type.getType(BiConsumer.class);
   private static final Type A_BIFUNCTION_TYPE = Type.getType(BiFunction.class);
@@ -102,7 +168,17 @@ public abstract class BaseOliveBuilder {
       new Method(
           "measureFlow",
           A_STREAM_TYPE,
-          new Type[] {A_STREAM_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, INT_TYPE, INT_TYPE});
+          new Type[] {
+            A_STREAM_TYPE,
+            A_STRING_TYPE,
+            INT_TYPE,
+            INT_TYPE,
+            A_STRING_TYPE,
+            A_STRING_TYPE,
+            INT_TYPE,
+            INT_TYPE,
+            A_STRING_TYPE
+          });
   private static final Method METHOD_PICK =
       new Method(
           "pick",
@@ -144,44 +220,10 @@ public abstract class BaseOliveBuilder {
   private static final Method METHOD_STREAM__PEEK =
       new Method("peek", A_STREAM_TYPE, new Type[] {A_CONSUMER_TYPE});
   public static final String SIGNER_ACCESSOR_NAME = "Signer Accessor";
-
-  public static void createSignatureInfrastructure(
-      RootBuilder owner,
-      String prefix,
-      InputFormatDefinition inputFormat,
-      List<SignableRenderer> signables,
-      SignatureDefinition signer) {
-    final String name = prefix + signer.name();
-    switch (signer.storage()) {
-      case STATIC:
-        owner.classVisitor.visitField(
-            Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
-            name,
-            signer.type().apply(TypeUtils.TO_ASM).getDescriptor(),
-            null,
-            null);
-        signer.build(owner.classInitMethod, inputFormat.type(), signables.stream());
-        owner.classInitMethod.putStatic(
-            owner.selfType(), name, signer.type().apply(TypeUtils.TO_ASM));
-        break;
-      case DYNAMIC:
-        final Method method =
-            new Method(
-                name, signer.type().apply(TypeUtils.TO_ASM), new Type[] {inputFormat.type()});
-        final GeneratorAdapter methodGen =
-            new GeneratorAdapter(
-                Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor);
-        methodGen.visitCode();
-        signer.build(methodGen, inputFormat.type(), signables.stream());
-        methodGen.returnValue();
-        methodGen.visitMaxs(0, 0);
-        methodGen.visitEnd();
-        break;
-      default:
-        throw new UnsupportedOperationException();
-    }
-  }
-
+  public static final String SOURCE_LOCATION_COLUMN = "Source Location Column";
+  public static final String SOURCE_LOCATION_FILE = "Source Location File";
+  public static final String SOURCE_LOCATION_HASH = "Source Location Hash";
+  public static final String SOURCE_LOCATION_LINE = "Source Location Line";
   private Type currentType;
   protected final InputFormatDefinition initialFormat;
   protected final RootBuilder owner;
@@ -217,7 +259,10 @@ public abstract class BaseOliveBuilder {
           loadOliveServices(renderer.methodGen());
           loadInputProvider(renderer.methodGen());
           renderer.emitNamed(ACTION_NAME);
-          loadOwnerSourceLocation(renderer.methodGen());
+          renderer.emitNamed(SOURCE_LOCATION_FILE);
+          renderer.emitNamed(SOURCE_LOCATION_LINE);
+          renderer.emitNamed(SOURCE_LOCATION_COLUMN);
+          renderer.emitNamed(SOURCE_LOCATION_HASH);
           loadAccessor(renderer);
           for (Consumer<Renderer> rendererConsumer : arglist) {
             rendererConsumer.accept(renderer);
@@ -317,6 +362,11 @@ public abstract class BaseOliveBuilder {
               LambdaBuilder.bifunction(newType, oldType, unrollType),
               new LoadableValue() {
                 @Override
+                public void accept(Renderer renderer) {
+                  loadAccessor(renderer);
+                }
+
+                @Override
                 public String name() {
                   return SIGNER_ACCESSOR_NAME;
                 }
@@ -324,11 +374,6 @@ public abstract class BaseOliveBuilder {
                 @Override
                 public Type type() {
                   return A_SIGNATURE_ACCESSOR_TYPE;
-                }
-
-                @Override
-                public void accept(Renderer renderer) {
-                  loadAccessor(renderer);
                 }
               });
 
@@ -537,23 +582,25 @@ public abstract class BaseOliveBuilder {
 
   protected abstract void loadOliveServices(GeneratorAdapter method);
 
-  protected abstract void loadOwnerSourceLocation(GeneratorAdapter method);
-
   protected abstract void loadSigner(SignatureDefinition variable, Renderer renderer);
 
   /** Stream of all the parameters available for capture/use in the clauses. */
   public abstract Stream<LoadableValue> loadableValues();
 
   /** Measure how much data goes through this olive clause. */
-  public final void measureFlow(String filename, int line, int column) {
+  public final void measureFlow(int line, int column) {
     steps.add(
         renderer -> {
           loadOliveServices(renderer.methodGen());
           renderer.methodGen().swap();
-          renderer.methodGen().push(filename);
+          renderer.methodGen().push(owner.sourcePath());
           renderer.methodGen().push(line);
           renderer.methodGen().push(column);
-          loadOwnerSourceLocation(renderer.methodGen());
+          renderer.methodGen().push(owner.hash);
+          renderer.emitNamed(SOURCE_LOCATION_FILE);
+          renderer.emitNamed(SOURCE_LOCATION_LINE);
+          renderer.emitNamed(SOURCE_LOCATION_COLUMN);
+          renderer.emitNamed(SOURCE_LOCATION_HASH);
           renderer
               .methodGen()
               .invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__MEASURE_FLOW);
@@ -929,34 +976,5 @@ public abstract class BaseOliveBuilder {
         newRenderer,
         collectedRenderer,
         capturedVariables.length + collectorBuilderType.parameters());
-  }
-
-  public static void renderSigner(
-      RootBuilder owner,
-      InputFormatDefinition format,
-      String prefix,
-      SignatureDefinition signer,
-      Renderer renderer) {
-    switch (signer.storage()) {
-      case DYNAMIC:
-        renderer.loadStream();
-        renderer
-            .methodGen()
-            .invokeStatic(
-                owner.selfType(),
-                new Method(
-                    prefix + signer.name(),
-                    signer.type().apply(TypeUtils.TO_ASM),
-                    new Type[] {format.type()}));
-        break;
-      case STATIC:
-        renderer
-            .methodGen()
-            .getStatic(
-                owner.selfType(), prefix + signer.name(), signer.type().apply(TypeUtils.TO_ASM));
-        break;
-      default:
-        throw new UnsupportedOperationException();
-    }
   }
 }

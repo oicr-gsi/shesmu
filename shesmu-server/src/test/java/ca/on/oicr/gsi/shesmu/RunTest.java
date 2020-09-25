@@ -106,7 +106,15 @@ public class RunTest {
 
     @Override
     public <T> Stream<T> measureFlow(
-        Stream<T> input, String filename, int line, int column, int oliveLine, int oliveColumn) {
+        Stream<T> input,
+        String filename,
+        int line,
+        int column,
+        String hash,
+        String oliveFile,
+        int oliveLine,
+        int oliveColumn,
+        String oliveHash) {
       return input;
     }
 

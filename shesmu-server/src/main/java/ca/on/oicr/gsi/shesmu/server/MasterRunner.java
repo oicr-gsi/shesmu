@@ -98,9 +98,21 @@ public class MasterRunner {
                 String filename,
                 int line,
                 int column,
+                String hash,
+                String oliveFile,
                 int oliveLine,
-                int oliveColumn) {
-              return services.measureFlow(input, filename, line, column, oliveLine, oliveColumn);
+                int oliveColumn,
+                String oliveHash) {
+              return services.measureFlow(
+                  input,
+                  filename,
+                  line,
+                  column,
+                  hash,
+                  oliveFile,
+                  oliveLine,
+                  oliveColumn,
+                  oliveHash);
             }
 
             @Override

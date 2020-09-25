@@ -1,5 +1,9 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.*;
+import static org.objectweb.asm.Type.*;
+import static org.objectweb.asm.Type.INT_TYPE;
+
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionParameterDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
@@ -7,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
 public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
 
@@ -131,6 +137,10 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
     annotations.forEach(
         annotation -> annotation.collectFreeVariables(freeVariables, Flavour::needsCapture));
     ttl.collectFreeVariables(freeVariables, Flavour::needsCapture);
+    freeVariables.add(SOURCE_LOCATION_FILE);
+    freeVariables.add(SOURCE_LOCATION_LINE);
+    freeVariables.add(SOURCE_LOCATION_COLUMN);
+    freeVariables.add(SOURCE_LOCATION_HASH);
   }
 
   @Override
@@ -209,16 +219,33 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
     renderer.methodGen().storeLocal(ttlLocal);
 
     loadOliveServices.accept(renderer);
-    OliveBuilder.emitAlert(
-        renderer.methodGen(),
-        labelLocal,
-        annotationLocal,
-        ttlLocal,
-        renderer.root().sourcePath(),
-        line,
-        column,
-        renderer.root().hash);
+    renderer.methodGen().loadLocal(labelLocal);
+    renderer.methodGen().loadLocal(annotationLocal);
+    renderer.methodGen().loadLocal(ttlLocal);
+    renderer.emitNamed(SOURCE_LOCATION_FILE);
+    renderer.emitNamed(SOURCE_LOCATION_LINE);
+    renderer.emitNamed(SOURCE_LOCATION_COLUMN);
+    renderer.emitNamed(SOURCE_LOCATION_HASH);
+    renderer
+        .methodGen()
+        .invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_OLIVE_SERVICES__ACCEPT_ALERT);
+    renderer.methodGen().pop();
   }
+
+  private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(OliveServices.class);
+  private static final Method METHOD_OLIVE_SERVICES__ACCEPT_ALERT =
+      new Method(
+          "accept",
+          BOOLEAN_TYPE,
+          new Type[] {
+            A_STRING_ARRAY_TYPE,
+            A_STRING_ARRAY_TYPE,
+            LONG_TYPE,
+            A_STRING_TYPE,
+            INT_TYPE,
+            INT_TYPE,
+            A_STRING_TYPE
+          });
 
   @Override
   public void render(RootBuilder builder, Renderer renderer) {

@@ -125,7 +125,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
 
     flattenBuilder.finish();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override

@@ -299,7 +299,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     children.forEach(group -> group.render(regrouperForChildren, builder));
     regroup.finish();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
     // We have now thoroughly hosed equals and hashCode in the output. If the next clause was
     // another grouper and it tried to stick things in a hashmap, everything might be endless
     // suffering. So, we make a hidden 1:1 let clause to stop the chaos.

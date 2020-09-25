@@ -217,8 +217,10 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                                                       OliveServices.class,
                                                       InputProvider.class,
                                                       Optional.class,
+                                                      String.class,
                                                       int.class,
                                                       int.class,
+                                                      String.class,
                                                       SignatureAccessor.class),
                                                   parameters.stream().map(Imyhat::javaType))
                                               .toArray(Class[]::new)))

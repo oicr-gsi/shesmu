@@ -11,8 +11,10 @@ import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.runtime.OliveServices;
 import java.lang.invoke.LambdaMetafactory;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassVisitor;
@@ -111,26 +113,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
     signerClass.visitEnd();
   }
 
-  public static void emitAlert(
-      GeneratorAdapter methodGen,
-      int labelLocal,
-      int annotationLocal,
-      int ttlLocal,
-      String filename,
-      int column,
-      int line,
-      String hash) {
-    methodGen.loadLocal(labelLocal);
-    methodGen.loadLocal(annotationLocal);
-    methodGen.loadLocal(ttlLocal);
-    methodGen.push(filename);
-    methodGen.push(column);
-    methodGen.push(line);
-    methodGen.push(hash);
-    methodGen.invokeInterface(A_ACTION_CONSUMER_TYPE, METHOD_OLIVE_SERVICES__ACCEPT_ALERT);
-    methodGen.pop();
-  }
-
   private static final Type A_ACTION_CONSUMER_TYPE = Type.getType(OliveServices.class);
   private static final Type A_ACTION_TYPE = Type.getType(Action.class);
   private static final Type A_REFILLER_TYPE = Type.getType(Refiller.class);
@@ -154,19 +136,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
           new Type[] {
             A_ACTION_TYPE, A_STRING_TYPE, INT_TYPE, INT_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE
           });
-  private static final Method METHOD_OLIVE_SERVICES__ACCEPT_ALERT =
-      new Method(
-          "accept",
-          BOOLEAN_TYPE,
-          new Type[] {
-            A_STRING_ARRAY_TYPE,
-            A_STRING_ARRAY_TYPE,
-            LONG_TYPE,
-            A_STRING_TYPE,
-            INT_TYPE,
-            INT_TYPE,
-            A_STRING_TYPE
-          });
+
   private static final Method METHOD_OLIVE_SERVICES__OLIVE_RUNTIME =
       new Method(
           "oliveRuntime", VOID_TYPE, new Type[] {A_STRING_TYPE, INT_TYPE, INT_TYPE, LONG_TYPE});
@@ -183,6 +153,75 @@ public final class OliveBuilder extends BaseOliveBuilder {
   private boolean hasAccessor;
   private final int line;
   private final String signerPrefix;
+  private final List<LoadableValue> sourceLocationLoadableValues =
+      Arrays.asList(
+          new LoadableValue() {
+            @Override
+            public void accept(Renderer renderer) {
+              renderer.methodGen().push(owner.sourcePath());
+            }
+
+            @Override
+            public String name() {
+              return SOURCE_LOCATION_FILE;
+            }
+
+            @Override
+            public Type type() {
+              return A_STRING_TYPE;
+            }
+          },
+          new LoadableValue() {
+
+            @Override
+            public void accept(Renderer renderer) {
+              renderer.methodGen().push(line);
+            }
+
+            @Override
+            public String name() {
+              return SOURCE_LOCATION_LINE;
+            }
+
+            @Override
+            public Type type() {
+              return INT_TYPE;
+            }
+          },
+          new LoadableValue() {
+
+            @Override
+            public void accept(Renderer renderer) {
+              renderer.methodGen().push(column);
+            }
+
+            @Override
+            public String name() {
+              return SOURCE_LOCATION_COLUMN;
+            }
+
+            @Override
+            public Type type() {
+              return INT_TYPE;
+            }
+          },
+          new LoadableValue() {
+
+            @Override
+            public void accept(Renderer renderer) {
+              renderer.methodGen().push(owner.hash);
+            }
+
+            @Override
+            public String name() {
+              return SOURCE_LOCATION_HASH;
+            }
+
+            @Override
+            public Type type() {
+              return A_STRING_TYPE;
+            }
+          });
 
   public OliveBuilder(
       RootBuilder owner,
@@ -231,7 +270,8 @@ public final class OliveBuilder extends BaseOliveBuilder {
   }
 
   private void finish(Consumer<Renderer> finishStream) {
-    final Renderer runMethod = owner.rootRenderer(true, actionName);
+    final Renderer runMethod =
+        owner.rootRenderer(true, actionName, sourceLocationLoadableValues.stream());
     final int startTime = runMethod.methodGen().newLocal(LONG_TYPE);
     runMethod.methodGen().invokeStatic(A_SYSTEM_TYPE, METHOD_SYSTEM__NANO_TIME);
     runMethod.methodGen().storeLocal(startTime);
@@ -246,22 +286,25 @@ public final class OliveBuilder extends BaseOliveBuilder {
                 owner.rootRenderer(
                     true,
                     actionName,
-                    new LoadableValue() {
-                      @Override
-                      public String name() {
-                        return SIGNER_ACCESSOR_NAME;
-                      }
+                    Stream.concat(
+                        sourceLocationLoadableValues.stream(),
+                        Stream.of(
+                            new LoadableValue() {
+                              @Override
+                              public void accept(Renderer renderer) {
+                                loadAccessor(renderer);
+                              }
 
-                      @Override
-                      public Type type() {
-                        return A_SIGNATURE_ACCESSOR_TYPE;
-                      }
+                              @Override
+                              public String name() {
+                                return SIGNER_ACCESSOR_NAME;
+                              }
 
-                      @Override
-                      public void accept(Renderer renderer) {
-                        loadAccessor(renderer);
-                      }
-                    })));
+                              @Override
+                              public Type type() {
+                                return A_SIGNATURE_ACCESSOR_TYPE;
+                              }
+                            })))));
 
     runMethod.methodGen().dup();
     finishStream.accept(runMethod);
@@ -287,7 +330,7 @@ public final class OliveBuilder extends BaseOliveBuilder {
             owner,
             String.format("%s %d:%d", actionType, line, column),
             LambdaBuilder.consumer(currentType()),
-            Stream.concat(
+            Stream.of(
                     Stream.of(
                         new LoadableValue() {
                           @Override
@@ -305,7 +348,9 @@ public final class OliveBuilder extends BaseOliveBuilder {
                             return A_ACTION_CONSUMER_TYPE;
                           }
                         }),
+                    sourceLocationLoadableValues.stream(),
                     captures)
+                .flatMap(Function.identity())
                 .toArray(LoadableValue[]::new));
     finish(
         runMethod -> {
@@ -366,12 +411,6 @@ public final class OliveBuilder extends BaseOliveBuilder {
   }
 
   @Override
-  protected void loadOwnerSourceLocation(GeneratorAdapter method) {
-    method.push(line);
-    method.push(column);
-  }
-
-  @Override
   protected void loadSigner(SignatureDefinition signer, Renderer renderer) {
     switch (signer.storage()) {
       case STATIC:
@@ -409,7 +448,10 @@ public final class OliveBuilder extends BaseOliveBuilder {
 
   @Override
   public Stream<LoadableValue> loadableValues() {
-    return Stream.concat(
-        owner.constants(true), Stream.of(RootBuilder.actionNameSpecial(actionName)));
+    return Stream.of(
+            owner.constants(true),
+            Stream.of(RootBuilder.actionNameSpecial(actionName)),
+            sourceLocationLoadableValues.stream())
+        .flatMap(Function.identity());
   }
 }

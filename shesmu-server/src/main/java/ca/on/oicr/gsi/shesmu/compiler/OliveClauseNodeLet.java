@@ -112,7 +112,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
     let.finish();
     if (arguments.stream().anyMatch(LetArgumentNode::filters)) {
       oliveBuilder.filterNonNull();
-      oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+      oliveBuilder.measureFlow(line, column);
     }
   }
 

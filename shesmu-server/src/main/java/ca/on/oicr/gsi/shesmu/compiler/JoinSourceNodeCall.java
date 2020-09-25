@@ -1,6 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.ACTION_NAME;
+import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.*;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
@@ -107,7 +107,10 @@ public class JoinSourceNodeCall extends JoinSourceNode {
         oliveBuilder.loadOliveServices(renderer.methodGen());
         oliveBuilder.loadInputProvider(renderer.methodGen());
         renderer.emitNamed(ACTION_NAME);
-        oliveBuilder.loadOwnerSourceLocation(renderer.methodGen());
+        renderer.emitNamed(SOURCE_LOCATION_FILE);
+        renderer.emitNamed(SOURCE_LOCATION_LINE);
+        renderer.emitNamed(SOURCE_LOCATION_COLUMN);
+        renderer.emitNamed(SOURCE_LOCATION_HASH);
         renderer.methodGen().newInstance(accessorType);
         renderer.methodGen().dup();
         renderer.methodGen().invokeConstructor(accessorType, CTOR_DEFAULT);

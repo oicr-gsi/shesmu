@@ -331,9 +331,21 @@ public final class Server implements ServerConfig, ActionServices {
                   String filename,
                   int line,
                   int column,
+                  String hash,
+                  String oliveFile,
                   int oliveLine,
-                  int oliveColumn) {
-                return processor.measureFlow(input, filename, line, column, oliveLine, oliveColumn);
+                  int oliveColumn,
+                  String oliveHash) {
+                return processor.measureFlow(
+                    input,
+                    filename,
+                    line,
+                    column,
+                    hash,
+                    oliveFile,
+                    oliveLine,
+                    oliveColumn,
+                    oliveHash);
               }
 
               @Override

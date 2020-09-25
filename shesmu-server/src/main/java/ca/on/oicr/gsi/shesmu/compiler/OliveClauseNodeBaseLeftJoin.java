@@ -294,7 +294,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
 
     leftJoin.second().finish();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override
