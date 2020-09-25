@@ -18,41 +18,45 @@ import org.objectweb.asm.commons.Method;
 /** Creates bytecode for a “Define”-style olive to be used in call clauses */
 public final class OliveDefineBuilder extends BaseOliveBuilder
     implements CallableDefinitionRenderer {
+  private static class ParameterLoadableValue extends LoadableValue {
+    private final int index;
+    private final String name;
+    private final Type type;
+
+    private ParameterLoadableValue(int index, String name, Type type) {
+      this.index = index;
+      this.name = name;
+      this.type = type;
+    }
+
+    @Override
+    public void accept(Renderer renderer) {
+      renderer.methodGen().loadArg(index);
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public Type type() {
+      return type;
+    }
+  }
 
   public static final LoadableValue ACTION_NAME_LOADABLE_VALUE =
-      new LoadableValue() {
-        @Override
-        public String name() {
-          return ACTION_NAME;
-        }
-
-        @Override
-        public Type type() {
-          return A_OPTIONAL_TYPE;
-        }
-
-        @Override
-        public void accept(Renderer renderer) {
-          renderer.methodGen().loadArg(3);
-        }
-      };
+      new ParameterLoadableValue(3, ACTION_NAME, A_OPTIONAL_TYPE);
   public static final LoadableValue SIGNER_ACCESSOR_LOADABLE_VALUE =
-      new LoadableValue() {
-        @Override
-        public String name() {
-          return SIGNER_ACCESSOR_NAME;
-        }
-
-        @Override
-        public Type type() {
-          return A_SIGNATURE_ACCESSOR_TYPE;
-        }
-
-        @Override
-        public void accept(Renderer renderer) {
-          renderer.methodGen().loadArg(6);
-        }
-      };
+      new ParameterLoadableValue(8, SIGNER_ACCESSOR_NAME, A_SIGNATURE_ACCESSOR_TYPE);
+  public static final LoadableValue SOURCE_LOCATION_COLUMN_LOADABLE_VALUE =
+      new ParameterLoadableValue(6, SOURCE_LOCATION_COLUMN, Type.INT_TYPE);
+  public static final LoadableValue SOURCE_LOCATION_FILE_LOADABLE_VALUE =
+      new ParameterLoadableValue(4, SOURCE_LOCATION_FILE, A_STRING_TYPE);
+  public static final LoadableValue SOURCE_LOCATION_HASH_LOADABLE_VALUE =
+      new ParameterLoadableValue(7, SOURCE_LOCATION_HASH, A_STRING_TYPE);
+  public static final LoadableValue SOURCE_LOCATION_LINE_LOADABLE_VALUE =
+      new ParameterLoadableValue(5, SOURCE_LOCATION_LINE, Type.INT_TYPE);
   private final Method method;
   private final String name;
   private final List<LoadableValue> parameters;
@@ -64,7 +68,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
     this.name = name;
     this.parameters =
         parameters
-            .map(Pair.number(7))
+            .map(Pair.number(9))
             .map(Pair.transform(LoadParameter::new))
             .collect(Collectors.toList());
     method =
@@ -77,8 +81,10 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
                         A_OLIVE_SERVICES_TYPE,
                         A_INPUT_PROVIDER_TYPE,
                         A_OPTIONAL_TYPE,
+                        A_STRING_TYPE,
                         Type.INT_TYPE,
                         Type.INT_TYPE,
+                        A_STRING_TYPE,
                         A_SIGNATURE_ACCESSOR_TYPE),
                     this.parameters.stream().map(LoadableValue::type))
                 .toArray(Type[]::new));
@@ -176,7 +182,13 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
             new GeneratorAdapter(Opcodes.ACC_PUBLIC, method, null, null, owner.classVisitor),
             Stream.concat(
                 parameters.stream(),
-                Stream.of(ACTION_NAME_LOADABLE_VALUE, SIGNER_ACCESSOR_LOADABLE_VALUE)),
+                Stream.of(
+                    ACTION_NAME_LOADABLE_VALUE,
+                    SIGNER_ACCESSOR_LOADABLE_VALUE,
+                    SOURCE_LOCATION_FILE_LOADABLE_VALUE,
+                    SOURCE_LOCATION_LINE_LOADABLE_VALUE,
+                    SOURCE_LOCATION_COLUMN_LOADABLE_VALUE,
+                    SOURCE_LOCATION_HASH_LOADABLE_VALUE)),
             this::emitSigner);
     renderer.methodGen().visitCode();
     renderer.methodGen().loadArg(0);
@@ -214,12 +226,6 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
   }
 
   @Override
-  protected void loadOwnerSourceLocation(GeneratorAdapter method) {
-    method.loadArg(4);
-    method.loadArg(5);
-  }
-
-  @Override
   protected void loadSigner(SignatureDefinition signer, Renderer renderer) {
     final String name = signerPrefix + signer.name();
     renderer.methodGen().loadThis();
@@ -229,7 +235,13 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
   @Override
   public Stream<LoadableValue> loadableValues() {
     return Stream.of(
-            Stream.of(ACTION_NAME_LOADABLE_VALUE, SIGNER_ACCESSOR_LOADABLE_VALUE),
+            Stream.of(
+                ACTION_NAME_LOADABLE_VALUE,
+                SIGNER_ACCESSOR_LOADABLE_VALUE,
+                SOURCE_LOCATION_FILE_LOADABLE_VALUE,
+                SOURCE_LOCATION_LINE_LOADABLE_VALUE,
+                SOURCE_LOCATION_COLUMN_LOADABLE_VALUE,
+                SOURCE_LOCATION_HASH_LOADABLE_VALUE),
             parameters.stream(),
             owner.constants(true))
         .flatMap(Function.identity());

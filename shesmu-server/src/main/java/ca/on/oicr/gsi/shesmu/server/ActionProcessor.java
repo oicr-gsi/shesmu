@@ -393,7 +393,15 @@ public final class ActionProcessor
   public static final Gauge OLIVE_FLOW =
       Gauge.build(
               "shesmu_olive_data_flow", "The number of items passing through each olive clause.")
-          .labelNames("filename", "line", "column", "olive_line", "olive_column")
+          .labelNames(
+              "filename",
+              "line",
+              "column",
+              "hash",
+              "olive_file",
+              "olive_line",
+              "olive_column",
+              "olive_hash")
           .register();
   private static final Gauge OLIVE_RUN_TIME =
       Gauge.build("shesmu_olive_run_time", "The runtime of an olive in seconds.")
@@ -1040,14 +1048,25 @@ public final class ActionProcessor
 
   @Override
   public <T> Stream<T> measureFlow(
-      Stream<T> input, String fileName, int line, int column, int oliveLine, int oliveColumn) {
+      Stream<T> input,
+      String fileName,
+      int line,
+      int column,
+      String hash,
+      String oliveFile,
+      int oliveLine,
+      int oliveColumn,
+      String oliveHash) {
     final Gauge.Child child =
         OLIVE_FLOW.labels(
             fileName,
             Integer.toString(line),
             Integer.toString(column),
+            hash,
+            oliveFile,
             Integer.toString(oliveLine),
-            Integer.toString(oliveColumn));
+            Integer.toString(oliveColumn),
+            oliveHash);
     final AtomicLong counter = new AtomicLong();
     return input.peek(x -> counter.incrementAndGet()).onClose(() -> child.set(counter.get()));
   }
@@ -1103,15 +1122,26 @@ public final class ActionProcessor
   }
 
   @Override
-  public Long read(String filename, int line, int column, int oliveLine, int oliveColumn) {
+  public Long read(
+      String filename,
+      int line,
+      int column,
+      String hash,
+      String oliveFilename,
+      int oliveLine,
+      int oliveColumn,
+      String oliveHash) {
     return (long)
         OLIVE_FLOW
             .labels(
                 filename,
                 Integer.toString(line),
                 Integer.toString(column),
+                hash,
+                oliveFilename,
                 Integer.toString(oliveLine),
-                Integer.toString(oliveColumn))
+                Integer.toString(oliveColumn),
+                oliveHash)
             .get();
   }
 

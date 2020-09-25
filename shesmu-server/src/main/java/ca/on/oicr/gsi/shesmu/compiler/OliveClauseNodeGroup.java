@@ -179,7 +179,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
     children.forEach(group -> group.render(regrouperForChildren, builder));
     regroup.finish();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override

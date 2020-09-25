@@ -438,14 +438,11 @@ public abstract class RootBuilder {
    * <p>No stream variables are available in this context
    */
   public final Renderer rootRenderer(
-      boolean allowUserDefined, String actionName, LoadableValue... captures) {
+      boolean allowUserDefined, String actionName, Stream<LoadableValue> captures) {
     return new RendererNoStream(
         this,
         runMethod,
-        Stream.of(
-                constants(allowUserDefined),
-                Stream.of(actionNameSpecial(actionName)),
-                Stream.of(captures))
+        Stream.of(constants(allowUserDefined), Stream.of(actionNameSpecial(actionName)), captures)
             .flatMap(Function.identity()),
         RootBuilder::invalidSignerEmitter);
   }

@@ -129,7 +129,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
     extractorMethod.methodGen().visitMaxs(0, 0);
     extractorMethod.methodGen().visitEnd();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override

@@ -23,7 +23,15 @@ public interface OliveServices {
   boolean isOverloaded(String... services);
 
   <T> Stream<T> measureFlow(
-      Stream<T> input, String filename, int line, int column, int oliveLine, int oliveColumn);
+      Stream<T> input,
+      String filename,
+      int line,
+      int column,
+      String hash,
+      String oliveFile,
+      int oliveLine,
+      int oliveColumn,
+      String oliveHash);
 
   void oliveRuntime(String filename, int line, int column, long timeInNs);
 }

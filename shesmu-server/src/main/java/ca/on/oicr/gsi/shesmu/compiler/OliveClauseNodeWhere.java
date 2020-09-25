@@ -99,7 +99,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
     filter.methodGen().visitMaxs(0, 0);
     filter.methodGen().visitEnd();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override

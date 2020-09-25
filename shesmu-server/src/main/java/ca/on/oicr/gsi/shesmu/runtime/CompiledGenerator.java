@@ -304,8 +304,10 @@ public class CompiledGenerator implements DefinitionRepository {
                                 A_OLIVE_SERVICES_TYPE,
                                 A_INPUT_PROVIDER_TYPE,
                                 A_OPTIONAL_TYPE,
+                                A_STRING_TYPE,
                                 Type.INT_TYPE,
                                 Type.INT_TYPE,
+                                A_STRING_TYPE,
                                 A_SIGNATURE_ACCESSOR_TYPE),
                             parameterTypes.stream().map(t -> t.apply(TO_ASM)))
                         .toArray(Type[]::new)),

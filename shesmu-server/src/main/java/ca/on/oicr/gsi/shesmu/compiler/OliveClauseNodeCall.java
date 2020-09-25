@@ -4,7 +4,6 @@ import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -82,7 +81,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
     oliveBuilder.call(
         definitions.apply(name), arguments.stream().map(argument -> argument::render));
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override

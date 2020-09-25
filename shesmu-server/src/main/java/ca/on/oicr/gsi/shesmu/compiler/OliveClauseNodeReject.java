@@ -135,7 +135,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
 
-    oliveBuilder.measureFlow(builder.sourcePath(), line, column);
+    oliveBuilder.measureFlow(line, column);
   }
 
   @Override
