@@ -70,8 +70,7 @@ a.button:visited {
 
 .button,
 a.button,
-.dropdown,
-.tablemenucapture > div {
+.dropdown {
   margin: 0.2em;
   padding: 0.4em;
   border: 1px solid var(--widget-lowlight);
@@ -83,14 +82,47 @@ a.button,
 a.button {
   text-decoration: none;
 }
-
-.dropdown,
-.tablemenucapture > div {
-  color: var(--widget-negative);
-  background-color: var(--widget-lowlight);
+.menu,
+.tablemenu,
+.help {
+  z-index: 1001;
+  position: absolute;
+  overflow: auto;
+  border-radius: 0.2em;
+  max-height: 80vh;
+  border: 1px solid var(--widget-text);
+  margin: 0px;
 }
-.tablemenucapture > div {
+.tablemenu,
+.help {
+  padding: 1em;
+}
+.help {
+  max-width: 80vw;
+  background-color: var(--widget-negative);
+}
+.menu,
+.tablemenu {
+  max-width: 50vw;
+  background-color: var(--widget-negative);
+  color: var(--widget-text);
+}
+.tablemenu {
   font-weight: bold;
+}
+
+.menu > * {
+  color: var(--widget-lowlight);
+  background-color: var(--widget-negative);
+  display: block;
+  padding: 0.5em;
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
+
+.menu > span:hover {
+  background-color: var(--widget-highlight);
+  color: var(--widget-negative);
 }
 
 .button.accessory,
@@ -105,11 +137,12 @@ a.button.accessory:visited {
 }
 
 .button.accessory:hover,
-a.button.accessory:hover,
-.dropdown:hover {
+a.button.accessory:hover {
   background-color: var(--widget-highlight);
 }
-
+.dropdown:hover {
+  background-color: var(--widget-shadow);
+}
 .button.accessory,
 a.button.accessory:link,
 a.button.accessory:visited {
@@ -118,8 +151,7 @@ a.button.accessory:visited {
   border-color: var(--widget-lowlight);
 }
 
-.button.accessory.active
-{
+.button.accessory.active {
   background-color: var(--widget-lowlight);
   background-image: linear-gradient(
     to bottom,
@@ -129,7 +161,7 @@ a.button.accessory:visited {
   color: var(--widget-negative);
 }
 
-.button.accessory.active:hover{
+.button.accessory.active:hover {
   background-color: var(--widget-lowlight);
   background-image: linear-gradient(
     to bottom,
@@ -177,7 +209,6 @@ a.button.regular:visited,
   );
 }
 
-
 .button.danger,
 a.button.danger:link,
 a.button.danger:visited {
@@ -218,28 +249,15 @@ a.button.danger:visited {
   font-size: 90%;
 }
 
-.dropdowncapture > div > *,
-.tablemenucapture > div {
-  position: absolute;
-  display: block;
-  max-width: 50vw;
-  color: var(--widget-lowlight);
-  background-color: var(--widget-negative);
-  padding: 0.5em;
-}
-
-.dropdowncapture > div > * {
-  overflow-wrap: break-word;
-  word-break: break-all;
-}
-
-.dropdowncapture > div > span:hover {
-  background-color: var(--widget-highlight);
-  color: var(--widget-negative);
-}
-
-.tablemenucapture table {
+.tablemenu table {
   width: auto;
+}
+.tablemenu p {
+  cursor: default;
+}
+
+.tablemenu p:hover {
+  background-color: #f5f5f5;
 }
 
 .olivesearch input {
@@ -719,11 +737,8 @@ a.button.danger:visited {
 }
 
 .modal,
-.dropdowncapture,
-.menucapture,
-.tablemenucapture,
-.helpcapture {
-  position: fixed;
+.capture {
+  position: absolute;
   z-index: 1000;
   left: 0;
   top: 0;
@@ -764,17 +779,7 @@ a.button.danger:visited {
   max-height: 85vh;
 }
 
-.menucapture > div,
-.helpcapture > div {
-  position: absolute;
-  background: var(--widget-negative);
-  border: 1px solid var(--widget-text);
-  border-radius: 0.1em;
-  max-height: 80%;
-  max-width: 80%;
-  overflow: auto;
-}
-.menucapture > div > span {
+.menu > span {
   color: var(--widget-text);
   background-color: var(--widget-negative);
   padding: 0.5em;
@@ -782,7 +787,7 @@ a.button.danger:visited {
   display: block;
 }
 
-.menucapture > div > span:hover {
+.menu > span:hover {
   color: var(--widget-negative);
   background-color: var(--widget-highlight);
 }
@@ -790,10 +795,10 @@ a.button.danger:visited {
 th {
   color: grey;
 }
-.helpcapture > div {
+.help {
   padding: 1em;
 }
-.helpcapture hr {
+.help hr {
   border: 1px solid var(--dialog-border);
   width: 1px;
   height: 1px;
@@ -843,13 +848,6 @@ div.editor {
 
 table.errors {
   width: 100%;
-}
-
-.tablemenucapture div.olivelist {
-  margin-top: 1em;
-  max-height: 80vh;
-  overflow-y: auto;
-  cursor: default;
 }
 
 .vertical {
@@ -913,7 +911,7 @@ img.deadolive {
 }
 
 .filters > div {
-  margin:.2em;
-  border:1px dotted var(--widget-highlight);
-  padding:.5em
+  margin: 0.2em;
+  border: 1px dotted var(--widget-highlight);
+  padding: 0.5em;
 }
