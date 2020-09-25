@@ -248,6 +248,7 @@ export function initialiseOliveDash(
   const container = document.getElementById("olives")!;
   const filenameFormatter = commonPathPrefix(oliveFiles.map((f) => f.file));
   const dashboardState = historyState(
+    "olivedash",
     {
       alert: loadFilterRegex(alertFilters || []),
       saved: saved,
