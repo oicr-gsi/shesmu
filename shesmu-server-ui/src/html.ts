@@ -7,7 +7,10 @@ import {
   mapModel,
   shuffle,
   filterModel,
+  SourceLocation,
 } from "./util.js";
+import { BasicQuery } from "./actionfilters.js";
+import { AlertFilter } from "./alert.js";
 /**
  * A function to render an item that can handle click events.
  */
@@ -125,6 +128,23 @@ export type NamedComponents<T> = {
   [P in keyof T]: UIElement;
 };
 
+/**
+ * The request parameters for Shesmu UI pages
+ */
+export interface ShesmuLinks {
+  actiondash: {
+    filters: BasicQuery | string;
+    saved: string;
+  };
+  alerts: {
+    filters: AlertFilter<RegExp>[];
+  };
+  olivedash: {
+    alert: AlertFilter<RegExp>[];
+    saved: SourceLocation | null;
+    filters: BasicQuery | string;
+  };
+}
 /**
  * A callback that is capable of listening to updates in the state synchronizer.
  * @param state the new state
@@ -1052,18 +1072,20 @@ export function hiddenOnNull<T>(
 }
 /**
  * Create a way to synchronize the browser history with an object
+ * @param url the URL to link back to
  * @param initial the state to use on start up
  * @param title a function to produce a title; this isn't displayed anywhere, but might be in the future according to Mozilla
  */
-export function historyState<T extends { [name: string]: any }>(
-  initial: T,
-  title: (input: T) => string
-): StateSynchronizer<T> {
-  let listener: StateListener<T> = null;
+export function historyState<R extends keyof ShesmuLinks>(
+  url: R,
+  initial: ShesmuLinks[R],
+  title: (input: ShesmuLinks[R]) => string
+): StateSynchronizer<ShesmuLinks[R]> {
+  let listener: StateListener<ShesmuLinks[R]> = null;
   let current = initial;
   window.addEventListener("popstate", (e) => {
     if (e.state) {
-      current = e.state as T;
+      current = e.state as ShesmuLinks[R];
       if (listener) {
         listener(current, false);
       }
@@ -1072,13 +1094,13 @@ export function historyState<T extends { [name: string]: any }>(
 
   return {
     reload: () => {},
-    statusChanged: (input: T) => {
+    statusChanged: (input: ShesmuLinks[R]) => {
       if (input != current) {
         current = input;
         window.history.pushState(
           { ...input },
           title(input),
-          makeUrl(window.location.pathname, input)
+          makeUrl(url, input)
         );
         if (listener) {
           listener(current, true);
@@ -1087,10 +1109,10 @@ export function historyState<T extends { [name: string]: any }>(
     },
     statusFailed: (message, _retry) => console.log(message),
     statusWaiting: () => {},
-    get(): T {
+    get(): ShesmuLinks[R] {
       return current;
     },
-    listen: (newListener: StateListener<T>) => {
+    listen: (newListener: StateListener<ShesmuLinks[R]>) => {
       listener = newListener;
       if (listener) {
         listener(current, false);
@@ -1301,9 +1323,9 @@ export function link(
  * @param url the base URL
  * @param parameters the parameters to supply; they will be JSON-encoded
  */
-export function makeUrl(
-  url: string,
-  parameters: { [name: string]: any }
+export function makeUrl<R extends keyof ShesmuLinks>(
+  url: R,
+  parameters: ShesmuLinks[R]
 ): string {
   return (
     url +

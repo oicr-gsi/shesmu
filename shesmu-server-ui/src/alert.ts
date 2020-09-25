@@ -564,6 +564,7 @@ export function initialiseAlertDashboard(
   } else {
     const filterState = synchronizerFields(
       historyState(
+        "alerts",
         {
           filters: loadFilterRegex(initialFilters),
         },
