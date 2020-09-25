@@ -862,7 +862,7 @@ export function dropdownTable<T, S>(
   container.element.addEventListener(
     "click",
     popup(
-      "tablemenucapture",
+      "tablemenu",
       true,
       (close) =>
         items.length == 0
@@ -1600,7 +1600,7 @@ export function popup(
   return (e) => {
     e.stopPropagation();
     const modal = document.createElement("div");
-    modal.className = className;
+    modal.className = "capture";
     document.body.appendChild(modal);
     const inner = createUiFromTag(
       "div",
@@ -1608,29 +1608,38 @@ export function popup(
         if (modal.isConnected) {
           document.body.removeChild(modal);
         }
+        if (inner.element.isConnected) {
+          document.body.removeChild(inner.element);
+        }
         afterClose();
       })
     );
-    modal.appendChild(inner.element);
-    if (underOwner && e.currentTarget instanceof HTMLElement) {
-      inner.element.style.left = `${e.currentTarget.offsetLeft}px`;
-      inner.element.style.top = `${e.currentTarget.offsetTop +
-        e.currentTarget.offsetHeight}px`;
-    } else {
-      inner.element.style.left = `${Math.min(
-        e.clientX,
-        document.body.clientWidth - inner.element.offsetWidth - 10
-      )}px`;
-      inner.element.style.top = `${Math.min(
-        e.clientY,
-        document.body.clientHeight - inner.element.offsetHeight - 10
-      )}px`;
-    }
+    inner.element.className = className;
+    document.body.appendChild(inner.element);
+    const { x, y } =
+      underOwner && e.currentTarget instanceof HTMLElement
+        ? {
+            x: e.currentTarget.offsetLeft,
+            y: e.currentTarget.offsetTop + e.currentTarget.offsetHeight,
+          }
+        : { x: e.pageX, y: e.pageY };
+    inner.element.style.left = `${Math.min(
+      x,
+      document.body.clientWidth - inner.element.offsetWidth - 10
+    )}px`;
+    inner.element.style.top = `${Math.min(
+      y,
+      document.body.clientHeight - inner.element.offsetHeight - 10
+    )}px`;
+
     inner.element.addEventListener("click", (e) => e.stopPropagation());
     modal.addEventListener("click", (e) => {
       e.stopPropagation();
       if (modal.isConnected) {
         document.body.removeChild(modal);
+      }
+      if (inner.element.isConnected) {
+        document.body.removeChild(inner.element);
       }
       afterClose();
     });
@@ -1649,7 +1658,7 @@ export function popupMenu(
   ...items: { label: DisplayElement; action: () => void }[]
 ): ClickHandler {
   return popup(
-    "menucapture",
+    "menu",
     underOwner,
     (close) =>
       items.map(({ label, action }) =>

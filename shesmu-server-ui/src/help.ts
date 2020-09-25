@@ -144,7 +144,7 @@ function helpButton(
       hasNew ? "ⓘ️✨" : "ⓘ️",
       hasNew ? "New tips are available!" : "Previous tips and advice.",
       popup(
-        "helpcapture",
+        "help",
         true,
         (close) =>
           createUiFromTag(
