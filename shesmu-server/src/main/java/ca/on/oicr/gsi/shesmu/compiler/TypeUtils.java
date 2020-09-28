@@ -224,39 +224,21 @@ public class TypeUtils {
                           new AlgebraicVisitor<String>() {
                             @Override
                             public String empty(String name) {
-                              return "parser.u_e(" + quote(name) + ")";
+                              return quote(name) + ": null";
                             }
 
                             @Override
                             public String object(
                                 String name, Stream<Pair<String, Imyhat>> contents) {
-                              return "parser.u_o("
-                                  + quote(name)
-                                  + ","
-                                  + contents
-                                      .map(
-                                          f ->
-                                              "["
-                                                  + quote(f.first())
-                                                  + ","
-                                                  + f.second().apply(TO_JS_PARSER)
-                                                  + "]")
-                                      .collect(Collectors.joining(","))
-                                  + ")";
+                              return quote(name) + ": " + TO_JS_PARSER.object(contents);
                             }
 
                             @Override
                             public String tuple(String name, Stream<Imyhat> contents) {
-                              return "parser.u_t("
-                                  + quote(name)
-                                  + ","
-                                  + contents
-                                      .map(c -> c.apply(TO_JS_PARSER))
-                                      .collect(Collectors.joining(","))
-                                  + ")";
+                              return quote(name) + ": " + TO_JS_PARSER.tuple(contents);
                             }
                           }))
-              .collect(Collectors.joining(",", "parser.u(", ")"));
+              .collect(Collectors.joining(",", "parser.u({", "})"));
         }
 
         private String quote(String name) {
