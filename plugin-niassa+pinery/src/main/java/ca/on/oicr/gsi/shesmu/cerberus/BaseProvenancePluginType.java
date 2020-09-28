@@ -73,6 +73,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                   final CerberusFileProvenanceValue result =
                       new CerberusFileProvenanceValue(
                           fp.getFileSWID().toString(),
+                          limsAttr(fp, "barcode_kit", badSetInRecord::add),
                           limsAttr(fp, "cell_viability", badSetInRecord::add)
                               .map(Double::parseDouble),
                           fp.getLastModified().toInstant(),

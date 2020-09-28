@@ -9,6 +9,7 @@ import java.util.Optional;
 
 /** IUS information from Pinery */
 public final class PineryIUSValue {
+  private final Optional<String> barcode_kit;
   private final String bases_mask;
   private final Optional<Double> cell_viability;
   private final Optional<Instant> completed_date;
@@ -54,6 +55,7 @@ public final class PineryIUSValue {
   private final boolean umis;
 
   public PineryIUSValue(
+      Optional<String> barcode_kit,
       String bases_mask,
       Optional<Double> cell_viability,
       Optional<Instant> completed_date,
@@ -98,6 +100,7 @@ public final class PineryIUSValue {
       boolean umis,
       boolean is_sample) {
     super();
+    this.barcode_kit = barcode_kit;
     this.bases_mask = bases_mask;
     this.cell_viability = cell_viability;
     this.completed_date = completed_date;
@@ -141,6 +144,11 @@ public final class PineryIUSValue {
     this.tissue_region = tissue_region;
     this.tissue_type = tissue_type;
     this.umis = umis;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> barcode_kit() {
+    return barcode_kit;
   }
 
   @ShesmuVariable(signable = true)
