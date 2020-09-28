@@ -125,6 +125,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 addLane.accept(lp.getSequencerRunName(), lp.getLaneNumber());
 
                 return new PineryIUSValue(
+                    Optional.empty(),
                     run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                     Optional.empty(),
                     Optional.ofNullable(lp.getCreatedDate()).map(ZonedDateTime::toInstant),
@@ -199,6 +200,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                 if (run == null) return null;
                 final PineryIUSValue result =
                     new PineryIUSValue(
+                        limsAttr(sp, "barcode_kit", badSetInRecord::add, false),
                         run.getRunBasesMask() == null ? "" : run.getRunBasesMask(),
                         limsAttr(sp, "cell_viability", badSetInRecord::add, false)
                             .map(Double::parseDouble),

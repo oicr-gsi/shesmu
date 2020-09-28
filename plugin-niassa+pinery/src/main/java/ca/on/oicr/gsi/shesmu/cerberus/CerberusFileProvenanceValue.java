@@ -14,6 +14,7 @@ import java.util.*;
  */
 public final class CerberusFileProvenanceValue {
   private final String accession;
+  private final Optional<String> barcode_kit;
   private final Optional<Double> cell_viability;
   private final Instant completed_date;
   private final String donor;
@@ -61,6 +62,7 @@ public final class CerberusFileProvenanceValue {
 
   public CerberusFileProvenanceValue(
       String accession,
+      Optional<String> barcode_kit,
       Optional<Double> cell_viability,
       Instant completed_date,
       String donor,
@@ -108,6 +110,7 @@ public final class CerberusFileProvenanceValue {
       Tuple workflow_version) {
     super();
     this.accession = accession;
+    this.barcode_kit = barcode_kit;
     this.cell_viability = cell_viability;
     this.completed_date = completed_date;
     this.donor = donor;
@@ -159,6 +162,11 @@ public final class CerberusFileProvenanceValue {
   @ShesmuVariable
   public String accession() {
     return accession;
+  }
+
+  @ShesmuVariable(signable = true)
+  public Optional<String> barcode_kit() {
+    return barcode_kit;
   }
 
   @ShesmuVariable(signable = true)
