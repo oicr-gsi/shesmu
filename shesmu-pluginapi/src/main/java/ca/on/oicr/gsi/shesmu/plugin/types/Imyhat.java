@@ -1863,7 +1863,7 @@ public abstract class Imyhat {
         return parse(input.subSequence(1, input.length()), output, allowEmpty).asOptional();
       case 't':
       case 'o':
-        return parseComplex(input, output, allowEmpty, false);
+        return parseComplex(input, output, allowEmpty, true);
       case 'u':
         int count = 0;
         int index;
@@ -1873,6 +1873,7 @@ public abstract class Imyhat {
         if (count == 0) {
           return BAD;
         }
+        output.set(input.subSequence(index, input.length()));
         final Map<String, Imyhat> unions = new TreeMap<>();
         for (int i = 0; i < count; i++) {
           final StringBuilder name = new StringBuilder();
@@ -1881,8 +1882,13 @@ public abstract class Imyhat {
             name.append(output.get().charAt(dollar));
             dollar++;
           }
-          output.set(output.get().subSequence(dollar + 1, output.get().length()));
-          unions.put(name.toString(), parseComplex(input, output, allowEmpty, true));
+          unions.put(
+              name.toString(),
+              parseComplex(
+                  (output.get().subSequence(dollar + 1, output.get().length())),
+                  output,
+                  allowEmpty,
+                  false));
         }
         return new AlgebraicImyhat(unions);
       default:
@@ -1898,7 +1904,7 @@ public abstract class Imyhat {
       boolean noZero) {
     int count = 0;
     int index;
-    for (index = 1; Character.isDigit(input.charAt(index)); index++) {
+    for (index = 1; index < input.length() && Character.isDigit(input.charAt(index)); index++) {
       count = 10 * count + Character.digit(input.charAt(index), 10);
     }
     if (count == 0 && noZero) {

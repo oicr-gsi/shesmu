@@ -242,7 +242,7 @@ public class TypeUtils {
         }
 
         private String quote(String name) {
-          return new String(JsonStringEncoder.getInstance().quoteAsString(name));
+          return "\"" + new String(JsonStringEncoder.getInstance().quoteAsString(name)) + "\"";
         }
 
         @Override
