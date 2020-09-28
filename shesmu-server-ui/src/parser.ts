@@ -5,6 +5,7 @@ export type ParseResult = {
   output?: any;
 };
 export type Parser = (input: string) => ParseResult;
+
 export function _(input: string): ParseResult {
   return { good: false, input: input, error: "Cannot parse bad type." };
 }
@@ -403,6 +404,38 @@ export function t(innerTypes: Parser[]): Parser {
       };
     } else {
       return { good: false, input: input, error: "Expected } in tuple." };
+    }
+  };
+}
+function nullParser(input: string): ParseResult {
+  return { input: input, good: true };
+}
+export function u(unionTypes: { [type: string]: Parser | null }): Parser {
+  return (input) => {
+    const match = input.match(/^\s*([A-Z][A-Z_0-9]+)\s*/);
+    if (match) {
+      if (unionTypes.hasOwnProperty(match[1])) {
+        const result = (unionTypes[match[1]] || nullParser)(
+          input.substr(match[0].length)
+        );
+        if (result.good) {
+          return {
+            good: true,
+            input: result.input,
+            output: { type: match[1], contents: result.output },
+          };
+        } else {
+          return result;
+        }
+      } else {
+        return {
+          good: false,
+          input: input,
+          output: `Invalid algebraic type ${match[1]}.`,
+        };
+      }
+    } else {
+      return { good: false, input: input, error: "Expected algebraic type." };
     }
   };
 }
