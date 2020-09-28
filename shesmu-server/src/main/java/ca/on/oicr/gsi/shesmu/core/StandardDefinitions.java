@@ -247,6 +247,22 @@ public final class StandardDefinitions implements DefinitionRepository {
             "Remove white space from a string.",
             Imyhat.STRING,
             new FunctionParameter("input to trim", Imyhat.STRING)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "truncate"),
+            RuntimeSupport.class,
+            "truncate",
+            "Truncates a string to a maximum length.",
+            Imyhat.STRING,
+            new FunctionParameter("input string", Imyhat.STRING),
+            new FunctionParameter("maximum length", Imyhat.INTEGER),
+            new FunctionParameter(
+                "method",
+                Imyhat.algebraicTuple("START")
+                    .unify(Imyhat.algebraicTuple("START_ELLIPSIS", Imyhat.STRING))
+                    .unify(Imyhat.algebraicTuple("MIDDLE"))
+                    .unify(Imyhat.algebraicTuple("MIDDLE_ELLIPSIS", Imyhat.STRING))
+                    .unify(Imyhat.algebraicTuple("END"))
+                    .unify(Imyhat.algebraicTuple("END_ELLIPSIS", Imyhat.STRING)))),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "lower"),
             "toLowerCase",

@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.runtime;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
@@ -606,6 +607,46 @@ public final class RuntimeSupport {
   public static String toString(Instant instant, String format) {
     return DateTimeFormatter.ofPattern(format)
         .format(LocalDateTime.ofInstant(instant, ZoneOffset.UTC));
+  }
+
+  public static String truncate(String input, long maxLength, AlgebraicValue where) {
+    if (input.length() < maxLength) {
+      return input;
+    }
+    switch (where.name()) {
+      case "START":
+        return input.substring(0, (int) maxLength);
+      case "START_ELLIPSIS":
+        final String startEllipsis = (String) where.get(0);
+        if (startEllipsis.length() >= maxLength) {
+          return startEllipsis;
+        }
+        return input.substring(0, (int) maxLength - startEllipsis.length()) + startEllipsis;
+      case "MIDDLE":
+        return input.substring(0, (int) (maxLength / 2))
+            + input.substring((int) (input.length() - maxLength / 2));
+      case "MIDDLE_ELLIPSIS":
+        final String middleEllipsis = (String) where.get(0);
+        if (middleEllipsis.length() >= maxLength) {
+          return middleEllipsis;
+        }
+        final int firstLength = (int) Math.ceil(maxLength / 2.0 - middleEllipsis.length() / 2.0);
+        return input.substring(0, firstLength)
+            + middleEllipsis
+            + input.substring(
+                (int) (input.length() - maxLength + firstLength + middleEllipsis.length()));
+      case "END":
+        return input.substring((int) (input.length() - maxLength));
+      case "END_ELLIPSIS":
+        final String endEllipsis = (String) where.get(0);
+        if (endEllipsis.length() >= maxLength) {
+          return endEllipsis;
+        }
+        return endEllipsis
+            + input.substring((int) (input.length() - maxLength + endEllipsis.length()));
+      default:
+        throw new IllegalArgumentException("Invalid ADT received.");
+    }
   }
 
   /** Determine the union of two sets. */
