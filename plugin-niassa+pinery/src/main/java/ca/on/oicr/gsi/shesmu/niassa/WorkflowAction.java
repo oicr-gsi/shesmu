@@ -821,7 +821,7 @@ public final class WorkflowAction extends Action {
   }
 
   void setAnnotation(String tag, String value) {
-    annotations.putIfAbsent(tag, value);
+    annotations.putIfAbsent(tag, value.length() < 256 ? value : value.substring(0, 255));
   }
 
   private void skipWorkflowRun(int workflowRunSwid, long workflowSwid) {
