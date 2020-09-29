@@ -155,7 +155,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
             & expression.resolve(defs, errorHandler)
             & name.resolve(oliveCompilerServices, errorHandler);
     return defs.replaceStream(
-            Stream.concat(incoming.stream().map(Target::wrap), name.targets()), ok)
+            Stream.concat(incoming.stream().map(Target::softWrap), name.targets()), ok)
         .withProvider(
             UndefinedVariableProvider.combine(
                 name,

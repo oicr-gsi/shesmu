@@ -206,7 +206,10 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
                     .count()
                 == handlers.size();
     return defs.replaceStream(
-            Stream.concat(name.targets(), defs.stream().filter(t -> t.flavour().isStream())), good)
+            Stream.concat(
+                name.targets(),
+                defs.stream().filter(t -> t.flavour().isStream()).map(Target::softWrap)),
+            good)
         .withProvider(
             UndefinedVariableProvider.combine(
                 name,

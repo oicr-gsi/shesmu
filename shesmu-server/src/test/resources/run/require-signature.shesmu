@@ -1,0 +1,7 @@
+Version 1;
+Input test;
+
+Olive
+ Require x = `project` OnReject Resume
+ Where library_size > 0
+ Run ok With ok = "library_size" In std::signature::names && x != "";

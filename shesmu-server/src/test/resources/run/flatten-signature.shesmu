@@ -4,4 +4,5 @@ Input test;
 Olive
  Where project == "the_foo_study"
  Flatten x In stuff
- Run ok With ok = "project" In std::signature::names && x != "";
+ Where library_size > 0
+ Run ok With ok = "project" In std::signature::names && "library_size" In std::signature::names && x != "";
