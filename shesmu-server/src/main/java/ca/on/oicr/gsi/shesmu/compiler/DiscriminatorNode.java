@@ -11,35 +11,62 @@ import java.util.stream.Stream;
 
 /** One of the <tt>By</tt> clauses in <tt>Group</tt> clause */
 public abstract class DiscriminatorNode {
+  private static final Parser.ParseDispatch<ComplexConstructor> COMPLEX =
+      new Parser.ParseDispatch<ComplexConstructor>();
+
+  private interface ComplexConstructor {
+    DiscriminatorNode create(
+        int line, int column, DestructuredArgumentNode name, ExpressionNode expression);
+  }
+
+  static {
+    COMPLEX.addKeyword("OnlyIf", Parser.justWhiteSpace(DiscriminatorNodeOnlyIf::new));
+    COMPLEX.addKeyword("Univalued", Parser.justWhiteSpace(DiscriminatorNodeUnivalued::new));
+    COMPLEX.addRaw("rename", Parser.justWhiteSpace(DiscriminatorNodeRename::new));
+  }
 
   public static Parser parse(Parser input, Consumer<DiscriminatorNode> output) {
-    final AtomicReference<String> name = new AtomicReference<>();
     final Parser groupParser = input.whitespace().symbol("@");
     if (groupParser.isGood()) {
+      final AtomicReference<String> name = new AtomicReference<>();
       final Parser groupResult = groupParser.whitespace().identifier(name::set).whitespace();
       if (groupResult.isGood()) {
         output.accept(new DiscriminatorNodeGang(input.line(), input.column(), name.get()));
       }
       return groupResult;
     }
-    final Parser baseParser = input.whitespace().identifier(name::set).whitespace();
-    if (baseParser.isGood()) {
-
-      final Parser renameParser = baseParser.symbol("=");
-      if (renameParser.isGood()) {
-        final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
-        final Parser renameResult =
-            renameParser.whitespace().then(ExpressionNode::parse, expression::set).whitespace();
-        if (renameResult.isGood()) {
-          output.accept(
-              new DiscriminatorNodeRename(
-                  input.line(), input.column(), name.get(), expression.get()));
-        }
-        return renameResult;
+    final AtomicReference<DestructuredArgumentNode> complexName = new AtomicReference<>();
+    final Parser complexParser =
+        input
+            .whitespace()
+            .then(DestructuredArgumentNode::parse, complexName::set)
+            .whitespace()
+            .symbol("=")
+            .whitespace();
+    if (complexParser.isGood()) {
+      final AtomicReference<ComplexConstructor> constructor = new AtomicReference<>();
+      final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
+      final Parser result =
+          complexParser
+              .dispatch(COMPLEX, constructor::set)
+              .whitespace()
+              .then(ExpressionNode::parse, expression::set)
+              .whitespace();
+      if (result.isGood()) {
+        output.accept(
+            constructor
+                .get()
+                .create(input.line(), input.column(), complexName.get(), expression.get()));
       }
-      output.accept(new DiscriminatorNodeSimple(input.line(), input.column(), name.get()));
+      return result;
+    } else {
+      final AtomicReference<String> name = new AtomicReference<>();
+      final Parser result = input.whitespace().identifier(name::set).whitespace();
+      if (result.isGood()) {
+        output.accept(new DiscriminatorNodeSimple(input.line(), input.column(), name.get()));
+      }
+      return result;
     }
-    return baseParser;
   }
 
   public DiscriminatorNode() {

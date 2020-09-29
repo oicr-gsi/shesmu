@@ -1,0 +1,9 @@
+Version 1;
+Input test;
+
+Olive
+ Group
+  By project = OnlyIf If library_size == 300 Then `project` Else ``
+  Into
+    z = Count
+ Run ok With ok = z == 1;

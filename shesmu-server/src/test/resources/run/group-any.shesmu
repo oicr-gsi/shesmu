@@ -3,7 +3,7 @@ Input test;
 
 Olive
  Group
-  By project
+  By project = OnlyIf `project`
   Into
     x = Where library_size == 307 First path,
     y = Where library_size == 300 First path,

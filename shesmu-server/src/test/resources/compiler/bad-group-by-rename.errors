@@ -1,1 +1,1 @@
-6:6: New variable “p” in By does not use any stream variables.
+6:10: New variable in By does not use any stream variables.

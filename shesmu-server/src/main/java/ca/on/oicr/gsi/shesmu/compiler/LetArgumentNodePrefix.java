@@ -10,11 +10,21 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class LetArgumentNodePrefix extends LetArgumentNode {
-  private class PrefixTarget implements Target {
+  private class PrefixTarget implements DefinedTarget {
     public final Target backing;
 
     private PrefixTarget(Target backing) {
       this.backing = backing;
+    }
+
+    @Override
+    public int column() {
+      return column;
+    }
+
+    @Override
+    public int line() {
+      return line;
     }
 
     @Override
@@ -132,7 +142,7 @@ public class LetArgumentNodePrefix extends LetArgumentNode {
   }
 
   @Override
-  public Stream<Target> targets() {
+  public Stream<DefinedTarget> targets() {
     return targets.stream().map(x -> x);
   }
 

@@ -510,12 +510,19 @@ public final class RuntimeSupport {
    *
    * @param input the stream of input items
    * @param grouper a way to create subgroups for each outer group.
-   * @param makeKey a value for a key that is common across the bulk groups
+   * @param makeKey a value for a key that is common across the bulk groups; if it returns null, it
+   *     should be skipped
    */
   @RuntimeInterop
   public static <I, O> Stream<O> regroup(
       Stream<I> input, Grouper<I, O> grouper, Function<I, O> makeKey) {
-    final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
+    final Map<O, List<I>> groups =
+        input
+            .map(i -> new Pair<>(makeKey.apply(i), i))
+            .filter(p -> p.first() != null)
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first, Collectors.mapping(Pair::second, Collectors.toList())));
     input.close();
     return groups
         .values()
@@ -541,19 +548,26 @@ public final class RuntimeSupport {
    *     </ul>
    *
    * @param input the stream to consume
-   * @param makeKey the constructor that makes an output item for an input item
+   * @param makeKey the constructor that makes an output item for an input item; if it returns null,
+   *     it should be skipped
    * @param collector a function that adds all of the “collected” input data to an output value
    * @return the grouped output stream
    */
   @RuntimeInterop
   public static <I, O> Stream<O> regroup(
       Stream<I> input, Function<I, O> makeKey, BiConsumer<O, I> collector) {
-    final Map<O, List<I>> groups = input.collect(Collectors.groupingBy(makeKey));
+    final Map<O, List<I>> groups =
+        input
+            .map(i -> new Pair<>(makeKey.apply(i), i))
+            .filter(p -> p.first() != null)
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first, Collectors.mapping(Pair::second, Collectors.toList())));
     input.close();
     return groups
         .entrySet()
         .stream()
-        .peek(e -> e.getValue().stream().forEach(x -> collector.accept(e.getKey(), x)))
+        .peek(e -> e.getValue().forEach(x -> collector.accept(e.getKey(), x)))
         .map(Entry::getKey);
   }
 

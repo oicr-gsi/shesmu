@@ -92,7 +92,7 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<Target> targets() {
+  public Stream<DefinedTarget> targets() {
     return elements.stream().flatMap(DestructuredArgumentNode::targets);
   }
 
