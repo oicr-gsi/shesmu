@@ -20,7 +20,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
   private final String gangName;
   private final int line;
   // This is a list of input variable to output variable
-  private List<Pair<Target, Target>> targets;
+  private List<Pair<Target, DefinedTarget>> targets;
 
   public LetArgumentNodeGang(int line, int column, String gangName) {
     this.gangName = gangName;
@@ -51,7 +51,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public void collectFreeVariables(Set<String> names, Predicate<Target.Flavour> predicate) {
-    for (final Pair<Target, Target> target : targets) {
+    for (final Pair<Target, DefinedTarget> target : targets) {
       if (predicate.test(target.first().flavour())) {
         names.add(target.first().name());
       }
@@ -75,7 +75,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public void render(LetBuilder let) {
-    for (final Pair<Target, Target> target : targets) {
+    for (final Pair<Target, DefinedTarget> target : targets) {
       let.add(
           target.first().type().apply(TO_ASM),
           target.first().name(),
@@ -87,7 +87,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
 
   @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
-    final Optional<List<Pair<Target, Target>>> results =
+    final Optional<List<Pair<Target, DefinedTarget>>> results =
         TypeUtils.matchGang(
             line,
             column,
@@ -97,7 +97,17 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
               unusedNames.add(inputTarget.name());
               return new Pair<>(
                   inputTarget,
-                  new Target() {
+                  new DefinedTarget() {
+                    @Override
+                    public int column() {
+                      return column;
+                    }
+
+                    @Override
+                    public int line() {
+                      return line;
+                    }
+
                     @Override
                     public Flavour flavour() {
                       return Flavour.STREAM;
@@ -141,7 +151,7 @@ public final class LetArgumentNodeGang extends LetArgumentNode {
   }
 
   @Override
-  public Stream<Target> targets() {
+  public Stream<DefinedTarget> targets() {
     return targets.stream().map(Pair::second);
   }
 

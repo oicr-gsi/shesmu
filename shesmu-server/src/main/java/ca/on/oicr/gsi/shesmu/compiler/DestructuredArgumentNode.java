@@ -51,7 +51,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
         }
 
         @Override
-        public Stream<Target> targets() {
+        public Stream<DefinedTarget> targets() {
           return Stream.empty();
         }
 
@@ -172,7 +172,7 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
 
   public abstract void setFlavour(Target.Flavour flavour);
 
-  public abstract Stream<Target> targets();
+  public abstract Stream<DefinedTarget> targets();
 
   public abstract boolean typeCheck(Imyhat type, Consumer<String> errorHandler);
 }

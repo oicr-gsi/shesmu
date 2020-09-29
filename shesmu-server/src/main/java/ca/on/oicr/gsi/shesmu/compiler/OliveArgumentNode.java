@@ -205,7 +205,7 @@ public abstract class OliveArgumentNode implements UndefinedVariableProvider {
   }
 
   /** The argument name */
-  public final Stream<Target> targets() {
+  public final Stream<DefinedTarget> targets() {
     return name.targets();
   }
 

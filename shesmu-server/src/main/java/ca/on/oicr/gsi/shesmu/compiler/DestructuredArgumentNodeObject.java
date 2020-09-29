@@ -97,7 +97,7 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<Target> targets() {
+  public Stream<DefinedTarget> targets() {
     return fields.stream().flatMap(f -> f.second().targets());
   }
 

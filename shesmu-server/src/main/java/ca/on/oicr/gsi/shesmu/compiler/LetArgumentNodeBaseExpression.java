@@ -81,7 +81,7 @@ public abstract class LetArgumentNodeBaseExpression extends LetArgumentNode {
   }
 
   @Override
-  public final Stream<Target> targets() {
+  public final Stream<DefinedTarget> targets() {
     return name.targets();
   }
 

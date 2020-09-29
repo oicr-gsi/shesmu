@@ -111,7 +111,7 @@ public abstract class LetArgumentNode implements UndefinedVariableProvider {
   public abstract boolean resolveFunctions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);
 
-  public abstract Stream<Target> targets();
+  public abstract Stream<DefinedTarget> targets();
 
   public abstract boolean typeCheck(Consumer<String> errorHandler);
 }

@@ -218,11 +218,13 @@ variables.
 
 Discriminators come in multiple forms:
 
-|Syntax                       | Behaviour                                                                                               |
-|---                          |---                                                                                                      |
-| _name_ `=` _expr_           | Compute the value from _expr_ for teach row and use it for grouping; assign it to _name_ in the output. |
-| _name_                      | Use an existing variable _name_ for grouping and copy it to the output.                                 |
-| `@`_gang_                   | Use all variables in a gang for grouping and copy them to the output.                                   |
+|Syntax                       | Behaviour                                                                                                                                                                                       |
+|---                          |---                                                                                                                                                                                              |
+| _name_ `=` _expr_           | Compute the value from _expr_ for each row and use it for grouping; assign it to _name_ in the output. _name_ can use destructuring.                                                            |
+| _name_ `= OnlyIf` _expr_    | Compute the value from _expr_, which must be an optional value, for each row and, if it contains a value, use it for grouping; assign it to _name_ in the output. _name_ can use destructuring. |
+| _name_ `= Univalued` _expr_ | Compute the value from _expr_, which must be a list, for each row and, if it contains a single value, use it for grouping; assign it to _name_ in the output. _name_ can use destructuring.     |
+| _name_                      | Use an existing variable _name_ for grouping and copy it to the output.                                                                                                                         |
+| `@`_gang_                   | Use all variables in a gang for grouping and copy them to the output.                                                                                                                           |
 
 Custom groupers take parameters. Some parameters are per-row, which may use
 variables, and some are fixed, which must use constants or parameters to a

@@ -793,6 +793,98 @@ public final class RegroupVariablesBuilder implements Regrouper {
     }
   }
 
+  private class MultiDiscriminator extends Element {
+    private final Consumer<Renderer> loader;
+    private final DestructuredArgumentNode name;
+    private final Type rootType;
+
+    public MultiDiscriminator(
+        DestructuredArgumentNode name, Type rootType, Consumer<Renderer> loader) {
+      super();
+      this.name = name;
+      this.rootType = rootType;
+      this.loader = loader;
+      name.targets().forEach(target -> buildGetter(target.type().apply(TO_ASM), target.name()));
+    }
+
+    @Override
+    public void buildCollect() {
+      // No collection required
+    }
+
+    @Override
+    public int buildConstructor(GeneratorAdapter ctor, int index) {
+      name.render(r -> r.methodGen().loadArg(index))
+          .forEach(
+              t -> {
+                ctor.loadThis();
+                t.accept(new RendererNoStream(null, ctor, Stream.empty(), null));
+                ctor.putField(self, t.name(), t.type());
+              });
+      return index + 1;
+    }
+
+    @Override
+    public void buildEquals(GeneratorAdapter method, int otherLocal, Label end) {
+      name.targets()
+          .forEach(
+              target -> {
+                final Type fieldType = target.type().apply(TO_ASM);
+                method.loadThis();
+                method.getField(self, target.name(), fieldType);
+                method.loadLocal(otherLocal);
+                method.getField(self, target.name(), fieldType);
+                switch (fieldType.getSort()) {
+                  case Type.ARRAY:
+                  case Type.OBJECT:
+                    method.invokeVirtual(A_OBJECT_TYPE, METHOD_EQUALS);
+                    method.ifZCmp(GeneratorAdapter.EQ, end);
+                    break;
+                  default:
+                    method.ifCmp(fieldType, GeneratorAdapter.NE, end);
+                }
+              });
+    }
+
+    @Override
+    public void buildHashCode(GeneratorAdapter method) {
+      name.targets()
+          .forEach(
+              target -> {
+                final Type fieldType = target.type().apply(TO_ASM);
+                method.push(31);
+                method.math(GeneratorAdapter.MUL, INT_TYPE);
+                method.loadThis();
+                method.getField(self, target.name(), fieldType);
+                switch (fieldType.getSort()) {
+                  case Type.ARRAY:
+                  case Type.OBJECT:
+                    method.invokeVirtual(A_OBJECT_TYPE, METHOD_HASH_CODE);
+                    break;
+                  default:
+                    method.cast(fieldType, INT_TYPE);
+                    break;
+                }
+                method.math(GeneratorAdapter.ADD, INT_TYPE);
+              });
+    }
+
+    @Override
+    public Stream<Type> constructorType() {
+      return Stream.of(rootType);
+    }
+
+    @Override
+    public void failIfBad(GeneratorAdapter okMethod) {
+      // Do nothing
+    }
+
+    @Override
+    public void loadConstructorArgument() {
+      loader.accept(newRenderer);
+    }
+  }
+
   private class NamedTuple extends BaseComposite {
 
     public NamedTuple(String prefix, Stream<Pair<String, Imyhat>> fields) {
@@ -1512,6 +1604,10 @@ public final class RegroupVariablesBuilder implements Regrouper {
 
   public void addKey(Type fieldType, String fieldName, Consumer<Renderer> loader) {
     elements.add(new Discriminator(fieldType, fieldName, loader));
+  }
+
+  public void addKeys(DestructuredArgumentNode name, Type rootType, Consumer<Renderer> loader) {
+    elements.add(new MultiDiscriminator(name, rootType, loader));
   }
 
   @Override

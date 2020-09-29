@@ -3,7 +3,7 @@ Input test;
 
 Olive
  Group
-  By project
+  By project = Univalued [project]
   Into
     z = All library_size < 400
  Run ok With ok = z;

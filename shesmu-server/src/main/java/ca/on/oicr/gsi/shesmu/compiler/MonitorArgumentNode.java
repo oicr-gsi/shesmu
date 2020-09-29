@@ -115,7 +115,7 @@ public final class MonitorArgumentNode {
         & name.resolve(expressionCompilerServices, errorHandler);
   }
 
-  public Stream<Target> target() {
+  public Stream<DefinedTarget> target() {
     return name.targets();
   }
 

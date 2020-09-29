@@ -138,8 +138,18 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   private final int line;
   private final String name;
   private boolean read;
-  private final Target target =
-      new Target() {
+  private final DefinedTarget target =
+      new DefinedTarget() {
+        @Override
+        public int column() {
+          return column;
+        }
+
+        @Override
+        public int line() {
+          return line;
+        }
+
         @Override
         public Flavour flavour() {
           return flavour;
@@ -225,7 +235,7 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
   }
 
   @Override
-  public Stream<Target> targets() {
+  public Stream<DefinedTarget> targets() {
     return Stream.of(target);
   }
 

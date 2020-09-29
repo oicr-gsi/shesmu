@@ -13,12 +13,22 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
-  private class StarTarget implements Target {
+  private class StarTarget implements DefinedTarget {
     private final String name;
     private Imyhat type = Imyhat.BAD;
 
     private StarTarget(String name) {
       this.name = name;
+    }
+
+    @Override
+    public int column() {
+      return column;
+    }
+
+    @Override
+    public int line() {
+      return line;
     }
 
     public LoadableValue prepare(Consumer<Renderer> loader) {
@@ -126,7 +136,7 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
   }
 
   @Override
-  public Stream<Target> targets() {
+  public Stream<DefinedTarget> targets() {
     return fields.values().stream().map(x -> x);
   }
 
