@@ -915,3 +915,20 @@ img.deadolive {
   border: 1px dotted var(--widget-highlight);
   padding: 0.5em;
 }
+
+.spot {
+  background-color: var(--widget-danger-lowlight);
+  color: var(--widget-danger-negative);
+}
+.nospot {
+  background-color: var(--widget-danger-shadow);
+  color: var(--widget-danger-lowlight);
+}
+.spot,
+.nospot {
+  font-size: 70%;
+  vertical-align: top;
+  border-radius: 50%;
+  padding: 0.2em;
+  margin: 0.2em;
+}

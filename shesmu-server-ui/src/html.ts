@@ -177,7 +177,7 @@ type SynchronizedFields<T> = {
  */
 export interface Tab {
   /** The header title for the tab */
-  name: DisplayElement;
+  name: UIElement;
   /** The contents the body of the tab */
   contents: UIElement;
   /** If true, this tab will be selected by default*/
@@ -1961,6 +1961,38 @@ export function singleState<T>(
   return {
     model: mapModel(model, formatter),
     ui: ui,
+  };
+}
+
+/**
+ * Create a little read circle with a number in it
+ * @param title a callback to generate a tooltip for the current count
+ */
+export function spotCounter(
+  title: (input: number) => string
+): { ui: UIElement; model: StatefulModel<number> } {
+  const element = createUiFromTag("span");
+  element.element.className = "spot";
+  return {
+    ui: element,
+    model: {
+      reload: () => {},
+      statusChanged: (input) => {
+        element.element.className = input ? "spot" : "nospot";
+        element.element.innerText = input.toString();
+        element.element.title = title(input);
+      },
+      statusFailed: (message, _retry) => {
+        element.element.className = "spot";
+        element.element.innerText = "?";
+        element.element.title = message;
+      },
+      statusWaiting: () => {
+        element.element.className = "spot";
+        element.element.innerText = "";
+        element.element.title = "Count is being refreshed";
+      },
+    },
   };
 }
 

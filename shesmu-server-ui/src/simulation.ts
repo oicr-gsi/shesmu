@@ -41,6 +41,7 @@ import {
   text,
   tile,
   svgFromStr,
+  spotCounter,
 } from "./html.js";
 import {
   MutableStore,
@@ -285,9 +286,28 @@ export function initialiseSimulationDashboard(
         ]
       )
   );
+  const spot = spotCounter((c) => {
+    switch (c) {
+      case 0:
+        return "No local action defintions";
+      case 1:
+        return "One local action defintion.";
+      default:
+        return `${c} local action definitions`;
+    }
+  });
   fakeActionDefinitions = mutableStoreWatcher(
     mutableLocalStore<FakeActionParameters>("shesmu_fake_actions"),
-    fakeActionsModel
+    combineModels(
+      fakeActionsModel,
+      mapModel(spot.model, (fakeActions) => {
+        let c = 0;
+        for (const _fa of fakeActions) {
+          c++;
+        }
+        return c;
+      })
+    )
   );
   const script = document.createElement("DIV");
   script.className = "editor";
@@ -337,7 +357,7 @@ export function initialiseSimulationDashboard(
       ),
     },
     {
-      name: "Extra Definitions",
+      name: ["Extra Definitions", spot.ui],
       contents: group(
         button("➕ Import Action", "Uploads a file containing an action.", () =>
           loadFile((name, data) =>
