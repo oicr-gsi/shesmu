@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * <p>Either a string literal or an expression that can be converted to a string literal
  */
 public abstract class StringNode {
-  private static final Pattern DATE_FORMAT = Pattern.compile("^[GyMdhHmsSEDFwWakKz]");
+  private static final Pattern DATE_FORMAT = Pattern.compile("^[GyYMdhHmsSEDFwWakKz]+");
   private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt{}])");
   private static final Pattern LITERAL = Pattern.compile("^[^\\\\\"{]+");
   private static final Parser.ParseDispatch<StringNode> PARTS = new Parser.ParseDispatch<>();
