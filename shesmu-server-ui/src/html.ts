@@ -292,7 +292,7 @@ function addElements(
               const element = createUiFromTag("span", result.contents);
               // Safe to discard find and reveal since only display elements should be present
               target.appendChild(element.element);
-              element.element.style.fontFamily = "mono-space";
+              element.element.style.fontFamily = "monospace";
             }
             break;
 

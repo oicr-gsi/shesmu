@@ -42,6 +42,7 @@ import {
   tile,
   svgFromStr,
   spotCounter,
+  link,
 } from "./html.js";
 import {
   MutableStore,
@@ -358,7 +359,12 @@ export function initialiseSimulationDashboard(
     },
     {
       name: ["Extra Definitions", spot.ui],
-      contents: group(
+      contents: [
+        link("actiondefs", "All actions known"),
+        " to the Shesmu server are available in simulation. If testing something that is not yet available or needs to be modified, the action definition can be imported here. Actions here take priority over actions from the server. If exporting actions to ",
+        mono(".actnow"),
+        " files, do not use actions definitions here or the server will not recognise them.",
+        br(),
         button("➕ Import Action", "Uploads a file containing an action.", () =>
           loadFile((name, data) =>
             importAction(fakeActionDefinitions, name.split(".")[0], data)
@@ -379,8 +385,9 @@ export function initialiseSimulationDashboard(
             ];
           })
         ),
-        fakeActionsUi
-      ),
+        br(),
+        fakeActionsUi,
+      ],
     }
   );
   const dashboardState = mapModel(
