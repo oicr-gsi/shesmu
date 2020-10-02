@@ -143,20 +143,25 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
           }
           getter.returnValue();
           getter.endMethod();
-          final GeneratorAdapter signerCheck =
-              new GeneratorAdapter(
-                  Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                  new Method(
-                      String.format("%s %s Signer Check", method.getName(), variable.name()),
-                      Type.getMethodDescriptor(Type.BOOLEAN_TYPE)),
-                  null,
-                  null,
-                  owner.classVisitor);
-          signerCheck.visitCode();
-          signerCheck.push(signedVariables.contains(variable.name()));
-          signerCheck.returnValue();
-          signerCheck.endMethod();
         });
+    initialFormat
+        .baseStreamVariables()
+        .forEach(
+            variable -> {
+              final GeneratorAdapter signerCheck =
+                  new GeneratorAdapter(
+                      Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                      new Method(
+                          String.format("%s %s Signer Check", method.getName(), variable.name()),
+                          Type.getMethodDescriptor(Type.BOOLEAN_TYPE)),
+                      null,
+                      null,
+                      owner.classVisitor);
+              signerCheck.visitCode();
+              signerCheck.push(signedVariables.contains(variable.name()));
+              signerCheck.returnValue();
+              signerCheck.endMethod();
+            });
   }
 
   /**
