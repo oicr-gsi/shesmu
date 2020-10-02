@@ -622,7 +622,7 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                definitionRepository
+                compiler
                     .oliveDefinitions()
                     .sorted(Comparator.comparing(CallableDefinition::name))
                     .forEach(
@@ -635,7 +635,18 @@ public final class Server implements ServerConfig, ActionServices {
 
                             writer.writeStartElement("table");
                             writer.writeAttribute("class", "even");
+
                             showSourceConfig(writer, oliveDefinition.filename());
+
+                            writer.writeStartElement("tr");
+                            writer.writeStartElement("td");
+                            writer.writeCharacters("Input Format");
+                            writer.writeEndElement();
+                            writer.writeStartElement("td");
+                            writer.writeCharacters(oliveDefinition.format());
+                            writer.writeEndElement();
+                            writer.writeEndElement();
+
                             writer.writeStartElement("tr");
                             writer.writeStartElement("td");
                             writer.writeCharacters("Output Format");
@@ -662,6 +673,8 @@ public final class Server implements ServerConfig, ActionServices {
                             }
                             writer.writeEndElement();
 
+                            writer.writeStartElement("table");
+                            writer.writeAttribute("class", "even");
                             TableRowWriter row = new TableRowWriter(writer);
                             oliveDefinition
                                 .outputStreamVariables(null, null)
