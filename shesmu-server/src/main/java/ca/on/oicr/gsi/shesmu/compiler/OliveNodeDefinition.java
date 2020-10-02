@@ -18,12 +18,11 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   private final int column;
   private final boolean export;
   private String inputFormat;
+  private boolean isRoot;
   private final int line;
   private final String name;
   private List<Target> outputStreamVariables;
-
   private final List<OliveParameter> parameters;
-
   private boolean resolveLock;
 
   public OliveNodeDefinition(
@@ -84,14 +83,14 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   }
 
   @Override
-  public Stream<OliveTable> dashboard() {
-    return Stream.empty();
-  }
-
-  @Override
   public void collectSignables(
       Set<String> signableNames, Consumer<SignableVariableCheck> addSignableCheck) {
     signableNames.addAll(this.signableNames);
+  }
+
+  @Override
+  public Stream<OliveTable> dashboard() {
+    return Stream.empty();
   }
 
   @Override
@@ -110,7 +109,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   }
 
   public boolean isRoot() {
-    return clauses().stream().noneMatch(OliveClauseNodeGroup.class::isInstance);
+    return isRoot;
   }
 
   @Override
@@ -203,11 +202,6 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   }
 
   @Override
-  public boolean skipCheckUnusedDeclarations() {
-    return export;
-  }
-
-  @Override
   public boolean resolveTypes(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
     return parameters
@@ -215,6 +209,16 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
             .filter(p -> p.resolveTypes(oliveCompilerServices, errorHandler))
             .count()
         == parameters.size();
+  }
+
+  @Override
+  protected void setPurity(ClauseStreamOrder state) {
+    isRoot = state != ClauseStreamOrder.TRANSFORMED;
+  }
+
+  @Override
+  public boolean skipCheckUnusedDeclarations() {
+    return export;
   }
 
   @Override

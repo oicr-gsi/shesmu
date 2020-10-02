@@ -287,6 +287,11 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
   }
 
   @Override
+  protected void setPurity(ClauseStreamOrder state) {
+    // Do nothing.
+  }
+
+  @Override
   public boolean skipCheckUnusedDeclarations() {
     return false;
   }

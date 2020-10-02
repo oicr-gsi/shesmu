@@ -279,6 +279,11 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
   }
 
   @Override
+  protected void setPurity(ClauseStreamOrder state) {
+    // Do nothing.
+  }
+
+  @Override
   public boolean skipCheckUnusedDeclarations() {
     return false;
   }

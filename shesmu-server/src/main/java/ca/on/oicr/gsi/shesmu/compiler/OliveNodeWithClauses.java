@@ -42,6 +42,7 @@ public abstract class OliveNodeWithClauses extends OliveNode {
     if (state == ClauseStreamOrder.PURE || state == ClauseStreamOrder.ALMOST_PURE) {
       collectArgumentSignableVariables();
     }
+    setPurity(state);
     return state != ClauseStreamOrder.BAD;
   }
 
@@ -98,6 +99,8 @@ public abstract class OliveNodeWithClauses extends OliveNode {
   /** Do any further non-variable definition resolution specific to this class */
   protected abstract boolean resolveDefinitionsExtra(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler);
+
+  protected abstract void setPurity(ClauseStreamOrder state);
 
   public abstract boolean skipCheckUnusedDeclarations();
 
