@@ -341,6 +341,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
+  protected void setPurity(ClauseStreamOrder state) {
+    // Do nothing.
+  }
+
+  @Override
   public boolean skipCheckUnusedDeclarations() {
     return false;
   }
