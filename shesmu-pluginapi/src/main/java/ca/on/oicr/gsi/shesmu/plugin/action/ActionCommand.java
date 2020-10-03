@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.plugin.action;
 
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -32,6 +33,7 @@ public abstract class ActionCommand<A extends Action> {
   private final String buttonText;
   private final Class<A> clazz;
   private final String command;
+  private final FrontEndIcon icon;
   private final EnumSet<Preference> preferences = EnumSet.noneOf(Preference.class);
 
   /**
@@ -40,14 +42,19 @@ public abstract class ActionCommand<A extends Action> {
    * @param clazz the action class on which this command is performed
    * @param command an identifier for this command; although the implementation is unique to this
    *     action type, this can be shared across different action types for bulk actions
-   * @param buttonText the text that should appear in the UI; normally, this starts with an emoji to
-   *     act as an icon
+   * @param icon the icon that should appear in the UI
+   * @param buttonText the text that should appear in the UI
    * @param preferences UI settings for this command
    */
   public ActionCommand(
-      Class<A> clazz, String command, String buttonText, Preference... preferences) {
+      Class<A> clazz,
+      String command,
+      FrontEndIcon icon,
+      String buttonText,
+      Preference... preferences) {
     this.clazz = clazz;
     this.command = command;
+    this.icon = icon;
     this.buttonText = buttonText;
     this.preferences.addAll(Arrays.asList(preferences));
   }
@@ -57,7 +64,7 @@ public abstract class ActionCommand<A extends Action> {
     return buttonText;
   }
 
-  /** The command identifer */
+  /** The command identifier */
   public final String command() {
     return command;
   }
@@ -70,6 +77,11 @@ public abstract class ActionCommand<A extends Action> {
    * @return true if the command was followed; false if inappropriate or not understood
    */
   protected abstract boolean execute(A action, Optional<String> user);
+
+  /** The front end icon */
+  public FrontEndIcon icon() {
+    return icon;
+  }
 
   /** Check if a UI preference is set */
   public final boolean prefers(Preference preference) {

@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.core;
 
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
@@ -20,7 +21,8 @@ public class NothingAction extends Action {
       new ActionCommand<NothingAction>(
           NothingAction.class,
           "NOTHING-COMPLAIN",
-          "📢 Write to Server Console",
+          FrontEndIcon.TERMINAL,
+          "Write to Server Console",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override

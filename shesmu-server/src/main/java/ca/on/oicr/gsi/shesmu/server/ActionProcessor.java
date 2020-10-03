@@ -1271,6 +1271,7 @@ public final class ActionProcessor
                         final ObjectNode command = commands.addObject();
                         command.put("command", c.command());
                         command.put("buttonText", c.buttonText());
+                        command.put("icon", c.icon().icon());
                         command.put("showPrompt", c.prefers(Preference.PROMPT));
                         command.put("allowBulk", c.prefers(Preference.ALLOW_BULK));
                       });

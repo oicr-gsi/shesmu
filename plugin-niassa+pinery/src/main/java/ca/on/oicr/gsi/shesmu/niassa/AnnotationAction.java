@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
@@ -28,7 +29,8 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
       new ActionCommand<AnnotationAction>(
           AnnotationAction.class,
           "NIASSA-HUMAN-APPROVE",
-          "🚀 Allow to run",
+          FrontEndIcon.HAND_THUMBS_UP,
+          "Allow to run",
           Preference.ALLOW_BULK,
           Preference.ANNOY_USER) {
         @Override

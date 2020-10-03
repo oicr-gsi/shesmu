@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -1747,6 +1748,7 @@ public final class Server implements ServerConfig, ActionServices {
                 jsonOutput.writeStartObject();
                 jsonOutput.writeStringField("command", command.getKey().command());
                 jsonOutput.writeStringField("buttonText", command.getKey().buttonText());
+                jsonOutput.writeStringField("icon", command.getKey().icon().icon());
                 jsonOutput.writeBooleanField(
                     "showPrompt", command.getKey().prefers(Preference.PROMPT));
                 jsonOutput.writeBooleanField(
@@ -2731,10 +2733,15 @@ public final class Server implements ServerConfig, ActionServices {
             new ExportSearch<String>() {
               @Override
               public String linkWithJson(
-                  String name, String urlStart, String urlEnd, String description) {
+                  FrontEndIcon icon,
+                  String name,
+                  String urlStart,
+                  String urlEnd,
+                  String description) {
                 try {
                   return String.format(
-                      "[%s, %s, filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s]",
+                      "[[{type:\"icon\", icon:\"%s\"}, %s], %s, filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s]",
+                      icon.icon(),
                       RuntimeSupport.MAPPER.writeValueAsString(name),
                       RuntimeSupport.MAPPER.writeValueAsString(description),
                       RuntimeSupport.MAPPER.writeValueAsString(urlStart),
@@ -2746,10 +2753,15 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public String linkWithUrlSearch(
-                  String name, String urlStart, String urlEnd, String description) {
+                  FrontEndIcon icon,
+                  String name,
+                  String urlStart,
+                  String urlEnd,
+                  String description) {
                 try {
                   return String.format(
-                      "[%s, %s, filters => window.location.href = %s + encodeSearch(filters) + %s]",
+                      "[[{type:\"icon\", icon:\"%s\"}, %s], %s, filters => window.location.href = %s + encodeSearch(filters) + %s]",
+                      icon.icon(),
                       RuntimeSupport.MAPPER.writeValueAsString(name),
                       RuntimeSupport.MAPPER.writeValueAsString(description),
                       RuntimeSupport.MAPPER.writeValueAsString(urlStart),

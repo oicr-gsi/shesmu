@@ -37,7 +37,8 @@ public class RunReport extends JsonParameterisedAction {
       new ActionCommand<RunReport>(
           RunReport.class,
           "GUANYIN-FORCE-RELAUNCH",
-          "🚀 Relaunch on Cromwell",
+          FrontEndIcon.ARROW_REPEAT,
+          "Relaunch on Cromwell",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
