@@ -2,6 +2,7 @@ import {
   ActiveItemRenderer,
   DisplayElement,
   FindHandler,
+  IconName,
   StateSynchronizer,
   UIElement,
   blank,
@@ -261,6 +262,7 @@ const timeAccessors: BasicQueryTimeAccessor[] = [
 
 interface LogicalOperator {
   operator: "and" | "or";
+  icon: IconName;
   tip: string;
 }
 /**
@@ -337,7 +339,7 @@ function addFilterDialog(
 ): void {
   dialog((close) => [
     button(
-      "🕑 Fixed Time Range",
+      [{ type: "icon", icon: "calendar-range" }, "Fixed Time Range"],
       "Add a filter that restricts between two absolute times.",
       () => {
         close();
@@ -353,44 +355,48 @@ function addFilterDialog(
       }
     ),
     button(
-      "🕑 Time Since Now",
+      [{ type: "icon", icon: "clock-history" }, "Time Since Now"],
       "Add a filter that restricts using a sliding window.",
       () => {
         close();
         timeDialog((n) => editTimeHorizon(0, (update) => timeAgo(n, update)));
       }
     ),
-    button("👾 Action Identifier", "Add a unique action identifier.", () => {
-      close();
-      const input = inputTextArea();
-      dialog((close) => [
-        "Action Identifiers (",
-        mono("shesmu:"),
-        italic("40 hex characters"),
-        " - other text will be ignored):",
-        br(),
-        input.ui,
-        br(),
-        button(
-          "Add All",
-          "Add any action IDs in the text to the filter.",
-          () => {
-            const ids = Array.from(
-              input.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
-              (m) => "shesmu:" + m[1].toUpperCase()
-            );
-            if (ids.length) {
-              close();
-              addSet("id", ids);
-            } else {
-              butter(3000, "The text you entered has no valid identifiers.");
-            }
-          }
-        ),
-      ]);
-    }),
     button(
-      "🔠 Text",
+      [{ type: "icon", icon: "eye" }, "Action Identifier"],
+      "Add a unique action identifier.",
+      () => {
+        close();
+        const input = inputTextArea();
+        dialog((close) => [
+          "Action Identifiers (",
+          mono("shesmu:"),
+          italic("40 hex characters"),
+          " - other text will be ignored):",
+          br(),
+          input.ui,
+          br(),
+          button(
+            "Add All",
+            "Add any action IDs in the text to the filter.",
+            () => {
+              const ids = Array.from(
+                input.value.matchAll(/shesmu:([0-9A-Fa-f]{40})/g),
+                (m) => "shesmu:" + m[1].toUpperCase()
+              );
+              if (ids.length) {
+                close();
+                addSet("id", ids);
+              } else {
+                butter(3000, "The text you entered has no valid identifiers.");
+              }
+            }
+          ),
+        ]);
+      }
+    ),
+    button(
+      [{ type: "icon", icon: "chat-left-text" }, "Text"],
       "Add a filter that looks for actions with specific text.",
       () => {
         close();
@@ -398,7 +404,7 @@ function addFilterDialog(
       }
     ),
     button(
-      "*️⃣  Regular Expression",
+      [{ type: "icon", icon: "chat-left-dots" }, "Regular Expression"],
       "Add a filter that looks for actions that match a regular expression.",
       () => {
         close();
@@ -406,7 +412,7 @@ function addFilterDialog(
       }
     ),
     button(
-      "🏁 Status",
+      [{ type: "icon", icon: "flag-fill" }, "Status"],
       "Add a filter that searches for actions in a particular state.",
       () => {
         close();
@@ -431,7 +437,7 @@ function addFilterDialog(
     ),
     onActionPage
       ? button(
-          "🎬 Action Type",
+          [{ type: "icon", icon: "camera-reels" }, "Action Type"],
           "Add a filter that searches for actions of a particular type.",
           () => {
             close();
@@ -447,7 +453,7 @@ function addFilterDialog(
         )
       : blank(),
     button(
-      "🏷️ Tags",
+      [{ type: "icon", icon: "tags" }, "Tags"],
       "Add a filter that searches for actions marked with a particular tag by an olive.",
       () => {
         close();
@@ -471,7 +477,7 @@ function addFilterDialog(
     ),
     sources.length
       ? button(
-          "📍 Source Olive",
+          [{ type: "icon", icon: "geo-alt-fill" }, "Source Olive"],
           "Add a filter that searches for actions that came from a particular olive (even if that olive has been replaced or deleted).",
           () => {
             close();
@@ -1054,7 +1060,10 @@ function renderFilters(
             br(),
             timeRangeAnchor("⇤ ", range.start, " —"),
             range.start && range.end
-              ? ["🕑 ", formatTimeSpan(range.end - range.start)]
+              ? [
+                  { type: "icon", icon: "clock" },
+                  formatTimeSpan(range.end - range.start),
+                ]
               : blank(),
             timeRangeAnchor("— ", range.start, " ⇥")
           )
@@ -1076,7 +1085,7 @@ function renderFilters(
             )
           ),
           br(),
-          "🕑 ",
+          { type: "icon", icon: "clock-history" },
           formatTimeSpan(horizon)
         )
       );
@@ -1250,7 +1259,7 @@ function searchAdvanced(
   return {
     buttons: [
       button(
-        "🖱️ Basic",
+        [{ type: "icon", icon: "mouse" }, "Basic"],
         "Switch to basic query interface. Current query will be lost.",
         () => {
           if (search.value.trim()) {
@@ -1289,7 +1298,7 @@ function searchAdvanced(
         }
       ),
       buttonAccessory(
-        "➕ Add Filter",
+        [{ type: "icon", icon: "funnel" }, "Add Filter"],
         "Add a filter to limit the actions displayed.",
         () => {
           const replaceQuery = (
@@ -1366,15 +1375,18 @@ function searchAdvanced(
                     [
                       {
                         operator: "and",
+                        icon: "intersect",
                         tip: "Add a filter that restricts the existing query.",
                       } as LogicalOperator,
                       {
                         operator: "or",
+                        icon: "union",
                         tip: "Add a filter that expands the existing query.",
                       } as LogicalOperator,
                     ].map((operation) =>
                       button(
                         [
+                          { type: "icon", icon: operation.icon },
                           "Existing Query ",
                           italic(operation.operator),
                           " New Filter",
@@ -1605,7 +1617,7 @@ function searchBasic(
   return {
     buttons: [
       buttonAccessory(
-        "➕ Add Filter",
+        [{ type: "icon", icon: "funnel" }, "Add Filter"],
         "Add a filter to limit the actions displayed.",
         () =>
           addFilterDialog(
@@ -1682,7 +1694,7 @@ function searchBasic(
       ),
 
       button(
-        "⌨️ Advanced",
+        [{ type: "icon", icon: "keyboard-fill" }, "Advanced"],
         "Switch to advanced query interface. Query will be saved, but cannot be converted back.",
         () =>
           promiseModel(synchronizer).statusChanged(
@@ -1693,7 +1705,7 @@ function searchBasic(
           )
       ),
       buttonAccessory(
-        "⌫ Clear Filters",
+        [{ type: "icon", icon: "backspace" }, "Clear Filters"],
         "Remove all search filters and view everything.",
         () => {
           current = {};

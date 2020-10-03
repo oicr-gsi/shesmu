@@ -141,7 +141,7 @@ function helpButton(
     });
     const markReadOnClose: Map<number, Set<number>> = new Map();
     return buttonIcon(
-      hasNew ? "ⓘ️✨" : "ⓘ️",
+      { type: "icon", icon: hasNew ? "info-circle-fill" : "info-circle" },
       hasNew ? "New tips are available!" : "Previous tips and advice.",
       popup(
         "help",
@@ -165,7 +165,7 @@ function helpButton(
               ? [
                   " | ",
                   buttonIcon(
-                    "🙈 Ignore All Tips",
+                    [{ type: "icon", icon: "volume-mute" }, "Ignore All Tips"],
                     "Mark all tips everywhere as read.",
                     () => {
                       close();
@@ -197,7 +197,12 @@ function helpButton(
                   ([v, i]) => v == version && i == index
                 );
                 const more = createUiFromTag("span", " (more)");
-                const header = createUiFromTag("p", "💡 ", tip.summary, more);
+                const header = createUiFromTag(
+                  "p",
+                  { type: "icon", icon: "gem" },
+                  tip.summary,
+                  more
+                );
                 more.element.style.color = "#aaa";
                 header.element.style.fontWeight = isNew ? "bold" : "normal";
                 const body = createUiFromTag("div", tip.description);

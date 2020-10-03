@@ -1,5 +1,6 @@
 import {
   ClickHandler,
+  DisplayElement,
   UIElement,
   blank,
   br,
@@ -105,7 +106,7 @@ interface BulkCommand extends BaseCommand {
  * The information for a button that can export the current search to some other service
  */
 export type ExportSearchCommand = [
-  string,
+  DisplayElement,
   string,
   (filters: ActionFilter[]) => void
 ];
@@ -123,20 +124,24 @@ type ServerSearches = { [name: string]: ActionFilter[] };
 export type Status = typeof statuses[number];
 
 export const standardExports: ExportSearchCommand[] = [
-  ["⎘ To Clipboard", "Export search to the clipboard.", saveClipboardJson],
   [
-    "⎘ To Clipboard for Ticket",
+    [{ type: "icon", icon: "clipboard" }, "To Clipboard"],
+    "Export search to the clipboard.",
+    saveClipboardJson,
+  ],
+  [
+    [{ type: "icon", icon: "clipboard-plus" }, "To Clipboard for Ticket"],
     "Export search to the clipboard in a way that can be pasted in a text document.",
     (filters) => saveClipboard(encodeSearch(filters)),
   ],
   [
-    "📁 To File",
+    [{ type: "icon", icon: "cloud-download" }, "To File"],
     "Download search as a file.",
     (filters) =>
       saveFile(JSON.stringify(filters), "application/json", "My Search.search"),
   ],
   [
-    "🖥 cURL Actions",
+    [{ type: "icon", icon: "clipboard-data" }, "cURL Actions"],
     "Convert search to a cURL command to extract actions.",
     (filters) =>
       copyCUrlCommand("query", {
@@ -146,7 +151,7 @@ export const standardExports: ExportSearchCommand[] = [
       }),
   ],
   [
-    "🖥 Wget Actions",
+    [{ type: "icon", icon: "clipboard-data" }, "Wget Actions"],
     "Convert search to a Wget command to extract actions.",
     (filters) =>
       copyWgetCommand("query", {
@@ -156,12 +161,12 @@ export const standardExports: ExportSearchCommand[] = [
       }),
   ],
   [
-    "🖥 cURL Purge",
+    [{ type: "icon", icon: "clipboard-x" }, "cURL Purge"],
     "Convert search to a cURL command to purge matching actions.",
     (filters) => copyCUrlCommand("pruge", filters),
   ],
   [
-    "🖥 Wget Purge",
+    [{ type: "icon", icon: "clipboard-x" }, "Wget Purge"],
     "Convert search to a Wget command to purge matching actions.",
     (filters) => copyWgetCommand("purge", filters),
   ],
@@ -253,12 +258,15 @@ export function actionDisplay(
                       action.actionId
                     ),
                     buttonAccessory(
-                      "⎘ Copy Id",
+                      [{ type: "icon", icon: "clipboard" }, "Copy Id"],
                       "Copy action identifier to clipboard.",
                       () => saveClipboard(action.actionId)
                     ),
                     buttonDanger(
-                      "☠️ Purge Action",
+                      [
+                        { type: "icon", icon: "x-octagon-fill" },
+                        "Purge Action",
+                      ],
                       "Remove this action from Shesmu. This does not stop an olive from generating it again.",
                       () =>
                         fetchJsonWithBusyDialog(
@@ -293,7 +301,7 @@ export function actionDisplay(
                           )
                         )
                       : buttonDanger(
-                          "🔧 Commands ▼",
+                          [{ type: "icon", icon: "wrench" }, "Commands ▼"],
                           "Perform an action-specific command.",
                           popupMenu(
                             true,
@@ -318,7 +326,7 @@ export function actionDisplay(
           : "Actions not loaded yet.",
       bulkCommands: ([filters, response]: QueryState) => [
         buttonAccessory(
-          "🡇 Export Search",
+          [{ type: "icon", icon: "cloud-arrow-down" }, "Export Search"],
           "Export this search to a file or the clipboard or for use in other software.",
           () =>
             dialog((close) =>
@@ -334,7 +342,7 @@ export function actionDisplay(
         ),
         response && response.bulkCommands.length
           ? buttonAccessory(
-              "🡇 Export Command",
+              [{ type: "icon", icon: "cloud-arrow-down" }, "Export Command"],
               "Generate a command line to perform a command command.",
               () =>
                 dialog((_close) =>
@@ -373,7 +381,7 @@ export function actionDisplay(
           : blank(),
         response && response.total
           ? buttonDanger(
-              "☠️ Purge Actions",
+              [{ type: "icon", icon: "x-octagon-fill" }, "Purge Actions"],
               "Remove actions from Shesmu. This does not stop an olive from generating them again.",
               () =>
                 fetchJsonWithBusyDialog("purge", filters, (count) => {
@@ -392,7 +400,7 @@ export function actionDisplay(
                 )
               )
             : buttonDanger(
-                "🔧 Bulk Commands ▼",
+                [{ type: "icon", icon: "wrench" }, "Bulk Commands ▼"],
                 "Perform a number of action-specific commands.",
                 popupMenu(
                   true,
@@ -630,7 +638,7 @@ export function initialiseActionDash(
   const { ui: saveUi, model: saveModel } = singleState(
     (input: ActionFilter[]) =>
       buttonAccessory(
-        "💾 Add to My Searches",
+        [{ type: "icon", icon: "cloud-plus" }, "Add to My Searches"],
         "Save this search to the local search collection.",
         () =>
           dialog((close) => {
@@ -640,7 +648,7 @@ export function initialiseActionDash(
               nameBox.ui,
               br(),
               button(
-                "💾 Add to My Searches",
+                [{ type: "icon", icon: "cloud-plus" }, "Add to My Searches"],
                 "Save this search to the local search collection.",
                 () => {
                   const name = nameBox.value.trim();
@@ -678,7 +686,7 @@ export function initialiseActionDash(
       localSearches.get(input[0])
         ? [
             button(
-              "✎ Rename Search",
+              [{ type: "icon", icon: "pencil" }, "Rename Search"],
               "Change the name of this search in the local search collection.",
               () =>
                 dialog((close) => {
@@ -687,19 +695,23 @@ export function initialiseActionDash(
                     "New name: ",
                     newNameEntry.ui,
                     br(),
-                    button("✎ Rename", "Change searchs name.", () => {
-                      const newName = newNameEntry.value.trim();
-                      if (newName && newName != input[0]) {
-                        localSearches.delete(input[0]);
-                        localSearches.set(newName, input[1]);
-                        close();
+                    button(
+                      [{ type: "icon", icon: "pencil" }, "Rename"],
+                      "Change searchs name.",
+                      () => {
+                        const newName = newNameEntry.value.trim();
+                        if (newName && newName != input[0]) {
+                          localSearches.delete(input[0]);
+                          localSearches.set(newName, input[1]);
+                          close();
+                        }
                       }
-                    }),
+                    ),
                   ];
                 })
             ),
             button(
-              "✖ Delete Search",
+              [{ type: "icon", icon: "trash" }, "Delete Search"],
               "Remove this search from your local search collection.",
               () => localSearches.delete(input[0])
             ),
@@ -738,7 +750,7 @@ export function initialiseActionDash(
     tile(
       [],
       buttonAccessory(
-        "⬆️ Import Search",
+        [{ type: "icon", icon: "cloud-arrow-up" }, "Import Search"],
         "Add a previously exported search.",
         () =>
           dialog((close) => {
@@ -803,7 +815,7 @@ export function initialiseActionDash(
                 () => loadFile((name, data) => addSearch(name, data, true))
               ),
               button(
-                "💾 Add to My Searches",
+                [{ type: "icon", icon: "cloud-plus" }, "Add to My Searches"],
                 "Save this search to the local search collection.",
                 () => {
                   const nameStr = name.value.trim();

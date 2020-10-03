@@ -244,7 +244,7 @@ export function initialiseSimulationDashboard(
           "",
           ([name, declaration]) => [
             buttonAccessory(
-              "⎘ Copy",
+              [{ type: "icon", icon: "clipboard" }, "Copy"],
               "Copy action definition to clipboard.",
               () =>
                 saveClipboardJson({
@@ -258,27 +258,30 @@ export function initialiseSimulationDashboard(
                   ),
                 })
             ),
-            button("✎ Rename", "Rename action definition.", () =>
-              dialog((close) => {
-                const rename = inputText(name);
-                return [
-                  "Rename action to: ",
-                  rename.ui,
-                  br(),
-                  button("Rename", "Rename action.", () => {
-                    if (validIdentifier.test(rename.value)) {
-                      close();
-                      fakeActionDefinitions.delete(name);
-                      fakeActionDefinitions.set(rename.value, declaration);
-                    } else {
-                      butter(
-                        3000,
-                        "I know that seems like a cool name, but it's not a valid Shesmu identifier (letters, numbers, and underscore, starting with a lower case letter)."
-                      );
-                    }
-                  }),
-                ];
-              })
+            button(
+              [{ type: "icon", icon: "pencil" }, "Rename"],
+              "Rename action definition.",
+              () =>
+                dialog((close) => {
+                  const rename = inputText(name);
+                  return [
+                    "Rename action to: ",
+                    rename.ui,
+                    br(),
+                    button("Rename", "Rename action.", () => {
+                      if (validIdentifier.test(rename.value)) {
+                        close();
+                        fakeActionDefinitions.delete(name);
+                        fakeActionDefinitions.set(rename.value, declaration);
+                      } else {
+                        butter(
+                          3000,
+                          "I know that seems like a cool name, but it's not a valid Shesmu identifier (letters, numbers, and underscore, starting with a lower case letter)."
+                        );
+                      }
+                    }),
+                  ];
+                })
             ),
             buttonClose("Delete action definition.", () =>
               fakeActionDefinitions.delete(name)
@@ -365,25 +368,35 @@ export function initialiseSimulationDashboard(
         mono(".actnow"),
         " files, do not use actions definitions here or the server will not recognise them.",
         br(),
-        button("➕ Import Action", "Uploads a file containing an action.", () =>
-          loadFile((name, data) =>
-            importAction(fakeActionDefinitions, name.split(".")[0], data)
-          )
+        button(
+          [{ type: "icon", icon: "upload" }, "Import Action"],
+          "Uploads a file containing an action.",
+          () =>
+            loadFile((name, data) =>
+              importAction(fakeActionDefinitions, name.split(".")[0], data)
+            )
         ),
-        button("➕ Add Action", "Adds an action from a definition.", () =>
-          dialog((close) => {
-            const actionJson = inputTextArea();
-            return [
-              "Action definition:",
-              br(),
-              actionJson.ui,
-              br(),
-              button("Add", "Save to fake action collection.", () => {
-                importAction(fakeActionDefinitions, null, actionJson.value);
-                close();
-              }),
-            ];
-          })
+        button(
+          [{ type: "icon", icon: "plus-square" }, "Add Action"],
+          "Adds an action from a definition.",
+          () =>
+            dialog((close) => {
+              const actionJson = inputTextArea();
+              return [
+                "Action definition:",
+                br(),
+                actionJson.ui,
+                br(),
+                button(
+                  [{ type: "icon", icon: "plus-square" }, "Add"],
+                  "Save to fake action collection.",
+                  () => {
+                    importAction(fakeActionDefinitions, null, actionJson.value);
+                    close();
+                  }
+                ),
+              ];
+            })
         ),
         br(),
         fakeActionsUi,
@@ -474,7 +487,7 @@ export function initialiseSimulationDashboard(
           });
           const oliveSelection = dropdown(
             (olive) => [
-              infoForProduces(olive.produces).icon,
+              { type: "icon", icon: infoForProduces(olive.produces).icon },
               " ",
               italic(olive.syntax),
               " – ",
@@ -689,12 +702,14 @@ export function initialiseSimulationDashboard(
   setRootDashboard(
     container,
     group(
-      button("🤖 Simulate", "Run olive simulation and fetch results", () =>
-        simulationModel.statusChanged(editor.getValue())
+      button(
+        [{ type: "icon", icon: "bug" }, "Simulate"],
+        "Run olive simulation and fetch results",
+        () => simulationModel.statusChanged(editor.getValue())
       ),
       waitForData.ui,
       buttonAccessory(
-        "🠝 Upload File",
+        [{ type: "icon", icon: "file-earmark-arrow-up" }, "Upload File"],
         "Upload a file from your computer to simulate",
         () =>
           loadFile((name, data) => {
@@ -703,7 +718,7 @@ export function initialiseSimulationDashboard(
           })
       ),
       buttonAccessory(
-        "🡇 Download File",
+        [{ type: "icon", icon: "file-earmark-arrow-down" }, "Download File"],
         "Save script in editor to your computer",
         () => saveFile(editor.getValue(), "text/plain", fileName)
       ),
