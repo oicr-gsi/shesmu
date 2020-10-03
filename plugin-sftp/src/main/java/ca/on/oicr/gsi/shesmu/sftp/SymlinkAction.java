@@ -1,6 +1,7 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
@@ -23,7 +24,11 @@ import java.util.stream.Stream;
 public class SymlinkAction extends Action {
   private static final ActionCommand<SymlinkAction> HUMAN_APPROVE_COMMAND =
       new ActionCommand<SymlinkAction>(
-          SymlinkAction.class, "SFTP-HUMAN-APPROVE", "🚀 Allow to run", Preference.ALLOW_BULK) {
+          SymlinkAction.class,
+          "SFTP-HUMAN-APPROVE",
+          FrontEndIcon.HAND_THUMBS_UP,
+          "Allow to run",
+          Preference.ALLOW_BULK) {
 
         @Override
         protected boolean execute(SymlinkAction action, Optional user) {

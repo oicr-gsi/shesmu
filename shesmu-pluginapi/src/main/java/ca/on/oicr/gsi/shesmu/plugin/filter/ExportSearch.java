@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
+
 /**
  * Allow creating custom "Export search" actions
  *
@@ -11,21 +13,25 @@ public interface ExportSearch<T> {
    *
    * <p>If the user selects this option, they will be redirected to the URL constructed
    *
+   * @param icon the icon of the button to display to the user
    * @param name the name of the button to display to the user
    * @param urlStart the part of the URL to prepend to the JSON blob
    * @param urlEnd the part of the URL to append to the JSON blob
    * @param description a tooltip to display on the button
    */
-  T linkWithJson(String name, String urlStart, String urlEnd, String description);
+  T linkWithJson(
+      FrontEndIcon icon, String name, String urlStart, String urlEnd, String description);
   /**
    * Export the search as a URL containing a base64-encoded representation of the search
    *
    * <p>If the user selects this option, they will be redirected to the URL constructed
    *
+   * @param icon the icon of the button to display to the user
    * @param name the name of the button to display to the user
    * @param urlStart the part of the URL to prepend to the base64-encoded data
    * @param urlEnd the part of the URL to append to the base64-encoded data
    * @param description a tooltip to display on the button
    */
-  T linkWithUrlSearch(String name, String urlStart, String urlEnd, String description);
+  T linkWithUrlSearch(
+      FrontEndIcon icon, String name, String urlStart, String urlEnd, String description);
 }

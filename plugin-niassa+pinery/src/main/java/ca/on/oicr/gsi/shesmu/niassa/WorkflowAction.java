@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import ca.on.oicr.gsi.provenance.model.LimsKey;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
@@ -60,7 +61,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-IGNORE-LOCK",
-          "🔓️ Ignore LIMS Key Lock",
+          FrontEndIcon.UNLOCK,
+          "Ignore LIMS Key Lock",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
@@ -76,7 +78,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-IGNORE-MAX-IN-FLIGHT",
-          "✈️ Ignore Max-in-flight Limit",
+          FrontEndIcon.LIGHTNING_FILL,
+          "Ignore Max-in-flight Limit",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -91,7 +94,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-INVALIDATE-ESSENTIALS",
-          "ℹ️ Refresh Run Information",
+          FrontEndIcon.JOURNAL_ARROW_DOWN,
+          "Refresh Run Information",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -111,7 +115,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-PRIORITY-BOOST",
-          "🚀 Use High Priority",
+          FrontEndIcon.TRUCK,
+          "Use High Priority",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -126,7 +131,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-PRIORITY-NICE",
-          "🚀 Use Normal Priority",
+          FrontEndIcon.BICYCLE,
+          "Use Normal Priority",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -141,7 +147,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-RESET-WFR",
-          "💔 Reset Workflow Run Connection",
+          FrontEndIcon.PLUG,
+          "Reset Workflow Run Connection",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -152,7 +159,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-RESPECT-LOCK",
-          "🔒️ Respect LIMS Key Lock",
+          FrontEndIcon.LOCK,
+          "Respect LIMS Key Lock",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -167,7 +175,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-RESPECT-MAX-IN-FLIGHT",
-          "🚲 Respect Max-in-flight Limit",
+          FrontEndIcon.LIGHTNING,
+          "Respect Max-in-flight Limit",
           Preference.ALLOW_BULK) {
         @Override
         protected boolean execute(WorkflowAction action, Optional<String> user) {
@@ -182,7 +191,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-RETRY",
-          "🚧 Retry",
+          FrontEndIcon.ARROW_REPEAT,
+          "Retry",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
@@ -213,7 +223,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-SKIP-CANDIDATES",
-          "🚧 Skip All Partially Matched Workflow Runs",
+          FrontEndIcon.ARROW_REPEAT,
+          "Skip All Partially Matched Workflow Runs",
           Preference.PROMPT,
           Preference.ANNOY_USER,
           Preference.ALLOW_BULK) {
@@ -226,7 +237,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-SKIP-HISTORIC",
-          "🚧 Skip Historic Workflow Runs",
+          FrontEndIcon.SCISSORS,
+          "Skip Historic Workflow Runs",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
@@ -238,7 +250,8 @@ public final class WorkflowAction extends Action {
       new ActionCommand<WorkflowAction>(
           WorkflowAction.class,
           "NIASSA-SKIP-RERUN",
-          "🚧 Skip and Re-run",
+          FrontEndIcon.ARROW_REPEAT,
+          "Skip and Re-run",
           Preference.PROMPT,
           Preference.ANNOY_USER,
           Preference.ALLOW_BULK) {

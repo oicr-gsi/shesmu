@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
+import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
@@ -24,7 +25,8 @@ public class DeleteAction extends Action {
       new ActionCommand<DeleteAction>(
           DeleteAction.class,
           "SFTP-HUMAN-APPROVE",
-          "🚀 Allow to run",
+          FrontEndIcon.HAND_THUMBS_UP,
+          "Allow to run",
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override

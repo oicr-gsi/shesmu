@@ -1,6 +1,7 @@
 import {
   ClickHandler,
   DisplayElement,
+  IconName,
   UIElement,
   blank,
   br,
@@ -96,6 +97,7 @@ interface ActionQueryResponse {
 interface BaseCommand {
   command: string;
   buttonText: string;
+  icon: IconName;
   showPrompt: boolean;
 }
 interface BulkCommand extends BaseCommand {
@@ -291,7 +293,10 @@ export function actionDisplay(
                     action.commands.length < 3
                       ? action.commands.map((command) =>
                           buttonDanger(
-                            command.buttonText,
+                            [
+                              { type: "icon", icon: command.icon },
+                              command.buttonText,
+                            ],
                             `Perform special command ${command.command} on this action.`,
                             createCallbackForActionCommand(
                               command,
@@ -306,7 +311,10 @@ export function actionDisplay(
                           popupMenu(
                             true,
                             ...action.commands.map((command) => ({
-                              label: command.buttonText,
+                              label: [
+                                { type: "icon" as const, icon: command.icon },
+                                command.buttonText,
+                              ],
                               action: createCallbackForActionCommand(
                                 command,
                                 action.actionId,
@@ -347,10 +355,12 @@ export function actionDisplay(
               () =>
                 dialog((_close) =>
                   tableFromRows(
-                    response.bulkCommands.map(({ buttonText, command }) =>
+                    response.bulkCommands.map(({ buttonText, icon, command }) =>
                       tableRow(
                         null,
-                        { contents: buttonText },
+                        {
+                          contents: [{ type: "icon", icon: icon }, buttonText],
+                        },
                         {
                           contents: button(
                             "cUrl",
@@ -394,7 +404,7 @@ export function actionDisplay(
           ? response.bulkCommands.length < 6
             ? response.bulkCommands.map((command) =>
                 buttonDanger(
-                  command.buttonText,
+                  [{ type: "icon", icon: command.icon }, command.buttonText],
                   `Perform special command ${command.command} on ${command.count} actions.`,
                   createCallbackForBulkCommand(command, filters, reload)
                 )
@@ -502,10 +512,17 @@ function createCallbackForActionCommand(
       dialog((close) => [
         `Perform command ${command.command} on ${id}? This is your moment of sober second thought.`,
         br(),
-        buttonDanger(command.buttonText.toUpperCase(), "Really do it!", () => {
-          close();
-          realPerform();
-        }),
+        buttonDanger(
+          [
+            { type: "icon", icon: command.icon },
+            command.buttonText.toUpperCase(),
+          ],
+          "Really do it!",
+          () => {
+            close();
+            realPerform();
+          }
+        ),
         br(),
         button("Back away slowly", "Don't do anything.", close),
       ]);
@@ -527,7 +544,11 @@ function createCallbackForBulkCommand(
         filters: filters,
       },
       (count) => {
-        butter(5000, `The command executed on ${count} actions.`);
+        butter(
+          5000,
+          { type: "icon", icon: command.icon },
+          `The command executed on ${count} actions.`
+        );
         reload();
       }
     );
@@ -550,10 +571,17 @@ function createCallbackForBulkCommand(
       dialog((close) => [
         `Perform command ${command.command} on ${command.count} actions? This is your moment of sober second thought.`,
         br(),
-        buttonDanger(command.buttonText.toUpperCase(), "Really do it!", () => {
-          close();
-          realPerform();
-        }),
+        buttonDanger(
+          [
+            { type: "icon", icon: command.icon },
+            command.buttonText.toUpperCase(),
+          ],
+          "Really do it!",
+          () => {
+            close();
+            realPerform();
+          }
+        ),
         br(),
         button("Back away slowly", "Don't do anything.", close),
       ]);
