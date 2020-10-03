@@ -166,7 +166,7 @@ export function initialisePauseDashboard(pauses: Pauses) {
                     active[index],
 
                     buttonDanger(
-                      "▶ Restart",
+                      [{ type: "icon", icon: "skip-forward-fill" }, "Restart"],
                       "Remove this pause and allow actions to continue.",
                       () =>
                         fetchJsonWithBusyDialog(
@@ -182,7 +182,7 @@ export function initialisePauseDashboard(pauses: Pauses) {
                         )
                     ),
                     buttonDanger(
-                      "️☠️ Purge",
+                      [{ type: "icon", icon: "x-octagon-fill" }, "️Purge"],
                       "Purge related actions and remove this pause.",
                       () =>
                         fetchJsonWithBusyDialog(

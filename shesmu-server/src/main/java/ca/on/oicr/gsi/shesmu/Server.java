@@ -2698,6 +2698,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("theme-ambiance.js", "text/javascript;charset=utf-8");
     add("theme-chrome.js", "text/javascript;charset=utf-8");
     add("mode-shesmu.js", "text/javascript;charset=utf-8");
+    add("bootstrap-icons.svg", "image/svg+xml");
     add("dead.svg", "image/svg+xml");
     add("shesmu.svg", "image/svg+xml");
     add("press.svg", "image/svg+xml");

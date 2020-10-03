@@ -1,5 +1,6 @@
 import { fetchJsonWithBusyDialog, refreshable } from "./io.js";
 import {
+  DisplayElement,
   StateSynchronizer,
   UIElement,
   UpdateableList,
@@ -155,16 +156,25 @@ export function alertNavigator<L, A extends Alert<L>>(
         return "No matching alerts.";
       }
       const liveCount = selectedAlerts.filter((a) => a.live).length;
-      let total: string;
+      let total: DisplayElement;
       if (liveCount == 0) {
-        total = `💤 ${selectedAlerts.length} expired alerts`;
+        total = [
+          { type: "icon", icon: "volume-mute" },
+          `${selectedAlerts.length} expired alerts`,
+        ];
       } else if (liveCount == selectedAlerts.length) {
-        total = `🔔 ${selectedAlerts.length} firing alerts`;
+        total = [
+          { type: "icon", icon: "volume-up" },
+          `${selectedAlerts.length} firing alerts`,
+        ];
       } else {
-        total = `${
-          selectedAlerts.length
-        } alerts 🔔 ${liveCount} firing 💤 ${selectedAlerts.length -
-          liveCount} expired`;
+        total = [
+          `${selectedAlerts.length} alerts`,
+          { type: "icon", icon: "volume-up" },
+          `${liveCount} firing`,
+          { type: "icon", icon: "volume-mute" },
+          `${selectedAlerts.length - liveCount} expired`,
+        ];
       }
       const numPerPage = 10;
 
@@ -211,22 +221,32 @@ export function alertNavigator<L, A extends Alert<L>>(
       },
 
       buttonAccessory(
-        "➕ Add Filter",
+        [{ type: "icon", icon: "funnel" }, "Add Filter"],
         "Add a filter to limit the alerts displayed.",
         () =>
           dialog((close) => [
-            button("🔔 Firing", "Currently firing alerts.", () => {
-              close();
-              filterList.keepOnly((x) => x.type != "live");
-              filterList.add({ type: "live", value: true, label: null });
-            }),
-            button("💤 Expired", "Not currently firing alerts.", () => {
-              close();
-              filterList.keepOnly((x) => x.type != "live");
-              filterList.add({ type: "live", value: false, label: null });
-            }),
+            button(
+              [{ type: "icon", icon: "volume-up" }, "Firing"],
+              "Currently firing alerts.",
+              () => {
+                close();
+                filterList.keepOnly((x) => x.type != "live");
+                filterList.add({ type: "live", value: true, label: null });
+              }
+            ),
+            button(
+              [{ type: "icon", icon: "volume-mute" }, "Expired"],
+              "Not currently firing alerts.",
+              () => {
+                close();
+                filterList.keepOnly((x) => x.type != "live");
+                filterList.add({ type: "live", value: false, label: null });
+              }
+            ),
+            br(),
+            "Labels: ",
             createLabelFilter(
-              "🏷️ Has Label",
+              [{ type: "icon", icon: "chat-left-fill" }, "Has Label"],
               "Find actions a labels.",
               close,
               (label) => {
@@ -238,7 +258,10 @@ export function alertNavigator<L, A extends Alert<L>>(
               }
             ),
             createLabelFilter(
-              "*️⃣  Label Name Matches Regular Expression",
+              [
+                { type: "icon", icon: "chat-left-dots-fill" },
+                "Label Name Matches Regular Expression",
+              ],
               "Find actions with label names that match a regular expression.",
               close,
               (label) =>
@@ -248,8 +271,13 @@ export function alertNavigator<L, A extends Alert<L>>(
                   value: null,
                 })
             ),
+            br(),
+            "Values: ",
             createLabelValueFilter(
-              "= Value Matches Text",
+              [
+                { type: "icon", icon: "chat-left-text-fill" },
+                "Value Matches Text",
+              ],
               "Find actions with labels that match a particular value.",
               close,
               (label, value) =>
@@ -260,7 +288,10 @@ export function alertNavigator<L, A extends Alert<L>>(
                 })
             ),
             createLabelValueFilter(
-              "≠ Value Does Not Match Text",
+              [
+                { type: "icon", icon: "chat-left" },
+                "Value Does Not Match Text",
+              ],
               "Find actions with labels that do not match a particular value.",
               close,
               (label, value) =>
@@ -271,7 +302,10 @@ export function alertNavigator<L, A extends Alert<L>>(
                 })
             ),
             createLabelValueFilter(
-              "*️⃣  Value Matches Regular Expression",
+              [
+                { type: "icon", icon: "chat-left-dots-fill" },
+                "Value Matches Regular Expression",
+              ],
               "Find actions with a label value that match a regular expression.",
               close,
               (label, value) =>
@@ -400,19 +434,25 @@ function breakdown(
                 [
                   "",
                   ([value]) => [
-                    button("=", "Show alerts that match this value.", () =>
-                      list.add({
-                        label: breakdown.label,
-                        value: value,
-                        type: "eq",
-                      })
+                    button(
+                      { type: "icon", icon: "chat-left-text-fill" },
+                      "Show alerts that match this value.",
+                      () =>
+                        list.add({
+                          label: breakdown.label,
+                          value: value,
+                          type: "eq",
+                        })
                     ),
-                    button("≠", "Hide alerts that match this value.", () =>
-                      list.add({
-                        label: breakdown.label,
-                        value: value,
-                        type: "ne",
-                      })
+                    button(
+                      { type: "icon", icon: "chat-left-fill" },
+                      "Hide alerts that match this value.",
+                      () =>
+                        list.add({
+                          label: breakdown.label,
+                          value: value,
+                          type: "ne",
+                        })
                     ),
                   ],
                 ]
@@ -443,7 +483,7 @@ function breakdown(
         {
           contents: [
             button(
-              "🏷️ Has Label",
+              [{ type: "icon", icon: "chat-left-fill" }, "Has Label"],
               "Show alerts that have this label with any value.",
               () =>
                 list.add({
@@ -484,7 +524,7 @@ function breakdown(
 }
 
 function createLabelFilter(
-  name: string,
+  name: DisplayElement,
   tooltip: string,
   close: () => void,
   add: (label: string) => void
@@ -509,7 +549,7 @@ function createLabelFilter(
 }
 
 function createLabelValueFilter(
-  name: string,
+  name: DisplayElement,
   tooltip: string,
   close: () => void,
   add: (label: string, value: string) => void
@@ -708,16 +748,18 @@ function showFilter(
   userFilter: AlertFilter<RegExp>,
   list: UpdateableList<AlertFilter<RegExp>>
 ): UIElement {
-  let name;
+  let name: DisplayElement;
   switch (userFilter.type) {
     case "live":
-      name = userFilter.value ? "🔔 Firing" : "💤 Expired";
+      name = userFilter.value
+        ? [{ type: "icon", icon: "volume-up" }, "Firing"]
+        : [{ type: "icon", icon: "volume-mute" }, "Expired"];
       break;
     case "has":
-      name = `🏷️ ${userFilter.label}`;
+      name = [{ type: "icon", icon: "tag" }, userFilter.label];
       break;
     case "has-regex":
-      name = `🏷️ ~ ${userFilter.label}`;
+      name = [{ type: "icon", icon: "tag" }, ` ~ ${userFilter.label}`];
       break;
     case "eq":
       name = `${userFilter.label} = ${userFilter.value || "<blank>"}`;

@@ -118,10 +118,14 @@ export function fetchJsonWithBusyDialog<
       if (error) {
         dialog((close) => [
           text(error.message),
-          button("Retry", "Attempt operation again.", () => {
-            close();
-            fetchJsonWithBusyDialog(url, parameters, callback);
-          }),
+          button(
+            [{ type: "icon", icon: "arrow-clockwise" }, "Retry"],
+            "Attempt operation again.",
+            () => {
+              close();
+              fetchJsonWithBusyDialog(url, parameters, callback);
+            }
+          ),
         ]);
       }
     })
