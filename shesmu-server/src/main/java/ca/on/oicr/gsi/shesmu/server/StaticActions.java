@@ -36,7 +36,9 @@ public class StaticActions implements LoadedConfiguration {
 
     @Override
     public void stop() {
-      // Do nothing.
+      // Reset counts for this file
+      processedCount.labels(fileName().toString()).set(0);
+      totalCount.labels(fileName().toString()).set(0);
     }
 
     @Override
