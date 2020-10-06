@@ -1,5 +1,40 @@
 # Unreleased
 
+# [1.4.3] - 2020-10-06T10:56+00:00
+
+Changes:
+
+* Fix missing signature functions for `Export Define`
+* Correctly determine whether output and input formats are the same
+* Allow `Group By` discriminators to destructure (_e.g._, `By {run, lane, _} = ius` is legal)
+* Allow `Group By` discriminators to filter out data using `OnlyIf` and `Univalued`
+* Create a `std::string::truncate` function
+* Fix bugs parsing algebraic type signatures
+* Fix `ClassCastExecption` bug with `Require` olives
+* Fix date formatter
+
+UI changes:
+
+* Use Bootstrap icons instead of emoji
+* Fix _Callable Definitions_ page
+* Add missing parser in front end for algebraic types
+* Show number of definitions in _Extra Definitions_ tab in simulator
+* Create a dashboard for pauses
+* Make he olive menu is scollable
+* Make popup menus move with the page content when scolled
+* Hide UI elements before selections are made
+* Fix tab switching on data refresh
+* Add a pane with selected items when doing a multi-select
+* Make _Add Filter_ → _Tags_ only show relevant tags
+* Collect action commands in a menu on action tiles
+* Improve pager layout
+* Improve navigation and labels in alert display
+
+Niassa+Pinery plugin:
+* Add workflow kinds to Niassa
+* Truncate annotations in Niassa to 255 characters
+* Add new `barcode_kit` field from v8 Pinery
+
 # [1.4.2] - 2020-09-15T18:29+00:00
 
 Changes:
