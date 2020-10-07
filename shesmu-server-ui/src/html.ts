@@ -2336,12 +2336,14 @@ export function inputSearchBar(
   model: StatefulModel<string>
 ): InputField<string> {
   const input = createUiFromTag("input");
-  input.element.type = "search";
+  input.element.type = "text";
   input.element.value = initial;
   input.element.style.width = "100%";
-  input.element.addEventListener("input", () =>
-    model.statusChanged(input.element.value)
-  );
+  input.element.addEventListener("keydown", (e) => {
+    if (e.key == "Enter") {
+      model.statusChanged(input.element.value);
+    }
+  });
 
   return {
     ui: input,
