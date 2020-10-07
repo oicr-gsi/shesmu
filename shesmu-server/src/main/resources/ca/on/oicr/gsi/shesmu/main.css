@@ -959,3 +959,16 @@ img.deadolive {
   cursor: pointer;
   white-space: nowrap;
 }
+
+.tree:hover {
+  color: var(--widget-lowlight);
+}
+
+.tree.selected {
+  background-color: var(--widget-zebra);
+  color: var(--widget-lowlight);
+}
+
+.tree.selected:hover {
+  color: var(--widget-text);
+}
