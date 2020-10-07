@@ -415,7 +415,10 @@ export function actionDisplay(
                 popupMenu(
                   true,
                   ...response.bulkCommands.map((command) => ({
-                    label: command.buttonText,
+                    label: [
+                      { type: "icon" as const, icon: command.icon },
+                      command.buttonText,
+                    ],
                     action: createCallbackForBulkCommand(
                       command,
                       filters,
