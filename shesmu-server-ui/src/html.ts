@@ -2762,6 +2762,21 @@ export function paragraph(...contents: DisplayElement[]): DisplayElement {
   return { type: "p", contents: contents };
 }
 
+function parentalSum(
+  child: HTMLElement,
+  extract: (input: HTMLElement) => number
+): number {
+  let sum = 0;
+  for (
+    let current: HTMLElement | null = child;
+    current != null;
+    current = current.offsetParent as HTMLElement
+  ) {
+    sum += extract(current);
+  }
+  return sum;
+}
+
 /**
  * Create a click handler that will show a pop up menu
  * @param underOwner if true, the pop up menu will appear under the widget that it is connected to; if false, the menu will appear at the position where the user clicked.
@@ -2795,8 +2810,10 @@ export function popup(
     const { x, y } =
       underOwner && e.currentTarget instanceof HTMLElement
         ? {
-            x: e.currentTarget.offsetLeft,
-            y: e.currentTarget.offsetTop + e.currentTarget.offsetHeight,
+            x: parentalSum(e.currentTarget, (x) => x.offsetLeft),
+            y:
+              parentalSum(e.currentTarget, (x) => x.offsetTop) +
+              e.currentTarget.offsetHeight,
           }
         : { x: e.pageX, y: e.pageY };
     inner.element.style.left = `${Math.min(
