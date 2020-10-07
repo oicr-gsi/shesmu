@@ -1790,14 +1790,30 @@ function clearChildren(container: HTMLElement) {
  * @param title the name of the section
  * @param inner the contents of the section
  */
-export function collapsible(title: string, ...inner: UIElement[]): UIElement {
+export function collapsible(
+  title: DisplayElement,
+  ...inner: UIElement[]
+): UIElement {
+  const result = collapsibleWithDefault(title, false, ...inner);
+  return result ? result.ui : blank();
+}
+/**
+ * A collapsible section
+ * @param title the name of the section
+ * @param inner the contents of the section
+ */
+export function collapsibleWithDefault(
+  title: DisplayElement,
+  openAtStart: boolean,
+  ...inner: UIElement[]
+): { ui: UIElement; model: StatefulModel<boolean> } | null {
   const contents = createUiFromTag("div", ...inner);
   if (!contents.element.hasChildNodes()) {
-    return [];
+    return null;
   }
   const showHide = createUiFromTag("p", title);
-  showHide.element.className = "collapse close";
-  contents.element.style.maxHeight = "0px";
+  showHide.element.className = openAtStart ? "collapse open" : "collapse close";
+  contents.element.style.maxHeight = openAtStart ? "none" : "0px";
   showHide.element.addEventListener("click", (e) => {
     e.stopPropagation();
     const visible = contents.element.style.maxHeight != "none";
@@ -1805,7 +1821,17 @@ export function collapsible(title: string, ...inner: UIElement[]): UIElement {
     showHide.element.className = visible ? "collapse open" : "collapse close";
     contents.element.style.maxHeight = visible ? "none" : "0px";
   });
-  return [showHide, contents];
+  return {
+    ui: [showHide, contents],
+    model: {
+      reload: () => {},
+      statusChanged: (input) => {
+        showHide.element.className = input ? "collapse open" : "collapse close";
+      },
+      statusFailed: (_message, _error) => {},
+      statusWaiting: () => {},
+    },
+  };
 }
 const months: string[] = [
   "January",
