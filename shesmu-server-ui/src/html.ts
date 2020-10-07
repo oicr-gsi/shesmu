@@ -2300,6 +2300,15 @@ export function historyState<R extends keyof ShesmuLinks>(
 export function hr(): UIElement {
   return createUiFromTag("hr");
 }
+/**
+ * Create an indented block
+ * @param children the elements to indent
+ */
+export function indented(...children: UIElement[]): UIElement {
+  const ui = createUiFromTag("div", ...children);
+  ui.element.className = "indent";
+  return ui;
+}
 
 /**
  * Create an image

@@ -937,6 +937,10 @@ img.deadolive {
   margin-right: 0.3em;
 }
 
+.indent {
+  padding-left: 1em;
+}
+
 .close {
   cursor: pointer;
   white-space: nowrap;
