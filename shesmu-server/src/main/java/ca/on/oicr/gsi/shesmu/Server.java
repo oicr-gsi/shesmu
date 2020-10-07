@@ -608,180 +608,45 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
-        "/olivedefs",
+        "/defs",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
+              public Stream<Header> headers() {
+                String defs = "[]";
+                try {
+                  final ArrayNode array = RuntimeSupport.MAPPER.createArrayNode();
+                  actionDefsJson(array);
+                  constantDefsJson(array);
+                  functionsDefsJson(array);
+                  oliveDefsJson(array);
+                  refillerDefsJson(array);
+                  signatureDefsJson(array);
+                  defs = RuntimeSupport.MAPPER.writeValueAsString(array);
+                } catch (JsonProcessingException e) {
+                  e.printStackTrace();
+                }
+                return Stream.of(
+                    Header.jsModule(
+                        String.format(
+                            "import {initialiseDefinitionDash} from \"./definitions.js\"; initialiseDefinitionDash(%s);",
+                            defs)));
+              }
+
+              @Override
               public String activeUrl() {
-                return "olivedefs";
+                return "defs";
               }
 
               @Override
               protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                compiler
-                    .oliveDefinitions()
-                    .sorted(Comparator.comparing(CallableDefinition::name))
-                    .forEach(
-                        oliveDefinition -> {
-                          try {
-                            writer.writeStartElement("h1");
-                            writer.writeAttribute("id", oliveDefinition.name());
-                            writer.writeCharacters(oliveDefinition.name());
-                            writer.writeEndElement();
-
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
-
-                            showSourceConfig(writer, oliveDefinition.filename());
-
-                            writer.writeStartElement("tr");
-                            writer.writeStartElement("td");
-                            writer.writeCharacters("Input Format");
-                            writer.writeEndElement();
-                            writer.writeStartElement("td");
-                            writer.writeCharacters(oliveDefinition.format());
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-
-                            writer.writeStartElement("tr");
-                            writer.writeStartElement("td");
-                            writer.writeCharacters("Output Format");
-                            writer.writeEndElement();
-                            writer.writeStartElement("td");
-                            writer.writeCharacters(
-                                oliveDefinition.isRoot() ? "Same and signable" : "Transformed");
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-
-                            writer.writeEndElement();
-
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
-                            for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
-                              writer.writeStartElement("tr");
-                              writer.writeStartElement("td");
-                              writer.writeCharacters("Argument " + (i + 1));
-                              writer.writeEndElement();
-                              writer.writeStartElement("td");
-                              writer.writeCharacters(oliveDefinition.parameterType(i).name());
-                              writer.writeEndElement();
-                              writer.writeEndElement();
-                            }
-                            writer.writeEndElement();
-
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
-                            TableRowWriter row = new TableRowWriter(writer);
-                            oliveDefinition
-                                .outputStreamVariables(null, null)
-                                .get()
-                                .sorted(Comparator.comparing(Target::name))
-                                .forEach(p -> row.write(false, p.name(), p.type().name()));
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                        });
-              }
-            }.renderPage(os);
-          }
-        });
-    add(
-        "/actiondefs",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this, false) {
-              @Override
-              public String activeUrl() {
-                return "actiondefs";
-              }
-
-              @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                definitionRepository
-                    .actions()
-                    .sorted(Comparator.comparing(ActionDefinition::name))
-                    .forEach(
-                        action -> {
-                          try {
-                            writer.writeStartElement("h1");
-                            writer.writeAttribute("id", action.name());
-                            writer.writeCharacters(action.name());
-                            writer.writeEndElement();
-                            writer.writeStartElement("p");
-                            writer.writeCharacters(action.description());
-                            writer.writeEndElement();
-
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
-                            showSourceConfig(writer, action.filename());
-                            TableRowWriter row = new TableRowWriter(writer);
-                            action
-                                .parameters()
-                                .sorted(Comparator.comparing(ActionParameterDefinition::name))
-                                .forEach(
-                                    p ->
-                                        row.write(
-                                            false,
-                                            p.name(),
-                                            p.type().name()
-                                                + (p.required() ? " Required" : " Optional")));
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                        });
-              }
-            }.renderPage(os);
-          }
-        });
-    add(
-        "/refillerdefs",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this, false) {
-
-              @Override
-              public String activeUrl() {
-                return "refillerdefs";
-              }
-
-              @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                definitionRepository
-                    .refillers()
-                    .sorted(Comparator.comparing(RefillerDefinition::name))
-                    .forEach(
-                        refiller -> {
-                          try {
-                            writer.writeStartElement("h1");
-                            writer.writeAttribute("id", refiller.name());
-                            writer.writeCharacters(refiller.name());
-                            writer.writeEndElement();
-                            writer.writeStartElement("p");
-                            writer.writeCharacters(refiller.description());
-                            writer.writeEndElement();
-
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "even");
-                            showSourceConfig(writer, refiller.filename());
-                            TableRowWriter row = new TableRowWriter(writer);
-                            refiller
-                                .parameters()
-                                .sorted(Comparator.comparing(RefillerParameterDefinition::name))
-                                .forEach(p -> row.write(false, p.name(), p.type().name()));
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                        });
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "definitiondash");
+                writer.writeComment("dashboard content");
+                writer.writeEndElement();
               }
             }.renderPage(os);
           }
@@ -1022,184 +887,6 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
-        "/signaturedefs",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new TablePage(this) {
-              @Override
-              public String activeUrl() {
-                return "signaturedefs";
-              }
-
-              @Override
-              protected void writeRows(TableRowWriter row) {
-                definitionRepository
-                    .signatures()
-                    .sorted(Comparator.comparing(SignatureDefinition::name))
-                    .forEach(
-                        variable -> {
-                          row.write(
-                              Collections.singletonList(new Pair<>("id", variable.name())),
-                              variable.name(),
-                              variable.type().name());
-                        });
-              }
-            }.renderPage(os);
-          }
-        });
-    add(
-        "/constantdefs",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this, false) {
-              @Override
-              public String activeUrl() {
-                return "constantdefs";
-              }
-
-              @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                Stream.concat(definitionRepository.constants(), compiler.constants())
-                    .sorted(Comparator.comparing(Target::name))
-                    .forEach(
-                        constant -> {
-                          try {
-                            writer.writeStartElement("h1");
-                            writer.writeAttribute("id", constant.name());
-                            writer.writeCharacters(constant.name());
-                            writer.writeEndElement();
-                            writer.writeStartElement("p");
-                            writer.writeCharacters(constant.description());
-                            writer.writeEndElement();
-                            showSourceConfig(writer, constant.filename());
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "function even");
-                            writer.writeStartElement("tr");
-                            writer.writeStartElement("td");
-                            writer.writeCharacters("Type");
-                            writer.writeEndElement();
-                            writer.writeStartElement("td");
-                            writer.writeCharacters(constant.type().name());
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                            writer.writeStartElement("tr");
-                            writer.writeStartElement("td");
-                            writer.writeCharacters("Value");
-                            writer.writeEndElement();
-                            writer.writeStartElement("td");
-                            writer.writeStartElement("span");
-                            writer.writeAttribute("class", "button accessory");
-                            writer.writeAttribute(
-                                "onclick", String.format("fetchConstant('%s')", constant.name()));
-                            writer.writeCharacters("▶ Get");
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                        });
-              }
-            }.renderPage(os);
-          }
-        });
-
-    add(
-        "/functiondefs",
-        t -> {
-          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream os = t.getResponseBody()) {
-            new BasePage(this, false) {
-              @Override
-              public String activeUrl() {
-                return "functiondefs";
-              }
-
-              @Override
-              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
-                Stream.concat(definitionRepository.functions(), compiler.functions())
-                    .sorted(Comparator.comparing(FunctionDefinition::name))
-                    .forEach(
-                        function -> {
-                          try {
-                            writer.writeStartElement("h1");
-                            writer.writeAttribute("id", function.name());
-                            writer.writeCharacters(function.name());
-                            writer.writeEndElement();
-                            writer.writeStartElement("p");
-                            writer.writeCharacters(function.description());
-                            writer.writeEndElement();
-                            showSourceConfig(writer, function.filename());
-                            writer.writeStartElement("table");
-                            writer.writeAttribute("class", "function");
-                            function
-                                .parameters()
-                                .map(Pair.number())
-                                .forEach(
-                                    p -> {
-                                      try {
-                                        writer.writeStartElement("tr");
-                                        writer.writeStartElement("td");
-                                        writer.writeCharacters(
-                                            "Argument "
-                                                + Integer.toString(p.first() + 1)
-                                                + ": "
-                                                + p.second().description());
-                                        writer.writeEndElement();
-                                        writer.writeStartElement("td");
-                                        writer.writeCharacters(p.second().type().name());
-                                        writer.writeEndElement();
-                                        writer.writeStartElement("td");
-                                        writer.writeStartElement("input");
-                                        writer.writeAttribute("type", "text");
-                                        writer.writeAttribute(
-                                            "id", function.name() + "$" + p.first());
-                                        writer.writeEndElement();
-                                        writer.writeEndElement();
-                                        writer.writeEndElement();
-                                      } catch (XMLStreamException e) {
-                                        throw new RuntimeException(e);
-                                      }
-                                    });
-                            writer.writeStartElement("tr");
-                            writer.writeStartElement("td");
-                            writer.writeCharacters("Result: " + function.returnType().name());
-                            writer.writeEndElement();
-                            writer.writeStartElement("td");
-                            writer.writeComment("type");
-                            writer.writeEndElement();
-                            writer.writeStartElement("td");
-                            writer.writeStartElement("span");
-                            writer.writeAttribute("class", "button accessory");
-                            writer.writeAttribute(
-                                "onclick",
-                                String.format(
-                                    "runFunction('%s', %s)",
-                                    function.name(),
-                                    function
-                                        .parameters()
-                                        .map(p -> p.type().apply(TypeUtils.TO_JS_PARSER))
-                                        .collect(Collectors.joining(",", "[", "]"))));
-                            writer.writeCharacters("▶ Run");
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                        });
-              }
-            }.renderPage(os);
-          }
-        });
-    add(
         "/dumpdefs",
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
@@ -1310,6 +997,13 @@ public final class Server implements ServerConfig, ActionServices {
               @Override
               public String activeUrl() {
                 return "typedefs";
+              }
+
+              @Override
+              public Stream<Header> headers() {
+                return Stream.of(
+                    Header.jsModule(
+                        "import {parseType} from \"./definitions.js\"; window.parseType = parseType;"));
               }
 
               @Override
@@ -1483,24 +1177,7 @@ public final class Server implements ServerConfig, ActionServices {
         "/actions",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          definitionRepository
-              .actions()
-              .forEach(
-                  actionDefinition -> {
-                    final ObjectNode obj = array.addObject();
-                    obj.put("name", actionDefinition.name());
-                    obj.put("description", actionDefinition.description());
-                    final ArrayNode parameters = obj.putArray("parameters");
-                    actionDefinition
-                        .parameters()
-                        .forEach(
-                            param -> {
-                              final ObjectNode paramInfo = parameters.addObject();
-                              paramInfo.put("name", param.name());
-                              paramInfo.put("type", param.type().toString());
-                              paramInfo.put("required", param.required());
-                            });
-                  });
+          actionDefsJson(array);
           return array;
         });
     add(
@@ -1543,23 +1220,7 @@ public final class Server implements ServerConfig, ActionServices {
         "/refillers",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          definitionRepository
-              .refillers()
-              .forEach(
-                  refiller -> {
-                    final ObjectNode obj = array.addObject();
-                    obj.put("name", refiller.name());
-                    obj.put("description", refiller.description());
-                    final ArrayNode parameters = obj.putArray("parameters");
-                    refiller
-                        .parameters()
-                        .forEach(
-                            param -> {
-                              final ObjectNode paramInfo = parameters.addObject();
-                              paramInfo.put("name", param.name());
-                              paramInfo.put("type", param.type().toString());
-                            });
-                  });
+          refillerDefsJson(array);
           return array;
         });
 
@@ -1567,73 +1228,28 @@ public final class Server implements ServerConfig, ActionServices {
         "/constants",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          Stream.concat(definitionRepository.constants(), compiler.constants())
-              .forEach(
-                  constant -> {
-                    final ObjectNode obj = array.addObject();
-                    obj.put("name", constant.name());
-                    obj.put("description", constant.description());
-                    obj.put("type", constant.type().descriptor());
-                  });
+          constantDefsJson(array);
           return array;
         });
     addJson(
         "/signatures",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          definitionRepository
-              .signatures()
-              .forEach(
-                  constant -> {
-                    final ObjectNode obj = array.addObject();
-                    obj.put("name", constant.name());
-                    obj.put("type", constant.type().descriptor());
-                  });
+          signatureDefsJson(array);
           return array;
         });
     addJson(
         "/functions",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          Stream.concat(definitionRepository.functions(), compiler.functions())
-              .forEach(
-                  function -> {
-                    final ObjectNode obj = array.addObject();
-                    obj.put("name", function.name());
-                    obj.put("description", function.description());
-                    obj.put("return", function.returnType().descriptor());
-                    final ArrayNode parameters = obj.putArray("parameters");
-                    function
-                        .parameters()
-                        .forEach(
-                            p -> {
-                              final ObjectNode parameter = parameters.addObject();
-                              parameter.put("type", p.type().descriptor());
-                              parameter.put("description", p.description());
-                            });
-                  });
+          functionsDefsJson(array);
           return array;
         });
     addJson(
         "/olivedefinitions",
         (mapper, query) -> {
           final ArrayNode array = mapper.createArrayNode();
-          Stream.concat(definitionRepository.oliveDefinitions(), compiler.oliveDefinitions())
-              .forEach(
-                  oliveDefinition -> {
-                    final ObjectNode obj = array.addObject();
-                    obj.put("name", oliveDefinition.name());
-                    obj.put("isRoot", oliveDefinition.isRoot());
-                    final ObjectNode output = obj.putObject("output");
-                    oliveDefinition
-                        .outputStreamVariables(null, null)
-                        .get()
-                        .forEach(v -> output.put(v.name(), v.type().descriptor()));
-                    final ArrayNode parameters = obj.putArray("parameters");
-                    for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
-                      parameters.add(oliveDefinition.parameterType(i).descriptor());
-                    }
-                  });
+          oliveDefsJson(array);
           return array;
         });
     addJson(
@@ -2514,6 +2130,133 @@ public final class Server implements ServerConfig, ActionServices {
     add("api-docs/swagger-ui.js", "text/javascript");
   }
 
+  public void refillerDefsJson(ArrayNode array) {
+    definitionRepository
+        .refillers()
+        .forEach(
+            refiller -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "refiller");
+              obj.put("name", refiller.name());
+              obj.put("description", refiller.description());
+              obj.put(
+                  "filename", refiller.filename() == null ? null : refiller.filename().toString());
+              final ArrayNode parameters = obj.putArray("parameters");
+              refiller
+                  .parameters()
+                  .forEach(
+                      param -> {
+                        final ObjectNode paramInfo = parameters.addObject();
+                        paramInfo.put("name", param.name());
+                        paramInfo.put("type", param.type().toString());
+                      });
+            });
+  }
+
+  public void actionDefsJson(ArrayNode array) {
+    definitionRepository
+        .actions()
+        .forEach(
+            actionDefinition -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "action");
+              obj.put("name", actionDefinition.name());
+              obj.put("description", actionDefinition.description());
+              obj.put(
+                  "filename",
+                  actionDefinition.filename() == null
+                      ? null
+                      : actionDefinition.filename().toString());
+              final ArrayNode parameters = obj.putArray("parameters");
+              actionDefinition
+                  .parameters()
+                  .forEach(
+                      param -> {
+                        final ObjectNode paramInfo = parameters.addObject();
+                        paramInfo.put("name", param.name());
+                        paramInfo.put("type", param.type().toString());
+                        paramInfo.put("required", param.required());
+                      });
+            });
+  }
+
+  public void oliveDefsJson(ArrayNode array) {
+    Stream.concat(definitionRepository.oliveDefinitions(), compiler.oliveDefinitions())
+        .forEach(
+            oliveDefinition -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "olive");
+              obj.put("name", oliveDefinition.name());
+              obj.put("isRoot", oliveDefinition.isRoot());
+              obj.put("format", oliveDefinition.format());
+              obj.put(
+                  "filename",
+                  oliveDefinition.filename() == null
+                      ? null
+                      : oliveDefinition.filename().toString());
+              final ObjectNode output = obj.putObject("output");
+              oliveDefinition
+                  .outputStreamVariables(null, null)
+                  .get()
+                  .forEach(v -> output.put(v.name(), v.type().descriptor()));
+              final ArrayNode parameters = obj.putArray("parameters");
+              for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
+                parameters.add(oliveDefinition.parameterType(i).descriptor());
+              }
+            });
+  }
+
+  public void functionsDefsJson(ArrayNode array) {
+    Stream.concat(definitionRepository.functions(), compiler.functions())
+        .forEach(
+            function -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "function");
+              obj.put("name", function.name());
+              obj.put("description", function.description());
+              obj.put("return", function.returnType().descriptor());
+              obj.put(
+                  "filename", function.filename() == null ? null : function.filename().toString());
+              final ArrayNode parameters = obj.putArray("parameters");
+              function
+                  .parameters()
+                  .forEach(
+                      p -> {
+                        final ObjectNode parameter = parameters.addObject();
+                        parameter.put("type", p.type().descriptor());
+                        parameter.put("description", p.description());
+                      });
+            });
+  }
+
+  public void signatureDefsJson(ArrayNode array) {
+    definitionRepository
+        .signatures()
+        .forEach(
+            constant -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "signature");
+              obj.put("name", constant.name());
+              obj.put("type", constant.type().descriptor());
+              obj.put(
+                  "filename", constant.filename() == null ? null : constant.filename().toString());
+            });
+  }
+
+  public void constantDefsJson(ArrayNode array) {
+    Stream.concat(definitionRepository.constants(), compiler.constants())
+        .forEach(
+            constant -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "constant");
+              obj.put("name", constant.name());
+              obj.put("description", constant.description());
+              obj.put("type", constant.type().descriptor());
+              obj.put(
+                  "filename", constant.filename() == null ? null : constant.filename().toString());
+            });
+  }
+
   private String exportSearches() {
     return pluginManager
         .exportSearches(
@@ -2668,11 +2411,7 @@ public final class Server implements ServerConfig, ActionServices {
 
   @Override
   public Stream<Header> headers() {
-    return Stream.of(
-        Header.cssFile("/main.css"),
-        Header.faviconPng(16),
-        Header.jsModule(
-            "import { fetchConstant, parseType, runFunction } from './definitions.js'; import * as parser from './parser.js'; window.parser = parser; window.fetchConstant = fetchConstant; window.parseType = parseType; window.runFunction = runFunction;"));
+    return Stream.of(Header.cssFile("/main.css"), Header.faviconPng(16));
   }
 
   @Override
@@ -2733,14 +2472,9 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.item("pausedash", "Pauses"),
         NavigationMenu.submenu(
             "Definitions",
-            NavigationMenu.item("actiondefs", "Actions"),
-            NavigationMenu.item("olivedefs", "Callable Olives"),
-            NavigationMenu.item("constantdefs", "Constants"),
-            NavigationMenu.item("functiondefs", "Functions"),
+            NavigationMenu.item("defs", "Definitions"),
             NavigationMenu.item("grouperdefs", "Groupers"),
-            NavigationMenu.item("inputdefs", "Input Formats"),
-            NavigationMenu.item("refillerdefs", "Refillers"),
-            NavigationMenu.item("signaturedefs", "Signatures")),
+            NavigationMenu.item("inputdefs", "Input Formats")),
         NavigationMenu.submenu(
             "Tools",
             NavigationMenu.item("simulatedash", "Olive Simulator"),

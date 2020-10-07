@@ -368,7 +368,7 @@ export function initialiseSimulationDashboard(
     {
       name: ["Extra Definitions", spot.ui],
       contents: [
-        link("actiondefs", "All actions known"),
+        link("defs", "All actions known"),
         " to the Shesmu server are available in simulation. If testing something that is not yet available or needs to be modified, the action definition can be imported here. Actions here take priority over actions from the server. If exporting actions to ",
         mono(".actnow"),
         " files, do not use actions definitions here or the server will not recognise them.",

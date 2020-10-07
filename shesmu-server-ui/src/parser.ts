@@ -363,6 +363,34 @@ export function p(input: string): ParseResult {
     return { good: false, input: input, error: "Expected path." };
   }
 }
+export function q(inner: Parser): Parser {
+  return (input) => {
+    let match = input.match(/^\s*`\s*`\s*/);
+    if (match) {
+      return {
+        good: true,
+        input: input.substring(match[0].length),
+        output: null,
+      };
+    }
+    match = input.match(/^\s*`\s*/);
+    if (match) {
+      const result = inner(input.substring(match[0].length));
+      if (result.good) {
+        match = result.input.match(/^\s*`\s*/);
+        if (match) {
+          return result;
+        } else {
+          return { good: false, input: result.input, error: "Expected `." };
+        }
+      } else {
+        return result;
+      }
+    } else {
+      return { good: false, input: input, error: "Expected `." };
+    }
+  };
+}
 export function s(input: string): ParseResult {
   let match = input.match(/^\s*"(([^"\\]|\\")*)"/);
   if (match) {
@@ -443,7 +471,7 @@ export function parse(
   input: string,
   parse: Parser,
   resultHandler: (output: any) => void,
-  errorHandler: (error: String, position: number) => void
+  errorHandler: (error: string, position: number) => void
 ) {
   let state = parse(input);
   if (!state.good) {
