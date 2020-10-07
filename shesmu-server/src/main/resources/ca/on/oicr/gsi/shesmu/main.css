@@ -936,3 +936,8 @@ img.deadolive {
   vertical-align: middle;
   margin-right: 0.3em;
 }
+
+.close {
+  cursor: pointer;
+  white-space: nowrap;
+}

@@ -1652,7 +1652,6 @@ export function buttonIcon(
   const button = createUiFromTag("span", icon);
   button.element.className = "close";
   button.element.title = title;
-  button.element.style.cursor = "pointer";
   button.element.addEventListener("click", (e) => {
     e.stopPropagation();
     callback(e);
