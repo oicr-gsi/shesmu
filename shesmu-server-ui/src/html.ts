@@ -1,13 +1,14 @@
 import { saveFile } from "./io.js";
 import {
   Publisher,
+  SourceLocation,
   StatefulModel,
   combineModels,
   computeDuration,
-  mapModel,
-  shuffle,
   filterModel,
-  SourceLocation,
+  mapModel,
+  mergingModel,
+  shuffle,
 } from "./util.js";
 import { BasicQuery } from "./actionfilters.js";
 import { AlertFilter } from "./alert.js";
@@ -1355,6 +1356,24 @@ export interface TableCell {
    */
   title?: string;
 }
+/**
+ * A description of a segment from the root to a leaf in a tree display
+ */
+export interface TreePath {
+  /**
+   * The "real" value associated with this segement. It will be used for comparisons against other leaves, but not displayed to the user.
+   */
+  value: string;
+  /**
+   * The way this segment should be shown to the user
+   */
+  display: DisplayElement;
+  /**
+   * Remove this segment if only has one leaf when true
+   */
+  elide: boolean;
+}
+
 /**
  * A bit of data that can be placed in a GUI element.
  */
@@ -3772,7 +3791,110 @@ export function timespan(title: string, time: number): UIElement {
   const { ago, absolute } = computeDuration(time);
   return text(`${title}: ${absolute} (${ago})`);
 }
+/**
+ * Create a nested tree navigator
+ * @param model the model to update when an item is selected
+ * @param render a callback to render an entry
+ * @returns a UI element displaying the tree, a model for that data and a model for the path selection callback
+ */
+export function tree<T>(
+  model: StatefulModel<T>,
+  render: (input: T) => DisplayElement
+): {
+  ui: UIElement;
+  buttons: UIElement;
+  data: StatefulModel<T[]>;
+  grouping: StatefulModel<(input: T) => TreePath[]>;
+} {
+  const { ui, model: paneModel } = pane("small");
+  let expand: StatefulModel<boolean> = combineModels();
+  let active: ComplexElement<HTMLParagraphElement> | null = null;
+  const [dataModel, grouping] = mergingModel(
+    paneModel,
+    (input: T[] | null, pathFunction: ((input: T) => TreePath[]) | null) => {
+      const paths = (input || []).map((i) => {
+        const current = createUiFromTag("p", render(i));
+        current.element.classList.add("tree");
+        current.element.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (active) {
+            active.element.classList.remove("selected");
+          }
+          active = current;
+          current.element.classList.add("selected");
+          model.statusChanged(i);
+        });
 
+        return {
+          path: pathFunction == null ? [] : pathFunction(i),
+          ui: current,
+        };
+      });
+      const allChildren: StatefulModel<boolean>[] = [];
+      const ui = treeSplitPaths(paths, 0, allChildren);
+      expand = combineModels(...allChildren);
+      return ui;
+    }
+  );
+  return {
+    ui,
+    buttons: [
+      buttonAccessory(
+        { type: "icon", icon: "arrows-expand" },
+        "Expand all branches",
+        () => expand.statusChanged(true)
+      ),
+      buttonAccessory(
+        { type: "icon", icon: "arrows-collapse" },
+        "Collapse all branches",
+        () => expand.statusChanged(false)
+      ),
+    ],
+    data: dataModel,
+    grouping: grouping,
+  };
+}
+function treeSplitPaths(
+  entries: { path: TreePath[]; ui: UIElement }[],
+  index: number,
+  expand: StatefulModel<boolean>[]
+): UIElement {
+  const childCounts: { [s: string]: number } = {};
+  for (const path of entries
+    .filter((e) => e.path.length > index + 1)
+    .map((e) => e.path[index])) {
+    if (childCounts.hasOwnProperty(path.value)) {
+      childCounts[path.value]++;
+    } else {
+      // If it's the root level, we don't want to collapse any singletons, so inflate the count.
+      childCounts[path.value] = path.elide ? 1 : 2;
+    }
+  }
+  const leaves = entries
+    .filter(
+      (e) => e.path.length == index + 1 || childCounts[e.path[index].value] == 1
+    )
+    .map((e) => e.ui);
+  const children = Object.entries(childCounts)
+    .filter((e) => e[1] > 1)
+    .map((e) => e[0])
+    .sort()
+    .flatMap((value) => {
+      const childEntries = entries.filter((e) => e.path[index].value == value);
+      const childUi = collapsibleWithDefault(
+        childEntries[0].path[index].display,
+        childEntries.length < 5,
+        treeSplitPaths(childEntries, index + 1, expand)
+      );
+      if (childUi) {
+        expand.push(childUi.model);
+        return [childUi.ui];
+      } else {
+        return [];
+      }
+    });
+  return indented(children.concat(leaves));
+}
 // Preload images
 new Image().src = "press.svg";
 new Image().src = "dead.svg";
