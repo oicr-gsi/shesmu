@@ -695,10 +695,7 @@ export function initialiseSimulationDashboard(
     };
   });
 
-  const { last: lastTheme, model: savedTheme } = locallyStoredString(
-    "shesmu_theme",
-    "ace/theme/chrome"
-  );
+  const savedTheme = locallyStoredString("shesmu_theme", "ace/theme/chrome");
   setRootDashboard(
     container,
     group(
@@ -734,14 +731,18 @@ export function initialiseSimulationDashboard(
               return "Unknown";
           }
         },
-        (theme) => theme == lastTheme,
-        combineModels(savedTheme, {
+        (theme) => theme == savedTheme.get(),
+        {
           reload: () => {},
           statusChanged: (input: string) => editor.setTheme(input),
           statusFailed: (_message: string, _retry: (() => void) | null) => {},
           statusWaiting: () => {},
-        }),
-        null,
+        },
+        {
+          synchronizer: savedTheme,
+          predicate: (recovered, item) => recovered == item,
+          extract: (x) => x,
+        },
         "ace/theme/ambiance",
         "ace/theme/chrome"
       ),

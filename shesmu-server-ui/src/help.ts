@@ -105,9 +105,14 @@ interface HelpState {
 }
 let state = locallyStored<HelpState>("shesmu_help", { version: 0, tips: [] });
 let model: Publisher<HelpState> = pubSubModel();
-model.subscribe({ ...state.model, isAlive: true });
+model.subscribe({ ...state, isAlive: true });
+state.listen((input, internal) => {
+  if (!internal) {
+    model.statusChanged(input);
+  }
+});
 {
-  const current = state.last;
+  const current = state.get();
   // In case there are any garbage tips, remove them from the user's config. If the server is rolled back, and then forward, it might cause tips to be marked as read, but that's not such a big deal. It's also per server; not global accross all Shesmu instances a user accesses.
   current.tips = current.tips.filter(
     ([version, index]) =>
@@ -134,7 +139,7 @@ function helpButton(
   readAllEnabled: boolean,
   predicate: (version: number, index: number, tip: HelpTip) => boolean
 ): UIElement {
-  return subscribedState(state.last, model, (input: HelpState) => {
+  return subscribedState(state.get(), model, (input: HelpState) => {
     const hasNew = input.tips.some(([version, index]) => {
       const tip = tips[version]?.[index];
       return tip && predicate(version, index, tip);

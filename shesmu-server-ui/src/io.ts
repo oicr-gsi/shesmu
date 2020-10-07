@@ -9,6 +9,8 @@ import {
   singleState,
   text,
   svgFromStr,
+  StateSynchronizer,
+  StateListener,
 } from "./html.js";
 import {
   MutableStore,
@@ -27,14 +29,6 @@ import { PrometheusAlert, AlertFilter } from "./alert.js";
 import { TypeResponse, ValueResponse } from "./definitions.js";
 import { SimulationRequest, SimulationResponse } from "./simulation.js";
 import { Stat } from "./stats.js";
-
-/**
- * The result of loading locally stored data
- */
-export interface LocalStore<T> {
-  last: T;
-  model: StatefulModel<T>;
-}
 
 /**
  * The update information provided by interrogating the server
@@ -199,30 +193,20 @@ export function loadFile(callback: (name: string, data: string) => void): void {
  * @param key the key name to use in the local storage database
  * @param empty the default value to use if none is found or the value is corrupt
  */
-export function locallyStored<T>(key: string, empty: T): LocalStore<T> {
+export function locallyStored<T>(key: string, empty: T): StateSynchronizer<T> {
   let current = empty;
-  try {
-    const value = localStorage.getItem(key);
-    if (value) {
-      current = JSON.parse(value);
-    }
-  } catch (e) {
-    // Ignore
-  }
-  return {
-    get last() {
-      return current;
+  return locallyStoredCustom(
+    key,
+    empty,
+    (value) => {
+      try {
+        return JSON.parse(value) as T;
+      } catch (e) {
+        return null;
+      }
     },
-    model: {
-      reload: () => {},
-      statusChanged: (input: T) => {
-        localStorage.setItem(key, JSON.stringify(input));
-        current = input;
-      },
-      statusWaiting: () => {},
-      statusFailed: (message: string) => console.log(message),
-    },
-  };
+    (input) => JSON.stringify(input)
+  );
 }
 /**
  * Create a storage location backed by the browser's local storage as raw text
@@ -232,14 +216,49 @@ export function locallyStored<T>(key: string, empty: T): LocalStore<T> {
 export function locallyStoredString(
   key: string,
   empty: string
-): LocalStore<string> {
+): StateSynchronizer<string> {
+  return locallyStoredCustom(
+    key,
+    empty,
+    (x) => x,
+    (x) => x
+  );
+}
+export function locallyStoredCustom<T>(
+  key: string,
+  empty: T,
+  parse: (input: string) => T | null,
+  store: (input: T) => string
+): StateSynchronizer<T> {
+  let currentListener: StateListener<T> = null;
+  window.addEventListener("storage", (e) => {
+    if (e.key == key && e.oldValue != e.newValue && currentListener) {
+      currentListener(
+        e.newValue == null ? empty : parse(e.newValue) || empty,
+        false
+      );
+    }
+  });
   return {
-    last: localStorage.getItem(key) || empty,
-    model: {
-      reload: () => {},
-      statusChanged: (input: string) => localStorage.setItem(key, input),
-      statusWaiting: () => {},
-      statusFailed: (message: string) => console.log(message),
+    reload: () => {},
+    statusChanged: (input: T) => {
+      localStorage.setItem(key, store(input));
+      if (currentListener) {
+        currentListener(input, true);
+      }
+    },
+    statusWaiting: () => {},
+    statusFailed: (message: string) => console.log(message),
+    get: () => {
+      const value = localStorage.getItem(key);
+      return value == null ? empty : parse(value) || empty;
+    },
+    listen: (listener) => {
+      currentListener = listener;
+      if (listener) {
+        const value = localStorage.getItem(key);
+        listener(value == null ? empty : parse(value) || empty, false);
+      }
     },
   };
 }
