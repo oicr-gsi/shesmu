@@ -3163,6 +3163,20 @@ export function sharedPane<T, F extends { [name: string]: UIElement }>(
   };
 }
 /**
+ * Creating a floating side panel
+ * @param side the floating panel
+ * @param body the main content
+ */
+export function sidepanel(side: UIElement, body: UIElement): UIElement {
+  const sidePanel = createUiFromTag(
+    "div",
+    createUiFromTag("div", side),
+    createUiFromTag("div", body)
+  );
+  sidePanel.element.className = "sidepanel";
+  return sidePanel;
+}
+/**
  * This create single panels with some shared state that can be updated
  * @param formatter a callback that will be called to update the contents of the pane when the state changes
  */

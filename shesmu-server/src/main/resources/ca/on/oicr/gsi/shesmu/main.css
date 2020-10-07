@@ -937,6 +937,20 @@ img.deadolive {
   margin-right: 0.3em;
 }
 
+.sidepanel {
+  display: flex;
+  flex-direction: row;
+}
+.sidepanel > div:first-child {
+  border: 1px solid var(--widget-lowlight);
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 80vh;
+  margin-right: 1em;
+  overflow: scroll;
+  padding: 1em;
+  width: 25vw;
+}
 .indent {
   padding-left: 1em;
 }
