@@ -102,6 +102,7 @@ public abstract class Compiler {
         signatures,
         exportConsumer,
         dashboardOutput,
+        false,
         false);
   }
   /**
@@ -122,7 +123,8 @@ public abstract class Compiler {
       Supplier<Stream<SignatureDefinition>> signatures,
       ExportConsumer exportConsumer,
       Consumer<FileTable> dashboardOutput,
-      boolean allowDuplicates) {
+      boolean allowDuplicates,
+      boolean allowUnused) {
     final AtomicReference<ProgramNode> program = new AtomicReference<>();
     final String hash;
     try {
@@ -149,7 +151,8 @@ public abstract class Compiler {
                 this::errorHandler,
                 constants,
                 signatures,
-                allowDuplicates)) {
+                allowDuplicates,
+                allowUnused)) {
       final Instant compileTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       if (dashboardOutput != null && skipRender) {
         dashboardOutput.accept(program.get().dashboard(path, hash, "Bytecode not available."));

@@ -2,6 +2,7 @@ import { Alert, alertNavigator, AlertFilter } from "./alert.js";
 import { infoForProduces, OliveType } from "./olive.js";
 import {
   loadFile,
+  locallyStored,
   locallyStoredString,
   mutableLocalStore,
   refreshable,
@@ -161,6 +162,7 @@ interface SimulatedOlive {
   duration: number;
 }
 export interface SimulationRequest {
+  allowUnused: boolean;
   fakeActions: { [name: string]: FakeActionParameters };
   dryRun: boolean;
   readStale: boolean;
@@ -171,6 +173,7 @@ export interface SimulationRequest {
  */
 export interface SimulationResponse {
   alerts?: SimulatedAlert[];
+  exceptionThrown: boolean;
   exports?: Export[];
   errors: string[];
   bytecode?: string;
@@ -351,7 +354,8 @@ export function initialiseSimulationDashboard(
     return ui;
   });
 
-  const waitForData = inputCheckbox("Wait for fresh data", false);
+  const readStale = locallyStored<boolean>("shesmu_read_stale", true);
+  const allowUnused = locallyStored<boolean>("shesmu_allow_unused", false);
   const tabbedArea = tabsModel(
     1,
     {
@@ -651,6 +655,15 @@ export function initialiseSimulationDashboard(
               table(response.overloadedInputs, ["Input Format", (x) => x]),
             ],
           });
+          butter(
+            3000 + response.overloadedInputs.length * 1000,
+            "Required input formats are unavailable:",
+            response.overloadedInputs.map((s) => [
+              br(),
+              { type: "icon", icon: "cloud-slash" },
+              s,
+            ])
+          );
         }
 
         if (response.overloadedServices?.length) {
@@ -664,6 +677,15 @@ export function initialiseSimulationDashboard(
               table(response.overloadedServices, ["Service", (x) => x]),
             ],
           });
+          butter(
+            3000 + response.overloadedServices.length * 1000,
+            "Required services are unavailable:",
+            response.overloadedServices.map((s) => [
+              br(),
+              { type: "icon", icon: "wifi-off" },
+              s,
+            ])
+          );
         }
         if (response.metrics) {
           tabList.push({
@@ -677,6 +699,15 @@ export function initialiseSimulationDashboard(
             contents: preformatted(response.bytecode),
           });
         }
+        if (!response.bytecode || response.exceptionThrown) {
+          // Errors might be present even if the script compiled okay, but if no bytecode was generated, we can be sure it's borked.
+          butter(
+            3000,
+            response.errors.length == 1
+              ? "Unable to simulate due to an error."
+              : `Unable to simulate due to ${response.errors.length} errors.`
+          );
+        }
       }
       return { tabs: tabList, activate: response?.errors.length === 0 };
     }
@@ -689,9 +720,10 @@ export function initialiseSimulationDashboard(
   const simulationModel = mapModel(main, (request: string) => {
     editor.getSession().clearAnnotations();
     return {
+      allowUnused: allowUnused.get(),
       fakeActions: Object.fromEntries(fakeActionDefinitions),
       dryRun: false,
-      readStale: !waitForData.value,
+      readStale: readStale.get(),
       script: request,
     };
   });
@@ -705,7 +737,6 @@ export function initialiseSimulationDashboard(
         "Run olive simulation and fetch results",
         () => simulationModel.statusChanged(editor.getValue())
       ),
-      waitForData.ui,
       buttonAccessory(
         [{ type: "icon", icon: "file-earmark-arrow-up" }, "Upload File"],
         "Upload a file from your computer to simulate",
@@ -720,7 +751,54 @@ export function initialiseSimulationDashboard(
         "Save script in editor to your computer",
         () => saveFile(editor.getValue(), "text/plain", fileName)
       ),
-      " Theme: ",
+      dropdown(
+        (stale, selected) => {
+          if (stale) {
+            return [
+              { type: "icon", icon: "server" },
+              selected ? blank() : "Use Cached Data",
+            ];
+          } else {
+            return [
+              { type: "icon", icon: "hdd-network" },
+              selected ? blank() : "Wait for Fresh Data",
+            ];
+          }
+        },
+        (wait) => wait == readStale.get(),
+        combineModels(),
+        {
+          synchronizer: readStale,
+          predicate: (recovered, item) => recovered == item,
+          extract: (x) => x,
+        },
+        false,
+        true
+      ),
+      dropdown(
+        (unused, selected) => {
+          if (unused) {
+            return [
+              { type: "icon", icon: "shield-slash" },
+              selected ? blank() : "Allow Unused Variables",
+            ];
+          } else {
+            return [
+              { type: "icon", icon: "shield" },
+              selected ? blank() : "Forbid Unused Variables",
+            ];
+          }
+        },
+        (wait) => wait == allowUnused.get(),
+        combineModels(),
+        {
+          synchronizer: allowUnused,
+          predicate: (recovered, item) => recovered == item,
+          extract: (x) => x,
+        },
+        false,
+        true
+      ),
       dropdown(
         (theme, selected) => {
           switch (theme) {
@@ -780,6 +858,7 @@ export function initialiseSimulationDashboard(
       checking = true;
       // This does not check for overload because editor is best-effort
       fetchAsPromise("simulate", {
+        allowUnused: false,
         fakeActions: Object.fromEntries(fakeActionDefinitions),
         dryRun: true,
         readStale: true,

@@ -27,7 +27,6 @@ import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.filter.*;
-import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -85,7 +84,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 
 @SuppressWarnings("restriction")
 public final class Server implements ServerConfig, ActionServices {
@@ -2147,7 +2145,8 @@ public final class Server implements ServerConfig, ActionServices {
                       definitionRepository::signatures,
                       null,
                       x -> {},
-                      true);
+                      true,
+                      false);
           t.getResponseHeaders().set("Content-type", "text/plain; charset=utf-8");
           final byte[] errorBytes = errors.toString().getBytes(StandardCharsets.UTF_8);
           t.sendResponseHeaders(success ? 200 : 400, errorBytes.length);
@@ -2164,218 +2163,6 @@ public final class Server implements ServerConfig, ActionServices {
               DefinitionRepository.concat(definitionRepository, compiler), this, inputSource, t);
         });
 
-    add(
-        "/checkhtml",
-        t -> {
-          final String script;
-          try (Scanner scanner = new Scanner(t.getRequestBody(), "utf-8")) {
-            script = scanner.useDelimiter("\\Z").next();
-          }
-          final List<String> errors = new ArrayList<>();
-          final AtomicReference<FileTable> description = new AtomicReference<>();
-          final List<Consumer<XMLStreamWriter>> exports = new ArrayList<>();
-          boolean success =
-              (new Compiler(false) {
-                    private final NameLoader<ActionDefinition> actions =
-                        new NameLoader<>(definitionRepository.actions(), ActionDefinition::name);
-                    private final NameLoader<CallableOliveDefinition> definitions =
-                        new NameLoader<>(
-                            definitionRepository.oliveDefinitions(), CallableOliveDefinition::name);
-                    private final NameLoader<FunctionDefinition> functions =
-                        new NameLoader<>(
-                            Stream.concat(definitionRepository.functions(), compiler.functions()),
-                            FunctionDefinition::name);
-                    private final NameLoader<RefillerDefinition> refillers =
-                        new NameLoader<>(
-                            definitionRepository.refillers(), RefillerDefinition::name);
-
-                    @Override
-                    protected ClassVisitor createClassVisitor() {
-                      return new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-                    }
-
-                    @Override
-                    protected void errorHandler(String message) {
-                      errors.add(message);
-                    }
-
-                    @Override
-                    protected ActionDefinition getAction(String name) {
-                      return actions.get(name);
-                    }
-
-                    @Override
-                    protected FunctionDefinition getFunction(String name) {
-                      return functions.get(name);
-                    }
-
-                    @Override
-                    protected InputFormatDefinition getInputFormats(String name) {
-                      return CompiledGenerator.SOURCES.get(name);
-                    }
-
-                    @Override
-                    protected CallableDefinition getOliveDefinition(String name) {
-                      return definitions.get(name);
-                    }
-
-                    @Override
-                    protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
-                      return definitions.get(name);
-                    }
-
-                    @Override
-                    protected RefillerDefinition getRefiller(String name) {
-                      return refillers.get(name);
-                    }
-                  })
-                  .compile(
-                      script,
-                      "shesmu/dyn/Checker",
-                      "Uploaded Check Script.shesmu",
-                      () -> Stream.concat(definitionRepository.constants(), compiler.constants()),
-                      definitionRepository::signatures,
-                      new ExportConsumer() {
-                        @Override
-                        public void constant(String name, Imyhat type) {
-                          exports.add(
-                              writer -> {
-                                try {
-                                  writer.writeStartElement("h1");
-                                  writer.writeCharacters("Export ");
-                                  writer.writeCharacters(name);
-                                  writer.writeEndElement();
-                                  final TableRowWriter row = new TableRowWriter(writer);
-                                  writer.writeStartElement("table");
-                                  row.write(false, "Constant", type.name());
-                                  writer.writeEndElement();
-                                } catch (XMLStreamException e) {
-                                  throw new RuntimeException(e);
-                                }
-                              });
-                        }
-
-                        @Override
-                        public void definition(
-                            String name,
-                            String inputFormat,
-                            boolean root,
-                            List<Imyhat> parameters,
-                            List<Target> outputTargets) {
-                          exports.add(
-                              writer -> {
-                                try {
-                                  writer.writeStartElement("h1");
-                                  writer.writeCharacters("Export Define");
-                                  writer.writeCharacters(name);
-                                  writer.writeEndElement();
-                                  final TableRowWriter row = new TableRowWriter(writer);
-                                  writer.writeStartElement("table");
-                                  for (final Imyhat parameter : parameters) {
-                                    row.write(false, "Parameter", parameter.name());
-                                  }
-                                  for (final Target outputTarget : outputTargets) {
-                                    row.write(
-                                        false, outputTarget.name(), outputTarget.type().name());
-                                  }
-                                  writer.writeEndElement();
-                                } catch (XMLStreamException e) {
-                                  throw new RuntimeException(e);
-                                }
-                              });
-                        }
-
-                        @Override
-                        public void function(
-                            String name,
-                            Imyhat returnType,
-                            Supplier<Stream<FunctionParameter>> parameters) {
-                          exports.add(
-                              writer -> {
-                                try {
-                                  writer.writeStartElement("h1");
-                                  writer.writeCharacters("Export ");
-                                  writer.writeCharacters(name);
-                                  writer.writeEndElement();
-                                  final TableRowWriter row = new TableRowWriter(writer);
-                                  writer.writeStartElement("table");
-                                  row.write(false, "Return", "", returnType.name());
-                                  parameters
-                                      .get()
-                                      .forEach(
-                                          new Consumer<FunctionParameter>() {
-                                            private int index;
-
-                                            @Override
-                                            public void accept(
-                                                FunctionParameter functionParameter) {
-                                              row.write(
-                                                  false,
-                                                  Integer.toString(index++),
-                                                  functionParameter.description(),
-                                                  functionParameter.type().name());
-                                            }
-                                          });
-                                  writer.writeEndElement();
-                                } catch (XMLStreamException e) {
-                                  throw new RuntimeException(e);
-                                }
-                              });
-                        }
-                      },
-                      description::set,
-                      false);
-          t.getResponseHeaders().set("Content-type", "text/xml");
-          t.sendResponseHeaders(200, 0);
-          try (OutputStream output = t.getResponseBody()) {
-            final XMLOutputFactory outputFactory = XMLOutputFactory.newFactory();
-            XMLStreamWriter writer = outputFactory.createXMLStreamWriter(output);
-            writer.writeStartDocument("utf-8", "1.0");
-            writer.writeStartElement("html");
-            writer.writeStartElement("body");
-            if (success) {
-              description
-                  .get()
-                  .olives()
-                  .forEach(
-                      olive -> {
-                        try {
-                          writer.writeStartElement("div");
-                          writer.writeAttribute("style", "overflow-x:auto");
-                          MetroDiagram.draw(
-                              writer,
-                              (localFilePath, line, column, hash) -> Stream.empty(),
-                              "",
-                              description.get().hash(),
-                              olive,
-                              null,
-                              description.get().format(),
-                              (f, l, c, ol, oc) -> null);
-                          writer.writeEndElement();
-                        } catch (XMLStreamException e) {
-                          throw new RuntimeException(e);
-                        }
-                      });
-              exports.forEach(export -> export.accept(writer));
-              writer.writeStartElement("pre");
-              writer.writeCharacters(description.get().bytecode());
-              writer.writeEndElement();
-            } else {
-              writer.writeStartElement("h1");
-              writer.writeCharacters("Errors");
-              writer.writeEndElement();
-              for (String error : errors) {
-                writer.writeStartElement("p");
-                writer.writeCharacters(error);
-                writer.writeEndElement();
-              }
-            }
-            writer.writeEndElement();
-            writer.writeEndDocument();
-          } catch (XMLStreamException e) {
-            e.printStackTrace();
-          }
-        });
     add(
         "/simulatedash",
         t -> {

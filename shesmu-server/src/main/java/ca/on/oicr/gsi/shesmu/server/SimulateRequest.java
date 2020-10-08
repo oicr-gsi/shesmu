@@ -40,6 +40,7 @@ import java.io.StringWriter;
 import java.lang.invoke.MethodHandle;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -251,24 +252,6 @@ public class SimulateRequest {
     }
   }
 
-  private static Imyhat convertType(JsonNode type, Consumer<String> errorHandler) {
-    switch (type.getNodeType()) {
-      case OBJECT:
-        return PackWdlVariables.create(
-                WdlInputType.of(
-                    (ObjectNode) type,
-                    false,
-                    (line, column, errorMessage) ->
-                        errorHandler.accept(
-                            String.format("%d:%d: %s", line, column, errorMessage))))
-            .second();
-      case STRING:
-        return Imyhat.parse(type.asText());
-      default:
-        return Imyhat.BAD;
-    }
-  }
-
   private static final Type A_FAKE_ACTION_TYPE = Type.getType(FakeAction.class);
   private static final Type A_FAKE_REFILLER_TYPE = Type.getType(FakeRefiller.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
@@ -294,6 +277,26 @@ public class SimulateRequest {
   private static final Method PACK_JSON_OBJECT__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
   private static final ThreadLocal<ObjectNode> RESULTS = new ThreadLocal<>();
+
+  private static Imyhat convertType(JsonNode type, Consumer<String> errorHandler) {
+    switch (type.getNodeType()) {
+      case OBJECT:
+        return PackWdlVariables.create(
+                WdlInputType.of(
+                    (ObjectNode) type,
+                    false,
+                    (line, column, errorMessage) ->
+                        errorHandler.accept(
+                            String.format("%d:%d: %s", line, column, errorMessage))))
+            .second();
+      case STRING:
+        return Imyhat.parse(type.asText());
+      default:
+        return Imyhat.BAD;
+    }
+  }
+
+  private boolean allowUnused;
   private boolean dryRun;
   private Map<String, Map<String, FakeActionParameter>> fakeActions = Collections.emptyMap();
   private boolean readStale;
@@ -305,6 +308,10 @@ public class SimulateRequest {
 
   public String getScript() {
     return script;
+  }
+
+  public boolean isAllowUnused() {
+    return allowUnused;
   }
 
   public boolean isDryRun() {
@@ -321,6 +328,7 @@ public class SimulateRequest {
     final ArrayNode exports = response.putArray("exports");
     final ArrayNode errors = response.putArray("errors");
     final AtomicReference<FileTable> fileTable = new AtomicReference<>();
+    final AtomicBoolean exceptionThrown = new AtomicBoolean();
     try {
       final HotloadingCompiler compiler =
           new HotloadingCompiler(
@@ -367,11 +375,6 @@ public class SimulateRequest {
                 }
 
                 @Override
-                public Stream<CallableOliveDefinition> oliveDefinitions() {
-                  return definitionRepository.oliveDefinitions();
-                }
-
-                @Override
                 public Stream<FunctionDefinition> functions() {
                   return definitionRepository.functions();
                 }
@@ -379,6 +382,11 @@ public class SimulateRequest {
                 @Override
                 public Stream<ConfigurationSection> listConfiguration() {
                   return definitionRepository.listConfiguration();
+                }
+
+                @Override
+                public Stream<CallableOliveDefinition> oliveDefinitions() {
+                  return definitionRepository.oliveDefinitions();
                 }
 
                 @Override
@@ -459,7 +467,8 @@ public class SimulateRequest {
                 }
               },
               fileTable::set,
-              importVerifier -> {});
+              importVerifier -> {},
+              allowUnused);
       compiler.errors().forEach(errors::add);
       if (fileTable.get() != null) {
         response.put("bytecode", fileTable.get().bytecode());
@@ -584,6 +593,7 @@ public class SimulateRequest {
                     },
                     format -> inputs.get(format).stream());
               } catch (InitialCachePopulationException e) {
+                exceptionThrown.set(true);
                 errors.add(String.format("Failed to populate %s cache", e.getMessage()));
               }
 
@@ -659,14 +669,20 @@ public class SimulateRequest {
             });
       }
     } catch (Exception e) {
+      exceptionThrown.set(true);
       errors.add(e.getMessage());
       e.printStackTrace();
     }
+    response.put("exceptionThrown", exceptionThrown.get());
     http.getResponseHeaders().set("Content-type", "application/json");
     http.sendResponseHeaders(200, 0);
     try (OutputStream os = http.getResponseBody()) {
       RuntimeSupport.MAPPER.writeValue(os, response);
     }
+  }
+
+  public void setAllowUnused(boolean allowUnused) {
+    this.allowUnused = allowUnused;
   }
 
   public void setDryRun(boolean dryRun) {
