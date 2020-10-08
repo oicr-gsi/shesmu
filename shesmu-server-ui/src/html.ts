@@ -1407,7 +1407,7 @@ function addElements(
   let find: FindHandler = null;
   elements
     .flat(Number.MAX_VALUE)
-    .forEach((result: Exclude<UIElement, UIElement[]>) => {
+    .forEach((result: Exclude<UIElement, UIElement[]>, index, arr) => {
       if (result === null) {
         target.appendChild(document.createElement("wbr"));
       } else if (typeof result == "string") {
@@ -1486,6 +1486,10 @@ function addElements(
               use.setAttribute("href", `bootstrap-icons.svg#${result.icon}`);
               svg.appendChild(use);
               target.appendChild(svg);
+              if (index == arr.length - 1) {
+                // Icons are padded on the right side for better layout, but the last icon should have this padding turned off.
+                svg.style.marginRight = "0px";
+              }
             }
             break;
         }
