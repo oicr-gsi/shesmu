@@ -1831,13 +1831,11 @@ export function collapsibleWithDefault(
   }
   const showHide = createUiFromTag("p", title);
   showHide.element.className = openAtStart ? "collapse open" : "collapse close";
-  contents.element.style.maxHeight = openAtStart ? "none" : "0px";
   showHide.element.addEventListener("click", (e) => {
     e.stopPropagation();
-    const visible = contents.element.style.maxHeight != "none";
+    const visible = showHide.element.classList.contains("close");
 
     showHide.element.className = visible ? "collapse open" : "collapse close";
-    contents.element.style.maxHeight = visible ? "none" : "0px";
   });
   return {
     ui: [showHide, contents],

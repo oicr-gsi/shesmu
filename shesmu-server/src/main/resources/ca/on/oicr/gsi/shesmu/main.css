@@ -284,11 +284,8 @@ a.button.danger:visited {
   content: "▼";
 }
 
-.collapse + * {
-  clear: both;
-  overflow-x: auto;
-  transition: max-height 0.3s ease-in-out;
-  overflow: hidden;
+.collapse.close + * {
+  display: none;
 }
 
 .error {
