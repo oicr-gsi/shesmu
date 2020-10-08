@@ -175,7 +175,8 @@ public class ProgramNode {
       Consumer<String> errorHandler,
       Supplier<Stream<ConstantDefinition>> constants,
       Supplier<Stream<SignatureDefinition>> signatures,
-      boolean allowDuplicates) {
+      boolean allowDuplicates,
+      boolean allowUnused) {
 
     inputFormatDefinition = inputFormatDefinitions.apply(input);
     if (inputFormatDefinition == null) {
@@ -347,8 +348,9 @@ public class ProgramNode {
     // Check for unused definitions
     ok =
         ok
-            && olives.stream().filter(olive -> olive.checkUnusedDeclarations(errorHandler)).count()
-                == olives.size();
+            && (olives.stream().filter(olive -> olive.checkUnusedDeclarations(errorHandler)).count()
+                    == olives.size()
+                || allowUnused);
     return ok;
   }
 }

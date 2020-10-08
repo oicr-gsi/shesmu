@@ -69,7 +69,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
           new String(Files.readAllBytes(fileName), StandardCharsets.UTF_8),
           exportConsumer,
           dashboardConsumer,
-          registerImport);
+          registerImport,
+          false);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -81,7 +82,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
       String contents,
       LiveExportConsumer exportConsumer,
       Consumer<FileTable> dashboardConsumer,
-      Consumer<ImportVerifier> registerImport) {
+      Consumer<ImportVerifier> registerImport,
+      boolean allowUnused) {
     try {
       errors.clear();
       final Compiler compiler =
@@ -304,7 +306,8 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
             }
           },
           dashboardConsumer,
-          false)) {
+          false,
+          allowUnused)) {
         final ActionGenerator generator = load(ActionGenerator.class, "dyn.shesmu.Program");
         for (final Consumer<ActionGenerator> export : exports) {
           export.accept(generator);
