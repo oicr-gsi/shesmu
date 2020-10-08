@@ -1978,7 +1978,7 @@ export function dialog(
  * @returns the UI element to change
  */
 export function dropdown<T, S>(
-  labelMaker: (input: T) => DisplayElement,
+  labelMaker: (input: T, selected: boolean) => DisplayElement,
   initial: ((item: T) => boolean) | null,
   model: StatefulModel<T>,
   synchronizer: {
@@ -1992,7 +1992,7 @@ export function dropdown<T, S>(
   const synchronizerCallbacks: ((state: S) => void)[] = [];
   const selectionModel = combineModels(
     model,
-    mapModel(activeElement.model, labelMaker)
+    mapModel(activeElement.model, (s) => labelMaker(s, true))
   );
   const container = createUiFromTag("span", activeElement.ui, " ▼");
   container.element.className = "dropdown";
@@ -2001,7 +2001,7 @@ export function dropdown<T, S>(
     popupMenu(
       true,
       ...items.map((item) => ({
-        label: labelMaker(item),
+        label: labelMaker(item, false),
         action: () => {
           selectionModel.statusChanged(item);
           if (synchronizer) {

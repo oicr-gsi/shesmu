@@ -721,14 +721,23 @@ export function initialiseSimulationDashboard(
       ),
       " Theme: ",
       dropdown(
-        (theme) => {
+        (theme, selected) => {
           switch (theme) {
             case "ace/theme/ambiance":
-              return "Ambiance";
+              return [
+                { type: "icon", icon: "moon" },
+                selected ? blank() : "Ambiance",
+              ];
             case "ace/theme/chrome":
-              return "Chrome";
+              return [
+                { type: "icon", icon: "sun" },
+                selected ? blank() : "Chrome",
+              ];
             default:
-              return "Unknown";
+              return [
+                { type: "icon", icon: "question-circle-fill" },
+                selected ? blank() : "Unknown",
+              ];
           }
         },
         (theme) => theme == savedTheme.get(),
