@@ -129,9 +129,10 @@ lowered type of `c`.
 Both of these cases silently drop data, which may be undesirable. The `Require`
 clause provides a way for missing data to be reported:
 
-     Require d = c {
-       Monitor missing_c "Number of records missing c." { a = a }
-     }
+     Require d = c
+       OnReject
+         Monitor missing_c "Number of records missing c." { a = a }
+       Resume
 
 This will perform the same lowering as `Let` with `OnlyIf`, but the rows with
 missing values for `c` get one last examination by the `Monitor` clause  before
