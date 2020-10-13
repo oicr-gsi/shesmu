@@ -79,9 +79,11 @@ public class WorkflowRunMatch implements Comparable<WorkflowRunMatch> {
     // For a partially complete workflow, we might have missing LIMS keys because some of the files
     // are provisioned out and others are not, so the LIMS keys are in hiding. So, if it's still
     // running and the only problem is missing LIMS keys, consider it inflight.
-    if (comparison == AnalysisComparison.EXACT
-        || comparison == AnalysisComparison.FIXABLE
-        || state.state() == ActionState.INFLIGHT && !extraLimsKeys && !stale && !fileSubset) {
+    if ((comparison == AnalysisComparison.EXACT || comparison == AnalysisComparison.FIXABLE)
+            && !extraLimsKeys
+            && !stale
+            && !fileSubset
+        || state.state() == ActionState.INFLIGHT) {
       return state.state();
     } else {
       return ActionState.HALP;
