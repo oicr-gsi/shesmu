@@ -1717,7 +1717,7 @@ export function checkRandomPermutation(
   ];
   mapping.length = Math.max(
     2,
-    Math.min(mapping.length, Math.ceil(Math.log10(count)))
+    Math.min(mapping.length, Math.ceil(Math.log2(count)))
   );
   shuffle(mapping);
   const code = table(
@@ -1758,12 +1758,25 @@ export function checkRandomSequence(
 ): UIElement {
   const sequence = new Array(Math.ceil(Math.log2(count)))
     .fill(0)
-    .map((x) => Math.floor(Math.random() * 9));
+    .map((_x, i, arr) => {
+      if (i == 0) {
+        return Math.floor(Math.random() * 9);
+      } else {
+        // Prevent duplicates
+        const result = Math.floor(Math.random() * 8);
+        if (result == arr[i - 1]) {
+          return result + 1;
+        } else {
+          return result;
+        }
+      }
+    });
   let index = 0;
-  let { ui, model } = singleState(
-    (index: number) =>
-      `Press ${sequence[index] + 1} (${index + 1} of ${sequence.length})`
-  );
+  let { ui, model } = singleState((index: number) => [
+    `Press ${sequence[index] + 1}`,
+    br(),
+    progress(index / sequence.length),
+  ]);
   model.statusChanged(0);
   const indexButton = (value: number) =>
     button((value + 1).toString(), "", () => {
