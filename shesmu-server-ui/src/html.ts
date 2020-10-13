@@ -2063,27 +2063,26 @@ export function dropdownTable<T, S>(
   );
   const container = createUiFromTag("span", activeElement.ui, " ▼");
   container.element.className = "dropdown";
-  const searchFilters: ((keywords: string[]) => void)[] = [];
-  const inputFilter = inputSearch((input) => {
-    const keywords = input
-      .toLowerCase()
-      .split(/\W+/)
-      .filter((s) => s);
-    for (const searchFilter of searchFilters) {
-      searchFilter(keywords);
-    }
-  });
   container.element.addEventListener(
     "click",
     popup(
       "tablemenu",
       true,
-      (close) =>
-        items.length == 0
+      (close) => {
+        const searchFilters: ((keywords: string[]) => void)[] = [];
+        return items.length == 0
           ? "No items."
           : [
               "Filter: ",
-              inputFilter,
+              inputSearch((input) => {
+                const keywords = input
+                  .toLowerCase()
+                  .split(/\W+/)
+                  .filter((s) => s);
+                for (const searchFilter of searchFilters) {
+                  searchFilter(keywords);
+                }
+              }),
               br(),
               items.map(({ value, label, children }) => {
                 const groupLabel = createUiFromTag("p", label);
@@ -2147,7 +2146,8 @@ export function dropdownTable<T, S>(
                 });
                 return block;
               }),
-            ],
+            ];
+      },
       () => {}
     )
   );
