@@ -969,3 +969,12 @@ img.deadolive {
 .tree.selected:hover {
   color: var(--widget-text);
 }
+
+.progress {
+  width: 100%;
+  background-color: var(--widget-shadow);
+}
+.progress > div {
+  height: 2ex;
+  background-color: var(--widget-lowlight);
+}

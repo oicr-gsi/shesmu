@@ -3103,6 +3103,17 @@ export function pickFromSetCustom<T>(
 }
 
 /**
+ * Create a progress bar
+ * @param fraction the completion between 0 and 1.
+ */
+export function progress(fraction: number): UIElement {
+  const inner = createUiFromTag("div");
+  inner.element.style.width = `${Math.min(100, Math.max(0, fraction * 100))}%`;
+  const outer = createUiFromTag("div", inner);
+  outer.element.className = "progress";
+  return outer;
+}
+/**
  * Create a set of radio buttons that can be turned off
  * @param inactiveLabel the label when a button is not active
  * @param activeLabel the label when when one of the button is active
