@@ -1683,6 +1683,18 @@ export function buttonIcon(
 }
 
 /**
+ * Check if a control/command key is pressed
+ * @param e the event
+ * @param key the letter to check for
+ */
+export function checkKey(e: KeyboardEvent, key: string): boolean {
+  return (
+    (window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey) &&
+    e.key === key
+  );
+}
+
+/**
  * Display a panel that requires the user to enter a random substitution code.
  */
 export function checkRandomPermutation(
@@ -2953,7 +2965,7 @@ export function setRootDashboard(
   window.addEventListener("keydown", (e) => {
     if (
       findOverride &&
-      (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) &&
+      (e.key == "F3" || e.key == "Find" || checkKey(e, "f")) &&
       findOverride()
     ) {
       e.preventDefault();
