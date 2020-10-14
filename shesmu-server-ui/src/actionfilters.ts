@@ -338,6 +338,9 @@ function addFilterDialog(
   setRegex: TextHandler
 ): void {
   dialog((close) => [
+    { type: "icon", icon: "clock-fill" },
+    { type: "b", contents: "Time" },
+    br(),
     button(
       [{ type: "icon", icon: "calendar-range" }, "Fixed Time Range"],
       "Add a filter that restricts between two absolute times.",
@@ -362,6 +365,11 @@ function addFilterDialog(
         timeDialog((n) => editTimeHorizon(0, (update) => timeAgo(n, update)));
       }
     ),
+    br(),
+    { type: "icon", icon: "camera-reels-fill" },
+    { type: "b", contents: "From the Action" },
+    br(),
+
     button(
       [{ type: "icon", icon: "eye" }, "Action Identifier"],
       "Add a unique action identifier.",
@@ -452,6 +460,10 @@ function addFilterDialog(
           }
         )
       : blank(),
+    br(),
+    { type: "icon", icon: "file-code-fill" },
+    { type: "b", contents: "From the Olive" },
+    br(),
     button(
       [{ type: "icon", icon: "tags" }, "Tags"],
       "Add a filter that searches for actions marked with a particular tag by an olive.",
