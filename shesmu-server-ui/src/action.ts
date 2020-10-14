@@ -351,36 +351,41 @@ export function actionDisplay(
               () =>
                 dialog((_close) =>
                   tableFromRows(
-                    response.bulkCommands.map(({ buttonText, icon, command }) =>
-                      tableRow(
-                        null,
-                        {
-                          contents: [{ type: "icon", icon: icon }, buttonText],
-                        },
-                        {
-                          contents: button(
-                            "cUrl",
-                            `Copy a cURL command to invoke the ${command} command on the actions selected.`,
-                            () =>
-                              copyCUrlCommand("command", {
-                                command: command,
-                                filters: filters,
-                              })
-                          ),
-                        },
-                        {
-                          contents: button(
-                            "Wget",
-                            `Copy a Wget command to invoke the ${command} command on the actions selected.`,
-                            () =>
-                              copyWgetCommand("command", {
-                                command: command,
-                                filters: filters,
-                              })
-                          ),
-                        }
+                    response.bulkCommands
+                      .sort((a, b) => a.buttonText.localeCompare(b.buttonText))
+                      .map(({ buttonText, icon, command }) =>
+                        tableRow(
+                          null,
+                          {
+                            contents: [
+                              { type: "icon", icon: icon },
+                              buttonText,
+                            ],
+                          },
+                          {
+                            contents: button(
+                              "cUrl",
+                              `Copy a cURL command to invoke the ${command} command on the actions selected.`,
+                              () =>
+                                copyCUrlCommand("command", {
+                                  command: command,
+                                  filters: filters,
+                                })
+                            ),
+                          },
+                          {
+                            contents: button(
+                              "Wget",
+                              `Copy a Wget command to invoke the ${command} command on the actions selected.`,
+                              () =>
+                                copyWgetCommand("command", {
+                                  command: command,
+                                  filters: filters,
+                                })
+                            ),
+                          }
+                        )
                       )
-                    )
                   )
                 )
             )
