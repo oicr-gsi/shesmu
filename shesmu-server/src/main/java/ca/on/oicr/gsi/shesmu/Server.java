@@ -2735,14 +2735,18 @@ public final class Server implements ServerConfig, ActionServices {
               public String linkWithJson(
                   FrontEndIcon icon,
                   String name,
+                  FrontEndIcon categoryIcon,
+                  String category,
                   String urlStart,
                   String urlEnd,
                   String description) {
                 try {
                   return String.format(
-                      "[[{type:\"icon\", icon:\"%s\"}, %s], %s, filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s]",
+                      "{icon:\"%s\", categoryIcon:\"%s\", label: %s, category: %s, description: %s, callback: filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s}",
                       icon.icon(),
+                      categoryIcon.icon(),
                       RuntimeSupport.MAPPER.writeValueAsString(name),
+                      RuntimeSupport.MAPPER.writeValueAsString(category),
                       RuntimeSupport.MAPPER.writeValueAsString(description),
                       RuntimeSupport.MAPPER.writeValueAsString(urlStart),
                       RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
@@ -2755,14 +2759,18 @@ public final class Server implements ServerConfig, ActionServices {
               public String linkWithUrlSearch(
                   FrontEndIcon icon,
                   String name,
+                  FrontEndIcon categoryIcon,
+                  String category,
                   String urlStart,
                   String urlEnd,
                   String description) {
                 try {
                   return String.format(
-                      "[[{type:\"icon\", icon:\"%s\"}, %s], %s, filters => window.location.href = %s + encodeSearch(filters) + %s]",
+                      "{icon:\"%s\", categoryIcon:\"%s\", label: %s, category: %s, description: %s, callback: filters => window.location.href = %s + encodeSearch(filters) + %s}",
                       icon.icon(),
+                      categoryIcon.icon(),
                       RuntimeSupport.MAPPER.writeValueAsString(name),
+                      RuntimeSupport.MAPPER.writeValueAsString(category),
                       RuntimeSupport.MAPPER.writeValueAsString(description),
                       RuntimeSupport.MAPPER.writeValueAsString(urlStart),
                       RuntimeSupport.MAPPER.writeValueAsString(urlEnd));

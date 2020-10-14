@@ -17,6 +17,7 @@ import {
   dropdown,
   group,
   historyState,
+  hr,
   img,
   inputText,
   inputTextArea,
@@ -107,11 +108,14 @@ interface BulkCommand extends BaseCommand {
 /**
  * The information for a button that can export the current search to some other service
  */
-export type ExportSearchCommand = [
-  DisplayElement,
-  string,
-  (filters: ActionFilter[]) => void
-];
+export type ExportSearchCommand = {
+  label: string;
+  icon: IconName;
+  description: string;
+  category: string;
+  categoryIcon: IconName;
+  callback: (filters: ActionFilter[]) => void;
+};
 /**
  * The format of a saved search ready for use by the UI
  */
@@ -126,52 +130,74 @@ type ServerSearches = { [name: string]: ActionFilter[] };
 export type Status = typeof statuses[number];
 
 export const standardExports: ExportSearchCommand[] = [
-  [
-    [{ type: "icon", icon: "clipboard" }, "To Clipboard"],
-    "Export search to the clipboard.",
-    saveClipboardJson,
-  ],
-  [
-    [{ type: "icon", icon: "clipboard-plus" }, "To Clipboard for Ticket"],
-    "Export search to the clipboard in a way that can be pasted in a text document.",
-    (filters) => saveClipboard(encodeSearch(filters)),
-  ],
-  [
-    [{ type: "icon", icon: "cloud-download" }, "To File"],
-    "Download search as a file.",
-    (filters) =>
+  {
+    icon: "clipboard",
+    label: "To Clipboard",
+    description: "Export search to the clipboard.",
+    category: "Share",
+    categoryIcon: "share",
+    callback: saveClipboardJson,
+  },
+  {
+    icon: "clipboard-plus",
+    label: "To Clipboard for Ticket",
+    description:
+      "Export search to the clipboard in a way that can be pasted in a text document.",
+    category: "Share",
+    categoryIcon: "share",
+    callback: (filters) => saveClipboard(encodeSearch(filters)),
+  },
+  {
+    icon: "cloud-download",
+    label: "To File",
+    description: "Download search as a file.",
+    category: "Share",
+    categoryIcon: "share",
+    callback: (filters) =>
       saveFile(JSON.stringify(filters), "application/json", "My Search.search"),
-  ],
-  [
-    [{ type: "icon", icon: "clipboard-data" }, "cURL Actions"],
-    "Convert search to a cURL command to extract actions.",
-    (filters) =>
+  },
+  {
+    icon: "clipboard-data",
+    label: "cURL Actions",
+    description: "Convert search to a cURL command to extract actions.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) =>
       copyCUrlCommand("query", {
         filters: filters,
         skip: 0,
         limit: 100000,
       }),
-  ],
-  [
-    [{ type: "icon", icon: "clipboard-data" }, "Wget Actions"],
-    "Convert search to a Wget command to extract actions.",
-    (filters) =>
+  },
+  {
+    icon: "clipboard-data",
+    label: "Wget Actions",
+    description: "Convert search to a Wget command to extract actions.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) =>
       copyWgetCommand("query", {
         filters: filters,
         skip: 0,
         limit: 100000,
       }),
-  ],
-  [
-    [{ type: "icon", icon: "clipboard-x" }, "cURL Purge"],
-    "Convert search to a cURL command to purge matching actions.",
-    (filters) => copyCUrlCommand("pruge", filters),
-  ],
-  [
-    [{ type: "icon", icon: "clipboard-x" }, "Wget Purge"],
-    "Convert search to a Wget command to purge matching actions.",
-    (filters) => copyWgetCommand("purge", filters),
-  ],
+  },
+  {
+    icon: "clipboard-x",
+    label: "cURL Purge",
+    description: "Convert search to a cURL command to purge matching actions.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) => copyCUrlCommand("pruge", filters),
+  },
+  {
+    icon: "clipboard-x",
+    label: "Wget Purge",
+    description: "Convert search to a Wget command to purge matching actions.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) => copyWgetCommand("purge", filters),
+  },
 ];
 
 /**
@@ -337,16 +363,7 @@ export function actionDisplay(
           [{ type: "icon", icon: "cloud-arrow-down" }, "Export Search"],
           "Export this search to a file or the clipboard or for use in other software.",
           () =>
-            dialog((close) =>
-              standardExports
-                .concat(exportSearches)
-                .map(([name, description, callback]) =>
-                  button(name, description, () => {
-                    callback(filters);
-                    close();
-                  })
-                )
-            )
+            exportSearchDialog(standardExports.concat(exportSearches), filters)
         ),
         response && response.bulkCommands.length
           ? buttonAccessory(
@@ -615,6 +632,39 @@ export function encodeSearch(filters: ActionFilter[]): string {
         (chr) => "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).substr(-4)
       )
     )
+  );
+}
+
+export function exportSearchDialog(
+  exportSearches: ExportSearchCommand[],
+  filters: ActionFilter[]
+): void {
+  dialog((close) =>
+    exportSearches
+      .sort(
+        (a, b) =>
+          a.category.localeCompare(b.category) || a.label.localeCompare(b.label)
+      )
+      .map(
+        (
+          { icon, label, description, category, categoryIcon, callback },
+          index,
+          arr
+        ) => [
+          index == 0 || arr[index - 1].category != category
+            ? [
+                index > 0 ? br() : blank(),
+                { type: "icon", icon: categoryIcon },
+                { type: "b", contents: category },
+                br(),
+              ]
+            : blank(),
+          button([{ type: "icon", icon: icon }, label], description, () => {
+            callback(filters);
+            close();
+          }),
+        ]
+      )
   );
 }
 
