@@ -27,7 +27,7 @@ import {
   updateBasicQueryForPropertySearch,
 } from "./actionfilters.js";
 import { refreshable } from "./io.js";
-import { Status, ExportSearchCommand } from "./action.js";
+import { Status, ExportSearchCommand, exportSearchDialog } from "./action.js";
 import { helpHotspot } from "./help.js";
 
 interface TableStatRow {
@@ -150,13 +150,9 @@ function renderStat(
       {
         label: "Export Search for Only This Condition",
         action: () =>
-          dialog((close) =>
-            exportSearches.map(([label, title, command]) =>
-              button(label, title, () => {
-                close();
-                command(filtersForPropertySearch(...limits));
-              })
-            )
+          exportSearchDialog(
+            exportSearches,
+            filtersForPropertySearch(...limits)
           ),
       }
     );
