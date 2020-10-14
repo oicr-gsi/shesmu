@@ -281,9 +281,11 @@ export function mutableLocalStore<T>(
   return {
     clear(): void {
       original = {};
+      localStorage.setItem(storageKey, JSON.stringify(original));
     },
     delete(key: string): void {
       delete original[key];
+      localStorage.setItem(storageKey, JSON.stringify(original));
     },
     get(key: string): T | undefined {
       return original[key];
