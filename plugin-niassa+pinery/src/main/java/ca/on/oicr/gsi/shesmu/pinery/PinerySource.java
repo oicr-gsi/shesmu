@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.pinery;
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.provenance.model.SampleProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.IUSUtils;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
@@ -408,11 +409,15 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
   @ShesmuMethod(
       name = "platform_for_instrument_model",
-      description = "The the platform of the instrument model for the Pinery defined in {file}.")
-  public String platformForInstrumentModel(
+      description = "The the platform of the instrument model for the Pinery defined in {file}.",
+      type = "u7ILLUMINA$t0IONTORRENT$t0LS454$t0OXFORDNANOPORE$t0PACBIO$t0SOLID$t0UNKNOWN$t0")
+  public AlgebraicValue platformForInstrumentModel(
       @ShesmuParameter(description = "The instrument model name as found in Pinery")
           String instrumentModel) {
-    return platforms.get().orElse(Collections.emptyMap()).getOrDefault(instrumentModel, "UNKNOWN");
+    // Return values are
+    // https://github.com/miso-lims/miso-lims/blob/master/core/src/main/java/uk/ac/bbsrc/tgac/miso/core/data/type/PlatformType.java + UNKNOWN
+    return new AlgebraicValue(
+        platforms.get().orElse(Collections.emptyMap()).getOrDefault(instrumentModel, "UNKNOWN"));
   }
 
   @ShesmuMethod(
