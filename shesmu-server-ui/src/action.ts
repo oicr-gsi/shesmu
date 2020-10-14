@@ -316,39 +316,18 @@ export function actionDisplay(
                           }
                         )
                     ),
-                    action.commands.length < 3
-                      ? action.commands.map((command) =>
-                          buttonDanger(
-                            [
-                              { type: "icon", icon: command.icon },
-                              command.buttonText,
-                            ],
-                            `Perform special command ${command.command} on this action.`,
-                            createCallbackForActionCommand(
-                              command,
-                              action.actionId,
-                              reload
-                            )
-                          )
+                    menuForCommands(
+                      "Commands",
+                      action.commands,
+                      (command) =>
+                        `Perform special command ${command.command} on this action.`,
+                      (command) =>
+                        createCallbackForActionCommand(
+                          command,
+                          action.actionId,
+                          reload
                         )
-                      : buttonDanger(
-                          [{ type: "icon", icon: "wrench" }, "Commands ▼"],
-                          "Perform an action-specific command.",
-                          popupMenu(
-                            true,
-                            ...action.commands.map((command) => ({
-                              label: [
-                                { type: "icon" as const, icon: command.icon },
-                                command.buttonText,
-                              ],
-                              action: createCallbackForActionCommand(
-                                command,
-                                action.actionId,
-                                reload
-                              ),
-                            }))
-                          )
-                        )
+                    )
                   ),
                   (actionRender.get(action.type) || defaultRenderer)(action),
                   collapsible(
@@ -418,32 +397,14 @@ export function actionDisplay(
             )
           : blank(),
         response
-          ? response.bulkCommands.length < 6
-            ? response.bulkCommands.map((command) =>
-                buttonDanger(
-                  [{ type: "icon", icon: command.icon }, command.buttonText],
-                  `Perform special command ${command.command} on ${command.count} actions.`,
-                  createCallbackForBulkCommand(command, filters, reload)
-                )
-              )
-            : buttonDanger(
-                [{ type: "icon", icon: "wrench" }, "Bulk Commands ▼"],
-                "Perform a number of action-specific commands.",
-                popupMenu(
-                  true,
-                  ...response.bulkCommands.map((command) => ({
-                    label: [
-                      { type: "icon" as const, icon: command.icon },
-                      command.buttonText,
-                    ],
-                    action: createCallbackForBulkCommand(
-                      command,
-                      filters,
-                      reload
-                    ),
-                  }))
-                )
-              )
+          ? menuForCommands(
+              "Bulk Commands",
+              response.bulkCommands,
+              (command) =>
+                `Perform special command ${command.command} on ${command.count} actions.`,
+              (command) =>
+                createCallbackForBulkCommand(command, filters, reload)
+            )
           : blank(),
       ],
     },
@@ -567,7 +528,9 @@ function createCallbackForBulkCommand(
         butter(
           5000,
           { type: "icon", icon: command.icon },
-          `The command executed on ${count} actions.`
+          "The command ",
+          { type: "i", contents: command.buttonText },
+          `executed on ${count} actions.`
         );
         reload();
       }
@@ -918,6 +881,40 @@ export function initialiseActionDash(
     tile([], entryBar),
     tabsUi
   );
+}
+
+function menuForCommands<T extends BaseCommand>(
+  overflowName: string,
+  commands: T[],
+  titleGenerator: (command: T) => string,
+  callbackGenerator: (commad: T) => () => void
+): UIElement {
+  return commands.length < 4
+    ? commands
+        .sort((a, b) => a.buttonText.localeCompare(b.buttonText))
+        .map((command) =>
+          buttonDanger(
+            [{ type: "icon", icon: command.icon }, command.buttonText],
+            titleGenerator(command),
+            callbackGenerator(command)
+          )
+        )
+    : buttonDanger(
+        [{ type: "icon", icon: "wrench" }, overflowName, " ▼"],
+        "Perform action-specific commands.",
+        popupMenu(
+          true,
+          ...commands
+            .sort((a, b) => a.buttonText.localeCompare(b.buttonText))
+            .map((command) => ({
+              label: [
+                { type: "icon" as const, icon: command.icon },
+                command.buttonText,
+              ],
+              action: callbackGenerator(command),
+            }))
+        )
+      );
 }
 
 /**
