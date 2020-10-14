@@ -81,7 +81,13 @@ public class ExpressionNodeComparison extends ExpressionNode {
   public boolean typeCheck(Consumer<String> errorHandler) {
     final boolean ok = left.typeCheck(errorHandler) & right.typeCheck(errorHandler);
     if (ok) {
-      if (!left.type().isSame(right.type())) {
+      // This logic is a bit funky because in the case of an algebraic type FOO
+      // == BAR should be an invalid comparison, but because they are both ADT,
+      // they are considered mergable (isSame). So, we check that either side
+      // is a subset, so if x is FOO or BAR, then x == FOO || FOO == x is
+      // valid, but x == BAZ || BAZ == x is not.
+      if (!left.type().isAssignableFrom(right.type())
+          && !right.type().isAssignableFrom(left.type())) {
         typeError(left.type(), right.type(), errorHandler);
         return false;
       }
