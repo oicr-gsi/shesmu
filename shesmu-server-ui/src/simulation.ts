@@ -18,6 +18,7 @@ import {
   button,
   buttonAccessory,
   buttonClose,
+  checkKey,
   collapsible,
   dialog,
   dropdown,
@@ -764,10 +765,7 @@ export function initialiseSimulationDashboard(
     "keydown",
     (e) => {
       // Map Ctrl-S or Command-S to download/save
-      if (
-        (window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey) &&
-        e.keyCode == 83
-      ) {
+      if (checkKey(e, "s")) {
         e.preventDefault();
         saveFile(editor.getValue(), "text/plain", fileName);
       }
