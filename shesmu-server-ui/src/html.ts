@@ -2519,6 +2519,115 @@ export function inputTextArea(initial?: string): InputField<string> {
     },
   };
 }
+
+/**
+ * A UI element that tiggers a regular update
+ *
+ * It keeps a counter and updates the counter every time it is triggered. If
+ * the UI element is removed, the model will no longer be updated.
+ * @param period the length of time between updates in milliseconds
+ * @param model the model to update with the current count
+ * @param refreshLabel if provided, this will create a refresh button for manually triggering an update; if a synchronizer is provided the button can also be used to enable or disable the trigger
+ */
+export function intervalCounter(
+  period: number,
+  model: StatefulModel<number>,
+  refreshLabel: {
+    label: DisplayElement;
+    title: string;
+    synchronizer: StateSynchronizer<boolean> | null;
+  } | null
+): UIElement {
+  const ui = createUiFromTag("span");
+  let counter = 0;
+  let handle: number | null = null;
+  const update = () => {
+    clearChildren(ui.element);
+    addElements(ui.element, throbberSmall());
+    window.setTimeout(() => clearChildren(ui.element), 500);
+    model.statusChanged(counter++);
+    if (handle !== null) {
+      window.clearInterval(handle);
+      handle = window.setInterval(() => {
+        if (ui.element.isConnected) {
+          update();
+        } else {
+          setup(false);
+        }
+      }, period);
+    }
+  };
+  const setup = (enabled: boolean) => {
+    if (handle === null && enabled) {
+      handle = window.setInterval(() => {
+        if (ui.element.isConnected) {
+          update();
+        } else {
+          setup(false);
+        }
+      }, period);
+    } else if (handle !== null && !enabled) {
+      window.clearInterval(handle);
+      clearChildren(ui.element);
+      handle = null;
+    }
+  };
+  let first = true;
+  ui.reveal = () => {
+    if (first) {
+      update();
+      first = false;
+    }
+  };
+  if (refreshLabel) {
+    if (refreshLabel.synchronizer) {
+      const synchronizer = refreshLabel.synchronizer;
+      const { model, ui: settingsUi } = singleState((enabled) =>
+        buttonAccessory(
+          [refreshLabel.label, " ▼"],
+          refreshLabel.title,
+          popupMenu(
+            true,
+            enabled
+              ? {
+                  label: [
+                    { type: "icon", icon: "x-circle" },
+                    "Disable Auto Refresh",
+                  ],
+                  action: () => synchronizer.statusChanged(false),
+                }
+              : {
+                  label: [
+                    { type: "icon", icon: "check-circle" },
+                    "Enable Auto Refresh",
+                  ],
+                  action: () => synchronizer.statusChanged(true),
+                },
+
+            {
+              label: [{ type: "icon", icon: "arrow-repeat" }, "Refresh Now"],
+              action: update,
+            }
+          )
+        )
+      );
+      refreshLabel.synchronizer.listen((enabled) => {
+        model.statusChanged(enabled);
+        setup(enabled);
+      });
+      return [settingsUi, ui];
+    } else {
+      setup(true);
+      return [
+        buttonAccessory(refreshLabel.label, refreshLabel.title, update),
+        ui,
+      ];
+    }
+  } else {
+    setup(true);
+    return ui;
+  }
+}
 /**
  * Display some italic text.
  */
