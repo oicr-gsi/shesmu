@@ -123,7 +123,7 @@ type SearchDefinition = [string, ActionFilter[]];
 /**
  * The format of searches provided by the server
  */
-type ServerSearches = { [name: string]: ActionFilter[] };
+export type ServerSearches = { [name: string]: ActionFilter[] };
 /**
  * The status of an action
  */
