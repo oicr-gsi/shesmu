@@ -401,20 +401,29 @@ export function mergeLocations(
     );
 }
 /**
- * Produce a model that generates an error on null input
+ * Produce a model combines values from two different models into one
+ * @param model the output model to consume the combined value
+ * @param combine a function to mix the input from the two values
+ * @param wait the output model should not be updated until input has been received by both input models; otherwise, the missing data will be null
  */
 export function mergingModel<T, S, R>(
   model: StatefulModel<R>,
-  combine: (left: T | null, right: S | null) => R
+  combine: (left: T | null, right: S | null) => R,
+  wait: boolean
 ): [StatefulModel<T>, StatefulModel<S>] {
   let lastLeft: T | null = null;
   let lastRight: S | null = null;
+  let clearLeft = !wait;
+  let clearRight = !wait;
   return [
     {
       reload: model.reload,
       statusChanged: (input: T) => {
         lastLeft = input;
-        model.statusChanged(combine(input, lastRight));
+        clearLeft = true;
+        if (clearRight) {
+          model.statusChanged(combine(input, lastRight));
+        }
       },
       statusFailed: model.statusFailed,
       statusWaiting: model.statusWaiting,
@@ -423,7 +432,10 @@ export function mergingModel<T, S, R>(
       reload: model.reload,
       statusChanged: (input: S) => {
         lastRight = input;
-        model.statusChanged(combine(lastLeft, input));
+        clearRight = true;
+        if (clearLeft) {
+          model.statusChanged(combine(lastLeft, input));
+        }
       },
       statusFailed: model.statusFailed,
       statusWaiting: model.statusWaiting,
