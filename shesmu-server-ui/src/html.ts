@@ -2645,7 +2645,7 @@ export function pager(
       n < 3 || (n >= current - 2 && n <= current + 2) || n >= numButtons - 3;
   }
 
-  const maxDigits = Math.ceil(Math.log10(numButtons));
+  const maxDigits = Math.ceil(Math.log10(numButtons + 2));
 
   for (let i = 0; i < numButtons; i++) {
     if (scoringScheme(i)) {
@@ -2653,7 +2653,7 @@ export function pager(
       rendering = true;
       // Left pad the label with figure space
       const label = `${" ".repeat(
-        maxDigits - Math.ceil(Math.log10(index + 2))
+        Math.max(0, maxDigits - Math.ceil(Math.log10(index + 2)))
       )}${index + 1}`;
       blocks.push({
         contents:
