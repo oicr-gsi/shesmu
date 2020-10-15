@@ -527,12 +527,10 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public Stream<Header> headers() {
-                String savedSearches;
                 String savedSearch;
                 String locations;
                 String userFilter;
                 try {
-                  savedSearches = RuntimeSupport.MAPPER.writeValueAsString(savedSearches());
                   locations = RuntimeSupport.MAPPER.writeValueAsString(activeLocations());
                   savedSearch =
                       RuntimeSupport.MAPPER.writeValueAsString(
@@ -544,7 +542,6 @@ public final class Server implements ServerConfig, ActionServices {
                               parameters.getOrDefault("filters", "null")));
                 } catch (JsonProcessingException e) {
                   e.printStackTrace();
-                  savedSearches = "{}";
                   savedSearch = "null";
                   locations = "[]";
                   userFilter = "'{}'";
@@ -556,8 +553,6 @@ public final class Server implements ServerConfig, ActionServices {
                             + "initialiseActionDash"
                             + "} from \"./action.js\";"
                             + "initialiseActionDash("
-                            + savedSearches
-                            + ", "
                             + locations
                             + ", "
                             + savedSearch

@@ -21,6 +21,7 @@ import {
   img,
   inputText,
   inputTextArea,
+  intervalCounter,
   italic,
   link,
   makeUrl,
@@ -47,14 +48,17 @@ import {
   commonPathPrefix,
   computeDuration,
   mapModel,
+  mergingModel,
   mutableStoreWatcher,
 } from "./util.js";
 import { ActionFilter, BasicQuery, createSearch } from "./actionfilters.js";
 import {
   fetchJsonWithBusyDialog,
   loadFile,
+  locallyStored,
   mutableLocalStore,
   paginatedRefreshable,
+  refreshable,
   saveClipboard,
   saveClipboardJson,
   saveFile,
@@ -637,21 +641,22 @@ export function exportSearchDialog(
 }
 
 function collectSearches(
-  serverSearches: ServerSearches,
-  saved: Iterable<SearchDefinition>
+  serverSearches: ServerSearches | null,
+  saved: Iterable<SearchDefinition> | null
 ): SearchDefinition[] {
   return [["All Actions", []] as SearchDefinition].concat(
     [
-      ...Object.entries(serverSearches).map(
-        ([name, filter]) => [name, filter] as SearchDefinition
-      ),
-      ...saved,
+      ...(serverSearches
+        ? Object.entries(serverSearches).map(
+            ([name, filter]) => [name, filter] as SearchDefinition
+          )
+        : []),
+      ...(saved || []),
     ].sort((a, b) => a[0].localeCompare(b[0]))
   );
 }
 
 export function initialiseActionDash(
-  serverSearches: ServerSearches,
   sources: SourceLocation[],
   savedQueryName: string | null,
   userFilters: string | BasicQuery | null,
@@ -687,7 +692,7 @@ export function initialiseActionDash(
   const { ui: saveUi, model: saveModel } = singleState(
     (input: ActionFilter[]) =>
       buttonAccessory(
-        [{ type: "icon", icon: "cloud-plus" }, "Add to My Searches"],
+        [{ type: "icon", icon: "bookmark-heart" }, "Add to My Searches"],
         "Save this search to the local search collection.",
         () =>
           dialog((close) => {
@@ -697,7 +702,10 @@ export function initialiseActionDash(
               nameBox.ui,
               br(),
               button(
-                [{ type: "icon", icon: "cloud-plus" }, "Add to My Searches"],
+                [
+                  { type: "icon", icon: "bookmark-heart" },
+                  "Add to My Searches",
+                ],
                 "Save this search to the local search collection.",
                 () => {
                   const name = nameBox.value.trim();
@@ -734,7 +742,7 @@ export function initialiseActionDash(
     (input: SearchDefinition) =>
       localSearches.get(input[0])
         ? [
-            button(
+            buttonAccessory(
               [{ type: "icon", icon: "pencil" }, "Rename Search"],
               "Change the name of this search in the local search collection.",
               () =>
@@ -759,8 +767,8 @@ export function initialiseActionDash(
                   ];
                 })
             ),
-            button(
-              [{ type: "icon", icon: "trash" }, "Delete Search"],
+            buttonAccessory(
+              [{ type: "icon", icon: "bookmark-x" }, "Delete Search"],
               "Remove this search from your local search collection.",
               () => localSearches.delete(input[0])
             ),
@@ -768,7 +776,7 @@ export function initialiseActionDash(
         : blank()
   );
   const { model: searchModel, ui: searchSelector } = singleState(
-    (saved: Iterable<SearchDefinition>): UIElement =>
+    (searches: SearchDefinition[]): UIElement =>
       dropdown(
         ([name, _filters]: SearchDefinition) => name,
         ([name, _filters]) => name == savedSynchonizer.get(),
@@ -782,12 +790,17 @@ export function initialiseActionDash(
           predicate: (selected: string, [name, _filters]: SearchDefinition) =>
             name == selected,
         },
-        ...collectSearches(serverSearches, saved)
+        ...searches
       )
+  );
+  const [serverSearchModel, localSearchModel] = mergingModel(
+    searchModel,
+    collectSearches,
+    true
   );
   localSearches = mutableStoreWatcher(
     mutableLocalStore<ActionFilter[]>("shesmu_searches"),
-    searchModel
+    localSearchModel
   );
 
   const tabsUi = tabs(
@@ -799,7 +812,7 @@ export function initialiseActionDash(
     tile(
       [],
       buttonAccessory(
-        [{ type: "icon", icon: "cloud-arrow-up" }, "Import Search"],
+        [{ type: "icon", icon: "bookmark-plus" }, "Import Search"],
         "Add a previously exported search.",
         () =>
           dialog((close) => {
@@ -859,12 +872,15 @@ export function initialiseActionDash(
               " will accepteded here.",
               br(),
               buttonAccessory(
-                "⬆️ Upload File",
+                [{ type: "icon", icon: "upload" }, "Upload File"],
                 "Use the contents of a file for the search.",
                 () => loadFile((name, data) => addSearch(name, data, true))
               ),
               button(
-                [{ type: "icon", icon: "cloud-plus" }, "Add to My Searches"],
+                [
+                  { type: "icon", icon: "bookmark-heart" },
+                  "Add to My Searches",
+                ],
                 "Save this search to the local search collection.",
                 () => {
                   const nameStr = name.value.trim();
@@ -880,6 +896,22 @@ export function initialiseActionDash(
       searchSelector,
       saveUi,
       deleteUi,
+      intervalCounter(
+        900_000, // 15 minutes
+        mapModel(
+          refreshable(
+            "savedsearches",
+            mapModel(serverSearchModel, (input) => input || {}),
+            false
+          ),
+          (_) => null
+        ),
+        {
+          label: [{ type: "icon", icon: "bookmark-check" }, "Refresh Searches"],
+          title: "Load any updated searches from the server.",
+          synchronizer: locallyStored<boolean>("shesmu_update_searches", true),
+        }
+      ),
       helpArea("action")
     ),
     tile([], refreshButton(combinedActionsModel.reload), buttons, bulkCommands),
