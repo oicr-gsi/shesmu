@@ -29,6 +29,7 @@ import { PrometheusAlert, AlertFilter } from "./alert.js";
 import { TypeResponse, ValueResponse } from "./definitions.js";
 import { SimulationRequest, SimulationResponse } from "./simulation.js";
 import { Stat } from "./stats.js";
+import { ServerSearches } from "./action.js";
 
 /**
  * The update information provided by interrogating the server
@@ -66,6 +67,7 @@ interface ShesmuRequestType {
   printquery: ActionFilter;
   purge: ActionFilter[];
   queryalerts: AlertFilter<RegExp>;
+  savedsearches: null;
   simulate: SimulationRequest;
   stats: ActionFilter[];
   tags: ActionFilter[];
@@ -87,6 +89,7 @@ interface ShesmuResponseType {
   printquery: string;
   purge: number;
   queryalerts: PrometheusAlert[];
+  savedsearches: ServerSearches;
   simulate: SimulationResponse;
   stats: Stat[];
   tags: string[];
