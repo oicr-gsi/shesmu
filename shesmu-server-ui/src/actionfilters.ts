@@ -663,7 +663,8 @@ export function createSearch(
   const [baseModel, queryModel] = mergingModel(
     filterModel(model, "Missing base search."),
     (left: ActionFilter[] | null, right: ActionFilter[] | null) =>
-      left ? left.concat(right || []) : null
+      left ? left.concat(right || []) : null,
+    false
   );
   let search: SearchPlatform | undefined;
   synchronizer.listen((query, internal) => {

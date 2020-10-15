@@ -3989,7 +3989,8 @@ export function tree<T>(
       const ui = treeSplitPaths(paths, 0, allChildren);
       expand = combineModels(...allChildren);
       return ui;
-    }
+    },
+    true
   );
   return {
     ui,
