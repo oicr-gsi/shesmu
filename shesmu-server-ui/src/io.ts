@@ -233,10 +233,12 @@ export function locallyStoredCustom<T>(
   let currentListener: StateListener<T> = null;
   window.addEventListener("storage", (e) => {
     if (e.key == key && e.oldValue != e.newValue && currentListener) {
-      currentListener(
-        e.newValue == null ? empty : parse(e.newValue) || empty,
-        false
-      );
+      if (e.newValue == null) {
+        currentListener(empty, false);
+      } else {
+        const result = parse(e.newValue);
+        currentListener(result === null ? empty : result, false);
+      }
     }
   });
   return {
@@ -257,7 +259,12 @@ export function locallyStoredCustom<T>(
       currentListener = listener;
       if (listener) {
         const value = localStorage.getItem(key);
-        listener(value == null ? empty : parse(value) || empty, false);
+        if (value == null) {
+          listener(empty, false);
+        } else {
+          const result = parse(value);
+          listener(result == null ? empty : result, false);
+        }
       }
     },
   };
