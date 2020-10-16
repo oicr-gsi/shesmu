@@ -452,7 +452,9 @@ public class MetroDiagram {
       writer.writeAttribute("text-anchor", "end");
       writer.writeAttribute("x", Long.toString(SVG_COUNT_START));
       writer.writeAttribute(
-          "y", Long.toString(topPadding + SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE));
+          "y",
+          Long.toString(
+              topPadding + SVG_ROW_HEIGHT * row + SVG_TEXT_BASELINE + SVG_ROW_HEIGHT / 2));
       writer.writeCharacters(Long.toString(count));
       writer.writeEndElement();
     }
