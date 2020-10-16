@@ -1271,7 +1271,7 @@ function searchAdvanced(
   };
   return {
     buttons: [
-      button(
+      buttonAccessory(
         [{ type: "icon", icon: "mouse" }, "Basic"],
         "Switch to basic query interface. Current query will be lost.",
         () => {
@@ -1310,7 +1310,7 @@ function searchAdvanced(
           }
         }
       ),
-      buttonAccessory(
+      button(
         [{ type: "icon", icon: "funnel" }, "Add Filter"],
         "Add a filter to limit the actions displayed.",
         () => {
@@ -1630,6 +1630,18 @@ function searchBasic(
   return {
     buttons: [
       buttonAccessory(
+        [{ type: "icon", icon: "keyboard-fill" }, "Advanced"],
+        "Switch to advanced query interface. Query will be saved, but cannot be converted back.",
+        () =>
+          promiseModel(synchronizer).statusChanged(
+            fetchAsPromise("printquery", {
+              type: "and",
+              filters: createFilters(current),
+            })
+          )
+      ),
+
+      button(
         [{ type: "icon", icon: "funnel" }, "Add Filter"],
         "Add a filter to limit the actions displayed.",
         () =>
@@ -1703,18 +1715,6 @@ function searchBasic(
               ].concat(current.regex || []);
               searchModel.statusChanged({ ...current });
             }
-          )
-      ),
-
-      button(
-        [{ type: "icon", icon: "keyboard-fill" }, "Advanced"],
-        "Switch to advanced query interface. Query will be saved, but cannot be converted back.",
-        () =>
-          promiseModel(synchronizer).statusChanged(
-            fetchAsPromise("printquery", {
-              type: "and",
-              filters: createFilters(current),
-            })
           )
       ),
       buttonAccessory(
