@@ -6,6 +6,7 @@ import {
   locallyStoredString,
   mutableLocalStore,
   refreshable,
+  saveClipboard,
   saveClipboardJson,
   saveFile,
   fetchAsPromise,
@@ -57,7 +58,10 @@ import {
 } from "./util.js";
 import { specialImports } from "./actions.js";
 import { helpArea } from "./help.js";
-
+import {
+  compressToEncodedURIComponent,
+  decompressFromEncodedURIComponent,
+} from "./lz-string.js";
 /**
  * An exported definition from a simulated script
  */
@@ -230,8 +234,9 @@ export function initialiseSimulationDashboard(
   ace: AceAjax.Ace,
   container: HTMLElement,
   completeSound: HTMLAudioElement,
-  scriptName: string,
-  scriptBody: string
+  scriptName: string | null,
+  scriptBody: string | null,
+  decodeBody: boolean
 ) {
   let fileName = scriptName || "unknown.shesmu";
   let fakeActionDefinitions: MutableStore<
@@ -325,7 +330,14 @@ export function initialiseSimulationDashboard(
   editor.session.setTabSize(2);
   editor.session.setUseSoftTabs(true);
   editor.setFontSize("14pt");
-  editor.setValue(scriptBody || localStorage.getItem("shesmu_script") || "", 0);
+  editor.setValue(
+    (decodeBody && scriptBody
+      ? decompressFromEncodedURIComponent(scriptBody)
+      : scriptBody) ||
+      localStorage.getItem("shesmu_script") ||
+      "",
+    0
+  );
   const errorTable = singleState((response: SimulationResponse | null) => {
     const annotations: AceAjax.Annotation[] = [];
     const ui = table(
@@ -751,6 +763,17 @@ export function initialiseSimulationDashboard(
         "Save script in editor to your computer",
         () => saveFile(editor.getValue(), "text/plain", fileName)
       ),
+      buttonAccessory(
+        [{ type: "icon", icon: "share" }, "Share"],
+        "Copy this script as a link to the clipboard",
+        () =>
+          saveClipboard(
+            `${window.location.origin}${
+              window.location.pathname
+            }?share=${compressToEncodedURIComponent(editor.getValue())}`
+          )
+      ),
+
       dropdown(
         (stale, selected) => {
           if (stale) {
