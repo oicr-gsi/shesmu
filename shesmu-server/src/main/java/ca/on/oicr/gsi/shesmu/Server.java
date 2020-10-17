@@ -1795,8 +1795,10 @@ public final class Server implements ServerConfig, ActionServices {
         "/simulatedash",
         t -> {
           final String existingScript = getParameters(t).get("script");
+          final String sharedScript = getParameters(t).get("share");
           final String scriptName;
           final String scriptBody;
+          final boolean decodeBody;
           if (existingScript != null) {
             if (compiler.dashboard().noneMatch(p -> p.second().filename().equals(existingScript))) {
               t.sendResponseHeaders(403, -1);
@@ -1808,9 +1810,16 @@ public final class Server implements ServerConfig, ActionServices {
             scriptBody =
                 RuntimeSupport.MAPPER.writeValueAsString(
                     new String(Files.readAllBytes(scriptPath), StandardCharsets.UTF_8));
+            decodeBody = false;
           } else {
             scriptName = "null";
-            scriptBody = "null";
+            if (sharedScript != null) {
+              scriptBody = RuntimeSupport.MAPPER.writeValueAsString(sharedScript);
+              decodeBody = true;
+            } else {
+              scriptBody = "null";
+              decodeBody = false;
+            }
           }
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
@@ -1836,8 +1845,8 @@ public final class Server implements ServerConfig, ActionServices {
                                 + "} from \"./simulation.js\";"
                                 + "const output = document.getElementById(\"outputContainer\");"
                                 + "const sound = document.getElementById(\"sound\");"
-                                + "initialiseSimulationDashboard(ace, output, sound, %s, %s);",
-                            scriptName, scriptBody)));
+                                + "initialiseSimulationDashboard(ace, output, sound, %s, %s, %s);",
+                            scriptName, scriptBody, decodeBody)));
               }
 
               @Override
@@ -2104,6 +2113,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("histogram.js", "text/javascript;charset=utf-8");
     add("html.js", "text/javascript;charset=utf-8");
     add("io.js", "text/javascript;charset=utf-8");
+    add("lz-string.js", "text/javascript;charset=utf-8");
     add("olive.js", "text/javascript;charset=utf-8");
     add("parser.js", "text/javascript;charset=utf-8");
     add("pause.js", "text/javascript;charset=utf-8");

@@ -13,6 +13,7 @@ shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/help.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/histogram.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/html.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/io.js
+shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/lz-string.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/olive.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/parser.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/pause.js
