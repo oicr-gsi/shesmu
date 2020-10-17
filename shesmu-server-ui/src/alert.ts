@@ -225,6 +225,9 @@ export function alertNavigator<L, A extends Alert<L>>(
         "Add a filter to limit the alerts displayed.",
         () =>
           dialog((close) => [
+            { type: "icon", icon: "bell" },
+            { type: "b", contents: "Activity" },
+            br(),
             button(
               [{ type: "icon", icon: "volume-up" }, "Firing"],
               "Currently firing alerts.",
@@ -244,7 +247,9 @@ export function alertNavigator<L, A extends Alert<L>>(
               }
             ),
             br(),
-            "Labels: ",
+            { type: "icon", icon: "signpost" },
+            { type: "b", contents: "Labels" },
+            br(),
             createLabelFilter(
               [{ type: "icon", icon: "chat-left-fill" }, "Has Label"],
               "Find actions a labels.",
@@ -272,7 +277,9 @@ export function alertNavigator<L, A extends Alert<L>>(
                 })
             ),
             br(),
-            "Values: ",
+            { type: "icon", icon: "collection-fill" },
+            { type: "b", contents: "Values" },
+            br(),
             createLabelValueFilter(
               [
                 { type: "icon", icon: "chat-left-text-fill" },
