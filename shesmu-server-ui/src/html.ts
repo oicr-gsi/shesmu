@@ -3426,12 +3426,20 @@ export function subscribedState<T>(
 
 export function svgFromStr(data: string): UIElement {
   const svg = new window.DOMParser().parseFromString(data, "image/svg+xml");
-  return {
-    element: document.adoptNode(svg.documentElement),
-    reveal: null,
-    find: null,
-    type: "ui",
-  };
+  return [
+    buttonAccessory(
+      { type: "icon", icon: "download" },
+      "Download diagram.",
+      () => saveFile(data, "image/svg+xml", "diagram.svg")
+    ),
+    br(),
+    {
+      element: document.adoptNode(svg.documentElement),
+      reveal: null,
+      find: null,
+      type: "ui",
+    },
+  ];
 }
 /**
  * Display a table from the supplied items.
