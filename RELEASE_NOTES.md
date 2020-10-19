@@ -1,5 +1,45 @@
 # Unreleased
 
+# [1.4.4] - 2020-10-19T10:44+00:00
+
+Changes:
+
+* Alerts from `Reject` or `Require` clauses now report the line number of the olive rather than the clause.
+* Data flow counts for `Export Define` olives are reported better in  Prometheus.
+* Clear counts for `.actnow` files when deleted
+
+Language changes:
+
+* Improve type safety of algebraic types comparisons
+
+UI changes:
+
+* Create a new definitions dashboard
+* Allow ignoring unused variables in simulation
+* Add groups to _Add Filter_ dialog for actions and alerts
+* Put buttons and menus of commands in alphabetical order
+* Improve _Export Search_ dialog
+* Fixes a bug where deleting entries did not save in _Extra Definitions_ in the
+  simulator and the saved searches on the _Actions_ page.
+* Fix bug where repeat count was negative (on browser console)
+* Fix table menu used on the _Olives_ page causing it to look like it should be
+  filtered even though it isn't.
+* Improve combination locks for dangerous commands
+* Synchronize settings across tabs
+* Fix a problem where pop up menus will appear in strange locations on the
+  page.
+* In advanced search, this attempts to refresh the contents as you type, which
+  overwhelms the backend causing the front end to behave poorly. This waits
+  until enter is pressed.
+* Add missing icons to _Bulk Commands_ menu
+
+
+Niassa+Pinery plugin:
+
+* Use an algebraic type for `pinery::...::platform_for_instrument_model`
+* Fix bug where actions with extra input files were marked as `SUCCEEDED`
+  instead of `HALP`.
+
 # [1.4.3] - 2020-10-06T10:56+00:00
 
 Changes:
