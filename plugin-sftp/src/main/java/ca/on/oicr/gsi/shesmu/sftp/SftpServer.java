@@ -41,6 +41,7 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.Message;
 import net.schmizz.sshj.common.SSHPacket;
 import net.schmizz.sshj.connection.channel.direct.Session;
+import net.schmizz.sshj.connection.channel.direct.Signal;
 import net.schmizz.sshj.sftp.*;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 
@@ -103,6 +104,12 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           "The time to run the remote refill script in seconds.",
           "filename",
           "name");
+  private static final Gauge refillResponseOk =
+      Gauge.build(
+              "shesmu_sftp_refill_response_ok",
+              "Whether the refill command returned an approved value.")
+          .labelNames("filename", "name")
+          .register();
   private static final Counter symlinkErrors =
       Counter.build(
               "shesmu_sftp_symlink_errors",
@@ -134,6 +141,19 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       description = "Remove a file (not directory) on an SFTP server described in {file}.")
   public DeleteAction delete() {
     return new DeleteAction(definer);
+  }
+
+  public Thread drainOutput(
+      String name, String command, BufferedReader errorReader, String stream) {
+    final Map<String, String> labels = new TreeMap<>();
+    labels.put("command", command);
+    labels.put("name", name);
+    labels.put("type", "refiller");
+    labels.put("stream", stream);
+    final Thread errorDrainThread =
+        new Thread(() -> errorReader.lines().forEach(l -> definer.log(l, labels)));
+    errorDrainThread.start();
+    return errorDrainThread;
   }
 
   @ShesmuMethod(
@@ -291,27 +311,68 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                 new BufferedReader(new InputStreamReader(process.getInputStream()));
             final BufferedReader errorReader =
                 new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-          if ("UPDATE".equals(reader.readLine())) {
-            try (final OutputStream output =
-                new PrometheusLoggingOutputStream(
-                    process.getOutputStream(), refillBytes, fileName().toString(), name)) {
-              MAPPER.writeValue(output, data);
-              // Send EOF to the remote end since closing the stream doesn't do that:
-              // https://github.com/hierynomus/sshj/issues/143
-              client
-                  .getTransport()
-                  .write(new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
+          final Thread inputThread;
+          final String response = reader.readLine();
+          if (response == null) {
+            inputThread = null;
+            process.signal(Signal.KILL);
+            refillResponseOk.labels(fileName().toString(), name).set(0);
+            final Map<String, String> labels = new TreeMap<>();
+            labels.put("command", command);
+            labels.put("name", name);
+            labels.put("type", "refiller");
+            definer.log("Expected OK or UPDATE, but got no output", labels);
+          } else {
+            switch (response) {
+              case "UPDATE":
+                refillResponseOk.labels(fileName().toString(), name).set(1);
+                inputThread =
+                    new Thread(
+                        () -> {
+                          try (final OutputStream output =
+                              new PrometheusLoggingOutputStream(
+                                  process.getOutputStream(),
+                                  refillBytes,
+                                  fileName().toString(),
+                                  name)) {
+                            MAPPER.writeValue(output, data);
+                            // Send EOF to the remote end since closing the stream doesn't do that:
+                            // https://github.com/hierynomus/sshj/issues/143
+                            client
+                                .getTransport()
+                                .write(
+                                    new SSHPacket(Message.CHANNEL_EOF)
+                                        .putUInt32(process.getRecipient()));
+                          } catch (IOException e) {
+                            e.printStackTrace();
+                          }
+                        });
+                inputThread.start();
+                break;
+              case "OK":
+                refillResponseOk.labels(fileName().toString(), name).set(1);
+                inputThread = null;
+                break;
+              default:
+                inputThread = null;
+                process.signal(Signal.KILL);
+                refillResponseOk.labels(fileName().toString(), name).set(0);
+                final Map<String, String> labels = new TreeMap<>();
+                labels.put("command", command);
+                labels.put("name", name);
+                labels.put("type", "refiller");
+                definer.log("Expected OK or UPDATE, but got invalid response: " + response, labels);
+                break;
             }
           }
-          final Map<String, String> labels = new TreeMap<>();
-          labels.put("command", command);
-          labels.put("name", name);
-          labels.put("type", "refiller");
-          labels.put("stream", "stderr");
-          errorReader.lines().forEach(l -> definer.log(l, labels));
-          labels.put("stream", "stdout");
-          reader.lines().forEach(l -> definer.log(l, labels));
+          final Thread errorDrainThread = drainOutput(name, command, errorReader, "stderr");
+          final Thread outputDrainThread = drainOutput(name, command, reader, "stdout");
           process.join();
+          outputDrainThread.join();
+          errorDrainThread.join();
+          if (inputThread != null) {
+            inputThread.join();
+          }
           exitStatus = process.getExitStatus() == null ? 255 : process.getExitStatus();
         }
       }
