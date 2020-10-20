@@ -5,6 +5,10 @@ import { FakeActionDefinition } from "./simulation.js";
 declare module "actions" {
   export const actionRender: Map<string, (a: Action) => UIElement>;
   export const specialImports: ((
-    data: string
-  ) => null | FakeActionDefinition)[];
+    data: string,
+    typeProcessor: {
+      wdl: (typeName: string) => Promise<string>;
+      shesmu: (typeName: string) => Promise<string>;
+    }
+  ) => Promise<null | FakeActionDefinition>)[];
 }

@@ -114,8 +114,8 @@ interface ExportFunction {
  * A definition for a fake action to be used in simulation
  */
 export interface FakeActionDefinition {
-  name: string;
-  parameters: FakeActionParameters;
+  name?: string;
+  parameters?: FakeActionParameters;
   errors: string[];
 }
 /**
@@ -191,21 +191,33 @@ export interface SimulationResponse {
 }
 export type TypeInfo = string | { [name: string]: TypeInfo };
 
-function importAction(
+function typeFetcher(format: string): (format: string) => Promise<string> {
+  return (type: string) =>
+    fetchAsPromise("type", { value: type, format: format }).then(
+      (v) => v.descriptor
+    );
+}
+
+async function importAction(
   store: MutableStore<string, FakeActionParameters>,
   name: string | null,
   data: string
-): void {
+): Promise<void> {
+  const resolver = {
+    wdl: typeFetcher("1"),
+    shesmu: typeFetcher(""),
+  };
   for (const importReads of specialImports) {
-    const result = importReads(data);
+    const result = await importReads(data, resolver);
     if (result) {
       if (result.errors.length) {
         dialog(() => result.errors.map((e) => text(e)));
-      } else {
+      } else if (result.parameters) {
         const givenName = result.name || name;
         if (givenName) {
           store.set(givenName, result.parameters);
         } else {
+          const parameters = result.parameters;
           dialog((close) => {
             const newName = inputText();
             return [
@@ -214,7 +226,7 @@ function importAction(
               br(),
               button("Add", "Save to fake action collection.", () => {
                 if (validIdentifier.test(newName.value)) {
-                  store.set(newName.value, result.parameters);
+                  store.set(newName.value, parameters);
                   close();
                 } else {
                   dialog(() => "This name isn't a valid Shesmu identifier.");
