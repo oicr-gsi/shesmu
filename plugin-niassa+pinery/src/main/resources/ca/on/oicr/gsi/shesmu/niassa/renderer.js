@@ -186,6 +186,8 @@ async function processWdlObj(parameters, resolver) {
     name.split(/\./).forEach((n, i, arr) => {
       if (i == arr.length - 1) {
         f[n] = inner;
+      } else if (f.hasOwnProperty(n)) {
+        f = f[n].fields;
       } else {
         const nextFields = {};
         f[n] = { is: "object", fields: nextFields };

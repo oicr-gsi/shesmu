@@ -19,14 +19,12 @@ import {
   butter,
   button,
   buttonAccessory,
-  buttonClose,
   checkKey,
   collapsible,
   dialog,
   dropdown,
   group,
   header,
-  inputCheckbox,
   inputText,
   inputTextArea,
   italic,
@@ -279,7 +277,26 @@ export function initialiseSimulationDashboard(
                   ),
                 })
             ),
-            button(
+            buttonAccessory(
+              [{ type: "icon", icon: "download" }, "Download"],
+              "Download action definition.",
+              () =>
+                saveFile(
+                  JSON.stringify({
+                    name: name,
+                    parameters: Object.entries(declaration).map(
+                      ([paramName, parameter]) => ({
+                        name: paramName,
+                        required: parameter.required,
+                        type: parameter.type,
+                      })
+                    ),
+                  }),
+                  "application/json",
+                  name + ".actiondef"
+                )
+            ),
+            buttonAccessory(
               [{ type: "icon", icon: "pencil" }, "Rename"],
               "Rename action definition.",
               () =>
@@ -304,8 +321,10 @@ export function initialiseSimulationDashboard(
                   ];
                 })
             ),
-            buttonClose("Delete action definition.", () =>
-              fakeActionDefinitions.delete(name)
+            buttonAccessory(
+              [{ type: "icon", icon: "trash" }, "Delete"],
+              "Delete action definition.",
+              () => fakeActionDefinitions.delete(name)
             ),
           ],
         ]
