@@ -178,7 +178,24 @@ actionRender.set("niassa-annotation", (a) => [
   text(`Value: ${a.value}`),
 ]);
 
-function processIniType(name, type, toplevel) {
+async function processWdlObj(parameters, resolver) {
+  const fields = {};
+  for (const [name, type] of Object.entries(parameters)) {
+    const inner = await resolver.wdl(type);
+    let f = fields;
+    name.split(/\./).forEach((n, i, arr) => {
+      if (i == arr.length - 1) {
+        f[n] = inner;
+      } else {
+        const nextFields = {};
+        f[n] = { is: "object", fields: nextFields };
+        f = nextFields;
+      }
+    });
+  }
+  return { is: "object", fields: fields };
+}
+async function processIniType(name, type, toplevel, errors, resolver) {
   if (type === "boolean") {
     return "b";
   } else if (type === "integer") {
@@ -196,28 +213,37 @@ function processIniType(name, type, toplevel) {
       case "date":
         return "d";
       case "list":
-        return "a" + processIniType(name, type.of, false);
-      case "tuple":
-        const elements = type.of.map((element) =>
-          processIniType(name, element, false)
+        return (
+          "a" + (await processIniType(name, type.of, false, errors, resolver))
         );
-        return "a" + elements.length + elements.join("");
+      case "tuple":
+        const elements = [];
+        for (const element of type.of) {
+          elements.push(
+            await processIniType(name, element, false, errors, resolver)
+          );
+        }
+        return "t" + elements.length + elements.join("");
       case "wdl":
         if (toplevel) {
-          return type.parameters;
+          return await processWdlObj(type.parameters, resolver);
         } else {
-          makePopup().innerText = `In ${name}, WDL type is nested. WDL type block may only appear as a top-level type.`;
+          errors.push(
+            `In ${name}, WDL type is nested. WDL type block may only appear as a top-level type.`
+          );
           return "!";
         }
     }
   }
-  makePopup().innerText = `Utterly incomprehensible type ${JSON.stringify(
-    type
-  )} for parameter ${name}.`;
+  errors.push(
+    `Utterly incomprehensible type ${JSON.stringify(
+      type
+    )} for parameter ${name}.`
+  );
   return "!";
 }
 
-specialImports.push((data) => {
+specialImports.push(async (data, resolver) => {
   try {
     const json = JSON.parse(data);
     if (typeof json == "object" && json && json.hasOwnProperty("accession")) {
@@ -232,7 +258,13 @@ specialImports.push((data) => {
         ) {
           output[parameter.name] = {
             required: parameter.required || false,
-            type: processIniType(parameter.name, parameter.type, true),
+            type: await processIniType(
+              parameter.name,
+              parameter.type,
+              true,
+              errors,
+              resolver
+            ),
           };
         } else {
           errors.push(`Malformed parameter: ${JSON.stringify(parameter)}`);
@@ -244,19 +276,27 @@ specialImports.push((data) => {
         output[userAnnotation] = { required: true, type: type };
       }
       if (json.hasOwnProperty("type")) {
-        const limsKeyType = niassaLimsKeyTypes[json.type];
-        if (!limsKeyType) {
-          errors.push(`Invalid type ${json.type} found in file.`);
-        } else {
-          output[limsKeyType[0]] = { required: true, type: limsKeyType[1] };
+        switch (typeof json["type"]) {
+          case "string":
+            const limsKeyType = niassaLimsKeyTypes[json.type];
+            if (!limsKeyType) {
+              errors.push(`Invalid type ${json.type} found in file.`);
+            } else {
+              output[limsKeyType[0]] = { required: true, type: limsKeyType[1] };
+            }
+            return { name: null, errors: errors, parameters: output };
+          case "object":
+            output["wdl_outputs"] = {
+              required: true,
+              type: await processWdlObj(json["type"], resolver),
+            };
+            return { name: null, errors: errors, parameters: output };
+          default:
+            return { errors: ["No workflow type is specified."] };
         }
-        return { name: null, errors: errors, parameters: output };
-      } else {
-        return null;
       }
-    } else {
-      return { errors: ["No workflow type is specified."] };
     }
+    return null;
   } catch (e) {
     // This is not JSON, so it can't be ours
     return null;
