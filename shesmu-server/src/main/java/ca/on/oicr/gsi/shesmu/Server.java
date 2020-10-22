@@ -13,7 +13,6 @@ import ca.on.oicr.gsi.shesmu.compiler.description.OliveTable;
 import ca.on.oicr.gsi.shesmu.compiler.description.Produces;
 import ca.on.oicr.gsi.shesmu.core.StandardDefinitions;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
-import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
@@ -30,6 +29,7 @@ import ca.on.oicr.gsi.shesmu.plugin.filter.*;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.TypeParser;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import ca.on.oicr.gsi.shesmu.runtime.CompiledGenerator;
 import ca.on.oicr.gsi.shesmu.runtime.OliveRunInfo;
@@ -38,6 +38,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.*;
 import ca.on.oicr.gsi.shesmu.server.ActionProcessor.Filter;
 import ca.on.oicr.gsi.shesmu.server.plugins.AnnotatedInputFormatDefinition;
+import ca.on.oicr.gsi.shesmu.server.plugins.BaseHumanTypeParser;
 import ca.on.oicr.gsi.shesmu.server.plugins.JarHashRepository;
 import ca.on.oicr.gsi.shesmu.server.plugins.PluginManager;
 import ca.on.oicr.gsi.shesmu.util.NameLoader;
@@ -72,7 +73,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -194,6 +194,7 @@ public final class Server implements ServerConfig, ActionServices {
   private final AutoUpdatingDirectory<SavedSearch> savedSearches;
   private final HttpServer server;
   private final StaticActions staticActions;
+  private Map<String, TypeParser> typeParsers = new TreeMap<>();
   public final String version;
   private final Executor wwwExecutor =
       new ThreadPoolExecutor(
@@ -353,6 +354,128 @@ public final class Server implements ServerConfig, ActionServices {
               }
             },
             inputSource);
+
+    addTypeParser(
+        new TypeParser() {
+          @Override
+          public String description() {
+            return "Descriptor";
+          }
+
+          @Override
+          public String format() {
+            return "shesmu::descriptor";
+          }
+
+          @Override
+          public Imyhat parse(String type) {
+            return Imyhat.parse(type);
+          }
+        });
+
+    addTypeParser(
+        new TypeParser() {
+          @Override
+          public String description() {
+            return "JSON-enhanced Descriptor";
+          }
+
+          @Override
+          public String format() {
+            return "shesmu::json_descriptor";
+          }
+
+          @Override
+          public Imyhat parse(String type) {
+            try {
+              return RuntimeSupport.MAPPER.readValue(type, Imyhat.class);
+            } catch (Exception e) {
+              return Imyhat.BAD;
+            }
+          }
+        });
+
+    addTypeParser(
+        new TypeParser() {
+          @Override
+          public String description() {
+            return "WDL Type (Pairs as objects)";
+          }
+
+          @Override
+          public String format() {
+            return "shesmu::wdl::objects";
+          }
+
+          @Override
+          public Imyhat parse(String type) {
+            return WdlInputType.parseString(type, true);
+          }
+        });
+    addTypeParser(
+        new TypeParser() {
+          @Override
+          public String description() {
+            return "WDL Type (Pairs as tuples)";
+          }
+
+          @Override
+          public String format() {
+            return "shesmu::wdl::tuples";
+          }
+
+          @Override
+          public Imyhat parse(String type) {
+            return WdlInputType.parseString(type, false);
+          }
+        });
+    addTypeParser(
+        new BaseHumanTypeParser(definitionRepository, InputFormatDefinition.DUMMY) {
+          @Override
+          public String description() {
+            return "Human-friendly";
+          }
+
+          @Override
+          public String format() {
+            return "shesmu::olive";
+          }
+
+          @Override
+          public Imyhat typeForName(String name) {
+            return null;
+          }
+        });
+
+    AnnotatedInputFormatDefinition.formats()
+        .sorted(Comparator.comparing(InputFormatDefinition::name))
+        .forEach(
+            format ->
+                addTypeParser(
+                    new BaseHumanTypeParser(definitionRepository, format) {
+                      final Map<String, Imyhat> predefinedTypes =
+                          InputFormatDefinition.predefinedTypes(
+                              definitionRepository.signatures(), format);
+
+                      @Override
+                      public String description() {
+                        return "Human-friendly with types from " + format.name();
+                      }
+
+                      @Override
+                      public String format() {
+                        return "shesmu::olive+" + format.name();
+                      }
+
+                      @Override
+                      public Imyhat typeForName(String name) {
+                        return predefinedTypes.get(name);
+                      }
+                    }));
+
+    for (final TypeParser parser : ServiceLoader.load(TypeParser.class)) {
+      addTypeParser(parser);
+    }
 
     add(
         "/",
@@ -1029,41 +1152,17 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeStartElement("select");
                 writer.writeAttribute("id", "format");
 
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "0");
-                writer.writeCharacters("Descriptor");
-                writer.writeEndElement();
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "3");
-                writer.writeCharacters("JSON-enhanced Descriptor");
-                writer.writeEndElement();
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "1");
-                writer.writeCharacters("WDL Type (Pairs as tuples)");
-                writer.writeEndElement();
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "2");
-                writer.writeCharacters("WDL Type (Pairs as objects)");
-                writer.writeEndElement();
-                writer.writeStartElement("option");
-                writer.writeAttribute("value", "");
-                writer.writeCharacters("Human-friendly");
-                writer.writeEndElement();
-
-                AnnotatedInputFormatDefinition.formats()
-                    .sorted(Comparator.comparing(InputFormatDefinition::name))
-                    .forEach(
-                        format -> {
-                          try {
-                            writer.writeStartElement("option");
-                            writer.writeAttribute("value", format.name());
-                            writer.writeCharacters(
-                                "Human-friendly with types from " + format.name());
-                            writer.writeEndElement();
-                          } catch (XMLStreamException e) {
-                            throw new RuntimeException(e);
-                          }
-                        });
+                for (final TypeParser parser :
+                    typeParsers
+                        .values()
+                        .stream()
+                        .sorted(Comparator.comparing(TypeParser::description))
+                        .collect(Collectors.toList())) {
+                  writer.writeStartElement("option");
+                  writer.writeAttribute("value", parser.format());
+                  writer.writeCharacters(parser.description());
+                  writer.writeEndElement();
+                }
 
                 writer.writeEndElement();
                 writer.writeEndElement();
@@ -1889,74 +1988,28 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           final TypeParseRequest request =
               RuntimeSupport.MAPPER.readValue(t.getRequestBody(), TypeParseRequest.class);
-          Imyhat type;
           t.getResponseHeaders().set("Content-type", "application/json");
-          if (request.getFormat() == null || request.getFormat().equals("0")) {
-            type = Imyhat.parse(request.getValue());
-          } else if (request.getFormat().equals("1")) {
-            type = WdlInputType.parseString(request.getValue(), false);
-          } else if (request.getFormat().equals("2")) {
-            type = WdlInputType.parseString(request.getValue(), true);
-          } else if (request.getFormat().equals("3")) {
-            type = RuntimeSupport.MAPPER.readValue(request.getValue(), Imyhat.class);
-          } else {
-            Optional<Function<String, Imyhat>> existingTypes =
-                request.getFormat().isEmpty()
-                    ? Optional.of(n -> null)
-                    : AnnotatedInputFormatDefinition.formats()
-                        .filter(format -> format.name().equals(request.getFormat()))
-                        .findAny()
-                        .map(
-                            f ->
-                                InputFormatDefinition.predefinedTypes(
-                                        definitionRepository.signatures(), f)
-                                    ::get);
-            type =
-                existingTypes
-                    .flatMap(
-                        types -> {
-                          AtomicReference<ImyhatNode> node = new AtomicReference<>();
-                          Parser parser =
-                              Parser.start(request.getValue(), (l, c, m) -> {})
-                                  .whitespace()
-                                  .then(ImyhatNode::parse, node::set)
-                                  .whitespace();
-                          if (parser.isGood()) {
-                            return Optional.of(
-                                node.get()
-                                    .render(
-                                        new ExpressionCompilerServices() {
-                                          private final NameLoader<FunctionDefinition> functions =
-                                              new NameLoader<>(
-                                                  definitionRepository.functions(),
-                                                  FunctionDefinition::name);
+          final Imyhat type =
+              typeParsers
+                  .getOrDefault(
+                      request.getFormat(),
+                      new TypeParser() {
+                        @Override
+                        public String description() {
+                          return "Hates everything";
+                        }
 
-                                          @Override
-                                          public FunctionDefinition function(String name) {
-                                            return functions.get(name);
-                                          }
+                        @Override
+                        public String format() {
+                          return "shesmu::bad";
+                        }
 
-                                          @Override
-                                          public Imyhat imyhat(String name) {
-                                            return types.apply(name);
-                                          }
-
-                                          @Override
-                                          public InputFormatDefinition inputFormat(String format) {
-                                            return CompiledGenerator.SOURCES.get(format);
-                                          }
-
-                                          @Override
-                                          public InputFormatDefinition inputFormat() {
-                                            return InputFormatDefinition.DUMMY;
-                                          }
-                                        },
-                                        m -> {}));
-                          }
-                          return Optional.empty();
-                        })
-                    .orElse(Imyhat.BAD);
-          }
+                        @Override
+                        public Imyhat parse(String type) {
+                          return Imyhat.BAD;
+                        }
+                      })
+                  .parse(request.getValue());
           if (type.isBad()) {
             t.sendResponseHeaders(400, 0);
             try (OutputStream os = t.getResponseBody()) {}
@@ -2233,6 +2286,10 @@ public final class Server implements ServerConfig, ActionServices {
             RuntimeSupport.MAPPER.writeValue(os, node);
           }
         });
+  }
+
+  private void addTypeParser(TypeParser parser) {
+    typeParsers.put(parser.format(), parser);
   }
 
   public void constantDefsJson(ArrayNode array) {

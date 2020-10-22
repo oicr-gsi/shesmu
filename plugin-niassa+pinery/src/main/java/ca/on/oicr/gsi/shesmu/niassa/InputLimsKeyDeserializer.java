@@ -24,8 +24,7 @@ import java.util.regex.Pattern;
  * one
  */
 public class InputLimsKeyDeserializer extends JsonDeserializer<InputLimsKeyProvider> {
-  private static final Parser.ParseDispatch<CustomLimsEntryType> DISPATCH =
-      new Parser.ParseDispatch<>();
+  static final Parser.ParseDispatch<CustomLimsEntryType> DISPATCH = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Either<Imyhat, CustomLimsEntryType>> FIELD =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<CustomLimsEntryType> INNER_DISPATCH =
