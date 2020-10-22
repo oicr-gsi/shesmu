@@ -178,25 +178,21 @@ actionRender.set("niassa-annotation", (a) => [
   text(`Value: ${a.value}`),
 ]);
 
-async function processWdlObj(parameters, resolver) {
-  const fields = {};
-  for (const [name, type] of Object.entries(parameters)) {
-    const inner = await resolver.wdl(type);
-    let f = fields;
-    name.split(/\./).forEach((n, i, arr) => {
-      if (i == arr.length - 1) {
-        f[n] = inner;
-      } else if (f.hasOwnProperty(n)) {
-        f = f[n].fields;
-      } else {
-        const nextFields = {};
-        f[n] = { is: "object", fields: nextFields };
-        f = nextFields;
-      }
-    });
-  }
-  return { is: "object", fields: fields };
+function createNestedFields(fields, name, inner) {
+  let f = fields;
+  name.split(/\./).forEach((n, i, arr) => {
+    if (i == arr.length - 1) {
+      f[n] = inner;
+    } else if (f.hasOwnProperty(n)) {
+      f = f[n].fields;
+    } else {
+      const nextFields = {};
+      f[n] = { is: "object", fields: nextFields };
+      f = nextFields;
+    }
+  });
 }
+
 async function processIniType(name, type, toplevel, errors, resolver) {
   if (type === "boolean") {
     return "b";
@@ -228,7 +224,17 @@ async function processIniType(name, type, toplevel, errors, resolver) {
         return "t" + elements.length + elements.join("");
       case "wdl":
         if (toplevel) {
-          return await processWdlObj(type.parameters, resolver);
+          const fields = {};
+          for (const [name, fieldType] of Object.entries(type.parameters)) {
+            const inner = await resolver(
+              type.pairsAsObjects
+                ? "shesmu::wdl::object"
+                : "shesmu::wdl::tuples",
+              fieldType
+            );
+            createNestedFields(fields, name, inner);
+          }
+          return { is: "object", fields: fields };
         } else {
           errors.push(
             `In ${name}, WDL type is nested. WDL type block may only appear as a top-level type.`
@@ -250,7 +256,12 @@ specialImports.push(async (data, resolver) => {
     const json = JSON.parse(data);
     if (typeof json == "object" && json && json.hasOwnProperty("accession")) {
       const errors = [];
-      const output = { major_olive_version: { required: true, type: "i" } };
+      const output = {
+        major_olive_version: { required: true, type: "i" },
+        supplemental_annotations: { required: false, type: "mss" },
+        priority: { required: false, type: "i" },
+        services: { required: false, type: "as" },
+      };
       for (const parameter of json.parameters || []) {
         if (
           parameter.hasOwnProperty("required") &&
@@ -288,9 +299,14 @@ specialImports.push(async (data, resolver) => {
             }
             return { name: null, errors: errors, parameters: output };
           case "object":
+            const fields = {};
+            for (const [name, type] of Object.entries(json["type"])) {
+              const inner = await resolver("niassa::wdl_output", type);
+              createNestedFields(fields, name, inner);
+            }
             output["wdl_outputs"] = {
               required: true,
-              type: await processWdlObj(json["type"], resolver),
+              type: { is: "object", fields: fields },
             };
             return { name: null, errors: errors, parameters: output };
           default:

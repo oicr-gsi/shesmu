@@ -189,24 +189,17 @@ export interface SimulationResponse {
 }
 export type TypeInfo = string | { [name: string]: TypeInfo };
 
-function typeFetcher(format: string): (format: string) => Promise<string> {
-  return (type: string) =>
-    fetchAsPromise("type", { value: type, format: format }).then(
-      (v) => v.descriptor
-    );
-}
-
 async function importAction(
   store: MutableStore<string, FakeActionParameters>,
   name: string | null,
   data: string
 ): Promise<void> {
-  const resolver = {
-    wdl: typeFetcher("1"),
-    shesmu: typeFetcher(""),
-  };
   for (const importReads of specialImports) {
-    const result = await importReads(data, resolver);
+    const result = await importReads(data, (format, type) =>
+      fetchAsPromise("type", { value: type, format: format }).then(
+        (v) => v.descriptor
+      )
+    );
     if (result) {
       if (result.errors.length) {
         dialog(() => result.errors.map((e) => text(e)));

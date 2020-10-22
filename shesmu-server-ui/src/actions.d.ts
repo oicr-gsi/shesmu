@@ -6,9 +6,6 @@ declare module "actions" {
   export const actionRender: Map<string, (a: Action) => UIElement>;
   export const specialImports: ((
     data: string,
-    typeProcessor: {
-      wdl: (typeName: string) => Promise<string>;
-      shesmu: (typeName: string) => Promise<string>;
-    }
+    typeResolver: (format: string, typeName: string) => Promise<string>
   ) => Promise<null | FakeActionDefinition>)[];
 }
