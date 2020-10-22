@@ -103,32 +103,6 @@ public final class Server implements ServerConfig, ActionServices {
     }
   }
 
-  private static final Pattern AMPERSAND = Pattern.compile("&");
-  private static final Pattern EQUAL = Pattern.compile("=");
-  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
-  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
-  private static final Gauge inflightCount =
-      Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
-  private static final Gauge inflightOldest =
-      Gauge.build(
-              "shesmu_inflight_oldest_time",
-              "The start time of the longest-running server process.")
-          .register();
-  private static final String instanceName =
-      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
-          .map("Shesmu - "::concat)
-          .orElse("Shesmu");
-  private static final LatencyHistogram responseTime =
-      new LatencyHistogram(
-          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
-  private static final Gauge stopGauge =
-      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
-          .register();
-  private static final Counter versionCounter =
-      Counter.build("shesmu_version", "The Shesmu git commit version")
-          .labelNames("version")
-          .register();
-
   public static Map<String, String> getParameters(HttpExchange t) {
     return Optional.ofNullable(t.getRequestURI().getQuery())
         .map(
@@ -175,6 +149,31 @@ public final class Server implements ServerConfig, ActionServices {
     s.start();
   }
 
+  private static final Pattern AMPERSAND = Pattern.compile("&");
+  private static final Pattern EQUAL = Pattern.compile("=");
+  public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
+  private static final Gauge inflightCount =
+      Gauge.build("shesmu_inflight_count", "The number of inflight processes.").register();
+  private static final Gauge inflightOldest =
+      Gauge.build(
+              "shesmu_inflight_oldest_time",
+              "The start time of the longest-running server process.")
+          .register();
+  private static final String instanceName =
+      Optional.ofNullable(System.getenv("SHESMU_INSTANCE"))
+          .map("Shesmu - "::concat)
+          .orElse("Shesmu");
+  private static final LatencyHistogram responseTime =
+      new LatencyHistogram(
+          "shesmu_http_request_time", "The time to respond to an HTTP request.", "url");
+  private static final Gauge stopGauge =
+      Gauge.build("shesmu_emergency_throttler", "Whether the emergency throttler is engaged.")
+          .register();
+  private static final Counter versionCounter =
+      Counter.build("shesmu_version", "The Shesmu git commit version")
+          .labelNames("version")
+          .register();
   public final String build;
   public final Instant buildTime;
   private final CompiledGenerator compiler;
@@ -364,13 +363,6 @@ public final class Server implements ServerConfig, ActionServices {
             new StatusPage(this, false) {
 
               @Override
-              public Stream<Header> headers() {
-                return Stream.of(
-                    Header.jsModule(
-                        "import {initialiseStatusHelp} from \"./help.js\"; initialiseStatusHelp();"));
-              }
-
-              @Override
               protected void emitCore(SectionRenderer renderer) throws XMLStreamException {
                 renderer.line("Version", version);
                 renderer.line("Build Time", buildTime);
@@ -383,6 +375,13 @@ public final class Server implements ServerConfig, ActionServices {
                     .paths()
                     .forEach(path -> renderer.line("Data Directory", path.toString()));
                 compiler.errorHtml(renderer);
+              }
+
+              @Override
+              public Stream<Header> headers() {
+                return Stream.of(
+                    Header.jsModule(
+                        "import {initialiseStatusHelp} from \"./help.js\"; initialiseStatusHelp();"));
               }
 
               @Override
@@ -627,6 +626,11 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
+              public String activeUrl() {
+                return "defs";
+              }
+
+              @Override
               public Stream<Header> headers() {
                 String defs = "[]";
                 try {
@@ -646,11 +650,6 @@ public final class Server implements ServerConfig, ActionServices {
                         String.format(
                             "import {initialiseDefinitionDash} from \"./definitions.js\"; initialiseDefinitionDash(%s);",
                             defs)));
-              }
-
-              @Override
-              public String activeUrl() {
-                return "defs";
               }
 
               @Override
@@ -1741,11 +1740,6 @@ public final class Server implements ServerConfig, ActionServices {
                     }
 
                     @Override
-                    protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
-                      return definitions.get(name);
-                    }
-
-                    @Override
                     protected FunctionDefinition getFunction(String name) {
                       return functions.get(name);
                     }
@@ -1757,6 +1751,11 @@ public final class Server implements ServerConfig, ActionServices {
 
                     @Override
                     protected CallableDefinition getOliveDefinition(String name) {
+                      return definitions.get(name);
+                    }
+
+                    @Override
+                    protected CallableDefinitionRenderer getOliveDefinitionRenderer(String name) {
                       return definitions.get(name);
                     }
 
@@ -1943,13 +1942,13 @@ public final class Server implements ServerConfig, ActionServices {
                                           }
 
                                           @Override
-                                          public InputFormatDefinition inputFormat(String format) {
-                                            return CompiledGenerator.SOURCES.get(format);
+                                          public Imyhat imyhat(String name) {
+                                            return types.apply(name);
                                           }
 
                                           @Override
-                                          public Imyhat imyhat(String name) {
-                                            return types.apply(name);
+                                          public InputFormatDefinition inputFormat(String format) {
+                                            return CompiledGenerator.SOURCES.get(format);
                                           }
 
                                           @Override
@@ -2152,29 +2151,6 @@ public final class Server implements ServerConfig, ActionServices {
     add("api-docs/swagger-ui.js", "text/javascript");
   }
 
-  public void refillerDefsJson(ArrayNode array) {
-    definitionRepository
-        .refillers()
-        .forEach(
-            refiller -> {
-              final ObjectNode obj = array.addObject();
-              obj.put("kind", "refiller");
-              obj.put("name", refiller.name());
-              obj.put("description", refiller.description());
-              obj.put(
-                  "filename", refiller.filename() == null ? null : refiller.filename().toString());
-              final ArrayNode parameters = obj.putArray("parameters");
-              refiller
-                  .parameters()
-                  .forEach(
-                      param -> {
-                        final ObjectNode paramInfo = parameters.addObject();
-                        paramInfo.put("name", param.name());
-                        paramInfo.put("type", param.type().toString());
-                      });
-            });
-  }
-
   public void actionDefsJson(ArrayNode array) {
     definitionRepository
         .actions()
@@ -2200,138 +2176,6 @@ public final class Server implements ServerConfig, ActionServices {
                         paramInfo.put("required", param.required());
                       });
             });
-  }
-
-  public void oliveDefsJson(ArrayNode array) {
-    Stream.concat(definitionRepository.oliveDefinitions(), compiler.oliveDefinitions())
-        .forEach(
-            oliveDefinition -> {
-              final ObjectNode obj = array.addObject();
-              obj.put("kind", "olive");
-              obj.put("name", oliveDefinition.name());
-              obj.put("isRoot", oliveDefinition.isRoot());
-              obj.put("format", oliveDefinition.format());
-              obj.put(
-                  "filename",
-                  oliveDefinition.filename() == null
-                      ? null
-                      : oliveDefinition.filename().toString());
-              final ObjectNode output = obj.putObject("output");
-              oliveDefinition
-                  .outputStreamVariables(null, null)
-                  .get()
-                  .forEach(v -> output.put(v.name(), v.type().descriptor()));
-              final ArrayNode parameters = obj.putArray("parameters");
-              for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
-                parameters.add(oliveDefinition.parameterType(i).descriptor());
-              }
-            });
-  }
-
-  public void functionsDefsJson(ArrayNode array) {
-    Stream.concat(definitionRepository.functions(), compiler.functions())
-        .forEach(
-            function -> {
-              final ObjectNode obj = array.addObject();
-              obj.put("kind", "function");
-              obj.put("name", function.name());
-              obj.put("description", function.description());
-              obj.put("return", function.returnType().descriptor());
-              obj.put(
-                  "filename", function.filename() == null ? null : function.filename().toString());
-              final ArrayNode parameters = obj.putArray("parameters");
-              function
-                  .parameters()
-                  .forEach(
-                      p -> {
-                        final ObjectNode parameter = parameters.addObject();
-                        parameter.put("type", p.type().descriptor());
-                        parameter.put("description", p.description());
-                      });
-            });
-  }
-
-  public void signatureDefsJson(ArrayNode array) {
-    definitionRepository
-        .signatures()
-        .forEach(
-            constant -> {
-              final ObjectNode obj = array.addObject();
-              obj.put("kind", "signature");
-              obj.put("name", constant.name());
-              obj.put("type", constant.type().descriptor());
-              obj.put(
-                  "filename", constant.filename() == null ? null : constant.filename().toString());
-            });
-  }
-
-  public void constantDefsJson(ArrayNode array) {
-    Stream.concat(definitionRepository.constants(), compiler.constants())
-        .forEach(
-            constant -> {
-              final ObjectNode obj = array.addObject();
-              obj.put("kind", "constant");
-              obj.put("name", constant.name());
-              obj.put("description", constant.description());
-              obj.put("type", constant.type().descriptor());
-              obj.put(
-                  "filename", constant.filename() == null ? null : constant.filename().toString());
-            });
-  }
-
-  private String exportSearches() {
-    return pluginManager
-        .exportSearches(
-            new ExportSearch<String>() {
-              @Override
-              public String linkWithJson(
-                  FrontEndIcon icon,
-                  String name,
-                  FrontEndIcon categoryIcon,
-                  String category,
-                  String urlStart,
-                  String urlEnd,
-                  String description) {
-                try {
-                  return String.format(
-                      "{icon:\"%s\", categoryIcon:\"%s\", label: %s, category: %s, description: %s, callback: filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s}",
-                      icon.icon(),
-                      categoryIcon.icon(),
-                      RuntimeSupport.MAPPER.writeValueAsString(name),
-                      RuntimeSupport.MAPPER.writeValueAsString(category),
-                      RuntimeSupport.MAPPER.writeValueAsString(description),
-                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
-                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
-                } catch (JsonProcessingException e) {
-                  throw new RuntimeException(e);
-                }
-              }
-
-              @Override
-              public String linkWithUrlSearch(
-                  FrontEndIcon icon,
-                  String name,
-                  FrontEndIcon categoryIcon,
-                  String category,
-                  String urlStart,
-                  String urlEnd,
-                  String description) {
-                try {
-                  return String.format(
-                      "{icon:\"%s\", categoryIcon:\"%s\", label: %s, category: %s, description: %s, callback: filters => window.location.href = %s + encodeSearch(filters) + %s}",
-                      icon.icon(),
-                      categoryIcon.icon(),
-                      RuntimeSupport.MAPPER.writeValueAsString(name),
-                      RuntimeSupport.MAPPER.writeValueAsString(category),
-                      RuntimeSupport.MAPPER.writeValueAsString(description),
-                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
-                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
-                } catch (JsonProcessingException e) {
-                  throw new RuntimeException(e);
-                }
-              }
-            })
-        .collect(Collectors.joining(",", "[", "]"));
   }
 
   private ArrayNode activeLocations() {
@@ -2396,6 +2240,20 @@ public final class Server implements ServerConfig, ActionServices {
         });
   }
 
+  public void constantDefsJson(ArrayNode array) {
+    Stream.concat(definitionRepository.constants(), compiler.constants())
+        .forEach(
+            constant -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "constant");
+              obj.put("name", constant.name());
+              obj.put("description", constant.description());
+              obj.put("type", constant.type().descriptor());
+              obj.put(
+                  "filename", constant.filename() == null ? null : constant.filename().toString());
+            });
+  }
+
   public void downloadInputData(
       HttpExchange t,
       InputSource inputSource,
@@ -2429,6 +2287,84 @@ public final class Server implements ServerConfig, ActionServices {
   private void emergencyThrottle(boolean stopped) {
     this.emergencyStop = stopped;
     stopGauge.set(stopped ? 1 : 0);
+  }
+
+  private String exportSearches() {
+    return pluginManager
+        .exportSearches(
+            new ExportSearch<String>() {
+              @Override
+              public String linkWithJson(
+                  FrontEndIcon icon,
+                  String name,
+                  FrontEndIcon categoryIcon,
+                  String category,
+                  String urlStart,
+                  String urlEnd,
+                  String description) {
+                try {
+                  return String.format(
+                      "{icon:\"%s\", categoryIcon:\"%s\", label: %s, category: %s, description: %s, callback: filters => window.location.href = %s + encodeURIComponent(JSON.stringify(filters)) + %s}",
+                      icon.icon(),
+                      categoryIcon.icon(),
+                      RuntimeSupport.MAPPER.writeValueAsString(name),
+                      RuntimeSupport.MAPPER.writeValueAsString(category),
+                      RuntimeSupport.MAPPER.writeValueAsString(description),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
+                } catch (JsonProcessingException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+
+              @Override
+              public String linkWithUrlSearch(
+                  FrontEndIcon icon,
+                  String name,
+                  FrontEndIcon categoryIcon,
+                  String category,
+                  String urlStart,
+                  String urlEnd,
+                  String description) {
+                try {
+                  return String.format(
+                      "{icon:\"%s\", categoryIcon:\"%s\", label: %s, category: %s, description: %s, callback: filters => window.location.href = %s + encodeSearch(filters) + %s}",
+                      icon.icon(),
+                      categoryIcon.icon(),
+                      RuntimeSupport.MAPPER.writeValueAsString(name),
+                      RuntimeSupport.MAPPER.writeValueAsString(category),
+                      RuntimeSupport.MAPPER.writeValueAsString(description),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlStart),
+                      RuntimeSupport.MAPPER.writeValueAsString(urlEnd));
+                } catch (JsonProcessingException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+            })
+        .collect(Collectors.joining(",", "[", "]"));
+  }
+
+  public void functionsDefsJson(ArrayNode array) {
+    Stream.concat(definitionRepository.functions(), compiler.functions())
+        .forEach(
+            function -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "function");
+              obj.put("name", function.name());
+              obj.put("description", function.description());
+              obj.put("return", function.returnType().descriptor());
+              obj.put(
+                  "filename", function.filename() == null ? null : function.filename().toString());
+              final ArrayNode parameters = obj.putArray("parameters");
+              function
+                  .parameters()
+                  .forEach(
+                      p -> {
+                        final ObjectNode parameter = parameters.addObject();
+                        parameter.put("type", p.type().descriptor());
+                        parameter.put("description", p.description());
+                      });
+            });
   }
 
   @Override
@@ -2508,6 +2444,32 @@ public final class Server implements ServerConfig, ActionServices {
             NavigationMenu.item("pluginhashes", "Plugin JAR Hashes"),
             NavigationMenu.item("dumpdefs", "Annotation-Driven Definition"),
             NavigationMenu.item("dumpadr", "Manual Definitions")));
+  }
+
+  public void oliveDefsJson(ArrayNode array) {
+    Stream.concat(definitionRepository.oliveDefinitions(), compiler.oliveDefinitions())
+        .forEach(
+            oliveDefinition -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "olive");
+              obj.put("name", oliveDefinition.name());
+              obj.put("isRoot", oliveDefinition.isRoot());
+              obj.put("format", oliveDefinition.format());
+              obj.put(
+                  "filename",
+                  oliveDefinition.filename() == null
+                      ? null
+                      : oliveDefinition.filename().toString());
+              final ObjectNode output = obj.putObject("output");
+              oliveDefinition
+                  .outputStreamVariables(null, null)
+                  .get()
+                  .forEach(v -> output.put(v.name(), v.type().descriptor()));
+              final ArrayNode parameters = obj.putArray("parameters");
+              for (int i = 0; i < oliveDefinition.parameterCount(); i++) {
+                parameters.add(oliveDefinition.parameterType(i).descriptor());
+              }
+            });
   }
 
   private void oliveJson(ArrayNode array) {
@@ -2599,6 +2561,29 @@ public final class Server implements ServerConfig, ActionServices {
     return pauseInfo;
   }
 
+  public void refillerDefsJson(ArrayNode array) {
+    definitionRepository
+        .refillers()
+        .forEach(
+            refiller -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "refiller");
+              obj.put("name", refiller.name());
+              obj.put("description", refiller.description());
+              obj.put(
+                  "filename", refiller.filename() == null ? null : refiller.filename().toString());
+              final ArrayNode parameters = obj.putArray("parameters");
+              refiller
+                  .parameters()
+                  .forEach(
+                      param -> {
+                        final ObjectNode paramInfo = parameters.addObject();
+                        paramInfo.put("name", param.name());
+                        paramInfo.put("type", param.type().toString());
+                      });
+            });
+  }
+
   public ObjectNode savedSearches() {
     final ObjectNode searchInfo = RuntimeSupport.MAPPER.createObjectNode();
     pluginManager
@@ -2627,6 +2612,20 @@ public final class Server implements ServerConfig, ActionServices {
                 }
               });
     }
+  }
+
+  public void signatureDefsJson(ArrayNode array) {
+    definitionRepository
+        .signatures()
+        .forEach(
+            constant -> {
+              final ObjectNode obj = array.addObject();
+              obj.put("kind", "signature");
+              obj.put("name", constant.name());
+              obj.put("type", constant.type().descriptor());
+              obj.put(
+                  "filename", constant.filename() == null ? null : constant.filename().toString());
+            });
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
