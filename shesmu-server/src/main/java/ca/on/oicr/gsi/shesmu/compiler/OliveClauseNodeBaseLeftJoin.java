@@ -361,7 +361,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
                     .map(
                         v ->
                             v.name().contains(Parser.NAMESPACE_SEPARATOR)
-                                ? v
+                                ? Target.softWrap(v)
                                 : new PrefixedTarget(v))),
             true);
 
@@ -392,7 +392,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
                               if (v instanceof InputVariable) {
                                 return Stream.of(new PrefixedVariable((InputVariable) v));
                               } else if (v.name().contains(Parser.NAMESPACE_SEPARATOR)) {
-                                return Stream.of(v);
+                                return Stream.of(Target.wrap(v));
                               } else {
                                 return Stream.of(new PrefixedTarget(v));
                               }
