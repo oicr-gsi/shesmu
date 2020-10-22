@@ -1,0 +1,11 @@
+Version 1;
+Input test;
+
+Define foo()
+ Where project == "the_foo_study";
+
+Olive
+ Let l = library_size
+ LeftJoin l To Call foo() library_size
+   x = Where std::signature::sha1 != "DA39A3EE5E6B4B0D3255BFEF95601890AFD80709" Count
+ Run ok With ok = x == 1;
