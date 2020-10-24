@@ -1077,7 +1077,7 @@ function renderFilters(
                   formatTimeSpan(range.end - range.start),
                 ]
               : blank(),
-            timeRangeAnchor("— ", range.start, " ⇥")
+            timeRangeAnchor("— ", range.end, " ⇥")
           )
         );
       }
