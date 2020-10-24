@@ -274,11 +274,11 @@ function renderStat(
               formatTimeSpan(boundaries[end] - boundaries[start]) +
               " (" +
               boundaryLabels[start].ago +
-              +" / " +
+              " / " +
               boundaryLabels[start].absolute +
               " to " +
               boundaryLabels[end].ago +
-              +" / " +
+              " / " +
               boundaryLabels[end].absolute +
               ")"
             );
