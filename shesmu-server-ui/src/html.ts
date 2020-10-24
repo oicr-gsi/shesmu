@@ -1902,17 +1902,14 @@ export function dateEditor(
   const enabled = inputCheckbox("Unbounded", !initial);
   const selected = typeof initial == "number" ? new Date(initial) : new Date();
   const year = inputNumber(selected.getFullYear(), 1970, null);
-  const initialMonth: [number, string] = [
-    selected.getMonth(),
-    months[selected.getMonth()] || "Unknown",
-  ];
+  const initialMonth: number = selected.getMonth();
   const monthModel = temporaryState(initialMonth);
   const month = dropdown(
-    ([_month, name]: [number, string]) => name,
+    (m: number) => months[m],
     (m) => m == initialMonth,
     monthModel,
     null,
-    ...months.entries()
+    ...months.keys()
   );
   const day = inputNumber(selected.getDate(), 1, 31);
   const hour = inputNumber(selected.getHours(), 0, 23);
@@ -1935,7 +1932,7 @@ export function dateEditor(
         ? null
         : new Date(
             year.value,
-            monthModel.get()[0],
+            monthModel.get(),
             day.value,
             hour.value,
             minute.value,
