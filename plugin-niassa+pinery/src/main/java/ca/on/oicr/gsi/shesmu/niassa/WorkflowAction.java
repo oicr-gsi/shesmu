@@ -1034,6 +1034,8 @@ public final class WorkflowAction extends Action {
                           logEntry.put("shardIndex", log.getShardIndex());
                           logEntry.put("stderr", log.getStderr());
                           logEntry.put("stdout", log.getStdout());
+                          logEntry.put("executionStatus", log.getExecutionStatus());
+                          logEntry.putPOJO("failures", log.getFailures());
                         }));
       } catch (InitialCachePopulationException e) {
         // This data is nice to have, so just be kind of sad if it's not available.

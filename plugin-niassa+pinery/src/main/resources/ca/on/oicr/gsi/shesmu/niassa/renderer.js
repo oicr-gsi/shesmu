@@ -17,6 +17,14 @@ const maybeJsonVisibleText = (input) => {
   }
 };
 
+function cromwellFailure(failures) {
+  return failures.map((f) =>
+    f.causedBy.length
+      ? collapsible(f.message, cromwellFailure(f.causedBy))
+      : text(f.message)
+  );
+}
+
 actionRender.set("niassa", (a) => [
   title(a, `Workflow ${a.workflowName} (${a.workflowAccession})`),
   table(
@@ -126,10 +134,12 @@ actionRender.set("niassa", (a) => [
       ["Task", (x) => x.task],
       ["Attempt", (x) => x.attempt.toString()],
       ["Scatter", (x) => (x.shardIndex < 0 ? "N/A" : x.shardIndex.toString())],
+      ["Status", (x) => x.executionStatus || "Unknown"],
       ["Backend", (x) => x.backend || "Unknown"],
       ["Job ID", (x) => x.jobId || "Unknown"],
       ["Standard Error", (x) => (x.stderr ? breakSlashes(x.stderr) : "N/A")],
-      ["Standard Output", (x) => (x.stdout ? breakSlashes(x.stdout) : "N/A")]
+      ["Standard Output", (x) => (x.stdout ? breakSlashes(x.stdout) : "N/A")],
+      ["Failures", (x) => cromwellFailure(x.failures)]
     )
   ),
   collapsible(
