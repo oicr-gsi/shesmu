@@ -1,12 +1,16 @@
 package ca.on.oicr.gsi.shesmu.niassa;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Collections;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CromwellCall {
   private int attempt;
   private String backend;
   private String callRoot;
+  private String executionStatus;
+  private List<CromwellFailure> failures = Collections.emptyList();
   private String jobId;
   private String shardIndex;
   private String stderr;
@@ -22,6 +26,14 @@ public class CromwellCall {
 
   public String getCallRoot() {
     return callRoot;
+  }
+
+  public String getExecutionStatus() {
+    return executionStatus;
+  }
+
+  public List<CromwellFailure> getFailures() {
+    return failures;
   }
 
   public String getJobId() {
@@ -50,6 +62,14 @@ public class CromwellCall {
 
   public void setCallRoot(String callRoot) {
     this.callRoot = callRoot;
+  }
+
+  public void setExecutionStatus(String executionStatus) {
+    this.executionStatus = executionStatus;
+  }
+
+  public void setFailures(List<CromwellFailure> failures) {
+    this.failures = failures;
   }
 
   public void setJobId(String jobId) {
