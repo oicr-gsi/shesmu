@@ -1220,10 +1220,13 @@ function searchAdvanced(
         statusChanged: (response: ParseQueryResponse | null) => {
           if (response?.formatted) {
             search.value = response.formatted;
+            searchState.statusChanged("ok");
+          } else {
+            searchState.statusChanged("bad");
           }
         },
-        statusFailed: () => {},
-        statusWaiting: () => {},
+        statusFailed: () => searchState.statusChanged("bad"),
+        statusWaiting: () => searchState.statusChanged("busy"),
       }
     ),
     (output: StatefulModel<ParseQueryResponse | null>) =>
@@ -1240,7 +1243,11 @@ function searchAdvanced(
     }
   );
 
-  const search = inputSearchBar(filter, searchModel);
+  const [search, searchState] = inputSearchBar(
+    "Action query: ",
+    filter,
+    searchModel
+  );
 
   searchModel.statusChanged(filter);
   const updateFromClick = (...filters: ActionFilter[]) => {
@@ -1425,9 +1432,7 @@ function searchAdvanced(
       ),
     ],
     entryBar: [
-      "Action query: ",
       search.ui,
-      br(),
       collapsible(
         "Help",
         paragraph(
