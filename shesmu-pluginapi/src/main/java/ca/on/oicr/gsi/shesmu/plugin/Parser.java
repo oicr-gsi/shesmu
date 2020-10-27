@@ -447,7 +447,7 @@ public abstract class Parser {
       if (isEmpty()) {
         return true;
       } else {
-        errorConsumer.raise(line(), column(), "Junk at end of file.");
+        errorConsumer.raise(line(), column(), "Junk at end of input.");
       }
     }
     errorConsumer.write();
