@@ -76,6 +76,7 @@ export interface DropdownTableSection<T> {
  * A flexible element in a flex box
  */
 export interface FlexElement {
+  css?: string[];
   /**
    * The UI to show in the flex box
    */
@@ -1257,6 +1258,8 @@ export type NamedComponents<T> = {
   [P in keyof T]: UIElement;
 };
 
+export type SearchBarState = "ok" | "bad" | "busy" | "dirty";
+
 /**
  * The request parameters for Shesmu UI pages
  */
@@ -2212,9 +2215,14 @@ export function flexGroup(
 ): UIElement {
   const element = createUiFromTag(
     "div",
-    ...blocks.map(({ contents, width }) => {
+    ...blocks.map(({ css, contents, width }) => {
       const x = createUiFromTag("div", contents);
       x.element.style.flex = width.toString();
+      if (css) {
+        for (const c of css) {
+          x.element.classList.add(c);
+        }
+      }
       return x;
     })
   );
@@ -2412,34 +2420,64 @@ export function inputSearch(updateHandler: (input: string) => void): UIElement {
   return input;
 }
 export function inputSearchBar(
+  title: string,
   initial: string,
   model: StatefulModel<string>
-): InputField<string> {
+): [InputField<string>, StatefulModel<SearchBarState>] {
   const input = createUiFromTag("input");
+  let lastState: SearchBarState = "dirty";
+  let lastValue = initial;
   input.element.type = "text";
   input.element.value = initial;
   input.element.style.width = "100%";
-  input.element.addEventListener("keydown", (e) => {
+  input.element.addEventListener("keyup", (e) => {
+    if (input.element.value == lastValue) {
+      input.element.className = lastState;
+    } else {
+      input.element.className = "dirty";
+    }
     if (e.key == "Enter") {
+      lastValue = input.element.value;
+      lastState = "dirty";
       model.statusChanged(input.element.value);
     }
   });
 
-  return {
-    ui: input,
-    get value() {
-      return input.element.value;
+  return [
+    {
+      ui: flexGroup(
+        "row",
+        { css: ["rigid"], contents: title, width: 0 },
+        { contents: input, width: 5 },
+        {
+          css: ["rigid"],
+          contents: { type: "icon", icon: "arrow-return-left" },
+          width: 0,
+        }
+      ),
+      get value() {
+        return input.element.value;
+      },
+      set value(v) {
+        input.element.value = v;
+      },
+      get enabled() {
+        return !input.element.disabled;
+      },
+      set enabled(v) {
+        input.element.disabled = !v;
+      },
     },
-    set value(v) {
-      input.element.value = v;
+    {
+      reload: () => {},
+      statusChanged: (state) => {
+        input.element.className = state;
+        lastState = state;
+      },
+      statusFailed: (_message, _error) => (input.element.className = "bad"),
+      statusWaiting: () => (input.element.className = "busy"),
     },
-    get enabled() {
-      return !input.element.disabled;
-    },
-    set enabled(v) {
-      input.element.disabled = !v;
-    },
-  };
+  ];
 }
 export function inputNumber(
   value: number,

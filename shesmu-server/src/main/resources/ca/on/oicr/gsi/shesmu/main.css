@@ -978,3 +978,33 @@ img.deadolive {
   height: 2ex;
   background-color: var(--widget-lowlight);
 }
+
+input.ok {
+  box-shadow: none;
+}
+input.bad {
+  box-shadow: 0px 0px 0.5em var(--widget-danger-highlight);
+}
+input.busy {
+  animation: busythrob 3s infinite;
+}
+input.dirty {
+  box-shadow: 0px 0px 0.5em var(--widget-lowlight);
+}
+@keyframes busythrob {
+  0% {
+    box-shadow: 0px 0px 0.2em var(--widget-lowlight);
+  }
+  50% {
+    box-shadow: 0px 0px 0.5em var(--widget-highlight);
+  }
+  100% {
+    box-shadow: 0px 0px 0.2em var(--widget-lowlight);
+  }
+}
+
+.rigid {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  white-space: nowrap;
+}
