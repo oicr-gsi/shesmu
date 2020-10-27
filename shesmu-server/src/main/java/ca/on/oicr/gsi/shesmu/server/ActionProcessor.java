@@ -238,6 +238,51 @@ public final class ActionProcessor
     protected abstract Optional<Instant> get(Action action, Information info);
   }
 
+  static Function<String, String> commonPathPrefix(Stream<String> input) {
+    final List<String> items = input.collect(Collectors.toList());
+    if (items.isEmpty()) {
+      return Function.identity();
+    }
+
+    final List<String> commonPrefix =
+        SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
+    commonPrefix.remove(commonPrefix.size() - 1);
+    for (int i = 1; i < items.size(); i++) {
+      final List<String> parts = Arrays.asList(SLASH.split(items.get(i)));
+      int x = 0;
+      while (x < parts.size() - 1
+          && x < commonPrefix.size()
+          && parts.get(x).equals(commonPrefix.get(x))) x++;
+      commonPrefix.subList(x, commonPrefix.size()).clear();
+    }
+    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
+  }
+
+  private static <T extends Comparable<T>> void propertySummary(
+      ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
+    final TreeMap<T, Set<Action>> states =
+        actions
+            .stream()
+            .flatMap(
+                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
+            .collect(
+                Collectors.groupingBy(
+                    Pair::first,
+                    TreeMap::new,
+                    Collectors.mapping(Pair::second, Collectors.toSet())));
+
+    final Function<T, String> namer = property.name(states.keySet().stream());
+    for (final Entry<T, Set<Action>> state : states.entrySet()) {
+      final ObjectNode row = table.addObject();
+      row.put("title", "Total");
+      row.put("value", state.getValue().size());
+      row.put("kind", "property");
+      row.put("type", property.name());
+      row.put("property", namer.apply(state.getKey()));
+      row.set("json", property.json(state.getKey()));
+    }
+  }
+
   public static final int ACTION_PERFORM_THREADS =
       Math.max(1, Runtime.getRuntime().availableProcessors() * 5 - 1);
   private static final BinMember<Instant> ADDED =
@@ -525,52 +570,6 @@ public final class ActionProcessor
       Gauge.build("shesmu_action_state_count", "The number of actions in a particular state.")
           .labelNames("state", "type")
           .register();
-
-  static Function<String, String> commonPathPrefix(Stream<String> input) {
-    final List<String> items = input.collect(Collectors.toList());
-    if (items.isEmpty()) {
-      return Function.identity();
-    }
-
-    final List<String> commonPrefix =
-        SLASH.splitAsStream(items.get(0)).collect(Collectors.toList());
-    commonPrefix.remove(commonPrefix.size() - 1);
-    for (int i = 1; i < items.size(); i++) {
-      final List<String> parts = Arrays.asList(SLASH.split(items.get(i)));
-      int x = 0;
-      while (x < parts.size() - 1
-          && x < commonPrefix.size()
-          && parts.get(x).equals(commonPrefix.get(x))) x++;
-      commonPrefix.subList(x, commonPrefix.size()).clear();
-    }
-    return x -> SLASH.splitAsStream(x).skip(commonPrefix.size()).collect(Collectors.joining("/"));
-  }
-
-  private static <T extends Comparable<T>> void propertySummary(
-      ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
-    final TreeMap<T, Set<Action>> states =
-        actions
-            .stream()
-            .flatMap(
-                action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
-            .collect(
-                Collectors.groupingBy(
-                    Pair::first,
-                    TreeMap::new,
-                    Collectors.mapping(Pair::second, Collectors.toSet())));
-
-    final Function<T, String> namer = property.name(states.keySet().stream());
-    for (final Entry<T, Set<Action>> state : states.entrySet()) {
-      final ObjectNode row = table.addObject();
-      row.put("title", "Total");
-      row.put("value", state.getValue().size());
-      row.put("kind", "property");
-      row.put("type", property.name());
-      row.put("property", namer.apply(state.getKey()));
-      row.set("json", property.json(state.getKey()));
-    }
-  }
-
   private final ActionServices actionServices;
   private final Map<Action, Information> actions = new ConcurrentHashMap<>();
   private final AutoLock alertLock = new AutoLock();
