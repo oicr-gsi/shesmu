@@ -1308,6 +1308,18 @@ public final class ActionProcessor
             });
   }
 
+  @Override
+  public Filter tag(Pattern pattern) {
+    return new Filter() {
+      private final Predicate<String> predicate = pattern.asPredicate();
+
+      @Override
+      protected boolean check(Action action, Information info) {
+        return info.tags.stream().anyMatch(predicate);
+      }
+    };
+  }
+
   /**
    * Check that an action has one of the listed tags attached
    *

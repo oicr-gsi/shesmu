@@ -79,6 +79,7 @@ export type ActionFilter =
   | ActionFilterStatusChanged
   | ActionFilterStatus
   | ActionFilterTag
+  | ActionFilterTagRegex
   | ActionFilterText
   | ActionFilterType;
 export interface ActionFilterAddedAgo {
@@ -180,6 +181,13 @@ export interface ActionFilterTag {
   negate?: boolean;
   tags: string[];
   type: "tag";
+}
+
+export interface ActionFilterTagRegex {
+  matchCase: boolean;
+  negate?: boolean;
+  pattern: string;
+  type: "tag-regex";
 }
 
 export interface ActionFilterText {
@@ -1498,6 +1506,16 @@ function searchAdvanced(
           ", ...",
           mono(")"),
           ")"
+        ),
+        paragraph(
+          "Regular expression on tag set: ",
+          mono("tag ~ /"),
+          italic("regex"),
+          mono("/"),
+          " or ",
+          mono("tag !~ /"),
+          italic("regex"),
+          mono("/")
         ),
 
         paragraph(
