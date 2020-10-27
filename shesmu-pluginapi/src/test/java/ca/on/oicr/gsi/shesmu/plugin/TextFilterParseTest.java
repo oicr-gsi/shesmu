@@ -21,6 +21,11 @@ public class TextFilterParseTest {
     }
 
     @Override
+    public Boolean tag(Pattern pattern) {
+      return false;
+    }
+
+    @Override
     public Boolean and(Stream<Boolean> filters) {
       return filters.allMatch(x -> x);
     }

@@ -133,6 +133,14 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
+        public ActionFilter tag(Pattern pattern) {
+          final ActionFilterTagRegex result = new ActionFilterTagRegex();
+          result.setPattern(pattern.pattern());
+          result.setMatchCase((pattern.flags() & Pattern.CASE_INSENSITIVE) == 0);
+          return result;
+        }
+
+        @Override
         public ActionFilter tags(Stream<String> tags) {
           final ActionFilterTag result = new ActionFilterTag();
           result.setTags(tags.toArray(String[]::new));
@@ -143,6 +151,7 @@ public interface ActionFilterBuilder<F> {
         public ActionFilter textSearch(Pattern pattern) {
           final ActionFilterRegex result = new ActionFilterRegex();
           result.setPattern(pattern.pattern());
+          result.setMatchCase((pattern.flags() & Pattern.CASE_INSENSITIVE) == 0);
           return result;
         }
 
@@ -336,6 +345,15 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
+        public Pair<String, Integer> tag(Pattern pattern) {
+          return new Pair<>(
+              String.format(
+                  "text ~ /%s/%s",
+                  pattern.pattern(), (pattern.flags() & Pattern.CASE_INSENSITIVE) == 0 ? "" : "i"),
+              0);
+        }
+
+        @Override
         public Pair<String, Integer> tags(Stream<String> tags) {
           return formatSet("tag", tags.toArray(String[]::new));
         }
@@ -464,6 +482,12 @@ public interface ActionFilterBuilder<F> {
     return statusChanged(Optional.of(Instant.now().minusMillis(offset)), Optional.empty());
   }
 
+  /**
+   * Check that an action has a tag matching the provided regular expression
+   *
+   * @param pattern the pattern
+   */
+  F tag(Pattern pattern);
   /**
    * Check that an action has one of the listed tags attached
    *

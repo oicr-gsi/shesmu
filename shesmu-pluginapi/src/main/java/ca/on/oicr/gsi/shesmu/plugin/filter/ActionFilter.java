@@ -36,6 +36,7 @@ import java.util.stream.Stream;
   @JsonSubTypes.Type(value = ActionFilterStatusChanged.class, name = "statuschanged"),
   @JsonSubTypes.Type(value = ActionFilterStatusChangedAgo.class, name = "statuschangedago"),
   @JsonSubTypes.Type(value = ActionFilterTag.class, name = "tag"),
+  @JsonSubTypes.Type(value = ActionFilterTagRegex.class, name = "tag-regex"),
   @JsonSubTypes.Type(value = ActionFilterText.class, name = "text"),
   @JsonSubTypes.Type(value = ActionFilterType.class, name = "type")
 })
@@ -119,16 +120,7 @@ public abstract class ActionFilter {
     TAG {
       @Override
       public Parser parse(Parser parser, Consumer<ActionFilterNode> output) {
-        return strings(
-            parser,
-            output,
-            tags -> {
-              final ActionFilterTag filter = new ActionFilterTag();
-              filter.setTags(tags);
-              return filter;
-            },
-            Function.identity(),
-            String[]::new);
+        return parser.dispatch(TAG_MATCH, output);
       }
     },
     TEXT {
@@ -537,6 +529,8 @@ public abstract class ActionFilter {
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<String> STRING = new Parser.ParseDispatch<>();
   public static final Pattern STRING_CONTENTS = Pattern.compile("^[^\"\n\\\\]*");
+  private static final Parser.ParseDispatch<ActionFilterNode> TAG_MATCH =
+      new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<TimeNode> TEMPORAL = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Integer> TEMPORAL_UNITS = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<ActionFilterNode> TERMINAL =
@@ -610,6 +604,105 @@ public abstract class ActionFilter {
           }
           return result;
         });
+    TAG_MATCH.addSymbol(
+        "~",
+        (p, o) ->
+            p.whitespace()
+                .regex(
+                    REGEX,
+                    m ->
+                        o.accept(
+                            errorHandler -> {
+                              final ActionFilterTagRegex filter = new ActionFilterTagRegex();
+                              filter.setPattern(m.group(1));
+                              filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
+                              return Optional.of(filter);
+                            }),
+                    "regular expression"));
+    TAG_MATCH.addSymbol(
+        "!~",
+        (p, o) ->
+            p.whitespace()
+                .regex(
+                    REGEX,
+                    m ->
+                        o.accept(
+                            errorHandler -> {
+                              final ActionFilterTagRegex filter = new ActionFilterTagRegex();
+                              filter.setPattern(m.group(1));
+                              filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
+                              filter.setNegate(true);
+                              return Optional.of(filter);
+                            }),
+                    "regular expression"));
+    TAG_MATCH.addSymbol(
+        "=",
+        (p, o) ->
+            p.whitespace()
+                .dispatch(
+                    STRING,
+                    s ->
+                        o.accept(
+                            errorHandler -> {
+                              final ActionFilterTag filter = new ActionFilterTag();
+                              filter.setTags(new String[] {s});
+                              return Optional.of(filter);
+                            }))
+                .whitespace());
+    TAG_MATCH.addSymbol(
+        "!=",
+        (p, o) ->
+            p.whitespace()
+                .dispatch(
+                    STRING,
+                    s ->
+                        o.accept(
+                            errorHandler -> {
+                              final ActionFilterTag filter = new ActionFilterTag();
+                              filter.setTags(new String[] {s});
+                              filter.setNegate(true);
+                              return Optional.of(filter);
+                            }))
+                .whitespace());
+    TAG_MATCH.addSymbol(
+        "in",
+        (p, o) ->
+            p.whitespace()
+                .symbol("(")
+                .whitespace()
+                .list(
+                    s ->
+                        o.accept(
+                            errorHandler -> {
+                              final ActionFilterTag filter = new ActionFilterTag();
+                              filter.setTags(s.stream().toArray(String[]::new));
+                              return Optional.of(filter);
+                            }),
+                    STRING,
+                    ',')
+                .symbol(")")
+                .whitespace());
+    TAG_MATCH.addSymbol(
+        "not",
+        (p, o) ->
+            p.whitespace()
+                .keyword("in")
+                .whitespace()
+                .symbol("(")
+                .whitespace()
+                .list(
+                    s ->
+                        o.accept(
+                            errorHandler -> {
+                              final ActionFilterTag filter = new ActionFilterTag();
+                              filter.setTags(s.stream().toArray(String[]::new));
+                              filter.setNegate(true);
+                              return Optional.of(filter);
+                            }),
+                    STRING,
+                    ',')
+                .symbol(")")
+                .whitespace());
     TEXT_MATCH.addSymbol(
         "~",
         (p, o) ->
