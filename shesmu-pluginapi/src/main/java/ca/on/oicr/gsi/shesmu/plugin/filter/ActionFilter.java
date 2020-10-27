@@ -177,9 +177,343 @@ public abstract class ActionFilter {
         ErrorConsumer errorHandler);
   }
 
+  private static Parser.Rule<BinaryOperator<ActionFilterNode>> binary(
+      Supplier<? extends BaseCollectionActionFilter> constructor) {
+    return Parser.just(
+        (a, b) ->
+            errorHandler -> {
+              final Optional<ActionFilter> aValue = a.generate(errorHandler);
+              final Optional<ActionFilter> bValue = b.generate(errorHandler);
+              if (aValue.isPresent() && bValue.isPresent()) {
+                final BaseCollectionActionFilter result = constructor.get();
+                result.setFilters(new ActionFilter[] {aValue.get(), bValue.get()});
+                return Optional.of(result);
+              }
+              return Optional.empty();
+            });
+  }
+
+  public static Optional<ActionFilter> extractFromText(String text, ObjectMapper mapper) {
+    final Set<String> actionIds = new TreeSet<>();
+    final List<ActionFilter> filters = new ArrayList<>();
+    final Matcher actionMatcher = ACTION_ID.matcher(text);
+    while (actionMatcher.find()) {
+      actionIds.add("shesmu:" + actionMatcher.group(1).toUpperCase());
+    }
+    if (!actionIds.isEmpty()) {
+      final ActionFilterIds idFilter = new ActionFilterIds();
+      idFilter.setIds(new ArrayList<>(actionIds));
+      filters.add(idFilter);
+    }
+    final Matcher filterMatcher = SEARCH.matcher(text);
+    while (filterMatcher.find()) {
+      try {
+        final ActionFilter[] current =
+            mapper.readValue(
+                Base64.getDecoder().decode(filterMatcher.group(1)), ActionFilter[].class);
+        switch (current.length) {
+          case 0:
+            break;
+          case 1:
+            filters.add(current[0]);
+            break;
+          default:
+            final ActionFilterAnd and = new ActionFilterAnd();
+            and.setFilters(current);
+            filters.add(and);
+        }
+      } catch (Exception e) {
+        // That was some hot garbage we're going to ignore
+      }
+    }
+    switch (filters.size()) {
+      case 0:
+        return Optional.empty();
+      case 1:
+        return Optional.of(filters.get(0));
+      default:
+        final ActionFilterOr or = new ActionFilterOr();
+        or.setFilters(filters.stream().toArray(ActionFilter[]::new));
+        return Optional.of(or);
+    }
+  }
+
+  /** Take the base filter and intersect it with the union of all accessory filters */
+  public static <F> Stream<Pair<String, F>> joinAllAnd(
+      String baseName,
+      F baseFilters,
+      Stream<Pair<String, F>> accessoryFilters,
+      ActionFilterBuilder<F> builder) {
+    return Stream.of(
+        new Pair<>(
+            baseName,
+            builder.and(Stream.of(baseFilters, builder.or(accessoryFilters.map(Pair::second))))));
+  }
+
+  /** Take the base filter and remove all the accessory filters */
+  public static <F> Stream<Pair<String, F>> joinAllExcept(
+      String baseName,
+      F baseFilters,
+      Stream<Pair<String, F>> accessoryFilters,
+      ActionFilterBuilder<F> builder) {
+    return Stream.of(
+        new Pair<>(
+            baseName,
+            builder.and(
+                Stream.concat(
+                    Stream.of(baseFilters),
+                    accessoryFilters.map(Pair::second).map(builder::negate)))));
+  }
+
+  /**
+   * Take each accessory filter and produce the intersection of the base filter and the accessory
+   * filter
+   */
+  public static <F> Stream<Pair<String, F>> joinEachAnd(
+      String baseName,
+      F baseFilters,
+      Stream<Pair<String, F>> accessoryFilters,
+      ActionFilterBuilder<F> builder) {
+    return accessoryFilters.map(
+        p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
+  }
+
+  private static Parser parse0(Parser parser, Consumer<ActionFilterNode> output) {
+    return Parser.scanBinary(ActionFilter::parse1, OR, parser, output);
+  }
+
+  private static Parser parse1(Parser parser, Consumer<ActionFilterNode> output) {
+    return Parser.scanBinary(ActionFilter::parse2, AND, parser, output);
+  }
+
+  private static Parser parse2(Parser parser, Consumer<ActionFilterNode> output) {
+    return Parser.scanPrefixed(ActionFilter::parse3, NOT, parser, output);
+  }
+
+  private static Parser parse3(Parser parser, Consumer<ActionFilterNode> output) {
+    return parser.dispatch(TERMINAL, output).whitespace();
+  }
+
+  private static Parser parseAgo(Parser parser, Consumer<TimeNode> output, boolean negate) {
+    final AtomicLong time = new AtomicLong();
+    final AtomicInteger units = new AtomicInteger();
+    final Parser result =
+        parser
+            .whitespace()
+            .integer(time::set, 10)
+            .dispatch(TEMPORAL_UNITS, units::set)
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(
+          (af, rf, e) -> {
+            final BaseAgoActionFilter filter = af.get();
+            filter.setOffset(time.get() * units.get());
+            filter.setNegate(negate);
+            return Optional.of(filter);
+          });
+    }
+    return result;
+  }
+
+  private static Parser parseLocation(Parser parser, Consumer<SourceOliveLocation> output) {
+    final SourceOliveLocation location = new SourceOliveLocation();
+    final AtomicReference<List<String>> filename = new AtomicReference<>();
+    Parser result =
+        parser
+            .whitespace()
+            .symbol("\"")
+            .regex(STRING_CONTENTS, m -> location.setFile(m.group(0)), "filename")
+            .symbol("\"")
+            .whitespace();
+    if (result.isGood()) {
+      final Parser line =
+          result.symbol(":").whitespace().integer(v -> location.setLine((int) v), 10).whitespace();
+      if (line.isGood()) {
+        result = line;
+        final Parser column =
+            result
+                .symbol(":")
+                .whitespace()
+                .integer(v -> location.setColumn((int) v), 10)
+                .whitespace();
+        if (column.isGood()) {
+          result = column;
+          final Parser hash =
+              result
+                  .symbol("[")
+                  .whitespace()
+                  .regex(
+                      SOURCE_HASH, m -> location.setHash(m.group(0).toUpperCase()), "Source hash")
+                  .whitespace()
+                  .symbol("]")
+                  .whitespace();
+          if (hash.isGood()) {
+            result = hash;
+          }
+        }
+      }
+    }
+    if (result.isGood()) {
+      output.accept(location);
+    }
+    return result;
+  }
+
+  private static OptionalInt parseMonth(String inputMonth) {
+    final DateFormatSymbols symbols = new DateFormatSymbols();
+    final String[] monthNames = symbols.getMonths();
+    final String[] monthShortNames = symbols.getShortMonths();
+    for (int i = 0; i < monthNames.length; i++) {
+      if (inputMonth.equalsIgnoreCase(monthNames[i])
+          || inputMonth.equalsIgnoreCase(monthShortNames[i])) {
+        return OptionalInt.of(i + 1);
+      }
+    }
+    return OptionalInt.empty();
+  }
+
+  private static Parser parseOpenRange(
+      Parser parser, Consumer<TimeNode> output, BiConsumer<BaseRangeActionFilter, Long> setter) {
+    final AtomicReference<Function<ErrorConsumer, Optional<Long>>> time = new AtomicReference<>();
+    final Parser result = parser.whitespace().then(ActionFilter::parseTime, time::set).whitespace();
+    if (result.isGood()) {
+      output.accept(
+          (af, rf, e) ->
+              time.get()
+                  .apply(e)
+                  .map(
+                      i -> {
+                        final BaseRangeActionFilter filter = rf.get();
+                        setter.accept(filter, i);
+                        return filter;
+                      }));
+    }
+    return result;
+  }
+
+  public static Optional<ActionFilter> parseQuery(String input, ErrorConsumer errorHandler) {
+    final AtomicReference<ActionFilterNode> query = new AtomicReference<>();
+    final Parser parser =
+        Parser.start(input, errorHandler).whitespace().then(ActionFilter::parse0, query::set);
+    return parser.finished()
+        ? Optional.of(query.get()).flatMap(q -> q.generate(errorHandler))
+        : Optional.empty();
+  }
+
+  private static Parser parseRange(Parser parser, Consumer<TimeNode> output, boolean negate) {
+    final AtomicReference<Function<ErrorConsumer, Optional<Long>>> startTime =
+        new AtomicReference<>();
+    final AtomicReference<Function<ErrorConsumer, Optional<Long>>> endTime =
+        new AtomicReference<>();
+    final Parser result =
+        parser
+            .whitespace()
+            .then(ActionFilter::parseTime, startTime::set)
+            .whitespace()
+            .keyword("to")
+            .whitespace()
+            .then(ActionFilter::parseTime, endTime::set)
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(
+          (af, rf, e) ->
+              startTime
+                  .get()
+                  .apply(e)
+                  .flatMap(
+                      start ->
+                          endTime
+                              .get()
+                              .apply(e)
+                              .map(
+                                  end -> {
+                                    final BaseRangeActionFilter filter = rf.get();
+                                    filter.setStart(start);
+                                    filter.setEnd(end);
+                                    filter.setNegate(negate);
+                                    return filter;
+                                  })));
+    }
+    return result;
+  }
+
+  private static Parser parseTime(
+      Parser parser, Consumer<Function<ErrorConsumer, Optional<Long>>> output) {
+    final AtomicReference<DateNode> date = new AtomicReference<>();
+    final AtomicReference<DateTimeNode> time = new AtomicReference<>();
+    final AtomicReference<InstantNode> zone = new AtomicReference<>();
+    final Parser result =
+        parser
+            .dispatch(DATE, date::set)
+            .dispatch(TIME, time::set)
+            .dispatch(TIME_ZONE, zone::set)
+            .whitespace();
+    if (result.isGood()) {
+      output.accept(
+          eh ->
+              date.get()
+                  .generate(eh)
+                  .flatMap(d -> time.get().generate(d, eh))
+                  .flatMap(ld -> zone.get().generate(ld, eh)));
+    }
+    return result;
+  }
+
+  private static <T> Parser strings(
+      Parser parser,
+      Consumer<ActionFilterNode> output,
+      Function<T[], ? extends ActionFilter> constructor,
+      Function<String, T> valueParser,
+      IntFunction<T[]> arrayConstructor) {
+    final AtomicReference<Pair<Boolean, List<String>>> matches = new AtomicReference<>();
+    final Parser result = parser.whitespace().dispatch(SET_MATCH, matches::set).whitespace();
+    if (result.isGood()) {
+      output.accept(
+          errorHandler -> {
+            final T[] buffer = arrayConstructor.apply(matches.get().second().size());
+            boolean ok = true;
+            for (int i = 0; i < buffer.length; i++) {
+              try {
+                buffer[i] = valueParser.apply(matches.get().second().get(i));
+                if (buffer[i] == null) {
+                  ok = false;
+                }
+              } catch (IllegalArgumentException e) {
+                ok = false;
+                errorHandler.raise(
+                    parser.line(),
+                    parser.column(),
+                    String.format("Unrecognised value “%s”.", matches.get().second().get(i)));
+              }
+            }
+            if (ok) {
+              final ActionFilter filter = constructor.apply(buffer);
+              filter.setNegate(matches.get().first());
+              return Optional.of(filter);
+            } else {
+              return Optional.empty();
+            }
+          });
+    }
+    return result;
+  }
+
+  private static Parser temporal(
+      Parser parser,
+      Consumer<ActionFilterNode> output,
+      Supplier<? extends BaseAgoActionFilter> agoConstructor,
+      Supplier<? extends BaseRangeActionFilter> rangeConstructor) {
+    final AtomicReference<TimeNode> filter = new AtomicReference<>();
+    final Parser result = parser.whitespace().dispatch(TEMPORAL, filter::set).whitespace();
+    if (result.isGood()) {
+      output.accept(
+          errorHandler -> filter.get().generate(agoConstructor, rangeConstructor, errorHandler));
+    }
+    return result;
+  }
+
   private static final Pattern ACTION_ID = Pattern.compile("shesmu:([0-9a-fA-F]{40})");
   private static final Pattern ACTION_ID_HASH = Pattern.compile("[0-9a-fA-F]{40}");
-  private static final Pattern SOURCE_HASH = Pattern.compile("[0-9a-fA-F]+");
   private static final Parser.ParseDispatch<BinaryOperator<ActionFilterNode>> AND =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<DateNode> DATE = new Parser.ParseDispatch<>();
@@ -198,6 +532,7 @@ public abstract class ActionFilter {
       Pattern.compile("(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|)");
   private static final Parser.ParseDispatch<Pair<Boolean, List<String>>> SET_MATCH =
       new Parser.ParseDispatch<>();
+  private static final Pattern SOURCE_HASH = Pattern.compile("[0-9a-fA-F]+");
   private static final Parser.ParseDispatch<Pair<Boolean, List<SourceOliveLocation>>> SOURCE_MATCH =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<String> STRING = new Parser.ParseDispatch<>();
@@ -507,341 +842,6 @@ public abstract class ActionFilter {
         Parser.justWhiteSpace(
             (datetime, errorHandler) ->
                 Optional.of(datetime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())));
-  }
-
-  private static Parser parseLocation(Parser parser, Consumer<SourceOliveLocation> output) {
-    final SourceOliveLocation location = new SourceOliveLocation();
-    final AtomicReference<List<String>> filename = new AtomicReference<>();
-    Parser result =
-        parser
-            .whitespace()
-            .symbol("\"")
-            .regex(STRING_CONTENTS, m -> location.setFile(m.group(0)), "filename")
-            .symbol("\"")
-            .whitespace();
-    if (result.isGood()) {
-      final Parser line =
-          result.symbol(":").whitespace().integer(v -> location.setLine((int) v), 10).whitespace();
-      if (line.isGood()) {
-        result = line;
-        final Parser column =
-            result
-                .symbol(":")
-                .whitespace()
-                .integer(v -> location.setColumn((int) v), 10)
-                .whitespace();
-        if (column.isGood()) {
-          result = column;
-          final Parser hash =
-              result
-                  .symbol("[")
-                  .whitespace()
-                  .regex(
-                      SOURCE_HASH, m -> location.setHash(m.group(0).toUpperCase()), "Source hash")
-                  .whitespace()
-                  .symbol("]")
-                  .whitespace();
-          if (hash.isGood()) {
-            result = hash;
-          }
-        }
-      }
-    }
-    if (result.isGood()) {
-      output.accept(location);
-    }
-    return result;
-  }
-
-  private static Parser.Rule<BinaryOperator<ActionFilterNode>> binary(
-      Supplier<? extends BaseCollectionActionFilter> constructor) {
-    return Parser.just(
-        (a, b) ->
-            errorHandler -> {
-              final Optional<ActionFilter> aValue = a.generate(errorHandler);
-              final Optional<ActionFilter> bValue = b.generate(errorHandler);
-              if (aValue.isPresent() && bValue.isPresent()) {
-                final BaseCollectionActionFilter result = constructor.get();
-                result.setFilters(new ActionFilter[] {aValue.get(), bValue.get()});
-                return Optional.of(result);
-              }
-              return Optional.empty();
-            });
-  }
-
-  public static Optional<ActionFilter> extractFromText(String text, ObjectMapper mapper) {
-    final Set<String> actionIds = new TreeSet<>();
-    final List<ActionFilter> filters = new ArrayList<>();
-    final Matcher actionMatcher = ACTION_ID.matcher(text);
-    while (actionMatcher.find()) {
-      actionIds.add("shesmu:" + actionMatcher.group(1).toUpperCase());
-    }
-    if (!actionIds.isEmpty()) {
-      final ActionFilterIds idFilter = new ActionFilterIds();
-      idFilter.setIds(new ArrayList<>(actionIds));
-      filters.add(idFilter);
-    }
-    final Matcher filterMatcher = SEARCH.matcher(text);
-    while (filterMatcher.find()) {
-      try {
-        final ActionFilter[] current =
-            mapper.readValue(
-                Base64.getDecoder().decode(filterMatcher.group(1)), ActionFilter[].class);
-        switch (current.length) {
-          case 0:
-            break;
-          case 1:
-            filters.add(current[0]);
-            break;
-          default:
-            final ActionFilterAnd and = new ActionFilterAnd();
-            and.setFilters(current);
-            filters.add(and);
-        }
-      } catch (Exception e) {
-        // That was some hot garbage we're going to ignore
-      }
-    }
-    switch (filters.size()) {
-      case 0:
-        return Optional.empty();
-      case 1:
-        return Optional.of(filters.get(0));
-      default:
-        final ActionFilterOr or = new ActionFilterOr();
-        or.setFilters(filters.stream().toArray(ActionFilter[]::new));
-        return Optional.of(or);
-    }
-  }
-
-  /** Take the base filter and intersect it with the union of all accessory filters */
-  public static <F> Stream<Pair<String, F>> joinAllAnd(
-      String baseName,
-      F baseFilters,
-      Stream<Pair<String, F>> accessoryFilters,
-      ActionFilterBuilder<F> builder) {
-    return Stream.of(
-        new Pair<>(
-            baseName,
-            builder.and(Stream.of(baseFilters, builder.or(accessoryFilters.map(Pair::second))))));
-  }
-
-  /** Take the base filter and remove all the accessory filters */
-  public static <F> Stream<Pair<String, F>> joinAllExcept(
-      String baseName,
-      F baseFilters,
-      Stream<Pair<String, F>> accessoryFilters,
-      ActionFilterBuilder<F> builder) {
-    return Stream.of(
-        new Pair<>(
-            baseName,
-            builder.and(
-                Stream.concat(
-                    Stream.of(baseFilters),
-                    accessoryFilters.map(Pair::second).map(builder::negate)))));
-  }
-
-  /**
-   * Take each accessory filter and produce the intersection of the base filter and the accessory
-   * filter
-   */
-  public static <F> Stream<Pair<String, F>> joinEachAnd(
-      String baseName,
-      F baseFilters,
-      Stream<Pair<String, F>> accessoryFilters,
-      ActionFilterBuilder<F> builder) {
-    return accessoryFilters.map(
-        p -> new Pair<>(p.first(), builder.and(Stream.of(p.second(), baseFilters))));
-  }
-
-  private static Parser parse0(Parser parser, Consumer<ActionFilterNode> output) {
-    return Parser.scanBinary(ActionFilter::parse1, OR, parser, output);
-  }
-
-  private static Parser parse1(Parser parser, Consumer<ActionFilterNode> output) {
-    return Parser.scanBinary(ActionFilter::parse2, AND, parser, output);
-  }
-
-  private static Parser parse2(Parser parser, Consumer<ActionFilterNode> output) {
-    return Parser.scanPrefixed(ActionFilter::parse3, NOT, parser, output);
-  }
-
-  private static Parser parse3(Parser parser, Consumer<ActionFilterNode> output) {
-    return parser.dispatch(TERMINAL, output).whitespace();
-  }
-
-  private static Parser parseAgo(Parser parser, Consumer<TimeNode> output, boolean negate) {
-    final AtomicLong time = new AtomicLong();
-    final AtomicInteger units = new AtomicInteger();
-    final Parser result =
-        parser
-            .whitespace()
-            .integer(time::set, 10)
-            .dispatch(TEMPORAL_UNITS, units::set)
-            .whitespace();
-    if (result.isGood()) {
-      output.accept(
-          (af, rf, e) -> {
-            final BaseAgoActionFilter filter = af.get();
-            filter.setOffset(time.get() * units.get());
-            filter.setNegate(negate);
-            return Optional.of(filter);
-          });
-    }
-    return result;
-  }
-
-  private static OptionalInt parseMonth(String inputMonth) {
-    final DateFormatSymbols symbols = new DateFormatSymbols();
-    final String[] monthNames = symbols.getMonths();
-    final String[] monthShortNames = symbols.getShortMonths();
-    for (int i = 0; i < monthNames.length; i++) {
-      if (inputMonth.equalsIgnoreCase(monthNames[i])
-          || inputMonth.equalsIgnoreCase(monthShortNames[i])) {
-        return OptionalInt.of(i + 1);
-      }
-    }
-    return OptionalInt.empty();
-  }
-
-  private static Parser parseOpenRange(
-      Parser parser, Consumer<TimeNode> output, BiConsumer<BaseRangeActionFilter, Long> setter) {
-    final AtomicReference<Function<ErrorConsumer, Optional<Long>>> time = new AtomicReference<>();
-    final Parser result = parser.whitespace().then(ActionFilter::parseTime, time::set).whitespace();
-    if (result.isGood()) {
-      output.accept(
-          (af, rf, e) ->
-              time.get()
-                  .apply(e)
-                  .map(
-                      i -> {
-                        final BaseRangeActionFilter filter = rf.get();
-                        setter.accept(filter, i);
-                        return filter;
-                      }));
-    }
-    return result;
-  }
-
-  public static Optional<ActionFilter> parseQuery(String input, ErrorConsumer errorHandler) {
-    final AtomicReference<ActionFilterNode> query = new AtomicReference<>();
-    final Parser parser =
-        Parser.start(input, errorHandler).whitespace().then(ActionFilter::parse0, query::set);
-    return parser.finished()
-        ? Optional.of(query.get()).flatMap(q -> q.generate(errorHandler))
-        : Optional.empty();
-  }
-
-  private static Parser parseRange(Parser parser, Consumer<TimeNode> output, boolean negate) {
-    final AtomicReference<Function<ErrorConsumer, Optional<Long>>> startTime =
-        new AtomicReference<>();
-    final AtomicReference<Function<ErrorConsumer, Optional<Long>>> endTime =
-        new AtomicReference<>();
-    final Parser result =
-        parser
-            .whitespace()
-            .then(ActionFilter::parseTime, startTime::set)
-            .whitespace()
-            .keyword("to")
-            .whitespace()
-            .then(ActionFilter::parseTime, endTime::set)
-            .whitespace();
-    if (result.isGood()) {
-      output.accept(
-          (af, rf, e) ->
-              startTime
-                  .get()
-                  .apply(e)
-                  .flatMap(
-                      start ->
-                          endTime
-                              .get()
-                              .apply(e)
-                              .map(
-                                  end -> {
-                                    final BaseRangeActionFilter filter = rf.get();
-                                    filter.setStart(start);
-                                    filter.setEnd(end);
-                                    filter.setNegate(negate);
-                                    return filter;
-                                  })));
-    }
-    return result;
-  }
-
-  private static Parser parseTime(
-      Parser parser, Consumer<Function<ErrorConsumer, Optional<Long>>> output) {
-    final AtomicReference<DateNode> date = new AtomicReference<>();
-    final AtomicReference<DateTimeNode> time = new AtomicReference<>();
-    final AtomicReference<InstantNode> zone = new AtomicReference<>();
-    final Parser result =
-        parser
-            .dispatch(DATE, date::set)
-            .dispatch(TIME, time::set)
-            .dispatch(TIME_ZONE, zone::set)
-            .whitespace();
-    if (result.isGood()) {
-      output.accept(
-          eh ->
-              date.get()
-                  .generate(eh)
-                  .flatMap(d -> time.get().generate(d, eh))
-                  .flatMap(ld -> zone.get().generate(ld, eh)));
-    }
-    return result;
-  }
-
-  private static <T> Parser strings(
-      Parser parser,
-      Consumer<ActionFilterNode> output,
-      Function<T[], ? extends ActionFilter> constructor,
-      Function<String, T> valueParser,
-      IntFunction<T[]> arrayConstructor) {
-    final AtomicReference<Pair<Boolean, List<String>>> matches = new AtomicReference<>();
-    final Parser result = parser.whitespace().dispatch(SET_MATCH, matches::set).whitespace();
-    if (result.isGood()) {
-      output.accept(
-          errorHandler -> {
-            final T[] buffer = arrayConstructor.apply(matches.get().second().size());
-            boolean ok = true;
-            for (int i = 0; i < buffer.length; i++) {
-              try {
-                buffer[i] = valueParser.apply(matches.get().second().get(i));
-                if (buffer[i] == null) {
-                  ok = false;
-                }
-              } catch (IllegalArgumentException e) {
-                ok = false;
-                errorHandler.raise(
-                    parser.line(),
-                    parser.column(),
-                    String.format("Unrecognised value “%s”.", matches.get().second().get(i)));
-              }
-            }
-            if (ok) {
-              final ActionFilter filter = constructor.apply(buffer);
-              filter.setNegate(matches.get().first());
-              return Optional.of(filter);
-            } else {
-              return Optional.empty();
-            }
-          });
-    }
-    return result;
-  }
-
-  private static Parser temporal(
-      Parser parser,
-      Consumer<ActionFilterNode> output,
-      Supplier<? extends BaseAgoActionFilter> agoConstructor,
-      Supplier<? extends BaseRangeActionFilter> rangeConstructor) {
-    final AtomicReference<TimeNode> filter = new AtomicReference<>();
-    final Parser result = parser.whitespace().dispatch(TEMPORAL, filter::set).whitespace();
-    if (result.isGood()) {
-      output.accept(
-          errorHandler -> filter.get().generate(agoConstructor, rangeConstructor, errorHandler));
-    }
-    return result;
   }
 
   private boolean negate;
