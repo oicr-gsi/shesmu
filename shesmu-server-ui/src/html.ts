@@ -1673,7 +1673,7 @@ export function buttonIcon(
   callback: ClickHandler
 ): UIElement {
   const button = createUiFromTag("span", icon);
-  button.element.className = "close";
+  button.element.className = "iconbutton";
   button.element.title = title;
   button.element.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -1859,19 +1859,25 @@ export function collapsibleWithDefault(
     return null;
   }
   const showHide = createUiFromTag("p", title);
-  showHide.element.className = openAtStart ? "collapse open" : "collapse close";
+  showHide.element.className = openAtStart
+    ? "collapse expanded"
+    : "collapse collapsed";
   showHide.element.addEventListener("click", (e) => {
     e.stopPropagation();
-    const visible = showHide.element.classList.contains("close");
+    const visible = showHide.element.classList.contains("collapsed");
 
-    showHide.element.className = visible ? "collapse open" : "collapse close";
+    showHide.element.className = visible
+      ? "collapse expanded"
+      : "collapse collapsed";
   });
   return {
     ui: [showHide, contents],
     model: {
       reload: () => {},
       statusChanged: (input) => {
-        showHide.element.className = input ? "collapse open" : "collapse close";
+        showHide.element.className = input
+          ? "collapse expanded"
+          : "collapse collapsed";
       },
       statusFailed: (_message, _error) => {},
       statusWaiting: () => {},
@@ -1954,7 +1960,7 @@ export function dialog(
   afterClose?: () => void
 ): void {
   const modal = document.createElement("div");
-  modal.className = "modal close";
+  modal.className = "modal dialog";
 
   const dialog = document.createElement("div");
   modal.appendChild(dialog);

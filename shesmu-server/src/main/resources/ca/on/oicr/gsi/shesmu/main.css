@@ -276,15 +276,15 @@ a.button.danger:visited {
   margin-right: 1em;
 }
 
-.collapse.close:before {
+.collapse.collapsed:before {
   content: "▶";
 }
 
-.collapse.open:before {
+.collapse.expanded:before {
   content: "▼";
 }
 
-.collapse.close + * {
+.collapse.collapsed + * {
   display: none;
 }
 
@@ -682,12 +682,12 @@ a.button.danger:visited {
   min-width: 25vw;
 }
 
-.filters > span > span.close {
+.filters > span > span.iconbutton {
   float: right;
 }
 
-.filters > span > span.close,
-.filterlist > div > span.close {
+.filters > span > span.iconbutton,
+.filterlist > div > span.iconbutton {
   margin: 0.3em;
 }
 
@@ -748,7 +748,7 @@ a.button.danger:visited {
   background-color: rgba(0, 0, 0, 0.4);
 }
 
-.modal.close > div {
+.modal.dialog > div {
   background-color: var(--dialog-background);
   margin: 5vh auto;
   padding: 20px;
@@ -759,7 +759,7 @@ a.button.danger:visited {
   box-shadow: 0.2em 0.2em 5px 0px rgba(0, 0, 0, 0.2);
 }
 
-.modal.close > div > :first-child {
+.modal.dialog > div > :first-child {
   font-size: 150%;
   top: 0px;
   right: 0px;
@@ -767,11 +767,11 @@ a.button.danger:visited {
   cursor: pointer;
 }
 
-.modal.close > div > :first-child:hover {
+.modal.dialog > div > :first-child:hover {
   color: var(--widget-danger-lowlight);
 }
 
-.modal.close > div > :nth-child(2) {
+.modal.dialog > div > :nth-child(2) {
   overflow: auto;
   max-height: 85vh;
 }
@@ -952,7 +952,7 @@ img.deadolive {
   padding-left: 1em;
 }
 
-.close {
+.iconbutton {
   cursor: pointer;
   white-space: nowrap;
 }
