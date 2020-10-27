@@ -3010,11 +3010,11 @@ export function popup(
         : { x: e.pageX, y: e.pageY };
     inner.element.style.left = `${Math.min(
       x,
-      document.body.clientWidth - inner.element.offsetWidth - 10
+      document.body.offsetWidth - inner.element.offsetWidth - 10
     )}px`;
     inner.element.style.top = `${Math.min(
       y,
-      document.body.clientHeight - inner.element.offsetHeight - 10
+      document.body.offsetHeight - inner.element.offsetHeight - 10
     )}px`;
 
     inner.element.addEventListener("click", (e) => e.stopPropagation());
