@@ -2916,7 +2916,7 @@ export function paginatedList<T>(
  * Create a mutable section of UI.
  */
 export function pane(
-  mode: "blank" | "small" | "large"
+  mode: "blank" | "small" | "medium" | "large"
 ): {
   ui: ComplexElement<HTMLElement>;
   model: StatefulModel<UIElement>;
@@ -2953,6 +2953,7 @@ export function pane(
             update(blank());
             break;
           case "small":
+          case "medium":
             update(throbberSmall());
             break;
           case "large":
@@ -2968,6 +2969,7 @@ export function pane(
           case "small":
             update(img("dead.svg", "deadolive"));
             break;
+          case "medium":
           case "large":
             update([
               img("dead.svg", "deadolive"),
@@ -3388,7 +3390,7 @@ export function singleState<T>(
   formatter: (input: T) => UIElement,
   hideErrors?: boolean
 ): { model: StatefulModel<T>; ui: UIElement } {
-  const { ui, model } = pane(hideErrors ? "blank" : "small");
+  const { ui, model } = pane(hideErrors ? "blank" : "medium");
   return {
     model: mapModel(model, formatter),
     ui: ui,
