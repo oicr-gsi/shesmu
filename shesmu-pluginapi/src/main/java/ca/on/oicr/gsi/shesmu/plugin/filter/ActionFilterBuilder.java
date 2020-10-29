@@ -348,7 +348,7 @@ public interface ActionFilterBuilder<F> {
         public Pair<String, Integer> tag(Pattern pattern) {
           return new Pair<>(
               String.format(
-                  "text ~ /%s/%s",
+                  "tag ~ /%s/%s",
                   pattern.pattern(), (pattern.flags() & Pattern.CASE_INSENSITIVE) == 0 ? "" : "i"),
               0);
         }
