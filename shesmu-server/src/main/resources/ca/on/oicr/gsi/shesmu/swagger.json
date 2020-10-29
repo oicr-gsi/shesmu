@@ -21,6 +21,7 @@
             "statuschanged": "#/components/schemas/ActionFilterStatusChanged",
             "statuschangedago": "#/components/schemas/ActionFilterStatusChangedAgo",
             "tag": "#/components/schemas/ActionFilterTag",
+            "tag-regex": "#/components/schemas/ActionFilterTagRegex",
             "text": "#/components/schemas/ActionFilterText",
             "type": "#/components/schemas/ActionFilterType"
           },
@@ -74,6 +75,9 @@
           },
           {
             "$ref": "#/components/schemas/ActionFilterTag"
+          },
+          {
+            "$ref": "#/components/schemas/ActionFilterTagRegex"
           },
           {
             "$ref": "#/components/schemas/ActionFilterText"
@@ -246,6 +250,10 @@
       },
       "ActionFilterRegex": {
         "properties": {
+          "matchCase": {
+            "description": "whether the regular must match as provided or if the case can be different",
+            "type": "boolean"
+          },
           "negate": {
             "description": "if true, the filter's output will be inverted",
             "type": "boolean"
@@ -361,6 +369,23 @@
               },
               "type": "array"
             }
+          }
+        },
+        "type": "object"
+      },
+      "ActionFilterTagRegex": {
+        "properties": {
+          "matchCase": {
+            "description": "whether the regular must match as provided or if the case can be different",
+            "type": "boolean"
+          },
+          "negate": {
+            "description": "if true, the filter's output will be inverted",
+            "type": "boolean"
+          },
+          "pattern": {
+            "description": "a Java regular expression the action's tags must match",
+            "type": "regex"
           }
         },
         "type": "object"
