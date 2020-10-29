@@ -1,5 +1,55 @@
 # Unreleased
 
+# [1.4.5] - 2020-10-29T11:22+00:00
+
+Changes:
+
+* Add a new regular expression filter for action tags
+* Fix cast class error with join temporary
+
+UI Changes:
+
+* Display parse errors for advanced search
+* Improve advanced search UI feedback
+	This changes the advanced search input box to provide a visual indicator of
+	the query's status and some indication that _Enter_ should be pressed to
+  update.
+* Fix popup menu positioning again
+* Fix display of time ranges in basic search
+* Fix formatting of stats ranges
+* Fix month selector for time ranges
+* Refresh searches from server on _Actions_ page
+	The searches provided by the server are populated at page load time. Since
+	searches can be updated based on changes in JIRA, this changes the _Actions_
+  page to reload the searches every 15 minutes.
+* Add a button to download SVG diagrams (on both the _Olives_ page and the simulator)
+* Move counts down in metro diagrams
+  The counts in the metro diagrams are the number of output records and this can
+  be difficult to recognise. This shifts all the counts down by a half row so
+  that the count is between the clause that produced and the clause that consumed
+  it.
+ 
+Simulator Changes:
+
+* Improve extra definitions buttons (make the styling consistent and add a download button)
+* Improve type parsing and WDL outputs (this allows `wdl_outputs) to be imported correctly)
+* Allow sharing a script from the simulation console
+
+Niassa Plugin Changes:
+
+* Pull more job status information from Cromwell (failure information mostly)
+
+SFTP Plugin Changes:
+
+* Improve the SFTP refiller
+  This makes a few improvements to the SFTP refiller:
+  
+  - perform reading stdout and stderr and writing to stdin in separate threads to
+    avoid buffering
+  - when reading the first line from the child, it checks that it is `OK` or
+    `UPDATING` and complain about it
+  - kill processes that don't respond appropriately
+
 # [1.4.4] - 2020-10-19T10:44+00:00
 
 Changes:
