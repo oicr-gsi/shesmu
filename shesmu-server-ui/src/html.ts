@@ -3048,13 +3048,35 @@ export function popup(
               e.currentTarget.offsetHeight,
           }
         : { x: e.pageX, y: e.pageY };
+    // The simplest thing to do would be put the menu at the point of click
+    // or under the appropriate other item. However, if the menu would
+    // extend past the edge of the page, triggering new scroll bars, which
+    // is annoying and may change the page layout, now putting the menu is
+    // slightly the wrong place. Therefore, this code tries to shift the
+    // menu to always appear inside the page. There are two coordinate
+    // systems `offset`, relative to the page, and `client` relative to the
+    // window. When the page is longer than the window, a menu calculation
+    // using `client` will stick the menu up in the top chunk of the page
+    // (whatever the first scrollable unit is), which is not helpful. If the
+    // `offset` is used, then when the page is mostly empty, it doesn't
+    // occupy the full `clientHeight`, and show the menu gets pushed up off
+    // the top of the screen. In a way, this was the case we were trying to
+    // avoid earlier (expanding the length of the page). However, in this
+    // case, we know we can extend the height of the page safely because it
+    // is less than the height of the window. So, the correct calculation is
+    // determine where to place the menu relative to the longer of the page
+    // (`offset`) or window (`client`).
     inner.element.style.left = `${Math.min(
       x,
-      document.body.offsetWidth - inner.element.offsetWidth - 10
+      Math.max(document.body.offsetWidth, document.body.clientWidth) -
+        inner.element.offsetWidth -
+        10
     )}px`;
     inner.element.style.top = `${Math.min(
       y,
-      document.body.offsetHeight - inner.element.offsetHeight - 10
+      Math.max(document.body.offsetHeight, document.body.clientHeight) -
+        inner.element.offsetHeight -
+        10
     )}px`;
 
     inner.element.addEventListener("click", (e) => e.stopPropagation());
