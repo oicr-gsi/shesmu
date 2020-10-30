@@ -27,10 +27,7 @@ import java.lang.invoke.MethodType;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
@@ -387,6 +384,33 @@ public final class RuntimeSupport {
             });
   }
 
+  public static Optional<Instant> localDate(long year, long month, long day) {
+    try {
+      return Optional.of(
+          ZonedDateTime.of(
+                  LocalDate.of((int) year, (int) month, (int) day),
+                  LocalTime.MIDNIGHT,
+                  ZoneId.systemDefault())
+              .toInstant());
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
+
+  public static Optional<Instant> localDateTime(
+      long year, long month, long day, long hours, long minutes, long seconds, long nanos) {
+    try {
+      return Optional.of(
+          ZonedDateTime.of(
+                  LocalDate.of((int) year, (int) month, (int) day),
+                  LocalTime.of((int) hours, (int) minutes, (int) seconds, (int) nanos),
+                  ZoneId.systemDefault())
+              .toInstant());
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
+
   @RuntimeInterop
   public static <T> Optional<T> merge(Optional<T> left, Supplier<Optional<T>> right) {
     return left.isPresent() ? left : right.get();
@@ -504,6 +528,7 @@ public final class RuntimeSupport {
     callsites.put(id, callsite);
     return callsite;
   }
+
   /**
    * Group items in to outer groups, then apply a complex subgrouping operation to produce subgroups
    * from this input
@@ -689,6 +714,33 @@ public final class RuntimeSupport {
   @RuntimeInterop
   public static String urlEncode(String input) throws UnsupportedEncodingException {
     return URLEncoder.encode(input, "UTF-8").replace("*", "%2A");
+  }
+
+  public static Optional<Instant> utcDate(long year, long month, long day) {
+    try {
+      return Optional.of(
+          ZonedDateTime.of(
+                  LocalDate.of((int) year, (int) month, (int) day),
+                  LocalTime.MIDNIGHT,
+                  ZoneId.of("Z"))
+              .toInstant());
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
+
+  public static Optional<Instant> utcDateTime(
+      long year, long month, long day, long hours, long minutes, long seconds, long nanos) {
+    try {
+      return Optional.of(
+          ZonedDateTime.of(
+                  LocalDate.of((int) year, (int) month, (int) day),
+                  LocalTime.of((int) hours, (int) minutes, (int) seconds, (int) nanos),
+                  ZoneId.of("Z"))
+              .toInstant());
+    } catch (Exception e) {
+      return Optional.empty();
+    }
   }
 
   @RuntimeInterop
