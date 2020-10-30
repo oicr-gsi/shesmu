@@ -429,6 +429,20 @@ public abstract class ExpressionNode implements Renderable {
           });
     }
     COMPARISON.addSymbol(
+        "=~",
+        (p, o) -> {
+          final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();
+          final Parser result =
+              p.whitespace().regex(REGEX, regexParser(regex), "Regular expression.").whitespace();
+          if (result.isGood()) {
+            o.accept(
+                left ->
+                    new ExpressionNodeRegexBinding(
+                        p.line(), p.column(), left, regex.get().first(), regex.get().second()));
+          }
+          return result;
+        });
+    COMPARISON.addSymbol(
         "~",
         (p, o) -> {
           final AtomicReference<Pair<String, Integer>> regex = new AtomicReference<>();

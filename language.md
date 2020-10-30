@@ -661,6 +661,18 @@ regular expression.
 _flags_ sets the behaviour of the regular expression. For details, see [regular
 expression flags](#regexflags).
 
+- _expr_` =~ /`_re_`/`_flags_
+
+Matches _expr_, which must be a string, against the provided regular
+expression and returns a tuple of the values of each capture group. Since
+individual capture groups may be missing, this returns an optional tuple of
+optional strings. If the outer optional is the missing value, then the regular
+expression failed to match. If any element of the tuple is the missing value,
+then that capture group did not match.
+
+_flags_ sets the behaviour of the regular expression. For details, see [regular
+expression flags](#regexflags).
+
 ### Disjunction
 #### Addition
 - _expr_ `+` _expr_

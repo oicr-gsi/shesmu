@@ -1,0 +1,8 @@
+Version 1;
+Input test;
+Timeout 100;
+
+Function r(string input) input =~ /a(.)c/i;
+
+Olive
+ Run ok With ok = r("abc") == `{`"b"`}` && r("aba") == ``;
