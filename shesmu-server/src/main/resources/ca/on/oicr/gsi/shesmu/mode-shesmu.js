@@ -118,7 +118,7 @@ ace.define(
             "path",
             "string",
           ].join("|"),
-          "keyword.operator": "`|~|:|<=?|>=?|==|\\|\\||-|!=?|/|\\*|&&|\\?",
+          "keyword.operator": "`|~|:|<=?|>=?|==|=~|\\|\\||-|!=?|/|\\*|&&|\\?",
           "constant.language":
             "False|True|json_signature|sha1_signature|signature_names|\\d+[kMG]i?|\\d+(weeks|days|hours|mins)|Date\\s*\\d\\d\\d\\d-\\d\\d-\\d\\d\\(T\\d\\d\\:\\d\\d:\\d\\d\\(Z|[+-]\\d\\d\\(:\\d\\d)?))?|[A-Z][A-Z_0-9]+",
         },

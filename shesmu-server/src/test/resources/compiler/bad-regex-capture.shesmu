@@ -1,0 +1,5 @@
+Version 1;
+Input test;
+
+Define standard_fastq(string s)
+  Where s =~ /abc/;
