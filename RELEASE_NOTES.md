@@ -1,5 +1,16 @@
 # Unreleased
 
+# [1.4.6] - 2020-10-30T10:37+00:00
+
+Changes:
+
+* Add tag regex action filter to Swagger
+* Fix regex tag matching in query pretty printer (fixes advanced search)
+
+UI Changes:
+
+* Change popup menu calculation again
+
 # [1.4.5] - 2020-10-29T11:22+00:00
 
 Changes:
