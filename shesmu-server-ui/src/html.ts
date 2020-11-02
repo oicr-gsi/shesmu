@@ -2887,7 +2887,7 @@ export function paginatedList<T>(
         [{ type: "icon", icon: "download" }, "Download"],
         "Download data as a file.",
         () => {
-          saveFile(JSON.stringify(data), "application/json", filename);
+          saveFile(JSON.stringify(data, null, 2), "application/json", filename);
         }
       ),
       button(
@@ -2895,7 +2895,7 @@ export function paginatedList<T>(
         "Download filtered data as a file.",
         () => {
           saveFile(
-            JSON.stringify(data.filter(condition)),
+            JSON.stringify(data.filter(condition), null, 2),
             "application/json",
             filename
           );
