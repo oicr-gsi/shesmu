@@ -1,0 +1,10 @@
+Version 1;
+Input test;
+Timeout 100;
+
+Olive
+ Run ok With ok =
+   Begin
+     d = "2020-03-04" =~ /(\d{4})-(\d{2})-(\d{2})/;
+     Return (`std::date::utc_date(std::integer::parse(d[0]?)?, std::integer::parse(d[1]?)?, std::integer::parse(d[2]?)?)? == Date 2020-03-04 ` Default False);
+   End;
