@@ -38,6 +38,14 @@ public class ObjectElementNodeSingle extends ObjectElementNode {
   }
 
   @Override
+  public Stream<String> renderConstant(EcmaScriptRenderer renderer) {
+    return Stream.of(
+        String.format(
+            "%s: {type: \"%s\", value: %s}",
+            field, expression.type().descriptor(), expression.renderEcma(renderer)));
+  }
+
+  @Override
   public boolean typeCheckExtra(Consumer<String> errorHandler) {
     return true;
   }

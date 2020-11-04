@@ -59,6 +59,7 @@ export interface ShesmuRequestType {
   allalerts: null;
   command: { command: string; filters: ActionFilter[] };
   constant: string;
+  count: ActionFilter[];
   drain: ActionFilter[];
   function: { name: string; args: any[] };
   getalert: string;
@@ -89,6 +90,7 @@ export interface ShesmuResponseType {
   allalerts: PrometheusAlert[];
   command: number;
   constant: ValueResponse;
+  count: number;
   drain: Action[];
   function: ValueResponse;
   getalert: PrometheusAlert | null;

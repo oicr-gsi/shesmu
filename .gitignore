@@ -9,6 +9,7 @@ shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/action.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/actionfilters.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/alert.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/definitions.js
+shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/guided_meditations.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/help.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/histogram.js
 shesmu-server/src/main/resources/ca/on/oicr/gsi/shesmu/html.js

@@ -10,7 +10,13 @@ import {
 } from "./html.js";
 import { locallyStored } from "./io.js";
 import { Publisher, pubSubModel } from "./util.js";
-export type Area = "action" | "alert" | "olive" | "pauses" | "simulator";
+export type Area =
+  | "action"
+  | "alert"
+  | "meditation"
+  | "olive"
+  | "pauses"
+  | "simulator";
 export type HotSpot =
   | "stats-crosstab"
   | "stats-table"
@@ -103,6 +109,15 @@ const tips: (HelpTip | null)[][] = [
       area: "action",
     },
   ],
+  [
+   {
+      summary: "Create guided meditations",
+      description:
+        "Guided meditations are interactive troubleshooting guides built by your institution to help solve data problems. For details on creating one, see the manual.",
+      hotspot: null,
+      area: "meditation",
+    } 
+  ]
 ];
 
 /**

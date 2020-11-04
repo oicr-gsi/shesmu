@@ -74,6 +74,8 @@ public abstract class ObjectElementNode {
 
   public abstract void render(Renderer renderer, ToIntFunction<String> indexOf);
 
+  public abstract Stream<String> renderConstant(EcmaScriptRenderer renderer);
+
   /** Resolve all variable plugins in this expression and its children. */
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);

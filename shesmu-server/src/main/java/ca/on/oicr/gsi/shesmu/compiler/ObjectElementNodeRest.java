@@ -60,6 +60,22 @@ public class ObjectElementNodeRest extends ObjectElementNode {
   }
 
   @Override
+  public Stream<String> renderConstant(EcmaScriptRenderer renderer) {
+    final String expressionResult = expression.renderEcma(renderer);
+    return tuple
+        .fields()
+        .filter(field -> !exceptions.contains(field.getKey()))
+        .map(
+            field ->
+                String.format(
+                    "%s: { type: \"%s\", value: %s.%s}",
+                    field.getKey(),
+                    field.getValue().first().descriptor(),
+                    expressionResult,
+                    field.getKey()));
+  }
+
+  @Override
   public boolean typeCheckExtra(Consumer<String> errorHandler) {
     if (expression.type() instanceof Imyhat.ObjectImyhat) {
       tuple = (Imyhat.ObjectImyhat) expression.type();
