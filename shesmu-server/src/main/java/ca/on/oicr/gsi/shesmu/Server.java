@@ -210,6 +210,7 @@ public final class Server implements ServerConfig, ActionServices {
   private final PluginManager pluginManager;
   private final ActionProcessor processor;
   private final AutoUpdatingDirectory<SavedSearch> savedSearches;
+  private final AutoUpdatingDirectory<GuidedMeditation> guidedMeditations;
   private final HttpServer server;
   private final StaticActions staticActions;
   private Map<String, TypeParser> typeParsers = new TreeMap<>();
@@ -256,6 +257,11 @@ public final class Server implements ServerConfig, ActionServices {
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
+    guidedMeditations =
+        new AutoUpdatingDirectory<>(
+            fileWatcher,
+            GuidedMeditation.EXTENSION,
+            fileName -> new GuidedMeditation(fileName, definitionRepository));
     processor = new ActionProcessor(localname(), pluginManager, this);
     compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
     staticActions = new StaticActions(processor, definitionRepository);
@@ -528,11 +534,13 @@ public final class Server implements ServerConfig, ActionServices {
 
               @Override
               public Stream<ConfigurationSection> sections() {
-                return Stream.concat(
-                    Stream.concat(
-                        pluginManager.listConfiguration(), staticActions.listConfiguration()),
-                    AnnotatedInputFormatDefinition.formats()
-                        .flatMap(AnnotatedInputFormatDefinition::configuration));
+                return Stream.of(
+                        pluginManager.listConfiguration(),
+                        staticActions.listConfiguration(),
+                        guidedMeditations.stream().map(GuidedMeditation::configuration),
+                        AnnotatedInputFormatDefinition.formats()
+                            .flatMap(AnnotatedInputFormatDefinition::configuration))
+                    .flatMap(Function.identity());
               }
             }.renderPage(os);
           }
@@ -640,6 +648,61 @@ public final class Server implements ServerConfig, ActionServices {
 
                 writer.writeStartElement("div");
                 writer.writeAttribute("id", "olives");
+                writer.writeComment("");
+                writer.writeEndElement();
+              }
+            }.renderPage(os);
+          }
+        });
+    add(
+        "/meditationdash",
+        t -> {
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          final Map<String, String> parameters = getParameters(t);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+              @Override
+              public String activeUrl() {
+                return "meditationdash";
+              }
+
+              @Override
+              public Stream<Header> headers() {
+                String filesJson = "[]";
+                try {
+                  final ArrayNode files = RuntimeSupport.MAPPER.createArrayNode();
+                  compiler
+                      .dashboard()
+                      .map(fileTable -> fileTable.second().filename())
+                      .forEach(files::add);
+                  filesJson = RuntimeSupport.MAPPER.writeValueAsString(files);
+
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+                return Stream.of(
+                    Header.jsModule(
+                        "import {"
+                            + "initialiseMeditationDash, register"
+                            + "} from \"./guided_meditations.js\";"
+                            + "import * as runtime from \"./runtime.js\";\n\n"
+                            + guidedMeditations
+                                .stream()
+                                .flatMap(GuidedMeditation::stream)
+                                .collect(Collectors.joining())
+                            + "initialiseMeditationDash("
+                            + filesJson
+                            + ", "
+                            + exportSearches()
+                            + ");"));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "meditationdash");
                 writer.writeComment("");
                 writer.writeEndElement();
               }
@@ -2285,6 +2348,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("actionfilters.js", "text/javascript;charset=utf-8");
     add("alert.js", "text/javascript;charset=utf-8");
     add("definitions.js", "text/javascript;charset=utf-8");
+    add("guided_meditations.js", "text/javascript;charset=utf-8");
     add("help.js", "text/javascript;charset=utf-8");
     add("histogram.js", "text/javascript;charset=utf-8");
     add("html.js", "text/javascript;charset=utf-8");
@@ -2293,6 +2357,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("olive.js", "text/javascript;charset=utf-8");
     add("parser.js", "text/javascript;charset=utf-8");
     add("pause.js", "text/javascript;charset=utf-8");
+    add("runtime.js", "text/javascript;charset=utf-8");
     add("simulation.js", "text/javascript;charset=utf-8");
     add("stats.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
@@ -2627,6 +2692,7 @@ public final class Server implements ServerConfig, ActionServices {
         NavigationMenu.submenu(
             "Tools",
             NavigationMenu.item("simulatedash", "Olive Simulator"),
+            NavigationMenu.item("meditationdash", "Guided Meditations"),
             NavigationMenu.item("typedefs", "Type Converter")),
         NavigationMenu.submenu(
             "Internals",
@@ -2847,8 +2913,6 @@ public final class Server implements ServerConfig, ActionServices {
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
   public void start() {
-    // Initialise status page start time immediately
-    StatusPage.class.toString();
     System.out.println("Starting server...");
     server.start();
     System.out.println("Waiting for files to be scanned...");

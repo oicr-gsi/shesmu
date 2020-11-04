@@ -60,16 +60,15 @@ public class ProgramNode {
           return result;
         });
   }
-  /** Parse a file of olive nodes */
-  public static boolean parseFile(
-      CharSequence input, Consumer<ProgramNode> output, ErrorConsumer errorHandler) {
+
+  public static Parser parse(Parser input, Consumer<ProgramNode> output) {
 
     // This is a bit weird; we want to support multiple versions of the olive language in the
     // future, so we parse the version and the version gives us the parser for the rest of the file.
     final AtomicReference<Pair<Integer, Integer>> start = new AtomicReference<>();
     final AtomicLong version = new AtomicLong();
     Parser result =
-        Parser.start(input, errorHandler)
+        input
             .whitespace()
             .location(start::set)
             .keyword("Version")
@@ -87,7 +86,12 @@ public class ProgramNode {
                   (p, o) -> p.raise("Version is not supported by this Shesmu server.")),
               f -> output.accept(f.apply(start.get().first(), start.get().second())));
     }
-    return result.finished();
+    return result;
+  }
+  /** Parse a file of olive nodes */
+  public static boolean parseFile(
+      CharSequence input, Consumer<ProgramNode> output, ErrorConsumer errorHandler) {
+    return parse(Parser.start(input, errorHandler), output).finished();
   }
 
   private final int column;

@@ -85,7 +85,7 @@ public class NameDefinitions {
    *
    * @param parameters the parameters to bind
    */
-  public NameDefinitions bind(List<Target> parameters) {
+  public NameDefinitions bind(List<? extends Target> parameters) {
     final Set<String> shadowedNames =
         parameters.stream().map(Target::name).collect(Collectors.toSet());
     return new NameDefinitions(

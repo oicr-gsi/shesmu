@@ -28,6 +28,7 @@ the provenance data.
 - [The Mandatory Guide to Optional Values](optionalguide.md)
 - [Algebraic Values without Algebra](algebraicguide.md)
 - [Training Guide for Operators](ops-guide.md)
+- [Writing Guided Meditations](guided-meditations.md)
 - [Static Actions](actnow.md)
 - [Shesmu Glossary](glossary.md)
 - [Shesmu FAQ](faq.md)
