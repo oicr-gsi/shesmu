@@ -34,6 +34,7 @@ public final class PineryIUSValue {
   private final String project;
   private final Optional<String> reference_slide_id;
   private final Optional<Double> rin;
+  private final long run_id;
   private final long run_lane_count;
   private final String run_status;
   private final String sequencing_control_type;
@@ -79,6 +80,7 @@ public final class PineryIUSValue {
       String project,
       Optional<String> reference_slide_id,
       Optional<Double> rin,
+      long run_id,
       long run_lane_count,
       String run_status,
       String sequencing_control_type,
@@ -112,6 +114,7 @@ public final class PineryIUSValue {
     this.group_desc = group_desc;
     this.group_id = group_id;
     this.instrumentModel = instrumentModel;
+    this.run_id = run_id;
     this.run_lane_count = run_lane_count;
     this.is_sample = is_sample;
     this.ius = ius;
@@ -188,7 +191,10 @@ public final class PineryIUSValue {
     PineryIUSValue that = (PineryIUSValue) o;
     return is_sample == that.is_sample
         && library_size == that.library_size
+        && run_id == that.run_id
+        && run_lane_count == that.run_lane_count
         && umis == that.umis
+        && barcode_kit.equals(that.barcode_kit)
         && bases_mask.equals(that.bases_mask)
         && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
@@ -253,6 +259,7 @@ public final class PineryIUSValue {
   @Override
   public int hashCode() {
     return Objects.hash(
+        barcode_kit,
         bases_mask,
         cell_viability,
         completed_date,
@@ -277,6 +284,8 @@ public final class PineryIUSValue {
         project,
         reference_slide_id,
         rin,
+        run_id,
+        run_lane_count,
         run_status,
         sequencing_control_type,
         sequencing_kit,
@@ -367,14 +376,19 @@ public final class PineryIUSValue {
     return rin;
   }
 
-  @ShesmuVariable(signable = true)
-  public String run_name() {
-    return (String) ius.get(0);
+  @ShesmuVariable
+  public long run_id() {
+    return run_id;
   }
 
   @ShesmuVariable
   public long run_lane_count() {
     return run_lane_count;
+  }
+
+  @ShesmuVariable(signable = true)
+  public String run_name() {
+    return (String) ius.get(0);
   }
 
   @ShesmuVariable

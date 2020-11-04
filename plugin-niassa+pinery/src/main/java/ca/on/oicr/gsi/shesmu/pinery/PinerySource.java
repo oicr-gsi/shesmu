@@ -153,6 +153,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     "",
                     Optional.empty(),
                     Optional.empty(),
+                    run.getId(),
                     runLaneCount(run),
                     getRunField(run, RunDto::getState),
                     "",
@@ -234,6 +235,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getStudyTitle(),
                         limsAttr(sp, "reference_slide_id", badSetInRecord::add, false),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
+                        run.getId(),
                         runLaneCount(run),
                         getRunField(run, RunDto::getState),
                         limsAttr(sp, "sequencing_control_type", badSetInRecord::add, false)
