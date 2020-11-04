@@ -1,5 +1,23 @@
 # Unreleased
 
+# [1.4.7] - 2020-11-04T19:16+00:00
+
+Language changes:
+
+* Add expression to extract capture groups from a regular expression
+	This adds an expression to pull capture groups as a tuple if a regular
+	expression matches. This does them positionally, because Java does not
+  provide an API to get information about named capture groups.
+* Add functions to create dates from numbers
+
+UI Changes:
+
+* Pretty print downloaded JSON files
+
+Pinery Plugin Changes:
+
+* Add `run_id` to `pinery_ius`
+
 # [1.4.6] - 2020-10-30T10:37+00:00
 
 Changes:
