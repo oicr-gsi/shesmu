@@ -12,6 +12,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.TypeGuarantee;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
+import io.prometheus.client.Gauge;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,6 +21,12 @@ import javax.xml.stream.XMLStreamException;
 
 public class StructuredConfigFile extends JsonPluginFile<Configuration> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final Gauge badEntry =
+      Gauge.build(
+              "shesmu_structured_config_bad_entry",
+              "Whether a particular entry in a structure configuration file is bad")
+          .labelNames("filename", "entry")
+          .register();
   private Set<String> badRecords = Collections.emptySet();
   private final Definer<StructuredConfigFile> definer;
 
@@ -59,6 +66,7 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
                               .map(
                                   field -> {
                                     try {
+
                                       return field
                                           .getValue()
                                           .first()
@@ -79,6 +87,7 @@ public class StructuredConfigFile extends JsonPluginFile<Configuration> {
                                     }
                                   })
                               .toArray();
+                      badEntry.labels(fileName().toString(), e.getKey()).set(ok.get() ? 0 : 1);
                       return ok.get() ? Optional.of(new Tuple(convertedValues)) : Optional.empty();
                     }));
     final Optional<Tuple> missingResult;
