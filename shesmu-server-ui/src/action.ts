@@ -1,6 +1,5 @@
 import {
   ClickHandler,
-  DisplayElement,
   IconName,
   UIElement,
   blank,
@@ -51,7 +50,12 @@ import {
   mergingModel,
   mutableStoreWatcher,
 } from "./util.js";
-import { ActionFilter, BasicQuery, createSearch } from "./actionfilters.js";
+import {
+  ActionFilter,
+  BasicQuery,
+  createSearch,
+  renderFilters,
+} from "./actionfilters.js";
 import {
   fetchJsonWithBusyDialog,
   loadFile,
@@ -775,6 +779,12 @@ export function initialiseActionDash(
           ]
         : blank()
   );
+  const {
+    ui: baseSearchUi,
+    model: baseSearchModel,
+  } = singleState(([_, filters]: [string, ActionFilter[]]) =>
+    tile(["filters"], renderFilters(filters, filenameFormatter))
+  );
   const { model: searchModel, ui: searchSelector } = singleState(
     (searches: SearchDefinition[]): UIElement =>
       dropdown(
@@ -782,6 +792,7 @@ export function initialiseActionDash(
         ([name, _filters]) => name == savedSynchonizer.get(),
         combineModels(
           deleteModel,
+          baseSearchModel,
           mapModel(model, ([_name, filters]) => filters)
         ),
         {
@@ -915,6 +926,7 @@ export function initialiseActionDash(
       helpArea("action")
     ),
     tile([], refreshButton(combinedActionsModel.reload), buttons, bulkCommands),
+    tile([], collapsible("Base Search Filter", baseSearchUi, br())),
     tile([], entryBar),
     tabsUi
   );
