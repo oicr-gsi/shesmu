@@ -35,6 +35,7 @@ import {
   temporaryState,
   text,
   tile,
+  buttonDisabled,
 } from "./html.js";
 import { AddRangeSearch, AddPropertySearch, PropertySearch } from "./stats.js";
 import { Status, statusButton, statusDescription, statuses } from "./action.js";
@@ -967,7 +968,145 @@ function recomposeFilterHelper(
       return false;
   }
 }
-function renderFilters(
+export function renderFilters(
+  filters: ActionFilter[],
+  fileNameFormatter: FilenameFormatter
+): UIElement {
+  if (filters.length == 0) {
+    return "No filters.";
+  }
+  return filters.map((f) => {
+    switch (f.type) {
+      case "addedago":
+      case "checkedago":
+      case "externalago":
+      case "statuschangedago":
+        return tile(
+          [],
+          nameForBin(f.type),
+          br(),
+          { type: "icon", icon: "clock-history" },
+          (f.negate ? "In Last " : "Before Last ") + formatTimeSpan(f.offset)
+        );
+      case "added":
+      case "checked":
+      case "external":
+      case "statuschanged":
+        return tile(
+          [],
+          nameForBin(f.type),
+          br(),
+          timeRangeAnchor(f.negate ? "⇥ " : "⇤ ", f.start, " —"),
+          f.start && f.end
+            ? [{ type: "icon", icon: "clock" }, formatTimeSpan(f.end - f.start)]
+            : blank(),
+          timeRangeAnchor("— ", f.end, f.negate ? "⇤ " : " ⇥")
+        );
+      case "and":
+        return tile(
+          ["indented"],
+          f.negate ? "Not all of" : "All of:",
+          tile(["filters"], renderFilters(f.filters, fileNameFormatter))
+        );
+      case "id":
+        return renderSet(
+          f.ids,
+          f.negate ? "Action Identifier is Not" : "Action Identifier is",
+          (id, _) => buttonDisabled(id, ""),
+          (_) => {}
+        );
+      case "or":
+        return tile(
+          ["indented"],
+          f.negate ? "Not one of" : "Any of:",
+          tile(["filters"], renderFilters(f.filters, fileNameFormatter))
+        );
+      case "regex":
+        return tile(
+          [],
+          (f.negate ? "Matches " : "Does Not Match ") +
+            (f.matchCase ? "Case-Sensitive" : "Case-Insensitive") +
+            " Regular Expression",
+          br(),
+          preformatted(f.pattern)
+        );
+      case "sourcefile":
+        return tile(
+          [],
+          f.negate ? "Not From Source File" : "From Source File",
+          br(),
+          tableFromRows(
+            f.files.map((file) =>
+              tableRow(null, { contents: fileNameFormatter(file), title: file })
+            )
+          )
+        );
+      case "sourcelocation":
+        return tile(
+          [],
+          f.negate ? "Not From Source Location" : "From Source Locations",
+          br(),
+          tableFromRows(
+            f.locations.map((item) =>
+              tableRow(
+                null,
+                { contents: fileNameFormatter(item.file), title: item.file },
+                { contents: item.line?.toString() || "*" },
+                { contents: item.column?.toString() || "*" },
+                { contents: item.hash || "*" }
+              )
+            )
+          )
+        );
+      case "status":
+        return renderSet(
+          f.states,
+          f.negate ? "Not in State" : "In State",
+          (state, _) => buttonDisabled(state, ""),
+          (_) => {}
+        );
+      case "tag":
+        return renderSet(
+          f.tags,
+          f.negate ? "Does Not Have Tag" : "Has Tag",
+          (tag, _) => buttonDisabled(tag, ""),
+          (_) => {}
+        );
+      case "tag-regex":
+        return tile(
+          [],
+          (f.negate ? "Matches " : "Does Not Match ") +
+            (f.matchCase
+              ? "Case-Sensitive Regular"
+              : "Case-Insensitive Regular") +
+            " Expression on Tags",
+          br(),
+          preformatted(f.pattern)
+        );
+      case "text":
+        return tile(
+          [],
+          (f.negate ? "Matches " : "Does Not Match ") +
+            (f.matchCase ? "Case-Sensitive" : "Case-Insensitive") +
+            " Text Search",
+          br(),
+          preformatted(f.text)
+        );
+      case "type":
+        return renderSet(
+          f.types,
+          f.negate ? "Is Not Action Type" : "Is Action Type",
+          (type, _) => buttonDisabled(type, ""),
+          (_) => {}
+        );
+
+      default:
+        return tile([], "Unknown filter.");
+    }
+  });
+}
+
+function renderQuery(
   query: BasicQuery,
   filenameFormatter: FilenameFormatter,
   update: (query: BasicQuery) => void
@@ -1637,7 +1776,7 @@ function searchBasic(
     (query: BasicQuery) =>
       tile(
         ["filters"],
-        renderFilters(query, filenameFormatter, (modification) => {
+        renderQuery(query, filenameFormatter, (modification) => {
           current = modification;
           searchModel.statusChanged(modification);
         })
