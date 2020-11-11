@@ -337,7 +337,7 @@ export function paginatedRefreshable<I, O>(
         Math.floor(result.offset / pageLength),
         (index: number) => {
           if (current != null) {
-            outputModel.statusChanged([current, index]);
+            outputModel.statusChanged([current, index * pageLength]);
           }
         }
       );
@@ -359,8 +359,8 @@ export function paginatedRefreshable<I, O>(
               .then((data: any) => data as O)
         )
       ),
-      ([request, page]: [I, number]) =>
-        [request, makeRequest(request, page, 25)] as [I, RequestInit]
+      ([request, offset]: [I, number]) =>
+        [request, makeRequest(request, offset, pageLength)] as [I, RequestInit]
     )
   );
   return {
