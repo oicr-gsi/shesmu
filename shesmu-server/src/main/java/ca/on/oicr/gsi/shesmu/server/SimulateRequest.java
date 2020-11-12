@@ -251,6 +251,24 @@ public class SimulateRequest {
     }
   }
 
+  private static Imyhat convertType(JsonNode type, Consumer<String> errorHandler) {
+    switch (type.getNodeType()) {
+      case OBJECT:
+        return PackWdlVariables.create(
+                WdlInputType.of(
+                    (ObjectNode) type,
+                    false,
+                    (line, column, errorMessage) ->
+                        errorHandler.accept(
+                            String.format("%d:%d: %s", line, column, errorMessage))))
+            .second();
+      case STRING:
+        return Imyhat.parse(type.asText());
+      default:
+        return Imyhat.BAD;
+    }
+  }
+
   private static final Type A_FAKE_ACTION_TYPE = Type.getType(FakeAction.class);
   private static final Type A_FAKE_REFILLER_TYPE = Type.getType(FakeRefiller.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
@@ -276,33 +294,19 @@ public class SimulateRequest {
   private static final Method PACK_JSON_OBJECT__CTOR =
       new Method("<init>", Type.VOID_TYPE, new Type[] {A_OBJECT_NODE_TYPE, A_STRING_TYPE});
   private static final ThreadLocal<ObjectNode> RESULTS = new ThreadLocal<>();
-
-  private static Imyhat convertType(JsonNode type, Consumer<String> errorHandler) {
-    switch (type.getNodeType()) {
-      case OBJECT:
-        return PackWdlVariables.create(
-                WdlInputType.of(
-                    (ObjectNode) type,
-                    false,
-                    (line, column, errorMessage) ->
-                        errorHandler.accept(
-                            String.format("%d:%d: %s", line, column, errorMessage))))
-            .second();
-      case STRING:
-        return Imyhat.parse(type.asText());
-      default:
-        return Imyhat.BAD;
-    }
-  }
-
   private boolean allowUnused;
   private boolean dryRun;
   private Map<String, Map<String, FakeActionParameter>> fakeActions = Collections.emptyMap();
+  private Map<String, Map<String, Imyhat>> fakeRefillers = Collections.emptyMap();
   private boolean readStale;
   private String script;
 
   public Map<String, Map<String, FakeActionParameter>> getFakeActions() {
     return fakeActions;
+  }
+
+  public Map<String, Map<String, Imyhat>> getFakeRefillers() {
+    return fakeRefillers;
   }
 
   public String getScript() {
@@ -390,15 +394,34 @@ public class SimulateRequest {
 
                 @Override
                 public Stream<RefillerDefinition> refillers() {
-                  return definitionRepository
-                      .refillers()
-                      .map(
-                          refiller ->
-                              new FakeRefillerDefinition(
-                                  refiller.name(),
-                                  refiller.description(),
-                                  null,
-                                  refiller.parameters().map(JsonRefillerParameterDefinition::new)));
+                  return Stream.concat(
+                      definitionRepository
+                          .refillers()
+                          .map(
+                              refiller ->
+                                  new FakeRefillerDefinition(
+                                      refiller.name(),
+                                      refiller.description(),
+                                      null,
+                                      refiller
+                                          .parameters()
+                                          .map(JsonRefillerParameterDefinition::new))),
+                      fakeRefillers
+                          .entrySet()
+                          .stream()
+                          .map(
+                              e ->
+                                  new FakeRefillerDefinition(
+                                      e.getKey(),
+                                      "Fake refiller",
+                                      null,
+                                      e.getValue()
+                                          .entrySet()
+                                          .stream()
+                                          .map(
+                                              p ->
+                                                  new JsonRefillerParameterDefinition(
+                                                      p.getKey(), p.getValue())))));
                 }
 
                 @Override
@@ -710,6 +733,10 @@ public class SimulateRequest {
 
   public void setFakeActions(Map<String, Map<String, FakeActionParameter>> fakeActions) {
     this.fakeActions = fakeActions;
+  }
+
+  public void setFakeRefillers(Map<String, Map<String, Imyhat>> fakeRefillers) {
+    this.fakeRefillers = fakeRefillers;
   }
 
   public void setReadStale(boolean readStale) {

@@ -48,10 +48,12 @@ import {
 import {
   MutableStore,
   combineModels,
+  countIterable,
   formatTimeSpan,
   mapModel,
   matchKeywordInArbitraryData,
   mutableStoreWatcher,
+  reducingModel,
   validIdentifier,
 } from "./util.js";
 import { specialImports } from "./actions.js";
@@ -122,6 +124,8 @@ export interface FakeActionDefinition {
 export type FakeActionParameters = {
   [name: string]: { type: TypeInfo; required: boolean };
 };
+
+export type FakeRefillerParameters = { [parameter: string]: string };
 /**
  * A record produced by a refiller in simulation
  */
@@ -166,6 +170,7 @@ interface SimulatedOlive {
 export interface SimulationRequest {
   allowUnused: boolean;
   fakeActions: { [name: string]: FakeActionParameters };
+  fakeRefillers: { [name: string]: FakeRefillerParameters };
   dryRun: boolean;
   readStale: boolean;
   script: string;
@@ -232,6 +237,52 @@ async function importAction(
   }
   dialog(() => "Cannot identify uploaded action format. Sorry.");
 }
+async function importRefiller(
+  store: MutableStore<string, FakeRefillerParameters>,
+  name: string | null,
+  data: string
+): Promise<void> {
+  try {
+    const body = JSON.parse(data);
+    if (typeof body == "object") {
+      for (const name of Object.keys(body)) {
+        if (!validIdentifier.test(name)) {
+          dialog(
+            () => "Refiller parameter ${name} isn't a valid Shesmu identifier."
+          );
+        }
+        body[name] = await fetchAsPromise("type", {
+          value: JSON.stringify(body[name]),
+          format: "shesmu::json_descriptor",
+        }).then((v) => v.descriptor);
+      }
+      if (name) {
+        store.set(name, body);
+      } else {
+        dialog((close) => {
+          const newName = inputText();
+          return [
+            "Save action as: ",
+            newName.ui,
+            br(),
+            button("Add", "Save to fake action collection.", () => {
+              if (validIdentifier.test(newName.value)) {
+                store.set(newName.value, body);
+                close();
+              } else {
+                dialog(() => "This name isn't a valid Shesmu identifier.");
+              }
+            }),
+          ];
+        });
+      }
+    } else {
+      dialog(() => "Refiller is missing valid name and parameters");
+    }
+  } catch (e) {
+    dialog(() => "Refiller is not valid JSON.");
+  }
+}
 
 export function initialiseSimulationDashboard(
   ace: AceAjax.Ace,
@@ -245,6 +296,10 @@ export function initialiseSimulationDashboard(
   let fakeActionDefinitions: MutableStore<
     string,
     FakeActionParameters
+  > = new Map();
+  let fakeRefillerDefinitions: MutableStore<
+    string,
+    { [parameter: string]: string }
   > = new Map();
 
   const { ui: fakeActionsUi, model: fakeActionsModel } = singleState(
@@ -324,27 +379,85 @@ export function initialiseSimulationDashboard(
         ]
       )
   );
+  const { ui: fakeRefillersUi, model: fakeRefillersModel } = singleState(
+    (items: Iterable<[string, FakeRefillerParameters]>) =>
+      table(
+        Array.from(items),
+        ["Name", ([name, _declaration]) => name],
+        [
+          "",
+          ([name, parameters]) => [
+            buttonAccessory(
+              [{ type: "icon", icon: "download" }, "Download"],
+              "Download refiller definition.",
+              () =>
+                saveFile(
+                  JSON.stringify(parameters),
+                  "application/json",
+                  name + ".refillerdef"
+                )
+            ),
+            buttonAccessory(
+              [{ type: "icon", icon: "pencil" }, "Rename"],
+              "Rename refiller definition.",
+              () =>
+                dialog((close) => {
+                  const rename = inputText(name);
+                  return [
+                    "Rename refiller to: ",
+                    rename.ui,
+                    br(),
+                    button("Rename", "Rename refiller.", () => {
+                      if (validIdentifier.test(rename.value)) {
+                        close();
+                        fakeRefillerDefinitions.delete(name);
+                        fakeRefillerDefinitions.set(rename.value, parameters);
+                      } else {
+                        butter(
+                          3000,
+                          "I know that seems like a cool name, but it's not a valid Shesmu identifier (letters, numbers, and underscore, starting with a lower case letter)."
+                        );
+                      }
+                    }),
+                  ];
+                })
+            ),
+            buttonAccessory(
+              [{ type: "icon", icon: "trash" }, "Delete"],
+              "Delete refiller definition.",
+              () => fakeRefillerDefinitions.delete(name)
+            ),
+          ],
+        ]
+      )
+  );
+
   const spot = spotCounter((c) => {
     switch (c) {
       case 0:
-        return "No local action defintions";
+        return "No local defintions";
       case 1:
-        return "One local action defintion.";
+        return "One local defintion.";
       default:
-        return `${c} local action definitions`;
+        return `${c} local definitions`;
     }
   });
+  const [actionSpotModel, refillerSpotModel] = reducingModel(
+    spot.model,
+    (accumulator: number, value: number | null) =>
+      value == null ? accumulator : value + accumulator,
+    0,
+    2
+  );
   fakeActionDefinitions = mutableStoreWatcher(
     mutableLocalStore<FakeActionParameters>("shesmu_fake_actions"),
+    combineModels(fakeActionsModel, mapModel(actionSpotModel, countIterable))
+  );
+  fakeRefillerDefinitions = mutableStoreWatcher(
+    mutableLocalStore<FakeRefillerParameters>("shesmu_fake_refillers"),
     combineModels(
-      fakeActionsModel,
-      mapModel(spot.model, (fakeActions) => {
-        let c = 0;
-        for (const _fa of fakeActions) {
-          c++;
-        }
-        return c;
-      })
+      fakeRefillersModel,
+      mapModel(refillerSpotModel, countIterable)
     )
   );
   const script = document.createElement("DIV");
@@ -442,6 +555,16 @@ export function initialiseSimulationDashboard(
         ),
         br(),
         fakeActionsUi,
+        br(),
+        button(
+          [{ type: "icon", icon: "upload" }, "Import Refiller"],
+          "Uploads a file containing refiller.",
+          () =>
+            loadFile((name, data) =>
+              importRefiller(fakeRefillerDefinitions, name.split(".")[0], data)
+            )
+        ),
+        fakeRefillersUi,
       ],
     }
   );
@@ -759,6 +882,7 @@ export function initialiseSimulationDashboard(
     return {
       allowUnused: allowUnused.get(),
       fakeActions: Object.fromEntries(fakeActionDefinitions),
+      fakeRefillers: Object.fromEntries(fakeRefillerDefinitions),
       dryRun: false,
       readStale: readStale.get(),
       script: request,
@@ -908,6 +1032,7 @@ export function initialiseSimulationDashboard(
       fetchAsPromise("simulate", {
         allowUnused: false,
         fakeActions: Object.fromEntries(fakeActionDefinitions),
+        fakeRefillers: Object.fromEntries(fakeRefillerDefinitions),
         dryRun: true,
         readStale: true,
         script: editor.getValue(),
