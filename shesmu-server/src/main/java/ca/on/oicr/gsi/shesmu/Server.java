@@ -1924,6 +1924,12 @@ public final class Server implements ServerConfig, ActionServices {
               decodeBody = false;
             }
           }
+          final String typeFormats =
+              RuntimeSupport.MAPPER.writeValueAsString(
+                  typeParsers
+                      .values()
+                      .stream()
+                      .collect(Collectors.toMap(TypeParser::format, TypeParser::description)));
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
@@ -1948,8 +1954,8 @@ public final class Server implements ServerConfig, ActionServices {
                                 + "} from \"./simulation.js\";"
                                 + "const output = document.getElementById(\"outputContainer\");"
                                 + "const sound = document.getElementById(\"sound\");"
-                                + "initialiseSimulationDashboard(ace, output, sound, %s, %s, %s);",
-                            scriptName, scriptBody, decodeBody)));
+                                + "initialiseSimulationDashboard(ace, output, sound, %s, %s, %s, %s);",
+                            scriptName, scriptBody, decodeBody, typeFormats)));
               }
 
               @Override
