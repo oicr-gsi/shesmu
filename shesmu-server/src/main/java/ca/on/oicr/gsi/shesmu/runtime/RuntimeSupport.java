@@ -8,7 +8,9 @@ import ca.on.oicr.gsi.shesmu.plugin.grouper.Grouper;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.Subgroup;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
+import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -260,6 +262,15 @@ public final class RuntimeSupport {
     }
 
     return joins.stream().map(p -> joiner.apply(inputs.get(p.first()), inners.get(p.second())));
+  }
+
+  @RuntimeInterop
+  public static CallSite jsonBootstrap(
+      MethodHandles.Lookup lookup, String descriptor, MethodType type, String json)
+      throws JsonProcessingException {
+    final Imyhat imyhat = Imyhat.parse(descriptor);
+    final Object value = imyhat.apply(new UnpackJson(MAPPER.readTree(json)));
+    return new ConstantCallSite(MethodHandles.constant(imyhat.javaType(), value).asType(type));
   }
 
   @RuntimeInterop

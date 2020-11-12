@@ -1,5 +1,7 @@
 import { Alert, alertNavigator, AlertFilter } from "./alert.js";
 import { infoForProduces, OliveType } from "./olive.js";
+import { parseDescriptor } from "./definitions.js";
+import * as valueParser from "./parser.js";
 import {
   loadFile,
   locallyStored,
@@ -10,6 +12,7 @@ import {
   saveClipboardJson,
   saveFile,
   fetchAsPromise,
+  fetchJsonWithBusyDialog,
 } from "./io.js";
 import {
   Tab,
@@ -62,6 +65,7 @@ import {
   compressToEncodedURIComponent,
   decompressFromEncodedURIComponent,
 } from "./lz-string.js";
+
 /**
  * An exported definition from a simulated script
  */
@@ -125,6 +129,10 @@ export type FakeActionParameters = {
   [name: string]: { type: TypeInfo; required: boolean };
 };
 
+export type FakeConstant = {
+  type: string;
+  value: any;
+};
 export type FakeRefillerParameters = { [parameter: string]: string };
 /**
  * A record produced by a refiller in simulation
@@ -170,6 +178,7 @@ interface SimulatedOlive {
 export interface SimulationRequest {
   allowUnused: boolean;
   fakeActions: { [name: string]: FakeActionParameters };
+  fakeConstants: { [name: string]: FakeConstant };
   fakeRefillers: { [name: string]: FakeRefillerParameters };
   dryRun: boolean;
   readStale: boolean;
@@ -588,13 +597,15 @@ export function initialiseSimulationDashboard(
   completeSound: HTMLAudioElement,
   scriptName: string | null,
   scriptBody: string | null,
-  decodeBody: boolean
+  decodeBody: boolean,
+  typeFormats: { [format: string]: string }
 ) {
   let fileName = scriptName || "unknown.shesmu";
   let fakeActionDefinitions: MutableStore<
     string,
     FakeActionParameters
   > = new Map();
+  let fakeConstantDefinitions: MutableStore<string, FakeConstant> = new Map();
   let fakeRefillerDefinitions: MutableStore<
     string,
     { [parameter: string]: string }
@@ -677,6 +688,30 @@ export function initialiseSimulationDashboard(
         ]
       )
   );
+  const {
+    ui: fakeConstantsUi,
+    model: fakeConstantsModel,
+  } = singleState((items: Iterable<[string, FakeConstant]>) =>
+    table(
+      Array.from(items),
+      ["Name", ([name, _declaration]) => name],
+      [
+        "Value",
+        ([_name, declaration]) =>
+          preformatted(JSON.stringify(declaration.value, null, 2)),
+      ],
+      [
+        "",
+        ([name, _declaration]) => [
+          buttonAccessory(
+            [{ type: "icon", icon: "trash" }, "Delete"],
+            "Delete constant definition.",
+            () => fakeConstantDefinitions.delete(name)
+          ),
+        ],
+      ]
+    )
+  );
   const { ui: fakeRefillersUi, model: fakeRefillersModel } = singleState(
     (items: Iterable<[string, FakeRefillerParameters]>) =>
       table(
@@ -740,16 +775,23 @@ export function initialiseSimulationDashboard(
         return `${c} local definitions`;
     }
   });
-  const [actionSpotModel, refillerSpotModel] = reducingModel(
+  const [actionSpotModel, constantSpotModel, refillerSpotModel] = reducingModel(
     spot.model,
     (accumulator: number, value: number | null) =>
       value == null ? accumulator : value + accumulator,
     0,
-    2
+    3
   );
   fakeActionDefinitions = mutableStoreWatcher(
     mutableLocalStore<FakeActionParameters>("shesmu_fake_actions"),
     combineModels(fakeActionsModel, mapModel(actionSpotModel, countIterable))
+  );
+  fakeConstantDefinitions = mutableStoreWatcher(
+    mutableLocalStore<FakeConstant>("shesmu_fake_constants"),
+    combineModels(
+      fakeConstantsModel,
+      mapModel(constantSpotModel, countIterable)
+    )
   );
   fakeRefillerDefinitions = mutableStoreWatcher(
     mutableLocalStore<FakeRefillerParameters>("shesmu_fake_refillers"),
@@ -816,6 +858,9 @@ export function initialiseSimulationDashboard(
     {
       name: ["Extra Definitions", spot.ui],
       contents: [
+        { type: "icon", icon: "camera-reels-fill" },
+        { type: "b", contents: "Action Definitions" },
+        br(),
         link("defs", "All actions known"),
         " to the Shesmu server are available in simulation. If testing something that is not yet available or needs to be modified, the action definition can be imported here. Actions here take priority over actions from the server. If exporting actions to ",
         mono(".actnow"),
@@ -854,6 +899,78 @@ export function initialiseSimulationDashboard(
         br(),
         fakeActionsUi,
         br(),
+        { type: "icon", icon: "braces" },
+        { type: "b", contents: "Constants" },
+        br(),
+        button(
+          [{ type: "icon", icon: "plus-square" }, "Add Constant"],
+          "Adds a new constant.",
+          () =>
+            dialog((close) => {
+              const nameInput = inputText();
+              const typeSelector = temporaryState("shesmu::olive");
+              const typeInput = inputText();
+              const valueInput = inputTextArea();
+
+              return [
+                "Name: ",
+                mono("shesmu::simulated::"),
+                nameInput.ui,
+                br(),
+                "Format: ",
+                dropdown(
+                  (format) => typeFormats[format],
+                  (format) => format == typeSelector.get(),
+                  typeSelector,
+                  null,
+                  ...Object.keys(typeFormats)
+                ),
+                br(),
+                "Type: ",
+                typeInput.ui,
+                br(),
+                "Value: ",
+                valueInput.ui,
+                br(),
+                button(
+                  [{ type: "icon", icon: "plus-square" }, "Add Constant"],
+                  "Add constant.",
+                  () => {
+                    if (validIdentifier.test(nameInput.value)) {
+                      fetchJsonWithBusyDialog(
+                        "type",
+                        { value: typeInput.value, format: typeSelector.get() },
+                        (v) => {
+                          const result = parseDescriptor(
+                            v.descriptor,
+                            valueParser
+                          )[0](valueInput.value);
+                          if (result.good) {
+                            fakeConstantDefinitions.set(nameInput.value, {
+                              type: v.descriptor,
+                              value: result.output,
+                            });
+                            close();
+                          } else {
+                            dialog(() => result.error || "Cannot parse value.");
+                          }
+                        }
+                      );
+                    } else {
+                      dialog(
+                        () => "This name isn't a valid Shesmu identifier."
+                      );
+                    }
+                  }
+                ),
+              ];
+            })
+        ),
+        fakeConstantsUi,
+        br(),
+        { type: "icon", icon: "trash-fill" },
+        { type: "b", contents: "Refillers" },
+        br(),
         button(
           [{ type: "icon", icon: "upload" }, "Import Refiller"],
           "Uploads a file containing refiller.",
@@ -888,6 +1005,7 @@ export function initialiseSimulationDashboard(
     return {
       allowUnused: allowUnused.get(),
       fakeActions: Object.fromEntries(fakeActionDefinitions),
+      fakeConstants: Object.fromEntries(fakeConstantDefinitions),
       fakeRefillers: Object.fromEntries(fakeRefillerDefinitions),
       dryRun: false,
       readStale: readStale.get(),
@@ -1038,6 +1156,7 @@ export function initialiseSimulationDashboard(
       fetchAsPromise("simulate", {
         allowUnused: false,
         fakeActions: Object.fromEntries(fakeActionDefinitions),
+        fakeConstants: Object.fromEntries(fakeConstantDefinitions),
         fakeRefillers: Object.fromEntries(fakeRefillerDefinitions),
         dryRun: true,
         readStale: true,

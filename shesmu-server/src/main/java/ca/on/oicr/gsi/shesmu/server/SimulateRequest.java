@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.*;
 import ca.on.oicr.gsi.shesmu.compiler.description.FileTable;
 import ca.on.oicr.gsi.shesmu.core.actions.fake.FakeAction;
+import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
@@ -26,6 +27,7 @@ import ca.on.oicr.gsi.shesmu.plugin.wdl.PackWdlVariables;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
 import ca.on.oicr.gsi.shesmu.runtime.*;
 import ca.on.oicr.gsi.status.ConfigurationSection;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -36,7 +38,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +56,8 @@ import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -93,6 +100,27 @@ public class SimulateRequest {
 
     public void setType(JsonNode type) {
       this.type = type;
+    }
+  }
+
+  public static class FakeConstant {
+    private Imyhat type;
+    private JsonNode value;
+
+    public Imyhat getType() {
+      return type;
+    }
+
+    public JsonNode getValue() {
+      return value;
+    }
+
+    public void setType(Imyhat type) {
+      this.type = type;
+    }
+
+    public void setValue(JsonNode value) {
+      this.value = value;
     }
   }
 
@@ -215,6 +243,44 @@ public class SimulateRequest {
     }
   }
 
+  private static final class JsonConstant extends ConstantDefinition {
+    private static final Handle JSON_BOOTSTRAP =
+        new Handle(
+            Opcodes.H_INVOKESTATIC,
+            Type.getInternalName(RuntimeSupport.class),
+            "jsonBootstrap",
+            Type.getMethodDescriptor(
+                Type.getType(CallSite.class),
+                Type.getType(MethodHandles.Lookup.class),
+                Type.getType(String.class),
+                Type.getType(MethodType.class),
+                Type.getType(String.class)),
+            false);
+    private final String value;
+
+    public JsonConstant(String name, Imyhat type, JsonNode node) {
+      super(
+          String.join(Parser.NAMESPACE_SEPARATOR, "shesmu", "simulated", name),
+          type,
+          "Simulated constant",
+          null);
+      try {
+        this.value = RuntimeSupport.MAPPER.writeValueAsString(node);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public void load(GeneratorAdapter methodGen) {
+      methodGen.invokeDynamic(
+          type().descriptor(),
+          Type.getMethodDescriptor(type().apply(TO_ASM)),
+          JSON_BOOTSTRAP,
+          value);
+    }
+  }
+
   private static final class JsonRefillerParameterDefinition
       implements RefillerParameterDefinition {
 
@@ -297,12 +363,17 @@ public class SimulateRequest {
   private boolean allowUnused;
   private boolean dryRun;
   private Map<String, Map<String, FakeActionParameter>> fakeActions = Collections.emptyMap();
+  private Map<String, FakeConstant> fakeConstants = Collections.emptyMap();
   private Map<String, Map<String, Imyhat>> fakeRefillers = Collections.emptyMap();
   private boolean readStale;
   private String script;
 
   public Map<String, Map<String, FakeActionParameter>> getFakeActions() {
     return fakeActions;
+  }
+
+  public Map<String, FakeConstant> getFakeConstants() {
+    return fakeConstants;
   }
 
   public Map<String, Map<String, Imyhat>> getFakeRefillers() {
@@ -337,6 +408,16 @@ public class SimulateRequest {
           new HotloadingCompiler(
               CompiledGenerator.SOURCES::get,
               new DefinitionRepository() {
+                private final List<ConstantDefinition> jsonConstants =
+                    fakeConstants
+                        .entrySet()
+                        .stream()
+                        .map(
+                            e ->
+                                new JsonConstant(
+                                    e.getKey(), e.getValue().getType(), e.getValue().getValue()))
+                        .collect(Collectors.toList());
+
                 @Override
                 public Stream<ActionDefinition> actions() {
                   return Stream.concat(
@@ -374,7 +455,7 @@ public class SimulateRequest {
 
                 @Override
                 public Stream<ConstantDefinition> constants() {
-                  return definitionRepository.constants();
+                  return Stream.concat(definitionRepository.constants(), jsonConstants.stream());
                 }
 
                 @Override
@@ -733,6 +814,10 @@ public class SimulateRequest {
 
   public void setFakeActions(Map<String, Map<String, FakeActionParameter>> fakeActions) {
     this.fakeActions = fakeActions;
+  }
+
+  public void setFakeConstants(Map<String, FakeConstant> fakeConstants) {
+    this.fakeConstants = fakeConstants;
   }
 
   public void setFakeRefillers(Map<String, Map<String, Imyhat>> fakeRefillers) {
