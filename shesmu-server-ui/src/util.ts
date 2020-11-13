@@ -208,6 +208,16 @@ export function copyLocation(location: SourceLocation): SourceLocation {
     hash: location.hash,
   };
 }
+
+export function countIterable<T>(items: Iterable<T> | null): number {
+  let c = 0;
+  if (items != null) {
+    for (const _fa of items) {
+      c++;
+    }
+  }
+  return c;
+}
 /**
  * Show a duration as a human-friendly approximation
  * @param duration the duration in milliseconds
