@@ -622,6 +622,36 @@ export function promiseTupleModel<T, S>(
     },
   };
 }
+/**
+ * Produce a fixed-length array of models that can be independently updated and their values combined into a single output
+ * @param model the model to update
+ * @param combine a reducing function
+ * @param initial the initial value to set the accumulator to
+ * @param count  the number of models to produce
+ */
+export function reducingModel<T, R>(
+  model: StatefulModel<R>,
+  combine: (value: R, accumulator: T | null) => R,
+  initial: R,
+  count: number
+): StatefulModel<T>[] {
+  let state: (T | null)[] = [];
+  const models: StatefulModel<T>[] = [];
+  for (let i = 0; i < count; i++) {
+    const index = i;
+    state.push(null);
+    models.push({
+      reload: model.reload,
+      statusChanged: (input: T) => {
+        state[index] = input;
+        model.statusChanged(state.reduce(combine, initial));
+      },
+      statusFailed: model.statusFailed,
+      statusWaiting: model.statusWaiting,
+    });
+  }
+  return models;
+}
 
 /**
  * Create a split model that can allow transformation of the input while also updating the underlying data
