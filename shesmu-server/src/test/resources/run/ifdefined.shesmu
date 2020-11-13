@@ -1,0 +1,8 @@
+Version 1;
+Input test;
+
+Olive Run ok With ok =
+  (IfDefined Function std::integer::parse Then True Else False)
+  && (IfDefined Function std::does_not_exist Then False Else True)
+  && (IfDefined std::date::epoch Then True Else False)
+  && (IfDefined std::does_not_exist Then False Else True);

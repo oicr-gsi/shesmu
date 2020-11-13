@@ -236,6 +236,35 @@ public abstract class ExpressionNode implements Renderable {
     INT_SUFFIX.addKeyword("", Parser.just(1));
     COALESCING.addKeyword("Default", binaryOperators("Default", BinaryOperation::optionalCoalesce));
     OUTER.addKeyword(
+        "IfDefined",
+        (p, o) -> {
+          final AtomicReference<List<DefinedCheckNode>> tests = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> trueExpression = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> falseExpression = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .list(tests::set, DefinedCheckNode::parse, ',')
+                  .whitespace()
+                  .keyword("Then")
+                  .whitespace()
+                  .then(ExpressionNode::parse, trueExpression::set)
+                  .whitespace()
+                  .keyword("Else")
+                  .whitespace()
+                  .then(ExpressionNode::parse0, falseExpression::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                new ExpressionNodeIfDefined(
+                    p.line(),
+                    p.column(),
+                    tests.get(),
+                    trueExpression.get(),
+                    falseExpression.get()));
+          }
+          return result;
+        });
+    OUTER.addKeyword(
         "If",
         (p, o) -> {
           final AtomicReference<ExpressionNode> testExpression = new AtomicReference<>();

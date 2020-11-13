@@ -473,6 +473,24 @@ _valueexpr_.
 Evaluates _testexpr_ and if true, returns _trueexpr_; if false, returns _falseexpr_.
 _testexpr_ must be boolean and both _trueexpr_ and _falseexpr_ must have the same type.
 
+- `IfDefined` _tests_ `Then` _trueexpr_ `Else` _falseexpr_
+
+Performs a conditional compilation. The _tests_ are a comma-separated list of
+constant names or `Function` + function names. If all of these items are
+defined, _trueexpr_ is used; otherwise, _falseexpr_ is used. It's important to
+note that, unlike `If`, this is a compile time decisions. Therefore, _trueexpr_
+and _falseexpr_ don't have to return the same type and the unused path can
+depend on constants and functions that are not defined.
+
+This expression is intended for use with the simulator's constants. This allows
+embedding logic like:
+
+     Where IfDefined shesmu::simulator::run
+       Then shesmu::simulator::run == run_name
+       Else True
+
+to allow the simulator to be used as a diagnostic tool.
+
 - `For` _var_ `In` _expr_`:` _modifications..._ _collector_
 
 Takes the elements in a dictionary, list, JSON blob, or optional and process them using the supplied
