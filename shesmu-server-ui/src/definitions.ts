@@ -555,7 +555,7 @@ function prettyKind(kind: Definition["kind"]): string {
   }
 }
 
-function parseDescriptor<T>(
+export function parseDescriptor<T>(
   type: string,
   transformer: TypeTransformer<T>
 ): [T, string] {
