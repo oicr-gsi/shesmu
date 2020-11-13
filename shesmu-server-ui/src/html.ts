@@ -1771,21 +1771,20 @@ export function checkRandomSequence(
   count: number,
   callback: () => void
 ): UIElement {
-  const sequence = new Array(Math.ceil(Math.log2(count)))
-    .fill(0)
-    .map((_x, i, arr) => {
-      if (i == 0) {
-        return Math.floor(Math.random() * 9);
+  const sequence = new Array(Math.ceil(Math.log2(count))).fill(0);
+  for (let i = 0; i < sequence.length; i++) {
+    if (i == 0) {
+      sequence[i] = Math.floor(Math.random() * 9);
+    } else {
+      // Prevent duplicates
+      const result = Math.floor(Math.random() * 8);
+      if (result >= sequence[i - 1]) {
+        sequence[i] = result + 1;
       } else {
-        // Prevent duplicates
-        const result = Math.floor(Math.random() * 8);
-        if (result == arr[i - 1]) {
-          return result + 1;
-        } else {
-          return result;
-        }
+        sequence[i] = result;
       }
-    });
+    }
+  }
   let index = 0;
   let { ui, model } = singleState((index: number) => [
     `Press ${sequence[index] + 1}`,
