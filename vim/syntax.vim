@@ -47,6 +47,7 @@ syn keyword shesmuKeyword From
 syn keyword shesmuKeyword Function
 syn keyword shesmuKeyword Group
 syn keyword shesmuKeyword If
+syn keyword shesmuKeyword IfDefined
 syn keyword shesmuKeyword Import
 syn keyword shesmuKeyword In
 syn keyword shesmuKeyword Input

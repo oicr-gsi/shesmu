@@ -52,6 +52,7 @@ ace.define(
             "Function",
             "Group",
             "If",
+            "IfDefined",
             "Import",
             "In",
             "Input",
