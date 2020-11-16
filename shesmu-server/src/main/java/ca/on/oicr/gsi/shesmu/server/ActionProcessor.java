@@ -1315,7 +1315,7 @@ public final class ActionProcessor
 
       @Override
       protected boolean check(Action action, Information info) {
-        return info.tags.stream().anyMatch(predicate);
+        return Stream.concat(info.tags.stream(), action.tags()).anyMatch(predicate);
       }
     };
   }
