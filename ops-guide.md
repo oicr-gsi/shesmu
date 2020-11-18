@@ -288,6 +288,18 @@ commands can be applied in bulk. A command may require a confirmation before
 executing and some dangerous commands require a puzzle to be solved before
 working in bulk.
 
+| State | Description |
+|-------|-------------|
+| FAILED | The action has been attempted and encounter an error (possibly recoverable). |
+| HALP | The action is in a state where it needs human attention or intervention to correct itself. |
+| INFLIGHT | The action is currently being executed. |
+| QUEUED | The action is waiting for a remote system to start it. |
+| SUCCEEDED | The action is complete. |
+| THROTTLED | The action is being rate limited by a Shesmu throttler or by an over-capacity signal. |
+| UNKNOWN | The actions state is not currently known either due to an exception or not having been attempted. |
+| WAITING | The action cannot be started due to a resource being unavailable. |
+| ZOMBIE | The action is never going to complete. This is not necessarily a failed state; testing or debugging actions should be in this state. |
+
 ### SFTP Delete Actions
 Files can be deleted from disk by the SFTP delete action. To have a human
 review before deleting, the olive can set `automatic = False` and then a
