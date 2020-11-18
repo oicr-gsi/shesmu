@@ -1,5 +1,28 @@
 # Unreleased
 
+# [1.5.0] - 2020-11-18T16:09+00:00
+
+Changes:
+
+* Fix incorrect tag regular expression search; regular expression searching on
+  tags was missing results.
+
+Language Changes:
+
+* Add `IfDefined` syntax; This is a new feature meant to operate with coming
+  new features in the simulation dashboard to permit conditional compilation.
+
+UI Changes:
+
+* Show the base search on the actions page
+* Fix sequence generator for dangerous commands to have no duplicates
+* Fix pager bug where page doesn't advance fully
+
+TSV/Config Changes:
+
+* Export bad records from structured config files (`.jsonconfig`) via
+  Prometheus (`shesmu_structured_config_bad_entry`)
+
 # [1.4.7] - 2020-11-04T19:16+00:00
 
 Language changes:
