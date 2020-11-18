@@ -4,7 +4,7 @@
   <parent>
     <groupId>ca.on.oicr.gsi</groupId>
     <artifactId>shesmu</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </parent>
   <artifactId>shesmu-plugin-ratelimit</artifactId>
   <packaging>jar</packaging>
