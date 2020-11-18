@@ -28,17 +28,9 @@
       </releases>
     </repository>
     <repository>
-      <id>spring-plugins</id>
-      <url>https://repo.spring.io/plugins-release/</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
+      <id>atlassian-repo</id>
+      <name>atlassian public repo</name>
+      <url>https://packages.atlassian.com/mvn/maven-external/</url>
     </repository>
   </repositories>
   <dependencies>
