@@ -291,6 +291,22 @@ public final class OliveBuilder extends BaseOliveBuilder {
                         Stream.of(
                             new LoadableValue() {
                               @Override
+                              public String name() {
+                                return "Olive Services";
+                              }
+
+                              @Override
+                              public Type type() {
+                                return A_OLIVE_SERVICES_TYPE;
+                              }
+
+                              @Override
+                              public void accept(Renderer renderer) {
+                                loadOliveServices(renderer.methodGen());
+                              }
+                            },
+                            new LoadableValue() {
+                              @Override
                               public void accept(Renderer renderer) {
                                 loadAccessor(renderer);
                               }

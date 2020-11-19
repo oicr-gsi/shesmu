@@ -46,7 +46,6 @@ public abstract class RootBuilder {
   private static final Type A_OLIVE_SERVICES_TYPE = Type.getType(OliveServices.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
   private static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
-
   private static final Type A_STRING_TYPE = Type.getType(String.class);
   private static final Method CTOR_CLASS = new Method("<clinit>", VOID_TYPE, new Type[] {});
   private static final Method CTOR_DEFAULT = new Method("<init>", VOID_TYPE, new Type[] {});
@@ -69,7 +68,6 @@ public abstract class RootBuilder {
       new Method("run", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE, A_INPUT_PROVIDER_TYPE});
   private static final Method METHOD_ACTION_GENERATOR__RUN_PREPARE =
       new Method("prepare", VOID_TYPE, new Type[] {A_OLIVE_SERVICES_TYPE});
-
   private static final Method METHOD_ACTION_GENERATOR__TIMEOUT =
       new Method("timeout", INT_TYPE, new Type[] {});
   private static final Method METHOD_BUILD_GAUGE =
@@ -83,7 +81,6 @@ public abstract class RootBuilder {
   private static final Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
   private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
-
   private static final Method METHOD_OLIVE_SERVICES__FIND_DUMPER =
       new Method(
           "findDumper", A_DUMPER_TYPE, new Type[] {A_STRING_TYPE, Type.getType(Imyhat[].class)});
@@ -306,6 +303,20 @@ public abstract class RootBuilder {
   /** Create a new class for this program. */
   protected abstract ClassVisitor createClassVisitor();
 
+  public void createDumper(String dumper, Renderer renderer, Imyhat... types) {
+    renderer.emitNamed("Olive Services");
+    renderer.methodGen().push(dumper);
+    renderer.methodGen().push(types.length);
+    renderer.methodGen().newArray(A_IMYHAT_TYPE);
+    for (int i = 0; i < types.length; i++) {
+      renderer.methodGen().dup();
+      renderer.methodGen().push(i);
+      renderer.methodGen().invokeDynamic(types[i].descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+      renderer.methodGen().arrayStore(A_IMYHAT_TYPE);
+    }
+    renderer.methodGen().invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__FIND_DUMPER);
+  }
+
   public void defineConstant(String name, Type type, Consumer<GeneratorAdapter> loader) {
     final String fieldName = name + "$constant";
     classVisitor
@@ -408,31 +419,6 @@ public abstract class RootBuilder {
 
   public InputFormatDefinition inputFormatDefinition() {
     return inputFormatDefinition;
-  }
-
-  public void loadDumper(String dumper, GeneratorAdapter methodGen, Imyhat... types) {
-    final String fieldName = "Dumper " + dumper;
-    if (!dumpers.contains(fieldName)) {
-      classVisitor
-          .visitField(Opcodes.ACC_PRIVATE, fieldName, A_DUMPER_TYPE.getDescriptor(), null, null)
-          .visitEnd();
-      runPrepare.loadThis();
-      runPrepare.loadArg(0);
-      runPrepare.push(dumper);
-      runPrepare.push(types.length);
-      runPrepare.newArray(A_IMYHAT_TYPE);
-      for (int i = 0; i < types.length; i++) {
-        runPrepare.dup();
-        runPrepare.push(i);
-        runPrepare.invokeDynamic(types[i].descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
-        runPrepare.arrayStore(A_IMYHAT_TYPE);
-      }
-      runPrepare.invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__FIND_DUMPER);
-      runPrepare.putField(selfType, fieldName, A_DUMPER_TYPE);
-      dumpers.add(fieldName);
-    }
-    methodGen.loadThis();
-    methodGen.getField(selfType, fieldName, A_DUMPER_TYPE);
   }
 
   public final void loadGauge(

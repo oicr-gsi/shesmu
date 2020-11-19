@@ -253,6 +253,11 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
   }
 
   @Override
+  public Stream<LoadableValue> requiredCaptures(RootBuilder builder) {
+    return Stream.empty();
+  }
+
+  @Override
   public void render(
       RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     final Set<String> captures = new HashSet<>();
