@@ -2711,7 +2711,13 @@ export function makeUrl<R extends keyof ShesmuLinks>(
     "?" +
     Object.entries(parameters)
       .map(
-        ([key, value]) => key + "=" + encodeURIComponent(JSON.stringify(value))
+        ([key, value]) =>
+          key +
+          "=" +
+          btoa(JSON.stringify(value))
+            .replace(/=/g, "")
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
       )
       .join("&")
   );

@@ -71,6 +71,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.Base64;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -115,6 +116,21 @@ public final class Server implements ServerConfig, ActionServices {
         .orElseGet(Collections::emptyMap);
   }
 
+  private static <T> String handleJsonQueryParameter(
+      Class<T> clazz, String parameter, T defaultValue) throws IOException {
+    if (parameter == null) {
+      return RuntimeSupport.MAPPER.writeValueAsString(defaultValue);
+    }
+    if (BASE64URL_DATA.matcher(parameter).matches()) {
+
+      return RuntimeSupport.MAPPER.writeValueAsString(
+          RuntimeSupport.MAPPER.readValue(Base64.getUrlDecoder().decode(parameter), clazz));
+    } else {
+      return RuntimeSupport.MAPPER.writeValueAsString(
+          RuntimeSupport.MAPPER.readValue(URLDecoder.decode(parameter, "UTF-8"), clazz));
+    }
+  }
+
   public static Runnable inflight(String name) {
     INFLIGHT.putIfAbsent(name, Instant.now());
     inflightOldest.set(
@@ -150,6 +166,8 @@ public final class Server implements ServerConfig, ActionServices {
   }
 
   private static final Pattern AMPERSAND = Pattern.compile("&");
+  private static final Pattern BASE64URL_DATA =
+      Pattern.compile("((?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3}|))");
   private static final Pattern EQUAL = Pattern.compile("=");
   public static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   private static final Map<String, Instant> INFLIGHT = new ConcurrentSkipListMap<>();
@@ -586,20 +604,14 @@ public final class Server implements ServerConfig, ActionServices {
                   oliveJson(olives);
                   olivesJson = RuntimeSupport.MAPPER.writeValueAsString(olives);
 
-                  final String savedString = parameters.get("saved");
-                  if (savedString != null) {
-                    final SourceOliveLocation savedLocation =
-                        RuntimeSupport.MAPPER.readValue(
-                            URLDecoder.decode(savedString, "UTF-8"), SourceOliveLocation.class);
-                    savedJson = RuntimeSupport.MAPPER.writeValueAsString(savedLocation);
-                  }
+                  savedJson =
+                      handleJsonQueryParameter(
+                          SourceOliveLocation.class, parameters.get("saved"), null);
                   userFilters =
-                      RuntimeSupport.MAPPER.writeValueAsString(
-                          RuntimeSupport.MAPPER.readTree(
-                              parameters.getOrDefault("filters", "null")));
+                      handleJsonQueryParameter(JsonNode.class, parameters.get("filters"), null);
                   alertFilters =
-                      RuntimeSupport.MAPPER.writeValueAsString(
-                          RuntimeSupport.MAPPER.readTree(parameters.getOrDefault("alert", "null")));
+                      handleJsonQueryParameter(
+                          AlertFilter[].class, parameters.get("alert"), new AlertFilter[0]);
 
                 } catch (IOException e) {
                   e.printStackTrace();
@@ -655,14 +667,11 @@ public final class Server implements ServerConfig, ActionServices {
                 try {
                   locations = RuntimeSupport.MAPPER.writeValueAsString(activeLocations());
                   savedSearch =
-                      RuntimeSupport.MAPPER.writeValueAsString(
-                          RuntimeSupport.MAPPER.readValue(
-                              parameters.getOrDefault("saved", "\"All Actions\""), String.class));
+                      handleJsonQueryParameter(
+                          String.class, parameters.get("saved"), "All Actions");
                   userFilter =
-                      RuntimeSupport.MAPPER.writeValueAsString(
-                          RuntimeSupport.MAPPER.readTree(
-                              parameters.getOrDefault("filters", "null")));
-                } catch (JsonProcessingException e) {
+                      handleJsonQueryParameter(JsonNode.class, parameters.get("filters"), null);
+                } catch (IOException e) {
                   e.printStackTrace();
                   savedSearch = "null";
                   locations = "[]";
@@ -1241,7 +1250,9 @@ public final class Server implements ServerConfig, ActionServices {
         t -> {
           t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
           t.sendResponseHeaders(200, 0);
-          final String query = getParameters(t).getOrDefault("filters", "[]");
+          final String filters =
+              handleJsonQueryParameter(
+                  AlertFilter[].class, getParameters(t).get("filters"), new AlertFilter[0]);
           try (OutputStream os = t.getResponseBody()) {
             new BasePage(this, false) {
               @Override
@@ -1260,8 +1271,7 @@ public final class Server implements ServerConfig, ActionServices {
                                   + "} from \"./alert.js\";"
                                   + "const output = document.getElementById(\"outputContainer\");"
                                   + "initialiseAlertDashboard(%s, output);",
-                              RuntimeSupport.MAPPER.writeValueAsString(
-                                  RuntimeSupport.MAPPER.readTree(query)))));
+                              filters)));
                 } catch (Exception e) {
                   throw new RuntimeException(e);
                 }
