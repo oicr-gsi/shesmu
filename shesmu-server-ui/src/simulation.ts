@@ -276,6 +276,7 @@ export function initialiseSimulationDashboard(
               () =>
                 saveFile(
                   JSON.stringify({
+                    kind: "action",
                     name: name,
                     parameters: Object.entries(declaration).map(
                       ([paramName, parameter]) => ({
