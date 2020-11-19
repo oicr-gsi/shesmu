@@ -174,6 +174,11 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   }
 
   @Override
+  public Stream<LoadableValue> requiredCaptures(RootBuilder builder) {
+    return Stream.empty();
+  }
+
+  @Override
   public NameDefinitions resolve(
       OliveCompilerServices oliveCompilerServices,
       NameDefinitions defs,

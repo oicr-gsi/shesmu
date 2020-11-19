@@ -25,12 +25,14 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   private List<Imyhat> dumperTypes;
 
   private final int line;
+  private final String selfName;
 
   public OliveClauseNodeBaseDump(int line, int column, String dumper) {
     super();
     this.line = line;
     this.column = column;
     this.dumper = dumper;
+    selfName = String.format("Dumper %d:%d", line, column);
   }
 
   protected abstract Predicate<String> captureVariable();
@@ -95,9 +97,9 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
             "Dump " + dumper,
             line,
             column,
-            oliveBuilder
-                .loadableValues()
-                .filter(v -> shouldCapture.test(v.name()))
+            Stream.concat(
+                    requiredCaptures(builder),
+                    oliveBuilder.loadableValues().filter(v -> shouldCapture.test(v.name())))
                 .toArray(LoadableValue[]::new));
     renderer.methodGen().visitCode();
     render(builder, renderer);
@@ -108,10 +110,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
 
   @Override
   public final void render(RootBuilder builder, Renderer renderer) {
-    builder.loadDumper(
-        dumper,
-        renderer.methodGen(),
-        IntStream.range(0, columnCount()).mapToObj(this::columnType).toArray(Imyhat[]::new));
+    renderer.emitNamed(selfName);
     renderer.methodGen().push(columnCount());
     renderer.methodGen().newArray(A_OBJECT_TYPE);
     for (int it = 0; it < columnCount(); it++) {
@@ -125,6 +124,32 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   }
 
   protected abstract void renderColumn(int index, Renderer renderer);
+
+  @Override
+  public final Stream<LoadableValue> requiredCaptures(RootBuilder builder) {
+    return Stream.of(
+        new LoadableValue() {
+          @Override
+          public void accept(Renderer renderer) {
+            builder.createDumper(
+                dumper,
+                renderer,
+                IntStream.range(0, columnCount())
+                    .mapToObj(OliveClauseNodeBaseDump.this::columnType)
+                    .toArray(Imyhat[]::new));
+          }
+
+          @Override
+          public String name() {
+            return selfName;
+          }
+
+          @Override
+          public Type type() {
+            return A_DUMPER_TYPE;
+          }
+        });
+  }
 
   @Override
   public final boolean resolveDefinitions(

@@ -45,6 +45,8 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
     }
   }
 
+  public static final LoadableValue OLIVE_SERVICES_LOADABLE_VALUE =
+      new ParameterLoadableValue(1, "Olive Services", A_OLIVE_SERVICES_TYPE);
   public static final LoadableValue ACTION_NAME_LOADABLE_VALUE =
       new ParameterLoadableValue(3, ACTION_NAME, A_OPTIONAL_TYPE);
   public static final LoadableValue SIGNER_ACCESSOR_LOADABLE_VALUE =
@@ -184,6 +186,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
                 parameters.stream(),
                 Stream.of(
                     ACTION_NAME_LOADABLE_VALUE,
+                    OLIVE_SERVICES_LOADABLE_VALUE,
                     SIGNER_ACCESSOR_LOADABLE_VALUE,
                     SOURCE_LOCATION_FILE_LOADABLE_VALUE,
                     SOURCE_LOCATION_LINE_LOADABLE_VALUE,
@@ -237,6 +240,7 @@ public final class OliveDefineBuilder extends BaseOliveBuilder
     return Stream.of(
             Stream.of(
                 ACTION_NAME_LOADABLE_VALUE,
+                OLIVE_SERVICES_LOADABLE_VALUE,
                 SIGNER_ACCESSOR_LOADABLE_VALUE,
                 SOURCE_LOCATION_FILE_LOADABLE_VALUE,
                 SOURCE_LOCATION_LINE_LOADABLE_VALUE,

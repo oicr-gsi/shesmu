@@ -100,7 +100,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
         oliveBuilder.filter(
             line,
             column,
-            Stream.concat(
+            Stream.of(
                     Stream.of(
                         new LoadableValue() {
 
@@ -119,7 +119,9 @@ public class OliveClauseNodeReject extends OliveClauseNode {
                             return A_OLIVE_SERVICES_TYPE;
                           }
                         }),
+                    handlers.stream().flatMap(handler -> handler.requiredCaptures(builder)),
                     oliveBuilder.loadableValues().filter(v -> freeVariables.contains(v.name())))
+                .flatMap(Function.identity())
                 .toArray(LoadableValue[]::new));
 
     renderer.methodGen().visitCode();
