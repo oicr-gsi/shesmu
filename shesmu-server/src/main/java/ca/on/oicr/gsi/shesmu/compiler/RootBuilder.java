@@ -92,6 +92,43 @@ public abstract class RootBuilder {
   private static final Method METHOD_OPTIONAL__OF =
       new Method("of", A_OPTIONAL_TYPE, new Type[] {A_OBJECT_TYPE});
 
+  public static LoadableValue actionNameSpecial(String actionName) {
+    return actionName == null
+        ? new LoadableValue() {
+          @Override
+          public void accept(Renderer renderer) {
+            renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);
+          }
+
+          @Override
+          public String name() {
+            return ACTION_NAME;
+          }
+
+          @Override
+          public Type type() {
+            return A_OPTIONAL_TYPE;
+          }
+        }
+        : new LoadableValue() {
+          @Override
+          public void accept(Renderer renderer) {
+            renderer.methodGen().push(actionName);
+            renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
+          }
+
+          @Override
+          public String name() {
+            return ACTION_NAME;
+          }
+
+          @Override
+          public Type type() {
+            return A_OPTIONAL_TYPE;
+          }
+        };
+  }
+
   public static void invalidSignerEmitter(SignatureDefinition renderer, Renderer name) {
     throw new IllegalArgumentException(
         String.format("Signature variable %s not defined in root context.", name));
@@ -124,8 +161,6 @@ public abstract class RootBuilder {
 
   final GeneratorAdapter classInitMethod;
   final ClassVisitor classVisitor;
-  final String hash;
-
   private final Supplier<Stream<ConstantDefinition>> constants;
 
   private final GeneratorAdapter ctor;
@@ -133,18 +168,13 @@ public abstract class RootBuilder {
   private final Set<String> dumpers = new HashSet<>();
 
   private final Set<String> gauges = new HashSet<>();
-
+  final String hash;
   private final InputFormatDefinition inputFormatDefinition;
-
   private final String path;
-
   private final GeneratorAdapter runMethod;
-
   private final GeneratorAdapter runPrepare;
-
   private final Label runStartLabel;
   private final Type selfType;
-
   private final Supplier<Stream<SignatureDefinition>> signatures;
   private final Set<String> usedFormats = new HashSet<>();
   private final List<LoadableValue> userDefinedConstants = new ArrayList<>();
@@ -445,43 +475,6 @@ public abstract class RootBuilder {
         Stream.of(constants(allowUserDefined), Stream.of(actionNameSpecial(actionName)), captures)
             .flatMap(Function.identity()),
         RootBuilder::invalidSignerEmitter);
-  }
-
-  public static LoadableValue actionNameSpecial(String actionName) {
-    return actionName == null
-        ? new LoadableValue() {
-          @Override
-          public void accept(Renderer renderer) {
-            renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);
-          }
-
-          @Override
-          public String name() {
-            return ACTION_NAME;
-          }
-
-          @Override
-          public Type type() {
-            return A_OPTIONAL_TYPE;
-          }
-        }
-        : new LoadableValue() {
-          @Override
-          public void accept(Renderer renderer) {
-            renderer.methodGen().push(actionName);
-            renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF);
-          }
-
-          @Override
-          public String name() {
-            return ACTION_NAME;
-          }
-
-          @Override
-          public Type type() {
-            return A_OPTIONAL_TYPE;
-          }
-        };
   }
 
   /** Get the type of the class being generated */
