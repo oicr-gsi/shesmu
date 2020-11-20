@@ -284,6 +284,304 @@ async function importRefiller(
   }
 }
 
+export function renderResponse(response: SimulationResponse | null): Tab[] {
+  const tabList: Tab[] = [];
+  if (response) {
+    if (response.alerts?.length) {
+      const { main, toolbar } = alertNavigator(
+        response.alerts,
+        () => [],
+        temporaryState<AlertFilter<RegExp>[]>([]),
+        [
+          ["Line", (l: SimulatedLocation) => l.line.toString()],
+          ["Column", (l: SimulatedLocation) => l.column.toString()],
+        ]
+      );
+      tabList.push({
+        name: "Alerts",
+        contents: [toolbar, br(), main],
+      });
+    }
+    if (response.actions?.length) {
+      tabList.push({
+        name: "Actions",
+        contents: renderActions(response.actions),
+      });
+    }
+    if (response.olives?.length) {
+      type SimulatedOliveRenderer = (olive: SimulatedOlive) => UIElement;
+      const oliveState = multipaneState<
+        SimulatedOlive,
+        {
+          actions: SimulatedOliveRenderer;
+          alerts: SimulatedOliveRenderer;
+          overview: SimulatedOliveRenderer;
+          dataflow: SimulatedOliveRenderer;
+        }
+      >("overview", {
+        actions: (olive: SimulatedOlive) => {
+          const oliveActions = (response.actions || []).filter((a) =>
+            a.locations.some(
+              (l) => l.line == olive.line && l.column == l.column
+            )
+          );
+          return oliveActions.length
+            ? renderActions(oliveActions)
+            : text("No actions found.");
+        },
+        alerts: (olive: SimulatedOlive) => {
+          const oliveAlerts = (response.alerts || []).filter((a) =>
+            a.locations.some(
+              (l) => l.line == olive.line && l.column == l.column
+            )
+          );
+          if (oliveAlerts.length) {
+            const { main, toolbar } = alertNavigator(
+              oliveAlerts,
+              () => [],
+              temporaryState<AlertFilter<RegExp>[]>([]),
+              [
+                ["Line", (l: SimulatedLocation) => l.line.toString()],
+                ["Column", (l: SimulatedLocation) => l.column.toString()],
+              ]
+            );
+            return [toolbar, br(), main];
+          } else {
+            return text("No alerts found.");
+          }
+        },
+        overview: (olive: SimulatedOlive) =>
+          table(
+            Object.entries({
+              Runtime: formatTimeSpan(olive.duration / 1e6),
+            }),
+            ["Information", (x) => x[0]],
+            ["Value", (x) => x[1]]
+          ),
+        dataflow: (olive: SimulatedOlive) => svgFromStr(olive.diagram),
+      });
+      const oliveSelection = dropdown(
+        (olive) => [
+          { type: "icon", icon: infoForProduces(olive.produces).icon },
+          " ",
+          italic(olive.syntax),
+          " – ",
+          olive.description || "No description.",
+        ],
+        null,
+        oliveState.model,
+        null,
+        ...response.olives
+      );
+      const oliveTabs = tabs(
+        {
+          name: "Overview",
+          contents: oliveState.components.overview,
+        },
+        { name: "Actions", contents: oliveState.components.actions },
+        {
+          name: "Alerts",
+          contents: oliveState.components.alerts,
+        },
+        { name: "Dataflow", contents: oliveState.components.dataflow }
+      );
+      tabList.push({
+        name: "Olive",
+        contents: [oliveSelection, br(), oliveTabs],
+      });
+    }
+    if (response.exports?.length) {
+      tabList.push({
+        name: "Exports",
+        contents: response.exports.map((ex) => {
+          switch (ex.type) {
+            case "constant":
+              return [
+                header(ex.name),
+                table(
+                  [["Returns", ex.returns]],
+                  ["Position", (x) => x[0]],
+                  ["Type", (x) => x[0]]
+                ),
+              ];
+            case "define":
+              return [
+                header(ex.name),
+                table(
+                  [
+                    ["Input Format", ex.inputFormat],
+                    ["Should Sign After", ex.isRoot ? "Yes" : "No"],
+                  ]
+                    .concat(
+                      ex.parameters.map((type, index) => [
+                        `Parameter ${index + 1}`,
+                        type,
+                      ])
+                    )
+                    .concat(
+                      Object.entries(ex.output).map(([name, type]) => [
+                        `Output Variable ${name}`,
+                        type,
+                      ])
+                    ),
+                  ["Position", (x) => x[0]],
+                  ["Type", (x) => x[0]]
+                ),
+              ];
+
+            case "function":
+              return [
+                header(ex.name),
+                table(
+                  [["Return", ex.returns]].concat(
+                    ex.parameters.map((type, index) => [
+                      `Parameter ${index + 1}`,
+                      type,
+                    ])
+                  ),
+                  ["Position", (x) => x[0]],
+                  ["Type", (x) => x[0]]
+                ),
+              ];
+            default:
+              return blank();
+          }
+        }),
+      });
+    }
+    if (response.refillers && Object.keys(response.refillers).length) {
+      const refillerState = singleState(
+        ([name, entries]: [string, RefillerRecord[]]) =>
+          entries.length > 0
+            ? renderJsonTable<RefillerRecord>(
+                name + ".refiller.json",
+                entries,
+                ...Object.keys(entries[0])
+                  .sort((a, b) => a.localeCompare(b))
+                  .map(
+                    (name) =>
+                      [name, (row: RefillerRecord) => row[name]] as [
+                        string,
+                        (row: RefillerRecord) => any
+                      ]
+                  )
+              )
+            : ["Olive provided no records to ", mono(name), " refiller."]
+      );
+      tabList.push({
+        name: "Refill Output",
+        contents: [
+          dropdown(
+            ([name]) => name,
+            null,
+            refillerState.model,
+            null,
+            ...Object.entries(response.refillers)
+          ),
+          br(),
+          refillerState.ui,
+        ],
+      });
+    }
+    if (response.dumpers && Object.entries(response.dumpers).length) {
+      const dumpState = singleState((input: [string, any[][]] | null) =>
+        input && input[1].length > 0
+          ? renderJsonTable<any[]>(
+              name + ".dump.json",
+              input[1],
+              ...Array.from(input[1][0].keys()).map(
+                (i) =>
+                  [`Column ${i + 1}`, (row) => row[i]] as [
+                    string,
+                    (input: any[]) => any
+                  ]
+              )
+            )
+          : ["Olive provided no records to ", mono(name), " dumper."]
+      );
+      tabList.push({
+        name: "Dumpers",
+        contents: group(
+          dropdown(
+            (input) => (input ? input[0] : blank()),
+            null,
+            dumpState.model,
+            null,
+            ...Object.entries(response.dumpers)
+          ),
+          br(),
+          dumpState.ui
+        ),
+      });
+    }
+    if (response.overloadedInputs?.length) {
+      tabList.push({
+        name: "Overloaded Inputs",
+        contents: [
+          text(
+            "The following input formats are unavailable and prevented the simulation from running:"
+          ),
+          br(),
+          table(response.overloadedInputs, ["Input Format", (x) => x]),
+        ],
+      });
+      butter(
+        3000 + response.overloadedInputs.length * 1000,
+        "Required input formats are unavailable:",
+        response.overloadedInputs.map((s) => [
+          br(),
+          { type: "icon", icon: "cloud-slash" },
+          s,
+        ])
+      );
+    }
+
+    if (response.overloadedServices?.length) {
+      tabList.push({
+        name: "Overloaded Services",
+        contents: [
+          text(
+            "The following services are unavailable and prevented the simulation from running:"
+          ),
+          br(),
+          table(response.overloadedServices, ["Service", (x) => x]),
+        ],
+      });
+      butter(
+        3000 + response.overloadedServices.length * 1000,
+        "Required services are unavailable:",
+        response.overloadedServices.map((s) => [
+          br(),
+          { type: "icon", icon: "wifi-off" },
+          s,
+        ])
+      );
+    }
+    if (response.metrics) {
+      tabList.push({
+        name: "Prometheus Metrics",
+        contents: preformatted(response.metrics),
+      });
+    }
+    if (response.bytecode) {
+      tabList.push({
+        name: "Bytecode",
+        contents: preformatted(response.bytecode),
+      });
+    }
+    if (!response.bytecode || response.exceptionThrown) {
+      // Errors might be present even if the script compiled okay, but if no bytecode was generated, we can be sure it's borked.
+      butter(
+        3000,
+        response.errors.length == 1
+          ? "Unable to simulate due to an error."
+          : `Unable to simulate due to ${response.errors.length} errors.`
+      );
+    }
+  }
+  return tabList;
+}
+
 export function initialiseSimulationDashboard(
   ace: AceAjax.Ace,
   container: HTMLElement,
@@ -571,305 +869,13 @@ export function initialiseSimulationDashboard(
   const dashboardState = mapModel(
     tabbedArea.models[0],
     (response: SimulationResponse | null) => {
-      const tabList: Tab[] = [];
-      if (response) {
-        if (document.visibilityState == "hidden") {
-          completeSound.play();
-        }
-
-        if (response.alerts?.length) {
-          const { main, toolbar } = alertNavigator(
-            response.alerts,
-            () => [],
-            temporaryState<AlertFilter<RegExp>[]>([]),
-            [
-              ["Line", (l: SimulatedLocation) => l.line.toString()],
-              ["Column", (l: SimulatedLocation) => l.column.toString()],
-            ]
-          );
-          tabList.push({
-            name: "Alerts",
-            contents: [toolbar, br(), main],
-          });
-        }
-        if (response.actions?.length) {
-          tabList.push({
-            name: "Actions",
-            contents: renderActions(response.actions),
-          });
-        }
-        if (response.olives?.length) {
-          type SimulatedOliveRenderer = (olive: SimulatedOlive) => UIElement;
-          const oliveState = multipaneState<
-            SimulatedOlive,
-            {
-              actions: SimulatedOliveRenderer;
-              alerts: SimulatedOliveRenderer;
-              overview: SimulatedOliveRenderer;
-              dataflow: SimulatedOliveRenderer;
-            }
-          >("overview", {
-            actions: (olive: SimulatedOlive) => {
-              const oliveActions = (response.actions || []).filter((a) =>
-                a.locations.some(
-                  (l) => l.line == olive.line && l.column == l.column
-                )
-              );
-              return oliveActions.length
-                ? renderActions(oliveActions)
-                : text("No actions found.");
-            },
-            alerts: (olive: SimulatedOlive) => {
-              const oliveAlerts = (response.alerts || []).filter((a) =>
-                a.locations.some(
-                  (l) => l.line == olive.line && l.column == l.column
-                )
-              );
-              if (oliveAlerts.length) {
-                const { main, toolbar } = alertNavigator(
-                  oliveAlerts,
-                  () => [],
-                  temporaryState<AlertFilter<RegExp>[]>([]),
-                  [
-                    ["Line", (l: SimulatedLocation) => l.line.toString()],
-                    ["Column", (l: SimulatedLocation) => l.column.toString()],
-                  ]
-                );
-                return [toolbar, br(), main];
-              } else {
-                return text("No alerts found.");
-              }
-            },
-            overview: (olive: SimulatedOlive) =>
-              table(
-                Object.entries({
-                  Runtime: formatTimeSpan(olive.duration / 1e6),
-                }),
-                ["Information", (x) => x[0]],
-                ["Value", (x) => x[1]]
-              ),
-            dataflow: (olive: SimulatedOlive) => svgFromStr(olive.diagram),
-          });
-          const oliveSelection = dropdown(
-            (olive) => [
-              { type: "icon", icon: infoForProduces(olive.produces).icon },
-              " ",
-              italic(olive.syntax),
-              " – ",
-              olive.description || "No description.",
-            ],
-            null,
-            oliveState.model,
-            null,
-            ...response.olives
-          );
-          const oliveTabs = tabs(
-            {
-              name: "Overview",
-              contents: oliveState.components.overview,
-            },
-            { name: "Actions", contents: oliveState.components.actions },
-            {
-              name: "Alerts",
-              contents: oliveState.components.alerts,
-            },
-            { name: "Dataflow", contents: oliveState.components.dataflow }
-          );
-          tabList.push({
-            name: "Olive",
-            contents: [oliveSelection, br(), oliveTabs],
-          });
-        }
-        if (response.exports?.length) {
-          tabList.push({
-            name: "Exports",
-            contents: response.exports.map((ex) => {
-              switch (ex.type) {
-                case "constant":
-                  return [
-                    header(ex.name),
-                    table(
-                      [["Returns", ex.returns]],
-                      ["Position", (x) => x[0]],
-                      ["Type", (x) => x[0]]
-                    ),
-                  ];
-                case "define":
-                  return [
-                    header(ex.name),
-                    table(
-                      [
-                        ["Input Format", ex.inputFormat],
-                        ["Should Sign After", ex.isRoot ? "Yes" : "No"],
-                      ]
-                        .concat(
-                          ex.parameters.map((type, index) => [
-                            `Parameter ${index + 1}`,
-                            type,
-                          ])
-                        )
-                        .concat(
-                          Object.entries(ex.output).map(([name, type]) => [
-                            `Output Variable ${name}`,
-                            type,
-                          ])
-                        ),
-                      ["Position", (x) => x[0]],
-                      ["Type", (x) => x[0]]
-                    ),
-                  ];
-
-                case "function":
-                  return [
-                    header(ex.name),
-                    table(
-                      [["Return", ex.returns]].concat(
-                        ex.parameters.map((type, index) => [
-                          `Parameter ${index + 1}`,
-                          type,
-                        ])
-                      ),
-                      ["Position", (x) => x[0]],
-                      ["Type", (x) => x[0]]
-                    ),
-                  ];
-                default:
-                  return blank();
-              }
-            }),
-          });
-        }
-        if (response.refillers && Object.keys(response.refillers).length) {
-          const refillerState = singleState(
-            ([name, entries]: [string, RefillerRecord[]]) =>
-              entries.length > 0
-                ? renderJsonTable<RefillerRecord>(
-                    name + ".refiller.json",
-                    entries,
-                    ...Object.keys(entries[0])
-                      .sort((a, b) => a.localeCompare(b))
-                      .map(
-                        (name) =>
-                          [name, (row: RefillerRecord) => row[name]] as [
-                            string,
-                            (row: RefillerRecord) => any
-                          ]
-                      )
-                  )
-                : ["Olive provided no records to ", mono(name), " refiller."]
-          );
-          tabList.push({
-            name: "Refill Output",
-            contents: [
-              dropdown(
-                ([name]) => name,
-                null,
-                refillerState.model,
-                null,
-                ...Object.entries(response.refillers)
-              ),
-              br(),
-              refillerState.ui,
-            ],
-          });
-        }
-        if (response.dumpers && Object.entries(response.dumpers).length) {
-          const dumpState = singleState((input: [string, any[][]] | null) =>
-            input && input[1].length > 0
-              ? renderJsonTable<any[]>(
-                  name + ".dump.json",
-                  input[1],
-                  ...Array.from(input[1][0].keys()).map(
-                    (i) =>
-                      [`Column ${i + 1}`, (row) => row[i]] as [
-                        string,
-                        (input: any[]) => any
-                      ]
-                  )
-                )
-              : ["Olive provided no records to ", mono(name), " dumper."]
-          );
-          tabList.push({
-            name: "Dumpers",
-            contents: group(
-              dropdown(
-                (input) => (input ? input[0] : blank()),
-                null,
-                dumpState.model,
-                null,
-                ...Object.entries(response.dumpers)
-              ),
-              br(),
-              dumpState.ui
-            ),
-          });
-        }
-        if (response.overloadedInputs?.length) {
-          tabList.push({
-            name: "Overloaded Inputs",
-            contents: [
-              text(
-                "The following input formats are unavailable and prevented the simulation from running:"
-              ),
-              br(),
-              table(response.overloadedInputs, ["Input Format", (x) => x]),
-            ],
-          });
-          butter(
-            3000 + response.overloadedInputs.length * 1000,
-            "Required input formats are unavailable:",
-            response.overloadedInputs.map((s) => [
-              br(),
-              { type: "icon", icon: "cloud-slash" },
-              s,
-            ])
-          );
-        }
-
-        if (response.overloadedServices?.length) {
-          tabList.push({
-            name: "Overloaded Services",
-            contents: [
-              text(
-                "The following services are unavailable and prevented the simulation from running:"
-              ),
-              br(),
-              table(response.overloadedServices, ["Service", (x) => x]),
-            ],
-          });
-          butter(
-            3000 + response.overloadedServices.length * 1000,
-            "Required services are unavailable:",
-            response.overloadedServices.map((s) => [
-              br(),
-              { type: "icon", icon: "wifi-off" },
-              s,
-            ])
-          );
-        }
-        if (response.metrics) {
-          tabList.push({
-            name: "Prometheus Metrics",
-            contents: preformatted(response.metrics),
-          });
-        }
-        if (response.bytecode) {
-          tabList.push({
-            name: "Bytecode",
-            contents: preformatted(response.bytecode),
-          });
-        }
-        if (!response.bytecode || response.exceptionThrown) {
-          // Errors might be present even if the script compiled okay, but if no bytecode was generated, we can be sure it's borked.
-          butter(
-            3000,
-            response.errors.length == 1
-              ? "Unable to simulate due to an error."
-              : `Unable to simulate due to ${response.errors.length} errors.`
-          );
-        }
+      if (response && document.visibilityState == "hidden") {
+        completeSound.play();
       }
-      return { tabs: tabList, activate: response?.errors.length === 0 };
+      return {
+        tabs: renderResponse(response),
+        activate: response?.errors.length === 0,
+      };
     }
   );
   const main = refreshable(
