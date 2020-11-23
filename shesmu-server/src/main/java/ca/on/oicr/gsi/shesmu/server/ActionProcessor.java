@@ -47,6 +47,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -777,7 +778,8 @@ public final class ActionProcessor
     final Set<U> columns = input.stream().flatMap(column::extract).collect(Collectors.toSet());
     // Rows and columns which are always present aren't interesting
     rows.removeIf(value -> input.stream().allMatch(e -> row.extract(e).anyMatch(value::equals)));
-    columns.removeIf(value -> input.stream().allMatch(e -> row.extract(e).anyMatch(value::equals)));
+    columns.removeIf(
+        value -> input.stream().allMatch(e -> column.extract(e).anyMatch(value::equals)));
 
     // If there's too little or too much data, just bail.
     if (rows.size() < 2
@@ -993,6 +995,90 @@ public final class ActionProcessor
         buckets[Math.min((int) bin.bucket(min.get(), binWidth, value), buckets.length - 1)]++;
       }
       Arrays.stream(buckets).forEach(counts.putArray(member.name())::add);
+    }
+  }
+
+  @SafeVarargs
+  private final <T, U> void histogramByProperty(
+      ArrayNode output,
+      int count,
+      List<Entry<Action, Information>> input,
+      Property<U> property,
+      Bin<T> bin,
+      BinMember<T>... members) {
+    final List<T> contents =
+        Stream.of(members)
+            .flatMap(
+                member ->
+                    input
+                        .stream()
+                        .flatMap(v -> member.extract(v).map(Stream::of).orElseGet(Stream::empty)))
+            .collect(Collectors.toList());
+    final Optional<T> min = contents.stream().min(bin);
+    final Optional<T> max = contents.stream().max(bin);
+    if (!min.isPresent() || !max.isPresent() || min.get().equals(max.get())) {
+      return;
+    }
+    final Set<U> properties = input.stream().flatMap(property::extract).collect(Collectors.toSet());
+    // Properties which are always present aren't interesting
+    properties.removeIf(
+        value -> input.stream().allMatch(e -> property.extract(e).anyMatch(value::equals)));
+    if (properties.size() < 2) {
+      return;
+    }
+
+    long width = bin.span(min.get(), max.get()) / count;
+    final int bucketsLength;
+    if (width < bin.minWidth()) {
+      // If the buckets are less than a minimum width, use buckets of the minimum width over the
+      // range
+      width = bin.minWidth();
+      bucketsLength = (int) (bin.span(min.get(), max.get()) / bin.minWidth()) + 1;
+    } else {
+      bucketsLength = count;
+    }
+    if (bucketsLength < 2) {
+      return;
+    }
+    final long binWidth = width;
+
+    final ObjectNode node = output.addObject();
+    node.put("type", "histogram-by-property");
+    node.put("property", property.name());
+    properties.stream().map(property::json).forEach(node.putArray("properties")::add);
+    final ArrayNode boundaries = node.putArray("boundaries");
+    for (int i = 0; i < bucketsLength; i++) {
+      boundaries.add(bin.name(min.get(), i * width));
+    }
+    boundaries.add(bin.name(max.get(), 0));
+    final ObjectNode counts = node.putObject("counts");
+    for (final BinMember<T> member : members) {
+      final Map<U, Map<Integer, Long>> counting =
+          input
+              .stream()
+              .flatMap(
+                  v ->
+                      member
+                          .extract(v)
+                          .map(x -> property.extract(v).map(p -> new Pair<>(p, x)))
+                          .orElseGet(Stream::empty))
+              .collect(
+                  Collectors.groupingBy(
+                      Pair::first,
+                      Collectors.groupingBy(
+                          v ->
+                              Math.min(
+                                  (int) bin.bucket(min.get(), binWidth, v.second()),
+                                  bucketsLength - 1),
+                          Collectors.counting())));
+      final ArrayNode memberValues = counts.putArray(member.name());
+      for (final Map.Entry<U, Map<Integer, Long>> entry : counting.entrySet()) {
+        final ObjectNode propertyCount = memberValues.addObject();
+        propertyCount.set("value", property.json(entry.getKey()));
+        IntStream.range(0, bucketsLength)
+            .mapToLong(i -> entry.getValue().getOrDefault(i, 0L))
+            .forEach(propertyCount.putArray("counts")::add);
+      }
     }
   }
 
@@ -1218,6 +1304,13 @@ public final class ActionProcessor
     crosstab(array, actions, TAG, TAG);
     histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
     histogram(array, 100, actions, INSTANT_BIN, EXTERNAL);
+
+    histogramByProperty(
+        array, 50, actions, ACTION_STATE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
+    histogramByProperty(array, 100, actions, ACTION_STATE, INSTANT_BIN, EXTERNAL);
+    histogramByProperty(
+        array, 50, actions, SOURCE_FILE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
+    histogramByProperty(array, 100, actions, SOURCE_FILE, INSTANT_BIN, EXTERNAL);
     return array;
   }
 

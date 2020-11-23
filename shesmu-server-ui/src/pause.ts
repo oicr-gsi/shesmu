@@ -74,7 +74,9 @@ export function initialisePauseDashboard(pauses: Pauses) {
   const actions = actionDisplay([]);
   const stats = actionStats(
     (...limits) => search.addPropertySearch(...limits),
-    (typeName, start, end) => search.addRangeSearch(typeName, start, end),
+    (typeName, start, end, ...limits) =>
+      search.addRangeSearch(typeName, start, end, ...limits),
+    filenameFormatter,
     []
   );
   const search = createSearch(

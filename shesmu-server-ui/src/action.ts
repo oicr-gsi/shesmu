@@ -694,7 +694,9 @@ export function initialiseActionDash(
   );
   const { ui: statsUi, model: statsModel } = actionStats(
     (...limits) => addPropertySearch(...limits),
-    (typeName, start, end) => addRangeSearch(typeName, start, end),
+    (typeName, start, end, ...limits) =>
+      addRangeSearch(typeName, start, end, ...limits),
+    filenameFormatter,
     standardExports.concat(exportSearches)
   );
   const { ui: saveUi, model: saveModel } = singleState(

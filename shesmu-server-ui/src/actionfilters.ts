@@ -713,8 +713,8 @@ export function createSearch(
       return find ? find() : false;
     }, entryBar.ui),
     model: combineModels(baseModel, baseFilters),
-    addRangeSearch: (typeName, start, end) =>
-      search?.addRangeSearch(typeName, start, end),
+    addRangeSearch: (typeName, start, end, ...limits) =>
+      search?.addRangeSearch(typeName, start, end, ...limits),
     addPropertySearch: (...limits) => search?.addPropertySearch(...limits),
   };
 }
@@ -859,6 +859,21 @@ export function nameForBin(name: TimeAgoType | TimeRangeType): string {
       return "External Last Modification Time";
     default:
       return name;
+  }
+}
+
+export function nameForProperty(property: PropertyType): string {
+  switch (property) {
+    case "status":
+      return "Action Status";
+    case "sourcefile":
+      return "Source File";
+    case "tag":
+      return "Tag";
+    case "type":
+      return "Action Type";
+    default:
+      return "Unknown";
   }
 }
 function recomposeFilter(filter: ActionFilter): BasicQuery | null {
@@ -1753,8 +1768,12 @@ function searchAdvanced(
     handles(query: string | BasicQuery): boolean {
       return typeof query == "string";
     },
-    addRangeSearch: (typeName, start, end) => {
-      updateFromClick({ type: typeName, start: start, end: end });
+    addRangeSearch: (typeName, start, end, ...limits) => {
+      updateFromClick(
+        ...filtersForPropertySearch(...limits).concat([
+          { type: typeName, start: start, end: end },
+        ])
+      );
     },
     addPropertySearch: (...limits) => {
       updateFromClick(...filtersForPropertySearch(...limits));
@@ -1904,12 +1923,17 @@ function searchBasic(
     handles(query: string | BasicQuery): boolean {
       return typeof query != "string";
     },
-    addRangeSearch: (typeName, start, end) => {
+    addRangeSearch: (typeName, start, end, ...limits) => {
       current[typeName] = {
         start: start,
         end: end,
       };
-      searchModel.statusChanged({ ...current });
+      const result = updateBasicQueryForPropertySearch(limits, current);
+      if (result instanceof Promise) {
+        promiseModel(synchronizer).statusChanged(result);
+      } else {
+        searchModel.statusChanged(result);
+      }
     },
 
     addPropertySearch: (...limits) => {
