@@ -11,7 +11,11 @@ import {
 import { locallyStored } from "./io.js";
 import { Publisher, pubSubModel } from "./util.js";
 export type Area = "action" | "alert" | "olive" | "pauses" | "simulator";
-export type HotSpot = "stats-crosstab" | "stats-table" | "stats-histogram";
+export type HotSpot =
+  | "stats-crosstab"
+  | "stats-table"
+  | "stats-histogram"
+  | "stats-histogram-by-property";
 /**
  * Describes an individual help message that should appear.
  */
@@ -88,6 +92,15 @@ const tips: (HelpTip | null)[][] = [
         "When a pause is created, it is locked to a particular version of an olive. If the script is modified, the pause will not apply to future olives and no longer be visible on the olive dashboards. The Pauses dashboard will show it as “dead”.",
       hotspot: null,
       area: "pauses",
+    },
+  ],
+  [
+    {
+      summary: "Histograms by properties",
+      description:
+        "This shows a histogram of values broken down by a particular property (such as action state). This works just like a regular histogram, but with an additonal property. Counts may be higher than expected since it is possible for an action to be present on multiple tabs.",
+      hotspot: "stats-histogram-by-property",
+      area: "action",
     },
   ],
 ];

@@ -2,6 +2,7 @@ import {
   ClickHandler,
   UIElement,
   blank,
+  br,
   button,
   dialog,
   makeUrl,
@@ -10,12 +11,15 @@ import {
   tableFromRows,
   tableRow,
   text,
+  tabs,
+  legend,
 } from "./html.js";
 import {
   StatefulModel,
   breakSlashes,
   computeDuration,
   formatTimeSpan,
+  FilenameFormatter,
 } from "./util.js";
 import { histogram } from "./histogram.js";
 import {
@@ -24,6 +28,7 @@ import {
   TimeRangeType,
   filtersForPropertySearch,
   nameForBin,
+  nameForProperty,
   updateBasicQueryForPropertySearch,
 } from "./actionfilters.js";
 import { refreshable } from "./io.js";
@@ -82,6 +87,16 @@ interface StatHistogram {
   counts: { [name in TimeRangeType]: number[] };
 }
 /**
+ * A histogram of values broken down by property
+ */
+interface StatHistogramByProperty {
+  type: "histogram-by-property";
+  property: PropertyType;
+  properties: any[];
+  boundaries: number[];
+  counts: { [name in TimeRangeType]: { counts: number[]; value: any }[] };
+}
+/**
  * Some raw text information
  */
 interface StatText {
@@ -91,7 +106,12 @@ interface StatText {
 /**
  * A statistic value computed by the server
  */
-export type Stat = StatCrosstab | StatHistogram | StatTable | StatText;
+export type Stat =
+  | StatCrosstab
+  | StatHistogram
+  | StatHistogramByProperty
+  | StatTable
+  | StatText;
 /**
  * A callback to add a property limit to the existing search filter
  */
@@ -102,7 +122,8 @@ export type AddPropertySearch = (...limits: PropertySearch[]) => void;
 export type AddRangeSearch = (
   typeName: TimeRangeType,
   start: number,
-  end: number
+  end: number,
+  ...restrictions: PropertySearch[]
 ) => void;
 
 export type PropertySearch =
@@ -111,10 +132,63 @@ export type PropertySearch =
   | { type: "tag"; value: string }
   | { type: "type"; value: string };
 
+const colours = [
+  "#d09c2e",
+  "#5b7fee",
+  "#bacd4c",
+  "#503290",
+  "#8bc151",
+  "#903691",
+  "#46ca79",
+  "#db64c3",
+  "#63bb5b",
+  "#af74db",
+  "#9fa627",
+  "#5a5dc0",
+  "#72891f",
+  "#578ae2",
+  "#c96724",
+  "#38b3eb",
+  "#c34f32",
+  "#34d3ca",
+  "#be2e68",
+  "#4ec88c",
+  "#be438d",
+  "#53d1a8",
+  "#d54a4a",
+  "#319466",
+  "#d486d8",
+  "#417c25",
+  "#4b2f75",
+  "#c3b857",
+  "#3b5ba0",
+  "#e09c4e",
+  "#6d95db",
+  "#9f741f",
+  "#826bb9",
+  "#78bb73",
+  "#802964",
+  "#a8bd69",
+  "#b995e2",
+  "#346e2e",
+  "#d97eb8",
+  "#6e6f24",
+  "#e36f96",
+  "#c29b59",
+  "#862644",
+  "#da8b57",
+  "#d2506f",
+  "#8d4e19",
+  "#d34b5b",
+  "#832520",
+  "#d06c72",
+  "#ce7058",
+];
 function renderStat(
   stat: Stat,
   addPropertySearch: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
+  filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
 ): UIElement {
   function popupForProperty(...limits: PropertySearch[]): ClickHandler {
@@ -159,7 +233,7 @@ function renderStat(
   }
   switch (stat.type) {
     case "text":
-      return stat.value;
+      return [stat.value, br()];
     case "table":
       return [
         tableFromRows(
@@ -182,6 +256,7 @@ function renderStat(
           })
         ),
         helpHotspot("stats-table"),
+        br(),
       ];
     case "crosstab": {
       const rows = [];
@@ -243,7 +318,7 @@ function renderStat(
           )
         );
       }
-      return [tableFromRows(rows), helpHotspot("stats-crosstab")];
+      return [tableFromRows(rows), helpHotspot("stats-crosstab"), br()];
     }
 
     case "histogram": {
@@ -285,7 +360,87 @@ function renderStat(
           },
         }))
       );
-      return [ui, helpHotspot("stats-histogram")];
+      return [ui, helpHotspot("stats-histogram"), br()];
+    }
+    case "histogram-by-property": {
+      const boundaryLabels = stat.boundaries.map((x) => computeDuration(x));
+      const boundaries = stat.boundaries;
+      const { ui: histoUi, model: histoModel } = singleState(
+        (selectedProperties: { value: any; colour: string }[]) =>
+          selectedProperties.length == 0
+            ? "Please select items from the legend to view."
+            : histogram(
+                Math.PI / 4,
+                boundaryLabels.map((l) => l.ago),
+                Object.entries(stat.counts).flatMap(([bin, propertyCounts]) =>
+                  selectedProperties.flatMap(({ value, colour }) =>
+                    propertyCounts
+                      .filter((c) => c.value == value)
+                      .map((c) => ({
+                        label: " " + nameForBin(bin as TimeRangeType),
+                        colour,
+                        counts: c.counts,
+                        selected(start: number, end: number): void {
+                          addRangeSearch(
+                            bin as TimeRangeType,
+                            boundaries[start],
+                            Math.max(
+                              boundaries[end],
+                              boundaries[start] + 60_000
+                            ), // Time is rounded to minutes for some situations, so if the window is too small, the start and end times will be the same and nothing matches; this kicks the end range a bit into the future
+                            {
+                              type: stat.property,
+                              value,
+                            }
+                          );
+                        },
+                        selectionDisplay(start: number, end: number): string {
+                          const sum = c.counts.reduce(
+                            (acc, value, index) =>
+                              index >= start && index < end ? acc + value : acc,
+                            0
+                          );
+                          return (
+                            sum +
+                            " actions over " +
+                            formatTimeSpan(
+                              boundaries[end] - boundaries[start]
+                            ) +
+                            " (" +
+                            boundaryLabels[start].ago +
+                            " / " +
+                            boundaryLabels[start].absolute +
+                            " to " +
+                            boundaryLabels[end].ago +
+                            " / " +
+                            boundaryLabels[end].absolute +
+                            ")"
+                          );
+                        },
+                      }))
+                  )
+                )
+              )
+      );
+      return [
+        { type: "b", contents: ["By ", nameForProperty(stat.property)] },
+        " ",
+        helpHotspot("stats-histogram-by-property"),
+        br(),
+        legend(
+          histoModel,
+          stat.property == "sourcefile"
+            ? (property) => filenameFormatter(`${property}`)
+            : (property) => breakSlashes(`${property}`),
+          stat.properties,
+          "#999",
+          colours
+        ),
+
+        br(),
+        histoUi,
+        br(),
+      ];
     }
 
     default:
@@ -299,13 +454,20 @@ function renderStat(
 export function actionStats(
   addPropertySeach: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
+  filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
 ): { ui: UIElement; model: StatefulModel<ActionFilter[]> } {
   const { model, ui } = singleState(
     (stats: Stat[] | null): UIElement => {
       if (stats?.length) {
         const results = stats.map((stat) =>
-          renderStat(stat, addPropertySeach, addRangeSearch, exportSearches)
+          renderStat(
+            stat,
+            addPropertySeach,
+            addRangeSearch,
+            filenameFormatter,
+            exportSearches
+          )
         );
         return [
           text("Click any cell or table heading to filter results."),

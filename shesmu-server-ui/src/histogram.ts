@@ -7,6 +7,10 @@ import { UIElement } from "./html.js";
  */
 export interface HistogramRow {
   /**
+   * The colour for the blocks in the row and the text
+   */
+  readonly colour?: string;
+  /**
    * The number of items in each bucket of the histogram
    */
   readonly counts: number[];
@@ -108,7 +112,7 @@ export function histogram(
           ) {
             ctxt.fillStyle = "#E0493B";
           } else {
-            ctxt.fillStyle = "#06AED5";
+            ctxt.fillStyle = rows[rowIndex].colour || "#06AED5";
           }
           ctxt.globalAlpha = Math.log(row.counts[countIndex] + 1) / logMax;
           ctxt.fillRect(

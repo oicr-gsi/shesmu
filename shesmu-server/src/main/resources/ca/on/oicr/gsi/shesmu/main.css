@@ -1008,3 +1008,12 @@ input.dirty {
   padding-right: 0.5em;
   white-space: nowrap;
 }
+
+.legend {
+  display: flex;
+  flex-direction: row;
+}
+.legend > * {
+  padding: 0.5em;
+  cursor: pointer;
+}

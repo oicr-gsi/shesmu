@@ -10,7 +10,7 @@ import {
   mergingModel,
   shuffle,
 } from "./util.js";
-import { BasicQuery } from "./actionfilters.js";
+import { BasicQuery, createSearch } from "./actionfilters.js";
 import { AlertFilter } from "./alert.js";
 /**
  * A function to render an item that can handle click events.
@@ -2682,6 +2682,48 @@ export function jsonParameters(action: { parameters: object }): UIElement {
   return objectTable(action.parameters, "Parameters", (x: any) =>
     preformatted(JSON.stringify(x, null, 2))
   );
+}
+
+/**
+ * Create a clickable legend
+ *
+ * Each element can be individually activated by clicking the legend.
+ */
+export function legend<T>(
+  model: StatefulModel<{ value: T; colour: string }[]>,
+  renderer: (input: T) => DisplayElement,
+  elements: T[],
+  disabledColour: string,
+  colours: string[]
+): UIElement {
+  let selected: Set<number> = new Set();
+  let container = createUiFromTag(
+    "div",
+    ...elements.map((value, index) => {
+      const colour = colours[index % colours.length];
+      const tile = createUiFromTag("span", renderer(value));
+      tile.element.style.color = disabledColour;
+      tile.element.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (selected.has(index)) {
+          selected.delete(index);
+          tile.element.style.color = "#aaa";
+        } else {
+          selected.add(index);
+          tile.element.style.color = colour;
+        }
+        model.statusChanged(
+          Array.from(selected).map((index) => ({
+            value: elements[index],
+            colour: colours[index % colours.length],
+          }))
+        );
+      });
+      return tile;
+    })
+  );
+  container.element.classList.add("legend");
+  return container;
 }
 
 /**
