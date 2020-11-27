@@ -1771,7 +1771,7 @@ export function checkRandomSequence(
   count: number,
   callback: () => void
 ): UIElement {
-  const sequence = new Array(Math.ceil(Math.log2(count))).fill(0);
+  const sequence = new Array(Math.max(1, Math.ceil(Math.log2(count)))).fill(0);
   for (let i = 0; i < sequence.length; i++) {
     if (i == 0) {
       sequence[i] = Math.floor(Math.random() * 9);
