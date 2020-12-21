@@ -6,7 +6,9 @@ import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
-import ca.on.oicr.gsi.shesmu.plugin.cache.*;
+import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
+import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
+import ca.on.oicr.gsi.shesmu.plugin.cache.SimpleRecord;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuMethod;
 import ca.on.oicr.gsi.shesmu.plugin.functions.ShesmuParameter;
@@ -19,6 +21,7 @@ import ca.on.oicr.gsi.shesmu.plugin.json.UnpackJson;
 import ca.on.oicr.gsi.shesmu.plugin.refill.CustomRefillerParameter;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.sftp.SshConnectionPool.PooledSshConnection;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,7 +29,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -37,13 +44,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
-import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.Message;
 import net.schmizz.sshj.common.SSHPacket;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Signal;
-import net.schmizz.sshj.sftp.*;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import net.schmizz.sshj.sftp.FileAttributes;
+import net.schmizz.sshj.sftp.FileMode;
+import net.schmizz.sshj.sftp.Response;
+import net.schmizz.sshj.sftp.SFTPException;
 
 public class SftpServer extends JsonPluginFile<Configuration> {
 
@@ -56,25 +64,16 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     @Override
     protected Optional<FileAttributes> fetch(Path fileName, Instant lastUpdated)
         throws IOException {
-      final Configuration config = configuration.orElse(null);
-      if (config == null) return Optional.empty();
 
-      try (final SSHClient client = new SSHClient()) {
-        client.addHostKeyVerifier(new PromiscuousVerifier());
-        client.connect(config.getHost(), config.getPort());
-        client.authPublickey(config.getUser());
-        final SFTPClient sftp = client.newSFTPClient();
-        if (sftp == null) return Optional.empty();
-        try {
-          final FileAttributes attributes = sftp.statExistence(fileName.toString());
+      try (final PooledSshConnection connection = connections.get()) {
+        final FileAttributes attributes = connection.sftp().statExistence(fileName.toString());
 
-          return Optional.of(attributes == null ? NXFILE : attributes);
-        } catch (SFTPException e) {
-          if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
-            return Optional.empty();
-          }
-          throw e;
+        return Optional.of(attributes == null ? NXFILE : attributes);
+      } catch (SFTPException e) {
+        if (e.getStatusCode() == Response.StatusCode.PERMISSION_DENIED) {
+          return Optional.empty();
         }
+        throw e;
       }
     }
   }
@@ -117,6 +116,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           .labelNames("target")
           .register();
   private Optional<Configuration> configuration = Optional.empty();
+  private final SshConnectionPool connections = new SshConnectionPool();
   private final Definer<SftpServer> definer;
   private final FileAttributeCache fileAttributes;
 
@@ -183,9 +183,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                           })
                       .collect(Collectors.joining(" "));
               return new SshJsonInputSource(
-                  c.getHost(),
-                  c.getPort(),
-                  c.getUser(),
+                  connections,
                   Optional.ofNullable(c.getFileRootsTtl()).filter(x -> x > 0),
                   c.getListCommand() == null
                       ? String.format(
@@ -207,15 +205,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     final Configuration config = configuration.orElse(null);
     if (config == null) return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
 
-    try (final SSHClient client = new SSHClient()) {
-      client.addHostKeyVerifier(new PromiscuousVerifier());
-
-      client.connect(config.getHost(), config.getPort());
-      client.authPublickey(config.getUser());
-      final SFTPClient sftp = client.newSFTPClient();
-      if (sftp == null) {
-        return new Pair<>(ActionState.UNKNOWN, fileInTheWay);
-      }
+    try (final PooledSshConnection connection = connections.get()) {
       // Because this library thinks that a file not existing is an error state worthy of
       // exception,
       // it throws whenever stat or lstat is called. There's a wrapper for stat that catches the
@@ -224,11 +214,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       // logic here.
       final String linkStr = link.toString();
       try {
-        final FileAttributes attributes = sftp.lstat(linkStr);
+        final FileAttributes attributes = connection.sftp().lstat(linkStr);
         updateMtime.accept(Instant.ofEpochSecond(attributes.getMtime()));
         // File exists and it is a symlink
         if (attributes.getType() == FileMode.Type.SYMLINK
-            && sftp.readlink(linkStr).equals(target)) {
+            && connection.sftp().readlink(linkStr).equals(target)) {
           // It's what we want; done
           return new Pair<>(ActionState.SUCCEEDED, false);
         }
@@ -237,13 +227,13 @@ public class SftpServer extends JsonPluginFile<Configuration> {
         }
         // We've been told to blow it away
         if (force) {
-          sftp.rm(linkStr);
+          connection.sftp().rm(linkStr);
           // Fun fact: OpenSSH has these parameters reversed compared to the spec.
           // https://github.com/hierynomus/sshj/issues/144
-          if (client.getTransport().getServerVersion().contains("OpenSSH")) {
-            sftp.symlink(target, linkStr);
+          if (connection.client().getTransport().getServerVersion().contains("OpenSSH")) {
+            connection.sftp().symlink(target, linkStr);
           } else {
-            sftp.symlink(linkStr, target);
+            connection.sftp().symlink(linkStr, target);
           }
           updateMtime.accept(Instant.now());
           return new Pair<>(ActionState.SUCCEEDED, true);
@@ -257,15 +247,15 @@ public class SftpServer extends JsonPluginFile<Configuration> {
           }
           // Create parent if necessary
           final String dirStr = link.getParent().toString();
-          if (sftp.statExistence(dirStr) == null) {
-            sftp.mkdirs(dirStr);
+          if (connection.sftp().statExistence(dirStr) == null) {
+            connection.sftp().mkdirs(dirStr);
           }
 
           // File does not exist, create it.
-          if (client.getTransport().getServerVersion().contains("OpenSSH")) {
-            sftp.symlink(target, linkStr);
+          if (connection.client().getTransport().getServerVersion().contains("OpenSSH")) {
+            connection.sftp().symlink(target, linkStr);
           } else {
-            sftp.symlink(linkStr, target);
+            connection.sftp().symlink(linkStr, target);
           }
           updateMtime.accept(Instant.now());
           return new Pair<>(ActionState.SUCCEEDED, false);
@@ -297,14 +287,11 @@ public class SftpServer extends JsonPluginFile<Configuration> {
     final Configuration config = configuration.orElse(null);
     if (config == null) return false;
     int exitStatus;
-    try (final SSHClient client = new SSHClient()) {
-      client.addHostKeyVerifier(new PromiscuousVerifier());
+    try (final PooledSshConnection connection = connections.get()) {
 
-      client.connect(config.getHost(), config.getPort());
-      client.authPublickey(config.getUser());
       refillLastUpdate.labels(fileName().toString(), name).setToCurrentTime();
       try (final AutoCloseable latency = refillLatency.start(fileName().toString(), name);
-          final Session session = client.startSession()) {
+          final Session session = connection.client().startSession()) {
 
         try (final Session.Command process = session.exec(command);
             final BufferedReader reader =
@@ -338,7 +325,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                             MAPPER.writeValue(output, data);
                             // Send EOF to the remote end since closing the stream doesn't do that:
                             // https://github.com/hierynomus/sshj/issues/143
-                            client
+                            connection
+                                .client()
                                 .getTransport()
                                 .write(
                                     new SSHPacket(Message.CHANNEL_EOF)
@@ -387,18 +375,10 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   ActionState rm(String path, boolean automatic) {
     final Configuration config = configuration.orElse(null);
     if (config == null) return ActionState.UNKNOWN;
-    try (final SSHClient client = new SSHClient()) {
-      client.addHostKeyVerifier(new PromiscuousVerifier());
-
-      client.connect(config.getHost(), config.getPort());
-      client.authPublickey(config.getUser());
-      final SFTPClient sftp = client.newSFTPClient();
-      if (sftp == null) {
-        return ActionState.UNKNOWN;
-      }
-      if (sftp.statExistence(path) != null) {
+    try (final PooledSshConnection connection = connections.get()) {
+      if (connection.sftp().statExistence(path) != null) {
         if (automatic) {
-          sftp.rm(path);
+          connection.sftp().rm(path);
           return ActionState.SUCCEEDED;
         } else {
           return ActionState.HALP;
@@ -427,6 +407,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
   @Override
   public synchronized Optional<Integer> update(Configuration configuration) {
     this.configuration = Optional.of(configuration);
+    connections.configure(
+        configuration.getHost(), configuration.getPort(), configuration.getUser());
     fileAttributes.invalidateAll();
     definer.clearRefillers();
     for (final Map.Entry<String, RefillerConfig> entry : configuration.getRefillers().entrySet()) {
@@ -490,12 +472,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
 
             @Override
             protected Optional<Object> fetch(Tuple key, Instant lastUpdated) throws Exception {
-              try (final SSHClient client = new SSHClient()) {
-                client.addHostKeyVerifier(new PromiscuousVerifier());
-
-                client.connect(configuration.getHost(), configuration.getPort());
-                client.authPublickey(configuration.getUser());
-                try (final Session session = client.startSession()) {
+              try (final PooledSshConnection connection = connections.get()) {
+                try (final Session session = connection.client().startSession()) {
 
                   try (final Session.Command process = session.exec(command);
                       final BufferedReader reader =
@@ -512,7 +490,8 @@ public class SftpServer extends JsonPluginFile<Configuration> {
                       MAPPER.writeValue(output, array);
                       // Send EOF to the remote end since closing the stream doesn't do that:
                       // https://github.com/hierynomus/sshj/issues/143
-                      client
+                      connection
+                          .client()
                           .getTransport()
                           .write(
                               new SSHPacket(Message.CHANNEL_EOF).putUInt32(process.getRecipient()));
@@ -556,12 +535,7 @@ public class SftpServer extends JsonPluginFile<Configuration> {
       definer.defineSource(
           source.getFormat(),
           source.getTtl(),
-          new SshJsonInputSource(
-              configuration.getHost(),
-              configuration.getPort(),
-              configuration.getUser(),
-              Optional.empty(),
-              source.getCommand()));
+          new SshJsonInputSource(connections, Optional.empty(), source.getCommand()));
     }
     return Optional.empty();
   }

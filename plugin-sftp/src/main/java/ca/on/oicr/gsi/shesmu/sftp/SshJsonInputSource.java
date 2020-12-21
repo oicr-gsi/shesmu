@@ -1,39 +1,30 @@
 package ca.on.oicr.gsi.shesmu.sftp;
 
 import ca.on.oicr.gsi.shesmu.plugin.input.JsonInputSource;
+import ca.on.oicr.gsi.shesmu.sftp.SshConnectionPool.PooledSshConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Optional;
-import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 
 public class SshJsonInputSource implements JsonInputSource {
   private final String command;
-  private final String host;
-  private final int port;
+  private final SshConnectionPool connections;
   private final Optional<Integer> ttl;
-  private final String user;
 
-  public SshJsonInputSource(
-      String host, int port, String user, Optional<Integer> ttl, String command) {
-    this.host = host;
-    this.port = port;
-    this.user = user;
+  public SshJsonInputSource(SshConnectionPool connections, Optional<Integer> ttl, String command) {
+    this.connections = connections;
     this.ttl = ttl;
     this.command = command;
   }
 
   @Override
   public InputStream fetch() throws Exception {
-    final SSHClient client = new SSHClient();
-    client.addHostKeyVerifier(new PromiscuousVerifier());
 
-    client.connect(host, port);
-    client.authPublickey(user);
-    final Session session = client.startSession();
+    final PooledSshConnection connection = connections.get();
+    final Session session = connection.client().startSession();
     final Session.Command process = session.exec(command);
     final InputStream stream = process.getInputStream();
     return new InputStream() {
@@ -53,7 +44,7 @@ public class SshJsonInputSource implements JsonInputSource {
           System.err.println("=== END ===");
         }
         session.close();
-        client.close();
+        connection.close();
       }
 
       @Override
