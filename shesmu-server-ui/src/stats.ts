@@ -5,21 +5,24 @@ import {
   br,
   button,
   dialog,
+  legend,
   makeUrl,
   popupMenu,
   singleState,
   tableFromRows,
   tableRow,
-  text,
   tabs,
-  legend,
+  temporaryState,
+  text,
 } from "./html.js";
 import {
+  FilenameFormatter,
   StatefulModel,
   breakSlashes,
+  combineModels,
   computeDuration,
   formatTimeSpan,
-  FilenameFormatter,
+  splitModel,
 } from "./util.js";
 import { histogram } from "./histogram.js";
 import {
@@ -31,7 +34,7 @@ import {
   nameForProperty,
   updateBasicQueryForPropertySearch,
 } from "./actionfilters.js";
-import { refreshable } from "./io.js";
+import { fetchAsPromise, refreshable } from "./io.js";
 import { Status, ExportSearchCommand, exportSearchDialog } from "./action.js";
 import { helpHotspot } from "./help.js";
 
@@ -189,7 +192,8 @@ function renderStat(
   addPropertySearch: AddPropertySearch,
   addRangeSearch: AddRangeSearch,
   filenameFormatter: FilenameFormatter,
-  exportSearches: ExportSearchCommand[]
+  exportSearches: ExportSearchCommand[],
+  baseFilters: ActionFilter[]
 ): UIElement {
   function popupForProperty(...limits: PropertySearch[]): ClickHandler {
     return popupMenu(
@@ -197,6 +201,18 @@ function renderStat(
       {
         label: "Drill Down",
         action: () => addPropertySearch(...limits),
+      },
+      {
+        label: "Drill Down in New Tab",
+        action: () =>
+          fetchAsPromise("printquery", {
+            type: "and",
+            filters: baseFilters.concat(filtersForPropertySearch(...limits)),
+          }).then((result) => {
+            window.open(
+              makeUrl("actiondash", { filters: result, saved: "All Actions" })
+            );
+          }),
       },
       {
         label: "Open Search for Only This Selection",
@@ -220,6 +236,14 @@ function renderStat(
             );
           }
         },
+      },
+      {
+        label: "Export Search for Drill Down",
+        action: () =>
+          exportSearchDialog(
+            exportSearches,
+            baseFilters.concat(filtersForPropertySearch(...limits))
+          ),
       },
       {
         label: "Export Search for Only This Condition",
@@ -457,6 +481,7 @@ export function actionStats(
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
 ): { ui: UIElement; model: StatefulModel<ActionFilter[]> } {
+  const filters = temporaryState<ActionFilter[]>([]);
   const { model, ui } = singleState(
     (stats: Stat[] | null): UIElement => {
       if (stats?.length) {
@@ -466,7 +491,8 @@ export function actionStats(
             addPropertySeach,
             addRangeSearch,
             filenameFormatter,
-            exportSearches
+            exportSearches,
+            filters.get()
           )
         );
         return [
@@ -480,6 +506,6 @@ export function actionStats(
   const io = refreshable("stats", model, false);
   return {
     ui: ui,
-    model: io,
+    model: combineModels(filters, io),
   };
 }
