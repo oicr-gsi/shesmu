@@ -20,12 +20,18 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
   private final int column;
   private final ExpressionNode expression;
   private List<Target> incoming;
+  private final Optional<String> label;
   private final int line;
   private final DestructuredArgumentNode name;
   private Imyhat unrollType;
 
   public OliveClauseNodeFlatten(
-      int line, int column, DestructuredArgumentNode name, ExpressionNode expression) {
+      Optional<String> label,
+      int line,
+      int column,
+      DestructuredArgumentNode name,
+      ExpressionNode expression) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.name = name;
@@ -56,7 +62,7 @@ public class OliveClauseNodeFlatten extends OliveClauseNode {
     expression.collectFreeVariables(inputs, Target.Flavour::isStream);
     return Stream.of(
         new OliveClauseRow(
-            "Flatten",
+            label.orElse("Flatten"),
             line,
             column,
             true,

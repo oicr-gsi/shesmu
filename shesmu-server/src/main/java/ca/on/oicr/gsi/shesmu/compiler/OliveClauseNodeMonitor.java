@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -28,18 +29,22 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   private static final Method METHOD_CHILD__INC = new Method("inc", Type.VOID_TYPE, new Type[] {});
   private static final Method METHOD_GAUGE__LABELS =
       new Method("labels", Type.getType(Object.class), new Type[] {Type.getType(String[].class)});
+
   private final int column;
-
   private final String help;
-
+  private final Optional<String> label;
   private final List<MonitorArgumentNode> labels;
-
   private final int line;
-
   private final String metricName;
 
   public OliveClauseNodeMonitor(
-      int line, int column, String metricName, String help, List<MonitorArgumentNode> labels) {
+      Optional<String> label,
+      int line,
+      int column,
+      String metricName,
+      String help,
+      List<MonitorArgumentNode> labels) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.metricName = metricName;
@@ -71,7 +76,7 @@ public class OliveClauseNodeMonitor extends OliveClauseNode implements RejectNod
   public Stream<OliveClauseRow> dashboard() {
     return Stream.of(
         new OliveClauseRow(
-            "Monitor",
+            label.orElse("Monitor"),
             line,
             column,
             false,

@@ -3,6 +3,6 @@ Input test;
 
 Olive
  Let p = project
- LeftJoin True To inner_test True
+ Label "figure out the stuff" LeftJoin True To inner_test True
     ls = Where p != "" List l
  Run ok With ok = (For l In ls: Count) == 2;

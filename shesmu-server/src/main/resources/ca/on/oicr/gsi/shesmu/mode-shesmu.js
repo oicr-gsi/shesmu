@@ -60,6 +60,7 @@ ace.define(
             "IntersectionJoin",
             "Into",
             "Join",
+            "Label",
             "Labels",
             "LeftIntersectionJoin",
             "LeftJoin",

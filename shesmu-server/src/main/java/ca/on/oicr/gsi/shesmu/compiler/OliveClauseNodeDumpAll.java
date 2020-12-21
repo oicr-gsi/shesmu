@@ -12,8 +12,8 @@ import java.util.stream.Stream;
 public final class OliveClauseNodeDumpAll extends OliveClauseNodeBaseDump implements RejectNode {
   private List<Target> columns;
 
-  public OliveClauseNodeDumpAll(int line, int column, String dumper) {
-    super(line, column, dumper);
+  public OliveClauseNodeDumpAll(Optional<String> label, int line, int column, String dumper) {
+    super(label, line, column, dumper);
   }
 
   @Override

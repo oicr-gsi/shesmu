@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -25,11 +26,17 @@ public class OliveClauseNodeReject extends OliveClauseNode {
   private final int column;
   private final ExpressionNode expression;
   private final List<RejectNode> handlers;
+  private final Optional<String> label;
   private final int line;
 
   public OliveClauseNodeReject(
-      int line, int column, ExpressionNode expression, List<RejectNode> handlers) {
+      Optional<String> label,
+      int line,
+      int column,
+      ExpressionNode expression,
+      List<RejectNode> handlers) {
     super();
+    this.label = label;
     this.line = line;
     this.column = column;
     this.expression = expression;
@@ -58,7 +65,7 @@ public class OliveClauseNodeReject extends OliveClauseNode {
     expression.collectFreeVariables(inputs, Flavour::isStream);
     return Stream.of(
         new OliveClauseRow(
-            "Reject",
+            label.orElse("Reject"),
             line,
             column,
             true,

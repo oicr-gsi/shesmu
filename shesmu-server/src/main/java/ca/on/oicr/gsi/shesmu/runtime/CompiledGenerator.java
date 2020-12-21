@@ -266,10 +266,11 @@ public class CompiledGenerator implements DefinitionRepository {
           }
 
           @Override
-          public Stream<OliveClauseRow> dashboardInner(int line, int column) {
+          public Stream<OliveClauseRow> dashboardInner(
+              Optional<String> label, int line, int column) {
             return Stream.of(
                 new OliveClauseRow(
-                    name,
+                    label.orElse(name),
                     line,
                     column,
                     true,
