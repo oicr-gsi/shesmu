@@ -41,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -546,6 +547,9 @@ public class CompiledGenerator implements DefinitionRepository {
       if (!live) {
         return "Deleted while waiting to run.";
       }
+      if (CompiledGenerator.this.checkPaused.test(fileName.toString())) {
+        return "Script is paused.";
+      }
       try (final MonitoredOliveServices monitoredConsumer =
           new MonitoredOliveServices(consumer, fileName.toString())) {
         generator.run(monitoredConsumer, input);
@@ -877,6 +881,7 @@ public class CompiledGenerator implements DefinitionRepository {
     return SCRIPT_REGISTRY.get(fileName);
   }
 
+  private final Predicate<String> checkPaused;
   private final DefinitionRepository definitionRepository;
   private final ScheduledExecutorService executor;
   private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
@@ -884,9 +889,12 @@ public class CompiledGenerator implements DefinitionRepository {
       Executors.newFixedThreadPool(Math.max(1, 4 * Runtime.getRuntime().availableProcessors() - 1));
 
   public CompiledGenerator(
-      ScheduledExecutorService executor, DefinitionRepository definitionRepository) {
+      ScheduledExecutorService executor,
+      DefinitionRepository definitionRepository,
+      Predicate<String> checkPaused) {
     this.executor = executor;
     this.definitionRepository = DefinitionRepository.concat(definitionRepository, this);
+    this.checkPaused = checkPaused;
     executor.scheduleWithFixedDelay(
         () ->
             scripts
