@@ -94,7 +94,7 @@ public final class OliveNodeDefinition extends OliveNodeWithClauses implements C
   }
 
   @Override
-  public Stream<OliveClauseRow> dashboardInner(int line, int column) {
+  public Stream<OliveClauseRow> dashboardInner(Optional<String> label, int line, int column) {
     return clauses().stream().flatMap(OliveClauseNode::dashboard);
   }
 

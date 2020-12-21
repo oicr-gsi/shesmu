@@ -55,6 +55,7 @@ syn keyword shesmuKeyword InputType
 syn keyword shesmuKeyword IntersectionJoin
 syn keyword shesmuKeyword Into
 syn keyword shesmuKeyword Join
+syn keyword shesmuKeyword Label
 syn keyword shesmuKeyword Labels
 syn keyword shesmuKeyword LeftIntersectionJoin
 syn keyword shesmuKeyword LeftJoin

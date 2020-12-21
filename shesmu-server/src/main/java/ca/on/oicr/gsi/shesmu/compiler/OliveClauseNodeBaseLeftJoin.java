@@ -93,6 +93,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   private final ExpressionNode innerKey;
   private List<? extends Target> innerVariables;
   private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
+  private final Optional<String> label;
   protected final int line;
   private final ExpressionNode outerKey;
   private final JoinSourceNode source;
@@ -100,6 +101,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
   private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeBaseLeftJoin(
+      Optional<String> label,
       int line,
       int column,
       JoinSourceNode source,
@@ -108,6 +110,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
       ExpressionNode innerKey,
       List<GroupNode> children,
       Optional<ExpressionNode> where) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.source = source;
@@ -159,7 +162,7 @@ public abstract class OliveClauseNodeBaseLeftJoin extends OliveClauseNode {
     where.ifPresent(w -> w.collectFreeVariables(whereInputs, Flavour::isStream));
     return Stream.of(
         new OliveClauseRow(
-            syntax(),
+            label.orElse(syntax()),
             line,
             column,
             true,

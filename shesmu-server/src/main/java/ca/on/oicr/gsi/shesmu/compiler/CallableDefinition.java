@@ -17,7 +17,7 @@ public interface CallableDefinition {
   void collectSignables(
       Set<String> signableNames, Consumer<SignableVariableCheck> addSignableCheck);
 
-  Stream<OliveClauseRow> dashboardInner(int line, int column);
+  Stream<OliveClauseRow> dashboardInner(Optional<String> label, int line, int column);
 
   Path filename();
 

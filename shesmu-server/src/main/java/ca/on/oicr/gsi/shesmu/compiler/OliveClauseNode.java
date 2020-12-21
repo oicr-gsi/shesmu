@@ -16,11 +16,12 @@ import java.util.stream.Stream;
 /** Base type for an olive clause */
 public abstract class OliveClauseNode {
   private interface DumpConstructor {
-    OliveClauseNodeBaseDump create(int line, int column, String dumperName);
+    OliveClauseNodeBaseDump create(Optional<String> label, int line, int column, String dumperName);
   }
 
   interface JoinConstructor {
     OliveClauseNode create(
+        Optional<String> label,
         int line,
         int column,
         JoinSourceNode source,
@@ -30,6 +31,7 @@ public abstract class OliveClauseNode {
 
   private interface LeftJoinConstructor {
     OliveClauseNode create(
+        Optional<String> label,
         int line,
         int column,
         JoinSourceNode source,
@@ -40,7 +42,12 @@ public abstract class OliveClauseNode {
         Optional<ExpressionNode> where);
   }
 
-  private static final Parser.ParseDispatch<OliveClauseNode> CLAUSES = new Parser.ParseDispatch<>();
+  private interface NodeConstructor<T> {
+    T create(Optional<String> label);
+  }
+
+  private static final Parser.ParseDispatch<NodeConstructor<OliveClauseNode>> CLAUSES =
+      new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<Optional<ExpressionNode>> GROUP_WHERE =
       new Parser.ParseDispatch<>();
   private static final Pattern HELP = Pattern.compile("^\"([^\"]*)\"");
@@ -50,8 +57,10 @@ public abstract class OliveClauseNode {
       new Parser.ParseDispatch<>();
 
   static {
-    REJECT_CLAUSES.addKeyword("Monitor", OliveClauseNode::parseMonitor);
-    REJECT_CLAUSES.addKeyword("Dump", OliveClauseNode::parseDump);
+    REJECT_CLAUSES.addKeyword(
+        "Monitor", (p, o) -> parseMonitor(p, f -> o.accept(f.create(Optional.empty()))));
+    REJECT_CLAUSES.addKeyword(
+        "Dump", (p, o) -> parseDump(p, f -> o.accept(f.create(Optional.empty()))));
     REJECT_CLAUSES.addKeyword(
         "Alert",
         (p, o) ->
@@ -66,15 +75,16 @@ public abstract class OliveClauseNode {
                             Collections.emptySet(),
                             ""))));
 
-    CLAUSES.addKeyword("Monitor", OliveClauseNode::parseMonitor);
-    CLAUSES.addKeyword("Dump", OliveClauseNode::parseDump);
+    CLAUSES.addKeyword("Monitor", (p, o) -> parseMonitor(p, f -> o.accept(f::create)));
+    CLAUSES.addKeyword("Dump", (p, o) -> parseDump(p, f -> o.accept(f::create)));
     CLAUSES.addKeyword(
         "Where",
         (p, o) -> {
           final AtomicReference<ExpressionNode> expression = new AtomicReference<>();
           final Parser result = ExpressionNode.parse(p.whitespace(), expression::set).whitespace();
           if (result.isGood()) {
-            o.accept(new OliveClauseNodeWhere(p.line(), p.column(), expression.get()));
+            o.accept(
+                label -> new OliveClauseNodeWhere(label, p.line(), p.column(), expression.get()));
           }
           return result;
         });
@@ -144,23 +154,27 @@ public abstract class OliveClauseNode {
           if (result.isGood()) {
             if (name.get() == null) {
               output.accept(
-                  new OliveClauseNodeGroup(
-                      parser.line(),
-                      parser.column(),
-                      collectors.get(),
-                      discriminators.get(),
-                      where.get()));
+                  label ->
+                      new OliveClauseNodeGroup(
+                          label,
+                          parser.line(),
+                          parser.column(),
+                          collectors.get(),
+                          discriminators.get(),
+                          where.get()));
             } else {
               output.accept(
-                  new OliveClauseNodeGroupWithGrouper(
-                      parser.line(),
-                      parser.column(),
-                      name.get(),
-                      inputs.get(),
-                      outputs.get(),
-                      collectors.get(),
-                      discriminators.get(),
-                      where.get()));
+                  label ->
+                      new OliveClauseNodeGroupWithGrouper(
+                          label,
+                          parser.line(),
+                          parser.column(),
+                          name.get(),
+                          inputs.get(),
+                          outputs.get(),
+                          collectors.get(),
+                          discriminators.get(),
+                          where.get()));
             }
           }
           return result;
@@ -179,7 +193,9 @@ public abstract class OliveClauseNode {
 
           if (result.isGood()) {
             output.accept(
-                new OliveClauseNodeLet(letParser.line(), letParser.column(), arguments.get()));
+                label ->
+                    new OliveClauseNodeLet(
+                        label, letParser.line(), letParser.column(), arguments.get()));
           }
           return result;
         });
@@ -200,8 +216,9 @@ public abstract class OliveClauseNode {
 
           if (result.isGood()) {
             output.accept(
-                new OliveClauseNodeFlatten(
-                    parser.line(), parser.column(), name.get(), expression.get()));
+                label ->
+                    new OliveClauseNodeFlatten(
+                        label, parser.line(), parser.column(), name.get(), expression.get()));
           }
           return result;
         });
@@ -224,8 +241,13 @@ public abstract class OliveClauseNode {
 
           if (result.isGood()) {
             output.accept(
-                new OliveClauseNodeReject(
-                    rejectParser.line(), rejectParser.column(), clause.get(), handlers.get()));
+                label ->
+                    new OliveClauseNodeReject(
+                        label,
+                        rejectParser.line(),
+                        rejectParser.column(),
+                        clause.get(),
+                        handlers.get()));
           }
           return result;
         });
@@ -253,12 +275,14 @@ public abstract class OliveClauseNode {
 
           if (result.isGood()) {
             output.accept(
-                new OliveClauseNodeRequire(
-                    rejectParser.line(),
-                    rejectParser.column(),
-                    name.get(),
-                    expression.get(),
-                    handlers.get()));
+                label ->
+                    new OliveClauseNodeRequire(
+                        label,
+                        rejectParser.line(),
+                        rejectParser.column(),
+                        name.get(),
+                        expression.get(),
+                        handlers.get()));
           }
           return result;
         });
@@ -283,12 +307,14 @@ public abstract class OliveClauseNode {
                   .whitespace();
           if (result.isGood()) {
             output.accept(
-                new OliveClauseNodePick(
-                    pickParser.line(),
-                    pickParser.column(),
-                    direction.get(),
-                    expression.get(),
-                    discriminators.get()));
+                label ->
+                    new OliveClauseNodePick(
+                        label,
+                        pickParser.line(),
+                        pickParser.column(),
+                        direction.get(),
+                        expression.get(),
+                        discriminators.get()));
           }
           return result;
         });
@@ -310,8 +336,9 @@ public abstract class OliveClauseNode {
                     .whitespace();
             if (result.isGood()) {
               output.accept(
-                  new OliveClauseNodeCall(
-                      input.line(), input.column(), name.get(), arguments.get()));
+                  label ->
+                      new OliveClauseNodeCall(
+                          label, input.line(), input.column(), name.get(), arguments.get()));
             }
             return result;
           }
@@ -344,7 +371,7 @@ public abstract class OliveClauseNode {
         });
   }
 
-  private static Rule<OliveClauseNode> join(JoinConstructor constructor) {
+  private static Rule<NodeConstructor<OliveClauseNode>> join(JoinConstructor constructor) {
     return (joinParser, output) -> {
       final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
       final AtomicReference<JoinSourceNode> source = new AtomicReference<>();
@@ -363,18 +390,20 @@ public abstract class OliveClauseNode {
 
       if (result.isGood()) {
         output.accept(
-            constructor.create(
-                joinParser.line(),
-                joinParser.column(),
-                source.get(),
-                outerKey.get(),
-                innerKey.get()));
+            label ->
+                constructor.create(
+                    label,
+                    joinParser.line(),
+                    joinParser.column(),
+                    source.get(),
+                    outerKey.get(),
+                    innerKey.get()));
       }
       return result;
     };
   }
 
-  private static Rule<OliveClauseNode> leftJoin(LeftJoinConstructor constructor) {
+  private static Rule<NodeConstructor<OliveClauseNode>> leftJoin(LeftJoinConstructor constructor) {
     return (leftJoinParser, output) -> {
       final AtomicReference<ExpressionNode> outerKey = new AtomicReference<>();
       final AtomicReference<JoinSourceNode> source = new AtomicReference<>();
@@ -399,25 +428,38 @@ public abstract class OliveClauseNode {
               .whitespace();
       if (result.isGood()) {
         output.accept(
-            constructor.create(
-                leftJoinParser.line(),
-                leftJoinParser.column(),
-                source.get(),
-                outerKey.get(),
-                prefix.get(),
-                innerKey.get(),
-                groups.get(),
-                where.get()));
+            label ->
+                constructor.create(
+                    label,
+                    leftJoinParser.line(),
+                    leftJoinParser.column(),
+                    source.get(),
+                    outerKey.get(),
+                    prefix.get(),
+                    innerKey.get(),
+                    groups.get(),
+                    where.get()));
       }
       return result;
     };
   }
 
   public static Parser parse(Parser input, Consumer<OliveClauseNode> output) {
-    return input.whitespace().dispatch(CLAUSES, output);
+    final Parser labelResult = input.whitespace().keyword("Label").whitespace();
+    if (labelResult.isGood()) {
+      final AtomicReference<String> label = new AtomicReference<>();
+      return labelResult
+          .regex(HELP, m -> label.set(m.group(1)), "label")
+          .whitespace()
+          .dispatch(CLAUSES, v -> output.accept(v.create(Optional.of(label.get()))));
+
+    } else {
+      return input.whitespace().dispatch(CLAUSES, v -> output.accept(v.create(Optional.empty())));
+    }
   }
 
-  private static Parser parseDump(Parser input, Consumer<? super OliveClauseNodeBaseDump> output) {
+  private static Parser parseDump(
+      Parser input, Consumer<NodeConstructor<OliveClauseNodeBaseDump>> output) {
     final DumpConstructor constructor;
     final Parser allResult = input.whitespace().keyword("All").whitespace();
     final Parser intermediateParser;
@@ -428,20 +470,20 @@ public abstract class OliveClauseNode {
       final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
       intermediateParser =
           input.whitespace().listEmpty(columns::set, ExpressionNode::parse, ',').whitespace();
-      constructor = (l, c, d) -> new OliveClauseNodeDump(l, c, d, columns.get());
+      constructor = (la, l, c, d) -> new OliveClauseNodeDump(la, l, c, d, columns.get());
     }
     final AtomicReference<String> dumper = new AtomicReference<>();
     final Parser result =
         intermediateParser.keyword("To").whitespace().identifier(dumper::set).whitespace();
 
     if (result.isGood()) {
-      output.accept(constructor.create(input.line(), input.column(), dumper.get()));
+      output.accept(label -> constructor.create(label, input.line(), input.column(), dumper.get()));
     }
     return result;
   }
 
   private static Parser parseMonitor(
-      Parser input, Consumer<? super OliveClauseNodeMonitor> output) {
+      Parser input, Consumer<NodeConstructor<OliveClauseNodeMonitor>> output) {
     final AtomicReference<String> metricName = new AtomicReference<>();
     final AtomicReference<String> help = new AtomicReference<>();
     final AtomicReference<List<MonitorArgumentNode>> labels = new AtomicReference<>();
@@ -460,8 +502,9 @@ public abstract class OliveClauseNode {
 
     if (result.isGood()) {
       output.accept(
-          new OliveClauseNodeMonitor(
-              input.line(), input.column(), metricName.get(), help.get(), labels.get()));
+          label ->
+              new OliveClauseNodeMonitor(
+                  label, input.line(), input.column(), metricName.get(), help.get(), labels.get()));
     }
     return result;
   }

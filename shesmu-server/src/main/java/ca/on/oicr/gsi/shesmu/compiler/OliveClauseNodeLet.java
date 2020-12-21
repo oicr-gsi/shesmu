@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -19,10 +20,13 @@ public class OliveClauseNodeLet extends OliveClauseNode {
 
   private final List<LetArgumentNode> arguments;
   private final int column;
+  private final Optional<String> label;
   private final int line;
 
-  public OliveClauseNodeLet(int line, int column, List<LetArgumentNode> arguments) {
+  public OliveClauseNodeLet(
+      Optional<String> label, int line, int column, List<LetArgumentNode> arguments) {
     super();
+    this.label = label;
     this.line = line;
     this.column = column;
     this.arguments = arguments;
@@ -53,7 +57,7 @@ public class OliveClauseNodeLet extends OliveClauseNode {
   public Stream<OliveClauseRow> dashboard() {
     return Stream.of(
         new OliveClauseRow(
-            "Let",
+            label.orElse("Let"),
             line,
             column,
             arguments.stream().anyMatch(LetArgumentNode::filters),

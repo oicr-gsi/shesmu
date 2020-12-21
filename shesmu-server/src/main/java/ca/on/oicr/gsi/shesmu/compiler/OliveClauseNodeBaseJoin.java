@@ -23,17 +23,20 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
   private final ExpressionNode innerKey;
   private List<? extends Target> innerVariables;
   private final List<Consumer<JoinBuilder>> joins = new ArrayList<>();
+  private final Optional<String> label;
   private final int line;
   private final ExpressionNode outerKey;
   private final JoinSourceNode source;
 
   public OliveClauseNodeBaseJoin(
+      Optional<String> label,
       int line,
       int column,
       JoinSourceNode source,
       ExpressionNode outerKey,
       ExpressionNode innerKey) {
     super();
+    this.label = label;
     this.line = line;
     this.column = column;
     this.source = source;
@@ -62,7 +65,7 @@ public abstract class OliveClauseNodeBaseJoin extends OliveClauseNode {
   public final Stream<OliveClauseRow> dashboard() {
     return Stream.of(
         new OliveClauseRow(
-            syntax(),
+            label.orElse(syntax()),
             line,
             column,
             true,

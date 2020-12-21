@@ -24,11 +24,13 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   private final String dumper;
   private List<Imyhat> dumperTypes;
 
+  private final Optional<String> label;
   private final int line;
   private final String selfName;
 
-  public OliveClauseNodeBaseDump(int line, int column, String dumper) {
+  public OliveClauseNodeBaseDump(Optional<String> label, int line, int column, String dumper) {
     super();
+    this.label = label;
     this.line = line;
     this.column = column;
     this.dumper = dumper;
@@ -57,7 +59,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   public final Stream<OliveClauseRow> dashboard() {
     return Stream.of(
         new OliveClauseRow(
-            "Dump",
+            label.orElse("Dump"),
             line(),
             column(),
             false,

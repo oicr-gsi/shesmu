@@ -466,8 +466,8 @@ public final class Check extends Compiler {
       }
 
       @Override
-      public Stream<OliveClauseRow> dashboardInner(int line, int column) {
-        return null;
+      public Stream<OliveClauseRow> dashboardInner(Optional<String> label, int line, int column) {
+        return Stream.empty();
       }
 
       @Override

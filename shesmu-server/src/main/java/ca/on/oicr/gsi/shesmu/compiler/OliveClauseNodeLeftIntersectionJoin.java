@@ -8,6 +8,7 @@ import java.util.Optional;
 public final class OliveClauseNodeLeftIntersectionJoin extends OliveClauseNodeBaseLeftJoin {
 
   public OliveClauseNodeLeftIntersectionJoin(
+      Optional<String> label,
       int line,
       int column,
       JoinSourceNode source,
@@ -16,7 +17,7 @@ public final class OliveClauseNodeLeftIntersectionJoin extends OliveClauseNodeBa
       ExpressionNode innerKey,
       List<GroupNode> children,
       Optional<ExpressionNode> where) {
-    super(line, column, source, outerKey, variablePrefix, innerKey, children, where);
+    super(label, line, column, source, outerKey, variablePrefix, innerKey, children, where);
   }
 
   @Override

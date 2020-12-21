@@ -6,12 +6,13 @@ import java.util.Optional;
 public class OliveClauseNodeJoin extends OliveClauseNodeBaseJoin {
 
   public OliveClauseNodeJoin(
+      Optional<String> label,
       int line,
       int column,
       JoinSourceNode source,
       ExpressionNode outerKey,
       ExpressionNode innerKey) {
-    super(line, column, source, outerKey, innerKey);
+    super(label, line, column, source, outerKey, innerKey);
   }
 
   @Override

@@ -189,7 +189,9 @@ Adds the elements in the result of _expr_, which must be a list of strings, to
 the tags associated with this actions.
 
 ## Clauses
-An olive can have many clauses that filter and reshape the data.
+An olive can have many clauses that filter and reshape the data. All clauses
+can be preceded with `Label "`_text_`"` to have _text_ appear in the dataflow
+diagram instead of the name of the clause.
 
 - `Dump` _expr1_[`,` _expr2_[`,` ...]] `To` _dumper_
 - `Dump All To` _dumper_

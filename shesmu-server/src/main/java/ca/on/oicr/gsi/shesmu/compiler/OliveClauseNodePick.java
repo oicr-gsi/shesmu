@@ -23,12 +23,19 @@ public class OliveClauseNodePick extends OliveClauseNode {
   private final List<PickNode> discriminators;
   private List<Target> discriminatorVariables;
   private final ExpressionNode extractor;
+  private final Optional<String> label;
   private final int line;
 
   private final boolean max;
 
   public OliveClauseNodePick(
-      int line, int column, boolean max, ExpressionNode extractor, List<PickNode> discriminators) {
+      Optional<String> label,
+      int line,
+      int column,
+      boolean max,
+      ExpressionNode extractor,
+      List<PickNode> discriminators) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.max = max;
@@ -57,7 +64,7 @@ public class OliveClauseNodePick extends OliveClauseNode {
     extractor.collectFreeVariables(inputs, Flavour::isStream);
     return Stream.of(
         new OliveClauseRow(
-            "Pick " + (max ? "Max" : "Min"),
+            label.orElse("Pick " + (max ? "Max" : "Min")),
             line,
             column,
             true,

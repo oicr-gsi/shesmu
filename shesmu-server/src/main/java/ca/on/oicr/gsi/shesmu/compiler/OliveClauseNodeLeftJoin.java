@@ -7,6 +7,7 @@ import java.util.*;
 public final class OliveClauseNodeLeftJoin extends OliveClauseNodeBaseLeftJoin {
 
   public OliveClauseNodeLeftJoin(
+      Optional<String> label,
       int line,
       int column,
       JoinSourceNode source,
@@ -15,7 +16,7 @@ public final class OliveClauseNodeLeftJoin extends OliveClauseNodeBaseLeftJoin {
       ExpressionNode innerKey,
       List<GroupNode> children,
       Optional<ExpressionNode> where) {
-    super(line, column, source, outerKey, variablePrefix, innerKey, children, where);
+    super(label, line, column, source, outerKey, variablePrefix, innerKey, children, where);
   }
 
   @Override

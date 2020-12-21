@@ -48,6 +48,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   private final GrouperDefinition grouper;
   private final String grouperName;
   private final List<ExpressionNode> inputExpressions = new ArrayList<>();
+  private final Optional<String> label;
   protected final int line;
   private List<String> outputNames;
   private final List<Pair<String, ExpressionNode>> rawInputExpressions;
@@ -55,6 +56,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
   private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeGroupWithGrouper(
+      Optional<String> label,
       int line,
       int column,
       String grouperName,
@@ -63,6 +65,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
       List<GroupNode> children,
       List<DiscriminatorNode> discriminators,
       Optional<ExpressionNode> where) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.grouperName = grouperName;
@@ -119,7 +122,7 @@ public final class OliveClauseNodeGroupWithGrouper extends OliveClauseNode {
     }
     return Stream.of(
         new OliveClauseRow(
-            "Group Using " + grouperName,
+            label.orElse("Group Using " + grouperName),
             line,
             column,
             true,

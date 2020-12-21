@@ -33,17 +33,20 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
   private final ExpressionNode expression;
   private final List<RejectNode> handlers;
   private List<Target> incoming;
+  private final Optional<String> label;
   private final int line;
   private final DestructuredArgumentNode name;
   private Imyhat type = Imyhat.BAD;
 
   public OliveClauseNodeRequire(
+      Optional<String> label,
       int line,
       int column,
       DestructuredArgumentNode name,
       ExpressionNode expression,
       List<RejectNode> handlers) {
     super();
+    this.label = label;
     this.line = line;
     this.column = column;
     this.name = name;
@@ -74,7 +77,7 @@ public class OliveClauseNodeRequire extends OliveClauseNode {
     expression.collectFreeVariables(inputs, Flavour::isStream);
     return Stream.of(
         new OliveClauseRow(
-            "Require",
+            label.orElse("Require"),
             line,
             column,
             true,

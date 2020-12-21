@@ -5,6 +5,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -15,8 +16,9 @@ public final class OliveClauseNodeDump extends OliveClauseNodeBaseDump implement
 
   private final List<ExpressionNode> columns;
 
-  public OliveClauseNodeDump(int line, int column, String dumper, List<ExpressionNode> columns) {
-    super(line, column, dumper);
+  public OliveClauseNodeDump(
+      Optional<String> label, int line, int column, String dumper, List<ExpressionNode> columns) {
+    super(label, line, column, dumper);
     this.columns = columns;
   }
 

@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation.Behaviour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -18,9 +19,12 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
 
   private final int column;
   private final ExpressionNode expression;
+  private final Optional<String> label;
   private final int line;
 
-  public OliveClauseNodeWhere(int line, int column, ExpressionNode expression) {
+  public OliveClauseNodeWhere(
+      Optional<String> label, int line, int column, ExpressionNode expression) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.expression = expression;
@@ -47,7 +51,7 @@ public class OliveClauseNodeWhere extends OliveClauseNode {
     expression.collectFreeVariables(inputs, Flavour::isStream);
     return Stream.of(
         new OliveClauseRow(
-            "Where",
+            label.orElse("Where"),
             line,
             column,
             true,

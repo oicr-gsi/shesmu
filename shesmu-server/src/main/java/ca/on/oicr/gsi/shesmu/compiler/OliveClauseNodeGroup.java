@@ -65,15 +65,18 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
   private final List<GroupNode> children;
   protected final int column;
   private final List<DiscriminatorNode> discriminators;
+  private final Optional<String> label;
   protected final int line;
   private final Optional<ExpressionNode> where;
 
   public OliveClauseNodeGroup(
+      Optional<String> label,
       int line,
       int column,
       List<GroupNode> children,
       List<DiscriminatorNode> discriminators,
       Optional<ExpressionNode> where) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.children = children;
@@ -114,7 +117,7 @@ public final class OliveClauseNodeGroup extends OliveClauseNode {
     where.ifPresent(w -> w.collectFreeVariables(whereInputs, Flavour::isStream));
     return Stream.of(
         new OliveClauseRow(
-            "Group",
+            label.orElse("Group"),
             line,
             column,
             true,

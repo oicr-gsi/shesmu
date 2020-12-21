@@ -15,11 +15,14 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 
   private final List<ExpressionNode> arguments;
   private final int column;
+  private final Optional<String> label;
   private final int line;
   private final String name;
   private CallableDefinition target;
 
-  public OliveClauseNodeCall(int line, int column, String name, List<ExpressionNode> arguments) {
+  public OliveClauseNodeCall(
+      Optional<String> label, int line, int column, String name, List<ExpressionNode> arguments) {
+    this.label = label;
     this.line = line;
     this.column = column;
     this.name = name;
@@ -43,7 +46,7 @@ public class OliveClauseNodeCall extends OliveClauseNode {
 
   @Override
   public Stream<OliveClauseRow> dashboard() {
-    return target.dashboardInner(line, column);
+    return target.dashboardInner(label, line, column);
   }
 
   @Override
