@@ -256,8 +256,8 @@ public final class Server implements ServerConfig, ActionServices {
     server = HttpServer.create(new InetSocketAddress(port), 0);
     server.setExecutor(wwwExecutor);
     definitionRepository = DefinitionRepository.concat(new StandardDefinitions(), pluginManager);
-    compiler = new CompiledGenerator(executor, definitionRepository);
     processor = new ActionProcessor(localname(), pluginManager, this);
+    compiler = new CompiledGenerator(executor, definitionRepository, processor::isPaused);
     staticActions = new StaticActions(processor, definitionRepository);
     final InputSource inputSource =
         (format, readStale) ->
