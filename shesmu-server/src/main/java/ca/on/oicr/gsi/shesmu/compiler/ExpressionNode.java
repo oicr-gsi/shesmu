@@ -864,14 +864,28 @@ public abstract class ExpressionNode implements Renderable {
       return gangResult;
     }
     final AtomicReference<List<ObjectElementNode>> fields = new AtomicReference<>();
-    final Parser objectResult =
-        parser
-            .whitespace()
-            .list(fields::set, ObjectElementNode::parse, ',')
-            .whitespace()
-            .symbol("}")
-            .whitespace();
-    if (objectResult.isGood()) {
+    Parser objectResult =
+        parser.whitespace().listEmpty(fields::set, ObjectElementNode::parse, ',').whitespace();
+    if (objectResult.symbol(";").isGood()) {
+      objectResult =
+          objectResult
+              .symbol(";")
+              .<ObjectElementNode>list(
+                  fields.get()::addAll,
+                  (cfp, cfo) ->
+                      cfp.whitespace()
+                          .identifier(
+                              n ->
+                                  cfo.accept(
+                                      new ObjectElementNodeSingle(
+                                          n,
+                                          new ExpressionNodeVariable(cfp.line(), cfp.column(), n))))
+                          .whitespace(),
+                  ',')
+              .whitespace();
+    }
+    objectResult = objectResult.symbol("}").whitespace();
+    if (objectResult.isGood() && !fields.get().isEmpty()) {
       output.accept(objectContsructor.apply(fields.get()));
       return objectResult;
     }

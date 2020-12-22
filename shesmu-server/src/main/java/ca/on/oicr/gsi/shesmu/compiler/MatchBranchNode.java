@@ -1,13 +1,11 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
-import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
 import ca.on.oicr.gsi.shesmu.plugin.Parser.ParseDispatch;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -30,54 +28,16 @@ public abstract class MatchBranchNode {
   static {
     CONSTRUCTOR.addSymbol(
         "{",
-        (p, o) -> {
-          final AtomicReference<List<Pair<String, DestructuredArgumentNode>>> fields =
-              new AtomicReference<>();
-          final Parser fieldParser =
-              p.list(
-                      fields::set,
-                      (pf, of) -> {
-                        final AtomicReference<String> fieldName = new AtomicReference<>();
-                        final AtomicReference<DestructuredArgumentNode> fieldValue =
-                            new AtomicReference<>();
-                        final Parser rf =
-                            pf.whitespace()
-                                .then(DestructuredArgumentNode::parse, fieldValue::set)
-                                .whitespace()
-                                .symbol("=")
-                                .whitespace()
-                                .identifier(fieldName::set)
-                                .whitespace();
-                        if (rf.isGood()) {
-                          of.accept(new Pair<>(fieldName.get(), fieldValue.get()));
-                        }
-                        return rf;
-                      },
-                      ',')
-                  .symbol("}")
-                  .whitespace();
-          if (fieldParser.isGood()) {
-            o.accept(
-                (line, column, name, value) ->
-                    new MatchBranchNodeObject(line, column, name, value, fields.get()));
-            return fieldParser;
-          }
-          final AtomicReference<List<DestructuredArgumentNode>> elements = new AtomicReference<>();
-          final Parser tupleParser =
-              p.list(
-                      elements::set,
-                      (pe, po) ->
-                          pe.whitespace().then(DestructuredArgumentNode::parse, po).whitespace(),
-                      ',')
-                  .symbol("}")
-                  .whitespace();
-          if (tupleParser.isGood()) {
-            o.accept(
-                (line, column, name, value) ->
-                    new MatchBranchNodeTuple(line, column, name, value, elements.get()));
-          }
-          return tupleParser;
-        });
+        (p, o) ->
+            DestructuredArgumentNode.parseTupleOrObject(
+                p,
+                o,
+                f ->
+                    (line, column, name, value) ->
+                        new MatchBranchNodeObject(line, column, name, value, f),
+                e ->
+                    (line, column, name, value) ->
+                        new MatchBranchNodeTuple(line, column, name, value, e)));
     CONSTRUCTOR.addKeyword(
         "_",
         (p, o) -> {

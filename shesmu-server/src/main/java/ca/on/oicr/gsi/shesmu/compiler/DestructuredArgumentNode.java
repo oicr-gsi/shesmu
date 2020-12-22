@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,40 +62,69 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
         }
       };
 
+  public static <T> Parser parseTupleOrObject(
+      Parser p,
+      Consumer<T> o,
+      Function<List<Pair<String, DestructuredArgumentNode>>, T> objectConstructor,
+      Function<List<DestructuredArgumentNode>, T> tupleConstructor) {
+    {
+      final AtomicReference<List<Pair<String, DestructuredArgumentNode>>> inner =
+          new AtomicReference<>();
+      Parser result =
+          p.whitespace()
+              .listEmpty(inner::set, (ip, io) -> parseInner(ip, io, true), ',')
+              .whitespace();
+      if (result.symbol(";").isGood()) {
+        result =
+            result
+                .symbol(";")
+                .<Pair<String, DestructuredArgumentNode>>list(
+                    f -> inner.get().addAll(f),
+                    (cfp, cfo) ->
+                        cfp.whitespace()
+                            .identifier(
+                                n ->
+                                    cfo.accept(
+                                        new Pair<>(
+                                            n,
+                                            new DestructuredArgumentNodeVariable(
+                                                cfp.line(), cfp.column(), n))))
+                            .whitespace(),
+                    ',')
+                .whitespace();
+      }
+
+      result = result.symbol("}").whitespace();
+      if (result.isGood() && !inner.get().isEmpty()) {
+        final Map<Boolean, Long> formats =
+            inner
+                .get()
+                .stream()
+                .collect(Collectors.partitioningBy(x -> x.first() == null, Collectors.counting()));
+        if ((formats.get(true) > 0) && (formats.get(false) > 0)) {
+          return result.raise("Destructuring is a mixture of object and tuple fields.");
+        }
+        if (formats.get(true) == 0) {
+          o.accept(objectConstructor.apply(inner.get()));
+        } else {
+          o.accept(
+              tupleConstructor.apply(
+                  inner.get().stream().map(Pair::second).collect(Collectors.toList())));
+        }
+      }
+      return result;
+    }
+  }
+
   static {
     DISPATCH.addSymbol(
         "{",
-        (p, o) -> {
-          final AtomicReference<List<Pair<String, DestructuredArgumentNode>>> inner =
-              new AtomicReference<>();
-          final Parser result =
-              p.whitespace()
-                  .list(inner::set, DestructuredArgumentNode::parseInner, ',')
-                  .whitespace()
-                  .symbol("}")
-                  .whitespace();
-          if (result.isGood()) {
-            final Map<Boolean, Long> formats =
-                inner
-                    .get()
-                    .stream()
-                    .collect(
-                        Collectors.partitioningBy(x -> x.first() == null, Collectors.counting()));
-            if ((formats.get(true) > 0) && (formats.get(false) > 0)) {
-              return result.raise("Destructuring is a mixture of object and tuple fields.");
-            }
-            if (formats.get(true) == 0) {
-              o.accept(new DestructuredArgumentNodeObject(p.line(), p.column(), inner.get()));
-            } else {
-              o.accept(
-                  new DestructuredArgumentNodeTuple(
-                      p.line(),
-                      p.column(),
-                      inner.get().stream().map(Pair::second).collect(Collectors.toList())));
-            }
-          }
-          return result;
-        });
+        (p, o) ->
+            parseTupleOrObject(
+                p,
+                o,
+                f -> new DestructuredArgumentNodeObject(p.line(), p.column(), f),
+                f -> new DestructuredArgumentNodeTuple(p.line(), p.column(), f)));
     DISPATCH.addKeyword(
         "_",
         (p, o) -> {
@@ -135,19 +165,24 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
     return parser.whitespace().dispatch(DISPATCH, output);
   }
 
-  private static Parser parseInner(Parser ip, Consumer<Pair<String, DestructuredArgumentNode>> io) {
+  public static Parser parseInner(
+      Parser parser,
+      Consumer<Pair<String, DestructuredArgumentNode>> output,
+      boolean tupleAllowed) {
     final AtomicReference<DestructuredArgumentNode> node = new AtomicReference<>();
     final AtomicReference<String> name = new AtomicReference<>();
-    final Parser childResult = parse(ip, node::set);
+    final Parser childResult = parse(parser, node::set);
     if (childResult.isGood()) {
       final Parser objectParser =
           childResult.whitespace().symbol("=").whitespace().identifier(name::set).whitespace();
       if (objectParser.isGood()) {
-        io.accept(new Pair<>(name.get(), node.get()));
+        output.accept(new Pair<>(name.get(), node.get()));
         return objectParser;
-      } else {
-        io.accept(new Pair<>(null, node.get()));
+      } else if (tupleAllowed) {
+        output.accept(new Pair<>(null, node.get()));
         return childResult;
+      } else {
+        return parser;
       }
     } else {
       return childResult;
