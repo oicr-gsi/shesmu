@@ -101,13 +101,22 @@ public class AnalysisState implements Comparable<AnalysisState> {
     knownSignatures =
         workflowRun == null
             ? source
-                .stream()
-                .flatMap(
-                    ap ->
-                        ap.getIusAttributes()
-                            .getOrDefault("signature", Collections.emptySortedSet())
-                            .stream())
-                .collect(Collectors.toSet())
+                    .stream()
+                    .anyMatch(
+                        ap ->
+                            ap.getIusLimsKeys().size()
+                                > 1) // If there are multiple LIMS keys per record, then the IUS
+                // attributes will contain the signatures of only one of them,
+                // which is useless, so pretend like we have no signature
+                ? Collections.emptySet()
+                : source
+                    .stream()
+                    .flatMap(
+                        ap ->
+                            ap.getIusAttributes()
+                                .getOrDefault("signature", Collections.emptySortedSet())
+                                .stream())
+                    .collect(Collectors.toSet())
             : workflowRun
                 .getIus()
                 .stream()
