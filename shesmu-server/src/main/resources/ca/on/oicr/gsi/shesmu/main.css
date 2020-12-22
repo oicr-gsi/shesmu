@@ -334,6 +334,11 @@ a.button.danger:visited {
   border: 1px dashed var(--cyan-watermark);
   background-color: var(--cyan-background);
 }
+.state_safety_limit_reached,
+.filterlist .state_safety_limit_reached {
+  border: 1px dashed var(--yellow-watermark);
+  background-color: var(--yellow-highlight);
+}
 
 .state_succeeded,
 .filterlist .state_succeeded,
@@ -408,6 +413,18 @@ a.button.danger:visited {
   background-size: 200px 200px;
 }
 
+.state_safety_limit_reached.updating {
+  background: linear-gradient(
+    -45deg,
+    var(--yellow-background) 25%,
+    var(--yellow-highlight) 25%,
+    var(--yellow-highlight) 50%,
+    var(--yellow-background) 50%,
+    var(--yellow-background) 75%,
+    var(--yellow-highlight) 75%
+  );
+  background-size: 200px 200px;
+}
 .state_succeeded.updating {
   background: linear-gradient(
     -45deg,
@@ -539,6 +556,16 @@ a.button.danger:visited {
   color: var(--yellow-highlight);
 }
 
+.action.state_safety_limit_reached a:link,
+.action.state_safety_limit_reached a:visited {
+  color: var(--yellow-watermark);
+}
+
+.action.state_safety_limit_reached a:hover,
+.action.state_safety_limit_reached a:active {
+  color: black;
+}
+
 .action.state_succeeded a:link,
 .action.state_simulated a:link,
 .alert.expired a:link,
@@ -609,6 +636,10 @@ a.button.danger:visited {
   color: var(--yellow-watermark);
 }
 
+.action.state_safety_limit_reached > :first-child::before {
+  content: "Safety Limit Reached ⚠️";
+  color: var(--yellow-desaturated);
+}
 .action.state_succeeded > :first-child::before {
   content: "Succeeded ✓";
   color: var(--blue-watermark);
@@ -642,6 +673,7 @@ a.button.danger:visited {
 .filterlist .state_failed,
 .filterlist .state_inflight,
 .filterlist .state_queued,
+.filterlist .state_safety_limit_reached,
 .filterlist .state_succeeded,
 .filterlist .state_throttled,
 .filterlist .state_unknown,
@@ -650,6 +682,7 @@ a.button.danger:visited {
 .button.state_failed,
 .button.state_inflight,
 .button.state_queued,
+.button.state_safety_limit_reached,
 .button.state_succeeded,
 .button.state_throttled,
 .button.state_unknown,

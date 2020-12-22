@@ -613,7 +613,7 @@ public final class WorkflowAction extends Action {
                 this.errors =
                     Collections.singletonList(
                         "Too many workflows running. Sit tight or increase max-in-flight setting.");
-                return ActionState.WAITING;
+                return ActionState.SAFETY_LIMIT_REACHED;
               case EXTERNAL_THROTTLE:
                 this.errors =
                     Collections.singletonList(

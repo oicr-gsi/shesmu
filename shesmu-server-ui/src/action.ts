@@ -217,6 +217,7 @@ export const statuses = [
   "HALP",
   "INFLIGHT",
   "QUEUED",
+  "SAFETY_LIMIT_REACHED",
   "SUCCEEDED",
   "THROTTLED",
   "UNKNOWN",
@@ -243,6 +244,8 @@ export function statusDescription(status: Status): string {
       return "The action is currently being executed.";
     case "QUEUED":
       return "The action is waiting for a remote system to start it.";
+    case "SAFETY_LIMIT_REACHED":
+      return "The action has encountered some user-defined limit stopping it from proceeding.";
     case "SUCCEEDED":
       return "The action is complete.";
     case "THROTTLED":
