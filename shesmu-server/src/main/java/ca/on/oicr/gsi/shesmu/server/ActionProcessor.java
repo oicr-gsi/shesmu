@@ -495,7 +495,7 @@ public final class ActionProcessor
 
         @Override
         public Stream<String> extract(Entry<Action, Information> input) {
-          return input.getValue().tags.stream();
+          return Stream.concat(input.getValue().tags.stream(), input.getKey().tags());
         }
 
         @Override
