@@ -193,11 +193,17 @@ An olive can have many clauses that filter and reshape the data. All clauses
 can be preceded with `Label "`_text_`"` to have _text_ appear in the dataflow
 diagram instead of the name of the clause.
 
-- `Dump` _expr1_[`,` _expr2_[`,` ...]] `To` _dumper_
+- `Dump` [`Label` _name1_] _expr1_[`,` [`Label` _name2_] _expr2_[`,` ...]] `To` _dumper_
 - `Dump All To` _dumper_
 
 Exports data to a dumper for debugging analysis. The expressions can be of any
-time. If `All` is used, all variables are dumped in alphabetical order.
+type. If `All` is used, all variables are dumped in alphabetical order. In
+output some output formats (_e.g._, TSV) column order is preserved. Column
+names can be provided with the `Label` prefix to provide a name. If no column
+name is provided, Shesmu will attempt to infer an "obvious" column name (the
+variable name if a variable or a simple transformation of a variable). If no
+column name is obvious and none is provided, Shesmu will create an arbitrary
+name.
 
 This may be used in `Reject` and `Require` clauses. This does not reshape the data.
 

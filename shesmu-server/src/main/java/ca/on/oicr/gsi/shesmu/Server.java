@@ -27,7 +27,7 @@ import ca.on.oicr.gsi.shesmu.plugin.files.AutoUpdatingDirectory;
 import ca.on.oicr.gsi.shesmu.plugin.files.FileWatcher;
 import ca.on.oicr.gsi.shesmu.plugin.filter.*;
 import ca.on.oicr.gsi.shesmu.plugin.grouper.GrouperDefinition;
-import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
+import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.TypeParser;
 import ca.on.oicr.gsi.shesmu.plugin.wdl.WdlInputType;
@@ -293,9 +293,9 @@ public final class Server implements ServerConfig, ActionServices {
               }
 
               @Override
-              public Dumper findDumper(String name, Imyhat... types) {
+              public Dumper findDumper(String name, String[] columns, Imyhat... types) {
                 return pluginManager
-                    .findDumper(name, types)
+                    .findDumper(name, columns, types)
                     .orElseGet(
                         () ->
                             jsonDumpers.containsKey(name)
@@ -315,9 +315,10 @@ public final class Server implements ServerConfig, ActionServices {
 
                                   @Override
                                   public void write(Object... values) {
-                                    final ArrayNode row = output.addArray();
+                                    final ObjectNode row = output.addObject();
                                     for (int i = 0; i < types.length; i++) {
-                                      types[i].accept(new PackJsonArray(row), values[i]);
+                                      types[i].accept(
+                                          new PackJsonObject(row, columns[i]), values[i]);
                                     }
                                   }
                                 }

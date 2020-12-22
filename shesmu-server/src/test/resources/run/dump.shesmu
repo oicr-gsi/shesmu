@@ -2,5 +2,5 @@ Version 1;
 Input test;
 
 Olive
- Label "hello" Dump workflow To somefile
+ Label "hello" Dump workflow, Label p project, 3 To somefile
  Run ok With ok = True;

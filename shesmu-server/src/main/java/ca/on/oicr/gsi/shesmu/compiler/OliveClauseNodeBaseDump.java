@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.OliveNode.ClauseStreamOrder;
 import ca.on.oicr.gsi.shesmu.compiler.description.OliveClauseRow;
 import ca.on.oicr.gsi.shesmu.compiler.description.VariableInformation;
@@ -22,7 +23,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
       new Method("write", Type.VOID_TYPE, new Type[] {Type.getType(Object[].class)});
   private final int column;
   private final String dumper;
-  private List<Imyhat> dumperTypes;
+  private DumperDefinition dumperDefinition;
 
   private final Optional<String> label;
   private final int line;
@@ -53,7 +54,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
 
   protected abstract Stream<String> columnInputs(int index);
 
-  public abstract Imyhat columnType(int index);
+  public abstract Pair<String, Imyhat> columnDefinition(int index);
 
   @Override
   public final Stream<OliveClauseRow> dashboard() {
@@ -69,7 +70,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
                     index ->
                         new VariableInformation(
                             String.format("%d:%d(%d)", line(), column(), index),
-                            columnType(index),
+                            columnDefinition(index).second(),
                             columnInputs(index),
                             Behaviour.DEFINITION))));
   }
@@ -119,7 +120,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
       renderer.methodGen().dup();
       renderer.methodGen().push(it);
       renderColumn(it, renderer);
-      renderer.methodGen().valueOf(columnType(it).apply(TypeUtils.TO_ASM));
+      renderer.methodGen().valueOf(columnDefinition(it).second().apply(TypeUtils.TO_ASM));
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
     renderer.methodGen().invokeInterface(A_DUMPER_TYPE, DUMPER__WRITE);
@@ -133,12 +134,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
         new LoadableValue() {
           @Override
           public void accept(Renderer renderer) {
-            builder.createDumper(
-                dumper,
-                renderer,
-                IntStream.range(0, columnCount())
-                    .mapToObj(OliveClauseNodeBaseDump.this::columnType)
-                    .toArray(Imyhat[]::new));
+            dumperDefinition.create(builder, renderer);
           }
 
           @Override
@@ -157,7 +153,7 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
   public final boolean resolveDefinitions(
       OliveCompilerServices oliveCompilerServices, Consumer<String> errorHandler) {
 
-    dumperTypes = oliveCompilerServices.upsertDumper(dumper);
+    dumperDefinition = oliveCompilerServices.upsertDumper(dumper);
     return resolveDefinitionsExtra(oliveCompilerServices, errorHandler);
   }
 
@@ -169,24 +165,32 @@ public abstract class OliveClauseNodeBaseDump extends OliveClauseNode implements
     if (!typeCheckExtra(errorHandler)) {
       return false;
     }
-    if (dumperTypes.isEmpty()) {
-      IntStream.range(0, columnCount()).mapToObj(this::columnType).forEachOrdered(dumperTypes::add);
+    if (dumperDefinition.isFresh()) {
+      for (int i = 0; i < columnCount(); i++) {
+        final Pair<String, Imyhat> column = columnDefinition(i);
+        dumperDefinition.add(column.first(), column.second());
+      }
       return true;
     }
-    if (dumperTypes.size() != columnCount()) {
+    if (dumperDefinition.size() != columnCount()) {
       errorHandler.accept(
           String.format(
               "%d:%d: Number of arguments (%d) to dumper %s is different from previously (%d).",
-              line, column, columnCount(), dumper, dumperTypes.size()));
+              line, column, columnCount(), dumper, dumperDefinition.size()));
       return false;
     }
     boolean ok = true;
-    for (int i = 0; i < dumperTypes.size(); i++) {
-      if (!dumperTypes.get(i).isSame(columnType(i))) {
+    for (int i = 0; i < dumperDefinition.size(); i++) {
+      if (!dumperDefinition.type(i).isSame(columnDefinition(i).second())) {
         errorHandler.accept(
             String.format(
                 "%d:%d: The %d argument to dumper %s is was previously %s and is now %s.",
-                line, column, i, dumper, dumperTypes.get(i).name(), columnType(i).name()));
+                line,
+                column,
+                i,
+                dumper,
+                dumperDefinition.type(i).name(),
+                columnDefinition(i).second().name()));
         ok = false;
       }
     }

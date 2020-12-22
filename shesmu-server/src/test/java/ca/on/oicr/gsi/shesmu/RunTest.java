@@ -85,7 +85,10 @@ public class RunTest {
     }
 
     @Override
-    public Dumper findDumper(String name, Imyhat... types) {
+    public Dumper findDumper(String name, String[] columns, Imyhat... types) {
+      if (columns.length != types.length) {
+        bad++;
+      }
       return new Dumper() {
         @Override
         public void stop() {
@@ -94,7 +97,9 @@ public class RunTest {
 
         @Override
         public void write(Object... values) {
-          // Do nothing.
+          if (values.length != types.length) {
+            bad++;
+          }
         }
       };
     }

@@ -44,6 +44,11 @@ public class ExpressionNodeVariable extends ExpressionNode {
   }
 
   @Override
+  public Optional<String> dumpColumnName() {
+    return Optional.of(name);
+  }
+
+  @Override
   public void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {
     if (predicate.test(target.flavour())) {
       names.add(name);

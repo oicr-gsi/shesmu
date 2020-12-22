@@ -57,6 +57,11 @@ public class ExpressionNodeObjectGet extends ExpressionNode {
   }
 
   @Override
+  public Optional<String> dumpColumnName() {
+    return expression.dumpColumnName().map(s -> s + "." + field);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     expression.render(renderer);
     renderer.mark(line());

@@ -894,7 +894,7 @@ public final class ActionProcessor
   }
 
   @Override
-  public Dumper findDumper(String name, Imyhat... types) {
+  public Dumper findDumper(String name, String[] columns, Imyhat... types) {
     return null;
   }
 

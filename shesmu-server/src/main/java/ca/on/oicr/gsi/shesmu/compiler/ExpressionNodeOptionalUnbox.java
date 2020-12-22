@@ -30,6 +30,11 @@ public class ExpressionNodeOptionalUnbox extends ExpressionNode {
   }
 
   @Override
+  public Optional<String> dumpColumnName() {
+    return expression.dumpColumnName();
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
     renderer.loadTarget(target);

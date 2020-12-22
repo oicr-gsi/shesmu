@@ -12,7 +12,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeDictionaryGet extends ExpressionNode {
@@ -113,11 +112,6 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
       new Method("get", A_OBJECT_TYPE, new Type[] {Type.INT_TYPE});
   private static final Method METHOD_MAP__GET_OR_DEFAULT =
       new Method("getOrDefault", A_OBJECT_TYPE, new Type[] {A_OBJECT_TYPE, A_OBJECT_TYPE});
-
-  private static void renderLoad(GeneratorAdapter method, int index) {
-    method.push(index);
-    method.invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
-  }
 
   private Access access = Access.BAD;
   private final ExpressionNode expression;

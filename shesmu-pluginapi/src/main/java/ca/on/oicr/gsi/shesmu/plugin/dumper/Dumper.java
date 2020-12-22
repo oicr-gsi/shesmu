@@ -13,8 +13,8 @@ public interface Dumper {
    *
    * <p>This may be called multiple times in error conditions.
    */
-  public void stop();
+  void stop();
 
   /** Write the provided values to the output. */
-  public void write(Object... values);
+  void write(Object... values);
 }

@@ -196,7 +196,7 @@ public class ProgramNode {
     // Find and resolve olive “Define” and “Matches”
     final OliveCompilerServices compilerServices =
         new OliveCompilerServices() {
-          final Map<String, List<Imyhat>> dumpers = new HashMap<>();
+          final Map<String, DumperDefinition> dumpers = new HashMap<>();
           final Set<String> metricNames = new HashSet<>();
 
           @Override
@@ -281,8 +281,8 @@ public class ProgramNode {
           }
 
           @Override
-          public List<Imyhat> upsertDumper(String dumper) {
-            return dumpers.computeIfAbsent(dumper, k -> new ArrayList<>());
+          public DumperDefinition upsertDumper(String dumper) {
+            return dumpers.computeIfAbsent(dumper, DumperDefinition::new);
           }
         };
 

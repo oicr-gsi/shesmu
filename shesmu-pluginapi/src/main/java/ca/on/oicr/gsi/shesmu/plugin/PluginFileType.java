@@ -113,9 +113,10 @@ public abstract class PluginFileType<T extends PluginFile> {
    * Find a dumper
    *
    * @param name the dumper to find
+   * @param columns
    * @return the dumper if found, or an empty stream if none is available
    */
-  public Stream<Dumper> findDumper(String name, Imyhat... types) {
+  public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
     return Stream.empty();
   }
 

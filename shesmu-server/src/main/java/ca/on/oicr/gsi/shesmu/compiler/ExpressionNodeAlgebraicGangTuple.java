@@ -51,6 +51,11 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
   }
 
   @Override
+  public Optional<String> dumpColumnName() {
+    return Optional.of(String.format("{@%s}", gangName));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.methodGen().newInstance(A_ALGEBRAIC_VALUE_TYPE);
     renderer.methodGen().dup();

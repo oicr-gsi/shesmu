@@ -127,8 +127,8 @@ public final class MonitoredOliveServices implements OliveServices, AutoCloseabl
   }
 
   @Override
-  public Dumper findDumper(String name, Imyhat... types) {
-    return backing.findDumper(name, types);
+  public Dumper findDumper(String name, String[] columns, Imyhat... types) {
+    return backing.findDumper(name, columns, types);
   }
 
   @Override

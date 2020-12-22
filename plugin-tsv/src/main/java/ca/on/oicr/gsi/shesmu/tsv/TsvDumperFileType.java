@@ -47,7 +47,7 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
     }
 
     @Override
-    public Stream<Dumper> findDumper(String name, Imyhat... types) {
+    public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
       final Path path = paths.get(name);
       return path == null
           ? Stream.empty()
@@ -58,7 +58,15 @@ public class TsvDumperFileType extends PluginFileType<TsvDumperFileType.DumperCo
                 {
                   Optional<PrintStream> output;
                   try {
-                    output = Optional.of(new PrintStream(path.toFile()));
+                    final PrintStream stream = new PrintStream(path.toFile());
+                    for (int it = 0; it < columns.length; it++) {
+                      if (it > 0) {
+                        stream.print("\t");
+                      }
+                      stream.print(columns[it]);
+                    }
+                    stream.println();
+                    output = Optional.of(stream);
                   } catch (final FileNotFoundException e) {
                     e.printStackTrace();
                     output = Optional.empty();

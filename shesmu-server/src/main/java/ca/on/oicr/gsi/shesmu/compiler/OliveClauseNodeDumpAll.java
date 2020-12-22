@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
@@ -42,8 +43,9 @@ public final class OliveClauseNodeDumpAll extends OliveClauseNodeBaseDump implem
   }
 
   @Override
-  public Imyhat columnType(int index) {
-    return columns.get(index).type();
+  public Pair<String, Imyhat> columnDefinition(int index) {
+    final Target target = columns.get(index);
+    return new Pair<>(target.name(), target.type());
   }
 
   @Override

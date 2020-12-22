@@ -18,7 +18,6 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.cache.InitialCachePopulationException;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
-import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonArray;
 import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.refill.Refiller;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -649,7 +648,7 @@ public class SimulateRequest {
                       }
 
                       @Override
-                      public Dumper findDumper(String name, Imyhat... types) {
+                      public Dumper findDumper(String name, String[] columns, Imyhat... types) {
                         return new Dumper() {
                           private final ArrayNode dump = dumpers.putArray(name);
 
@@ -660,9 +659,9 @@ public class SimulateRequest {
 
                           @Override
                           public void write(Object... values) {
-                            final ArrayNode row = dump.addArray();
+                            final ObjectNode row = dump.addObject();
                             for (int i = 0; i < types.length; i++) {
-                              types[i].accept(new PackJsonArray(row), values[i]);
+                              types[i].accept(new PackJsonObject(row, columns[i]), values[i]);
                             }
                           }
                         };
