@@ -15,6 +15,8 @@ public enum ActionState {
   INFLIGHT(2),
   /** The action is waiting for a remote system to start it. */
   QUEUED(2),
+  /** The action has encountered some user-defined limit stopping it from proceeding. */
+  SAFETY_LIMIT_REACHED(2),
   /** The action is complete. */
   SUCCEEDED(1),
   /**
