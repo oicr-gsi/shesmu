@@ -74,47 +74,56 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           new EnumMap<>(FileProvenanceFilter.class);
       filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
       final AtomicLong badStatusCount = new AtomicLong();
-      return metadata
-          .streamAnalysisProvenance(filters)
-          .filter(
-              ap -> {
-                if (ap.getWorkflowRunStatus() == null) {
-                  badStatusCount.incrementAndGet();
-                  return false;
-                }
-                return true;
-              })
-          .filter(ap -> ap.getWorkflowId() != null)
-          .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
-          .entrySet()
-          .stream()
-          .map(
-              e ->
-                  new AnalysisState(
-                      e.getKey(),
-                      () -> metadata.getWorkflowRunWithIuses(e.getKey()),
-                      iusAccession ->
-                          limsKeyCache.computeIfAbsent(iusAccession, metadata::getLimsKeyFrom),
-                      e.getValue(),
-                      incrementSlowFetch))
-          .onClose(
-              () -> {
-                badStatus.labels(url, Long.toString(key)).set(badStatusCount.get());
-                metadata.clean_up();
-
-                final Set<Pair<String, String>> stale =
-                    staleKeys.computeIfAbsent(key, k -> new HashSet<>());
-                synchronized (stale) {
-                  stale.forEach(
-                      p ->
-                          definer.log(
-                              String.format(
-                                  "Purging stale lock on %s/%s for workflow %d",
-                                  p.first(), p.second(), key),
-                              Collections.emptyMap()));
-                  stale.clear();
-                }
-              });
+      final Set<Pair<String, String>> seenLimsKeys = new HashSet<>();
+      try {
+        final List<AnalysisState> data =
+            metadata
+                .streamAnalysisProvenance(filters)
+                .filter(
+                    ap -> {
+                      if (ap.getWorkflowRunStatus() == null) {
+                        badStatusCount.incrementAndGet();
+                        return false;
+                      }
+                      return true;
+                    })
+                .filter(ap -> ap.getWorkflowId() != null)
+                .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
+                .entrySet()
+                .stream()
+                .map(
+                    e ->
+                        new AnalysisState(
+                            e.getKey(),
+                            () -> metadata.getWorkflowRunWithIuses(e.getKey()),
+                            iusAccession ->
+                                limsKeyCache.computeIfAbsent(
+                                    iusAccession, metadata::getLimsKeyFrom),
+                            e.getValue(),
+                            incrementSlowFetch))
+                .peek(as -> as.addSeenLimsKeys(seenLimsKeys))
+                .collect(Collectors.toList());
+        return data.stream();
+      } catch (Exception e) {
+        seenLimsKeys.clear();
+        throw e;
+      } finally {
+        badStatus.labels(url, Long.toString(key)).set(badStatusCount.get());
+        metadata.clean_up();
+        final Set<Pair<String, String>> stale =
+            staleKeys.computeIfAbsent(key, k -> new HashSet<>());
+        synchronized (stale) {
+          for (final Pair<String, String> limsKey : seenLimsKeys) {
+            if (stale.remove(limsKey)) {
+              definer.log(
+                  String.format(
+                      "Purging stale lock on %s/%s for workflow %d",
+                      limsKey.first(), limsKey.second(), key),
+                  Collections.emptyMap());
+            }
+          }
+        }
+      }
     }
   }
 

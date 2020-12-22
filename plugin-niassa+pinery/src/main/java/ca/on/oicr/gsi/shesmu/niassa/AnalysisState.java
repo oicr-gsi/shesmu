@@ -157,6 +157,13 @@ public class AnalysisState implements Comparable<AnalysisState> {
             .collect(Collectors.toCollection(TreeSet::new));
   }
 
+  public void addSeenLimsKeys(Set<Pair<String, String>> seenLimsKeys) {
+    limsKeys
+        .stream()
+        .map(l -> new Pair<>(l.first().getProvider(), l.first().getVersion()))
+        .forEach(seenLimsKeys::add);
+  }
+
   /** Check how much this analysis record matches the data provided */
   public <L extends LimsKey> WorkflowRunMatch compare(
       LongStream workflowAccessions,
