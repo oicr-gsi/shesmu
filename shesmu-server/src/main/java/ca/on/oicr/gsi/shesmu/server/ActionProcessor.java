@@ -856,6 +856,22 @@ public final class ActionProcessor
     return currentAlerts;
   }
 
+  public Stream<ObjectNode> drain(SourceLocationLinker linker, Filter... filters) {
+    final Set<Action> deadActions = new HashSet<>();
+    return startStream(filters)
+        .peek(e -> stateCount.labels(e.getValue().lastState.name(), e.getKey().type()).dec())
+        .map(
+            entry -> {
+              deadActions.add(entry.getKey());
+              return makeActionJson(linker, entry, false);
+            })
+        .onClose(
+            () -> {
+              actions.keySet().removeAll(deadActions);
+              deadActions.forEach(Action::purgeCleanup);
+            });
+  }
+
   /**
    * Check that an action's external timestamp is in the time range provided
    *
@@ -1131,6 +1147,62 @@ public final class ActionProcessor
     return actions.values().stream().flatMap(i -> i.locations.stream()).distinct();
   }
 
+  private ObjectNode makeActionJson(
+      SourceLocationLinker linker, Entry<Action, Information> entry, boolean includeCommands) {
+    ObjectNode actionNode;
+    try {
+      actionNode = entry.getKey().toJson(RuntimeSupport.MAPPER);
+    } catch (Exception e) {
+      e.printStackTrace();
+      actionNode = RuntimeSupport.MAPPER.createObjectNode();
+    }
+    final ObjectNode node = actionNode;
+    node.put("actionId", entry.getValue().id);
+    node.put("updateInProgress", entry.getValue().updateInProgress);
+    node.put("state", entry.getValue().lastState.name());
+    node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
+    node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
+    node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
+    Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags())
+        .forEach(node.putArray("tags")::add);
+    entry
+        .getKey()
+        .externalTimestamp()
+        .ifPresent(external -> node.put("external", external.toEpochMilli()));
+    final String thrown = entry.getValue().thrown;
+    if (thrown != null) {
+      if (node.has("errors")) {
+        ((ArrayNode) node.get("errors")).add(thrown);
+      } else {
+        node.putArray("errors").add(thrown);
+      }
+    }
+    node.put("type", entry.getKey().type());
+    final ArrayNode locations = node.putArray("locations");
+    entry
+        .getValue()
+        .locations
+        .stream()
+        .sorted()
+        .forEach(location -> location.toJson(locations, linker));
+    final ArrayNode commands = node.putArray("commands");
+    if (includeCommands) {
+      entry
+          .getKey()
+          .commands()
+          .forEach(
+              c -> {
+                final ObjectNode command = commands.addObject();
+                command.put("command", c.command());
+                command.put("buttonText", c.buttonText());
+                command.put("icon", c.icon().icon());
+                command.put("showPrompt", c.prefers(Preference.PROMPT));
+                command.put("allowBulk", c.prefers(Preference.ALLOW_BULK));
+              });
+    }
+    return node;
+  }
+
   @Override
   public <T> Stream<T> measureFlow(
       Stream<T> input,
@@ -1345,60 +1417,7 @@ public final class ActionProcessor
    * @param filters the filters to match
    */
   public Stream<ObjectNode> stream(SourceLocationLinker linker, Filter... filters) {
-    return startStream(filters)
-        .map(
-            entry -> {
-              ObjectNode actionNode;
-              try {
-                actionNode = entry.getKey().toJson(RuntimeSupport.MAPPER);
-              } catch (Exception e) {
-                e.printStackTrace();
-                actionNode = RuntimeSupport.MAPPER.createObjectNode();
-              }
-              final ObjectNode node = actionNode;
-              node.put("actionId", entry.getValue().id);
-              node.put("updateInProgress", entry.getValue().updateInProgress);
-              node.put("state", entry.getValue().lastState.name());
-              node.put("lastAdded", entry.getValue().lastAdded.toEpochMilli());
-              node.put("lastChecked", entry.getValue().lastChecked.toEpochMilli());
-              node.put("lastStatusChange", entry.getValue().lastStateTransition.toEpochMilli());
-              Stream.concat(entry.getValue().tags.stream(), entry.getKey().tags())
-                  .forEach(node.putArray("tags")::add);
-              entry
-                  .getKey()
-                  .externalTimestamp()
-                  .ifPresent(external -> node.put("external", external.toEpochMilli()));
-              final String thrown = entry.getValue().thrown;
-              if (thrown != null) {
-                if (node.has("errors")) {
-                  ((ArrayNode) node.get("errors")).add(thrown);
-                } else {
-                  node.putArray("errors").add(thrown);
-                }
-              }
-              node.put("type", entry.getKey().type());
-              final ArrayNode locations = node.putArray("locations");
-              entry
-                  .getValue()
-                  .locations
-                  .stream()
-                  .sorted()
-                  .forEach(location -> location.toJson(locations, linker));
-              final ArrayNode commands = node.putArray("commands");
-              entry
-                  .getKey()
-                  .commands()
-                  .forEach(
-                      c -> {
-                        final ObjectNode command = commands.addObject();
-                        command.put("command", c.command());
-                        command.put("buttonText", c.buttonText());
-                        command.put("icon", c.icon().icon());
-                        command.put("showPrompt", c.prefers(Preference.PROMPT));
-                        command.put("allowBulk", c.prefers(Preference.ALLOW_BULK));
-                      });
-              return node;
-            });
+    return startStream(filters).map(entry -> makeActionJson(linker, entry, true));
   }
 
   @Override

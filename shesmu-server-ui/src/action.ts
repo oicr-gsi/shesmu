@@ -207,6 +207,22 @@ export const standardExports: ExportSearchCommand[] = [
     categoryIcon: "terminal",
     callback: (filters) => copyWgetCommand("purge", filters),
   },
+  {
+    icon: "cart-x",
+    label: "cURL Drain",
+    description: "Convert search to a cURL command to drain matching actions.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) => copyCUrlCommand("drain", filters),
+  },
+  {
+    icon: "cart-x",
+    label: "Wget Drain",
+    description: "Convert search to a Wget command to drain matching actions.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) => copyWgetCommand("drain", filters),
+  },
 ];
 
 /**
@@ -403,15 +419,30 @@ export function actionDisplay(
             )
           : blank(),
         response && response.total
-          ? buttonDanger(
-              [{ type: "icon", icon: "x-octagon-fill" }, "Purge Actions"],
-              "Remove actions from Shesmu. This does not stop an olive from generating them again.",
-              () =>
-                fetchJsonWithBusyDialog("purge", filters, (count) => {
-                  butterForPurgeCount(count);
-                  reload();
-                })
-            )
+          ? [
+              buttonDanger(
+                [{ type: "icon", icon: "x-octagon-fill" }, "Purge Actions"],
+                "Remove actions from Shesmu. This does not stop an olive from generating them again.",
+                () =>
+                  fetchJsonWithBusyDialog("purge", filters, (count) => {
+                    butterForPurgeCount(count);
+                    reload();
+                  })
+              ),
+              buttonDanger(
+                [{ type: "icon", icon: "cart-x-fill" }, "Drain Actions"],
+                "Remove actions from Shesmu and save them to a file. This does not stop an olive from generating them again.",
+                () =>
+                  fetchJsonWithBusyDialog("drain", filters, (results) => {
+                    saveFile(
+                      JSON.stringify(results, null, 2),
+                      "application/json",
+                      "drained-actions.json"
+                    );
+                    reload();
+                  })
+              ),
+            ]
           : blank(),
         response
           ? menuForCommands(

@@ -1598,6 +1598,41 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/drain",
+        t -> {
+          final ActionFilter[] filters;
+          try {
+            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
+          } catch (final Exception e) {
+            t.sendResponseHeaders(400, 0);
+            try (final OutputStream os = t.getResponseBody()) {}
+            return;
+          }
+          t.sendResponseHeaders(200, 0);
+          try (final Stream<ObjectNode> actions =
+                  processor.drain(
+                      pluginManager,
+                      Stream.of(filters)
+                          .filter(Objects::nonNull)
+                          .map(filterJson -> filterJson.convert(processor))
+                          .toArray(Filter[]::new));
+              final OutputStream os = t.getResponseBody();
+              final JsonGenerator jsonOutput =
+                  new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+            jsonOutput.setCodec(RuntimeSupport.MAPPER);
+            jsonOutput.writeStartArray();
+            actions.forEach(
+                action -> {
+                  try {
+                    jsonOutput.writeTree(action);
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+            jsonOutput.writeEndArray();
+          }
+        });
+    add(
         "/command",
         t -> {
           final CommandRequest request;

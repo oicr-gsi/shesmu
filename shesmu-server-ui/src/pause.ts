@@ -1,5 +1,5 @@
 import { actionDisplay, butterForPurgeCount } from "./action.js";
-import { fetchJsonWithBusyDialog, refreshable } from "./io.js";
+import { fetchJsonWithBusyDialog, refreshable, saveFile } from "./io.js";
 import {
   br,
   dialog,
@@ -205,6 +205,40 @@ export function initialisePauseDashboard(pauses: Pauses) {
                               (isPause) => {
                                 if (!isPause) {
                                   butterForPurgeCount(count);
+                                  refresher.statusChanged(null);
+                                } else {
+                                  dialog((_c) => "Could not clear pause.");
+                                }
+                              }
+                            )
+                        )
+                    ),
+                    buttonDanger(
+                      [{ type: "icon", icon: "cart-x-fill" }, "️Drain"],
+                      "Purge related actions, download their contents and remove this pause.",
+                      () =>
+                        fetchJsonWithBusyDialog(
+                          "drain",
+                          [
+                            {
+                              type: "sourcelocation",
+                              locations: [copyLocation(pause)],
+                            },
+                          ],
+                          (actions) =>
+                            fetchJsonWithBusyDialog(
+                              pause.line ? "pauseolive" : "pausefile",
+                              {
+                                ...pause,
+                                pause: false,
+                              },
+                              (isPause) => {
+                                if (!isPause) {
+                                  saveFile(
+                                    JSON.stringify(actions, null, 2),
+                                    "application/json",
+                                    "paused-drained-actions.json"
+                                  );
                                   refresher.statusChanged(null);
                                 } else {
                                   dialog((_c) => "Could not clear pause.");
