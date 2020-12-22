@@ -1,6 +1,6 @@
 Version 1;
 Input test;
 
-Function x(integer a) `{x = ``, a = a}` As json; # This is what we're really testing, but we just need to generate valid bytecode
+Function x(integer a) `{x = ``; a}` As json; # This is what we're really testing, but we just need to generate valid bytecode
 
 Olive Run ok With ok = "{x(3)}" == "\{\"a\":3,\"x\":null}";

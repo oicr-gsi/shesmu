@@ -680,6 +680,11 @@ Destructuring also works on objects:
 
     For {x = n, y = l} In [{n = 1, l = "a"}, {n = 2, l = "b"}]: Where x > 5 Count
 
+Since field names are often the best name to use for a variable, a shorthand
+assignment is available:
+
+    For {; n, l} In [{n = 1, l = "a"}, {n = 2, l = "b"}]: Where n > 5 Count
+
 For objects, fields can be omitted:
 
     For {x = n} In [{n = 1, l = "a"}, {n = 2, l = "b"}]: Where x > 5 Count

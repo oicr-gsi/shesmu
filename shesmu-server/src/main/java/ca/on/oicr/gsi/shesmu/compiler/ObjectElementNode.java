@@ -30,8 +30,6 @@ public abstract class ObjectElementNode {
   }
 
   public static Parser parse(Parser parser, Consumer<ObjectElementNode> output) {
-    final AtomicReference<ObjectElementNode> value = new AtomicReference<>();
-
     final Parser restResult = parser.whitespace().symbol("...");
     if (restResult.isGood()) {
       final AtomicReference<ExpressionNode> expression = new AtomicReference<>();

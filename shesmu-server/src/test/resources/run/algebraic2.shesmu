@@ -4,4 +4,4 @@ Input test;
 Function x(string p)
   If p == "the_foo_study" Then OK Else SOMETHING {v = False};
 
-Olive Run ok With ok = Match x(project) When OK Then True When SOMETHING {v = v} Then v;
+Olive Run ok With ok = Match x(project) When OK Then True When SOMETHING {; v} Then v;
