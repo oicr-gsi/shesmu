@@ -467,9 +467,26 @@ public abstract class OliveClauseNode {
       constructor = OliveClauseNodeDumpAll::new;
       intermediateParser = allResult;
     } else {
-      final AtomicReference<List<ExpressionNode>> columns = new AtomicReference<>();
+      final AtomicReference<List<Pair<Optional<String>, ExpressionNode>>> columns =
+          new AtomicReference<>();
       intermediateParser =
-          input.whitespace().listEmpty(columns::set, ExpressionNode::parse, ',').whitespace();
+          input
+              .whitespace()
+              .listEmpty(
+                  columns::set,
+                  (pf, po) -> {
+                    final AtomicReference<Optional<String>> label =
+                        new AtomicReference<>(Optional.empty());
+                    final Parser labelResult = pf.whitespace().keyword("Label").whitespace();
+
+                    return ExpressionNode.parse(
+                        labelResult.isGood()
+                            ? labelResult.identifier(l -> label.set(Optional.of(l))).whitespace()
+                            : pf,
+                        expression -> po.accept(new Pair<>(label.get(), expression)));
+                  },
+                  ',')
+              .whitespace();
       constructor = (la, l, c, d) -> new OliveClauseNodeDump(la, l, c, d, columns.get());
     }
     final AtomicReference<String> dumper = new AtomicReference<>();

@@ -3,8 +3,6 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureDefinition;
-import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import java.util.List;
 import java.util.stream.Stream;
 
 public interface OliveCompilerServices extends ExpressionCompilerServices, ConstantRetriever {
@@ -20,5 +18,5 @@ public interface OliveCompilerServices extends ExpressionCompilerServices, Const
 
   Stream<SignatureDefinition> signatures();
 
-  List<Imyhat> upsertDumper(String dumper);
+  DumperDefinition upsertDumper(String dumper);
 }

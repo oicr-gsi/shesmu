@@ -5,6 +5,7 @@ import static ca.on.oicr.gsi.shesmu.compiler.BaseOliveBuilder.A_OPTIONAL_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ConstantDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.InputFormatDefinition;
@@ -60,8 +61,6 @@ public abstract class RootBuilder {
               A_STRING_TYPE,
               Type.getType(MethodType.class)),
           false);
-  private static final Method METHOD_ACTION_GENERATOR__CLEAR_GAUGE =
-      new Method("clearGauge", VOID_TYPE, new Type[] {});
   private static final Method METHOD_ACTION_GENERATOR__INPUTS =
       new Method("inputs", A_STREAM_TYPE, new Type[] {});
   private static final Method METHOD_ACTION_GENERATOR__RUN =
@@ -75,15 +74,14 @@ public abstract class RootBuilder {
           "buildGauge",
           A_GAUGE_TYPE,
           new Type[] {A_STRING_TYPE, A_STRING_TYPE, A_STRING_ARRAY_TYPE});
-  private static final Method METHOD_DUMPER__FIND =
-      new Method("find", A_DUMPER_TYPE, new Type[] {A_STRING_TYPE, Type.getType(Imyhat[].class)});
-  private static final Method METHOD_DUMPER__START = new Method("start", VOID_TYPE, new Type[] {});
   private static final Method METHOD_DUMPER__STOP = new Method("stop", VOID_TYPE, new Type[] {});
   private static final Method METHOD_GAUGE__CLEAR = new Method("clear", VOID_TYPE, new Type[] {});
   private static final String METHOD_IMYHAT_DESC = Type.getMethodDescriptor(A_IMYHAT_TYPE);
   private static final Method METHOD_OLIVE_SERVICES__FIND_DUMPER =
       new Method(
-          "findDumper", A_DUMPER_TYPE, new Type[] {A_STRING_TYPE, Type.getType(Imyhat[].class)});
+          "findDumper",
+          A_DUMPER_TYPE,
+          new Type[] {A_STRING_TYPE, A_STRING_ARRAY_TYPE, Type.getType(Imyhat[].class)});
   private static final Method METHOD_OPTIONAL__EMPTY =
       new Method("empty", A_OPTIONAL_TYPE, new Type[] {});
   private static final Method METHOD_OPTIONAL__OF =
@@ -303,15 +301,26 @@ public abstract class RootBuilder {
   /** Create a new class for this program. */
   protected abstract ClassVisitor createClassVisitor();
 
-  public void createDumper(String dumper, Renderer renderer, Imyhat... types) {
+  public final void createDumper(
+      String dumper, Renderer renderer, List<Pair<String, Imyhat>> columns) {
     renderer.emitNamed("Olive Services");
     renderer.methodGen().push(dumper);
-    renderer.methodGen().push(types.length);
-    renderer.methodGen().newArray(A_IMYHAT_TYPE);
-    for (int i = 0; i < types.length; i++) {
+    renderer.methodGen().push(columns.size());
+    renderer.methodGen().newArray(A_STRING_TYPE);
+    for (int i = 0; i < columns.size(); i++) {
       renderer.methodGen().dup();
       renderer.methodGen().push(i);
-      renderer.methodGen().invokeDynamic(types[i].descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
+      renderer.methodGen().push(columns.get(i).first());
+      renderer.methodGen().arrayStore(A_STRING_TYPE);
+    }
+    renderer.methodGen().push(columns.size());
+    renderer.methodGen().newArray(A_IMYHAT_TYPE);
+    for (int i = 0; i < columns.size(); i++) {
+      renderer.methodGen().dup();
+      renderer.methodGen().push(i);
+      renderer
+          .methodGen()
+          .invokeDynamic(columns.get(i).second().descriptor(), METHOD_IMYHAT_DESC, HANDLER_IMYHAT);
       renderer.methodGen().arrayStore(A_IMYHAT_TYPE);
     }
     renderer.methodGen().invokeInterface(A_OLIVE_SERVICES_TYPE, METHOD_OLIVE_SERVICES__FIND_DUMPER);

@@ -172,6 +172,11 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
   }
 
   @Override
+  public Optional<String> dumpColumnName() {
+    return expression.dumpColumnName().map(s -> s + "[" + index + "]");
+  }
+
+  @Override
   public void render(Renderer renderer) {
     expression.render(renderer);
     renderer.mark(line());

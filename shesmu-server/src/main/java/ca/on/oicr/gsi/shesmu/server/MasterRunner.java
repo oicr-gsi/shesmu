@@ -83,8 +83,8 @@ public class MasterRunner {
             }
 
             @Override
-            public Dumper findDumper(String name, Imyhat... types) {
-              return services.findDumper(name, types);
+            public Dumper findDumper(String name, String[] columns, Imyhat... types) {
+              return services.findDumper(name, columns, types);
             }
 
             @Override

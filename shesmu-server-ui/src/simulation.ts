@@ -493,20 +493,28 @@ export function renderResponse(response: SimulationResponse | null): Tab[] {
       });
     }
     if (response.dumpers && Object.entries(response.dumpers).length) {
-      const dumpState = singleState((input: [string, any[][]] | null) =>
-        input && input[1].length > 0
-          ? renderJsonTable<any[]>(
-              name + ".dump.json",
-              input[1],
-              ...Array.from(input[1][0].keys()).map(
-                (i) =>
-                  [`Column ${i + 1}`, (row) => row[i]] as [
-                    string,
-                    (input: any[]) => any
-                  ]
-              )
-            )
-          : ["Olive provided no records to ", mono(name), " dumper."]
+      const dumpState = singleState(
+        (input: [string, RefillerRecord[]] | null) => {
+          if (input) {
+            return input[1].length > 0
+              ? renderJsonTable<RefillerRecord>(
+                  input[0] + ".dump.json",
+                  input[1],
+                  ...Object.keys(input[1][0])
+                    .sort((a, b) => a.localeCompare(b))
+                    .map(
+                      (name) =>
+                        [name, (row: RefillerRecord) => row[name]] as [
+                          string,
+                          (row: RefillerRecord) => any
+                        ]
+                    )
+                )
+              : ["Olive provided no records to ", mono(input[0]), " dumper."];
+          } else {
+            return "Please select a dumper.";
+          }
+        }
       );
       tabList.push({
         name: "Dumpers",

@@ -161,6 +161,11 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
   }
 
   @Override
+  public Optional<String> dumpColumnName() {
+    return item.dumpColumnName();
+  }
+
+  @Override
   public void render(Renderer renderer) {
     // Okay, we are going to build two radically different kinds of code. If we have an optional
     // with no captures, we just compute the value and stick it in an optional

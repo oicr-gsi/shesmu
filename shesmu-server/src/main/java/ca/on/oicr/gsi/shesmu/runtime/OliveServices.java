@@ -18,7 +18,7 @@ public interface OliveServices {
       String hash)
       throws Exception;
 
-  Dumper findDumper(String name, Imyhat... types);
+  Dumper findDumper(String name, String[] columns, Imyhat... types);
 
   boolean isOverloaded(String... services);
 

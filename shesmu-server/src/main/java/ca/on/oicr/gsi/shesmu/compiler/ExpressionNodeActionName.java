@@ -3,6 +3,7 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -11,6 +12,11 @@ public class ExpressionNodeActionName extends ExpressionNode {
 
   public ExpressionNodeActionName(int line, int column) {
     super(line, column);
+  }
+
+  @Override
+  public Optional<String> dumpColumnName() {
+    return Optional.of("Action Name");
   }
 
   @Override

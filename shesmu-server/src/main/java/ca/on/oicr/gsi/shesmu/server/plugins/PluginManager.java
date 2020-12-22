@@ -751,8 +751,8 @@ public final class PluginManager
                 : customSource.stream().flatMap(s -> s.fetch(readStale)));
       }
 
-      public Stream<Dumper> findDumper(String name, Imyhat... types) {
-        return instance.findDumper(name, types);
+      public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
+        return instance.findDumper(name, columns, types);
       }
 
       public Stream<FunctionDefinition> functions() {
@@ -1072,10 +1072,10 @@ public final class PluginManager
           configuration.stream().flatMap(f -> f.fetch(format, readStale)));
     }
 
-    public Stream<Dumper> findDumper(String name, Imyhat... types) {
+    public Stream<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
       return Stream.concat(
-          fileFormat.findDumper(name, types),
-          configuration.stream().flatMap(f -> f.findDumper(name, types)));
+          fileFormat.findDumper(name, columns, types),
+          configuration.stream().flatMap(f -> f.findDumper(name, columns, types)));
     }
 
     public final Stream<FunctionDefinition> functions() {
@@ -1896,10 +1896,11 @@ public final class PluginManager
    * Find a dumper
    *
    * @param name the dumper to find
+   * @param columns
    * @return the dumper if found, or an empty optional if none is available
    */
-  public Optional<Dumper> findDumper(String name, Imyhat... types) {
-    return formatTypes.stream().flatMap(f -> f.findDumper(name, types)).findFirst();
+  public Optional<Dumper> findDumper(String name, String[] columns, Imyhat... types) {
+    return formatTypes.stream().flatMap(f -> f.findDumper(name, columns, types)).findFirst();
   }
 
   @Override

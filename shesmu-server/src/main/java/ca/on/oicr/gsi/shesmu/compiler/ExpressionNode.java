@@ -933,6 +933,11 @@ public abstract class ExpressionNode implements Renderable {
     return column;
   }
 
+  /** Provides a name that can be used for dump columns, if possible */
+  public Optional<String> dumpColumnName() {
+    return Optional.empty();
+  }
+
   public final int line() {
     return line;
   }
