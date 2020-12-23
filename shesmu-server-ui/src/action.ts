@@ -57,6 +57,7 @@ import {
   renderFilters,
 } from "./actionfilters.js";
 import {
+  ShesmuRequestType,
   fetchJsonWithBusyDialog,
   loadFile,
   locallyStored,
@@ -97,7 +98,7 @@ export interface ActionCommand extends BaseCommand {
 /**
  * Response from paginated action query endpoint
  */
-interface ActionQueryResponse {
+export interface ActionQueryResponse {
   offset: number;
   total: number;
   results: Action[];
@@ -196,7 +197,7 @@ export const standardExports: ExportSearchCommand[] = [
     description: "Convert search to a cURL command to purge matching actions.",
     category: "Command Line",
     categoryIcon: "terminal",
-    callback: (filters) => copyCUrlCommand("pruge", filters),
+    callback: (filters) => copyCUrlCommand("purge", filters),
   },
   {
     icon: "clipboard-x",
@@ -427,12 +428,9 @@ export function actionDisplay(
     25,
     "query",
     (filters, offset, pageLength) => ({
-      body: JSON.stringify({
-        filters: filters,
-        limit: pageLength,
-        skip: offset,
-      }),
-      method: "POST",
+      filters: filters,
+      limit: pageLength,
+      skip: offset,
     }),
     (_filters: ActionFilter[] | null, response: ActionQueryResponse | null) =>
       response ? { offset: response.offset, total: response.total } : null,
@@ -586,12 +584,18 @@ function createCallbackForBulkCommand(
   return performCommand;
 }
 
-function copyCUrlCommand(slug: string, request: any) {
+function copyCUrlCommand<K extends keyof ShesmuRequestType>(
+  slug: K,
+  request: ShesmuRequestType[K]
+) {
   saveClipboard(
     `curl -d '${JSON.stringify(request)}' -X POST ${location.origin}/${slug}`
   );
 }
-function copyWgetCommand(slug: string, request: any) {
+function copyWgetCommand<K extends keyof ShesmuRequestType>(
+  slug: K,
+  request: ShesmuRequestType[K]
+) {
   saveClipboard(
     `wget --post-data '${JSON.stringify(request)}' ${location.origin}/${slug}`
   );
