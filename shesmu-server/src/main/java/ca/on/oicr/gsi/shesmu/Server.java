@@ -1951,7 +1951,18 @@ public final class Server implements ServerConfig, ActionServices {
           request.run(
               DefinitionRepository.concat(definitionRepository, compiler), this, inputSource, t);
         });
-
+    add(
+        "/simulate-existing",
+        t -> {
+          final SimulateExistingRequest request =
+              RuntimeSupport.MAPPER.readValue(t.getRequestBody(), SimulateExistingRequest.class);
+          request.run(
+              compiler,
+              DefinitionRepository.concat(definitionRepository, compiler),
+              this,
+              inputSource,
+              t);
+        });
     add(
         "/simulatedash",
         t -> {

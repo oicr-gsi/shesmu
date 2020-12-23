@@ -711,6 +711,107 @@
         },
         "type": "object"
       },
+      "SimulationResponse": {
+        "properties": {
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {
+                "type": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "alerts": {
+            "properties": {
+              "annotations": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "labels": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "bytecode": {
+            "type": "string"
+          },
+          "dumpers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "exports": {
+            "additionalProperties": {
+              "properties": {
+                "parameters": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "returns": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "metrics": {
+            "type": "string"
+          },
+          "olives": {
+            "items": {
+              "properties": {
+                "column": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "diagram": {
+                  "type": "string"
+                },
+                "duration": {
+                  "type": "integer"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "syntax": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "overloadedInputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "SourceOliveLocation": {
         "properties": {
           "column": {
@@ -1780,6 +1881,12 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "allowUnused": {
+                    "type": "boolean"
+                  },
+                  "dryRun": {
+                    "type": "boolean"
+                  },
                   "fakeActions": {
                     "additionalProperties": {
                       "additionalProperties": {
@@ -1807,6 +1914,29 @@
                     },
                     "type": "object"
                   },
+                  "fakeConstants": {
+                    "additionalProperties": {
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "object"
+                  },
+                  "fakeRefillers": {
+                    "additionalProperties": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "type": "object"
+                  },
                   "readStale": {
                     "type": "boolean"
                   },
@@ -1825,105 +1955,62 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "actions": {
-                      "items": {
-                        "additionalProperties": true,
-                        "properties": {
-                          "type": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
-                    },
-                    "alerts": {
+                  "$ref": "#/components/schemas/SimulationResponse"
+                }
+              },
+              "description": "Results from the compilation and running."
+            },
+            "description": "Simulation complete. Does not indicate that olive ran successfully."
+          }
+        },
+        "summary": "Performs a dry-run of an olive script and returns all the alerts and actions generated by the script.",
+        "tags": [
+          "misc"
+        ]
+      }
+    },
+    "/simulate-existing": {
+      "post": {
+        "description": "Simulate an olive already on the server",
+        "operationId": "simulateExisting",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "fakeConstants": {
+                    "additionalProperties": {
                       "properties": {
-                        "annotations": {
-                          "additionalProperties": {
-                            "type": "string"
-                          },
-                          "type": "object"
+                        "type": {
+                          "type": "string"
                         },
-                        "labels": {
-                          "additionalProperties": {
-                            "type": "string"
-                          },
-                          "type": "object"
+                        "value": {
+                          "type": "string"
                         }
                       },
                       "type": "object"
                     },
-                    "bytecode": {
-                      "type": "string"
-                    },
-                    "dumpers": {
-                      "items": {
-                        "type": "string"
-                      },
-                      "type": "array"
-                    },
-                    "errors": {
-                      "items": {
-                        "type": "string"
-                      },
-                      "type": "array"
-                    },
-                    "exports": {
-                      "additionalProperties": {
-                        "properties": {
-                          "parameters": {
-                            "items": {
-                              "type": "string"
-                            },
-                            "type": "array"
-                          },
-                          "returns": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "object"
-                    },
-                    "metrics": {
-                      "type": "string"
-                    },
-                    "olives": {
-                      "items": {
-                        "properties": {
-                          "column": {
-                            "type": "integer"
-                          },
-                          "description": {
-                            "type": "string"
-                          },
-                          "diagram": {
-                            "type": "string"
-                          },
-                          "duration": {
-                            "type": "integer"
-                          },
-                          "line": {
-                            "type": "integer"
-                          },
-                          "syntax": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
-                    },
-                    "overloadedInputs": {
-                      "items": {
-                        "type": "string"
-                      },
-                      "type": "array"
-                    }
+                    "type": "object"
                   },
-                  "type": "object"
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "readStale": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationResponse"
                 }
               },
               "description": "Results from the compilation and running."

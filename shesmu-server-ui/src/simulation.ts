@@ -66,6 +66,12 @@ import {
   decompressFromEncodedURIComponent,
 } from "./lz-string.js";
 
+export interface ExistingSimulationRequest {
+  fakeConstants: { [name: string]: FakeConstant };
+  readStale: boolean;
+  fileName: string;
+}
+
 /**
  * An exported definition from a simulated script
  */
@@ -463,18 +469,18 @@ export function renderResponse(response: SimulationResponse | null): Tab[] {
         ([name, entries]: [string, RefillerRecord[]]) =>
           entries.length > 0
             ? renderJsonTable<RefillerRecord>(
-                name + ".refiller.json",
-                entries,
-                ...Object.keys(entries[0])
-                  .sort((a, b) => a.localeCompare(b))
-                  .map(
-                    (name) =>
-                      [name, (row: RefillerRecord) => row[name]] as [
-                        string,
-                        (row: RefillerRecord) => any
-                      ]
-                  )
-              )
+              name + ".refiller.json",
+              entries,
+              ...Object.keys(entries[0])
+                .sort((a, b) => a.localeCompare(b))
+                .map(
+                  (name) =>
+                    [name, (row: RefillerRecord) => row[name]] as [
+                      string,
+                      (row: RefillerRecord) => any
+                    ]
+                )
+            )
             : ["Olive provided no records to ", mono(name), " refiller."]
       );
       tabList.push({
@@ -498,18 +504,18 @@ export function renderResponse(response: SimulationResponse | null): Tab[] {
           if (input) {
             return input[1].length > 0
               ? renderJsonTable<RefillerRecord>(
-                  input[0] + ".dump.json",
-                  input[1],
-                  ...Object.keys(input[1][0])
-                    .sort((a, b) => a.localeCompare(b))
-                    .map(
-                      (name) =>
-                        [name, (row: RefillerRecord) => row[name]] as [
-                          string,
-                          (row: RefillerRecord) => any
-                        ]
-                    )
-                )
+                input[0] + ".dump.json",
+                input[1],
+                ...Object.keys(input[1][0])
+                  .sort((a, b) => a.localeCompare(b))
+                  .map(
+                    (name) =>
+                      [name, (row: RefillerRecord) => row[name]] as [
+                        string,
+                        (row: RefillerRecord) => any
+                      ]
+                  )
+              )
               : ["Olive provided no records to ", mono(input[0]), " dumper."];
           } else {
             return "Please select a dumper.";
@@ -820,8 +826,8 @@ export function initialiseSimulationDashboard(
     (decodeBody && scriptBody
       ? decompressFromEncodedURIComponent(scriptBody)
       : scriptBody) ||
-      localStorage.getItem("shesmu_script") ||
-      "",
+    localStorage.getItem("shesmu_script") ||
+    "",
     0
   );
   const errorTable = singleState((response: SimulationResponse | null) => {
@@ -1049,8 +1055,7 @@ export function initialiseSimulationDashboard(
         "Copy this script as a link to the clipboard",
         () =>
           saveClipboard(
-            `${window.location.origin}${
-              window.location.pathname
+            `${window.location.origin}${window.location.pathname
             }?share=${compressToEncodedURIComponent(editor.getValue())}`
           )
       ),
@@ -1125,10 +1130,10 @@ export function initialiseSimulationDashboard(
         },
         (theme) => theme == savedTheme.get(),
         {
-          reload: () => {},
+          reload: () => { },
           statusChanged: (input: string) => editor.setTheme(input),
-          statusFailed: (_message: string, _retry: (() => void) | null) => {},
-          statusWaiting: () => {},
+          statusFailed: (_message: string, _retry: (() => void) | null) => { },
+          statusWaiting: () => { },
         },
         {
           synchronizer: savedTheme,
