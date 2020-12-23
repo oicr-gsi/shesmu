@@ -29,7 +29,7 @@ import { PrometheusAlert, AlertFilter } from "./alert.js";
 import { TypeResponse, ValueResponse } from "./definitions.js";
 import { SimulationRequest, SimulationResponse } from "./simulation.js";
 import { Stat } from "./stats.js";
-import { ServerSearches } from "./action.js";
+import { ActionQueryResponse, ServerSearches } from "./action.js";
 
 /**
  * The update information provided by interrogating the server
@@ -54,7 +54,7 @@ export interface MutableServerInfo<I, R> {
  *
  * Null entires are GET requests; all others are treated as POST requests
  */
-interface ShesmuRequestType {
+export interface ShesmuRequestType {
   allalerts: null;
   command: { command: string; filters: ActionFilter[] };
   constant: string;
@@ -66,6 +66,11 @@ interface ShesmuRequestType {
   pauses: null;
   printquery: ActionFilter;
   purge: ActionFilter[];
+  query: {
+    filters: ActionFilter[];
+    limit: number;
+    skip: number;
+  };
   queryalerts: AlertFilter<RegExp>;
   savedsearches: null;
   simulate: SimulationRequest;
@@ -76,7 +81,7 @@ interface ShesmuRequestType {
 /**
  * These are the response types for all the endpoints where JSON requests can be made to the server
  */
-interface ShesmuResponseType {
+export interface ShesmuResponseType {
   allalerts: PrometheusAlert[];
   command: number;
   constant: ValueResponse;
@@ -88,6 +93,7 @@ interface ShesmuResponseType {
   pauses: Pauses;
   printquery: string;
   purge: number;
+  query: ActionQueryResponse;
   queryalerts: PrometheusAlert[];
   savedsearches: ServerSearches;
   simulate: SimulationResponse;
@@ -318,49 +324,51 @@ export function mutableLocalStore<T>(
  * @param computePage get the resulting page information from the response
  * @param model the model to update with the results; it also includes the original request for tracking purposes
  */
-export function paginatedRefreshable<I, O>(
+export function paginatedRefreshable<
+  I,
+  K extends keyof ShesmuRequestType & keyof ShesmuResponseType
+>(
   pageLength: number,
-  input: RequestInfo,
-  makeRequest: (request: I, offset: number, pageLength: number) => RequestInit,
+  input: K,
+  makeRequest: (
+    request: I,
+    offset: number,
+    pageLength: number
+  ) => ShesmuRequestType[K],
   computePage: (
     request: I | null,
-    output: O
+    output: ShesmuResponseType[K]
   ) => { offset: number; total: number } | null,
-  model: StatefulModel<[I, O]>
-): { model: SplitStatefulModel<I, [I, O]>; ui: UIElement } {
+  model: StatefulModel<[I, ShesmuResponseType[K] | null]>
+): { model: SplitStatefulModel<I, [I, ShesmuResponseType[K]]>; ui: UIElement } {
   let current: I | null = null;
-  const { ui, model: pagerModel } = singleState((state: [I, O]) => {
-    const result = computePage(state[0], state[1]);
-    if (result) {
-      return pager(
-        Math.ceil(result.total / pageLength),
-        Math.floor(result.offset / pageLength),
-        (index: number) => {
-          if (current != null) {
-            outputModel.statusChanged([current, index * pageLength]);
+  const { ui, model: pagerModel } = singleState(
+    (state: [I, ShesmuResponseType[K] | null]) => {
+      const result = state[1] === null ? null : computePage(state[0], state[1]);
+      if (result) {
+        return pager(
+          Math.ceil(result.total / pageLength),
+          Math.floor(result.offset / pageLength),
+          (index: number) => {
+            if (current != null) {
+              outputModel.statusChanged([current, index * pageLength]);
+            }
           }
-        }
-      );
-    } else {
-      return blank();
-    }
-  }, true);
+        );
+      } else {
+        return blank();
+      }
+    },
+    true
+  );
   const outputModel = splitModel(combineModels(pagerModel, model), (output) =>
     mapModel(
-      requestTupleModel(
-        input,
-        mapTupleModel(
-          promiseTupleModel(output),
-          (promise: Promise<Response | null>) =>
-            promise
-              .then((response) =>
-                response ? response.json() : Promise.resolve(null)
-              )
-              .then((data: any) => data as O)
-        )
-      ),
+      requestTupleModel(input, promiseTupleModel(output)),
       ([request, offset]: [I, number]) =>
-        [request, makeRequest(request, offset, pageLength)] as [I, RequestInit]
+        [request, makeRequest(request, offset, pageLength)] as [
+          I,
+          ShesmuRequestType[K]
+        ]
     )
   );
   return {
@@ -467,26 +475,33 @@ export function requestModel(
  * @param input the request to make
  * @param model the model that will deal with the response
  */
-export function requestTupleModel<T>(
-  input: RequestInfo,
-  model: StatefulModel<[T, Promise<Response | null>]>
-): StatefulModel<[T, RequestInit | null]> {
-  return mapTupleModel(model, (request: RequestInit | null) =>
+export function requestTupleModel<
+  T,
+  K extends keyof ShesmuRequestType & keyof ShesmuResponseType
+>(
+  input: K,
+  model: StatefulModel<[T, Promise<ShesmuResponseType[K] | null>]>
+): StatefulModel<[T, ShesmuRequestType[K] | null]> {
+  return mapTupleModel(model, (request: ShesmuRequestType[K] | null) =>
     request === null
       ? Promise.resolve(null)
-      : fetch(input, request).then((response) => {
-          if (response.ok) {
-            return Promise.resolve(response);
-          } else if (response.status == 503) {
-            return Promise.reject(new Error("Shesmu is currently overloaded."));
-          } else {
-            return Promise.reject(
-              new Error(
-                `Failed to load: ${response.status} ${response.statusText}`
-              )
-            );
+      : fetch(input, { method: "POST", body: JSON.stringify(request) }).then(
+          (response) => {
+            if (response.ok) {
+              return response.json();
+            } else if (response.status == 503) {
+              return Promise.reject(
+                new Error("Shesmu is currently overloaded.")
+              );
+            } else {
+              return Promise.reject(
+                new Error(
+                  `Failed to load: ${response.status} ${response.statusText}`
+                )
+              );
+            }
           }
-        })
+        )
   );
 }
 
@@ -558,50 +573,39 @@ export function serverStateModel<
     mapModel(
       requestTupleModel(
         input,
-        mapTupleModel(
-          promiseTupleModel(
-            mapModel(
-              output,
-              (info: [I | null, ShesmuResponseType[R] | null] | null) => {
-                const input = info?.[0];
-                const response = info?.[1];
-                if (
-                  input === null ||
-                  input === undefined ||
-                  response === null ||
-                  response === undefined
-                ) {
-                  return null;
-                } else {
-                  return {
-                    input: input,
-                    response: response,
-                    setter: (value) => split.statusChanged([input, value]),
-                  };
-                }
+        promiseTupleModel(
+          mapModel(
+            output,
+            (info: [I | null, ShesmuResponseType[R] | null] | null) => {
+              const input = info?.[0];
+              const response = info?.[1];
+              if (
+                input === null ||
+                input === undefined ||
+                response === null ||
+                response === undefined
+              ) {
+                return null;
+              } else {
+                return {
+                  input: input,
+                  response: response,
+                  setter: (value) => split.statusChanged([input, value]),
+                };
               }
-            )
-          ),
-          (promise: Promise<Response | null>) =>
-            promise
-              .then((response) =>
-                response ? response.json() : Promise.resolve(null)
-              )
-              .then((data: any) => data as ShesmuResponseType[R])
+            }
+          )
         )
       ),
       (
         info: [I, ShesmuResponseType[R] | null] | null
-      ): [I | null, RequestInit | null] => {
+      ): [I | null, ShesmuRequestType[R] | null] => {
         if (info) {
           const serverRequest = makeRequest(info[0], info[1]);
           if (serverRequest === null) {
             return [info[0], null];
           } else {
-            return [
-              info[0],
-              { method: "POST", body: JSON.stringify(serverRequest) },
-            ];
+            return [info[0], serverRequest];
           }
         } else {
           return [null, null];
@@ -610,6 +614,6 @@ export function serverStateModel<
     )
   );
   return mapModel(split, (input: I | null) =>
-    input ? ([input, null] as [I, ShesmuResponseType[R] | null]) : null
+    input !== null ? ([input, null] as [I, ShesmuResponseType[R] | null]) : null
   );
 }
