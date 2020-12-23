@@ -339,6 +339,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                           metadata.getWorkflowRunReport(
                               workflowSwid.intValue(), status, null, null)))
               .sum();
+      currentInFlight.labels(Long.toString(workflowSwid)).set(count);
       metadata.clean_up();
       return Optional.of(
           new MaxCheck() {
@@ -353,6 +354,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               foundRunning.labels(url(), workflowName).set(count + started);
               if (count + started < maxInFlight.getOrDefault(workflowName, 0)) {
                 started++;
+                currentInFlight.labels(Long.toString(workflowSwid)).set(count);
                 return MaxStatus.RUN;
               } else {
                 return MaxStatus.TOO_MANY_RUNNING;
@@ -471,11 +473,23 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       Gauge.build("shesmu_niassa_bad_status", "The number of workflow runs that have null status.")
           .labelNames("target", "workflow")
           .register();
+  private static final Gauge currentInFlight =
+      Gauge.build(
+              "shesmu_niassa_current_in_flight",
+              "The number of jobs currently running for a particular workflow SWID.")
+          .labelNames("workflow")
+          .register();
   private static final Gauge foundRunning =
       Gauge.build(
               "shesmu_niassa_found_running",
               "The number of workflow runs that Shesmu believes it has found. This is used for the max in flight checks.")
           .labelNames("target", "workflow")
+          .register();
+  private static final Gauge maxInFlightGauge =
+      Gauge.build(
+              "shesmu_niassa_max_in_flight",
+              "The maximum allowed number of running jobs for a particular workflow SWID.")
+          .labelNames("workflow")
           .register();
   static final Gauge slowFetch =
       Gauge.build(
@@ -541,14 +555,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     skipCache = new SkipLaneCache(fileName);
   }
 
-  @ShesmuMethod(
-      description = "Whether an IUS and LIMS key combination has been marked as skipped in {file}.")
-  public boolean is_skipped(
-      @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
-      @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
-    return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
-  }
-
   public LaunchLock acquireLock(
       long workflowAccession,
       Map<String, String> annotations,
@@ -608,6 +614,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   public void invalidateMaxInFlight(long workflowRunSwid) {
     maxInFlightCache.invalidate(workflowRunSwid);
+  }
+
+  @ShesmuMethod(
+      description = "Whether an IUS and LIMS key combination has been marked as skipped in {file}.")
+  public boolean is_skipped(
+      @ShesmuParameter(description = "IUS", type = "t3sis") Tuple ius,
+      @ShesmuParameter(description = "LIMS key", type = "t3sss") Tuple lims) {
+    return skipCache.get().anyMatch(new Pair<>(ius, lims)::equals);
   }
 
   public MaxStatus maxInFlight(
@@ -695,6 +709,9 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                     .flatMap(WorkflowFile::stream)
                     .forEach(
                         wc -> {
+                          maxInFlightGauge
+                              .labels(Long.toString(wc.second().getAccession()))
+                              .set(wc.second().getMaxInFlight());
                           maxInFlight.put(prefix + wc.first(), wc.second().getMaxInFlight());
                           wc.second().define(prefix + wc.first(), definer, workflowKind);
                         }));
