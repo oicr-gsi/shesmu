@@ -27,7 +27,7 @@ import {
 import { PauseRequest, Pauses } from "./pause.js";
 import { PrometheusAlert, AlertFilter } from "./alert.js";
 import { TypeResponse, ValueResponse } from "./definitions.js";
-import { SimulationRequest, SimulationResponse } from "./simulation.js";
+import { ExistingSimulationRequest, SimulationRequest, SimulationResponse } from "./simulation.js";
 import { Stat } from "./stats.js";
 import { Action, ActionQueryResponse, ServerSearches } from "./action.js";
 
@@ -75,6 +75,7 @@ export interface ShesmuRequestType {
   queryalerts: AlertFilter<RegExp>;
   savedsearches: null;
   simulate: SimulationRequest;
+  "simulate-existing": ExistingSimulationRequest;
   stats: ActionFilter[];
   tags: ActionFilter[];
   type: { value: string; format: string };
@@ -99,6 +100,7 @@ export interface ShesmuResponseType {
   queryalerts: PrometheusAlert[];
   savedsearches: ServerSearches;
   simulate: SimulationResponse;
+  "simulate-existing": SimulationResponse;
   stats: Stat[];
   tags: string[];
   type: TypeResponse;
