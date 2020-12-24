@@ -2194,6 +2194,12 @@ public final class Server implements ServerConfig, ActionServices {
           final ArrayNode errors = response.putArray("errors");
           ActionFilter.parseQuery(
                   input,
+                  name ->
+                      savedSearches
+                          .stream()
+                          .filter(s -> s.name().equals(name))
+                          .findAny()
+                          .map(s -> ActionFilterBuilder.JSON.and(s.filters())),
                   ((line, column, errorMessage) -> {
                     final ObjectNode error = errors.addObject();
                     error.put("line", line);
