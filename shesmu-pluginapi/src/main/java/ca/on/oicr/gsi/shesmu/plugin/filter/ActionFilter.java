@@ -83,7 +83,7 @@ public abstract class ActionFilter {
         final Parser result = parser.whitespace().dispatch(SOURCE_MATCH, matches::set).whitespace();
         if (result.isGood()) {
           output.accept(
-              errorHandler -> {
+              (existing, errorHandler) -> {
                 final ActionFilterSourceLocation filter = new ActionFilterSourceLocation();
                 filter.setLocations(
                     matches.get().second().stream().toArray(SourceOliveLocation[]::new));
@@ -147,7 +147,8 @@ public abstract class ActionFilter {
   }
 
   private interface ActionFilterNode {
-    Optional<ActionFilter> generate(ErrorConsumer errorHandler);
+    Optional<ActionFilter> generate(
+        Function<String, Optional<ActionFilter>> existing, ErrorConsumer errorHandler);
   }
 
   interface DateNode {
@@ -173,9 +174,9 @@ public abstract class ActionFilter {
       Supplier<? extends BaseCollectionActionFilter> constructor) {
     return Parser.just(
         (a, b) ->
-            errorHandler -> {
-              final Optional<ActionFilter> aValue = a.generate(errorHandler);
-              final Optional<ActionFilter> bValue = b.generate(errorHandler);
+            (existing, errorHandler) -> {
+              final Optional<ActionFilter> aValue = a.generate(existing, errorHandler);
+              final Optional<ActionFilter> bValue = b.generate(existing, errorHandler);
               if (aValue.isPresent() && bValue.isPresent()) {
                 final BaseCollectionActionFilter result = constructor.get();
                 result.setFilters(new ActionFilter[] {aValue.get(), bValue.get()});
@@ -383,12 +384,13 @@ public abstract class ActionFilter {
     return result;
   }
 
-  public static Optional<ActionFilter> parseQuery(String input, ErrorConsumer errorHandler) {
+  public static Optional<ActionFilter> parseQuery(
+      String input, Function<String, Optional<ActionFilter>> existing, ErrorConsumer errorHandler) {
     final AtomicReference<ActionFilterNode> query = new AtomicReference<>();
     final Parser parser =
         Parser.start(input, errorHandler).whitespace().then(ActionFilter::parse0, query::set);
     return parser.finished()
-        ? Optional.of(query.get()).flatMap(q -> q.generate(errorHandler))
+        ? Optional.of(query.get()).flatMap(q -> q.generate(existing, errorHandler))
         : Optional.empty();
   }
 
@@ -461,7 +463,7 @@ public abstract class ActionFilter {
     final Parser result = parser.whitespace().dispatch(SET_MATCH, matches::set).whitespace();
     if (result.isGood()) {
       output.accept(
-          errorHandler -> {
+          (existing, errorHandler) -> {
             final T[] buffer = arrayConstructor.apply(matches.get().second().size());
             boolean ok = true;
             for (int i = 0; i < buffer.length; i++) {
@@ -499,7 +501,8 @@ public abstract class ActionFilter {
     final Parser result = parser.whitespace().dispatch(TEMPORAL, filter::set).whitespace();
     if (result.isGood()) {
       output.accept(
-          errorHandler -> filter.get().generate(agoConstructor, rangeConstructor, errorHandler));
+          (existing, errorHandler) ->
+              filter.get().generate(agoConstructor, rangeConstructor, errorHandler));
     }
     return result;
   }
@@ -553,8 +556,8 @@ public abstract class ActionFilter {
         "not",
         Parser.just(
             f ->
-                errorHandler -> {
-                  final Optional<ActionFilter> result = f.generate(errorHandler);
+                (existing, errorHandler) -> {
+                  final Optional<ActionFilter> result = f.generate(existing, errorHandler);
                   result.ifPresent(v -> v.setNegate(!v.negate));
                   return result;
                 }));
@@ -565,7 +568,7 @@ public abstract class ActionFilter {
                 ACTION_ID_HASH,
                 m -> {
                   o.accept(
-                      errorHandler -> {
+                      (existing, errorHandler) -> {
                         final ActionFilterIds filter = new ActionFilterIds();
                         filter.setIds(
                             Collections.singletonList("shesmu:" + m.group(0).toUpperCase()));
@@ -581,7 +584,7 @@ public abstract class ActionFilter {
                   SEARCH_BASE64,
                   m ->
                       o.accept(
-                          errorHandler -> {
+                          (existing, errorHandler) -> {
                             final Optional<ActionFilter> extracted =
                                 extractFromText(m.group(0), MAPPER);
                             if (!extracted.isPresent()) {
@@ -592,8 +595,30 @@ public abstract class ActionFilter {
                   "Base64 search string");
           return result;
         });
+    TERMINAL.addKeyword(
+        "known:",
+        (p, o) ->
+            p.whitespace()
+                .dispatch(
+                    STRING,
+                    name ->
+                        o.accept(
+                            (existing, errorHandler) -> {
+                              final Optional<ActionFilter> filter = existing.apply(name);
+                              if (filter.isPresent()) {
+                                return filter;
+                              } else {
+                                errorHandler.raise(
+                                    p.line(),
+                                    p.column(),
+                                    String.format("Unknown exist search function %s", name));
+                                return Optional.empty();
+                              }
+                            }))
+                .whitespace());
     TERMINAL.addSymbol(
         "(", (p, o) -> p.whitespace().then(ActionFilter::parse0, o).symbol(")").whitespace());
+
     TERMINAL.addRaw(
         "comparison",
         (p, o) -> {
@@ -612,7 +637,7 @@ public abstract class ActionFilter {
                     REGEX,
                     m ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterTagRegex filter = new ActionFilterTagRegex();
                               filter.setPattern(m.group(1));
                               filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
@@ -627,7 +652,7 @@ public abstract class ActionFilter {
                     REGEX,
                     m ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterTagRegex filter = new ActionFilterTagRegex();
                               filter.setPattern(m.group(1));
                               filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
@@ -643,7 +668,7 @@ public abstract class ActionFilter {
                     STRING,
                     s ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterTag filter = new ActionFilterTag();
                               filter.setTags(new String[] {s});
                               return Optional.of(filter);
@@ -657,7 +682,7 @@ public abstract class ActionFilter {
                     STRING,
                     s ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterTag filter = new ActionFilterTag();
                               filter.setTags(new String[] {s});
                               filter.setNegate(true);
@@ -673,7 +698,7 @@ public abstract class ActionFilter {
                 .list(
                     s ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterTag filter = new ActionFilterTag();
                               filter.setTags(s.stream().toArray(String[]::new));
                               return Optional.of(filter);
@@ -693,7 +718,7 @@ public abstract class ActionFilter {
                 .list(
                     s ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterTag filter = new ActionFilterTag();
                               filter.setTags(s.stream().toArray(String[]::new));
                               filter.setNegate(true);
@@ -711,7 +736,7 @@ public abstract class ActionFilter {
                     REGEX,
                     m ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterRegex filter = new ActionFilterRegex();
                               filter.setPattern(m.group(1));
                               filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
@@ -726,7 +751,7 @@ public abstract class ActionFilter {
                     REGEX,
                     m ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterRegex filter = new ActionFilterRegex();
                               filter.setPattern(m.group(1));
                               filter.setMatchCase(m.group(2) == null || m.group(2).length() == 0);
@@ -742,7 +767,7 @@ public abstract class ActionFilter {
                     STRING,
                     s ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterText filter = new ActionFilterText();
                               filter.setText(s);
                               return Optional.of(filter);
@@ -755,7 +780,7 @@ public abstract class ActionFilter {
                     STRING,
                     s ->
                         o.accept(
-                            errorHandler -> {
+                            (existing, errorHandler) -> {
                               final ActionFilterText filter = new ActionFilterText();
                               filter.setText(s);
                               filter.setNegate(true);

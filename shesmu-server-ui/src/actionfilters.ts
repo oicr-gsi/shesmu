@@ -1746,6 +1746,13 @@ function searchAdvanced(
           " | ",
           mono("utc"),
           ")?"
+        ),
+        paragraph(
+          "Existing saved search: ",
+          mono('known:"'),
+          italic("name"),
+          mono('"'),
+          " Only searches stored on the server will work."
         )
       ),
     ],
