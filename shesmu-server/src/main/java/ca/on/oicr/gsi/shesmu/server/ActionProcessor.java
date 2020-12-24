@@ -769,6 +769,10 @@ public final class ActionProcessor
         .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
   }
 
+  public long count(Filter... filters) {
+    return startStream(filters).count();
+  }
+
   private <T extends Comparable<T>, U extends Comparable<U>> void crosstab(
       ArrayNode output,
       List<Entry<Action, Information>> input,
