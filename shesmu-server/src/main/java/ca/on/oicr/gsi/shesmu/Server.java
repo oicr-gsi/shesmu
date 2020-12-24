@@ -1575,6 +1575,28 @@ public final class Server implements ServerConfig, ActionServices {
         });
 
     add(
+        "/count",
+        t -> {
+          final ActionFilter[] filters;
+          try {
+            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
+          } catch (final Exception e) {
+            t.sendResponseHeaders(400, 0);
+            try (OutputStream os = t.getResponseBody()) {}
+            return;
+          }
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            RuntimeSupport.MAPPER.writeValue(
+                os,
+                processor.count(
+                    Stream.of(filters)
+                        .filter(Objects::nonNull)
+                        .map(filterJson -> filterJson.convert(processor))
+                        .toArray(Filter[]::new)));
+          }
+        });
+    add(
         "/purge",
         t -> {
           final ActionFilter[] filters;
