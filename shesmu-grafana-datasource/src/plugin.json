@@ -1,0 +1,47 @@
+{
+  "type": "datasource",
+  "name": "Shesmu Actions Data Source",
+  "id": "oicr-shesmu-grafana-datasource",
+  "metrics": true,
+  "info": {
+    "description": "Access Shesmu action counts in Grafana",
+    "author": {
+      "name": "Andre Masella",
+      "url": "https://oicr-gsi.github.io/shesmu/"
+    },
+    "keywords": [
+      "shesmu"
+    ],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Website",
+        "url": "https://oicr-gsi.github.io/shesmu"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/oicr-gsi/shesmu/blob/master/shesmu-grafana-plugin/LICENSE"
+      }
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "routes": [
+    {
+      "path": "count",
+      "url": "{{ .JsonData.url }}/count"
+    },
+    {
+      "path": "parsequery",
+      "url": "{{ .JsonData.url }}/parsequery"
+    }
+  ],
+  "dependencies": {
+    "grafanaVersion": "6.5.x",
+    "plugins": []
+  }
+}
