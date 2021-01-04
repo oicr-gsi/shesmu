@@ -84,6 +84,17 @@ public class StringNodeExpression extends StringNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    if (expression.type().isSame(Imyhat.STRING)) {
+      return expression.renderEcma(renderer);
+    } else if (expression.type().isSame(Imyhat.JSON)) {
+      return "JSON.stringify(" + expression.renderEcma(renderer) + ")";
+    } else {
+      return expression.renderEcma(renderer) + ".toString()";
+    }
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }

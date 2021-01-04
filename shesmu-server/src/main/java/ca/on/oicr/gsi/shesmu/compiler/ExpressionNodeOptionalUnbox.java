@@ -35,6 +35,11 @@ public class ExpressionNodeOptionalUnbox extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return renderer.load(target);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
     renderer.loadTarget(target);

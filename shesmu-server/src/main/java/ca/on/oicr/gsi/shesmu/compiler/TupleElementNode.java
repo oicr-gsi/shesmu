@@ -48,6 +48,8 @@ public abstract class TupleElementNode {
 
   public abstract int render(Renderer renderer, int start);
 
+  public abstract String render(EcmaScriptRenderer renderer);
+
   /** Resolve all variable plugins in this expression and its children. */
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);

@@ -53,6 +53,11 @@ public class SourceNodeSplit extends SourceNode {
   }
 
   @Override
+  public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
+    return renderer.buildStream(Imyhat.STRING,String.format("%s.split(/%s/%s)", expression.renderEcma(renderer), regex, EcmaScriptRenderer.regexFlagsToString(flags)));
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }

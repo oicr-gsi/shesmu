@@ -70,12 +70,14 @@ public abstract class ObjectElementNode {
 
   public abstract Stream<Pair<String, Imyhat>> names();
 
+  public abstract Stream<String> render(EcmaScriptRenderer renderer);
+
+  public abstract void render(Renderer renderer, ToIntFunction<String> indexOf);
+
   /** Resolve all variable plugins in this expression and its children. */
   public final boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }
-
-  public abstract void render(Renderer renderer, ToIntFunction<String> indexOf);
 
   /** Resolve all function plugins in this expression */
   public final boolean resolveDefinitions(

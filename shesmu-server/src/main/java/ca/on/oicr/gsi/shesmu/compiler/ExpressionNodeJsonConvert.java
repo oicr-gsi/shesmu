@@ -53,6 +53,11 @@ public class ExpressionNodeJsonConvert extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return expression.renderEcma(renderer);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     if (type.isSame(Imyhat.JSON)) {
       renderer.loadImyhat(expression.type().descriptor());

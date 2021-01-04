@@ -3,7 +3,11 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.INT_TYPE;
 
+import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
+import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import java.time.Instant;
+import java.util.stream.Stream;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -11,12 +15,192 @@ import org.objectweb.asm.commons.Method;
 
 /** Utility code for generating comparison bytecode */
 public enum Comparison {
-  EQ(GeneratorAdapter.EQ, false, "=="),
-  GE(GeneratorAdapter.GE, true, ">="),
-  GT(GeneratorAdapter.GT, true, ">"),
-  LE(GeneratorAdapter.LE, true, "<="),
-  LT(GeneratorAdapter.LT, true, "<"),
-  NE(GeneratorAdapter.NE, false, "!=");
+  EQ(GeneratorAdapter.EQ, false, "==") {
+    @Override
+    public ImyhatTransformer<String> render(
+        EcmaScriptRenderer renderer, String left, String right) {
+      return EcmaScriptRenderer.isEqual(left, right);
+    }
+  },
+  GE(GeneratorAdapter.GE, true, ">=") {
+    @Override
+    public ImyhatTransformer<String> render(
+        EcmaScriptRenderer renderer, String left, String right) {
+      return new OrderableComparison(symbol(), left, right);
+    }
+  },
+  GT(GeneratorAdapter.GT, true, ">") {
+    @Override
+    public ImyhatTransformer<String> render(
+        EcmaScriptRenderer renderer, String left, String right) {
+      return new OrderableComparison(symbol(), left, right);
+    }
+  },
+  LE(GeneratorAdapter.LE, true, "<=") {
+    @Override
+    public ImyhatTransformer<String> render(
+        EcmaScriptRenderer renderer, String left, String right) {
+      return new OrderableComparison(symbol(), left, right);
+    }
+  },
+  LT(GeneratorAdapter.LT, true, "<") {
+    @Override
+    public ImyhatTransformer<String> render(
+        EcmaScriptRenderer renderer, String left, String right) {
+      return new OrderableComparison(symbol(), left, right);
+    }
+  },
+  NE(GeneratorAdapter.NE, false, "!=") {
+    @Override
+    public ImyhatTransformer<String> render(
+        EcmaScriptRenderer renderer, String left, String right) {
+      return new ImyhatTransformer<String>() {
+        final ImyhatTransformer<String> isEqual = EcmaScriptRenderer.isEqual(left, right);
+
+        @Override
+        public String algebraic(Stream<AlgebraicTransformer> contents) {
+          return "!" + isEqual.algebraic(contents);
+        }
+
+        @Override
+        public String bool() {
+          return "!" + isEqual.bool();
+        }
+
+        @Override
+        public String date() {
+          return "!" + isEqual.date();
+        }
+
+        @Override
+        public String floating() {
+          return "!" + isEqual.floating();
+        }
+
+        @Override
+        public String integer() {
+          return "!" + isEqual.integer();
+        }
+
+        @Override
+        public String json() {
+          return "!" + isEqual.json();
+        }
+
+        @Override
+        public String list(Imyhat inner) {
+          return "!" + isEqual.list(inner);
+        }
+
+        @Override
+        public String map(Imyhat key, Imyhat value) {
+          return "!" + isEqual.map(key, value);
+        }
+
+        @Override
+        public String object(Stream<Pair<String, Imyhat>> contents) {
+          return "!" + isEqual.object(contents);
+        }
+
+        @Override
+        public String optional(Imyhat inner) {
+          return "!" + isEqual.optional(inner);
+        }
+
+        @Override
+        public String path() {
+          return "!" + isEqual.path();
+        }
+
+        @Override
+        public String string() {
+          return "!" + isEqual.string();
+        }
+
+        @Override
+        public String tuple(Stream<Imyhat> contents) {
+          return "!" + isEqual.tuple(contents);
+        }
+      };
+    }
+  };
+
+  private class OrderableComparison implements ImyhatTransformer<String> {
+    private final String left;
+    private final String right;
+    private final String symbol;
+
+    private OrderableComparison(String symbol, String left, String right) {
+      this.symbol = symbol;
+      this.left = left;
+      this.right = right;
+    }
+
+    @Override
+    public String algebraic(Stream<AlgebraicTransformer> contents) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String bool() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String date() {
+      return String.format("(%s %s %s)", left, symbol, right);
+    }
+
+    @Override
+    public String floating() {
+      return String.format("(%s %s %s)", left, symbol, right);
+    }
+
+    @Override
+    public String integer() {
+      return String.format("(%s %s %s)", left, symbol, right);
+    }
+
+    @Override
+    public String json() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String list(Imyhat inner) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String map(Imyhat key, Imyhat value) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String object(Stream<Pair<String, Imyhat>> contents) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String optional(Imyhat inner) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String path() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String string() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String tuple(Stream<Imyhat> contents) {
+      throw new UnsupportedOperationException();
+    }
+  }
 
   private static final Type A_INSTANT_TYPE = Type.getType(Instant.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
@@ -66,6 +250,9 @@ public enum Comparison {
   public boolean isOrdered() {
     return ordered;
   }
+
+  public abstract ImyhatTransformer<String> render(
+      EcmaScriptRenderer renderer, String left, String right);
 
   /** The symbol for this type. */
   public String symbol() {

@@ -24,6 +24,12 @@ public class CollectNodeFirst extends CollectNodeOptional {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.map(name, selector.type(), selector::renderEcma);
+    return String.format("$runtime.nullifyUndefined(%s[0])", builder.finish());
+  }
+
+  @Override
   protected Imyhat returnType(Imyhat incomingType, Imyhat selectorType) {
     return selectorType;
   }

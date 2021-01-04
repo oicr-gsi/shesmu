@@ -77,6 +77,11 @@ public class ExpressionNodeVariable extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return renderer.load(target);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.loadTarget(target);
   }

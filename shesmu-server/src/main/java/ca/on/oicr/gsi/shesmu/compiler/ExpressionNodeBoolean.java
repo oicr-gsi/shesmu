@@ -27,6 +27,11 @@ public final class ExpressionNodeBoolean extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return Boolean.toString(value);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.methodGen().push(value);
   }

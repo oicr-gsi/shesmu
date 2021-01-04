@@ -35,6 +35,7 @@ import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -84,6 +85,11 @@ public final class StandardDefinitions implements DefinitionRepository {
     }
 
     @Override
+    public String renderEcma(Object[] args) {
+      return String.format("Math.max(%s, Math.min(%s, %s))", args);
+    }
+
+    @Override
     public void renderStart(GeneratorAdapter methodGen) {
       // Do nothing
     }
@@ -110,12 +116,14 @@ public final class StandardDefinitions implements DefinitionRepository {
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "to_seconds"),
             "getEpochSecond",
             "Get the number of seconds since the UNIX epoch for this date.",
+            "Math.trunc(%s.getTime() / 1000)",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "to_millis"),
             "toEpochMilli",
             "Get the number of milliseconds since the UNIX epoch for this date.",
+            "%s.getTime()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -123,6 +131,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcYear",
             "Get the year in the UTC time zone.",
+            "%s.getUTCFullYear()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -130,6 +139,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localYear",
             "Get the year in the server's time zone.",
+            "%s.getFullYear()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -137,6 +147,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcDayOfYear",
             "Get the day of the year in the UTC time zone.",
+            "$runtime.dateDayOfYearUTC(%s)",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -144,6 +155,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localDayOfYear",
             "Get the day of the year in the server's time zone.",
+            "$runtime.dateDayOfYearLocal(%s)",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -151,6 +163,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcDayOfMonth",
             "Get the day of the month in the UTC time zone.",
+            "%s.getUTCDate()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -158,6 +171,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localDayOfMonth",
             "Get the day of the month in the server's time zone.",
+            "%s.getDate()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -165,6 +179,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcHour",
             "Get the hour of the day in the UTC time zone.",
+            "%s.getUTCHours()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -172,6 +187,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localHour",
             "Get the hour of the day in the server's time zone.",
+            "%s.getHours()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -179,6 +195,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcMinute",
             "Get the minute of the hour in the UTC time zone.",
+            "%s.getUTCMinutes()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -186,6 +203,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localMinute",
             "Get the minute of the hour in the server's time zone.",
+            "%s.getMinutes()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -193,6 +211,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcSecond",
             "Get the second of the minute in the UTC time zone.",
+            "%s.getUTCSeconds()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -200,6 +219,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localSecond",
             "Get the second of the minute in the server's time zone.",
+            "%s.getSeconds()",
             Imyhat.INTEGER,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -207,6 +227,10 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcMonth",
             "Get the month in the UTC time zone.",
+            Stream.of(Month.values())
+                .map(Month::name)
+                .collect(
+                    Collectors.joining(", ", "{type: [", "][%s.getUTCMonth()], contents: null}")),
             Stream.of(Month.values())
                 .map(d -> Imyhat.algebraicTuple(d.name()))
                 .reduce(Imyhat::unify)
@@ -218,6 +242,9 @@ public final class StandardDefinitions implements DefinitionRepository {
             "localMonth",
             "Get the month in the server time zone.",
             Stream.of(Month.values())
+                .map(Month::name)
+                .collect(Collectors.joining(", ", "{type: [", "][%s.getMonth()], contents: null}")),
+            Stream.of(Month.values())
                 .map(d -> Imyhat.algebraicTuple(d.name()))
                 .reduce(Imyhat::unify)
                 .get(),
@@ -227,6 +254,11 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcDayOfWeek",
             "Get the day of the week in the UTC time zone.",
+            Stream.of(DayOfWeek.values())
+                .map(DayOfWeek::name)
+                .collect(
+                    Collectors.joining(
+                        ", ", "{type: [", "][(%s.getUTCDay() + 6) % 7], contents: null}")),
             Stream.of(DayOfWeek.values())
                 .map(d -> Imyhat.algebraicTuple(d.name()))
                 .reduce(Imyhat::unify)
@@ -238,6 +270,11 @@ public final class StandardDefinitions implements DefinitionRepository {
             "localDayOfWeek",
             "Get the day of the week in the server time zone.",
             Stream.of(DayOfWeek.values())
+                .map(DayOfWeek::name)
+                .collect(
+                    Collectors.joining(
+                        ", ", "{type: [", "][(%s.getDay() + 6) % 7], contents: null}")),
+            Stream.of(DayOfWeek.values())
                 .map(d -> Imyhat.algebraicTuple(d.name()))
                 .reduce(Imyhat::unify)
                 .get(),
@@ -247,6 +284,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Instant.class,
             "ofEpochSecond",
             "Get create a date from the number of seconds since the UNIX epoch.",
+            "new Date(%s * 1000)",
             Imyhat.DATE,
             new FunctionParameter("date", Imyhat.INTEGER)),
         FunctionDefinition.staticMethod(
@@ -254,6 +292,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Instant.class,
             "ofEpochMilli",
             "Get create a date from the number of milliseconds since the UNIX epoch.",
+            "new Date(%s)",
             Imyhat.DATE,
             new FunctionParameter("date", Imyhat.INTEGER)),
         FunctionDefinition.staticMethod(
@@ -261,6 +300,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localDate",
             "Create a date from a year, month, day in the server's timezone.",
+            "new Date(%s, %s - 1, %s)",
             Imyhat.DATE.asOptional(),
             new FunctionParameter("year", Imyhat.INTEGER),
             new FunctionParameter("month", Imyhat.INTEGER),
@@ -270,6 +310,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "localDateTime",
             "Create a date from a date and time in the server's timezone.",
+            "new Date(%s, %s - 1, %s, %s, %s, %s, %s / 1000_000)",
             Imyhat.DATE.asOptional(),
             new FunctionParameter("year", Imyhat.INTEGER),
             new FunctionParameter("month", Imyhat.INTEGER),
@@ -283,6 +324,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcDate",
             "Create a date from a year, month, day in the UTC timezone.",
+            "new Date(Date.UTC(%s, %s - 1, %s))",
             Imyhat.DATE.asOptional(),
             new FunctionParameter("year", Imyhat.INTEGER),
             new FunctionParameter("month", Imyhat.INTEGER),
@@ -292,6 +334,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "utcDateTime",
             "Create a date from a date and time in the UTC timezone.",
+            "new Date(Date.UTC(%s, %s - 1, %s, %s, %s, %s, %s / 1000_000))",
             Imyhat.DATE.asOptional(),
             new FunctionParameter("year", Imyhat.INTEGER),
             new FunctionParameter("month", Imyhat.INTEGER),
@@ -305,6 +348,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Double.class,
             "isInfinite",
             "Check if the number is infinite.",
+            "(!Number.isFinite(%s))",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
         FunctionDefinition.staticMethod(
@@ -312,6 +356,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Double.class,
             "isNaN",
             "Check if the number is not-a-number.",
+            "Number.isNaN(%s)",
             Imyhat.BOOLEAN,
             new FunctionParameter("input number", Imyhat.FLOAT)),
         FunctionDefinition.staticMethod(
@@ -319,6 +364,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Math.class,
             "max",
             "Pick the maximum between two numbers",
+            "Math.max(%s, %s)",
             Imyhat.FLOAT,
             new FunctionParameter("input number", Imyhat.FLOAT),
             new FunctionParameter("input number", Imyhat.FLOAT)),
@@ -327,6 +373,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Math.class,
             "min",
             "Pick the minimum between two numbers",
+            "Math.min(%s, %s)",
             Imyhat.FLOAT,
             new FunctionParameter("input number", Imyhat.FLOAT),
             new FunctionParameter("input number", Imyhat.FLOAT)),
@@ -336,6 +383,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Math.class,
             "max",
             "Pick the maximum between two numbers",
+            "Math.max(%s, %s)",
             Imyhat.INTEGER,
             new FunctionParameter("input number", Imyhat.INTEGER),
             new FunctionParameter("input number", Imyhat.INTEGER)),
@@ -344,6 +392,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             Math.class,
             "min",
             "Pick the minimum between two numbers",
+            "Math.min(%s, %s)",
             Imyhat.INTEGER,
             new FunctionParameter("input number", Imyhat.INTEGER),
             new FunctionParameter("input number", Imyhat.INTEGER)),
@@ -353,6 +402,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             StandardDefinitions.class,
             "start_of_day",
             "Rounds a date-time to the previous midnight.",
+            "$runtime.dateStartOfDay(%s)",
             Imyhat.DATE,
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
@@ -360,6 +410,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             StandardDefinitions.class,
             "jsonObject",
             "Create a JSON object from fields.",
+            "Object.assign({}, ...%s)",
             Imyhat.JSON,
             new FunctionParameter("fields", Imyhat.tuple(Imyhat.STRING, Imyhat.JSON).asList())),
         FunctionDefinition.staticMethod(
@@ -367,30 +418,35 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "jsonMap",
             "Convert a dictionary to an array of arrays. If a dictionary has strings for keys, it will normally be encoded as a JSON object. For other key types, it will be encoded as a JSON array of two element arrays. This function forces conversion of a dictionary with string keys to the array-of-arrays JSON encoding. Shesmu will be able to convert either back to dictionary.",
+            "$runtime.dictIterator(%s)",
             Imyhat.JSON,
             new FunctionParameter("Map to encode", Imyhat.dictionary(Imyhat.STRING, Imyhat.JSON))),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "file"),
             "getFileName",
             "Extracts the last element in a path.",
+            "$runtime.pathFileName(%s)",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "dir"),
             "getParent",
             "Extracts all but the last elements in a path (i.e., the containing directory).",
+            "$runtime.pathParent(%s)",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "normalize"),
             "normalize",
             "Normalize a path (i.e., remove any ./ and ../ in the path).",
+            "$runtime.pathNormalize(%s)",
             Imyhat.PATH,
             new FunctionParameter("input path", Imyhat.PATH)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "relativize"),
             "relativize",
             "Creates a new path of relativize one path as if in the directory of the other.",
+            "$runtime.pathRelativeize(%s, %s)",
             Imyhat.PATH,
             new FunctionParameter("directory path", Imyhat.PATH),
             new FunctionParameter("path to relativize", Imyhat.PATH)),
@@ -399,6 +455,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             StandardDefinitions.class,
             "replaceHome",
             "Replace any path that starts with $HOME or ~ with the provided home directory",
+            "$runtime.pathReplaceHome(%s, %s)",
             Imyhat.PATH,
             new FunctionParameter("path to change", Imyhat.PATH),
             new FunctionParameter("home directory", Imyhat.PATH)),
@@ -407,6 +464,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             StandardDefinitions.class,
             "version_at_least",
             "Checks whether the supplied version tuple is the same or greater than version numbers provided.",
+            "$runtime.versionAtLeast(%s, %s, %s, %s)",
             Imyhat.BOOLEAN,
             new FunctionParameter(
                 "version", Imyhat.tuple(Imyhat.INTEGER, Imyhat.INTEGER, Imyhat.INTEGER)),
@@ -417,6 +475,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "trim"),
             "trim",
             "Remove white space from a string.",
+            "%s.trim()",
             Imyhat.STRING,
             new FunctionParameter("input to trim", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -424,6 +483,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "truncate",
             "Truncates a string to a maximum length.",
+            "$runtime.stringTruncate(%s)",
             Imyhat.STRING,
             new FunctionParameter("input string", Imyhat.STRING),
             new FunctionParameter("maximum length", Imyhat.INTEGER),
@@ -439,18 +499,21 @@ public final class StandardDefinitions implements DefinitionRepository {
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "lower"),
             "toLowerCase",
             "Convert a string to lower case.",
+            "%s.toLowerCase()",
             Imyhat.STRING,
             new FunctionParameter("input to convert", Imyhat.STRING)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "upper"),
             "toUpperCase",
             "Convert a string to upper case.",
+            "%s.toUpperCase()",
             Imyhat.STRING,
             new FunctionParameter("input to convert", Imyhat.STRING)),
         FunctionDefinition.virtualMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "eq"),
             "equalsIgnoreCase",
             "Compares two strings ignoring case.",
+            "(%s.localeComapre(%s, undefined, {sensitivity:\"accent\"}) == 0)",
             Imyhat.BOOLEAN,
             new FunctionParameter("first", Imyhat.STRING),
             new FunctionParameter("second", Imyhat.STRING)),
@@ -459,6 +522,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "parseLong",
             "Convert a string containing digits into an integer.",
+            "$runtime.intParse(%s)",
             Imyhat.INTEGER.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -466,6 +530,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "parseBool",
             "Convert a string containing into a Boolean.",
+            "$runtime.boolParse(%s)",
             Imyhat.BOOLEAN.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -473,6 +538,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "parseDouble",
             "Convert a string containing digits and a decimal point into an float.",
+            "$runtime.floatParse(%s)",
             Imyhat.FLOAT.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -480,6 +546,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "parseJson",
             "Convert a string containing JSON data into a JSON value.",
+            "$runtime.jsonParse(%s)",
             Imyhat.JSON.asOptional(),
             new FunctionParameter("String to parse", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -487,6 +554,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "urlDecode",
             "Convert a URL-encoded string back to a normal string.",
+            "decodeURIComponent(%s)",
             Imyhat.STRING.asOptional(),
             new FunctionParameter("String to encode", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -494,6 +562,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "urlEncode",
             "Convert a string to a URL-encoded string (also escaping *, even though that is not standard).",
+            "encodeURIComponent(%s).replace(\"*\", \"%2A\")",
             Imyhat.STRING,
             new FunctionParameter("String to encode", Imyhat.STRING)),
         FunctionDefinition.staticMethod(
@@ -501,6 +570,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             RuntimeSupport.class,
             "changePrefix",
             "Replaces the prefix of a path with a replacement. A number of prefixes are provided and the longest match is the one that is selected. If no match is found, the path is returned unchanged. This is mean to reconcile different mounts or symlink trees of the same file tree.",
+            "$runtime.changePrefix(%s, %s)",
             Imyhat.PATH,
             new FunctionParameter("The path to adjust", Imyhat.PATH),
             new FunctionParameter(
@@ -510,6 +580,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "ends_with"),
             "endsWith",
             "Checks if ends with the directory and filename suffix provided.",
+            "$runtime.pathStartsWith(%s, %s)",
             Imyhat.BOOLEAN,
             new FunctionParameter("The path to check", Imyhat.PATH),
             new FunctionParameter("The suffix path", Imyhat.PATH)),
@@ -517,6 +588,7 @@ public final class StandardDefinitions implements DefinitionRepository {
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "path", "starts_with"),
             "startsWith",
             "Checks if starts with the directory prefix provided.",
+            "$runtime.pathStartsWith(%s, %s)",
             Imyhat.BOOLEAN,
             new FunctionParameter("The path to check", Imyhat.PATH),
             new FunctionParameter("The prefix directory", Imyhat.PATH)),
@@ -524,11 +596,13 @@ public final class StandardDefinitions implements DefinitionRepository {
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "length"),
             "length",
             "Gets the length of a string.",
+            "%s.length",
             new FunctionParameter("input to measure", Imyhat.STRING)),
         FunctionDefinition.virtualIntegerFunction(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "string", "hash"),
             "hashCode",
             "Compute the hash of a string (equivalent to Java's hashCode).",
+            "$runtime.stringHash(%s)",
             new FunctionParameter("string to hash", Imyhat.STRING)),
         new FunctionDefinition() {
 
@@ -563,6 +637,11 @@ public final class StandardDefinitions implements DefinitionRepository {
                     "replace",
                     A_STRING_TYPE,
                     new Type[] {A_CHAR_SEQUENCE_TYPE, A_CHAR_SEQUENCE_TYPE}));
+          }
+
+          @Override
+          public String renderEcma(Object[] args) {
+            return String.format("%s.replaceAll(%s, %s)", args);
           }
 
           @Override
@@ -607,6 +686,11 @@ public final class StandardDefinitions implements DefinitionRepository {
           }
 
           @Override
+          public String renderEcma(Object[] args) {
+            return args[0].toString();
+          }
+
+          @Override
           public void renderStart(GeneratorAdapter methodGen) {
             // None required.
           }
@@ -618,11 +702,13 @@ public final class StandardDefinitions implements DefinitionRepository {
         },
         FunctionDefinition.cast(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "float", "to_integer"),
+            "Math.trunc(%s)",
             Imyhat.INTEGER,
             Imyhat.FLOAT,
             "Truncates a floating point number of an integer."),
         FunctionDefinition.cast(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "integer", "to_float"),
+            "%s",
             Imyhat.FLOAT,
             Imyhat.INTEGER,
             "Converts an integer to a floating point number.")
@@ -644,6 +730,11 @@ public final class StandardDefinitions implements DefinitionRepository {
           @Override
           public void load(GeneratorAdapter methodGen) {
             methodGen.invokeStatic(A_INSTANT_TYPE, METHOD_INSTANT__NOW);
+          }
+
+          @Override
+          public String load() {
+            return "new Date()";
           }
         }
       };

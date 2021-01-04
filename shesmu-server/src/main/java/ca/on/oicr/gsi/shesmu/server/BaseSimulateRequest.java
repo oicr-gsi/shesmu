@@ -273,6 +273,11 @@ public abstract class BaseSimulateRequest {
           JSON_BOOTSTRAP,
           value);
     }
+
+    @Override
+    public String load() {
+      return value;
+    }
   }
 
   protected static final class JsonRefillerParameterDefinition

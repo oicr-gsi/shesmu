@@ -1,6 +1,8 @@
 package ca.on.oicr.gsi.shesmu.compiler;
 
 import ca.on.oicr.gsi.shesmu.compiler.Target.Flavour;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -42,6 +44,15 @@ public class StringNodeLiteral extends StringNode {
   public void render(Renderer renderer) {
     renderer.methodGen().push(value);
     renderer.methodGen().invokeVirtual(A_STRINGBUILDER_TYPE, METHOD_STRINGBUILDER__APPEND__STR);
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    try {
+      return RuntimeSupport.MAPPER.writeValueAsString(value);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

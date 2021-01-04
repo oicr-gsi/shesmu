@@ -47,6 +47,12 @@ public class ListNodeSubsample extends ListNode {
   }
 
   @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.subsample(samplers, name);
+    return name;
+  }
+
+  @Override
   public final Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok =

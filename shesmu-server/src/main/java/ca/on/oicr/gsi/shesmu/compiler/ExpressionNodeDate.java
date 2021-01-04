@@ -40,6 +40,11 @@ public class ExpressionNodeDate extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format("new Date(%d)", value.toEpochMilli());
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
 

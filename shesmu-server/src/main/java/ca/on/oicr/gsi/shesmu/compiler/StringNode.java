@@ -98,6 +98,8 @@ public abstract class StringNode {
 
   public abstract void render(Renderer renderer);
 
+  public abstract String renderEcma(EcmaScriptRenderer renderer);
+
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   public abstract boolean resolveDefinitions(

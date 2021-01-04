@@ -33,6 +33,13 @@ public class ListNodeFilter extends ListNodeWithExpression {
   }
 
   @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.filter(name, expression::renderEcma);
+    return  name;
+  }
+
+
+  @Override
   protected boolean resolveExtraDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return true;

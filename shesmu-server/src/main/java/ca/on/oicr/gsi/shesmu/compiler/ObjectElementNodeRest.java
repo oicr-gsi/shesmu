@@ -32,6 +32,15 @@ public class ObjectElementNodeRest extends ObjectElementNode {
   }
 
   @Override
+  public Stream<String> render(EcmaScriptRenderer renderer) {
+    final String expressionResult = expression.renderEcma(renderer);
+    return tuple
+        .fields()
+        .filter(field -> !exceptions.contains(field.getKey()))
+        .map(field -> String.format("%s: %s.%s", field.getKey(), expressionResult, field.getKey()));
+  }
+
+  @Override
   public void render(Renderer renderer, ToIntFunction<String> indexOf) {
     expression.render(renderer);
     final int local = renderer.methodGen().newLocal(A_TUPLE_TYPE);

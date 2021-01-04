@@ -55,6 +55,16 @@ public class ExpressionNodeBlock extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final EcmaScriptRenderer inner = renderer.duplicate();
+    for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {
+      final String value = renderer.newConst(definition.second().renderEcma(inner));
+      definition.first().renderEcma(rr -> value).forEach(inner::define);
+    }
+    return result.renderEcma(inner);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     Renderer current = renderer.duplicate();
     for (final Pair<DestructuredArgumentNode, ExpressionNode> definition : definitions) {

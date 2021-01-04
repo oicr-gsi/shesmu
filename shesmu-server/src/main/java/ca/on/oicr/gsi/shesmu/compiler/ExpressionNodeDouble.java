@@ -27,6 +27,11 @@ public class ExpressionNodeDouble extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return Double.toString(value);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
 

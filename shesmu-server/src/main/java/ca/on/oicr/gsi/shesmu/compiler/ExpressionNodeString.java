@@ -42,6 +42,11 @@ public class ExpressionNodeString extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return parts.stream().map(p -> p.renderEcma(renderer)).collect(Collectors.joining(" + ", "(", ")"));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     if (parts.stream().allMatch(StringNode::isPassive)) {
       final String renderedString =

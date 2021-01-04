@@ -68,6 +68,17 @@ public class CollectNodeDictionary extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.map(
+        name,
+        Imyhat.tuple(key.type(), value.type()),
+        r -> String.format("[%s, %s]", key.renderEcma(r), value.renderEcma(r)));
+    return String.format(
+        "$runtime.dictNew(%s, (a, b) => %s)",
+        builder.finish(), key.type().apply(EcmaScriptRenderer.COMPARATOR));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final NameDefinitions innerDefs = defs.bind(name);

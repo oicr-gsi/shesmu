@@ -24,6 +24,11 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
       }
 
       @Override
+      public String render(EcmaScriptRenderer renderer, String collection, String index) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
       public Imyhat output(Imyhat type) {
         return Imyhat.BAD;
       }
@@ -40,6 +45,11 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
           renderer.methodGen().invokeInterface(A_MAP_TYPE, METHOD_MAP__GET);
           renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF_NULLABLE);
         }
+      }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, String collection, String index) {
+        return String.format("$runtime.replaceUndef(%s.get(%s))", collection, index);
       }
 
       @Override
@@ -82,6 +92,11 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
       }
 
       @Override
+      public String render(EcmaScriptRenderer renderer, String collection, String index) {
+        return String.format("$runtime.mapNull(%s, $v => $v.get(%s))", collection, index);
+      }
+
+      @Override
       public Imyhat output(Imyhat type) {
         return type.asOptional();
       }
@@ -91,6 +106,8 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
 
     public abstract void render(
         int line, int column, Renderer renderer, ExpressionNode index, boolean resultIsOptional);
+
+    public abstract String render(EcmaScriptRenderer renderer, String collection, String index);
   }
 
   private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
@@ -135,6 +152,11 @@ public class ExpressionNodeDictionaryGet extends ExpressionNode {
   public void collectPlugins(Set<Path> pluginFileNames) {
     index.collectPlugins(pluginFileNames);
     expression.collectPlugins(pluginFileNames);
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return access.render(renderer, expression.renderEcma(renderer), index.renderEcma(renderer));
   }
 
   @Override

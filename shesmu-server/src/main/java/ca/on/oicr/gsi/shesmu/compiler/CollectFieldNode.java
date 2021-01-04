@@ -96,6 +96,15 @@ public class CollectFieldNode {
     builder.renderer().methodGen().endMethod();
   }
 
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor initial) {
+    EcmaLoadableConstructor name = initial;
+    for (final ListNode node : transforms) {
+      name = node.render(builder, name);
+    }
+
+    return collector.render(builder, name);
+  }
+
   public boolean resolve(
       NameDefinitions defs, DestructuredArgumentNode initial, Consumer<String> errorHandler) {
     final Optional<DestructuredArgumentNode> nextName =

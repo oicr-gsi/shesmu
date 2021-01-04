@@ -22,8 +22,6 @@ public abstract class ListNodeWithExpression extends ListNode {
 
   /**
    * Add all free variable names to the set provided.
-   *
-   * @param names
    */
   @Override
   public final void collectFreeVariables(Set<String> names, Predicate<Flavour> predicate) {

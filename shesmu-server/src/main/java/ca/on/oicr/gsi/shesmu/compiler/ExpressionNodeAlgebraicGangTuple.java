@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -48,6 +49,17 @@ public class ExpressionNodeAlgebraicGangTuple extends ExpressionNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     // Do nothing
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "{\"type\": \"%s\", \"contents\": %s }",
+        algebraicName,
+        elements
+            .stream()
+            .map(p -> renderer.load(p.first()))
+            .collect(Collectors.joining(",", "[", "]")));
   }
 
   @Override

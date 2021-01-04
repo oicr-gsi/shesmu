@@ -78,6 +78,23 @@ public class CollectNodeReduce extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    return String.format(
+        "%s.reduce(%s, %s)",
+        builder.finish(),
+        builder
+            .renderer()
+            .lambda(
+                2,
+                (r, args) -> {
+                  accumulatorName.renderEcma(rr -> args.apply(0)).forEach(r::define);
+                  name.create(rr -> args.apply(1)).forEach(r::define);
+                  return reducer.renderEcma(r);
+                }),
+        initial.renderEcma(builder.renderer()));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok =

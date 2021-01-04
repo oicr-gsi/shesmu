@@ -80,6 +80,13 @@ public class DestructuredArgumentNodeObject extends DestructuredArgumentNode {
   }
 
   @Override
+  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+    return fields
+        .stream()
+        .flatMap(f -> f.second().renderEcma(r -> loader.apply(r) + "." + f.first()));
+  }
+
+  @Override
   public boolean resolve(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return fields

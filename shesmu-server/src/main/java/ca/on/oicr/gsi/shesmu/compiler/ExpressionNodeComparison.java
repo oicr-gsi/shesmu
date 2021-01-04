@@ -35,6 +35,17 @@ public class ExpressionNodeComparison extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return left.type()
+        .unify(right.type())
+        .apply(
+            comparison.render(
+                renderer,
+                renderer.newConst(left.renderEcma(renderer)),
+                renderer.newConst(right.renderEcma(renderer))));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     left.render(renderer);
     right.render(renderer);

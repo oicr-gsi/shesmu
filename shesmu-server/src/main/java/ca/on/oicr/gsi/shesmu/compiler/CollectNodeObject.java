@@ -76,6 +76,20 @@ public class CollectNodeObject extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    final String start = builder.renderer().newConst(builder.finish());
+    return fields
+        .stream()
+        .map(
+            f ->
+                f.fieldName()
+                    + ": "
+                    + f.render(builder.renderer().buildStream(builder.currentType(), start), name))
+        .sorted()
+        .collect(Collectors.joining(", ", "{", "}"));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok =

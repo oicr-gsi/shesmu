@@ -46,6 +46,13 @@ public class ExpressionNodeRegex extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "/%s/%s.test(%s)",
+        regex, EcmaScriptRenderer.regexFlagsToString(flags), expression.renderEcma(renderer));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.regex(regex, flags);
     expression.render(renderer);

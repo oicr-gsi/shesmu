@@ -29,6 +29,11 @@ public class CollectNodeCount extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    return builder.finish() + ".length";
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return true;

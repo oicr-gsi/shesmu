@@ -27,6 +27,31 @@ public final class CollectNodeOptima extends CollectNodeOptional {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    return String.format(
+        "$runtime.optima(%s, %s, %s)",
+        builder.finish(),
+        builder
+            .renderer()
+            .lambda(
+                1,
+                (r, arg) -> {
+                  name.create(rr -> arg.apply(0)).forEach(r::define);
+                  return selector.renderEcma(r);
+                }),
+        builder
+            .renderer()
+            .lambda(
+                2,
+                (r, args) ->
+                    selector
+                        .type()
+                        .apply(
+                            (max ? Comparison.GT : Comparison.LT)
+                                .render(r, args.apply(0), args.apply(1)))));
+  }
+
+  @Override
   protected Imyhat returnType(Imyhat incomingType, Imyhat selectorType) {
     return incomingType;
   }

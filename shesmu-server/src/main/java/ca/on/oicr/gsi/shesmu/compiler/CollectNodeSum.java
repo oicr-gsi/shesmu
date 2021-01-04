@@ -59,6 +59,21 @@ public class CollectNodeSum extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    return String.format(
+        "%s.reduce(%s, 0)",
+        builder.finish(),
+        builder
+            .renderer()
+            .lambda(
+                2,
+                (r, args) -> {
+                  name.create(rr -> args.apply(1)).forEach(r::define);
+                  return args.apply(0) + " + " + expression.renderEcma(r);
+                }));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok = expression.resolve(defs.bind(name), errorHandler);

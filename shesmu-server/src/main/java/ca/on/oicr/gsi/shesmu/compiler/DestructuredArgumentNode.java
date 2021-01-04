@@ -41,6 +41,11 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
         }
 
         @Override
+        public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+          return Stream.empty();
+        }
+
+        @Override
         public boolean resolve(
             ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
           return true;
@@ -201,6 +206,8 @@ public abstract class DestructuredArgumentNode implements UndefinedVariableProvi
   public abstract boolean isBlank();
 
   public abstract Stream<LoadableValue> render(Consumer<Renderer> loader);
+
+  public abstract Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader);
 
   public abstract boolean resolve(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler);

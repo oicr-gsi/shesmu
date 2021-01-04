@@ -67,6 +67,8 @@ public abstract class MatchAlternativeNode {
 
   public abstract void render(Renderer renderer, Label end, int local);
 
+  public abstract String render(EcmaScriptRenderer renderer, String original);
+
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   public abstract boolean resolveDefinitions(

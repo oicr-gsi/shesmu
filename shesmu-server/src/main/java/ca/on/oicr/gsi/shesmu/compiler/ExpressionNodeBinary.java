@@ -44,6 +44,11 @@ public final class ExpressionNodeBinary extends ExpressionNode {
     right.collectPlugins(pluginFileNames);
   }
 
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return operation.render(renderer, left, right);
+  }
+
   public ExpressionNode left() {
     return left;
   }

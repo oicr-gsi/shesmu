@@ -3,6 +3,8 @@ package ca.on.oicr.gsi.shesmu.compiler;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -32,6 +34,12 @@ public class TupleElementNodeRest extends TupleElementNode {
       renderer.methodGen().arrayStore(A_OBJECT_TYPE);
     }
     return start + tuple.count();
+  }
+
+  @Override
+  public String render(EcmaScriptRenderer renderer) {
+    final String value = expression.renderEcma(renderer);
+    return IntStream.range(0, tuple.count()).mapToObj(i -> value + "[" + i + "]").collect(Collectors.joining(", "));
   }
 
   @Override

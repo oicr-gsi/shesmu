@@ -9,6 +9,7 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.runtime.TableCollector;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -125,6 +126,34 @@ public class CollectNodeTable extends CollectNode {
           }
           renderer.methodGen().invokeConstructor(A_TABLE_COLLECTOR_TYPE, CTOR__TABLE_COLLECTOR);
         });
+  }
+
+  @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    final String tableFormat = format.renderEcma(builder.renderer());
+    builder.map(
+        name,
+        Imyhat.STRING,
+        r ->
+            columns
+                .stream()
+                .map(p -> p.second().renderEcma(r))
+                .collect(
+                    Collectors.joining(
+                        " + " + tableFormat + ".data_separator + ",
+                        tableFormat + ".data_start + ",
+                        tableFormat + ".data_end")));
+    return columns
+            .stream()
+            .map(p -> p.first().renderEcma(builder.renderer()))
+            .collect(
+                Collectors.joining(
+                    " + " + tableFormat + ".header_separator + ",
+                    tableFormat + ".header_start + ",
+                    tableFormat + ".header_end + "))
+        + String.join("", Collections.nCopies(columns.size(), tableFormat + ".header_underline + "))
+        + builder.finish()
+        + ".join(\"\")";
   }
 
   @Override

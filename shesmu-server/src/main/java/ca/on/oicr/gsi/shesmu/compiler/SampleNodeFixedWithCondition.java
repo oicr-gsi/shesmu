@@ -107,6 +107,24 @@ public class SampleNodeFixedWithCondition extends SampleNode {
   }
 
   @Override
+  public String render(
+      EcmaScriptRenderer renderer,
+      String previous,
+      Imyhat streamType,
+      EcmaLoadableConstructor name) {
+    return String.format(
+        "$runtime.subsampleFixedWithCondition(%s, %s, %s)",
+        previous,
+        limitExpression.renderEcma(renderer),
+        renderer.lambda(
+            1,
+            (r, args) -> {
+              name.create(rr -> args.apply(0)).forEach(renderer::define);
+              return conditionExpression.renderEcma(r);
+            }));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok =

@@ -6,6 +6,8 @@ import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat.ObjectImyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,22 @@ public class ExpressionNodeMatch extends ExpressionNode {
     test.collectPlugins(pluginFileNames);
     alternative.collectPlugins(pluginFileNames);
     cases.forEach(item -> item.collectPlugins(pluginFileNames));
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final String testValue = renderer.newConst(test.renderEcma(renderer));
+    final String result = renderer.newLet();
+    renderer.mapIf(cases.stream(), m -> {
+      try {
+        return String.format("%s.type == %s", testValue, RuntimeSupport.MAPPER.writeValueAsString(m.name()));
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }, (r, m) -> {
+
+    }, r -> r.statement(String.format("%s = %s", result, alternative.render(r,testValue ))));
+    return result;
   }
 
   @Override

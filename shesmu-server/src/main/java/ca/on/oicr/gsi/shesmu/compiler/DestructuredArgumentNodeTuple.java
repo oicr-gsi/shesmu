@@ -6,6 +6,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
@@ -72,6 +73,13 @@ public class DestructuredArgumentNodeTuple extends DestructuredArgumentNode {
                           r.methodGen().invokeVirtual(A_TUPLE_TYPE, METHOD_TUPLE__GET);
                           r.methodGen().unbox(tupleType.get(i).apply(TO_ASM));
                         }));
+  }
+
+  @Override
+  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+    return IntStream.range(0, elements.size())
+        .boxed()
+        .flatMap(i -> elements.get(i).renderEcma(r -> loader.apply(r) + "[" + i + "]"));
   }
 
   @Override

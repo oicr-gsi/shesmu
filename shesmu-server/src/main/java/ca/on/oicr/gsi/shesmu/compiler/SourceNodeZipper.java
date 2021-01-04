@@ -45,6 +45,7 @@ public class SourceNodeZipper extends SourceNode {
   private final ExpressionNode left;
   private final ExpressionNode right;
   private Imyhat type;
+  private Imyhat keyType;
   private List<Pair<Integer, Character>> copySemantics = new ArrayList<>();
 
   public SourceNodeZipper(int line, int column, ExpressionNode left, ExpressionNode right) {
@@ -84,6 +85,44 @@ public class SourceNodeZipper extends SourceNode {
     renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__ZIP);
 
     return renderer.buildStream(type);
+  }
+
+  @Override
+  public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
+
+    return renderer.buildStream(
+        type,
+        String.format(
+            "$runtime.zip(%s, %s, %s)",
+            left.renderEcma(renderer),
+            right.renderEcma(renderer),
+            renderer.lambda(
+                2,
+                (r, arg) -> {
+                  final String result = r.newLet("[]");
+                  r.conditional(
+                      keyType.apply(EcmaScriptRenderer.isEqual(arg.apply(0), arg.apply(1))),
+                      whenTrue -> {
+                        final String output =
+                            whenTrue.newLet(String.format("new Array(%d)", copySemantics.size()));
+                        for (int index = 0; index < copySemantics.size(); index++) {
+                          whenTrue.statement(
+                              String.format(
+                                  "%s[%d] = $runtime.nullifyUndefined(%s?.[%d])",
+                                  output,
+                                  index,
+                                  arg.apply(
+                                      Character.toLowerCase(copySemantics.get(index).second())
+                                              == 'a'
+                                          ? 0
+                                          : 1),
+                                  copySemantics.get(index).first()));
+                        }
+
+                        whenTrue.statement(String.format("%s.push(%s)", result, output));
+                      });
+                  return result;
+                })));
   }
 
   @Override
@@ -142,7 +181,8 @@ public class SourceNodeZipper extends SourceNode {
       return false;
     }
     final List<Imyhat> output = new ArrayList<>();
-    output.add(leftIndex.unify(rightIndex));
+    keyType = leftIndex.unify(rightIndex);
+    output.add(keyType);
     for (int position = 0; position < 2; position++) {
       for (int index = 1; index < types.get(position).count(); index++) {
         final Imyhat outputType = types.get(position).get(index).asOptional();

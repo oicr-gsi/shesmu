@@ -38,6 +38,11 @@ public class ExpressionNodeIfDefined extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return (isDefined ? trueExpression : falseExpression).renderEcma(renderer);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
     (isDefined ? trueExpression : falseExpression).render(renderer);

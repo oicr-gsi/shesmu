@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -40,6 +41,19 @@ public class ExpressionNodeDictionary extends ExpressionNode {
     for (final DictionaryElementNode entry : entries) {
       entry.collectPlugins(pluginFileNames);
     }
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return entries
+        .stream()
+        .map(entry -> entry.render(renderer))
+        .collect(
+            Collectors.joining(
+                ", ",
+                "$runtime.dictNew([",
+                String.format(
+                    "].flat(1), (a, b) => %s)", key.apply(EcmaScriptRenderer.COMPARATOR))));
   }
 
   @Override

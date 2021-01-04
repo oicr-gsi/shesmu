@@ -39,6 +39,12 @@ public class ListNodeMap extends ListNodeWithExpression {
   }
 
   @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.map(name, expression.type(), expression::renderEcma);
+    return nextName::renderEcma;
+  }
+
+  @Override
   protected boolean resolveExtraDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return nextName.resolve(expressionCompilerServices, errorHandler);

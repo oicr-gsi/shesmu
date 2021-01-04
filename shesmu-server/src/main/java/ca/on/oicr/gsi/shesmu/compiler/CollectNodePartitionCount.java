@@ -68,6 +68,21 @@ public class CollectNodePartitionCount extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    return String.format(
+        "$runtime.partitionCount(%s, %s)",
+        builder.finish(),
+        builder
+            .renderer()
+            .lambda(
+                1,
+                (r, args) -> {
+                  name.create(rr -> args.apply(0)).forEach(r::define);
+                  return expression.renderEcma(r);
+                }));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok = expression.resolve(defs.bind(name), errorHandler);

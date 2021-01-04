@@ -8,7 +8,9 @@ import ca.on.oicr.gsi.shesmu.plugin.json.PackJsonObject;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatConsumer;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeInterop;
+import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import ca.on.oicr.gsi.shesmu.server.BaseHotloadingCompiler;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
@@ -56,6 +58,11 @@ public abstract class ConstantDefinition implements Target {
     @Override
     public void load(GeneratorAdapter methodGen) {
       original.load(methodGen);
+    }
+
+    @Override
+    public String load() {
+      return original.load();
     }
   }
 
@@ -182,6 +189,11 @@ public abstract class ConstantDefinition implements Target {
       public void load(GeneratorAdapter methodGen) {
         methodGen.push(value);
       }
+
+      @Override
+      public String load() {
+        return Boolean.toString(value);
+      }
     };
   }
 
@@ -198,6 +210,11 @@ public abstract class ConstantDefinition implements Target {
         methodGen.push(value.toEpochMilli());
         methodGen.invokeStatic(type().apply(TypeUtils.TO_ASM), INSTANT_CTOR);
       }
+
+      @Override
+      public String load() {
+        return String.format("new Date(%s)", value.toEpochMilli());
+      }
     };
   }
 
@@ -213,6 +230,11 @@ public abstract class ConstantDefinition implements Target {
       public void load(GeneratorAdapter methodGen) {
         methodGen.push(value);
       }
+
+      @Override
+      public String load() {
+        return Long.toString(value);
+      }
     };
   }
 
@@ -227,6 +249,15 @@ public abstract class ConstantDefinition implements Target {
       @Override
       public void load(GeneratorAdapter methodGen) {
         methodGen.push(value);
+      }
+
+      @Override
+      public String load() {
+        try {
+          return RuntimeSupport.MAPPER.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        }
       }
     };
   }
@@ -298,6 +329,8 @@ public abstract class ConstantDefinition implements Target {
    * @param methodGen the method to load the value in
    */
   public abstract void load(GeneratorAdapter methodGen);
+
+  public abstract String load();
 
   /**
    * The name of the constant.

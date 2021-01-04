@@ -49,6 +49,11 @@ public class DictionaryElementNodeSingle extends DictionaryElementNode {
   }
 
   @Override
+  public String render(EcmaScriptRenderer renderer) {
+    return String.format("[[%s, %s]]", key.renderEcma(renderer), value.renderEcma(renderer));
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return key.resolve(defs, errorHandler) & value.resolve(defs, errorHandler);
   }

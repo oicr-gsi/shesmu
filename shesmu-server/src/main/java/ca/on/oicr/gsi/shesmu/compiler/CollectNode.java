@@ -246,6 +246,8 @@ public abstract class CollectNode {
 
   public abstract void render(JavaStreamBuilder builder, LoadableConstructor name);
 
+  public abstract String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name);
+
   /** Resolve all variable plugins in this expression and its children. */
   public abstract boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler);

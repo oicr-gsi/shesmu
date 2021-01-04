@@ -146,6 +146,12 @@ public final class PluginManager
             Type.getMethodDescriptor(type().apply(TypeUtils.TO_ASM)),
             BSM_HANDLE_ARBITRARY);
       }
+
+      @Override
+      public String load() {
+        throw new UnsupportedOperationException(
+            "Plugun-provided constants cannot be exported to ECMAScript");
+      }
     }
 
     private final class ArbitraryDynamicSignatureDefintion
@@ -241,6 +247,11 @@ public final class PluginManager
       @Override
       public void render(GeneratorAdapter methodGen) {
         methodGen.invokeDynamic(fixedName, descriptor, BSM_HANDLE_ARBITRARY);
+      }
+
+      @Override
+      public String renderEcma(Object[] args) {
+        throw new UnsupportedOperationException();
       }
 
       @Override
@@ -691,6 +702,11 @@ public final class PluginManager
                         parameter1Type.type().apply(TypeUtils.TO_ASM),
                         parameter2Type.type().apply(TypeUtils.TO_ASM)),
                     BSM_HANDLE_ARBITRARY);
+              }
+
+              @Override
+              public String renderEcma(Object[] args) {
+                throw new UnsupportedOperationException();
               }
 
               @Override
@@ -1210,6 +1226,12 @@ public final class PluginManager
                     public void load(GeneratorAdapter methodGen) {
                       invoker.write(methodGen, path.toString());
                     }
+
+                    @Override
+                    public String load() {
+                      throw new UnsupportedOperationException(
+                          "Plugin-provided constants cannot be exported to ECMAScript");
+                    }
                   });
         } else {
           final MethodHandle handle = fileFormat.lookup().unreflect(method);
@@ -1275,6 +1297,11 @@ public final class PluginManager
                     @Override
                     public void render(GeneratorAdapter methodGen) {
                       invoker.write(methodGen, path.toString());
+                    }
+
+                    @Override
+                    public String renderEcma(Object[] args) {
+                      throw new UnsupportedOperationException();
                     }
 
                     @Override

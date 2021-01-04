@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -156,6 +158,11 @@ public class StringNodeGangName extends StringNode {
       }
       underscore = true;
     }
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    throw new UnsupportedOperationException("It should be impossible to have a gang in ECMAScript");
   }
 
   @Override

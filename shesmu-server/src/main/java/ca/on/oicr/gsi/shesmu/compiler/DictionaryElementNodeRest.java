@@ -42,6 +42,11 @@ public class DictionaryElementNodeRest extends DictionaryElementNode {
   }
 
   @Override
+  public String render(EcmaScriptRenderer renderer) {
+    return expression.renderEcma(renderer);
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }

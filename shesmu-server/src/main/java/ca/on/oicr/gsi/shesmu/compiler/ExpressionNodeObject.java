@@ -44,6 +44,15 @@ public class ExpressionNodeObject extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return fields
+        .stream()
+        .flatMap(f -> f.render(renderer))
+        .sorted()
+        .collect(Collectors.joining(", ", "{", "}"));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
     final Map<String, Integer> indices =

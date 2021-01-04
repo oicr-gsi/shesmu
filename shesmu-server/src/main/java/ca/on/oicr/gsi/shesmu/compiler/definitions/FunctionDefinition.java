@@ -12,7 +12,11 @@ import org.objectweb.asm.commons.Method;
 /** A multi-keyed map that functions a value based on rules/tables */
 public interface FunctionDefinition {
   static FunctionDefinition cast(
-      String name, Imyhat returnType, Imyhat argumentType, String description) {
+      String name,
+      String ecmaDefinition,
+      Imyhat returnType,
+      Imyhat argumentType,
+      String description) {
     return new FunctionDefinition() {
 
       @Override
@@ -41,6 +45,11 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public String renderEcma(Object[] args) {
+        return String.format(ecmaDefinition, args);
+      }
+
+      @Override
       public void renderStart(GeneratorAdapter methodGen) {
         // None required.
       }
@@ -66,6 +75,7 @@ public interface FunctionDefinition {
       Class<?> owner,
       String methodName,
       String description,
+      String ecmaDefinition,
       Imyhat returnType,
       FunctionParameter... parameters) {
     return new FunctionDefinition() {
@@ -103,6 +113,11 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public String renderEcma(Object[] args) {
+        return String.format(ecmaDefinition, args);
+      }
+
+      @Override
       public void renderStart(GeneratorAdapter methodGen) {
         // None required.
       }
@@ -118,6 +133,7 @@ public interface FunctionDefinition {
       String name,
       String methodName,
       String description,
+      String ecmaDefinition,
       FunctionParameter firstParameter,
       FunctionParameter... parameters) {
     return new FunctionDefinition() {
@@ -161,6 +177,11 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public String renderEcma(Object[] args) {
+        return String.format(ecmaDefinition, args);
+      }
+
+      @Override
       public void renderStart(GeneratorAdapter methodGen) {
         // None required.
       }
@@ -176,6 +197,7 @@ public interface FunctionDefinition {
       String name,
       String methodName,
       String description,
+      String ecmaDefinition,
       Imyhat returnType,
       FunctionParameter firstParameter,
       FunctionParameter... parameters) {
@@ -219,6 +241,11 @@ public interface FunctionDefinition {
       }
 
       @Override
+      public String renderEcma(Object[] args) {
+        return String.format(ecmaDefinition, args);
+      }
+
+      @Override
       public void renderStart(GeneratorAdapter methodGen) {
         // None required.
       }
@@ -247,6 +274,8 @@ public interface FunctionDefinition {
   /** Create bytecode for this function. */
   void render(GeneratorAdapter methodGen);
 
+  /** Create ECMAScript for this function */
+  String renderEcma(Object[] args);
   /**
    * Create bytecode for anything that should be on the stack before the arguments of this function.
    */

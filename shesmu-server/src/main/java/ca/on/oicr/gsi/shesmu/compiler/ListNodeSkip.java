@@ -12,4 +12,10 @@ public class ListNodeSkip extends ListNodeBaseRange {
   protected void render(JavaStreamBuilder builder, Consumer<Renderer> expression) {
     builder.skip(expression);
   }
+
+  @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.skip(expression.renderEcma(builder.renderer()));
+    return name;
+  }
 }

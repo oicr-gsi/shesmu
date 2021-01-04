@@ -62,6 +62,16 @@ public class ExpressionNodeRegexBinding extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "$runtime.regexBind(/%s/%s, %s, %d)",
+        regex,
+        EcmaScriptRenderer.regexFlagsToString(flags),
+        expression.renderEcma(renderer),
+        captureCount);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
 

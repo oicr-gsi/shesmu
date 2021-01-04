@@ -59,6 +59,34 @@ public final class CollectNodeMatches extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    String matchOperation;
+    switch (matchType) {
+      case ALL:
+      case NONE:
+        matchOperation = "every";
+        break;
+      case ANY:
+        matchOperation = "some";
+        break;
+      default:
+        throw new IllegalStateException();
+    }
+    return String.format(
+        "%s.%s(%s)",
+        builder.finish(),
+        matchOperation,
+        builder
+            .renderer()
+            .lambda(
+                1,
+                (r, args) -> {
+                  name.create(rr -> args.apply(0)).forEach(r::define);
+                  return (matchType == Match.NONE ? "!" : "") + "(" + selector.renderEcma(r) + ")";
+                }));
+  }
+
+  @Override
   public final boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok = selector.resolve(defs.bind(name), errorHandler);
