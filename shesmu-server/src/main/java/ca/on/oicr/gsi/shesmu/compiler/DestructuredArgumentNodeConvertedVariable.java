@@ -8,6 +8,7 @@ import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -39,6 +40,25 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
     @Override
     public final Type type() {
       return convertedType.apply(TO_ASM);
+    }
+  }
+
+  private class EcmaStringConverter extends EcmaLoadableValue {
+
+    private final Function<EcmaScriptRenderer, String> loader;
+
+    public EcmaStringConverter(Function<EcmaScriptRenderer, String> loader) {
+      this.loader = loader;
+    }
+
+    @Override
+    public String apply(EcmaScriptRenderer renderer) {
+      return loader.apply(renderer) + ".toString()";
+    }
+
+    @Override
+    public String name() {
+      return name;
     }
   }
 
@@ -220,6 +240,49 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
     }
     throw new IllegalStateException(
         "Trying to write bytecode for a type situation that should have been rejected");
+  }
+
+  @Override
+  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+    if (convertedType.isSame(Imyhat.JSON)) {
+      return Stream.of(
+          new EcmaLoadableValue() {
+            @Override
+            public String apply(EcmaScriptRenderer renderer) {
+              return loader.apply(renderer);
+            }
+
+            @Override
+            public String name() {
+              return name;
+            }
+          });
+    }
+    if (convertedType.isSame(Imyhat.STRING)) {
+      if (type.isSame(Imyhat.INTEGER)) {
+        return Stream.of(new EcmaStringConverter(loader));
+      }
+      if (type.isSame(Imyhat.FLOAT)) {
+        return Stream.of(new EcmaStringConverter(loader));
+      }
+      if (type.isSame(Imyhat.JSON)) {
+        return Stream.of(
+            new EcmaLoadableValue() {
+              @Override
+              public String apply(EcmaScriptRenderer renderer) {
+                return String.format("JSON.toString(%s)", loader.apply(renderer));
+              }
+
+              @Override
+              public String name() {
+                return name;
+              }
+            });
+      }
+      return Stream.of(new EcmaStringConverter(loader));
+    }
+    throw new IllegalStateException(
+        "Trying to write ECMAScript for a type situation that should have been rejected");
   }
 
   @Override

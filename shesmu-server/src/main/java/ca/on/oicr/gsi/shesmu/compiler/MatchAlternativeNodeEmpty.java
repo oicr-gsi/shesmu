@@ -36,6 +36,12 @@ public class MatchAlternativeNodeEmpty extends MatchAlternativeNode {
   }
 
   @Override
+  public String render(EcmaScriptRenderer renderer, String original) {
+    renderer.statement("throw new Error(\"Unsupported algebraic value in “Match” with no alternative.\")");
+    return "null";
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return true;
   }

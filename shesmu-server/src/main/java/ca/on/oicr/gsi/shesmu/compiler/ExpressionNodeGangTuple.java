@@ -45,6 +45,11 @@ public class ExpressionNodeGangTuple extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    throw new UnsupportedOperationException("ECMA Script should not be able to handle gangs.");
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.methodGen().newInstance(A_TUPLE_TYPE);
     renderer.methodGen().dup();

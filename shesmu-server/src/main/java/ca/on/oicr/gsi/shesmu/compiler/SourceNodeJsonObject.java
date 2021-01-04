@@ -61,6 +61,11 @@ public class SourceNodeJsonObject extends SourceNode {
   }
 
   @Override
+  public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
+    return renderer.buildStream(streamType(), lifted ? String.format("$runtime.mapNullOrDefault(%s, $v => Object.entires(v), [])", expression.renderEcma(renderer)): String.format("Object.entries(%s)", expression.renderEcma(renderer)));
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }

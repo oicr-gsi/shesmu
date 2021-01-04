@@ -59,6 +59,25 @@ public class ExpressionNodeSwitch extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final String testValue = renderer.newConst(test.renderEcma(renderer));
+    final String testLambda =
+        renderer.newConst(
+            renderer.lambda(
+                1,
+                (r, args) ->
+                    test.type().apply(EcmaScriptRenderer.isEqual(args.apply(0), testValue))));
+    final String result = renderer.newLet();
+    renderer.mapIf(
+        cases.stream(),
+        p -> String.format("%s(%s)", testLambda, p.first().renderEcma(renderer)),
+        (r, p) -> r.statement(String.format("%s = %s", result, p.second().renderEcma(r))),
+        r -> r.statement(String.format("%s = %s", result, alternative.renderEcma(r))));
+
+    return result;
+  }
+
+  @Override
   public void render(Renderer renderer) {
     CompareBrancher compare;
     if (test.type().isSame(Imyhat.BOOLEAN)) {

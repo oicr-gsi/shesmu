@@ -25,6 +25,11 @@ public class TupleElementNodeSingle extends TupleElementNode {
   }
 
   @Override
+  public String render(EcmaScriptRenderer renderer) {
+    return expression.renderEcma(renderer);
+  }
+
+  @Override
   public Stream<Imyhat> types() {
     return Stream.of(expression.type());
   }

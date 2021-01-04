@@ -22,14 +22,18 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
   private static final Type A_ALGEBRAIC_TYPE = Type.getType(AlgebraicValue.class);
 
   private static final Method CTOR_ALGEBRAIC =
-      new Method("<init>", Type.VOID_TYPE, new Type[] {Type.getType(String.class),Type.getType(Object[].class)});
+      new Method(
+          "<init>",
+          Type.VOID_TYPE,
+          new Type[] {Type.getType(String.class), Type.getType(Object[].class)});
 
   private final List<ObjectElementNode> fields;
   private final String name;
 
   private Imyhat type;
 
-  public ExpressionNodeAlgebraicObject(int line, int column,String name,  List<ObjectElementNode> fields) {
+  public ExpressionNodeAlgebraicObject(
+      int line, int column, String name, List<ObjectElementNode> fields) {
     super(line, column);
     this.name = name;
     this.fields = fields;
@@ -46,12 +50,28 @@ public class ExpressionNodeAlgebraicObject extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+
+    return String.format(
+        "{\"type\": \"%s\", \"contents\": %s}",
+        name,
+        fields
+            .stream()
+            .flatMap(f -> f.render(renderer))
+            .sorted()
+            .collect(Collectors.joining(", ", "{", "}")));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
     final Map<String, Integer> indices =
-        fields.stream().flatMap(ObjectElementNode::names).sorted()
+        fields
+            .stream()
+            .flatMap(ObjectElementNode::names)
+            .sorted()
             .map(Pair.number())
-        .collect(Collectors.toMap(p -> p.second().first(), Pair::first));
+            .collect(Collectors.toMap(p -> p.second().first(), Pair::first));
 
     renderer.methodGen().newInstance(A_ALGEBRAIC_TYPE);
     renderer.methodGen().dup();

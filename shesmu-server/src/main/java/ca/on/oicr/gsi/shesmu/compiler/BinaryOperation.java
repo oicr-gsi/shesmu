@@ -43,6 +43,18 @@ public abstract class BinaryOperation {
     }
 
     public void copy(
+        EcmaScriptRenderer renderer,
+        String result,
+        int targetIndex,
+        String leftVariable,
+        String rightVariable) {
+      renderer.statement(
+          String.format(
+              "%s[%d] = %s[%d]",
+              result, targetIndex, isLeft ? leftVariable : rightVariable, originalIndex));
+    }
+
+    public void copy(
         GeneratorAdapter methodGen, int targetIndex, int leftVariable, int rightVariable) {
       methodGen.dup();
       methodGen.push(targetIndex);
@@ -68,7 +80,7 @@ public abstract class BinaryOperation {
    * @param owner the class containing the static method
    * @param method method to call taking the Imyhat of the inner type follow by the two operands
    */
-  public static Definition binaryListStaticMethod(Type owner, String method) {
+  public static Definition binaryListStaticMethod(Type owner, String method, String esMethod) {
     return (left, right) ->
         (left.isSame(right) && (left instanceof Imyhat.ListImyhat))
             ? Optional.of(
@@ -92,6 +104,14 @@ public abstract class BinaryOperation {
                                 method,
                                 A_SET_TYPE,
                                 new Type[] {A_IMYHAT_TYPE, A_SET_TYPE, A_SET_TYPE}));
+                  }
+
+                  @Override
+                  public String render(
+                      EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+                    return String.format(
+                        "$runtime.%s(%s, %s)",
+                        esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
                   }
                 })
             : Optional.empty();
@@ -118,7 +138,7 @@ public abstract class BinaryOperation {
    * @param owner the class containing the static method
    * @param method method to call taking the Imyhat of the inner type follow by the two operands
    */
-  public static Definition listAndItemStaticMethod(Type owner, String method) {
+  public static Definition listAndItemStaticMethod(Type owner, String method, String esMethod) {
     return (left, right) -> {
       if (left instanceof Imyhat.ListImyhat) {
         final Imyhat inner = ((Imyhat.ListImyhat) left).inner();
@@ -144,6 +164,14 @@ public abstract class BinaryOperation {
                               method,
                               A_SET_TYPE,
                               new Type[] {A_IMYHAT_TYPE, A_SET_TYPE, A_OBJECT_TYPE}));
+                }
+
+                @Override
+                public String render(
+                    EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+                  return String.format(
+                      "$runtime.%s(%s, %s)",
+                      esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
                 }
               });
         }
@@ -204,6 +232,20 @@ public abstract class BinaryOperation {
                 }
                 renderer.methodGen().invokeConstructor(A_TUPLE_TYPE, TUPLE__CTOR);
               }
+
+              @Override
+              public String render(
+                  EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+                final String leftValue = renderer.newConst(left.renderEcma(renderer));
+                final String rightValue = renderer.newConst(right.renderEcma(renderer));
+                final String result =
+                    renderer.newConst(String.format("new Array(%d)", newFields.size()));
+                int targetIndex = 0;
+                for (ConcatenatedObjectField field : newFields.values()) {
+                  field.copy(renderer, result, targetIndex++, leftValue, rightValue);
+                }
+                return result;
+              }
             });
       }
     }
@@ -252,6 +294,14 @@ public abstract class BinaryOperation {
             renderer.methodGen().invokeVirtual(A_OPTIONAL_TYPE, OPTIONAL__OR_ELSE_GET);
             renderer.methodGen().unbox(resultType.apply(TO_ASM));
           }
+
+          @Override
+          public String render(
+              EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+            final String result = renderer.newLet(left.renderEcma(renderer));
+            renderer.conditional(String.format("%s === null", result), right::renderEcma);
+            return result;
+          }
         });
   }
 
@@ -290,12 +340,59 @@ public abstract class BinaryOperation {
                 supplier.push(renderer);
                 renderer.methodGen().invokeStatic(A_RUNTIME_SUPPORT_TYPE, RUNTIME_SUPPORT__MERGE);
               }
+
+              @Override
+              public String render(
+                  EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+                final String result = renderer.newLet(left.renderEcma(renderer));
+                renderer.conditional(String.format("%s === null", result), right::renderEcma);
+                return result;
+              }
             });
       }
     }
     return Optional.empty();
   }
 
+  protected static String primitiveMath(
+      EcmaScriptRenderer renderer,
+      boolean truncate,
+      int opcode,
+      ExpressionNode left,
+      ExpressionNode right) {
+    String symbol;
+    switch (opcode) {
+      case GeneratorAdapter.ADD:
+        symbol = "+";
+        break;
+      case GeneratorAdapter.AND:
+        symbol = "&";
+        break;
+      case GeneratorAdapter.DIV:
+        symbol = "/";
+        break;
+      case GeneratorAdapter.MUL:
+        symbol = "*";
+        break;
+      case GeneratorAdapter.OR:
+        symbol = "|";
+        break;
+      case GeneratorAdapter.REM:
+        symbol = "%";
+        break;
+      case GeneratorAdapter.SUB:
+        symbol = "-";
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown math opcode");
+    }
+    return String.format(
+        "%s(%s %s %s)",
+        truncate ? "Math.trunc" : "",
+        left.renderEcma(renderer),
+        symbol,
+        right.renderEcma(renderer));
+  }
   /**
    * Perform a primitive math operation on two operands of the provided type; returning the same
    * type
@@ -320,6 +417,12 @@ public abstract class BinaryOperation {
             leftValue.render(renderer);
             rightValue.render(renderer);
             renderer.methodGen().math(opcode, type.apply(TO_ASM));
+          }
+
+          @Override
+          public String render(
+              EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+            return primitiveMath(renderer, type.isSame(Imyhat.INTEGER), opcode, left, right);
           }
         });
   }
@@ -357,6 +460,12 @@ public abstract class BinaryOperation {
                   }
                   renderer.methodGen().math(opcode, this.returnType().apply(TO_ASM));
                 }
+
+                @Override
+                public String render(
+                    EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+                  return primitiveMath(renderer, leftIsInt && rightIsInt, opcode, left, right);
+                }
               });
         }
         return Optional.empty();
@@ -390,6 +499,16 @@ public abstract class BinaryOperation {
             rightValue.render(renderer);
             renderer.methodGen().mark(end);
           }
+
+          @Override
+          public String render(
+              EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+            return String.format(
+                "(%s %s %s)",
+                left.renderEcma(renderer),
+                condition == GeneratorAdapter.EQ ? "&&" : "||",
+                renderer.selfInvoke(right::renderEcma));
+          }
         });
   }
 
@@ -403,7 +522,12 @@ public abstract class BinaryOperation {
    * @param methodName the name of the method to call
    */
   public static Definition staticMethod(
-      Imyhat leftType, Imyhat rightType, Imyhat returnType, Type owner, String methodName) {
+      Imyhat leftType,
+      Imyhat rightType,
+      Imyhat returnType,
+      Type owner,
+      String methodName,
+      String esMethod) {
     return exact(
         leftType,
         rightType,
@@ -428,6 +552,13 @@ public abstract class BinaryOperation {
                         returnType.apply(TO_ASM),
                         new Type[] {leftType.apply(TO_ASM), rightType.apply(TO_ASM)}));
           }
+
+          @Override
+          public String render(
+              EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+            return String.format(
+                "%s(%s, %s)", esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
+          }
         });
   }
 
@@ -451,6 +582,13 @@ public abstract class BinaryOperation {
               rightValue.render(renderer);
               renderer.methodGen().invokeVirtual(A_TUPLE_TYPE, TUPLE__CONCAT);
             }
+
+            @Override
+            public String render(
+                EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+              return String.format(
+                  "%s.concat(%s)", left.renderEcma(renderer), right.renderEcma(renderer));
+            }
           });
     }
     return Optional.empty();
@@ -466,7 +604,7 @@ public abstract class BinaryOperation {
    * @param methodName the name of the virtual method
    */
   public static Definition virtualMethod(
-      Imyhat leftType, Imyhat rightType, Imyhat returnType, String methodName) {
+      Imyhat leftType, Imyhat rightType, Imyhat returnType, String methodName, String esMethod) {
     final Method method =
         new Method(methodName, returnType.apply(TO_ASM), new Type[] {rightType.apply(TO_ASM)});
     return exact(
@@ -490,6 +628,13 @@ public abstract class BinaryOperation {
               renderer.methodGen().invokeVirtual(leftType.apply(TO_ASM), method);
             }
           }
+
+          @Override
+          public String render(
+              EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
+            return String.format(
+                "%s(%s, %s)", esMethod, left.renderEcma(renderer), right.renderEcma(renderer));
+          }
         });
   }
 
@@ -506,6 +651,12 @@ public abstract class BinaryOperation {
         @Override
         public void render(
             int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String render(
+            EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right) {
           throw new UnsupportedOperationException();
         }
       };
@@ -528,6 +679,9 @@ public abstract class BinaryOperation {
 
   public abstract void render(
       int line, int column, Renderer renderer, Renderable leftValue, Renderable rightValue);
+
+  public abstract String render(
+      EcmaScriptRenderer renderer, ExpressionNode left, ExpressionNode right);
 
   public Imyhat returnType() {
     return returnType;

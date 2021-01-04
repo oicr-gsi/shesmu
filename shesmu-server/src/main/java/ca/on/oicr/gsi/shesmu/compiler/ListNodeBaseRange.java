@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 
 public abstract class ListNodeBaseRange extends ListNode {
 
-  private final ExpressionNode expression;
+  protected final ExpressionNode expression;
 
   protected ListNodeBaseRange(int line, int column, ExpressionNode expression) {
     super(line, column);

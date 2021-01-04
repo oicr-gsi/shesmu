@@ -23,6 +23,11 @@ public class SourceNodeContainer extends SourceNode {
       public void render(Renderer renderer) {
         renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
       }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return expression.renderEcma(renderer);
+      }
     },
     LIFTED_LIST {
       @Override
@@ -32,6 +37,11 @@ public class SourceNodeContainer extends SourceNode {
         renderer.methodGen().unbox(A_SET_TYPE);
         renderer.methodGen().invokeInterface(A_SET_TYPE, METHOD_SET__STREAM);
       }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return String.format("$runtime.mapNullOrDefault(%s, $v => $v, [])", expression);
+      }
     },
     MAP {
       @Override
@@ -39,6 +49,11 @@ public class SourceNodeContainer extends SourceNode {
         renderer
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_MAP);
+      }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return String.format("$runtime.dictIterator(%s)", expression.renderEcma(renderer));
       }
     },
     LIFTED_MAP {
@@ -48,6 +63,12 @@ public class SourceNodeContainer extends SourceNode {
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_MAP_OPTIONAL);
       }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return String.format(
+            "$runtime.mapNullOrDefault(%s, $v => $runtime.dictIterator($v), [])", expression);
+      }
     },
     OPTIONAL {
       @Override
@@ -55,6 +76,11 @@ public class SourceNodeContainer extends SourceNode {
         renderer
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__STREAM_OPTIONAL);
+      }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return String.format("$runtime.mapNullOrDefault(%s, $v => [$v], [])", expression);
       }
     },
     JSON {
@@ -64,6 +90,11 @@ public class SourceNodeContainer extends SourceNode {
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS);
       }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return String.format("$runtime.arrayFromJson(%s)", expression);
+      }
     },
     LIFTED_JSON {
       @Override
@@ -72,9 +103,17 @@ public class SourceNodeContainer extends SourceNode {
             .methodGen()
             .invokeStatic(A_RUNTIME_SUPPORT_TYPE, METHOD_RUNTIME_SUPPORT__JSON_ELEMENTS_OPTIONAL);
       }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, ExpressionNode expression) {
+        return String.format(
+            "$runtime.mapNullOrDefault(%s, $v => $runtime.arrayFromJson($v), [])", expression);
+      }
     };
 
     public abstract void render(Renderer renderer);
+
+    public abstract String render(EcmaScriptRenderer renderer, ExpressionNode expression);
   }
 
   private static final Type A_COLLECTIONS_TYPE = Type.getType(Collections.class);
@@ -129,6 +168,11 @@ public class SourceNodeContainer extends SourceNode {
     mode.render(renderer);
     final JavaStreamBuilder builder = renderer.buildStream(initialType);
     return builder;
+  }
+
+  @Override
+  public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
+    return renderer.buildStream(initialType, mode.render(renderer, expression));
   }
 
   @Override

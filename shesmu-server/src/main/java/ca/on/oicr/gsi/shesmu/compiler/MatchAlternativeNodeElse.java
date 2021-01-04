@@ -34,6 +34,11 @@ public class MatchAlternativeNodeElse extends MatchAlternativeNode {
   }
 
   @Override
+  public String render(EcmaScriptRenderer renderer, String original) {
+    return expression.renderEcma(renderer);
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }

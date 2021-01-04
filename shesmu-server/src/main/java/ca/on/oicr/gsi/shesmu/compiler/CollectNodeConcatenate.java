@@ -124,6 +124,15 @@ public class CollectNodeConcatenate extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.map(name, getter.type(), getter::renderEcma);
+
+    return String.format(
+        "%s%s.join(%s)",
+        builder.finish(), needsSort ? ".sort()" : "", delimiter.renderEcma(builder.renderer()));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return getter.resolve(defs.bind(name), errorHandler) & delimiter.resolve(defs, errorHandler);

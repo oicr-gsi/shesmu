@@ -89,6 +89,22 @@ public class MatchAlternativeNodeRemainder extends MatchAlternativeNode {
   }
 
   @Override
+  public String render(EcmaScriptRenderer renderer, String original) {
+    renderer.define(new EcmaLoadableValue() {
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public String apply(EcmaScriptRenderer renderer) {
+        return original;
+      }
+    });
+    return expression.renderEcma(renderer);
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     boolean ok = expression.resolve(defs.bind(target), errorHandler);
     if (ok && !read) {

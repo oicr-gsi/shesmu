@@ -256,6 +256,11 @@ public class RunTest {
         }
 
         @Override
+        public String renderEcma(Object[] args) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
         public final void renderStart(GeneratorAdapter methodGen) {
           // None required.
         }
@@ -293,6 +298,11 @@ public class RunTest {
           methodGen.invokeStatic(
               Type.getType(Long.class),
               new Method("toString", Type.getType(String.class), new Type[] {Type.LONG_TYPE}));
+        }
+
+        @Override
+        public String renderEcma(Object[] args) {
+          throw new UnsupportedOperationException();
         }
 
         @Override

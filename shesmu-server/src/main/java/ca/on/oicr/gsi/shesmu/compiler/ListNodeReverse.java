@@ -41,6 +41,12 @@ public class ListNodeReverse extends ListNode {
   }
 
   @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.reverse();
+    return name;
+  }
+
+  @Override
   public Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return Optional.of(name);

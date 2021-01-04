@@ -89,7 +89,7 @@ public final class Check extends Compiler {
       return;
     }
     final List<ConstantDefinition> constants =
-        fetch(remote, "constants") //
+        fetch(remote, "constants")
             .map(
                 o ->
                     new ConstantDefinition(
@@ -102,10 +102,15 @@ public final class Check extends Compiler {
                       public void load(GeneratorAdapter methodGen) {
                         throw new UnsupportedOperationException();
                       }
-                    }) //
+
+                      @Override
+                      public String load() {
+                        throw new UnsupportedOperationException();
+                      }
+                    })
             .collect(Collectors.toList());
     final List<SignatureDefinition> signatures =
-        fetch(remote, "signatures") //
+        fetch(remote, "signatures")
             .map(
                 o ->
                     new SignatureDefinition(
@@ -228,6 +233,11 @@ public final class Check extends Compiler {
 
       @Override
       public void render(GeneratorAdapter methodGen) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public String renderEcma(Object[] args) {
         throw new UnsupportedOperationException();
       }
 

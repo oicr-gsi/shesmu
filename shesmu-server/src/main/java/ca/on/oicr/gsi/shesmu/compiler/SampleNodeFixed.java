@@ -64,6 +64,16 @@ public class SampleNodeFixed extends SampleNode {
   }
 
   @Override
+  public String render(
+      EcmaScriptRenderer renderer,
+      String previous,
+      Imyhat streamType,
+      EcmaLoadableConstructor name) {
+    return String.format(
+        "$runtime.subsampleFixed(%s, %s)", previous, expression.renderEcma(renderer));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);

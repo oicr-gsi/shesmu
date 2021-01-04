@@ -32,6 +32,12 @@ public class ListNodeSort extends ListNodeWithExpression {
   }
 
   @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.sort(name, expression.type().isSame(Imyhat.STRING),  expression::renderEcma);
+    return name;
+  }
+
+  @Override
   protected boolean resolveExtraDefinitions(
       ExpressionCompilerServices expressionCompilerServices, Consumer<String> errorHandler) {
     return true;

@@ -57,6 +57,14 @@ public class CollectNodeList extends CollectNode {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.map(name, expression.type(), expression::renderEcma);
+    return String.format(
+        "$runtime.setNew(%s, (a, b) => %s)",
+        builder.finish(), expression.type().apply(EcmaScriptRenderer.COMPARATOR));
+  }
+
+  @Override
   public boolean resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     final boolean ok = expression.resolve(defs.bind(name), errorHandler);

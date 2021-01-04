@@ -32,6 +32,12 @@ public class ExpressionNodeActionName extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    // We are never in an olive in ES, so this is always null
+    return "null";
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.emitNamed(BaseOliveBuilder.ACTION_NAME);
   }

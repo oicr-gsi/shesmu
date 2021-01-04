@@ -24,6 +24,21 @@ public class CollectNodeUnivalued extends CollectNodeOptional {
   }
 
   @Override
+  public String render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    return String.format(
+        "$runtime.univalued(%s, %s)",
+        builder.finish(),
+        builder
+            .renderer()
+            .lambda(
+                2,
+                (r, args) ->
+                    selector
+                        .type()
+                        .apply(EcmaScriptRenderer.isEqual(args.apply(0), args.apply(1)))));
+  }
+
+  @Override
   protected Imyhat returnType(Imyhat incomingType, Imyhat selectorType) {
     return selectorType;
   }

@@ -15,11 +15,21 @@ public class ExpressionNodeContains extends ExpressionNode {
   private enum Mode {
     BAD {
       @Override
+      public String ecmaFunction() {
+        throw new IllegalStateException();
+      }
+
+      @Override
       void render(GeneratorAdapter methodGen) {
         throw new IllegalStateException();
       }
     },
     LIST {
+      @Override
+      public String ecmaFunction() {
+        return "$runtime.setContains";
+      }
+
       @Override
       void render(GeneratorAdapter methodGen) {
         methodGen.invokeInterface(A_SET_TYPE, METHOD_SET__CONTAINS);
@@ -27,10 +37,17 @@ public class ExpressionNodeContains extends ExpressionNode {
     },
     MAP {
       @Override
+      public String ecmaFunction() {
+        return "$runtime.dictContains";
+      }
+
+      @Override
       void render(GeneratorAdapter methodGen) {
         methodGen.invokeInterface(A_MAP_TYPE, METHOD_MAP__CONTAINS_KEY);
       }
     };
+
+    public abstract String ecmaFunction();
 
     abstract void render(GeneratorAdapter methodGen);
   }
@@ -43,6 +60,7 @@ public class ExpressionNodeContains extends ExpressionNode {
   private static final Method METHOD_SET__CONTAINS =
       new Method("contains", Type.BOOLEAN_TYPE, new Type[] {A_OBJECT_TYPE});
   private final ExpressionNode haystack;
+  private Imyhat keyType = Imyhat.BAD;
   private Mode mode = Mode.BAD;
   private final ExpressionNode needle;
 
@@ -63,6 +81,16 @@ public class ExpressionNodeContains extends ExpressionNode {
   public void collectPlugins(Set<Path> pluginFileNames) {
     haystack.collectPlugins(pluginFileNames);
     needle.collectPlugins(pluginFileNames);
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "%s(%s, %s, (a, b) => %s)",
+        mode.ecmaFunction(),
+        haystack.renderEcma(renderer),
+        needle.renderEcma(renderer),
+        keyType.apply(EcmaScriptRenderer.COMPARATOR));
   }
 
   @Override
@@ -97,8 +125,10 @@ public class ExpressionNodeContains extends ExpressionNode {
     final boolean ok = needle.typeCheck(errorHandler) & haystack.typeCheck(errorHandler);
     if (ok) {
       if (haystack.type() instanceof Imyhat.ListImyhat) {
-        if (haystack.type().isAssignableFrom(needle.type().asList())) {
+        final Imyhat inner = ((Imyhat.ListImyhat) haystack.type()).inner();
+        if (inner.isAssignableFrom(needle.type())) {
           mode = Mode.LIST;
+          keyType = needle.type().unify(inner);
           return true;
         }
         typeError(haystack.type(), needle.type(), errorHandler);
@@ -108,6 +138,7 @@ public class ExpressionNodeContains extends ExpressionNode {
         final Imyhat.DictionaryImyhat haystackType = (Imyhat.DictionaryImyhat) haystack.type();
         if (haystackType.key().isAssignableFrom(needle.type())) {
           mode = Mode.MAP;
+          keyType = haystackType.key().unify(needle.type());
           return true;
         }
         typeError(needle.type(), haystackType.key(), errorHandler);

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
@@ -66,6 +67,20 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
       return name;
     }
 
+    public EcmaLoadableValue prepareEcma(Function<EcmaScriptRenderer, String> loader) {
+      return new EcmaLoadableValue() {
+        @Override
+        public String name() {
+          return name;
+        }
+
+        @Override
+        public String apply(EcmaScriptRenderer renderer) {
+          return loader.apply(renderer) + "." + name;
+        }
+      };
+    }
+
     @Override
     public void read() {
       read = true;
@@ -122,6 +137,11 @@ public class DestructuredArgumentNodeStar extends DestructuredArgumentNode {
   @Override
   public Stream<LoadableValue> render(Consumer<Renderer> loader) {
     return fields.values().stream().map(t -> t.prepare(loader));
+  }
+
+  @Override
+  public Stream<EcmaLoadableValue> renderEcma(Function<EcmaScriptRenderer, String> loader) {
+    return fields.values().stream().map(f -> f.prepareEcma(loader));
   }
 
   @Override

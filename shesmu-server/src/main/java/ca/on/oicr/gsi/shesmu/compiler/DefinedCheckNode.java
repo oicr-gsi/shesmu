@@ -15,7 +15,7 @@ public abstract class DefinedCheckNode {
   }
 
   public static Parser parse(Parser input, Consumer<DefinedCheckNode> output) {
-    final AtomicReference<Function<String, DefinedCheckNode>> check = new AtomicReference();
+    final AtomicReference<Function<String, DefinedCheckNode>> check = new AtomicReference<>();
     final AtomicReference<String> name = new AtomicReference<>();
 
     final Parser result =

@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -45,6 +46,14 @@ public class ExpressionNodeList extends ExpressionNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     items.forEach(item -> item.collectPlugins(pluginFileNames));
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return items
+        .stream()
+        .map(e -> e.renderEcma(renderer))
+        .collect(Collectors.joining(", ", "$runtime.setNew([", "])"));
   }
 
   @Override

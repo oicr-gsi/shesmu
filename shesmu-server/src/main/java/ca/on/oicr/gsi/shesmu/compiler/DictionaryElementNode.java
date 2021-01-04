@@ -50,6 +50,8 @@ public abstract class DictionaryElementNode {
 
   public abstract void render(Renderer renderer);
 
+  public abstract String render(EcmaScriptRenderer renderer);
+
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 
   public abstract boolean resolveDefinitions(

@@ -56,6 +56,11 @@ public class SourceNodeRange extends SourceNode {
   }
 
   @Override
+  public EcmaStreamBuilder render(EcmaScriptRenderer renderer) {
+    return renderer.buildStream(Imyhat.INTEGER, String.format("$runtime.range(%s, %s)", start.renderEcma(renderer), end.renderEcma(renderer)));
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return start.resolve(defs, errorHandler) & end.resolve(defs, errorHandler);
   }

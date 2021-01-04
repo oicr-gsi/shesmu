@@ -122,6 +122,12 @@ public class CompiledGenerator implements DefinitionRepository {
         methodGen.invokeDynamic(
             invokeName, Type.getMethodDescriptor(type().apply(TO_ASM)), BSM, fileName.toString());
       }
+
+      @Override
+      public String load() {
+        throw new UnsupportedOperationException(
+            "Olive-generated constants cannot be exported to ECMAScript.");
+      }
     }
 
     class ExportedDefineOliveDefinition implements Supplier<CallableOliveDefinition> {
@@ -429,6 +435,12 @@ public class CompiledGenerator implements DefinitionRepository {
                 parameters.get().map(p -> p.type().apply(TO_ASM)).toArray(Type[]::new)),
             BSM,
             fileName.toString());
+      }
+
+      @Override
+      public String renderEcma(Object[] args) {
+        throw new UnsupportedOperationException(
+            "Olive-defined function not exportable to ECMAScript");
       }
 
       @Override

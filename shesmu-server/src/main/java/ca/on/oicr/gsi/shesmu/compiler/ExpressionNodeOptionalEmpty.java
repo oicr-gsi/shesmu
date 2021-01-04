@@ -32,6 +32,11 @@ public class ExpressionNodeOptionalEmpty extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return "null";
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
     renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__EMPTY);

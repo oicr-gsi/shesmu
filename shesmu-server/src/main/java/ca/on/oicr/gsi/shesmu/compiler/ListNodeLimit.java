@@ -12,4 +12,10 @@ public class ListNodeLimit extends ListNodeBaseRange {
   protected void render(JavaStreamBuilder builder, Consumer<Renderer> expression) {
     builder.limit(expression);
   }
+
+  @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.limit(expression.renderEcma(builder.renderer()));
+    return name;
+  }
 }

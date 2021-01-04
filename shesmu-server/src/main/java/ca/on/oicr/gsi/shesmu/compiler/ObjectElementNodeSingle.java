@@ -24,6 +24,11 @@ public class ObjectElementNodeSingle extends ObjectElementNode {
   }
 
   @Override
+  public Stream<String> render(EcmaScriptRenderer renderer) {
+    return Stream.of(String.format("%s: %s", field, expression.renderEcma(renderer)));
+  }
+
+  @Override
   public void render(Renderer renderer, ToIntFunction<String> indexOf) {
     renderer.methodGen().dup();
     renderer.methodGen().push(indexOf.applyAsInt(field));

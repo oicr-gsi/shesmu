@@ -132,6 +132,8 @@ public abstract class SourceNode {
   /** Produce bytecode for this source */
   public abstract JavaStreamBuilder render(Renderer renderer);
 
+  public abstract EcmaStreamBuilder render(EcmaScriptRenderer renderer);
+
   /** Resolve all variable plugins in this source and its children. */
   public abstract boolean resolve(NameDefinitions defs, Consumer<String> errorHandler);
 

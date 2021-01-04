@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** Perform a subsampling operation in a <tt>Subsample</tt> clause in a <tt>For</tt> expression */
-public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler {
+public abstract class SampleNode implements JavaStreamBuilder.RenderSubsampler, EcmaStreamBuilder.RenderSubsampler {
 
   public enum Consumption {
     BAD,

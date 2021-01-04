@@ -60,6 +60,11 @@ public class StringNodeInteger extends StringNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format("$runtime.formatNumber(%s, %d)", expression.renderEcma(renderer), width);
+  }
+
+  @Override
   public boolean resolve(NameDefinitions defs, Consumer<String> errorHandler) {
     return expression.resolve(defs, errorHandler);
   }

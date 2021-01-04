@@ -33,6 +33,17 @@ public class ExpressionNodeWdlPair extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final String value = inner.renderEcma(renderer);
+    if (type instanceof TupleImyhat) {
+      return String.format("[ %1$s.left, %1$s.right ]", value);
+    } else {
+      return String.format("{left: %1$s[0], right: %1$s[1]}", value);
+
+    }
+  }
+
+  @Override
   public void render(Renderer renderer) {
     inner.render(renderer);
 

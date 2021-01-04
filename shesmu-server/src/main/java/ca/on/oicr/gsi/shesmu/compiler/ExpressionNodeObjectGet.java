@@ -57,6 +57,15 @@ public class ExpressionNodeObjectGet extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    if (lifted) {
+      return String.format("$runtime.mapNull(%s, v => v.%s)", expression.renderEcma(renderer), field);
+    } else {
+return expression.renderEcma(renderer) + "." + field;
+    }
+  }
+
+  @Override
   public Optional<String> dumpColumnName() {
     return expression.dumpColumnName().map(s -> s + "." + field);
   }

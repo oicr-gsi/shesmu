@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -94,6 +95,35 @@ public class ListNodeFlatten extends ListNode {
     renderer.methodGen().visitMaxs(0, 0);
     renderer.methodGen().visitEnd();
     return outputName;
+  }
+
+  class FlattenLambda implements EcmaScriptRenderer.LambdaRender {
+
+    private EcmaLoadableConstructor name;
+
+    public FlattenLambda(EcmaLoadableConstructor name) {
+      this.name = name;
+    }
+
+    @Override
+    public String render(EcmaScriptRenderer renderer, IntFunction<String> arg) {
+      final EcmaStreamBuilder builder = source.render(renderer);
+      for (final ListNode node: transforms) {
+        name = node.render(builder, name);
+      }
+      return builder.finish();
+    }
+  }
+
+  @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    final FlattenLambda lambda = new FlattenLambda(name);
+        builder.flatten(
+            type,
+           lambda
+            );
+    return  lambda.name;
+
   }
 
   @Override

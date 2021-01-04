@@ -172,6 +172,11 @@ public final class HotloadingCompiler extends BaseHotloadingCompiler {
                               c.load(methodGen);
                               registerImport.accept(new ConstantVerifier(c));
                             }
+
+                            @Override
+                            public String load() {
+                              return c.load();
+                            }
                           })
                   .collect(Collectors.toList())
               ::stream,

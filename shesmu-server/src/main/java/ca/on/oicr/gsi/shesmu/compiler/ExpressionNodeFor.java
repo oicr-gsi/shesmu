@@ -48,6 +48,21 @@ public class ExpressionNodeFor extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    final EcmaStreamBuilder builder = source.render(renderer);
+    return collector.render(
+        builder,
+        transforms
+            .stream()
+            .reduce(
+                name::renderEcma,
+                (n, transform) -> transform.render(builder, n),
+                (a, b) -> {
+                  throw new UnsupportedOperationException();
+                }));
+  }
+
+  @Override
   public void render(Renderer renderer) {
     final JavaStreamBuilder builder = source.render(renderer);
     collector.render(

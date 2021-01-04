@@ -211,7 +211,7 @@ public abstract class ExpressionNode implements Renderable {
   private static final Parser.ParseDispatch<ExpressionNode> OUTER = new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<String> PATH = new Parser.ParseDispatch<>();
   private static final Pattern PATH_CHUNK = Pattern.compile("^[^\\\\'\n]+");
-  public static final Pattern REGEX = Pattern.compile("^/((?:[^\\\\/\n]|\\\\.)*)/([ceimsu]*)");
+  public static final Pattern REGEX = Pattern.compile("^/((?:[^\\\\/\n]|\\\\.)*)/([imsu]*)");
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_LOOSE =
       new Parser.ParseDispatch<>();
   private static final Parser.ParseDispatch<UnaryOperator<ExpressionNode>> SUFFIX_TIGHT =
@@ -511,12 +511,19 @@ public abstract class ExpressionNode implements Renderable {
         binaryOperators(
             "+",
             BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.ADD),
-            BinaryOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds"),
-            BinaryOperation.virtualMethod(Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve"),
+            BinaryOperation.virtualMethod(
+                Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "plusSeconds", "datePlusSeconds"),
+            BinaryOperation.virtualMethod(
+                Imyhat.PATH, Imyhat.PATH, Imyhat.PATH, "resolve", "pathResolve"),
             BinaryOperation.staticMethod(
-                Imyhat.PATH, Imyhat.STRING, Imyhat.PATH, A_RUNTIME_SUPPORT_TYPE, "resolvePath"),
-            BinaryOperation.binaryListStaticMethod(A_RUNTIME_SUPPORT_TYPE, "union"),
-            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "addItem"),
+                Imyhat.PATH,
+                Imyhat.STRING,
+                Imyhat.PATH,
+                A_RUNTIME_SUPPORT_TYPE,
+                "resolvePath",
+                "pathResolve"),
+            BinaryOperation.binaryListStaticMethod(A_RUNTIME_SUPPORT_TYPE, "union", "setUnion"),
+            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "addItem", "setAdd"),
             BinaryOperation::tupleConcat,
             BinaryOperation::objectConcat));
     DISJUNCTION.addSymbol(
@@ -524,11 +531,19 @@ public abstract class ExpressionNode implements Renderable {
         binaryOperators(
             "-",
             BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.SUB),
-            BinaryOperation.virtualMethod(Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds"),
+            BinaryOperation.virtualMethod(
+                Imyhat.DATE, Imyhat.INTEGER, Imyhat.DATE, "minusSeconds", "dateMinusSeconds"),
             BinaryOperation.staticMethod(
-                Imyhat.DATE, Imyhat.DATE, Imyhat.INTEGER, A_RUNTIME_SUPPORT_TYPE, "difference"),
-            BinaryOperation.binaryListStaticMethod(A_RUNTIME_SUPPORT_TYPE, "difference"),
-            BinaryOperation.listAndItemStaticMethod(A_RUNTIME_SUPPORT_TYPE, "removeItem")));
+                Imyhat.DATE,
+                Imyhat.DATE,
+                Imyhat.INTEGER,
+                A_RUNTIME_SUPPORT_TYPE,
+                "difference",
+                "dateDifference"),
+            BinaryOperation.binaryListStaticMethod(
+                A_RUNTIME_SUPPORT_TYPE, "difference", "setDifference"),
+            BinaryOperation.listAndItemStaticMethod(
+                A_RUNTIME_SUPPORT_TYPE, "removeItem", "setRemove")));
 
     CONJUNCTION.addSymbol(
         "*", binaryOperators("*", BinaryOperation.primitiveMathUpgrading(GeneratorAdapter.MUL)));
@@ -907,12 +922,7 @@ public abstract class ExpressionNode implements Renderable {
   public static Consumer<Matcher> regexParser(AtomicReference<Pair<String, Integer>> regex) {
     return m -> {
       int flags = 0;
-      if (m.group(2).contains("c")) {
-        flags |= Pattern.UNICODE_CHARACTER_CLASS;
-      }
-      if (m.group(2).contains("e")) {
-        flags |= Pattern.CANON_EQ;
-      }
+
       if (m.group(2).contains("i")) {
         flags |= Pattern.CASE_INSENSITIVE;
       }
@@ -955,6 +965,9 @@ public abstract class ExpressionNode implements Renderable {
   public final int line() {
     return line;
   }
+
+  /** Produce ES6/JavaScript code for this expression */
+  public abstract String renderEcma(EcmaScriptRenderer renderer);
 
   /** Produce bytecode for this expression */
   public abstract void render(Renderer renderer);

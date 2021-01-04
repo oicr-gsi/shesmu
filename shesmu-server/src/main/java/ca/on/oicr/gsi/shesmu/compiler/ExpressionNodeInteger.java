@@ -27,6 +27,11 @@ public class ExpressionNodeInteger extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return Long.toString(value);
+  }
+
+  @Override
   public void render(Renderer renderer) {
     renderer.mark(line());
 

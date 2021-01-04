@@ -29,6 +29,11 @@ public class ExpressionNodeNegate extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return "-(" + inner.renderEcma(renderer) + ")";
+  }
+
+  @Override
   public void render(Renderer renderer) {
     inner.render(renderer);
     renderer.methodGen().math(GeneratorAdapter.NEG, inner.type().apply(TO_ASM));

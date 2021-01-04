@@ -143,6 +143,11 @@ public class OliveNodeFunction extends OliveNode implements FunctionDefinition {
   }
 
   @Override
+  public String renderEcma(Object[] args) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void render(
       RootBuilder builder, Function<String, CallableDefinitionRenderer> definitions) {
     final GeneratorAdapter methodGen =

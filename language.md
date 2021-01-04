@@ -1295,8 +1295,6 @@ Mixing the two representations is fine (_e.g._, `["qb", "s"]` is equivalent to
 ## Regular Expression Flags
 Regular expressions can have modified behaviour. Any combination of the following flags can be used after a regular expression:
 
-- `c`: make the character classes (_e.g._, `\p{Digit}`) use [Unicode character classes](http://www.unicode.org/reports/tr18/#Compatibility_Properties) instead of ASCII ones.
-- `e`: match on decomposed Unicode forms. This allow a decomposed form to match a composed one.
 - `i`: perform a case-insensitive match. This only works on ASCII characters unless `u` or `e` are also set.
 - `m`: perform a multi-line match. This makes `^` and `$` work on lines in the text rather than on the text as a whole.
 - `s`: perform a single-line match. This makes `.` match the end of line.

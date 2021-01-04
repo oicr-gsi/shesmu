@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -43,6 +44,14 @@ public class ExpressionNodeAlgebraicTuple extends ExpressionNode {
   @Override
   public void collectPlugins(Set<Path> pluginFileNames) {
     items.forEach(item -> item.collectPlugins(pluginFileNames));
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return String.format(
+        "{\"type\": \"%s\", \"contents\": %s}",
+        name,
+        items.stream().map(e -> e.render(renderer)).collect(Collectors.joining(", ", "[", "]")));
   }
 
   @Override

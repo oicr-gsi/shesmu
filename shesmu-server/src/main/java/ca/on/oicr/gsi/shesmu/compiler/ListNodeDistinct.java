@@ -35,6 +35,12 @@ public class ListNodeDistinct extends ListNode {
   }
 
   @Override
+  public EcmaLoadableConstructor render(EcmaStreamBuilder builder, EcmaLoadableConstructor name) {
+    builder.distinct();
+    return name;
+  }
+
+  @Override
   public Optional<DestructuredArgumentNode> resolve(
       DestructuredArgumentNode name, NameDefinitions defs, Consumer<String> errorHandler) {
     return Optional.of(name);

@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 public class ExpressionNodeFunctionCall extends ExpressionNode {
-  private static final FunctionDefinition BROKEN_FUCNTION =
+  private static final FunctionDefinition BROKEN_FUNCTION =
       new FunctionDefinition() {
 
         @Override
@@ -40,6 +40,11 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
 
         @Override
         public void render(GeneratorAdapter methodGen) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String renderEcma(Object[] args) {
           throw new UnsupportedOperationException();
         }
 
@@ -81,6 +86,11 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
   }
 
   @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return function.renderEcma(arguments.stream().map(arg -> arg.renderEcma(renderer)).toArray());
+  }
+
+  @Override
   public void render(Renderer renderer) {
     function.renderStart(renderer.methodGen());
     arguments.forEach(argument -> argument.render(renderer));
@@ -99,7 +109,7 @@ public class ExpressionNodeFunctionCall extends ExpressionNode {
     boolean ok = true;
     function = expressionCompilerServices.function(name);
     if (function == null) {
-      function = BROKEN_FUCNTION;
+      function = BROKEN_FUNCTION;
       errorHandler.accept(String.format("%d:%d: Undefined function “%s”.", line(), column(), name));
       ok = false;
     }

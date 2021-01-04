@@ -23,6 +23,11 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
       }
 
       @Override
+      public String render(EcmaScriptRenderer renderer, String renderEcma, int index) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
       public Imyhat output(Imyhat type) {
         return Imyhat.BAD;
       }
@@ -32,6 +37,11 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
       public void render(int line, int column, Renderer renderer, Imyhat type, int index) {
         renderLoad(renderer.methodGen(), index);
         renderer.methodGen().unbox(type.apply(TypeUtils.TO_ASM));
+      }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, String value, int index) {
+        return value + "[" + index + "]";
       }
 
       @Override
@@ -62,6 +72,11 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
       }
 
       @Override
+      public String render(EcmaScriptRenderer renderer, String value, int index) {
+        return String.format("$runtime.mapNull(%s, v => v[%d])", value, index);
+      }
+
+      @Override
       public Imyhat output(Imyhat type) {
         return type.asOptional();
       }
@@ -79,6 +94,11 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
           renderer.methodGen().invokeInterface(A_MAP_TYPE, METHOD_MAP__GET);
           renderer.methodGen().invokeStatic(A_OPTIONAL_TYPE, METHOD_OPTIONAL__OF_NULLABLE);
         }
+      }
+
+      @Override
+      public String render(EcmaScriptRenderer renderer, String value, int index) {
+        return String.format("$runtime.nullifyUndefined(%s.get(%d))", value, index);
       }
 
       @Override
@@ -115,6 +135,10 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
       }
 
       @Override
+      public String render(EcmaScriptRenderer renderer, String value, int index) {
+        return String.format("$runtime.mapNull(%s, v => $runtime.nullifyUndefined(v.get(%d)))", value, index);
+      }
+      @Override
       public Imyhat output(Imyhat type) {
         return type.asOptional();
       }
@@ -123,6 +147,8 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
     public abstract Imyhat output(Imyhat type);
 
     public abstract void render(int line, int column, Renderer renderer, Imyhat type, int index);
+
+    public abstract String render(EcmaScriptRenderer renderer, String value, int index);
   }
 
   private static final Type A_FUNCTION_TYPE = Type.getType(Function.class);
@@ -174,6 +200,11 @@ public class ExpressionNodeTupleGet extends ExpressionNode {
   @Override
   public Optional<String> dumpColumnName() {
     return expression.dumpColumnName().map(s -> s + "[" + index + "]");
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return access.render(renderer, expression.renderEcma(renderer), index);
   }
 
   @Override

@@ -9,7 +9,9 @@ import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -158,6 +160,54 @@ public class ExpressionNodeOptionalOf extends ExpressionNode {
       }
     }
     item.collectPlugins(pluginFileNames);
+  }
+
+  class LayerUnNester implements Consumer<EcmaScriptRenderer> {
+
+    private final Iterator<List<UnboxableExpression>> iterator;
+    private final String output;
+
+    LayerUnNester(
+        Iterator<List<UnboxableExpression>> iterator, String output) {
+      this.iterator = iterator;
+      this.output = output;
+    }
+
+    @Override
+    public void accept(EcmaScriptRenderer renderer) {
+      if (iterator.hasNext()) {
+        renderer.conditional(
+         iterator.next().stream().map(capture -> {
+           final String capturedValue = renderer.newConst(capture.expression.renderEcma(renderer));
+           renderer.define(new EcmaLoadableValue() {
+             @Override
+             public String name() {
+               return capture.name;
+             }
+
+             @Override
+             public String apply(EcmaScriptRenderer renderer) {
+               return capturedValue;
+             }
+           });
+           return capturedValue + " !== null";
+         }).collect(Collectors.joining(" && ")),
+            this
+            );
+      } else {
+        renderer.statement(String.format("%s = %s", output, item.renderEcma(renderer)));
+      }
+    }
+  }
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    if (captures.isEmpty()) {
+      return  item.renderEcma(renderer);
+    } else {
+     final String result = renderer.newLet("null");
+     new LayerUnNester(captures.values().iterator(), result).accept(renderer);
+      return result;
+    }
   }
 
   @Override
