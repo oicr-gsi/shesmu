@@ -1,5 +1,6 @@
 [
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -33,6 +34,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 1,
     "run_lane_count": 1,
     "run_name": "RUN0001",
     "run_status": "Completed",
@@ -55,6 +57,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -88,6 +91,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -110,6 +114,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -143,6 +148,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -165,6 +171,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -198,6 +205,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -220,6 +228,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -253,6 +262,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -275,6 +285,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -308,6 +319,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 2,
     "run_lane_count": 1,
     "run_name": "RUN0002",
     "run_status": "Completed",
@@ -330,6 +342,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -363,6 +376,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 3,
     "run_lane_count": 1,
     "run_name": "RUN0003",
     "run_status": "Completed",
@@ -385,6 +399,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y101,I8,I8,y101",
     "cell_viability": null,
     "completed_date": 0,
@@ -418,6 +433,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 5,
     "run_lane_count": 4,
     "run_name": "RUN0005",
     "run_status": "Completed",
@@ -440,6 +456,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y101,I8,I8,y101",
     "cell_viability": null,
     "completed_date": 0,
@@ -473,6 +490,7 @@
     "project": "",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 5,
     "run_lane_count": 4,
     "run_name": "RUN0005",
     "run_status": "Completed",
@@ -495,6 +513,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -528,6 +547,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 1,
     "run_lane_count": 1,
     "run_name": "RUN0001",
     "run_status": "Completed",
@@ -550,6 +570,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -583,6 +604,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 1,
     "run_lane_count": 1,
     "run_name": "RUN0001",
     "run_status": "Completed",
@@ -605,6 +627,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -638,6 +661,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -660,6 +684,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -693,6 +718,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -715,6 +741,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -748,6 +775,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -770,6 +798,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -803,6 +832,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -825,6 +855,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -858,6 +889,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -880,6 +912,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -913,6 +946,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -935,6 +969,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -968,6 +1003,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -990,6 +1026,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -1023,6 +1060,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 4,
     "run_lane_count": 4,
     "run_name": "RUN0004",
     "run_status": "Completed",
@@ -1045,6 +1083,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -1078,6 +1117,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 2,
     "run_lane_count": 1,
     "run_name": "RUN0002",
     "run_status": "Completed",
@@ -1100,6 +1140,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y151,I8,y151",
     "cell_viability": null,
     "completed_date": 0,
@@ -1133,6 +1174,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 3,
     "run_lane_count": 1,
     "run_name": "RUN0003",
     "run_status": "Completed",
@@ -1155,6 +1197,7 @@
     "umis": false
   },
   {
+    "barcode_kit": null,
     "bases_mask": "y101,I8,I8,y101",
     "cell_viability": null,
     "completed_date": 0,
@@ -1188,6 +1231,7 @@
     "project": "ABC",
     "reference_slide_id": null,
     "rin": null,
+    "run_id": 5,
     "run_lane_count": 4,
     "run_name": "RUN0005",
     "run_status": "Completed",
