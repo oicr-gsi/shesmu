@@ -226,8 +226,8 @@ public interface ActionFilterBuilder<F> {
           } else if (offset % 60_000 == 0) {
             reduced = offset / 60_000;
             units = "mins";
-          } else if (offset % 10_000 == 0) {
-            reduced = offset / 86400;
+          } else if (offset % 1000 == 0) {
+            reduced = offset / 1000;
             units = "secs";
           } else {
             reduced = offset;
