@@ -423,6 +423,46 @@ public final class RuntimeSupport {
   }
 
   @RuntimeInterop
+  public static long localDayOfMonth(Instant time) {
+    return time.atZone(ZoneId.systemDefault()).getDayOfMonth();
+  }
+
+  @RuntimeInterop
+  public static AlgebraicValue localDayOfWeek(Instant time) {
+    return new AlgebraicValue(time.atZone(ZoneId.systemDefault()).getDayOfWeek().name());
+  }
+
+  @RuntimeInterop
+  public static long localDayOfYear(Instant time) {
+    return time.atZone(ZoneId.systemDefault()).getDayOfYear();
+  }
+
+  @RuntimeInterop
+  public static long localHour(Instant time) {
+    return time.atZone(ZoneId.systemDefault()).getHour();
+  }
+
+  @RuntimeInterop
+  public static long localMinute(Instant time) {
+    return time.atZone(ZoneId.systemDefault()).getMinute();
+  }
+
+  @RuntimeInterop
+  public static AlgebraicValue localMonth(Instant time) {
+    return new AlgebraicValue(time.atZone(ZoneId.systemDefault()).getMonth().name());
+  }
+
+  @RuntimeInterop
+  public static long localSecond(Instant time) {
+    return time.atZone(ZoneId.systemDefault()).getSecond();
+  }
+
+  @RuntimeInterop
+  public static long localYear(Instant time) {
+    return time.atZone(ZoneId.systemDefault()).getYear();
+  }
+
+  @RuntimeInterop
   public static <T> Optional<T> merge(Optional<T> left, Supplier<Optional<T>> right) {
     return left.isPresent() ? left : right.get();
   }
@@ -740,6 +780,7 @@ public final class RuntimeSupport {
     }
   }
 
+  @RuntimeInterop
   public static Optional<Instant> utcDateTime(
       long year, long month, long day, long hours, long minutes, long seconds, long nanos) {
     try {
@@ -752,6 +793,46 @@ public final class RuntimeSupport {
     } catch (Exception e) {
       return Optional.empty();
     }
+  }
+
+  @RuntimeInterop
+  public static long utcDayOfMonth(Instant time) {
+    return time.atZone(ZoneId.of("Z")).getDayOfMonth();
+  }
+
+  @RuntimeInterop
+  public static AlgebraicValue utcDayOfWeek(Instant time) {
+    return new AlgebraicValue(time.atZone(ZoneId.of("Z")).getDayOfWeek().name());
+  }
+
+  @RuntimeInterop
+  public static long utcDayOfYear(Instant time) {
+    return time.atZone(ZoneId.of("Z")).getDayOfYear();
+  }
+
+  @RuntimeInterop
+  public static long utcHour(Instant time) {
+    return time.atZone(ZoneId.of("Z")).getHour();
+  }
+
+  @RuntimeInterop
+  public static long utcMinute(Instant time) {
+    return time.atZone(ZoneId.of("Z")).getMinute();
+  }
+
+  @RuntimeInterop
+  public static AlgebraicValue utcMonth(Instant time) {
+    return new AlgebraicValue(time.atZone(ZoneId.of("Z")).getMonth().name());
+  }
+
+  @RuntimeInterop
+  public static long utcSecond(Instant time) {
+    return time.atZone(ZoneId.of("Z")).getSecond();
+  }
+
+  @RuntimeInterop
+  public static long utcYear(Instant time) {
+    return time.atZone(ZoneId.of("Z")).getYear();
   }
 
   @RuntimeInterop
