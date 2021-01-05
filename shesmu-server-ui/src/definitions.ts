@@ -628,7 +628,7 @@ function parseComplex<T, E extends T | null>(
   whenEmpty: () => E
 ): [T | E, string] {
   let match;
-  if ((match = /^([0-9]*)([^0-9].*)$/.exec(type.substr(1))) === null) {
+  if ((match = /^([0-9]*)([^0-9].*|)$/.exec(type.substring(1))) === null) {
     throw new Error("Malformed descriptor");
   }
   let rest = match[2];
