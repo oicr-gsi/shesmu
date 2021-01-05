@@ -1,5 +1,44 @@
 # Unreleased
 
+# [1.6.0] - 2021-01-05T22:45+00:00
+
+Changes:
+
+* Provide an endpoint to count the number of matching actions
+* Add a `drain` endpoint (purge and download)
+* Prevent paused scripts from running (in addition to stopping their actions)
+* Add a new action state for safety interlocks
+* Export current and max in flight jobs
+* Allow injection constants during simulation
+* Add fake refillers to simulator
+
+Language changes:
+
+* Allow dumpers to have column names
+* Allow setting a `Label` on clauses (to appear in the dataflow diagram)
+* Fix `Dump` in join operations to go somewhere
+
+UI changes:
+
+* Allow advanced action queries to reference saves searches
+* Fix bug pretty printing time offsets in advanced action queries
+* Include generated tags in histograms and stats tables
+* Allow _Drill Down_ in a new tab
+* Create a histogram-by-property stats panel
+* Handle generating a sequence puzzle challenge for 1 action gracefully
+* Encode URL parameters in a Firefox-friendly way
+
+Niassa+Pinery plugin changes:
+
+* Attempt to fix LIMS key locking (again)
+* Fix Pinery IUS demo data to match the current `pinery_ius` schema
+* Copy `cerberus_fp` gangs to `pinery_ius`
+* Fix bug preventing importing `.niassawf` files in simulation
+
+SFTP/SSH plugin changes:
+
+* Add SSH connection pooling
+
 # [1.5.0] - 2020-11-18T16:09+00:00
 
 Changes:
