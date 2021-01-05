@@ -561,25 +561,25 @@ export function parseDescriptor<T>(
 ): [T, string] {
   switch (type.charAt(0)) {
     case "b":
-      return [transformer.b, type.substr(1)];
+      return [transformer.b, type.substring(1)];
     case "d":
-      return [transformer.d, type.substr(1)];
+      return [transformer.d, type.substring(1)];
     case "f":
-      return [transformer.f, type.substr(1)];
+      return [transformer.f, type.substring(1)];
     case "i":
-      return [transformer.i, type.substr(1)];
+      return [transformer.i, type.substring(1)];
     case "j":
-      return [transformer.j, type.substr(1)];
+      return [transformer.j, type.substring(1)];
     case "p":
-      return [transformer.p, type.substr(1)];
+      return [transformer.p, type.substring(1)];
     case "s":
-      return [transformer.s, type.substr(1)];
+      return [transformer.s, type.substring(1)];
     case "a": {
-      const [inner, remainder] = parseDescriptor(type.substr(1), transformer);
+      const [inner, remainder] = parseDescriptor(type.substring(1), transformer);
       return [transformer.a(inner), remainder];
     }
     case "m": {
-      const [key, keyRemainder] = parseDescriptor(type.substr(1), transformer);
+      const [key, keyRemainder] = parseDescriptor(type.substring(1), transformer);
       const [value, valueRemainder] = parseDescriptor(
         keyRemainder,
         transformer
@@ -587,7 +587,7 @@ export function parseDescriptor<T>(
       return [transformer.m(key, value), valueRemainder];
     }
     case "q": {
-      const [inner, remainder] = parseDescriptor(type.substr(1), transformer);
+      const [inner, remainder] = parseDescriptor(type.substring(1), transformer);
       return [transformer.q(inner), remainder];
     }
     case "t":
@@ -601,7 +601,7 @@ export function parseDescriptor<T>(
       );
     case "u": {
       let match;
-      if ((match = /^([0-9]*)([^0-9].*)$/.exec(type.substr(1))) === null) {
+      if ((match = /^([0-9]*)([^0-9].*)$/.exec(type.substring(1))) === null) {
         throw new Error("Malformed descriptor");
       }
       let rest = match[2];

@@ -641,10 +641,10 @@ export function encodeSearch(filters: ActionFilter[]): string {
   return (
     "shesmusearch:" +
     btoa(
-      JSON.stringify(filters).replace(
-        /[\u007F-\uFFFF]/g,
-        (chr) => "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).substr(-4)
-      )
+      JSON.stringify(filters).replace(/[\u007F-\uFFFF]/g, (chr) => {
+        const padded = "0000" + chr.charCodeAt(0).toString(16);
+        return "\\u" + padded.substring(padded.length - 4);
+      })
     )
   );
 }
