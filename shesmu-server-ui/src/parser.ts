@@ -444,7 +444,7 @@ export function u(unionTypes: { [type: string]: Parser | null }): Parser {
     if (match) {
       if (unionTypes.hasOwnProperty(match[1])) {
         const result = (unionTypes[match[1]] || nullParser)(
-          input.substr(match[0].length)
+          input.substring(match[0].length)
         );
         if (result.good) {
           return {
