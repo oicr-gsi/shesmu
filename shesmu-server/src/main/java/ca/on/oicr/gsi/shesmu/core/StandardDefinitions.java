@@ -27,7 +27,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -113,6 +115,130 @@ public final class StandardDefinitions implements DefinitionRepository {
             "toEpochMilli",
             "Get the number of milliseconds since the UNIX epoch for this date.",
             Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_year"),
+            RuntimeSupport.class,
+            "utcYear",
+            "Get the year in the UTC time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_year"),
+            RuntimeSupport.class,
+            "localYear",
+            "Get the year in the server's time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_day_of_year"),
+            RuntimeSupport.class,
+            "utcDayOfYear",
+            "Get the day of the year in the UTC time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_day_of_year"),
+            RuntimeSupport.class,
+            "localDayOfYear",
+            "Get the day of the year in the server's time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_day_of_month"),
+            RuntimeSupport.class,
+            "utcDayOfMonth",
+            "Get the day of the month in the UTC time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_day_of_month"),
+            RuntimeSupport.class,
+            "localDayOfMonth",
+            "Get the day of the month in the server's time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_hour_of_day"),
+            RuntimeSupport.class,
+            "utcHour",
+            "Get the hour of the day in the UTC time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_hour_of_day"),
+            RuntimeSupport.class,
+            "localHour",
+            "Get the hour of the day in the server's time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_minute_of_hour"),
+            RuntimeSupport.class,
+            "utcMinute",
+            "Get the minute of the hour in the UTC time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_minute_of_hour"),
+            RuntimeSupport.class,
+            "localMinute",
+            "Get the minute of the hour in the server's time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_second_of_minute"),
+            RuntimeSupport.class,
+            "utcSecond",
+            "Get the second of the minute in the UTC time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_second_of_minute"),
+            RuntimeSupport.class,
+            "localSecond",
+            "Get the second of the minute in the server's time zone.",
+            Imyhat.INTEGER,
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_month"),
+            RuntimeSupport.class,
+            "utcMonth",
+            "Get the month in the UTC time zone.",
+            Stream.of(Month.values())
+                .map(d -> Imyhat.algebraicTuple(d.name()))
+                .reduce(Imyhat::unify)
+                .get(),
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_month"),
+            RuntimeSupport.class,
+            "localMonth",
+            "Get the month in the server time zone.",
+            Stream.of(Month.values())
+                .map(d -> Imyhat.algebraicTuple(d.name()))
+                .reduce(Imyhat::unify)
+                .get(),
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "utc_day_of_week"),
+            RuntimeSupport.class,
+            "utcDayOfWeek",
+            "Get the day of the week in the UTC time zone.",
+            Stream.of(DayOfWeek.values())
+                .map(d -> Imyhat.algebraicTuple(d.name()))
+                .reduce(Imyhat::unify)
+                .get(),
+            new FunctionParameter("date", Imyhat.DATE)),
+        FunctionDefinition.staticMethod(
+            String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "local_day_of_week"),
+            RuntimeSupport.class,
+            "localDayOfWeek",
+            "Get the day of the week in the server time zone.",
+            Stream.of(DayOfWeek.values())
+                .map(d -> Imyhat.algebraicTuple(d.name()))
+                .reduce(Imyhat::unify)
+                .get(),
             new FunctionParameter("date", Imyhat.DATE)),
         FunctionDefinition.staticMethod(
             String.join(Parser.NAMESPACE_SEPARATOR, "std", "date", "from_seconds"),
