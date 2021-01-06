@@ -887,7 +887,7 @@ public class CompiledGenerator implements DefinitionRepository {
   private final ScheduledExecutorService executor;
   private Optional<AutoUpdatingDirectory<Script>> scripts = Optional.empty();
   private final ExecutorService workExecutor =
-      Executors.newFixedThreadPool(Math.max(1, 4 * Runtime.getRuntime().availableProcessors() - 1));
+      Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
 
   public CompiledGenerator(
       ScheduledExecutorService executor,
