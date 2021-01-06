@@ -1,7 +1,9 @@
 package ca.on.oicr.gsi.shesmu.plugin.cache;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.prometheus.LatencyHistogram;
 import io.prometheus.client.Gauge;
+import io.prometheus.client.Histogram;
 import java.lang.ref.SoftReference;
 import java.time.Instant;
 import java.util.Iterator;
@@ -42,7 +44,12 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
 
     @Override
     public I update(Instant lastModified) throws Exception {
-      return fetch(key, label, lastModified);
+      double cpuStart = Owner.CPU_TIME.getAsDouble();
+      try (final AutoCloseable _ignored = fetchTime.start(name)) {
+        return fetch(key, label, lastModified);
+      } finally {
+        fetchCpuTime.labels(name).observe(Owner.CPU_TIME.getAsDouble() - cpuStart);
+      }
     }
   }
 
@@ -52,6 +59,18 @@ public abstract class LabelledKeyValueCache<K, L, I, V>
       Gauge.build("shesmu_cache_lkv_item_count", "Number of items in a cache.")
           .labelNames("name")
           .register();
+  private static final Histogram fetchCpuTime =
+      Histogram.build()
+          .buckets(1.0, 5.0, 10.0, 30.0, 60.0, 300.0, 600.0, 3600.0)
+          .name("shesmu_cache_lkv_fetch_cpu")
+          .help("The CPU Time to regenerate a cache value.")
+          .labelNames("name")
+          .register();
+  private static final LatencyHistogram fetchTime =
+      new LatencyHistogram(
+          "shesmu_cache_lkv_fetch_wall",
+          "The wall clock time to regenerate a cache value.",
+          "name");
   private static final Gauge innerCount =
       Gauge.build("shesmu_cache_lkv_max_inner_count", "The largest collection stored in a cache.")
           .labelNames("name")
