@@ -2628,6 +2628,11 @@ public final class Server implements ServerConfig, ActionServices {
                       ? null
                       : TimeUnit.NANOSECONDS.toMillis(fileTable.first().runtime().getNano()));
               fileNode.put(
+                  "cpuTime",
+                  fileTable.first() == null || fileTable.first().cpuTime() == null
+                      ? null
+                      : TimeUnit.NANOSECONDS.toMillis(fileTable.first().cpuTime().getNano()));
+              fileNode.put(
                   "lastRun",
                   fileTable.first() == null ? null : fileTable.first().lastRun().toEpochMilli());
               final ArrayNode olivesNode = fileNode.putArray("olives");

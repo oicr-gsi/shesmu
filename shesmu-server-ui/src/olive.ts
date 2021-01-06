@@ -111,6 +111,8 @@ interface ScriptFile extends SourceLocation {
   format: string;
   /** The disassembled bytecode */
   bytecode: string;
+  /** The CPU time in milliseconds the olive ran for */
+  cpuTime: number | null;
   /**
    * Whether the olive is paused
    */
@@ -123,7 +125,7 @@ interface ScriptFile extends SourceLocation {
    * The number of rows of input ingested by the script when last run
    */
   inputCount: number | null;
-  /**The time, in nanoseconds, the olive ran for*/
+  /**The wallclock time, in milliseconds, the olive ran for*/
   runtime: number | null;
   /** The last time the olive was run, in milliseconds since the UNIX epoch. */
   lastRun: number | null;
@@ -197,6 +199,14 @@ function overview(file: ScriptFile, olive: Olive | null) {
       {
         contents:
           file.runtime == null ? "Unknown" : formatTimeSpan(file.runtime),
+      }
+    ),
+    tableRow(
+      null,
+      { contents: "CPU Time" },
+      {
+        contents:
+          file.cpuTime == null ? "Unknown" : formatTimeSpan(file.cpuTime),
       }
     ),
     tableRow(

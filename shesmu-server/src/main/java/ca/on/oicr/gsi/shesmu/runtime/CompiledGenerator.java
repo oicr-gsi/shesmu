@@ -35,12 +35,15 @@ import io.prometheus.client.Gauge.Timer;
 import java.io.PrintStream;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -52,7 +55,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 /** Compiles a user-specified file into a usable program and updates it as necessary */
 public class CompiledGenerator implements DefinitionRepository {
-
   public static final class DefinitionKey {
     private final String definitionName;
     private final String inputFormat;
@@ -687,8 +689,16 @@ public class CompiledGenerator implements DefinitionRepository {
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Type A_SIGNATURE_ACCESSOR_TYPE = Type.getType(SignatureAccessor.class);
   private static final Type A_STREAM_TYPE = Type.getType(Stream.class);
-  public static final Type A_STRING_TYPE = Type.getType(String.class);
   public static final Type A_STRING_ARRAY_TYPE = Type.getType(String[].class);
+  public static final Type A_STRING_TYPE = Type.getType(String.class);
+  private static final Handle BSM =
+      new Handle(
+          Opcodes.H_INVOKESTATIC,
+          Type.getInternalName(CompiledGenerator.class),
+          "bootstrap",
+          Type.getMethodDescriptor(
+              A_CALLSITE_TYPE, A_LOOKUP_TYPE, A_STRING_TYPE, A_METHOD_TYPE_TYPE, A_STRING_TYPE),
+          false);
   public static final Handle BSM_DEFINE =
       new Handle(
           Opcodes.H_INVOKESTATIC,
@@ -699,20 +709,6 @@ public class CompiledGenerator implements DefinitionRepository {
               A_LOOKUP_TYPE,
               A_STRING_TYPE,
               A_METHOD_TYPE_TYPE,
-              A_STRING_TYPE,
-              A_STRING_ARRAY_TYPE),
-          false);
-  public static final Handle BSM_DEFINE_VARIABLE =
-      new Handle(
-          Opcodes.H_INVOKESTATIC,
-          Type.getInternalName(CompiledGenerator.class),
-          "bootstrapDefineVariable",
-          Type.getMethodDescriptor(
-              A_CALLSITE_TYPE,
-              A_LOOKUP_TYPE,
-              A_STRING_TYPE,
-              A_METHOD_TYPE_TYPE,
-              A_STRING_TYPE,
               A_STRING_TYPE,
               A_STRING_ARRAY_TYPE),
           false);
@@ -730,15 +726,24 @@ public class CompiledGenerator implements DefinitionRepository {
               A_STRING_TYPE,
               A_STRING_ARRAY_TYPE),
           false);
-  private static final Handle BSM =
+  public static final Handle BSM_DEFINE_VARIABLE =
       new Handle(
           Opcodes.H_INVOKESTATIC,
           Type.getInternalName(CompiledGenerator.class),
-          "bootstrap",
+          "bootstrapDefineVariable",
           Type.getMethodDescriptor(
-              A_CALLSITE_TYPE, A_LOOKUP_TYPE, A_STRING_TYPE, A_METHOD_TYPE_TYPE, A_STRING_TYPE),
+              A_CALLSITE_TYPE,
+              A_LOOKUP_TYPE,
+              A_STRING_TYPE,
+              A_METHOD_TYPE_TYPE,
+              A_STRING_TYPE,
+              A_STRING_TYPE,
+              A_STRING_ARRAY_TYPE),
           false);
-
+  private static final LongSupplier CPU_TIME =
+      ManagementFactory.getThreadMXBean().isCurrentThreadCpuTimeSupported()
+          ? ManagementFactory.getThreadMXBean()::getCurrentThreadCpuTime
+          : () -> 0L;
   private static final MethodHandle CREATE_EXCEPTION;
   private static final CallSiteRegistry<Pair<String, String>> DEFINE_REGISTRY =
       new CallSiteRegistry<>();
@@ -1024,7 +1029,8 @@ public class CompiledGenerator implements DefinitionRepository {
                         final Instant startTime = Instant.now();
                         inflight.get().run();
                         inflight.set(Server.inflight("Running " + script.fileName.toString()));
-                        script.runInfo = new OliveRunInfo(true, "Running now", null, startTime);
+                        script.runInfo =
+                            new OliveRunInfo(true, "Running now", null, startTime, null);
                         final long inputCount =
                             script.dashboard == null
                                 ? 0
@@ -1035,11 +1041,17 @@ public class CompiledGenerator implements DefinitionRepository {
                             () ->
                                 timeoutFuture.complete(
                                     new OliveRunInfo(
-                                        false, "Deadline exceeded", inputCount, startTime)),
+                                        false, "Deadline exceeded", inputCount, startTime, null)),
                             script.generator.timeout(),
                             TimeUnit.SECONDS);
+                        final long startCpu = CPU_TIME.getAsLong();
+                        final String result = script.run(consumer, cache);
                         return new OliveRunInfo(
-                            true, script.run(consumer, cache), inputCount, startTime);
+                            true,
+                            result,
+                            inputCount,
+                            startTime,
+                            Duration.ofNanos(CPU_TIME.getAsLong() - startCpu));
                       },
                       workExecutor);
 
