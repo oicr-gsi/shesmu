@@ -102,19 +102,6 @@ public final class RuntimeSupport {
   }
 
   /**
-   * Put a formatted date-time into a string builder
-   *
-   * @param builder the string builder to append to
-   * @param instant the instant to use
-   * @param format the format code for {@link DateTimeFormatter}
-   */
-  @RuntimeInterop
-  public static StringBuilder appendFormatted(
-      StringBuilder builder, Instant instant, String format) {
-    return builder.append(toString(instant, format));
-  }
-
-  /**
    * Write a zero-padded number to a string builder
    *
    * @param builder the string builder to append to

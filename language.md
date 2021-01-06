@@ -941,7 +941,6 @@ Specified a new string literal. A string may contain the following special items
 - `\\{` for a open brace character
 - `{`_expr_`}` for a string interpolation; the expression must be a string, integer, or date
 - `{`_expr_`:`_n_`}` for a zero-padded integer string interpolation; the expression must be an integer and _n_ is the number of digits to pad to
-- `{`_expr_`:`_f_`}` for a formatted date string interpolation; the expression must be a date and _f_ is the [format code](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html)
 - `{@`_name_`}` interpolate a name from a gang; the variables in the gang must be strings and integers
 
 #### Sub-expression

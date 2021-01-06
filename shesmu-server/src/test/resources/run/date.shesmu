@@ -1,4 +1,0 @@
-Version 1;
-Input test;
-
-Olive Run ok With ok = "{std::date::epoch:YYYY}" == "1970";

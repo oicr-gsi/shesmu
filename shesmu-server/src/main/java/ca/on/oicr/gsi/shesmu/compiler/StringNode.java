@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
  * <p>Either a string literal or an expression that can be converted to a string literal
  */
 public abstract class StringNode {
-  private static final Pattern DATE_FORMAT = Pattern.compile("^[GyYMdhHmsSEDFwWakKz]+");
   private static final Pattern ESCAPE = Pattern.compile("^\\\\([\\\\\"nt{}])");
   private static final Pattern LITERAL = Pattern.compile("^[^\\\\\"{]+");
   private static final Parser.ParseDispatch<StringNode> PARTS = new Parser.ParseDispatch<>();
@@ -56,23 +55,13 @@ public abstract class StringNode {
           }
           if (result.lookAhead(':')) {
             final AtomicLong width = new AtomicLong();
-            final Parser widthResult = result.symbol(":").integer(width::set, 10);
+            final Parser widthResult =
+                result.symbol(":").whitespace().integer(width::set, 10).whitespace();
             if (widthResult.isGood()) {
               o.accept(
                   new StringNodeInteger(p.line(), p.column(), expression.get(), (int) width.get()));
-              result = widthResult;
-            } else {
-              result =
-                  result
-                      .symbol(":")
-                      .regex(
-                          DATE_FORMAT,
-                          m ->
-                              o.accept(
-                                  new StringNodeDate(
-                                      p.line(), p.column(), expression.get(), m.group(0))),
-                          "Expected date format code.");
             }
+            result = widthResult;
           } else {
             o.accept(new StringNodeExpression(expression.get()));
           }
