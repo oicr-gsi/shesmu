@@ -8,14 +8,21 @@ public class OliveRunInfo {
   private final Instant lastRun;
   private final boolean ok;
   private final Duration runtime;
+  private final Duration cpuTime;
   private final String status;
 
-  public OliveRunInfo(boolean ok, String status, Long inputCount, Instant lastRun) {
+  public OliveRunInfo(
+      boolean ok, String status, Long inputCount, Instant lastRun, Duration cpuTime) {
     this.ok = ok;
     this.status = status;
     this.inputCount = inputCount;
     this.lastRun = lastRun;
     this.runtime = Duration.between(lastRun, Instant.now());
+    this.cpuTime = cpuTime;
+  }
+
+  public Duration cpuTime() {
+    return cpuTime;
   }
 
   public Long inputCount() {
