@@ -76,7 +76,7 @@ export interface ShesmuRequestType {
   savedsearches: null;
   simulate: SimulationRequest;
   "simulate-existing": ExistingSimulationRequest;
-  stats: ActionFilter[];
+  stats: { filters: ActionFilter[]; wait: boolean };
   tags: ActionFilter[];
   type: { value: string; format: string };
 }

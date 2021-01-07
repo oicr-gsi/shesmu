@@ -1557,13 +1557,10 @@ public final class Server implements ServerConfig, ActionServices {
     add(
         "/stats",
         t -> {
-          final ActionProcessor.Filter[] filters;
+          final StatsRequest request;
           try {
-            filters =
-                Stream.of(RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class))
-                    .filter(Objects::nonNull)
-                    .map(filterJson -> filterJson.convert(processor))
-                    .toArray(ActionProcessor.Filter[]::new);
+            request = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), StatsRequest.class);
+
           } catch (final Exception e) {
             t.sendResponseHeaders(400, 0);
             try (OutputStream os = t.getResponseBody()) {}
@@ -1571,7 +1568,15 @@ public final class Server implements ServerConfig, ActionServices {
           }
           t.sendResponseHeaders(200, 0);
           try (OutputStream os = t.getResponseBody()) {
-            RuntimeSupport.MAPPER.writeValue(os, processor.stats(RuntimeSupport.MAPPER, filters));
+            RuntimeSupport.MAPPER.writeValue(
+                os,
+                processor.stats(
+                    RuntimeSupport.MAPPER,
+                    request.isWait(),
+                    Stream.of(request.getFilters())
+                        .filter(Objects::nonNull)
+                        .map(filterJson -> filterJson.convert(processor))
+                        .toArray(ActionProcessor.Filter[]::new)));
           }
         });
 

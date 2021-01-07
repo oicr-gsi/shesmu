@@ -91,7 +91,7 @@ export function initialisePauseDashboard(pauses: Pauses) {
     tabs(
       { contents: stats.ui, name: "Overview" },
       {
-        contents: [actions.bulkCommands, br(), actions.actions],
+        contents: [stats.toolbar, actions.bulkCommands, br(), actions.actions],
         name: "Actions",
       }
     )

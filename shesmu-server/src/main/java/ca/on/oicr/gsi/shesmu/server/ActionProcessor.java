@@ -1351,7 +1351,8 @@ public final class ActionProcessor
                     .allMatch(filter -> filter.check(entry.getKey(), entry.getValue())));
   }
 
-  public ArrayNode stats(ObjectMapper mapper, Filter... filters) {
+  public ArrayNode stats(ObjectMapper mapper, boolean wait, Filter... filters) {
+    final Instant start = Instant.now();
     final List<Entry<Action, Information>> actions =
         startStream(filters).collect(Collectors.toList());
     final ArrayNode array = mapper.createArrayNode();
@@ -1364,29 +1365,37 @@ public final class ActionProcessor
     total.put("value", actions.size());
     total.putNull("kind");
 
-    // This is all written out because there's no convenient type-safe way to put it
-    // in a list
-    propertySummary(table, ACTION_STATE, actions);
-    propertySummary(table, TYPE, actions);
-    propertySummary(table, SOURCE_FILE, actions);
-
-    crosstab(array, actions, ACTION_STATE, TYPE);
-    crosstab(array, actions, ACTION_STATE, SOURCE_FILE);
-    crosstab(array, actions, TYPE, SOURCE_FILE);
-
-    crosstab(array, actions, ACTION_STATE, TAG);
-    crosstab(array, actions, SOURCE_FILE, TAG);
-    crosstab(array, actions, TYPE, TAG);
-    crosstab(array, actions, TAG, TAG);
-    histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
-    histogram(array, 100, actions, INSTANT_BIN, EXTERNAL);
-
-    histogramByProperty(
-        array, 50, actions, ACTION_STATE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
-    histogramByProperty(array, 100, actions, ACTION_STATE, INSTANT_BIN, EXTERNAL);
-    histogramByProperty(
-        array, 50, actions, SOURCE_FILE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED);
-    histogramByProperty(array, 100, actions, SOURCE_FILE, INSTANT_BIN, EXTERNAL);
+    for (final Runnable computeStat :
+        new Runnable[] {
+          () -> propertySummary(table, ACTION_STATE, actions),
+          () -> propertySummary(table, TYPE, actions),
+          () -> propertySummary(table, SOURCE_FILE, actions),
+          () -> crosstab(array, actions, ACTION_STATE, TYPE),
+          () -> crosstab(array, actions, ACTION_STATE, SOURCE_FILE),
+          () -> crosstab(array, actions, TYPE, SOURCE_FILE),
+          () -> crosstab(array, actions, ACTION_STATE, TAG),
+          () -> crosstab(array, actions, SOURCE_FILE, TAG),
+          () -> crosstab(array, actions, TYPE, TAG),
+          () -> crosstab(array, actions, TAG, TAG),
+          () -> histogram(array, 50, actions, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
+          () -> histogram(array, 100, actions, INSTANT_BIN, EXTERNAL),
+          () ->
+              histogramByProperty(
+                  array, 50, actions, ACTION_STATE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
+          () -> histogramByProperty(array, 100, actions, ACTION_STATE, INSTANT_BIN, EXTERNAL),
+          () ->
+              histogramByProperty(
+                  array, 50, actions, SOURCE_FILE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
+          () -> histogramByProperty(array, 100, actions, SOURCE_FILE, INSTANT_BIN, EXTERNAL),
+        }) {
+      if (!wait && Duration.between(start, Instant.now()).toMillis() >= 500) {
+        final ObjectNode budget = array.addObject();
+        budget.put("type", "text");
+        budget.put("value", "Too many actions to compute all statistics.");
+        break;
+      }
+      computeStat.run();
+    }
     return array;
   }
 
