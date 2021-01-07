@@ -726,7 +726,7 @@ export function initialiseActionDash(
   const { actions: actionUi, bulkCommands, model: actionModel } = actionDisplay(
     exportSearches
   );
-  const { ui: statsUi, model: statsModel } = actionStats(
+  const { ui: statsUi, toolbar: statsToolbar, model: statsModel } = actionStats(
     (...limits) => addPropertySearch(...limits),
     (typeName, start, end, ...limits) =>
       addRangeSearch(typeName, start, end, ...limits),
@@ -965,7 +965,13 @@ export function initialiseActionDash(
       ),
       helpArea("action")
     ),
-    tile([], refreshButton(combinedActionsModel.reload), buttons, bulkCommands),
+    tile(
+      [],
+      refreshButton(combinedActionsModel.reload),
+      buttons,
+      bulkCommands,
+      statsToolbar
+    ),
     tile([], collapsible("Base Search Filter", baseSearchUi, br())),
     tile([], entryBar),
     tabsUi

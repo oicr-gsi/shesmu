@@ -14,6 +14,7 @@ import {
   tabs,
   temporaryState,
   text,
+  dropdown,
 } from "./html.js";
 import {
   FilenameFormatter,
@@ -23,6 +24,7 @@ import {
   computeDuration,
   formatTimeSpan,
   splitModel,
+  mergingModel,
 } from "./util.js";
 import { histogram } from "./histogram.js";
 import {
@@ -34,7 +36,7 @@ import {
   nameForProperty,
   updateBasicQueryForPropertySearch,
 } from "./actionfilters.js";
-import { fetchAsPromise, refreshable } from "./io.js";
+import { fetchAsPromise, locallyStored, refreshable } from "./io.js";
 import { Status, ExportSearchCommand, exportSearchDialog } from "./action.js";
 import { helpHotspot } from "./help.js";
 
@@ -480,7 +482,7 @@ export function actionStats(
   addRangeSearch: AddRangeSearch,
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
-): { ui: UIElement; model: StatefulModel<ActionFilter[]> } {
+): { ui: UIElement; toolbar: UIElement; model: StatefulModel<ActionFilter[]> } {
   const filters = temporaryState<ActionFilter[]>([]);
   const { model, ui } = singleState(
     (stats: Stat[] | null): UIElement => {
@@ -503,9 +505,45 @@ export function actionStats(
       return "No statistics are available.";
     }
   );
-  const io = refreshable("stats", model, false);
+  const waitForStats = locallyStored<boolean>(
+    "shesmu_wait_for_slow_stats",
+    false
+  );
+  const [io, wait] = mergingModel(
+    refreshable("stats", model, false),
+    (filters: ActionFilter[] | null, wait: boolean | null) => ({
+      filters: filters || [],
+      wait: wait || false,
+    }),
+    true
+  );
   return {
     ui: ui,
+    toolbar: dropdown(
+      (wait, selected) => {
+        if (wait) {
+          return [
+            { type: "icon", icon: "hourglass-split" },
+            selected ? blank() : "Wait for Slow Statistics",
+          ];
+        } else {
+          return [
+            { type: "icon", icon: "hourglass" },
+            selected ? blank() : "Skip Slow Statistics",
+          ];
+        }
+      },
+      (wait) => wait == waitForStats.get(),
+      wait,
+      {
+        synchronizer: waitForStats,
+        predicate: (recovered, item) => recovered == item,
+        extract: (x) => x,
+      },
+      false,
+      true
+    ),
+
     model: combineModels(filters, io),
   };
 }

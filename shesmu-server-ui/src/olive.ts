@@ -278,7 +278,7 @@ export function initialiseOliveDash(
     "toolbar",
     "main"
   );
-  const { ui: statsUi, model: statsModel } = actionStats(
+  const { ui: statsUi, toolbar: statsToolbar, model: statsModel } = actionStats(
     (...limits) => search.addPropertySearch(...limits),
     (typeName, start, end, ...limits) =>
       search.addRangeSearch(typeName, start, end, ...limits),
@@ -556,6 +556,7 @@ export function initialiseOliveDash(
       refreshButton(model.reload),
       pauseOliveButton,
       pauseFileButton,
+      statsToolbar,
       bulkCommands,
       helpArea("olive")
     ),
