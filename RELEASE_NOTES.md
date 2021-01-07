@@ -1,5 +1,18 @@
 # Unreleased
 
+# [1.6.1] - 2021-01-07T14:18+00:00
+
+Changes:
+
+* Reduce olive thread pool size to avoid overwhelming the machine when running
+* Fix SSH connection pool and set a maximum connection limit
+
+commit 9c2fccdf80cca35ae27165c80d015e5a726d0ed3
+Author: Andre Masella <andre.masella@oicr.on.ca>
+Date:   Tue Jan 5 17:54:24 2021 -0500
+
+    [maven-release-plugin] prepare for next development iteration
+
 # [1.6.0] - 2021-01-05T22:45+00:00
 
 Changes:
