@@ -55,6 +55,7 @@ export interface MutableServerInfo<I, R> {
  * Null entires are GET requests; all others are treated as POST requests
  */
 export interface ShesmuRequestType {
+  "action-ids": ActionFilter[];
   allalerts: null;
   command: { command: string; filters: ActionFilter[] };
   constant: string;
@@ -83,6 +84,7 @@ export interface ShesmuRequestType {
  * These are the response types for all the endpoints where JSON requests can be made to the server
  */
 export interface ShesmuResponseType {
+  "action-ids": string[];
   allalerts: PrometheusAlert[];
   command: number;
   constant: ValueResponse;

@@ -192,6 +192,24 @@ export const standardExports: ExportSearchCommand[] = [
       }),
   },
   {
+    icon: "clipboard-data",
+    label: "cURL Action Identifiers",
+    description:
+      "Convert search to a cURL command to extract action identifiers.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) => copyCUrlCommand("action-ids", filters),
+  },
+  {
+    icon: "clipboard-data",
+    label: "Wget Action Identifiers",
+    description:
+      "Convert search to a Wget command to extract action idetnifiers.",
+    category: "Command Line",
+    categoryIcon: "terminal",
+    callback: (filters) => copyWgetCommand("action-ids", filters),
+  },
+  {
     icon: "clipboard-x",
     label: "cURL Purge",
     description: "Convert search to a cURL command to purge matching actions.",
@@ -222,6 +240,40 @@ export const standardExports: ExportSearchCommand[] = [
     category: "Command Line",
     categoryIcon: "terminal",
     callback: (filters) => copyWgetCommand("drain", filters),
+  },
+  {
+    icon: "clipboard",
+    label: "To Clipboard as JSON",
+    description:
+      "Export action identifiers in the current view as a JSON array to the clipboard.",
+    category: "Action Identifiers",
+    categoryIcon: "camera-reels",
+    callback: (filters) =>
+      fetchJsonWithBusyDialog("action-ids", filters, saveClipboardJson),
+  },
+  {
+    icon: "clipboard-plus",
+    label: "To Clipboard as Text",
+    description:
+      "Export action identifiers in the current view as a text list to the clipboard.",
+    category: "Action Identifiers",
+    categoryIcon: "camera-reels",
+    callback: (filters) =>
+      fetchJsonWithBusyDialog("action-ids", filters, (ids) =>
+        saveClipboard(ids.join("\n"))
+      ),
+  },
+  {
+    icon: "cloud-download",
+    label: "To JSON File",
+    description:
+      "Export action identifiers in the current view as a JSON array to a file.",
+    category: "Action Identifiers",
+    categoryIcon: "camera-reels",
+    callback: (filters) =>
+      fetchJsonWithBusyDialog("action-ids", filters, (ids) =>
+        saveFile(JSON.stringify(ids), "application/json", "Action IDs.json")
+      ),
   },
 ];
 

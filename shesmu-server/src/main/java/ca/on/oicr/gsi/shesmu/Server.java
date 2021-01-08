@@ -1620,6 +1620,39 @@ public final class Server implements ServerConfig, ActionServices {
           }
         });
     add(
+        "/action-ids",
+        t -> {
+          final ActionFilter[] filters;
+          try {
+            filters = RuntimeSupport.MAPPER.readValue(t.getRequestBody(), ActionFilter[].class);
+          } catch (final Exception e) {
+            t.sendResponseHeaders(400, 0);
+            try (OutputStream os = t.getResponseBody()) {}
+            return;
+          }
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody();
+              final JsonGenerator jsonOutput =
+                  new JsonFactory().createGenerator(os, JsonEncoding.UTF8)) {
+            jsonOutput.writeStartArray();
+            processor
+                .actionIds(
+                    Stream.of(filters)
+                        .filter(Objects::nonNull)
+                        .map(filterJson -> filterJson.convert(processor))
+                        .toArray(Filter[]::new))
+                .forEach(
+                    id -> {
+                      try {
+                        jsonOutput.writeString(id);
+                      } catch (IOException e) {
+                        throw new RuntimeException(e);
+                      }
+                    });
+            jsonOutput.writeEndArray();
+          }
+        });
+    add(
         "/drain",
         t -> {
           final ActionFilter[] filters;
