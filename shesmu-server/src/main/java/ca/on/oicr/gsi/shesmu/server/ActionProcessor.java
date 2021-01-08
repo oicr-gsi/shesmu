@@ -668,6 +668,10 @@ public final class ActionProcessor
     return false;
   }
 
+  public Stream<String> actionIds(Filter... filters) {
+    return startStream(filters).map(e -> e.getValue().id);
+  }
+
   /**
    * Check that an action was last added in the time range provided
    *
