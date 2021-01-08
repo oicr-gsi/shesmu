@@ -96,6 +96,7 @@ public final class OliveNodeRun extends OliveNodeWithClauses {
             Produces.ACTIONS,
             tags,
             description,
+            definition.supplementaryInformation(),
             clauses().stream().flatMap(OliveClauseNode::dashboard),
             arguments
                 .stream()

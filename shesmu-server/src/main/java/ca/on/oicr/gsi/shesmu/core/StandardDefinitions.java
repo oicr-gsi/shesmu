@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.core;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
+import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.compiler.RefillerDefinition;
 import ca.on.oicr.gsi.shesmu.compiler.Renderer;
 import ca.on.oicr.gsi.shesmu.compiler.definitions.ActionDefinition;
@@ -16,6 +17,7 @@ import ca.on.oicr.gsi.shesmu.core.signers.SHA1DigestSigner;
 import ca.on.oicr.gsi.shesmu.core.signers.SignatureCount;
 import ca.on.oicr.gsi.shesmu.core.signers.SignatureNames;
 import ca.on.oicr.gsi.shesmu.plugin.Parser;
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -552,12 +554,21 @@ public final class StandardDefinitions implements DefinitionRepository {
                   return Imyhat.STRING;
                 }
               })) {
-
         @Override
         public void initialize(GeneratorAdapter methodGen) {
           methodGen.newInstance(A_NOTHING_ACTION_TYPE);
           methodGen.dup();
           methodGen.invokeConstructor(A_NOTHING_ACTION_TYPE, DEFAULT_CTOR);
+        }
+
+        @Override
+        public SupplementaryInformation supplementaryInformation() {
+          return () ->
+              Stream.of(
+                  new Pair<>(
+                      SupplementaryInformation.text("Number of CPUs This Action Won't Use"),
+                      SupplementaryInformation.text(
+                          Integer.toString(Runtime.getRuntime().availableProcessors()))));
         }
       };
   private static final SignatureDefinition[] SIGNATURES =

@@ -163,6 +163,7 @@ public class OliveNodeAlert extends OliveNodeWithClauses implements RejectNode {
             Produces.ALERTS,
             tags,
             description,
+            Stream::empty,
             clauses().stream().flatMap(OliveClauseNode::dashboard),
             Stream.concat(
                 Stream.of(labels, annotations)

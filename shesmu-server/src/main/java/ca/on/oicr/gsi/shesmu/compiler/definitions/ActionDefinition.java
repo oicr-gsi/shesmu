@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.definitions;
 
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,5 +61,9 @@ public abstract class ActionDefinition {
   /** List all the parameters that must be set for this action to be performed. */
   public final Stream<ActionParameterDefinition> parameters() {
     return parameters.stream();
+  }
+
+  public SupplementaryInformation supplementaryInformation() {
+    return Stream::empty;
   }
 }

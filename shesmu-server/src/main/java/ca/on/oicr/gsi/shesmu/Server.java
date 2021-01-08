@@ -2293,6 +2293,16 @@ public final class Server implements ServerConfig, ActionServices {
                   actionDefinition.filename() == null
                       ? null
                       : actionDefinition.filename().toString());
+              final ArrayNode supplementaryInfoArray = obj.putArray("supplementaryInformation");
+              actionDefinition
+                  .supplementaryInformation()
+                  .generate()
+                  .forEach(
+                      row -> {
+                        final ObjectNode rowNode = supplementaryInfoArray.addObject();
+                        rowNode.set("label", row.first().toJson());
+                        rowNode.set("value", row.second().toJson());
+                      });
               final ArrayNode parameters = obj.putArray("parameters");
               actionDefinition
                   .parameters()
@@ -2653,6 +2663,17 @@ public final class Server implements ServerConfig, ActionServices {
                           oliveNode.put("paused", processor.isPaused(location));
                         }
                         olive.tags().sorted().forEach(oliveNode.putArray("tags")::add);
+                        final ArrayNode supplementaryInfoArray =
+                            oliveNode.putArray("supplementaryInformation");
+                        olive
+                            .supplementaryInformation()
+                            .generate()
+                            .forEach(
+                                row -> {
+                                  final ObjectNode rowNode = supplementaryInfoArray.addObject();
+                                  rowNode.set("label", row.first().toJson());
+                                  rowNode.set("value", row.second().toJson());
+                                });
                         final ArrayNode clauseArray = oliveNode.putArray("clauses");
                         olive
                             .clauses()
@@ -2704,6 +2725,16 @@ public final class Server implements ServerConfig, ActionServices {
               obj.put("description", refiller.description());
               obj.put(
                   "filename", refiller.filename() == null ? null : refiller.filename().toString());
+              final ArrayNode supplementaryInfoArray = obj.putArray("supplementaryInformation");
+              refiller
+                  .supplementaryInformation()
+                  .generate()
+                  .forEach(
+                      row -> {
+                        final ObjectNode rowNode = supplementaryInfoArray.addObject();
+                        rowNode.set("label", row.first().toJson());
+                        rowNode.set("value", row.second().toJson());
+                      });
               final ArrayNode parameters = obj.putArray("parameters");
               refiller
                   .parameters()
