@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.compiler.description;
 
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -8,6 +9,7 @@ import java.util.stream.Stream;
 public final class OliveTable {
   private final int column;
   private final String description;
+  private final SupplementaryInformation information;
   private final int line;
   private final Produces produces;
   private final List<OliveClauseRow> rows;
@@ -22,6 +24,7 @@ public final class OliveTable {
       Produces produces,
       Set<String> tags,
       String description,
+      SupplementaryInformation information,
       Stream<OliveClauseRow> rows,
       Stream<VariableInformation> variables) {
     super();
@@ -31,6 +34,7 @@ public final class OliveTable {
     this.produces = produces;
     this.tags = tags;
     this.description = description;
+    this.information = information;
     this.rows = rows.collect(Collectors.toList());
     this.variables = variables.collect(Collectors.toList());
   }
@@ -53,6 +57,10 @@ public final class OliveTable {
 
   public Produces produces() {
     return produces;
+  }
+
+  public SupplementaryInformation supplementaryInformation() {
+    return information;
   }
 
   public String syntax() {

@@ -6,6 +6,8 @@ import ca.on.oicr.gsi.provenance.model.AnalysisProvenance;
 import ca.on.oicr.gsi.shesmu.cerberus.CerberusAnalysisProvenanceValue;
 import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation.DisplayElement;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -47,6 +49,8 @@ import org.apache.http.impl.client.HttpClients;
 class NiassaServer extends JsonPluginFile<Configuration> {
   private interface MaxCheck {
     MaxStatus check(String workflowName);
+
+    Stream<Pair<DisplayElement, DisplayElement>> display(String workflowName);
   }
 
   private class AnalysisCache
@@ -369,6 +373,18 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                 return MaxStatus.TOO_MANY_RUNNING;
               }
             }
+
+            @Override
+            public Stream<Pair<DisplayElement, DisplayElement>> display(String workflowName) {
+              return Stream.of(
+                  new Pair<>(
+                      SupplementaryInformation.text("Max in Flight"),
+                      SupplementaryInformation.text(
+                          Integer.toString(maxInFlight.getOrDefault(workflowName, 0)))),
+                  new Pair<>(
+                      SupplementaryInformation.text("Current in Flight"),
+                      SupplementaryInformation.text(Integer.toString(count + started))));
+            }
           });
     }
   }
@@ -611,6 +627,14 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   public WorkflowRunEssentials directoryAndIni(long workflowRun) {
     return directoryAndIniCache.get(workflowRun).orElse(WorkflowRunEssentials.EMPTY);
+  }
+
+  public Stream<Pair<DisplayElement, DisplayElement>> displayMaxInfo(
+      long workflowAccession, String workflowName) {
+    return maxInFlightCache
+        .get(workflowAccession)
+        .map(m -> m.display(workflowName))
+        .orElseGet(Stream::empty);
   }
 
   public String host() {

@@ -133,6 +133,7 @@ public final class OliveNodeRefill extends OliveNodeWithClauses {
             Produces.REFILL,
             tags,
             description,
+            definition.supplementaryInformation(),
             clauses().stream().flatMap(OliveClauseNode::dashboard),
             arguments
                 .stream()

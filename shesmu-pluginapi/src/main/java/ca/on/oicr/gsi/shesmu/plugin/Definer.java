@@ -34,6 +34,14 @@ public interface Definer<T> extends Supplier<T> {
      * @param <I> the type of the input rows
      */
     <I> RefillInfo<I, ? extends Refiller<I>> info(Class<I> rowType);
+
+    /**
+     * Any supplementary information to be displayed; this will be invoked when a user request comes
+     * it, so it must be fast, but can provide updated information.
+     */
+    default SupplementaryInformation supplementary() {
+      return Stream::empty;
+    }
   }
 
   /**
@@ -81,12 +89,33 @@ public interface Definer<T> extends Supplier<T> {
    * @param parameters the parameters that cannot be inferred by annotations
    * @return the full-qualified name to the action
    */
+  default <A extends Action> String defineAction(
+      String name,
+      String description,
+      Class<A> clazz,
+      Supplier<A> supplier,
+      Stream<CustomActionParameter<A>> parameters) {
+    return defineAction(name, description, clazz, supplier, parameters, Stream::empty);
+  }
+  /**
+   * Define a new action
+   *
+   * @param name the Shesmu name of the action
+   * @param description the help text for the action
+   * @param clazz the class which implements the actions
+   * @param supplier a generator of new instances of this action
+   * @param parameters the parameters that cannot be inferred by annotations
+   * @param information any supplementary information to be displayed; this will be invoked when a
+   *     user request comes it, so it must be fast, but can provide updated information.
+   * @return the full-qualified name to the action
+   */
   <A extends Action> String defineAction(
       String name,
       String description,
       Class<A> clazz,
       Supplier<A> supplier,
-      Stream<CustomActionParameter<A>> parameters);
+      Stream<CustomActionParameter<A>> parameters,
+      SupplementaryInformation information);
 
   /**
    * Define a constant using a particular value

@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFile;
 import ca.on.oicr.gsi.shesmu.plugin.PluginFileType;
+import ca.on.oicr.gsi.shesmu.plugin.SupplementaryInformation;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.functions.FunctionParameter;
@@ -122,7 +123,8 @@ public class CheckConfig {
                   String description,
                   Class<A> clazz,
                   Supplier<A> supplier,
-                  Stream<CustomActionParameter<A>> parameters) {
+                  Stream<CustomActionParameter<A>> parameters,
+                  SupplementaryInformation information) {
                 System.out.printf("Action %s bound to %s.\n", name, clazz.getName());
                 return name;
               }

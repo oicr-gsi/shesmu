@@ -1,5 +1,6 @@
 import { fetchJsonWithBusyDialog, locallyStored } from "./io.js";
 import {
+  DisplayElement,
   IconName,
   TreePath,
   UIElement,
@@ -43,6 +44,7 @@ export interface ActionDefintion {
   description: string;
   parameters: { name: string; type: string; required: boolean }[];
   filename: string | null;
+  supplementaryInformation: {label: DisplayElement, value: DisplayElement}[];
 }
 export interface ConstantDefinition {
   kind: "constant";
@@ -74,6 +76,7 @@ export interface RefillerDefinition {
   description: string;
   parameters: { name: string; type: string }[];
   filename: string | null;
+  supplementaryInformation: {label: DisplayElement, value: DisplayElement}[];
 }
 export interface SignatureDefinition {
   kind: "signature";
@@ -229,6 +232,7 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
               italic("Description: "),
               definition.description,
               br(),
+              table(definition.supplementaryInformation, ["Extra Information", (x) => x.label], ["Value", (x) => x.value]),
               table(
                 definition.parameters,
                 ["Name", (p) => p.name],
@@ -305,6 +309,7 @@ export function initialiseDefinitionDash(definitions: Definition[]): void {
               italic("Description: "),
               definition.description,
               br(),
+              table(definition.supplementaryInformation, ["Extra Information", (x) => x.label], ["Value", (x) => x.value]),
               table(
                 definition.parameters,
                 ["Name", (p) => p.name],

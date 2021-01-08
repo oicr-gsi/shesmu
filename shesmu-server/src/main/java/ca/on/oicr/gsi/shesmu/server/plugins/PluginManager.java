@@ -97,22 +97,30 @@ public final class PluginManager
       private final CallSite callsite;
 
       private final String fixedName;
+      private final SupplementaryInformation information;
 
       private ArbitraryActionDefintition(
           String name,
           MethodHandle handle,
           String description,
           Path filename,
+          SupplementaryInformation information,
           Stream<ActionParameterDefinition> parameters) {
         super(name, description, filename, parameters);
         fixedName = name + " action";
         callsite = installArbitrary(fixedName, handle.asType(MethodType.methodType(Action.class)));
+        this.information = information;
       }
 
       @Override
       public void initialize(GeneratorAdapter methodGen) {
         methodGen.invokeDynamic(
             fixedName, Type.getMethodDescriptor(Type.getType(Action.class)), BSM_HANDLE_ARBITRARY);
+      }
+
+      @Override
+      public SupplementaryInformation supplementaryInformation() {
+        return information;
       }
     }
 
@@ -253,6 +261,7 @@ public final class PluginManager
       private final String description;
       private final Path fileName;
       private final String fixedName;
+      private final SupplementaryInformation information;
       private final String name;
       private final List<RefillerParameterDefinition> parameters;
 
@@ -261,10 +270,12 @@ public final class PluginManager
           MethodHandle target,
           Path fileName,
           String description,
+          SupplementaryInformation information,
           List<RefillerParameterDefinition> parameters) {
         this.name = name;
         this.fileName = fileName;
         this.description = description;
+        this.information = information;
         this.parameters = parameters;
         final MethodHandle handle = target.asType(MethodType.methodType(Refiller.class));
         fixedName = name + " refill";
@@ -297,6 +308,11 @@ public final class PluginManager
             .methodGen()
             .invokeDynamic(
                 fixedName, Type.getMethodDescriptor(A_REFILLER_TYPE), BSM_HANDLE_ARBITRARY);
+      }
+
+      @Override
+      public SupplementaryInformation supplementaryInformation() {
+        return information;
       }
     }
 
@@ -445,7 +461,8 @@ public final class PluginManager
           String description,
           Class<A> clazz,
           Supplier<A> supplier,
-          Stream<CustomActionParameter<A>> parameters) {
+          Stream<CustomActionParameter<A>> parameters,
+          SupplementaryInformation information) {
         final MethodHandle handle =
             MH_SUPPLIER_GET.bindTo(supplier).asType(MethodType.methodType(clazz));
         final String qualifiedName =
@@ -458,6 +475,7 @@ public final class PluginManager
                 handle,
                 description,
                 instance.fileName(),
+                information,
                 Stream.concat(
                     parameters.map(p -> new InvokeDynamicActionParameterDescriptor(name, p)),
                     InvokeDynamicActionParameterDescriptor.findActionDefinitionsByAnnotation(
@@ -701,6 +719,7 @@ public final class PluginManager
                 MH_REFILL_INFO_CREATE.bindTo(info),
                 instance.fileName(),
                 description,
+                refillerDefiner.supplementary(),
                 Stream.concat(
                         info.parameters()
                             .map(p -> new InvokeDynamicRefillerParameterDescriptor(name, p)),
@@ -1158,6 +1177,7 @@ public final class PluginManager
                 fileFormat.lookup().unreflect(method),
                 annotation.description(),
                 null,
+                Stream::empty,
                 parameters.stream()));
       }
     }
@@ -1370,6 +1390,7 @@ public final class PluginManager
                 fileFormat.lookup().unreflect(method),
                 null,
                 annotation.description(),
+                Stream::empty,
                 parameters));
       }
     }
@@ -1790,11 +1811,6 @@ public final class PluginManager
     return formatTypes.stream().flatMap(FormatTypeWrapper::constants);
   }
 
-  @Override
-  public Stream<CallableOliveDefinition> oliveDefinitions() {
-    return Stream.empty();
-  }
-
   public long count() {
     return (long) formatTypes.size();
   }
@@ -1936,6 +1952,11 @@ public final class PluginManager
     } finally {
       LOG_REENTRANT_CHECK.set(false);
     }
+  }
+
+  @Override
+  public Stream<CallableOliveDefinition> oliveDefinitions() {
+    return Stream.empty();
   }
 
   public void pushAlerts(String alertJson) {

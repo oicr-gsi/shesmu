@@ -171,7 +171,8 @@ public class WorkflowConfiguration {
                     Stream.of(getType().parameter()),
                     Stream.of(getParameters()).map(IniParam::parameter),
                     userAnnotations.entrySet().stream().map(UserAnnotationParameter::new))
-                .flatMap(Function.identity())),
+                .flatMap(Function.identity()),
+            () -> definer.get().displayMaxInfo(accession, name)),
         new AlgebraicValue(kind.toUpperCase()));
   }
 
