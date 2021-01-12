@@ -328,7 +328,7 @@ public final class PineryIUSValue {
     return is_sample;
   }
 
-  @ShesmuVariable(type = "t3sis")
+  @ShesmuVariable(type = "t3sis", signable = true)
   public Tuple ius() {
     return ius;
   }
