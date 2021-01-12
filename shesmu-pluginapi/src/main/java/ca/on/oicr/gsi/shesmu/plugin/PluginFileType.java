@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.plugin;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
@@ -10,6 +11,7 @@ import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -145,7 +147,8 @@ public abstract class PluginFileType<T extends PluginFile> {
   public void pushAlerts(String alertJson) {}
 
   /** Create a list of searches */
-  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+  public <F> Stream<Pair<String, F>> searches(
+      ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
     return Stream.empty();
   }
 

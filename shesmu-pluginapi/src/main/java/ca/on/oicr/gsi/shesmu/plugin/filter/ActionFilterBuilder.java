@@ -7,17 +7,16 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public interface ActionFilterBuilder<F> {
+public interface ActionFilterBuilder<F, T, S, I, O> {
   /** Do a "transformation" of the JSON representation to an exact copy. */
-  ActionFilterBuilder<ActionFilter> JSON =
-      new ActionFilterBuilder<ActionFilter>() {
+  ActionFilterBuilder<ActionFilter, ActionState, String, Instant, Long> JSON =
+      new ActionFilterBuilder<ActionFilter, ActionState, String, Instant, Long>() {
         @Override
         public ActionFilter added(Optional<Instant> start, Optional<Instant> end) {
           final ActionFilterAdded result = new ActionFilterAdded();
@@ -27,7 +26,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public ActionFilter addedAgo(long offset) {
+        public ActionFilter addedAgo(Long offset) {
           final ActionFilterAddedAgo result = new ActionFilterAddedAgo();
           result.setOffset(offset);
           return result;
@@ -49,7 +48,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public ActionFilter checkedAgo(long offset) {
+        public ActionFilter checkedAgo(Long offset) {
           final ActionFilterCheckedAgo result = new ActionFilterCheckedAgo();
           result.setOffset(offset);
           return result;
@@ -64,17 +63,22 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public ActionFilter externalAgo(long offset) {
+        public ActionFilter externalAgo(Long offset) {
           final ActionFilterExternalAgo result = new ActionFilterExternalAgo();
           result.setOffset(offset);
           return result;
         }
 
         @Override
-        public ActionFilter fromFile(String... files) {
+        public ActionFilter fromFile(Stream<String> files) {
           final ActionFilterSourceFile result = new ActionFilterSourceFile();
-          result.setFiles(files);
+          result.setFiles(files.toArray(String[]::new));
           return result;
+        }
+
+        @Override
+        public ActionFilter fromJson(ActionFilter actionFilter) {
+          return actionFilter;
         }
 
         @Override
@@ -93,9 +97,9 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public ActionFilter isState(ActionState... states) {
+        public ActionFilter isState(Stream<ActionState> states) {
           final ActionFilterStatus result = new ActionFilterStatus();
-          result.setState(states);
+          result.setState(states.toArray(ActionState[]::new));
           return result;
         }
 
@@ -126,7 +130,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public ActionFilter statusChangedAgo(long offset) {
+        public ActionFilter statusChangedAgo(Long offset) {
           final ActionFilterStatusChangedAgo result = new ActionFilterStatusChangedAgo();
           result.setOffset(offset);
           return result;
@@ -156,9 +160,17 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public ActionFilter type(String... types) {
+        public ActionFilter textSearch(String text, boolean matchCase) {
+          final ActionFilterRegex result = new ActionFilterRegex();
+          result.setPattern(Pattern.quote(text));
+          result.setMatchCase(matchCase);
+          return result;
+        }
+
+        @Override
+        public ActionFilter type(Stream<String> types) {
           final ActionFilterType result = new ActionFilterType();
-          result.setTypes(types);
+          result.setTypes(types.toArray(String[]::new));
           return result;
         }
       };
@@ -170,8 +182,8 @@ public interface ActionFilterBuilder<F> {
    * Terminal expressions are 0, unary prefixes are 1, logical conjunction is 2, logical disjuncion
    * is 3.
    */
-  ActionFilterBuilder<Pair<String, Integer>> QUERY =
-      new ActionFilterBuilder<Pair<String, Integer>>() {
+  ActionFilterBuilder<Pair<String, Integer>, ActionState, String, Instant, Long> QUERY =
+      new ActionFilterBuilder<Pair<String, Integer>, ActionState, String, Instant, Long>() {
         private final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
 
@@ -181,7 +193,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> addedAgo(long offset) {
+        public Pair<String, Integer> addedAgo(Long offset) {
           return formatAgo("generated", offset);
         }
 
@@ -200,7 +212,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> checkedAgo(long offset) {
+        public Pair<String, Integer> checkedAgo(Long offset) {
           return formatAgo("checked", offset);
         }
 
@@ -210,7 +222,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> externalAgo(long offset) {
+        public Pair<String, Integer> externalAgo(Long offset) {
           return formatAgo("external", offset);
         }
 
@@ -236,12 +248,14 @@ public interface ActionFilterBuilder<F> {
           return new Pair<>(String.format("%s last %d%s", name, reduced, units), 0);
         }
 
-        private Pair<String, Integer> formatSet(String name, String... items) {
-          if (items.length == 1) {
-            return new Pair<>(String.format("%s = %s", name, quote(items[0])), 0);
+        private Pair<String, Integer> formatSet(String name, Stream<String> stream) {
+          final List<String> items = stream.collect(Collectors.toList());
+          if (items.size() == 1) {
+            return new Pair<>(String.format("%s = %s", name, quote(items.get(0))), 0);
           } else {
             return new Pair<>(
-                Stream.of(items)
+                items
+                    .stream()
                     .map(this::quote)
                     .collect(Collectors.joining(", ", name + " in (", ")")),
                 0);
@@ -249,8 +263,13 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> fromFile(String... files) {
+        public Pair<String, Integer> fromFile(Stream<String> files) {
           return formatSet("file", files);
+        }
+
+        @Override
+        public Pair<String, Integer> fromJson(ActionFilter actionFilter) {
+          return actionFilter.convert(this);
         }
 
         @Override
@@ -275,13 +294,8 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> isState(ActionState... states) {
-          final String[] stateNames = new String[states.length];
-          for (int i = 0; i < stateNames.length; i++) {
-            stateNames[i] = states[i].name().toLowerCase();
-          }
-          Arrays.sort(stateNames);
-          return formatSet("status", stateNames);
+        public Pair<String, Integer> isState(Stream<ActionState> states) {
+          return formatSet("status", states.map(s -> s.name().toLowerCase()).distinct().sorted());
         }
 
         @Override
@@ -340,7 +354,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> statusChangedAgo(long offset) {
+        public Pair<String, Integer> statusChangedAgo(Long offset) {
           return formatAgo("status_changed", offset);
         }
 
@@ -355,7 +369,7 @@ public interface ActionFilterBuilder<F> {
 
         @Override
         public Pair<String, Integer> tags(Stream<String> tags) {
-          return formatSet("tag", tags.toArray(String[]::new));
+          return formatSet("tag", tags);
         }
 
         @Override
@@ -374,7 +388,7 @@ public interface ActionFilterBuilder<F> {
         }
 
         @Override
-        public Pair<String, Integer> type(String... types) {
+        public Pair<String, Integer> type(Stream<String> types) {
           return formatSet("type", types);
         }
       };
@@ -384,16 +398,14 @@ public interface ActionFilterBuilder<F> {
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  F added(Optional<Instant> start, Optional<Instant> end);
+  F added(Optional<I> start, Optional<I> end);
 
   /**
    * Check that an action was added in a recent range
    *
    * @param offset the number of milliseconds ago
    */
-  default F addedAgo(long offset) {
-    return added(Optional.of(Instant.now().minusMillis(offset)), Optional.empty());
-  }
+  F addedAgo(O offset);
 
   /** Check that all of the filters match */
   F and(Stream<F> filters);
@@ -404,16 +416,14 @@ public interface ActionFilterBuilder<F> {
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  F checked(Optional<Instant> start, Optional<Instant> end);
+  F checked(Optional<I> start, Optional<I> end);
 
   /**
    * Check that an action was checked by the scheduler in a recent range
    *
    * @param offset the number of milliseconds ago
    */
-  default F checkedAgo(long offset) {
-    return checked(Optional.of(Instant.now().minusMillis(offset)), Optional.empty());
-  }
+  F checkedAgo(O offset);
 
   /**
    * Check that an action's external timestamp is in the time range provided
@@ -421,23 +431,23 @@ public interface ActionFilterBuilder<F> {
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  F external(Optional<Instant> start, Optional<Instant> end);
+  F external(Optional<I> start, Optional<I> end);
 
   /**
    * Check that an action has an external timestamp in a recent range
    *
    * @param offset the number of milliseconds ago
    */
-  default F externalAgo(long offset) {
-    return external(Optional.of(Instant.now().minusMillis(offset)), Optional.empty());
-  }
+  F externalAgo(O offset);
 
   /**
    * Checks that an action was generated in a particular file
    *
    * @param files the names of the files
    */
-  F fromFile(String... files);
+  F fromFile(Stream<S> files);
+
+  F fromJson(ActionFilter actionFilter);
 
   /**
    * Checks that an action was generated in a particular source location
@@ -451,14 +461,14 @@ public interface ActionFilterBuilder<F> {
    *
    * @param ids the allowed identifiers
    */
-  F ids(List<String> ids);
+  F ids(List<S> ids);
 
   /**
    * Checks that an action is in one of the specified actions states
    *
    * @param states the permitted states
    */
-  F isState(ActionState... states);
+  F isState(Stream<T> states);
 
   F negate(F filter);
 
@@ -471,16 +481,14 @@ public interface ActionFilterBuilder<F> {
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
-  F statusChanged(Optional<Instant> start, Optional<Instant> end);
+  F statusChanged(Optional<I> start, Optional<I> end);
 
   /**
    * Check that an action was added in a recent range
    *
    * @param offset the number of milliseconds ago
    */
-  default F statusChangedAgo(long offset) {
-    return statusChanged(Optional.of(Instant.now().minusMillis(offset)), Optional.empty());
-  }
+  F statusChangedAgo(O offset);
 
   /**
    * Check that an action has a tag matching the provided regular expression
@@ -493,7 +501,7 @@ public interface ActionFilterBuilder<F> {
    *
    * @param tags the set of tags
    */
-  F tags(Stream<String> tags);
+  F tags(Stream<S> tags);
 
   /**
    * Check that an action matches the regular expression provided
@@ -508,12 +516,8 @@ public interface ActionFilterBuilder<F> {
    * @param text the text
    * @param matchCase whether the match should be case sensitive
    */
-  default F textSearch(String text, boolean matchCase) {
-    return textSearch(
-        Pattern.compile(
-            "^.*" + Pattern.quote(text) + ".*$", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
-  }
+  F textSearch(S text, boolean matchCase);
 
   /** Check that an action has one of the types specified */
-  F type(String... types);
+  F type(Stream<S> types);
 }

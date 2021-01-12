@@ -2,12 +2,14 @@ package ca.on.oicr.gsi.shesmu.plugin;
 
 import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ExportSearch;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.status.SectionRenderer;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -76,7 +78,8 @@ public abstract class PluginFile implements RequiredServices {
   public void pushAlerts(String alertJson) {}
 
   /** Create a list of searches */
-  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+  public <F> Stream<Pair<String, F>> searches(
+      ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
     return Stream.empty();
   }
 

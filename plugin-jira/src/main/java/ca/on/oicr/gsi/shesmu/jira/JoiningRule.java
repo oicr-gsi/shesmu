@@ -1,8 +1,10 @@
 package ca.on.oicr.gsi.shesmu.jira;
 
 import ca.on.oicr.gsi.Pair;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
+import java.time.Instant;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,7 +17,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<JiraConnection.JiraActionFilter> accessoryFilters,
-        ActionFilterBuilder<F> builder) {
+        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
       return ActionFilter.joinAllExcept(
           baseName, baseFilters, accessoryFilters.map(f -> f.process(baseName, builder)), builder);
     }
@@ -27,7 +29,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<JiraConnection.JiraActionFilter> accessoryFilters,
-        ActionFilterBuilder<F> builder) {
+        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
       return ActionFilter.joinAllAnd(
           baseName, baseFilters, accessoryFilters.map(f -> f.process(baseName, builder)), builder);
     }
@@ -42,7 +44,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<JiraConnection.JiraActionFilter> accessoryFilters,
-        ActionFilterBuilder<F> builder) {
+        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
       return ActionFilter.joinEachAnd(
           baseName, baseFilters, accessoryFilters.map(f -> f.process(baseName, builder)), builder);
     }
@@ -53,7 +55,7 @@ public enum JoiningRule {
         String baseName,
         F baseFilters,
         Stream<JiraConnection.JiraActionFilter> accessoryFilters,
-        ActionFilterBuilder<F> builder) {
+        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
       return accessoryFilters
           .collect(Collectors.groupingBy(JiraConnection.JiraActionFilter::assignee))
           .entrySet()
@@ -83,5 +85,5 @@ public enum JoiningRule {
       String baseName,
       F baseFilters,
       Stream<JiraConnection.JiraActionFilter> accessoryFilters,
-      ActionFilterBuilder<F> builder);
+      ActionFilterBuilder<F, ActionState, String, Instant, Long> builder);
 }

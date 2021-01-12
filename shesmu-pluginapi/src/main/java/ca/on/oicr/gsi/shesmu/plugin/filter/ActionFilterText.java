@@ -1,11 +1,14 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import java.time.Instant;
+
 public class ActionFilterText extends ActionFilter {
   private boolean matchCase;
   private String text;
 
   @Override
-  public <F> F convert(ActionFilterBuilder<F> filterBuilder) {
+  public <F> F convert(ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return maybeNegate(filterBuilder.textSearch(text, matchCase), filterBuilder);
   }
 

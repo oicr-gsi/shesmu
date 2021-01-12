@@ -1,5 +1,7 @@
 package ca.on.oicr.gsi.shesmu.plugin.filter;
 
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
+import java.time.Instant;
 import java.util.regex.Pattern;
 
 public class ActionFilterRegex extends ActionFilter {
@@ -7,7 +9,7 @@ public class ActionFilterRegex extends ActionFilter {
   private String pattern;
 
   @Override
-  public <F> F convert(ActionFilterBuilder<F> filterBuilder) {
+  public <F> F convert(ActionFilterBuilder<F, ActionState, String, Instant, Long> filterBuilder) {
     return maybeNegate(
         filterBuilder.textSearch(
             Pattern.compile(pattern, matchCase ? 0 : Pattern.CASE_INSENSITIVE)),
