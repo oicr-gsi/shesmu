@@ -14,7 +14,34 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TextFilterParseTest {
-  private abstract static class TestFilterBuilder implements ActionFilterBuilder<Boolean> {
+  private abstract static class TestFilterBuilder
+      implements ActionFilterBuilder<Boolean, ActionState, String, Instant, Long> {
+
+    @Override
+    public Boolean addedAgo(Long offset) {
+      return false;
+    }
+
+    @Override
+    public Boolean checkedAgo(Long offset) {
+      return false;
+    }
+
+    @Override
+    public Boolean externalAgo(Long offset) {
+      return false;
+    }
+
+    @Override
+    public Boolean fromJson(ActionFilter actionFilter) {
+      return false;
+    }
+
+    @Override
+    public Boolean statusChangedAgo(Long offset) {
+      return false;
+    }
+
     @Override
     public Boolean added(Optional<Instant> start, Optional<Instant> end) {
       return false;
@@ -41,7 +68,7 @@ public class TextFilterParseTest {
     }
 
     @Override
-    public Boolean fromFile(String... files) {
+    public Boolean fromFile(Stream<String> files) {
       return false;
     }
 
@@ -51,7 +78,7 @@ public class TextFilterParseTest {
     }
 
     @Override
-    public Boolean isState(ActionState... states) {
+    public Boolean isState(Stream<ActionState> states) {
       return false;
     }
 
@@ -76,7 +103,7 @@ public class TextFilterParseTest {
     }
 
     @Override
-    public Boolean type(String... types) {
+    public Boolean type(Stream<String> types) {
       return false;
     }
   }
@@ -104,6 +131,11 @@ public class TextFilterParseTest {
                           public Boolean textSearch(Pattern pattern) {
                             return pattern.matcher("test").matches();
                           }
+
+                          @Override
+                          public Boolean textSearch(String text, boolean matchCase) {
+                            return text.equals("test");
+                          }
                         }))
             .orElse(false));
   }
@@ -128,6 +160,11 @@ public class TextFilterParseTest {
                           public Boolean textSearch(Pattern pattern) {
                             return false;
                           }
+
+                          @Override
+                          public Boolean textSearch(String text, boolean matchCase) {
+                            return false;
+                          }
                         }))
             .orElse(false));
   }
@@ -150,6 +187,11 @@ public class TextFilterParseTest {
                           @Override
                           public Boolean textSearch(Pattern pattern) {
                             return pattern.matcher("test").matches();
+                          }
+
+                          @Override
+                          public Boolean textSearch(String text, boolean matchCase) {
+                            return text.equals("test");
                           }
                         }))
             .orElse(false));

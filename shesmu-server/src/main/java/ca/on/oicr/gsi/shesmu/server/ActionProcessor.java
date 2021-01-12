@@ -13,6 +13,7 @@ import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
+import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilter;
 import ca.on.oicr.gsi.shesmu.plugin.filter.ActionFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.AlertFilterBuilder;
 import ca.on.oicr.gsi.shesmu.plugin.filter.SourceOliveLocation;
@@ -61,7 +62,7 @@ public final class ActionProcessor
     implements OliveServices,
         InputSource,
         MetroDiagram.OliveFlowReader,
-        ActionFilterBuilder<ActionProcessor.Filter> {
+        ActionFilterBuilder<ActionProcessor.Filter, ActionState, String, Instant, Long> {
 
   private interface Bin<T> extends Comparator<T> {
     long bucket(T min, long width, T value);
@@ -224,6 +225,12 @@ public final class ActionProcessor
       super();
       this.start = start;
       this.end = end;
+    }
+
+    private InstantFilter(long offset) {
+      super();
+      this.start = Optional.of(Instant.now().minusMillis(offset));
+      this.end = Optional.empty();
     }
 
     @Override
@@ -678,8 +685,20 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
+  @Override
   public Filter added(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.lastAdded);
+      }
+    };
+  }
+
+  @Override
+  public Filter addedAgo(Long offset) {
+    return new InstantFilter(offset) {
 
       @Override
       protected Optional<Instant> get(Action action, Information info) {
@@ -699,6 +718,7 @@ public final class ActionProcessor
   }
 
   /** Check that all of the filters match */
+  @Override
   public Filter and(Stream<Filter> filters) {
     return new Filter() {
       private final List<Filter> filterList = filters.collect(Collectors.toList());
@@ -716,8 +736,20 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
+  @Override
   public Filter checked(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.lastChecked);
+      }
+    };
+  }
+
+  @Override
+  public Filter checkedAgo(Long offset) {
+    return new InstantFilter(offset) {
 
       @Override
       protected Optional<Instant> get(Action action, Information info) {
@@ -886,8 +918,20 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
+  @Override
   public Filter external(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return action.externalTimestamp();
+      }
+    };
+  }
+
+  @Override
+  public Filter externalAgo(Long offset) {
+    return new InstantFilter(offset) {
 
       @Override
       protected Optional<Instant> get(Action action, Information info) {
@@ -927,8 +971,9 @@ public final class ActionProcessor
    *
    * @param files the names of the files
    */
-  public Filter fromFile(String... files) {
-    final Set<String> set = Stream.of(files).collect(Collectors.toSet());
+  @Override
+  public Filter fromFile(Stream<String> files) {
+    final Set<String> set = files.collect(Collectors.toSet());
     return new Filter() {
 
       @Override
@@ -938,11 +983,17 @@ public final class ActionProcessor
     };
   }
 
+  @Override
+  public Filter fromJson(ActionFilter actionFilter) {
+    return actionFilter.convert(this);
+  }
+
   /**
    * Checks that an action was generated in a particular source location
    *
    * @param locations the source locations
    */
+  @Override
   public Filter fromSourceLocation(Stream<SourceOliveLocation> locations) {
     final List<Predicate<SourceLocation>> list = locations.collect(Collectors.toList());
     return new Filter() {
@@ -1111,6 +1162,7 @@ public final class ActionProcessor
    *
    * @param ids the allowed identifiers
    */
+  @Override
   public Filter ids(List<String> ids) {
     return new Filter() {
 
@@ -1139,9 +1191,10 @@ public final class ActionProcessor
    *
    * @param states the permitted states
    */
-  public Filter isState(ActionState... states) {
-    final EnumSet<ActionState> set = EnumSet.noneOf(ActionState.class);
-    set.addAll(Arrays.asList(states));
+  @Override
+  public Filter isState(Stream<ActionState> states) {
+    final EnumSet<ActionState> set =
+        states.collect(Collectors.toCollection(() -> EnumSet.noneOf(ActionState.class)));
     return new Filter() {
 
       @Override
@@ -1236,6 +1289,7 @@ public final class ActionProcessor
     return input.peek(x -> counter.incrementAndGet()).onClose(() -> child.set(counter.get()));
   }
 
+  @Override
   public Filter negate(Filter filter) {
     return filter.negate();
   }
@@ -1248,6 +1302,7 @@ public final class ActionProcessor
   }
 
   /** Check that any of the filters match */
+  @Override
   public Filter or(Stream<Filter> filters) {
     return new Filter() {
       private final List<Filter> filterList = filters.collect(Collectors.toList());
@@ -1409,8 +1464,20 @@ public final class ActionProcessor
    * @param start the exclusive cut-off timestamp
    * @param end the exclusive cut-off timestamp
    */
+  @Override
   public Filter statusChanged(Optional<Instant> start, Optional<Instant> end) {
     return new InstantFilter(start, end) {
+
+      @Override
+      protected Optional<Instant> get(Action action, Information info) {
+        return Optional.of(info.lastStateTransition);
+      }
+    };
+  }
+
+  @Override
+  public Filter statusChangedAgo(Long offset) {
+    return new InstantFilter(offset) {
 
       @Override
       protected Optional<Instant> get(Action action, Information info) {
@@ -1454,6 +1521,7 @@ public final class ActionProcessor
    *
    * @param tags the set of tags
    */
+  @Override
   public Filter tags(Stream<String> tags) {
     final Set<String> tagSet = tags.collect(Collectors.toSet());
     return new Filter() {
@@ -1474,6 +1542,7 @@ public final class ActionProcessor
    *
    * @param pattern the pattern
    */
+  @Override
   public Filter textSearch(Pattern pattern) {
     return new Filter() {
       @Override
@@ -1483,9 +1552,16 @@ public final class ActionProcessor
     };
   }
 
+  @Override
+  public Filter textSearch(String text, boolean matchCase) {
+    return textSearch(
+        Pattern.compile(Pattern.quote(text), matchCase ? 0 : Pattern.CASE_INSENSITIVE));
+  }
+
   /** Check that an action has one of the types specified */
-  public Filter type(String... types) {
-    final Set<String> set = Stream.of(types).collect(Collectors.toSet());
+  @Override
+  public Filter type(Stream<String> types) {
+    final Set<String> set = types.collect(Collectors.toSet());
     return new Filter() {
 
       @Override

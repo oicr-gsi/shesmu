@@ -23,6 +23,10 @@ public abstract class Parser {
     Parser parse(Parser parser, Consumer<T> output);
   }
 
+  public interface RuleWithLiteral<T, V> extends Rule<T> {
+    T literal(V value);
+  }
+
   private static class Broken extends Parser {
 
     public Broken(MaxParseError consumer, int line, int column, String message) {
@@ -63,6 +67,11 @@ public abstract class Parser {
     @Override
     public Parser regex(Pattern pattern, Consumer<Matcher> output, String errorMessage) {
       return this;
+    }
+
+    @Override
+    public String slice(Parser end) {
+      return null;
     }
 
     @Override
@@ -151,6 +160,15 @@ public abstract class Parser {
             errorConsumer(), consume(input, match.end()), line(), column() + match.end());
       }
       return new Broken(errorConsumer(), line(), column(), errorMessage);
+    }
+
+    @Override
+    public String slice(Parser end) {
+      if (end instanceof Good) {
+        return input.subSequence(0, input.length() - ((Good) end).input.length()).toString();
+      } else {
+        return null;
+      }
     }
 
     @Override
@@ -248,7 +266,7 @@ public abstract class Parser {
   /**
    * Allow the parser to try several possible branches and return the first one that matches
    *
-   * @param <T> the output type of the parsing proccess
+   * @param <T> the output type of the parsing process
    */
   public static final class ParseDispatch<T> implements Rule<T> {
     private final List<Rule<T>> dispatches = new ArrayList<>();
@@ -345,17 +363,14 @@ public abstract class Parser {
    * @param <T> the type of the nodes
    */
   public static <T> Parser scanBinary(
-      Rule<T> child,
-      ParseDispatch<BinaryOperator<T>> condensers,
-      Parser input,
-      Consumer<T> output) {
+      Rule<T> child, Rule<BinaryOperator<T>> condensers, Parser input, Consumer<T> output) {
     final AtomicReference<T> node = new AtomicReference<>();
     Parser parser = child.parse(input, node::set);
     while (parser.isGood()) {
       final AtomicReference<T> right = new AtomicReference<>();
       final AtomicReference<BinaryOperator<T>> condenser = new AtomicReference<>();
       final Parser next =
-          child.parse(parser.dispatch(condensers, condenser::set).whitespace(), right::set);
+          child.parse(parser.then(condensers, condenser::set).whitespace(), right::set);
       if (next.isGood()) {
         node.set(condenser.get().apply(node.get(), right.get()));
         parser = next;
@@ -368,9 +383,9 @@ public abstract class Parser {
   }
 
   public static <T> Parser scanPrefixed(
-      Rule<T> child, ParseDispatch<UnaryOperator<T>> condensers, Parser input, Consumer<T> output) {
+      Rule<T> child, Rule<UnaryOperator<T>> condensers, Parser input, Consumer<T> output) {
     final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-    Parser next = input.dispatch(condensers, modifier::set).whitespace();
+    Parser next = input.then(condensers, modifier::set).whitespace();
     if (!next.isGood()) {
       next = input;
       modifier.set(UnaryOperator.identity());
@@ -385,7 +400,7 @@ public abstract class Parser {
 
   public static <T> Parser scanSuffixed(
       Rule<T> child,
-      ParseDispatch<UnaryOperator<T>> condensers,
+      Rule<UnaryOperator<T>> condensers,
       boolean repeated,
       Parser input,
       Consumer<T> output) {
@@ -394,7 +409,7 @@ public abstract class Parser {
     boolean again = true;
     while (result.isGood() && again) {
       final AtomicReference<UnaryOperator<T>> modifier = new AtomicReference<>();
-      final Parser next = result.dispatch(condensers, modifier::set).whitespace();
+      final Parser next = result.then(condensers, modifier::set).whitespace();
       if (next.isGood()) {
         result = next;
         node.updateAndGet(modifier.get());
@@ -621,6 +636,13 @@ public abstract class Parser {
   public final boolean same(Parser other) {
     return other.line() == line() && other.column() == column();
   }
+
+  /**
+   * Get the chunk of string between the two parse states
+   *
+   * @param end the parser that has consumed more input
+   */
+  public abstract String slice(Parser end);
 
   /**
    * Check for a symbol and parse more if found; if not, remain unchanged

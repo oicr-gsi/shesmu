@@ -4,6 +4,7 @@ import ca.on.oicr.gsi.Pair;
 import ca.on.oicr.gsi.shesmu.plugin.Definer;
 import ca.on.oicr.gsi.shesmu.plugin.FrontEndIcon;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.cache.KeyValueCache;
 import ca.on.oicr.gsi.shesmu.plugin.cache.MergingRecord;
@@ -142,7 +143,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
       return assignee;
     }
 
-    <F> Pair<String, F> process(String name, ActionFilterBuilder<F> builder) {
+    <F> Pair<String, F> process(
+        String name, ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
       return new Pair<>(
           name.replace("{key}", key).replace("{summary}", summary).replace("{assignee}", assignee),
           filter.convert(builder));
@@ -303,7 +305,8 @@ public class JiraConnection extends JsonPluginFile<Configuration> {
   }
 
   @Override
-  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+  public <F> Stream<Pair<String, F>> searches(
+      ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
     try {
       return searches
           .stream()

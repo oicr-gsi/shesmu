@@ -16,6 +16,7 @@ import ca.on.oicr.gsi.shesmu.compiler.definitions.SignatureVariableForStaticSign
 import ca.on.oicr.gsi.shesmu.plugin.*;
 import ca.on.oicr.gsi.shesmu.plugin.SourceLocation.SourceLocationLinker;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.action.CustomActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ShesmuAction;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
@@ -61,6 +62,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -832,7 +834,8 @@ public final class PluginManager
         return Stream.concat(refillers.values().stream(), refillersFromAnnotations.stream());
       }
 
-      public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+      public <F> Stream<Pair<String, F>> searches(
+          ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
         return instance.searches(builder);
       }
 
@@ -1592,7 +1595,8 @@ public final class PluginManager
           staticRefillers.stream(), configuration.stream().flatMap(FileWrapper::refillers));
     }
 
-    public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+    public <F> Stream<Pair<String, F>> searches(
+        ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
       return Stream.concat(
           fileFormat.searches(builder), configuration.stream().flatMap(f -> f.searches(builder)));
     }
@@ -1970,7 +1974,8 @@ public final class PluginManager
     return formatTypes.stream().flatMap(FormatTypeWrapper::refillers);
   }
 
-  public <F> Stream<Pair<String, F>> searches(ActionFilterBuilder<F> builder) {
+  public <F> Stream<Pair<String, F>> searches(
+      ActionFilterBuilder<F, ActionState, String, Instant, Long> builder) {
     return formatTypes.stream().flatMap(formatType -> formatType.searches(builder));
   }
 
