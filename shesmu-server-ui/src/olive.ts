@@ -47,6 +47,7 @@ import {
 import {
   AlertFilter,
   PrometheusAlert,
+  ServerAlertFilter,
   alertNavigator,
   loadFilterRegex,
   prometheusAlertHeader,
@@ -328,7 +329,7 @@ export function initialiseOliveDash(
       mapModel(alertModel.model, (alerts) => alerts || []),
       false
     ),
-    (location: SourceLocation): AlertFilter<RegExp> => ({
+    (location: SourceLocation): ServerAlertFilter => ({
       type: "sourcelocation",
       locations: [copyLocation(location)],
     })
@@ -402,9 +403,9 @@ export function initialiseOliveDash(
       (reference: OliveReference, desired: boolean | null) =>
         reference?.olive
           ? {
-              ...copyLocation(reference.olive.olive),
-              pause: desired,
-            }
+            ...copyLocation(reference.olive.olive),
+            pause: desired,
+          }
           : null
     ),
     serverStateModel(
@@ -413,12 +414,12 @@ export function initialiseOliveDash(
       (reference: OliveReference, desired: boolean | null) =>
         reference && desired !== null
           ? {
-              file: reference.script.file,
-              line: null,
-              column: null,
-              hash: null,
-              pause: desired,
-            }
+            file: reference.script.file,
+            line: null,
+            column: null,
+            hash: null,
+            pause: desired,
+          }
           : null
     ),
     miscModel,
@@ -522,8 +523,8 @@ export function initialiseOliveDash(
     (candidate: OliveReference, keywords: string[]) =>
       candidate
         ? keywords.every((keyword) =>
-            candidate.keywords.some((t) => t.indexOf(keyword) != -1)
-          )
+          candidate.keywords.some((t) => t.indexOf(keyword) != -1)
+        )
         : false,
     ...oliveFiles.map((script) => {
       const scriptPlayPause = makePauseUpdater();

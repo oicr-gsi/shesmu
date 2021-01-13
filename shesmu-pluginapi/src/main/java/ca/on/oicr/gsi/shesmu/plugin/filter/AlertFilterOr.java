@@ -7,7 +7,7 @@ public final class AlertFilterOr extends AlertFilter {
   private List<AlertFilter> filters = Collections.emptyList();
 
   @Override
-  public <F> F convert(AlertFilterBuilder<F> f) {
+  public <F> F convert(AlertFilterBuilder<F, String> f) {
     return maybeNegate(f.or(filters.stream().map(filter -> filter.convert(f))), f);
   }
 

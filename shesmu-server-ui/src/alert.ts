@@ -132,6 +132,20 @@ export type LocationColumns<L> = [string, (location: L) => UIElement][];
 export interface PrometheusAlert extends Alert<SourceLocation> {
   generatorURL: string;
 }
+
+export type ServerAlertFilter =
+  | { type: "and"; filters: ServerAlertFilter[]; negate?: boolean }
+  | { type: "sourcelocation"; locations: SourceLocation[]; negate?: boolean }
+  | { type: "has"; isRegex: boolean; name: string; negate?: boolean }
+  | {
+      type: "eq";
+      isRegex: boolean;
+      name: string;
+      value: string;
+      negate?: boolean;
+    }
+  | { type: "is_live"; negate?: boolean }
+  | { type: "or"; filters: ServerAlertFilter[]; negate?: boolean };
 /**
  * Create a display for alerts with user-customisable filtering
  */

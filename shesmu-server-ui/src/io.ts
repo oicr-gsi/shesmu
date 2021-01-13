@@ -25,7 +25,7 @@ import {
   splitModel,
 } from "./util.js";
 import { PauseRequest, Pauses } from "./pause.js";
-import { PrometheusAlert, AlertFilter } from "./alert.js";
+import { PrometheusAlert, ServerAlertFilter } from "./alert.js";
 import { TypeResponse, ValueResponse } from "./definitions.js";
 import { ExistingSimulationRequest, SimulationRequest, SimulationResponse } from "./simulation.js";
 import { Stat } from "./stats.js";
@@ -73,7 +73,7 @@ export interface ShesmuRequestType {
     limit: number;
     skip: number;
   };
-  queryalerts: AlertFilter<RegExp>;
+  queryalerts: ServerAlertFilter;
   savedsearches: null;
   simulate: SimulationRequest;
   "simulate-existing": ExistingSimulationRequest;

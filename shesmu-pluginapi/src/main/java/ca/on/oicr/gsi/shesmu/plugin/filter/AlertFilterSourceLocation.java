@@ -6,7 +6,7 @@ public final class AlertFilterSourceLocation extends AlertFilter {
   private SourceOliveLocation[] locations;
 
   @Override
-  public <F> F convert(AlertFilterBuilder<F> filterBuilder) {
+  public <F> F convert(AlertFilterBuilder<F, String> filterBuilder) {
     return maybeNegate(filterBuilder.fromSourceLocation(Stream.of(locations)), filterBuilder);
   }
 
