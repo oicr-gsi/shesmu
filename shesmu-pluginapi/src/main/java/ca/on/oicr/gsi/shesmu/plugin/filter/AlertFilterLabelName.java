@@ -7,7 +7,7 @@ public final class AlertFilterLabelName extends AlertFilter {
   private String name;
 
   @Override
-  public <F> F convert(AlertFilterBuilder<F> f) {
+  public <F> F convert(AlertFilterBuilder<F, String> f) {
     return maybeNegate(isRegex ? f.hasLabelName(Pattern.compile(name)) : f.hasLabelName(name), f);
   }
 

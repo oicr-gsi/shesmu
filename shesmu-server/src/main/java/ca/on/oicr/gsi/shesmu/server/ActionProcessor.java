@@ -306,8 +306,8 @@ public final class ActionProcessor
           return "added";
         }
       };
-  public static final AlertFilterBuilder<Predicate<Alert>> ALERT_FILTER_BUILDER =
-      new AlertFilterBuilder<Predicate<Alert>>() {
+  public static final AlertFilterBuilder<Predicate<Alert>, String> ALERT_FILTER_BUILDER =
+      new AlertFilterBuilder<Predicate<Alert>, String>() {
         @Override
         public Predicate<Alert> and(Stream<Predicate<Alert>> filters) {
           final List<Predicate<Alert>> predicates = filters.collect(Collectors.toList());
