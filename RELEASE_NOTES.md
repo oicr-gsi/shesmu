@@ -1,5 +1,35 @@
 # Unreleased
 
+# [1.6.2] - 2021-01-15T20:13+00:00
+
+Changes:
+
+* Track olive execution CPU time
+* Allow simulating existing olives
+* Track CPU and wall clock time for cache refreshes
+
+Language changes:
+
+* Add new date functions to `std::date::`
+* Create object assignment shorthand
+
+UI changes:
+
+* Allow saving action IDs from the UI
+* Allow action and refillers to display things to the user
+* Show fewer stats based if slow to compute
+* Fix parsing of some algebraic type descriptors
+
+Niassa plugin changes:
+
+* Deal with Niassa's IUS attributes being a incorrect with multiple IUSes
+* Monitor Niassa cache refresh better
+* Sign IUS in `cerberus_fp` and `pinery_ius` formats
+
+Pinery plugin changes:
+
+* Replace Pinery project clinical flag with pipeline
+
 # [1.6.1] - 2021-01-07T14:18+00:00
 
 Changes:
