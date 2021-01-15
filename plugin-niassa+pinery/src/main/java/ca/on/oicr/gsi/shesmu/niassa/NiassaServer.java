@@ -79,6 +79,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       filters.put(FileProvenanceFilter.workflow, Collections.singleton(Long.toString(key)));
       final AtomicLong badStatusCount = new AtomicLong();
       final Set<Pair<String, String>> seenLimsKeys = new HashSet<>();
+      final Gauge.Child monitor = badAnalysisData.labels(url, Long.toString(key));
       try {
         final List<AnalysisState> data =
             metadata
@@ -107,9 +108,11 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                             incrementSlowFetch))
                 .peek(as -> as.addSeenLimsKeys(seenLimsKeys))
                 .collect(Collectors.toList());
+        monitor.set(0);
         return data.stream();
       } catch (Exception e) {
         seenLimsKeys.clear();
+        monitor.set(1);
         throw e;
       } finally {
         badStatus.labels(url, Long.toString(key)).set(badStatusCount.get());
@@ -494,6 +497,12 @@ class NiassaServer extends JsonPluginFile<Configuration> {
           metadata.annotateWorkflowRun(accession, attribute, null);
         }
       };
+  private static final Gauge badAnalysisData =
+      Gauge.build(
+              "shesmu_niassa_bad_analysis_data",
+              "Whether the last download of analysis provenance was successful or not.")
+          .labelNames("target", "workflow")
+          .register();
   private static final Gauge badStatus =
       Gauge.build("shesmu_niassa_bad_status", "The number of workflow runs that have null status.")
           .labelNames("target", "workflow")
