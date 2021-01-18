@@ -1356,7 +1356,6 @@ public final class ActionProcessor
   }
 
   public ArrayNode stats(ObjectMapper mapper, boolean wait, Filter... filters) {
-    final Instant start = Instant.now();
     final List<Entry<Action, Information>> actions =
         startStream(filters).collect(Collectors.toList());
     final ArrayNode array = mapper.createArrayNode();
@@ -1369,6 +1368,7 @@ public final class ActionProcessor
     total.put("value", actions.size());
     total.putNull("kind");
 
+    final Instant start = Instant.now();
     for (final Runnable computeStat :
         new Runnable[] {
           () -> propertySummary(table, ACTION_STATE, actions),
@@ -1392,7 +1392,7 @@ public final class ActionProcessor
                   array, 50, actions, SOURCE_FILE, INSTANT_BIN, ADDED, CHECKED, STATUS_CHANGED),
           () -> histogramByProperty(array, 100, actions, SOURCE_FILE, INSTANT_BIN, EXTERNAL),
         }) {
-      if (!wait && Duration.between(start, Instant.now()).toMillis() >= 500) {
+      if (!wait && Duration.between(start, Instant.now()).toMillis() >= 5000) {
         final ObjectNode budget = array.addObject();
         budget.put("type", "text");
         budget.put("value", "Too many actions to compute all statistics.");
