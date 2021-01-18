@@ -169,7 +169,7 @@ public class AnalysisState implements Comparable<AnalysisState> {
   public void addSeenLimsKeys(Set<Pair<String, String>> seenLimsKeys) {
     limsKeys
         .stream()
-        .map(l -> new Pair<>(l.first().getProvider(), l.first().getVersion()))
+        .map(l -> new Pair<>(l.first().getProvider(), l.first().getId()))
         .forEach(seenLimsKeys::add);
   }
 
