@@ -1,5 +1,19 @@
 # Unreleased
 
+# [1.6.3] - 2021-01-18T21:04+00:00
+
+Language changes:
+
+* Remove date formatter
+
+UI changes:
+
+* Change the stats budget to 5 seconds and don't count filtering the actions in that budget.
+
+Niassa plugin changes:
+
+* Fix another LIMS key locking prevents locks from being released
+
 # [1.6.2] - 2021-01-15T20:13+00:00
 
 Changes:
