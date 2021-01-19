@@ -411,7 +411,7 @@ export function initialiseOliveDash(
       "pausefile",
       pauseFileModel,
       (reference: OliveReference, desired: boolean | null) =>
-        reference && desired !== null
+        reference
           ? {
               file: reference.script.file,
               line: null,
