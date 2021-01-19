@@ -315,7 +315,6 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   private class MaxInFlightCache
       extends KeyValueCache<Long, Optional<MaxCheck>, Optional<MaxCheck>> {
-
     public MaxInFlightCache(Path fileName) {
       super(
           "niassa-max-in-flight " + fileName.toString(),
@@ -336,7 +335,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
     @Override
     protected Optional<MaxCheck> fetch(Long workflowSwid, Instant lastUpdated) throws IOException {
       final MetadataWS metadata = metadataConstructor.get();
-      if (metadata.getWorkflow(workflowSwid.intValue()) == null) {
+      final Workflow workflow = metadata.getWorkflow(workflowSwid.intValue());
+      if (workflow == null) {
         definer.log(
             String.format("No such workflow %d for max-in-flight check!", workflowSwid),
             Collections.emptyMap());
@@ -355,7 +355,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                           metadata.getWorkflowRunReport(
                               workflowSwid.intValue(), status, null, null)))
               .sum();
-      currentInFlight.labels(Long.toString(workflowSwid)).set(count);
+      currentInFlight.labels(Long.toString(workflowSwid), workflow.getName()).set(count);
       metadata.clean_up();
       return Optional.of(
           new MaxCheck() {
@@ -367,10 +367,10 @@ class NiassaServer extends JsonPluginFile<Configuration> {
             private int started;
 
             public synchronized MaxStatus check(String workflowName) {
-              foundRunning.labels(url(), workflowName).set(count + started);
+              foundRunning.labels(url(), workflowName, workflow.getName()).set(count + started);
               if (count + started < maxInFlight.getOrDefault(workflowName, 0)) {
                 started++;
-                currentInFlight.labels(Long.toString(workflowSwid)).set(count);
+                currentInFlight.labels(Long.toString(workflowSwid), workflow.getName()).set(count);
                 return MaxStatus.RUN;
               } else {
                 return MaxStatus.TOO_MANY_RUNNING;
@@ -511,19 +511,19 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       Gauge.build(
               "shesmu_niassa_current_in_flight",
               "The number of jobs currently running for a particular workflow SWID.")
-          .labelNames("workflow")
+          .labelNames("workflow", "workflow_name")
           .register();
   private static final Gauge foundRunning =
       Gauge.build(
               "shesmu_niassa_found_running",
               "The number of workflow runs that Shesmu believes it has found. This is used for the max in flight checks.")
-          .labelNames("target", "workflow")
+          .labelNames("target", "workflow", "workflow_name")
           .register();
   private static final Gauge maxInFlightGauge =
       Gauge.build(
               "shesmu_niassa_max_in_flight",
               "The maximum allowed number of running jobs for a particular workflow SWID.")
-          .labelNames("workflow")
+          .labelNames("workflow", "action_name")
           .register();
   static final Gauge slowFetch =
       Gauge.build(
@@ -752,7 +752,8 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                     .forEach(
                         wc -> {
                           maxInFlightGauge
-                              .labels(Long.toString(wc.second().getAccession()))
+                              .labels(
+                                  Long.toString(wc.second().getAccession()), prefix + wc.first())
                               .set(wc.second().getMaxInFlight());
                           maxInFlight.put(prefix + wc.first(), wc.second().getMaxInFlight());
                           wc.second().define(prefix + wc.first(), definer, workflowKind);
