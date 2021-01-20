@@ -640,10 +640,21 @@ class NiassaServer extends JsonPluginFile<Configuration> {
 
   public Stream<Pair<DisplayElement, DisplayElement>> displayMaxInfo(
       long workflowAccession, String workflowName) {
+    if (workflowAccession == 0) {
+      return Stream.of(
+          new Pair<>(
+              SupplementaryInformation.text("Max in Flight"),
+              SupplementaryInformation.bold("Not a real workflow")));
+    }
     return maxInFlightCache
-        .get(workflowAccession)
+        .getStale(workflowAccession)
         .map(m -> m.display(workflowName))
-        .orElseGet(Stream::empty);
+        .orElseGet(
+            () ->
+                Stream.of(
+                    new Pair<>(
+                        SupplementaryInformation.text("Max in Flight"),
+                        SupplementaryInformation.text("Data not available yet"))));
   }
 
   public String host() {
