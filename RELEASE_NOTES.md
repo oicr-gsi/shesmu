@@ -1,5 +1,16 @@
 # Unreleased
 
+# [1.6.4] - 2021-01-20T16:52+00:00
+
+UI changes:
+
+* Fix bug preventing _Pause Script_ button from showing
+
+Niassa plugin changes:
+
+* Fix extremely slow fetch of max-in-flight information
+* Include workflow names in max-in-flight Prometheus metrics
+
 # [1.6.3] - 2021-01-18T21:04+00:00
 
 Language changes:
