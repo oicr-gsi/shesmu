@@ -162,6 +162,7 @@ information about how to extend the system. The plugins available are:
 - [Run Scanner](plugin-runscanner/README.md)
 - [SFTP servers](plugin-sftp/README.md)
 - [Tab-separated files](plugin-tsv/README.md)
+- [Víðarr](plugin-vidarr/README.md)
 
 Once a plugin is configured, it can provide:
 

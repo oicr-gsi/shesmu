@@ -1,21 +1,13 @@
 dist: trusty
 language: java
 jdk:
-  - oraclejdk8
-  - oraclejdk9
+  - oraclejdk14
 sudo: required
 install: true
 env:
   global:
     - MAVEN_SETTINGS="${TRAVIS_BUILD_DIR}/gsi-config"
     - MAVEN_OPTS="-Xms1g -Xmx2g"
-matrix:
-  include:
-    - jdk: openjdk11
-      before_install:
-        - sudo apt-get -y install build-essential pkg-config libjsoncpp-dev
-        - rm "${JAVA_HOME}/lib/security/cacerts"
-        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
 
 git:
   depth: 3
