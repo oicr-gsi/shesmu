@@ -171,6 +171,7 @@
     <module>shesmu-pluginapi</module>
     <module>shesmu-server</module>
     <module>plugin-gsi-common</module>
+    <module>plugin-cerberus</module>
     <module>plugin-github</module>
     <module>plugin-guanyin</module>
     <module>plugin-jira</module>

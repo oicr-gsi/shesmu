@@ -10,14 +10,16 @@ The Pinery plugin provides two input formats:
 To configure a Pinery source, create a JSON file ending in `.pinery` as follows:
 
     {
-      "provider": "foo",
+      "provider": "foo-v2",
+      "shortProvider": "foo",
       "url": "http://pinery:8080/",
-      "version": "v2"
+      "version": 2
     }
 
 where `provider` is an arbitrary string that will be baked into the
-`pinery_ius`'s `provider` field. `url` is the address of the Pinery server and
-`version`, which is optional, provides the Pinery data model version.
+`pinery_ius`'s `provider` field. `shortProvider` is similar, but will be used
+in `external_key`. `url` is the address of the Pinery server and `version`
+provides the Pinery data model version.
 
 For each configuration, the names of all and active projects are also available
 as constants.

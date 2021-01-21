@@ -5,18 +5,23 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PineryConfiguration {
   private String provider;
+  private String shortProvider;
   private String url;
-  private String version;
+  private int version;
 
   public String getProvider() {
     return provider;
+  }
+
+  public String getShortProvider() {
+    return shortProvider;
   }
 
   public String getUrl() {
     return url;
   }
 
-  public String getVersion() {
+  public int getVersion() {
     return version;
   }
 
@@ -24,11 +29,19 @@ public class PineryConfiguration {
     this.provider = provider;
   }
 
+  public void setShortProvider(String shortProvider) {
+    this.shortProvider = shortProvider;
+  }
+
   public void setUrl(String url) {
     this.url = url;
   }
 
-  public void setVersion(String version) {
+  public void setVersion(int version) {
     this.version = version;
+  }
+
+  public String shortProvider() {
+    return shortProvider == null ? provider : shortProvider;
   }
 }

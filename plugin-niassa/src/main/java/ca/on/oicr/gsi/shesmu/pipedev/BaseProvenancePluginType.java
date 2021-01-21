@@ -71,8 +71,8 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                               reason -> badSetInRecord.add("limskey:" + reason),
                               true)
                           .map(IusLimsKey::getLimsKey);
-                  final Optional<Tuple> workflowVersion = IUSUtils.parseWorkflowVersion(
-                      fp.getWorkflowVersion());
+                  final Optional<Tuple> workflowVersion =
+                      IUSUtils.parseWorkflowVersion(fp.getWorkflowVersion());
                   if (!workflowVersion.isPresent()) {
                     badVersions.incrementAndGet();
                     badRecord.set(true);
@@ -90,6 +90,12 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   false)
                               .orElse(""),
                           limsAttr(fp, "geo_external_name", badSetInRecord::add).orElse(""),
+                          new Tuple(
+                              limsKey.map(LimsKey::getId).orElse(""),
+                              limsKey.map(LimsKey::getProvider).orElse(""),
+                              fp.getStatus() == FileProvenance.Status.STALE,
+                              Collections.singletonMap(
+                                  "pinery-legacy", limsKey.map(LimsKey::getVersion).orElse(""))),
                           limsAttr(fp, "geo_tube_id", badSetInRecord::add).orElse(""),
                           fp.getFileAttributes(),
                           IUSUtils.parseLong(fp.getFileSize()),
@@ -100,8 +106,7 @@ public abstract class BaseProvenancePluginType<C extends AutoCloseable>
                                   reason -> badSetInRecord.add("instrument_model: " + reason),
                                   true)
                               .orElse(""),
-                          fp.getWorkflowRunInputFileSWIDs()
-                              .stream()
+                          fp.getWorkflowRunInputFileSWIDs().stream()
                               .map(Object::toString)
                               .collect(Collectors.toSet()),
                           packIUS(fp),

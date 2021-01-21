@@ -18,6 +18,7 @@ public final class PineryIUSValue {
   private final String donor;
   private final Optional<Double> dv200;
   private final String external_donor_id;
+  private final Tuple external_key;
   private final String external_tissue_id;
   private final String group_desc;
   private final String group_id;
@@ -65,6 +66,7 @@ public final class PineryIUSValue {
       String donor,
       Optional<Double> dv200,
       String external_donor_id,
+      Tuple external_key,
       String external_tissue_id,
       String group_desc,
       String group_id,
@@ -111,6 +113,7 @@ public final class PineryIUSValue {
     this.donor = donor;
     this.dv200 = dv200;
     this.external_donor_id = external_donor_id;
+    this.external_key = external_key;
     this.external_tissue_id = external_tissue_id;
     this.group_desc = group_desc;
     this.group_id = group_id;
@@ -192,8 +195,12 @@ public final class PineryIUSValue {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     PineryIUSValue that = (PineryIUSValue) o;
     return is_sample == that.is_sample
         && library_size == that.library_size
@@ -208,6 +215,7 @@ public final class PineryIUSValue {
         && donor.equals(that.donor)
         && dv200.equals(that.dv200)
         && external_donor_id.equals(that.external_donor_id)
+        && external_key.equals(that.external_key)
         && external_tissue_id.equals(that.external_tissue_id)
         && group_desc.equals(that.group_desc)
         && group_id.equals(that.group_id)
@@ -247,6 +255,11 @@ public final class PineryIUSValue {
     return external_donor_id;
   }
 
+  @ShesmuVariable(type = "ao4id$sprovider$sstale$bversions$mss")
+  public Tuple external_key() {
+    return external_key;
+  }
+
   @ShesmuVariable(signable = true)
   public String external_tissue_id() {
     return external_tissue_id;
@@ -279,6 +292,7 @@ public final class PineryIUSValue {
         donor,
         dv200,
         external_donor_id,
+        external_key,
         external_tissue_id,
         group_desc,
         group_id,

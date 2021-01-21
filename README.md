@@ -149,6 +149,7 @@ plugins that might be useful, but it is likely that custom plugins are needed.
 Please read the [plugin implementation guide](implementation.md) for
 information about how to extend the system. The plugins available are:
 
+- [Cerberus](plugin-cerberus/README.md)
 - [Git and GitHub](plugin-github/README.md)
 - [Guanyin reporting](plugin-guanyin/README.md)
 - [JIRA ticket management](plugin-jira/README.md)
