@@ -184,6 +184,7 @@
     <module>plugin-runscanner</module>
     <module>plugin-sftp</module>
     <module>plugin-tsv</module>
+    <module>plugin-vidarr</module>
     <module>maintenance-editor</module>
   </modules>
   <build>
