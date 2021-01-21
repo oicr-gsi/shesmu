@@ -43,7 +43,7 @@ commands.
 
 Build dependencies:
 
-- Java 8 or later (The Niassa + Pinery plugin does not work for Java 9+)
+- Java 8 or later
 - Maven 3.5 or later
 - TypeScript 3.9 or later (the version supplied with Ubuntu and Debian in
   `node-typescript` is too old. Use `sudo npm -g i typescript` to install a
@@ -155,7 +155,8 @@ information about how to extend the system. The plugins available are:
 - [Loki loggin](plugin-loki/README.md)
 - [MongoDB](plugin-mongo/README.md)
 - [Nabu file QC](plugin-nabu/README.md)
-- [Niassa and Pinery](plugin-niassa+pinery/README.md)
+- [Niassa](plugin-niassa/README.md)
+- [Pinery](plugin-pinery/README.md)
 - [Prometheus Alert Manager](plugin-prometheus/README.md)
 - [Token Bucket Throttling](plugin-ratelimit/README.md)
 - [Run Scanner](plugin-runscanner/README.md)

@@ -170,13 +170,15 @@
   <modules>
     <module>shesmu-pluginapi</module>
     <module>shesmu-server</module>
+    <module>plugin-gsi-common</module>
     <module>plugin-github</module>
     <module>plugin-guanyin</module>
     <module>plugin-jira</module>
     <module>plugin-loki</module>
     <module>plugin-mongo</module>
     <module>plugin-nabu</module>
-    <module>plugin-niassa+pinery</module>
+    <module>plugin-niassa</module>
+    <module>plugin-pinery</module>
     <module>plugin-prometheus</module>
     <module>plugin-ratelimit</module>
     <module>plugin-runscanner</module>
@@ -210,7 +212,7 @@
       <plugin>
         <groupId>com.cosium.code</groupId>
         <artifactId>maven-git-code-format</artifactId>
-        <version>1.20</version>
+        <version>1.39</version>
         <executions>
           <execution>
             <goals>
