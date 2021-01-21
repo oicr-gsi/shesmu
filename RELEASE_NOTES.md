@@ -1,5 +1,11 @@
 # Unreleased
 
+# [1.6.5] - 2021-01-21T11:53+00:00
+
+Niassa plugin changes:
+
+* Fix exception while getting max-in-flight information
+
 # [1.6.4] - 2021-01-20T16:52+00:00
 
 UI changes:
