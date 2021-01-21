@@ -1,5 +1,6 @@
 package ca.on.oicr.gsi.shesmu.gsicommon;
 
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import ca.on.oicr.gsi.shesmu.plugin.input.Gang;
 import ca.on.oicr.gsi.shesmu.plugin.input.ShesmuVariable;
@@ -10,7 +11,6 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface CerberusFileProvenanceValue {
-
   @ShesmuVariable
   String accession();
 
@@ -33,6 +33,9 @@ public interface CerberusFileProvenanceValue {
 
   @ShesmuVariable(signable = true)
   String external_donor_id();
+
+  @ShesmuVariable(type = "ao4id$sprovider$sstale$bversions$mss")
+  Tuple external_key();
 
   @ShesmuVariable(signable = true)
   String external_tissue_id();
@@ -170,6 +173,9 @@ public interface CerberusFileProvenanceValue {
 
   @ShesmuVariable
   String workflow_accession();
+
+  @ShesmuVariable(type = "u2NIASSA$t0VIDARR$t0")
+  AlgebraicValue workflow_engine();
 
   @ShesmuVariable
   String workflow_run_accession();

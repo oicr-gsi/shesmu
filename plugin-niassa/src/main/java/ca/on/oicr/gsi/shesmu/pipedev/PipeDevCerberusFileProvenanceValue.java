@@ -2,6 +2,7 @@ package ca.on.oicr.gsi.shesmu.pipedev;
 
 import ca.on.oicr.gsi.shesmu.gsicommon.CerberusFileProvenanceValue;
 import ca.on.oicr.gsi.shesmu.gsicommon.IUSUtils;
+import ca.on.oicr.gsi.shesmu.plugin.AlgebraicValue;
 import ca.on.oicr.gsi.shesmu.plugin.Tuple;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -19,6 +20,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   private final Instant completed_date;
   private final String donor;
   private final String external_donor_id;
+  private final Tuple external_key;
   private final String external_tissue_id;
   private final Map<String, Set<String>> file_attributes;
   private final long file_size;
@@ -67,6 +69,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
       Instant completed_date,
       String donor,
       String external_donor_id,
+      Tuple external_key,
       String external_tissue_id,
       SortedMap<String, SortedSet<String>> file_attributes,
       long file_size,
@@ -115,6 +118,7 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
     this.completed_date = completed_date;
     this.donor = donor;
     this.external_donor_id = external_donor_id;
+    this.external_key = external_key;
     this.external_tissue_id = external_tissue_id;
     this.file_attributes = IUSUtils.attributes(file_attributes);
     this.file_size = file_size;
@@ -186,17 +190,24 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     PipeDevCerberusFileProvenanceValue that = (PipeDevCerberusFileProvenanceValue) o;
     return file_size == that.file_size
         && library_size == that.library_size
         && stale == that.stale
+        && umis == that.umis
         && accession.equals(that.accession)
+        && barcode_kit.equals(that.barcode_kit)
         && cell_viability.equals(that.cell_viability)
         && completed_date.equals(that.completed_date)
         && donor.equals(that.donor)
         && external_donor_id.equals(that.external_donor_id)
+        && external_key.equals(that.external_key)
         && external_tissue_id.equals(that.external_tissue_id)
         && file_attributes.equals(that.file_attributes)
         && group_desc.equals(that.group_desc)
@@ -228,7 +239,6 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
         && tissue_prep.equals(that.tissue_prep)
         && tissue_region.equals(that.tissue_region)
         && tissue_type.equals(that.tissue_type)
-        && umis == that.umis
         && workflow.equals(that.workflow)
         && workflow_accession.equals(that.workflow_accession)
         && workflow_run_accession.equals(that.workflow_run_accession)
@@ -237,33 +247,15 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   }
 
   @Override
-  public Map<String, Set<String>> file_attributes() {
-    return file_attributes;
-  }
-
-  @Override
-  public long file_size() {
-    return file_size;
-  }
-
-  @Override
-  public String group_desc() {
-    return group_desc;
-  }
-
-  @Override
-  public String group_id() {
-    return group_id;
-  }
-
-  @Override
   public int hashCode() {
     return Objects.hash(
         accession,
+        barcode_kit,
         cell_viability,
         completed_date,
         donor,
         external_donor_id,
+        external_key,
         external_tissue_id,
         file_attributes,
         file_size,
@@ -304,6 +296,26 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
         workflow_run_accession,
         workflow_run_attributes,
         workflow_version);
+  }
+
+  @Override
+  public Map<String, Set<String>> file_attributes() {
+    return file_attributes;
+  }
+
+  @Override
+  public long file_size() {
+    return file_size;
+  }
+
+  @Override
+  public String group_desc() {
+    return group_desc;
+  }
+
+  @Override
+  public String group_id() {
+    return group_id;
   }
 
   @Override
@@ -457,6 +469,11 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   }
 
   @Override
+  public Tuple external_key() {
+    return external_key;
+  }
+
+  @Override
   public String external_tissue_id() {
     return external_tissue_id;
   }
@@ -474,6 +491,11 @@ public final class PipeDevCerberusFileProvenanceValue implements CerberusFilePro
   @Override
   public String workflow_accession() {
     return workflow_accession;
+  }
+
+  @Override
+  public AlgebraicValue workflow_engine() {
+    return new AlgebraicValue("NIASSA");
   }
 
   @Override

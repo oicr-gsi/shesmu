@@ -49,9 +49,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
         final Map<String, Integer> badSetCounts = new TreeMap<>();
         final Map<String, RunDto> allRuns =
-            c.getSequencerRun()
-                .all()
-                .stream()
+            c.getSequencerRun().all().stream()
                 .collect(
                     Collectors.toMap(
                         RunDto::getName,
@@ -60,9 +58,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         // spiteful, so we spite it back.
                         (a, b) -> a));
         final Set<String> completeRuns =
-            allRuns
-                .values()
-                .stream()
+            allRuns.values().stream()
                 .filter(run -> run.getState().equals("Completed") && run.getCreatedDate() != null)
                 .map(RunDto::getName)
                 .collect(Collectors.toSet());
@@ -98,13 +94,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     private Stream<PineryIUSValue> lanes(
         PineryClient client,
-        String version,
+        int version,
         String provider,
         Map<String, Integer> badSetCounts,
         Map<String, RunDto> allRuns,
         BiConsumer<String, String> addLane)
         throws HttpResponseException {
-      return Utils.stream(client.getLaneProvenance().version(version))
+      return Utils.stream(client.getLaneProvenance().version("v" + version))
           .filter(
               lp ->
                   isRunValid(allRuns.get(lp.getSequencerRunName()))
@@ -129,6 +125,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     "",
                     Optional.empty(),
                     "",
+                    new Tuple(
+                        lp.getProvenanceId(),
+                        config.get().shortProvider(),
+                        false,
+                        Collections.singletonMap("pinery-hash-" + version, lp.getVersion())),
                     "",
                     "",
                     "",
@@ -180,13 +181,13 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
 
     private Stream<PineryIUSValue> samples(
         PineryClient client,
-        String version,
+        int version,
         String provider,
         Map<String, Integer> badSetCounts,
         Map<String, RunDto> allRuns,
         BiPredicate<String, String> hasLane)
         throws HttpResponseException {
-      return Utils.stream(client.getSampleProvenance().version(version))
+      return Utils.stream(client.getSampleProvenance().version("v" + version))
           .filter(
               sp ->
                   isRunValid(allRuns.get(sp.getSequencerRunName()))
@@ -209,6 +210,11 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         sp.getRootSampleName(),
                         limsAttr(sp, "dv200", badSetInRecord::add, false).map(Double::parseDouble),
                         limsAttr(sp, "geo_external_name", badSetInRecord::add, false).orElse(""),
+                        new Tuple(
+                            sp.getProvenanceId(),
+                            config.get().shortProvider(),
+                            false,
+                            Collections.singletonMap("pinery-hash-" + version, sp.getVersion())),
                         limsAttr(sp, "geo_tube_id", badSetInRecord::add, false).orElse(""),
                         limsAttr(sp, "geo_group_id_description", badSetInRecord::add, false)
                             .orElse(""),
@@ -292,9 +298,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
       final PineryConfiguration cfg = config.get();
       try (PineryClient c = new PineryClient(cfg.getUrl(), true)) {
         return Optional.of(
-            c.getInstrumentModel()
-                .all()
-                .stream()
+            c.getInstrumentModel().all().stream()
                 .filter(i -> !i.getName().equals("unspecified"))
                 .collect(
                     Collectors.toMap(
@@ -341,8 +345,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
   }
 
   private static long runLaneCount(RunDto dto) {
-    return dto.getPositions()
-        .stream()
+    return dto.getPositions().stream()
         .map(RunDtoPosition::getPosition)
         .max(Comparator.naturalOrder())
         .orElse(0);
