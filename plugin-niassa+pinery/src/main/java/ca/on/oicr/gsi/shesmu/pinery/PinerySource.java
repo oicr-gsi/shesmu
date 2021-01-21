@@ -63,12 +63,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
             allRuns
                 .values()
                 .stream()
-                .filter(
-                    run ->
-                        run.getState().equals("Completed")
-                            && run.getCreatedDate() != null
-                            && run.getRunDirectory() != null
-                            && !run.getRunDirectory().equals(""))
+                .filter(run -> run.getState().equals("Completed") && run.getCreatedDate() != null)
                 .map(RunDto::getName)
                 .collect(Collectors.toSet());
         final Set<Pair<String, String>> validLanes = new HashSet<>();
@@ -149,7 +144,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                     "",
                     new Tuple(lp.getLaneProvenanceId(), provider, lastModified, lp.getVersion()),
                     "",
-                    Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
+                    Paths.get(
+                        run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                            ? "/"
+                            : run.getRunDirectory()),
                     "",
                     Optional.empty(),
                     Optional.empty(),
@@ -231,7 +229,10 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
                         new Tuple(
                             sp.getSampleProvenanceId(), provider, lastModified, sp.getVersion()),
                         limsAttr(sp, "geo_organism", badSetInRecord::add, true).orElse(""),
-                        Paths.get(run.getRunDirectory() == null ? "/" : run.getRunDirectory()),
+                        Paths.get(
+                            run.getRunDirectory() == null || run.getRunDirectory().equals("")
+                                ? "/"
+                                : run.getRunDirectory()),
                         sp.getStudyTitle(),
                         limsAttr(sp, "reference_slide_id", badSetInRecord::add, false),
                         limsAttr(sp, "rin", badSetInRecord::add, false).map(Double::parseDouble),
@@ -330,10 +331,7 @@ public class PinerySource extends JsonPluginFile<PineryConfiguration> {
           .register();
 
   private static boolean isRunValid(RunDto run) {
-    return run != null
-        && run.getCreatedDate() != null
-        && run.getRunDirectory() != null
-        && !run.getRunDirectory().equals("");
+    return run != null && run.getCreatedDate() != null;
   }
 
   private static Optional<String> limsAttr(
