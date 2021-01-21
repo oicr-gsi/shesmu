@@ -66,6 +66,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -2143,32 +2144,100 @@ public final class Server implements ServerConfig, ActionServices {
                 writer.writeAttribute("id", "outputContainer");
                 writer.writeEndElement();
               }
+            }.renderPage(os);
+          }
+        });
+    add(
+        "/compile-meditation",
+        t -> {
+          final MeditationCompilationRequest request =
+              RuntimeSupport.MAPPER.readValue(
+                  t.getRequestBody(), MeditationCompilationRequest.class);
+          try {
+            request.run(DefinitionRepository.concat(definitionRepository, compiler), t);
+          } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+          }
+        });
+    add(
+        "/yogastudio",
+        t -> {
+          final String existingScript = getParameters(t).get("script");
+          final String sharedScript = getParameters(t).get("share");
+          final String scriptName;
+          final String scriptBody;
+          final boolean decodeBody;
+          if (existingScript != null) {
+            if (guidedMeditations
+                .stream()
+                .noneMatch(p -> p.filename().toString().equals(existingScript))) {
+              t.sendResponseHeaders(403, -1);
+              return;
+            }
+            final Path scriptPath = Paths.get(existingScript);
+            scriptName =
+                RuntimeSupport.MAPPER.writeValueAsString(scriptPath.getFileName().toString());
+            scriptBody =
+                RuntimeSupport.MAPPER.writeValueAsString(
+                    new String(Files.readAllBytes(scriptPath), StandardCharsets.UTF_8));
+            decodeBody = false;
+          } else {
+            scriptName = "null";
+            if (sharedScript != null) {
+              scriptBody = RuntimeSupport.MAPPER.writeValueAsString(sharedScript);
+              decodeBody = true;
+            } else {
+              scriptBody = "null";
+              decodeBody = false;
+            }
+          }
+          t.getResponseHeaders().set("Content-type", "text/html; charset=utf-8");
+          t.sendResponseHeaders(200, 0);
+          try (OutputStream os = t.getResponseBody()) {
+            new BasePage(this, false) {
+              @Override
+              public String activeUrl() {
+                return "yogastudio";
+              }
 
-              private void writeDateRange(XMLStreamWriter writer, String name, String description)
-                  throws XMLStreamException {
-                writer.writeStartElement("tr");
-                writer.writeStartElement("td");
-                writer.writeCharacters(description);
-                writer.writeEndElement();
-                writer.writeStartElement("td");
-                writer.writeStartElement("input");
-                writer.writeAttribute("type", "text");
-                writer.writeAttribute("id", name + "Start");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeCharacters(" to ");
-                writer.writeStartElement("input");
-                writer.writeAttribute("type", "text");
-                writer.writeAttribute("id", name + "End");
-                writer.writeComment("");
-                writer.writeEndElement();
-                writer.writeEndElement();
+              @Override
+              public Stream<Header> headers() {
+                String locations;
+                try {
+                  locations =
+                      RuntimeSupport.MAPPER.writeValueAsString(
+                          processor
+                              .locations()
+                              .map(SourceLocation::fileName)
+                              .collect(Collectors.toSet()));
+                } catch (IOException e) {
+                  locations = "[]";
+                }
+                return Stream.of(
+                    Header.jsFile("ace.js"),
+                    Header.jsFile("ext-searchbox.js"),
+                    Header.jsFile("theme-ambiance.js"),
+                    Header.jsFile("theme-chrome.js"),
+                    Header.jsFile("mode-shesmu.js"),
+                    Header.jsModule(
+                        String.format(
+                            "import {"
+                                + "initialiseYogaStudio"
+                                + "} from \"./yogastudio.js\";"
+                                + "const output = document.getElementById(\"outputContainer\");"
+                                + "initialiseYogaStudio(ace, output, %s, %s, %s, %s, %s);",
+                            scriptName, scriptBody, decodeBody, locations, exportSearches())));
+              }
+
+              @Override
+              protected void renderContent(XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement("div");
+                writer.writeAttribute("id", "outputContainer");
                 writer.writeEndElement();
               }
             }.renderPage(os);
           }
         });
-
     add(
         "/type",
         t -> {
@@ -2361,6 +2430,7 @@ public final class Server implements ServerConfig, ActionServices {
     add("simulation.js", "text/javascript;charset=utf-8");
     add("stats.js", "text/javascript;charset=utf-8");
     add("util.js", "text/javascript;charset=utf-8");
+    add("yogastudio.js", "text/javascript;charset=utf-8");
     add("ace.js", "text/javascript;charset=utf-8");
     add("ext-searchbox.js", "text/javascript;charset=utf-8");
     add("theme-ambiance.js", "text/javascript;charset=utf-8");
@@ -2693,6 +2763,7 @@ public final class Server implements ServerConfig, ActionServices {
             "Tools",
             NavigationMenu.item("simulatedash", "Olive Simulator"),
             NavigationMenu.item("meditationdash", "Guided Meditations"),
+            NavigationMenu.item("yogastudio", "Yoga Studio (Meditation Prototyping)"),
             NavigationMenu.item("typedefs", "Type Converter")),
         NavigationMenu.submenu(
             "Internals",

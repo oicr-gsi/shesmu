@@ -469,18 +469,18 @@ export function renderResponse(response: SimulationResponse | null): Tab[] {
         ([name, entries]: [string, RefillerRecord[]]) =>
           entries.length > 0
             ? renderJsonTable<RefillerRecord>(
-              name + ".refiller.json",
-              entries,
-              ...Object.keys(entries[0])
-                .sort((a, b) => a.localeCompare(b))
-                .map(
-                  (name) =>
-                    [name, (row: RefillerRecord) => row[name]] as [
-                      string,
-                      (row: RefillerRecord) => any
-                    ]
-                )
-            )
+                name + ".refiller.json",
+                entries,
+                ...Object.keys(entries[0])
+                  .sort((a, b) => a.localeCompare(b))
+                  .map(
+                    (name) =>
+                      [name, (row: RefillerRecord) => row[name]] as [
+                        string,
+                        (row: RefillerRecord) => any
+                      ]
+                  )
+              )
             : ["Olive provided no records to ", mono(name), " refiller."]
       );
       tabList.push({
@@ -504,18 +504,18 @@ export function renderResponse(response: SimulationResponse | null): Tab[] {
           if (input) {
             return input[1].length > 0
               ? renderJsonTable<RefillerRecord>(
-                input[0] + ".dump.json",
-                input[1],
-                ...Object.keys(input[1][0])
-                  .sort((a, b) => a.localeCompare(b))
-                  .map(
-                    (name) =>
-                      [name, (row: RefillerRecord) => row[name]] as [
-                        string,
-                        (row: RefillerRecord) => any
-                      ]
-                  )
-              )
+                  input[0] + ".dump.json",
+                  input[1],
+                  ...Object.keys(input[1][0])
+                    .sort((a, b) => a.localeCompare(b))
+                    .map(
+                      (name) =>
+                        [name, (row: RefillerRecord) => row[name]] as [
+                          string,
+                          (row: RefillerRecord) => any
+                        ]
+                    )
+                )
               : ["Olive provided no records to ", mono(input[0]), " dumper."];
           } else {
             return "Please select a dumper.";
@@ -826,8 +826,8 @@ export function initialiseSimulationDashboard(
     (decodeBody && scriptBody
       ? decompressFromEncodedURIComponent(scriptBody)
       : scriptBody) ||
-    localStorage.getItem("shesmu_script") ||
-    "",
+      localStorage.getItem("shesmu_script") ||
+      "",
     0
   );
   const errorTable = singleState((response: SimulationResponse | null) => {
@@ -1027,7 +1027,6 @@ export function initialiseSimulationDashboard(
     };
   });
 
-  const savedTheme = locallyStoredString("shesmu_theme", "ace/theme/chrome");
   setRootDashboard(
     container,
     group(
@@ -1055,7 +1054,8 @@ export function initialiseSimulationDashboard(
         "Copy this script as a link to the clipboard",
         () =>
           saveClipboard(
-            `${window.location.origin}${window.location.pathname
+            `${window.location.origin}${
+              window.location.pathname
             }?share=${compressToEncodedURIComponent(editor.getValue())}`
           )
       ),
@@ -1108,41 +1108,7 @@ export function initialiseSimulationDashboard(
         false,
         true
       ),
-      dropdown(
-        (theme, selected) => {
-          switch (theme) {
-            case "ace/theme/ambiance":
-              return [
-                { type: "icon", icon: "moon" },
-                selected ? blank() : "Ambiance",
-              ];
-            case "ace/theme/chrome":
-              return [
-                { type: "icon", icon: "sun" },
-                selected ? blank() : "Chrome",
-              ];
-            default:
-              return [
-                { type: "icon", icon: "question-circle-fill" },
-                selected ? blank() : "Unknown",
-              ];
-          }
-        },
-        (theme) => theme == savedTheme.get(),
-        {
-          reload: () => { },
-          statusChanged: (input: string) => editor.setTheme(input),
-          statusFailed: (_message: string, _retry: (() => void) | null) => { },
-          statusWaiting: () => { },
-        },
-        {
-          synchronizer: savedTheme,
-          predicate: (recovered, item) => recovered == item,
-          extract: (x) => x,
-        },
-        "ace/theme/ambiance",
-        "ace/theme/chrome"
-      ),
+      themeSelector(editor),
       helpArea("simulator")
     ),
     br(),
@@ -1248,5 +1214,41 @@ function renderJsonTable<T>(
           matchKeywordInArbitraryData(k, extractor(item))
         )
       )
+  );
+}
+
+export function themeSelector(editor: AceAjax.Editor): UIElement {
+  const savedTheme = locallyStoredString("shesmu_theme", "ace/theme/chrome");
+  return dropdown(
+    (theme, selected) => {
+      switch (theme) {
+        case "ace/theme/ambiance":
+          return [
+            { type: "icon", icon: "moon" },
+            selected ? blank() : "Ambiance",
+          ];
+        case "ace/theme/chrome":
+          return [{ type: "icon", icon: "sun" }, selected ? blank() : "Chrome"];
+        default:
+          return [
+            { type: "icon", icon: "question-circle-fill" },
+            selected ? blank() : "Unknown",
+          ];
+      }
+    },
+    (theme) => theme == savedTheme.get(),
+    {
+      reload: () => {},
+      statusChanged: (input: string) => editor.setTheme(input),
+      statusFailed: (_message: string, _retry: (() => void) | null) => {},
+      statusWaiting: () => {},
+    },
+    {
+      synchronizer: savedTheme,
+      predicate: (recovered, item) => recovered == item,
+      extract: (x) => x,
+    },
+    "ace/theme/ambiance",
+    "ace/theme/chrome"
   );
 }

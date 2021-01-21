@@ -27,9 +27,14 @@ import {
 import { PauseRequest, Pauses } from "./pause.js";
 import { PrometheusAlert, ServerAlertFilter } from "./alert.js";
 import { TypeResponse, ValueResponse } from "./definitions.js";
-import { ExistingSimulationRequest, SimulationRequest, SimulationResponse } from "./simulation.js";
+import {
+  ExistingSimulationRequest,
+  SimulationRequest,
+  SimulationResponse,
+} from "./simulation.js";
 import { Stat } from "./stats.js";
 import { Action, ActionQueryResponse, ServerSearches } from "./action.js";
+import { MeditationCompilationResponse } from "./yogastudio.js";
 
 /**
  * The update information provided by interrogating the server
@@ -58,6 +63,7 @@ export interface ShesmuRequestType {
   "action-ids": ActionFilter[];
   allalerts: null;
   command: { command: string; filters: ActionFilter[] };
+  "compile-meditation": { script: string };
   constant: string;
   count: ActionFilter[];
   drain: ActionFilter[];
@@ -89,6 +95,7 @@ export interface ShesmuResponseType {
   "action-ids": string[];
   allalerts: PrometheusAlert[];
   command: number;
+  "compile-meditation": MeditationCompilationResponse;
   constant: ValueResponse;
   count: number;
   drain: Action[];
