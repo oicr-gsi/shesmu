@@ -144,12 +144,12 @@ interface WizardForm<T> {
   processor: WizardStep<T>;
 }
 
-type WizardNext<T> = {
+export type WizardNext<T> = {
   information: InformationNested;
   then: Wizard<T> | null;
 };
 
-type WizardStep<T> = (input: Partial<T>) => WizardNext<T>;
+export type WizardStep<T> = (input: Partial<T>) => WizardNext<T>;
 
 const endings = [
   "Thank you for coming on this journey.",
@@ -331,7 +331,7 @@ function inputProperty<T, K extends keyof T>(
   };
 }
 
-function renderInformation(
+export function renderInformation(
   info: Information,
   filenameFormatter: FilenameFormatter,
   exportSearches: ExportSearchCommand[]
@@ -485,7 +485,7 @@ function renderInformation(
   }
 }
 
-function renderWizard<T>(
+export function renderWizard<T>(
   state: Partial<T>,
   wizard: Wizard<T>,
   filenameFormatter: FilenameFormatter,

@@ -125,24 +125,20 @@ public class GuidedMeditation implements WatchedFileListener {
                   errors::add)
           && wizard.get().typeCheck(errors::add)) {
         outputHandler.accept(
-            String.format(
-                "register(%s, function($runtime) {%s}(runtime));\n\n",
-                RuntimeSupport.MAPPER.writeValueAsString(
-                    RuntimeSupport.removeExtension(sourcePath, GuidedMeditation.EXTENSION)),
-                EcmaScriptRenderer.root(
-                    sourcePath.toString(),
-                    Utils.bytesToHex(
-                        MessageDigest.getInstance("SHA-1")
-                            .digest(script.getBytes(StandardCharsets.UTF_8))),
-                    renderer -> {
-                      for (final WizardDefineNode definition : definitions.get()) {
-                        definition.render(renderer);
-                      }
-                      renderer.statement(
-                          String.format(
-                              "return %s",
-                              wizard.get().renderEcma(renderer, baseLoader -> Stream.empty())));
-                    })));
+            EcmaScriptRenderer.root(
+                sourcePath.toString(),
+                Utils.bytesToHex(
+                    MessageDigest.getInstance("SHA-1")
+                        .digest(script.getBytes(StandardCharsets.UTF_8))),
+                renderer -> {
+                  for (final WizardDefineNode definition : definitions.get()) {
+                    definition.render(renderer);
+                  }
+                  renderer.statement(
+                      String.format(
+                          "return %s",
+                          wizard.get().renderEcma(renderer, baseLoader -> Stream.empty())));
+                }));
       } else {
         errorHandler.accept(errors);
       }
@@ -171,6 +167,10 @@ public class GuidedMeditation implements WatchedFileListener {
     };
   }
 
+  public Path filename() {
+    return fileName;
+  }
+
   @Override
   public void start() {
     update();
@@ -188,12 +188,19 @@ public class GuidedMeditation implements WatchedFileListener {
   @Override
   public Optional<Integer> update() {
     try (Timer ignored = compileTime.labels(fileName.toString()).startTimer()) {
+      final String name =
+          RuntimeSupport.MAPPER.writeValueAsString(
+              RuntimeSupport.removeExtension(fileName, GuidedMeditation.EXTENSION));
       compile(
           fileName,
           definitionRepository,
           new String(Files.readAllBytes(fileName), StandardCharsets.UTF_8),
           e -> errors = e,
-          o -> script = Optional.of(o));
+          o ->
+              script =
+                  Optional.of(
+                      String.format(
+                          "register(%s, function($runtime) {%s}(runtime));\n\n", name, o)));
     } catch (IOException | NoSuchAlgorithmException e) {
       sourceValid.labels(fileName.toString()).set(0);
       errors = Collections.singletonList(e.getMessage());
