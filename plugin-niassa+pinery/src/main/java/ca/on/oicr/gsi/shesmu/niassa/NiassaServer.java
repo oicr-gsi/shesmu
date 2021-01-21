@@ -646,15 +646,22 @@ class NiassaServer extends JsonPluginFile<Configuration> {
               SupplementaryInformation.text("Max in Flight"),
               SupplementaryInformation.bold("Not a real workflow")));
     }
-    return maxInFlightCache
-        .getStale(workflowAccession)
-        .map(m -> m.display(workflowName))
-        .orElseGet(
-            () ->
-                Stream.of(
-                    new Pair<>(
-                        SupplementaryInformation.text("Max in Flight"),
-                        SupplementaryInformation.text("Data not available yet"))));
+    try {
+      return maxInFlightCache
+          .getStale(workflowAccession)
+          .map(m -> m.display(workflowName))
+          .orElseGet(
+              () ->
+                  Stream.of(
+                      new Pair<>(
+                          SupplementaryInformation.text("Max in Flight"),
+                          SupplementaryInformation.text("Data not available"))));
+    } catch (InitialCachePopulationException e) {
+      return Stream.of(
+          new Pair<>(
+              SupplementaryInformation.text("Max in Flight"),
+              SupplementaryInformation.text("Data not available yet")));
+    }
   }
 
   public String host() {
