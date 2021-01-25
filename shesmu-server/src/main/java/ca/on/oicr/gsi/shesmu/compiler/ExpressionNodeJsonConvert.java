@@ -2,10 +2,10 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
+import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
 import ca.on.oicr.gsi.shesmu.plugin.types.ImyhatTransformer;
 import ca.on.oicr.gsi.shesmu.runtime.JsonConverter;
-import ca.on.oicr.gsi.shesmu.runtime.JsonWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -16,10 +16,10 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 public class ExpressionNodeJsonConvert extends ExpressionNode {
+  private static final Type A_AS_JSON_NODE_TYPE = Type.getType(AsJsonNode.class);
   private static final Type A_IMYHAT_TYPE = Type.getType(Imyhat.class);
   private static final Type A_JSON_CONVERTER_TYPE = Type.getType(JsonConverter.class);
   private static final Type A_JSON_NODE_TYPE = Type.getType(JsonNode.class);
-  private static final Type A_JSON_WRAPPER_TYPE = Type.getType(JsonWrapper.class);
   private static final Type A_OPTIONAL_TYPE = Type.getType(Optional.class);
   private static final Method IMYHAT__APPLY =
       new Method(
@@ -53,17 +53,12 @@ public class ExpressionNodeJsonConvert extends ExpressionNode {
   }
 
   @Override
-  public String renderEcma(EcmaScriptRenderer renderer) {
-    return expression.renderEcma(renderer);
-  }
-
-  @Override
   public void render(Renderer renderer) {
     if (type.isSame(Imyhat.JSON)) {
       renderer.loadImyhat(expression.type().descriptor());
       expression.render(renderer);
       renderer.methodGen().valueOf(expression.type().apply(TO_ASM));
-      renderer.methodGen().invokeStatic(A_JSON_WRAPPER_TYPE, JSON_CONVERTER__CONVERT);
+      renderer.methodGen().invokeStatic(A_AS_JSON_NODE_TYPE, JSON_CONVERTER__CONVERT);
     } else {
       renderer.loadImyhat(type.descriptor());
       renderer.methodGen().newInstance(A_JSON_CONVERTER_TYPE);
@@ -73,6 +68,11 @@ public class ExpressionNodeJsonConvert extends ExpressionNode {
       renderer.methodGen().invokeVirtual(A_IMYHAT_TYPE, IMYHAT__APPLY);
       renderer.methodGen().checkCast(A_OPTIONAL_TYPE);
     }
+  }
+
+  @Override
+  public String renderEcma(EcmaScriptRenderer renderer) {
+    return expression.renderEcma(renderer);
   }
 
   @Override
