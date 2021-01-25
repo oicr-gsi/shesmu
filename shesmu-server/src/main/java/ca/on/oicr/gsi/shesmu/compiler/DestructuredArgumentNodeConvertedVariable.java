@@ -2,8 +2,8 @@ package ca.on.oicr.gsi.shesmu.compiler;
 
 import static ca.on.oicr.gsi.shesmu.compiler.TypeUtils.TO_ASM;
 
+import ca.on.oicr.gsi.shesmu.plugin.json.AsJsonNode;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
-import ca.on.oicr.gsi.shesmu.runtime.JsonWrapper;
 import ca.on.oicr.gsi.shesmu.runtime.RuntimeSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -95,7 +95,7 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
     @Override
     protected void convert(Renderer renderer) {
       renderer.methodGen().valueOf(type.apply(TO_ASM));
-      renderer.methodGen().invokeStatic(A_JSON_WRAPPER_TYPE, JSON_CONVERTER__CONVERT);
+      renderer.methodGen().invokeStatic(A_AS_JSON_NODE_TYPE, JSON_CONVERTER__CONVERT);
     }
 
     @Override
@@ -132,8 +132,8 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
     }
   }
 
+  private static final Type A_AS_JSON_NODE_TYPE = Type.getType(AsJsonNode.class);
   private static final Type A_DOUBLE_TYPE = Type.getType(Double.class);
-  private static final Type A_JSON_WRAPPER_TYPE = Type.getType(JsonWrapper.class);
   private static final Type A_LONG_TYPE = Type.getType(Long.class);
   private static final Type A_OBJECT_MAPPER_TYPE = Type.getType(ObjectMapper.class);
   private static final Type A_OBJECT_TYPE = Type.getType(Object.class);
@@ -166,13 +166,13 @@ public class DestructuredArgumentNodeConvertedVariable extends DestructuredArgum
         }
 
         @Override
-        public int line() {
-          return line;
+        public Flavour flavour() {
+          return flavour;
         }
 
         @Override
-        public Flavour flavour() {
-          return flavour;
+        public int line() {
+          return line;
         }
 
         @Override

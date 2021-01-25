@@ -1,4 +1,4 @@
-package ca.on.oicr.gsi.shesmu.runtime;
+package ca.on.oicr.gsi.shesmu.plugin.json;
 
 import ca.on.oicr.gsi.shesmu.plugin.types.Field;
 import ca.on.oicr.gsi.shesmu.plugin.types.Imyhat;
@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class JsonWrapper implements ImyhatFunction<JsonNode> {
+public class AsJsonNode implements ImyhatFunction<JsonNode> {
   public static JsonNode convert(Imyhat type, Object value) {
-    return type.apply(new JsonWrapper(), value);
+    return type.apply(new AsJsonNode(), value);
   }
 
   private static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
@@ -25,7 +25,7 @@ public class JsonWrapper implements ImyhatFunction<JsonNode> {
   public JsonNode apply(String name, AccessContents accessor) {
     final ObjectNode objectNode = FACTORY.objectNode();
     objectNode.put("type", name);
-    objectNode.put("value", accessor.apply(this));
+    objectNode.set("value", accessor.apply(this));
     return objectNode;
   }
 
