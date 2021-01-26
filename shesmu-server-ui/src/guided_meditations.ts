@@ -163,7 +163,11 @@ type FetchOperation<T> = {
 };
 type InformationNested = Information[] | InformationNested[];
 
-type Wizard<T> = WizardFetch<T> | WizardForm<T> | WizardChoice<T>;
+type Wizard<T> =
+  | WizardFetch<T>
+  | WizardForm<T>
+  | WizardChoice<T>
+  | WizardFork<T>;
 
 interface WizardChoice<T> {
   type: "choice";
@@ -180,6 +184,12 @@ interface WizardForm<T> {
   type: "form";
   parameters: Parameters<T>;
   processor: WizardStep<T>;
+}
+
+interface WizardFork<T> {
+  type: "fork";
+  processor: WizardStep<T>;
+  items: { title: string; extra: Partial<T> }[];
 }
 
 export type WizardNext<T> = {
@@ -880,6 +890,68 @@ export function renderWizard<T>(
           .catch((e) => fetchModel.statusFailed(`${e}`, refresh));
       };
       refresh();
+      break;
+    case "fork":
+      switch (wizard.items.length) {
+        case 0:
+          inner = [
+            br(),
+            { type: "icon", icon: "cone-striped" },
+            "Normally the road forks here, but it seems this is a cul-de-sac.",
+          ];
+          break;
+        case 1:
+          const newState = { ...state, ...wizard.items[0].extra };
+          const { information, then } = wizard.processor(newState);
+          inner = [
+            information
+              .flat(Number.MAX_VALUE)
+              .map((i) =>
+                renderInformation(i, filenameFormatter, exportSearches)
+              ),
+            then == null
+              ? [
+                  br(),
+                  { type: "icon", icon: "flower2" },
+                  endings[Math.floor(Math.random() * endings.length)],
+                ]
+              : renderWizard(newState, then, filenameFormatter, exportSearches),
+          ];
+          break;
+        default:
+          inner = [
+            tabs(
+              ...wizard.items.map(({ title, extra }) => {
+                const newState = { ...state, ...extra };
+                const { information, then } = wizard.processor(newState);
+                return {
+                  name: title,
+                  contents: [
+                    information
+                      .flat(Number.MAX_VALUE)
+                      .map((i) =>
+                        renderInformation(i, filenameFormatter, exportSearches)
+                      ),
+                    then == null
+                      ? [
+                          br(),
+                          { type: "icon", icon: "flower2" } as UIElement,
+                          "This branch bears no more fruit.",
+                        ]
+                      : renderWizard(
+                          newState,
+                          then,
+                          filenameFormatter,
+                          exportSearches
+                        ),
+                  ],
+                };
+              })
+            ),
+            br(),
+          ];
+      }
+      break;
   }
 
   return [hr(), inner, childDisplay.ui];

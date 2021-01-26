@@ -200,6 +200,36 @@ public abstract class WizardNode {
           }
           return result;
         });
+    DISPATCH.addKeyword(
+        "Fork",
+        (p, o) -> {
+          final AtomicReference<DestructuredArgumentNode> name = new AtomicReference<>();
+          final AtomicReference<SourceNode> source = new AtomicReference<>();
+          final AtomicReference<List<ListNode>> transforms = new AtomicReference<>();
+          final AtomicReference<ExpressionNode> title = new AtomicReference<>();
+          final AtomicReference<WizardNode> step = new AtomicReference<>();
+          final Parser result =
+              p.whitespace()
+                  .then(DestructuredArgumentNode::parse, name::set)
+                  .whitespace()
+                  .then(SourceNode::parse, source::set)
+                  .whitespace()
+                  .symbol(":")
+                  .whitespace()
+                  .list(transforms::set, ListNode::parse)
+                  .keyword("Title")
+                  .whitespace()
+                  .then(ExpressionNode::parse, title::set)
+                  .whitespace()
+                  .then(WizardNode::parse, step::set)
+                  .whitespace();
+          if (result.isGood()) {
+            o.accept(
+                new WizardNodeFork(
+                    name.get(), source.get(), transforms.get(), title.get(), step.get()));
+          }
+          return result;
+        });
     DISPATCH.addRaw(
         "display information and next step",
         (p, o) -> {
