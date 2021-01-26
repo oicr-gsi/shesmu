@@ -258,6 +258,13 @@ Algebra](algebraicguide.md).
 Computes the value _refexpr_ and if it is equal to any _textexpr_, the matching
 _step_ will be performed. If no value match, _altstep_ is performed instead.
 
+- `Fork` _name_ `In` _source_`:` [ _transforms_ ]\* `Title` _title_ _step_
+
+Splits the journey into several parallel journeys.  _source_ and _transforms_
+are as exactly as `For` expressions. Each resulting item will be split into a
+new path handled by _step_. They will be labelled to avoid confusion, using
+_title_, which must be a string.
+
 ### Gathering Server Data
 The information blocks can display information from the server, but this
 information isn't available to make decision. The `Fetch` element allows
