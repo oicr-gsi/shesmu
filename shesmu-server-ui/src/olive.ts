@@ -25,6 +25,7 @@ import {
   textWithTitle,
   hidden,
   DisplayElement,
+  mono,
 } from "./html.js";
 import {
   SourceLocation,
@@ -220,6 +221,7 @@ function overview(file: ScriptFile, olive: Olive | null) {
       { contents: "Input Fomat" },
       { contents: link(`inputdefs#${file.format}`, file.format) }
     ),
+    tableRow(null, { contents: "Source Path" }, { contents: mono(file.file) }),
     tableRow(null, { contents: "Source Hash" }, { contents: file.hash || "*" }),
     tableRow(
       null,
