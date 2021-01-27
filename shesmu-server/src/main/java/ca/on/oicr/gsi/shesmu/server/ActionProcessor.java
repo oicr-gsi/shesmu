@@ -1555,7 +1555,8 @@ public final class ActionProcessor
   @Override
   public Filter textSearch(String text, boolean matchCase) {
     return textSearch(
-        Pattern.compile(Pattern.quote(text), matchCase ? 0 : Pattern.CASE_INSENSITIVE));
+        Pattern.compile(
+            ".*" + Pattern.quote(text) + ".*", matchCase ? 0 : Pattern.CASE_INSENSITIVE));
   }
 
   /** Check that an action has one of the types specified */
