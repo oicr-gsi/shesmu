@@ -32,6 +32,7 @@ public class BarcodeGrouper<I, O> implements Grouper<I, O> {
     this.basesMaskReader = basesMaskReader;
     this.barcodeReader = barcodeReader;
     this.collectorFactory = collectorFactory;
+    badGroups.clear();
   }
 
   @Override
