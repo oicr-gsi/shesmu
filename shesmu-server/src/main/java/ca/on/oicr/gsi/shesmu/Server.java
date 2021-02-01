@@ -2284,7 +2284,7 @@ public final class Server implements ServerConfig, ActionServices {
           try (OutputStream os = t.getResponseBody();
               PrintStream writer = new PrintStream(os, false, "UTF-8")) {
             writer.println(
-                "import { title } from './action.js'; import { breakSlashes } from './util.js'; import { blank, collapsible, jsonParameters, link, objectTable, preformatted, revealWhitespace, table, text, timespan, strikeout } from './html.js';\nexport const actionRender = new Map();\nexport const specialImports = [];\n");
+                "import { title } from './action.js'; import { breakSlashes } from './util.js'; import { blank, collapsible, jsonParameters, link, objectTable, preformatted, recursiveDifferences, revealWhitespace, table, text, timespan, strikeout } from './html.js';\nexport const actionRender = new Map();\nexport const specialImports = [];\n");
             definitionRepository.writeJavaScriptRenderer(writer);
           }
         });

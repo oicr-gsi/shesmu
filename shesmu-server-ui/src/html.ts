@@ -3404,6 +3404,134 @@ export function radioSelector<T>(
 }
 
 /**
+ * Compare two arbitrary JSON objects to create a table that explains their differences
+ */
+export function recursiveDifferences(
+  leftName: string,
+  left: any,
+  rightName: string,
+  right: any
+): UIElement {
+  const rows = recursiveDifferencesHelper("Root", left, right);
+  if (rows.length == 0) {
+    return blank();
+  } else {
+    rows.unshift(
+      tableRow(
+        null,
+        { contents: "Location" },
+        { contents: leftName },
+        { contents: rightName }
+      )
+    );
+    return tableFromRows(rows);
+  }
+}
+function recursiveDifferencesHelper(
+  path: string,
+  left: any,
+  right: any
+): ComplexElement<HTMLTableRowElement>[] {
+  if (typeof left == typeof right) {
+    switch (typeof left) {
+      case "string":
+      case "boolean":
+      case "number":
+        if (left == right) {
+          return [];
+        }
+        break;
+
+      case "object":
+        if (Array.isArray(left) && Array.isArray(right)) {
+          let rows: ComplexElement<HTMLTableRowElement>[] = [];
+          let i;
+          for (i = 0; i < Math.min(left.length, right.length); i++) {
+            rows = rows.concat(
+              recursiveDifferencesHelper(`{path}[{i}]`, left[i], right[i])
+            );
+          }
+          for (; i < left.length; i++) {
+            rows.push(
+              tableRow(
+                null,
+                { contents: `{path}[{i}]` },
+                { contents: preformatted(JSON.stringify(left[i], null, 2)) },
+                { contents: "Missing" }
+              )
+            );
+          }
+          for (; i < right.length; i++) {
+            rows.push(
+              tableRow(
+                null,
+                { contents: `{path}[{i}]` },
+                { contents: "Missing" },
+                { contents: preformatted(JSON.stringify(right[i], null, 2)) }
+              )
+            );
+          }
+          return rows;
+        } else if (!Array.isArray(left) && !Array.isArray(right)) {
+          let rows: ComplexElement<HTMLTableRowElement>[] = [];
+          let keys = new Set(Object.keys(left).concat(Object.keys(right)));
+          for (const key of keys) {
+            if (left.hasOwnProperty(key) && right.hasOwnProperty(key)) {
+              rows = rows.concat(
+                recursiveDifferencesHelper(
+                  `{path}.{key}`,
+                  left[key],
+                  right[key]
+                )
+              );
+            } else if (left.hasOwnProperty(key)) {
+              rows.push(
+                tableRow(
+                  null,
+                  { contents: `{path}.{key}` },
+                  {
+                    contents: preformatted(JSON.stringify(left[key], null, 2)),
+                  },
+                  { contents: "Missing" }
+                )
+              );
+            } else {
+              rows.push(
+                tableRow(
+                  null,
+                  { contents: `{path}.{key}` },
+                  { contents: "Missing" },
+                  {
+                    contents: preformatted(JSON.stringify(right[key], null, 2)),
+                  }
+                )
+              );
+            }
+          }
+        }
+        break;
+      default:
+        return [
+          tableRow(
+            null,
+            { contents: path },
+            { contents: `Cannot compare ${typeof left}` },
+            { contents: "N/A" }
+          ),
+        ];
+    }
+  }
+  return [
+    tableRow(
+      null,
+      { contents: path },
+      { contents: preformatted(JSON.stringify(left, null, 2)) },
+      { contents: preformatted(JSON.stringify(right, null, 2)) }
+    ),
+  ];
+}
+
+/**
  * Make text that makes whitespace visible
  */
 export function revealWhitespace(text: string): string {
