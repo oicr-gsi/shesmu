@@ -220,6 +220,7 @@ public abstract class ActionFilter {
         return result;
       }
     },
+
     last {
       @Override
       public <T, S, I, O> Parser parse(
@@ -685,6 +686,7 @@ public abstract class ActionFilter {
               parser
                   .whitespace()
                   .integer(time::set, 10)
+                  .whitespace()
                   .dispatch(TEMPORAL_UNITS, units::set)
                   .whitespace();
           if (result.isGood()) {
