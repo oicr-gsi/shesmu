@@ -52,10 +52,10 @@ public class InformationNodeDownload extends InformationNode {
   @Override
   public boolean typeCheck(Consumer<String> errorHandler) {
     boolean ok = true;
-    if (fileName.typeCheck(errorHandler)) {
-      if (!fileName.type().isSame(Imyhat.STRING) && !fileName.type().isSame(Imyhat.JSON)) {
+    if (contents.typeCheck(errorHandler)) {
+      if (!contents.type().isSame(Imyhat.STRING) && !contents.type().isSame(Imyhat.JSON)) {
         ok = false;
-        fileName.typeError("json or string", fileName.type(), errorHandler);
+        contents.typeError("json or string", contents.type(), errorHandler);
       }
     } else {
       ok = false;
@@ -78,10 +78,10 @@ public class InformationNodeDownload extends InformationNode {
                 })
             .orElse(true);
 
-    if (contents.typeCheck(errorHandler)) {
-      if (!contents.type().isSame(Imyhat.STRING)) {
+    if (fileName.typeCheck(errorHandler)) {
+      if (!fileName.type().isSame(Imyhat.STRING)) {
         ok = false;
-        contents.typeError(Imyhat.STRING, contents.type(), errorHandler);
+        fileName.typeError(Imyhat.STRING, fileName.type(), errorHandler);
       }
     } else {
       ok = false;
