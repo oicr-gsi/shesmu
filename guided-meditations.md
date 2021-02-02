@@ -311,20 +311,20 @@ may not appreciate that. There are three important things to do:
 - Restrict the number of variables required (_i.e._, have a `Let` clause that limits the variables to only the ones necessary)
 - Remove duplicate rows. Normally, Shesmu handles duplicates gracefully, but implementation details here make duplicate rows more of a problem. If selecting a small number of variables that will be mostly duplicated, use a `Group By` to ensure that duplicates are collapsed.
 
-    "Peer in the file system!"
-		Form
-			Entry text owner Label "What user are you interested in?"
-    Then
-      Fetch
-        Olive
-          Let owner = owner
-          unix_file
-            Where user == shesmu::simulated::owner Let file, size
-          To files
-      Then
-        Repeat {; file,  size} In files:
-          Begin Bold "{file}" " ({size}) " End
-      Stop
+     "Peer in the file system!"
+		 Form
+			 Entry text owner Label "What user are you interested in?"
+     Then
+       Fetch
+         Olive
+           Let owner = owner
+           unix_file
+             Where user == shesmu::simulated::owner Let file, size
+           To files
+       Then
+         Repeat {; file,  size} In files:
+           Begin Bold "{file}" " ({size}) " End
+       Stop
 
 ### Define and Go-to
 It can be useful to reuse steps in different contents. At the beginning of a
