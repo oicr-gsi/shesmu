@@ -11,6 +11,8 @@ import {
   button,
   buttonAccessory,
   buttonClose,
+  buttonDanger,
+  buttonDisabled,
   buttonEdit,
   collapsible,
   dateEditor,
@@ -35,7 +37,6 @@ import {
   temporaryState,
   text,
   tile,
-  buttonDisabled,
 } from "./html.js";
 import { AddRangeSearch, AddPropertySearch, PropertySearch } from "./stats.js";
 import { Status, statusButton, statusDescription, statuses } from "./action.js";
@@ -1459,12 +1460,15 @@ function searchAdvanced(
                   "The query does not have an equivalent basic form.",
                   br(),
                   button(
-                    "Stay here",
+                    [{ type: "icon", icon: "life-preserver" }, "Stay here"],
                     "Stay in the advanced query interface.",
                     close
                   ),
-                  button(
-                    "Discard and Switch",
+                  buttonDanger(
+                    [
+                      { type: "icon", icon: "trash-fill" },
+                      "Discard and Switch",
+                    ],
                     "Switch to the basic query interface.",
                     () => {
                       close();
