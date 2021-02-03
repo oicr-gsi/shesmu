@@ -1,5 +1,22 @@
 # Unreleased
 
+# [1.7.0] - 2021-02-03T14:42+00:00
+
+Changes:
+
+* Fix text query in action search to allow partial matches
+* Add guided meditations dashboard
+* Add custom grouper for set combinations
+* Create a Grafana plugin to access Shesmu action counts
+
+UI changes:
+* Show complete source path in olive dashboard
+
+Pinery plugin changes:
+
+* Clear barcode errors during grouping
+* Substitute missing sequencer run directories for `/`
+
 # [1.6.5] - 2021-01-21T11:53+00:00
 
 Niassa plugin changes:
