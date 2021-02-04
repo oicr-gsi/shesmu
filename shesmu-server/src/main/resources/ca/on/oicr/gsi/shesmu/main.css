@@ -1050,3 +1050,16 @@ input.dirty {
   padding: 0.5em;
   cursor: pointer;
 }
+
+.dragorder {
+  display: flex;
+  flex-flow: row wrap;
+}
+.dragorder > div {
+  border-left-style: solid;
+  border-right-style: solid;
+  border-left-width: 3px;
+  border-right-width: 3px;
+  border-color: #fff;
+  padding: 2em;
+}
