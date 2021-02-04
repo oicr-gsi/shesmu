@@ -12,6 +12,7 @@ import {
 } from "./util.js";
 import { BasicQuery, createSearch } from "./actionfilters.js";
 import { AlertFilter } from "./alert.js";
+
 /**
  * A function to render an item that can handle click events.
  */
@@ -1704,63 +1705,28 @@ export function checkRandomPermutation(
   count: number,
   callback: () => void
 ): UIElement {
-  const mapping = [
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-  ];
-  mapping.length = Math.max(
-    2,
-    Math.min(mapping.length, Math.ceil(Math.log2(count)))
-  );
-  shuffle(mapping);
-  const code = table(
-    [...mapping.entries()],
-    ["Code", ([index, _char]) => index.toString()],
-    ["Value", ([_index, char]) => char]
-  );
-  const sequence = [...mapping.entries()];
-  shuffle(sequence);
-  const answer = sequence.map(([_index, x]) => x).join("");
-
+  const code: number[] = new Array(Math.max(3, Math.min(26, count)));
+  for (let i = 0; i < code.length; i++) {
+    code[i] = i;
+  }
+  shuffle(code);
   return [
-    "Substitute each number in the sequence:",
+    "Put the blocks in alphabetical order:",
     br(),
-    sequence.map(([index, _x]) => index.toString()).join(", "),
-    br(),
-    "with a letter as follows:",
-    br(),
-    code,
-    br(),
-    "into this box: ",
-    inputSearch((input) => {
-      if (input.replace(/[^A-Za-z]/g, "").toUpperCase() == answer) {
-        callback();
-      }
-    }),
-    br(),
-    "and hit Enter.",
+    dragOrder(
+      {
+        statusChanged: (input: number[]) => {
+          if (input.every((item, index) => item == index)) {
+            callback();
+          }
+        },
+        statusFailed: (message, retry) => {},
+        statusWaiting: () => {},
+        reload: () => {},
+      },
+      (i) => String.fromCodePoint("A".codePointAt(0)! + i),
+      ...code
+    ),
   ];
 }
 
@@ -2000,6 +1966,109 @@ export function dialog(
   if (inner.reveal) {
     inner.reveal();
   }
+}
+/**
+ * Create a set of draggable blocks that can be reordered
+ * @param model the output model to update with the current state
+ * @param labelMaker a callback to determine what to display in the blocks
+ * @param items the values to rearrange
+ */
+export function dragOrder<T>(
+  model: StatefulModel<T[]>,
+  labelMaker: (input: T) => DisplayElement,
+  ...items: T[]
+): UIElement {
+  const container = singleState((input: T[]) => {
+    let displays = input.map((item, index) => {
+      const element = createUiFromTag("div", labelMaker(item));
+      element.element.draggable = true;
+      element.element.addEventListener("dragstart", (e) => {
+        e.dataTransfer?.setData("moveposition", index.toString());
+      });
+      element.element.addEventListener("dragover", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const onLeft =
+          (e.pageX - parentalSum(element.element, (x) => x.offsetLeft)) /
+            element.element.clientWidth <
+          0.5;
+        if (onLeft) {
+          element.element.style.borderLeftColor = "var(--widget-highlight)";
+          if (index == items.length - 1) {
+            element.element.style.borderRightColor = "white";
+          } else {
+            displays[index + 1].element.style.borderLeftColor = "white";
+          }
+        } else {
+          element.element.style.borderLeftColor = "white";
+          if (index == items.length - 1) {
+            element.element.style.borderRightColor = "var(--widget-highlight)";
+          } else {
+            displays[index + 1].element.style.borderLeftColor =
+              "var(--widget-highlight)";
+          }
+        }
+      });
+      element.element.addEventListener("dragleave", (e) => {
+        element.element.style.borderLeftColor = "white";
+        element.element.style.borderRightColor = "white";
+        if (index < items.length - 1) {
+          displays[index + 1].element.style.borderLeftColor = "white";
+        }
+      });
+      element.element.addEventListener("drop", (e) => {
+        e.stopPropagation();
+        let position = e.dataTransfer?.getData("moveposition");
+        if (position) {
+          const positionIndex = parseInt(position);
+          if (positionIndex == index) {
+            return;
+          }
+          const onLeft =
+            (e.pageX - parentalSum(element.element, (x) => x.offsetLeft)) /
+              element.element.clientWidth <
+            0.5;
+          if (positionIndex < index) {
+            if (positionIndex == 0) {
+              output.statusChanged(
+                input
+                  .slice(1, onLeft ? index : index + 1)
+                  .concat([input[0]])
+                  .concat(input.slice(onLeft ? index : index + 1))
+              );
+            } else {
+              output.statusChanged(
+                input
+                  .slice(0, positionIndex)
+                  .concat(
+                    input.slice(positionIndex + 1, onLeft ? index : index + 1)
+                  )
+                  .concat([input[positionIndex]])
+                  .concat(input.slice(onLeft ? index : index + 1))
+              );
+            }
+          } else {
+            output.statusChanged(
+              input
+                .slice(0, onLeft ? index : index + 1)
+                .concat([input[positionIndex]])
+                .concat(input.slice(onLeft ? index : index + 1, positionIndex))
+                .concat(input.slice(positionIndex + 1))
+            );
+          }
+        }
+      });
+
+      return element;
+    });
+    const list = createUiFromTag("div", displays);
+    list.element.classList.add("dragorder");
+    return list;
+  });
+  container.model.statusChanged(items);
+  const output = combineModels(model, container.model);
+
+  return container.ui;
 }
 /**
  * Create a drop down list
