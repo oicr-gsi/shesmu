@@ -59,7 +59,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       super(
           "niassa-analysis " + fileName.toString(),
           120,
-          TimeoutRecord.limit(45, ReplacingRecord::new));
+          TimeoutRecord.limit(45, ConcurrencyLimitedRecord.limit(4, ReplacingRecord::new)));
     }
 
     @Override
@@ -82,8 +82,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       final Gauge.Child monitor = badAnalysisData.labels(url, Long.toString(key));
       try {
         final List<AnalysisState> data =
-            metadata
-                .streamAnalysisProvenance(filters)
+            metadata.streamAnalysisProvenance(filters)
                 .filter(
                     ap -> {
                       if (ap.getWorkflowRunStatus() == null) {
@@ -93,8 +92,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
                       return true;
                     })
                 .filter(ap -> ap.getWorkflowId() != null)
-                .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId))
-                .entrySet()
+                .collect(Collectors.groupingBy(AnalysisProvenance::getWorkflowRunId)).entrySet()
                 .stream()
                 .map(
                     e ->
@@ -175,8 +173,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
       ini.load(new StringReader(run.getIniFile()));
 
       final Optional<String> cromwellId =
-          run.getWorkflowRunAttributes()
-              .stream()
+          run.getWorkflowRunAttributes().stream()
               .filter(attr -> attr.getTag().equals("cromwell-workflow-id"))
               .map(WorkflowRunAttribute::getValue)
               .findFirst();
@@ -764,8 +761,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         .map(Configuration::getPrefix)
         .ifPresent(
             prefix ->
-                WORKFLOWS
-                    .stream()
+                WORKFLOWS.stream()
                     .flatMap(WorkflowFile::stream)
                     .forEach(
                         wc -> {
@@ -782,9 +778,7 @@ class NiassaServer extends JsonPluginFile<Configuration> {
         "The kind/category of workflow for a particular action name",
         Imyhat.dictionary(
             Imyhat.STRING,
-            workflowKind
-                .values()
-                .stream()
+            workflowKind.values().stream()
                 .map(AlgebraicValue::name)
                 .map(Imyhat::algebraicTuple)
                 .reduce(Imyhat::unify)
