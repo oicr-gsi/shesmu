@@ -30,6 +30,21 @@ public abstract class ActionCommand<A extends Action> {
     ANNOY_USER
   }
 
+  /** The result of updating the action */
+  public enum Response {
+    /** The action executed this command, but no visible state changes occurred. */
+    ACCEPTED,
+    /** This action was not able to execute this command. */
+    IGNORED,
+    /** The action executed this command and now needs to be purged. */
+    PURGE,
+    /**
+     * The action executed this command and needs to put back in the {@link ActionState#UNKNOWN}
+     * state
+     */
+    RESET
+  }
+
   private final String buttonText;
   private final Class<A> clazz;
   private final String command;
@@ -76,7 +91,7 @@ public abstract class ActionCommand<A extends Action> {
    * @param user the user performing this action, if known
    * @return true if the command was followed; false if inappropriate or not understood
    */
-  protected abstract boolean execute(A action, Optional<String> user);
+  protected abstract Response execute(A action, Optional<String> user);
 
   /** The front end icon */
   public FrontEndIcon icon() {
@@ -96,10 +111,10 @@ public abstract class ActionCommand<A extends Action> {
    * @param user the user performing this action, if known
    * @return true if the command was followed; false if inappropriate or not understood
    */
-  public final boolean process(Action action, String command, Optional<String> user) {
+  public final Response process(Action action, String command, Optional<String> user) {
     if (command.equals(this.command) && clazz.isInstance(action)) {
       return execute(clazz.cast(action), user);
     }
-    return false;
+    return Response.IGNORED;
   }
 }

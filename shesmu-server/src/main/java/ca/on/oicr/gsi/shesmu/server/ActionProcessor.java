@@ -10,6 +10,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Response;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
 import ca.on.oicr.gsi.shesmu.plugin.dumper.Dumper;
@@ -269,8 +270,7 @@ public final class ActionProcessor
   private static <T extends Comparable<T>> void propertySummary(
       ArrayNode table, Property<T> property, List<Entry<Action, Information>> actions) {
     final TreeMap<T, Set<Action>> states =
-        actions
-            .stream()
+        actions.stream()
             .flatMap(
                 action -> property.extract(action).map(prop -> new Pair<>(prop, action.getKey())))
             .collect(
@@ -318,9 +318,7 @@ public final class ActionProcessor
         public Predicate<Alert> fromSourceLocation(Stream<SourceOliveLocation> locations) {
           final List<Predicate<SourceLocation>> predicates = locations.collect(Collectors.toList());
           return alert ->
-              alert
-                  .locations
-                  .stream()
+              alert.locations.stream()
                   .anyMatch(
                       location ->
                           predicates.stream().anyMatch(predicate -> predicate.test(location)));
@@ -768,35 +766,56 @@ public final class ActionProcessor
    */
   public long command(
       PluginManager pluginManager, String command, Optional<String> user, Filter... filters) {
-    return startStream(filters)
-        .filter(
-            e -> {
-              final List<String> performedCommands =
-                  e.getKey()
+    final List<Action> purge = new ArrayList<>();
+    final long count =
+        startStream(filters)
+            .filter(
+                e -> {
+                  final Map<String, String> labels = new TreeMap<>();
+                  labels.put("action", e.getValue().id);
+                  labels.put("action_type", e.getKey().type());
+                  return e.getKey()
                       .commands()
-                      .filter(
-                          c -> c.command().equals(command) && c.process(e.getKey(), command, user))
-                      .map(ActionCommand::command)
-                      .collect(Collectors.toList());
-              final Map<String, String> labels = new TreeMap<>();
-              labels.put("action", e.getValue().id);
-              labels.put("action_type", e.getKey().type());
-              for (final String performedCommand : performedCommands) {
-                labels.put("command", performedCommand);
-                pluginManager.log("Performed command", labels);
-              }
-              if (!performedCommands.isEmpty()) {
-                if (e.getValue().lastState != ActionState.UNKNOWN) {
-                  stateCount.labels(e.getValue().lastState.name(), e.getKey().type()).dec();
-                  stateCount.labels(ActionState.UNKNOWN.name(), e.getKey().type()).inc();
-                  e.getValue().lastStateTransition = Instant.now();
-                }
-                e.getValue().lastState = ActionState.UNKNOWN;
-                return true;
-              }
-              return false;
-            })
-        .count();
+                      .filter(c -> c.command().equals(command))
+                      .reduce(
+                          false,
+                          (accumulator, c) -> {
+                            final ActionCommand.Response response =
+                                c.process(e.getKey(), command, user);
+                            if (response != Response.IGNORED) {
+                              labels.put("command", c.command());
+                              pluginManager.log("Performed command", labels);
+                            }
+                            switch (response) {
+                              case ACCEPTED:
+                                return true;
+                              case PURGE:
+                                purge.add(e.getKey());
+                                stateCount
+                                    .labels(e.getValue().lastState.name(), e.getKey().type())
+                                    .dec();
+                                return true;
+                              case RESET:
+                                if (e.getValue().lastState != ActionState.UNKNOWN) {
+                                  stateCount
+                                      .labels(e.getValue().lastState.name(), e.getKey().type())
+                                      .dec();
+                                  stateCount
+                                      .labels(ActionState.UNKNOWN.name(), e.getKey().type())
+                                      .inc();
+                                  e.getValue().lastStateTransition = Instant.now();
+                                }
+                                e.getValue().lastState = ActionState.UNKNOWN;
+                                return true;
+                            }
+                            return accumulator;
+                          },
+                          (a, b) -> a || b);
+                })
+            .count();
+    purge.forEach(actions::remove);
+    purge.forEach(Action::purgeCleanup);
+    return count;
   }
 
   public Map<ActionCommand<?>, Long> commonCommands(Filter... filters) {
@@ -851,8 +870,7 @@ public final class ActionProcessor
     final Function<T, String> rowNamer = row.name(rows.stream());
     final Function<U, String> columnNamer = column.name(columns.stream());
     final ArrayNode columnsJson = node.putArray("columns");
-    columns
-        .stream()
+    columns.stream()
         .map(c -> new Pair<>(columnNamer.apply(c), column.json(c)))
         .sorted(Comparator.comparing(Pair::first))
         .forEach(
@@ -862,8 +880,7 @@ public final class ActionProcessor
               columnJson.set("value", colPair.second());
             });
     final Map<T, Set<Entry<Action, Information>>> map =
-        input
-            .stream()
+        input.stream()
             .flatMap(e -> row.extract(e).map(t -> new Pair<>(t, e)))
             .collect(
                 Collectors.groupingBy(
@@ -875,9 +892,7 @@ public final class ActionProcessor
       rowsJson.set(name, row.json(entry.getKey()));
 
       for (final Entry<U, Long> i :
-          entry
-              .getValue()
-              .stream()
+          entry.getValue().stream()
               .filter(
                   c ->
                       !c.equals(
@@ -943,9 +958,7 @@ public final class ActionProcessor
   @Override
   public Stream<Object> fetch(String format, boolean readStale) {
     return format.equals("shesmu")
-        ? actions
-            .entrySet()
-            .stream()
+        ? actions.entrySet().stream()
             .map(
                 entry ->
                     new ShesmuIntrospectionValue(
@@ -1032,8 +1045,7 @@ public final class ActionProcessor
         Stream.of(members)
             .flatMap(
                 member ->
-                    input
-                        .stream()
+                    input.stream()
                         .flatMap(v -> member.extract(v).map(Stream::of).orElseGet(Stream::empty)))
             .collect(Collectors.toList());
     final Optional<T> min = contents.stream().min(bin);
@@ -1085,8 +1097,7 @@ public final class ActionProcessor
         Stream.of(members)
             .flatMap(
                 member ->
-                    input
-                        .stream()
+                    input.stream()
                         .flatMap(v -> member.extract(v).map(Stream::of).orElseGet(Stream::empty)))
             .collect(Collectors.toList());
     final Optional<T> min = contents.stream().min(bin);
@@ -1129,8 +1140,7 @@ public final class ActionProcessor
     final ObjectNode counts = node.putObject("counts");
     for (final BinMember<T> member : members) {
       final Map<U, Map<Integer, Long>> counting =
-          input
-              .stream()
+          input.stream()
               .flatMap(
                   v ->
                       member
@@ -1240,10 +1250,7 @@ public final class ActionProcessor
     }
     node.put("type", entry.getKey().type());
     final ArrayNode locations = node.putArray("locations");
-    entry
-        .getValue()
-        .locations
-        .stream()
+    entry.getValue().locations.stream()
         .sorted()
         .forEach(location -> location.toJson(locations, linker));
     final ArrayNode commands = node.putArray("commands");
@@ -1401,9 +1408,7 @@ public final class ActionProcessor
   }
 
   private Stream<Entry<Action, Information>> startStream(Filter... filters) {
-    return actions
-        .entrySet()
-        .stream()
+    return actions.entrySet().stream()
         .filter(
             entry ->
                 Arrays.stream(filters)
@@ -1576,9 +1581,7 @@ public final class ActionProcessor
 
     final Instant now = Instant.now();
     final List<Entry<Action, Information>> candidates =
-        actions
-            .entrySet()
-            .stream()
+        actions.entrySet().stream()
             .sorted(Comparator.comparingInt(e -> e.getKey().priority()))
             .filter(
                 entry ->
@@ -1594,10 +1597,7 @@ public final class ActionProcessor
     for (final Entry<Action, Information> entry : candidates) {
       entry.getValue().updateInProgress = true;
       final String location =
-          entry
-              .getValue()
-              .locations
-              .stream()
+          entry.getValue().locations.stream()
               .map(Object::toString)
               .sorted()
               .collect(Collectors.joining(" "));
@@ -1628,10 +1628,7 @@ public final class ActionProcessor
                                 "Performing %s action %s from %s",
                                 entry.getKey().type(), entry.getValue().id, location))) {
                   entry.getValue().lastState =
-                      entry
-                              .getValue()
-                              .locations
-                              .stream()
+                      entry.getValue().locations.stream()
                               .anyMatch(
                                   l ->
                                       pausedOlives.contains(l)
@@ -1668,9 +1665,7 @@ public final class ActionProcessor
     scheduledInRound.set(candidates.size());
     lastRun.setToCurrentTime();
     final Map<Pair<ActionState, String>, Optional<Instant>> lastTransitions =
-        actions
-            .entrySet()
-            .stream()
+        actions.entrySet().stream()
             .collect(
                 Collectors.groupingBy(
                     (Entry<Action, Information> e) ->

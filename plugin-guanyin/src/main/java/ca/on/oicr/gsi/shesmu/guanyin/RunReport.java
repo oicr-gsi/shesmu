@@ -42,12 +42,12 @@ public class RunReport extends JsonParameterisedAction {
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
-        protected boolean execute(RunReport action, Optional<String> user) {
+        protected Response execute(RunReport action, Optional<String> user) {
           if (action.reportRecordId.isPresent()) {
             action.forceRelaunch = true;
-            return true;
+            return Response.RESET;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();

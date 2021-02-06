@@ -34,12 +34,12 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
           Preference.ALLOW_BULK,
           Preference.ANNOY_USER) {
         @Override
-        protected boolean execute(AnnotationAction action, Optional<String> user) {
+        protected Response execute(AnnotationAction action, Optional<String> user) {
           if (!action.automatic) {
             action.automatic = true;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
 
@@ -100,8 +100,7 @@ public final class AnnotationAction<A extends Attribute<?, A>> extends Action {
       final int accession = Integer.parseInt(this.accession);
       final Metadata metadata = server.get().metadata();
       final Annotatable<A> item = type.fetch(metadata, accession);
-      if (item.getAnnotations()
-          .stream()
+      if (item.getAnnotations().stream()
           .anyMatch(a -> a.getTag().equals(key) && a.getValue().equals(value))) {
         metadata.clean_up();
         return ActionState.SUCCEEDED;
