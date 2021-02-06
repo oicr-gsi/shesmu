@@ -31,12 +31,12 @@ public class SymlinkAction extends Action {
           Preference.ALLOW_BULK) {
 
         @Override
-        protected boolean execute(SymlinkAction action, Optional user) {
+        protected Response execute(SymlinkAction action, Optional user) {
           if (!action.automatic) {
             action.automatic = true;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final Gauge filesInTheWay =

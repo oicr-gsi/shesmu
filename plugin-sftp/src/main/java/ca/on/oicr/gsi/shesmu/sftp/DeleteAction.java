@@ -30,12 +30,12 @@ public class DeleteAction extends Action {
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
-        protected boolean execute(DeleteAction action, Optional<String> user) {
+        protected Response execute(DeleteAction action, Optional<String> user) {
           if (!action.automatic) {
             action.automatic = true;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
 

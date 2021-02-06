@@ -26,9 +26,23 @@ public class NothingAction extends Action {
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
-        protected boolean execute(NothingAction action, Optional<String> user) {
+        protected Response execute(NothingAction action, Optional<String> user) {
           System.err.println(action.value);
-          return true;
+          return Response.ACCEPTED;
+        }
+      };
+  private static final ActionCommand<NothingAction> SCREAM_TO_DEATH =
+      new ActionCommand<NothingAction>(
+          NothingAction.class,
+          "NOTHING-SCREAM-TO-DEATH",
+          FrontEndIcon.TRASH_FILL,
+          "Write to Server Console and Purge",
+          Preference.ALLOW_BULK,
+          Preference.PROMPT) {
+        @Override
+        protected Response execute(NothingAction action, Optional<String> user) {
+          System.err.println(action.value);
+          return Response.PURGE;
         }
       };
   @RuntimeInterop public String value = "";
@@ -39,7 +53,7 @@ public class NothingAction extends Action {
 
   @Override
   public Stream<ActionCommand<?>> commands() {
-    return Stream.of(COMPLAIN);
+    return Stream.of(COMPLAIN, SCREAM_TO_DEATH);
   }
 
   @Override

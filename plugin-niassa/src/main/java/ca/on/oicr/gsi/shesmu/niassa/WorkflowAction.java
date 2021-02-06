@@ -11,6 +11,7 @@ import ca.on.oicr.gsi.shesmu.plugin.Utils;
 import ca.on.oicr.gsi.shesmu.plugin.action.Action;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Preference;
+import ca.on.oicr.gsi.shesmu.plugin.action.ActionCommand.Response;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionParameter;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionServices;
 import ca.on.oicr.gsi.shesmu.plugin.action.ActionState;
@@ -66,12 +67,12 @@ public final class WorkflowAction extends Action {
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (!action.overrideLock) {
             action.overrideLock = true;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final ActionCommand<WorkflowAction> IGNORE_MAX_IN_FLIGHT_COMMAND =
@@ -82,12 +83,12 @@ public final class WorkflowAction extends Action {
           "Ignore Max-in-flight Limit",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (!action.ignoreMaxInFlight) {
             action.ignoreMaxInFlight = true;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final ActionCommand<WorkflowAction> INVALIDATE_ESSENTIALS_COMMAND =
@@ -98,12 +99,12 @@ public final class WorkflowAction extends Action {
           "Refresh Run Information",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (action.runAccession != 0) {
             action.server.get().invalidateDirectoryAndIni(action.runAccession);
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   static final Comparator<LimsKey> LIMS_ID_COMPARATOR =
@@ -119,12 +120,12 @@ public final class WorkflowAction extends Action {
           "Use High Priority",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (!action.priorityBoost) {
             action.priorityBoost = true;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final ActionCommand<WorkflowAction> PRIORITY_NICE_COMMAND =
@@ -135,12 +136,12 @@ public final class WorkflowAction extends Action {
           "Use Normal Priority",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (action.priorityBoost) {
             action.priorityBoost = false;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final ActionCommand<WorkflowAction> RESET_WFR_COMMAND =
@@ -151,7 +152,7 @@ public final class WorkflowAction extends Action {
           "Reset Workflow Run Connection",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           return action.resetWorkflowRun();
         }
       };
@@ -163,12 +164,12 @@ public final class WorkflowAction extends Action {
           "Respect LIMS Key Lock",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (action.overrideLock) {
             action.overrideLock = false;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final ActionCommand<WorkflowAction> RESPECT_MAX_IN_FLIGHT_COMMAND =
@@ -179,12 +180,12 @@ public final class WorkflowAction extends Action {
           "Respect Max-in-flight Limit",
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (action.ignoreMaxInFlight) {
             action.ignoreMaxInFlight = false;
-            return true;
+            return Response.ACCEPTED;
           }
-          return false;
+          return Response.IGNORED;
         }
       };
   private static final ActionCommand<WorkflowAction> RETRY_COMMAND =
@@ -196,9 +197,9 @@ public final class WorkflowAction extends Action {
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           if (action.runAccession == 0) {
-            return false;
+            return Response.IGNORED;
           } else {
             try {
               final Metadata metadata = action.server.get().metadata();
@@ -209,13 +210,13 @@ public final class WorkflowAction extends Action {
                 metadata.updateWorkflowRun(run);
                 action.lastState = ActionState.UNKNOWN;
                 metadata.clean_up();
-                return true;
+                return Response.RESET;
               }
               metadata.clean_up();
             } catch (Exception e) {
               e.printStackTrace();
             }
-            return false;
+            return Response.IGNORED;
           }
         }
       };
@@ -229,7 +230,7 @@ public final class WorkflowAction extends Action {
           Preference.ANNOY_USER,
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           return action.skipWorkflowRunMatches(action.matches);
         }
       };
@@ -242,7 +243,7 @@ public final class WorkflowAction extends Action {
           Preference.ALLOW_BULK,
           Preference.PROMPT) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           return action.skipWorkflowRunMatches(action.matches.subList(1, action.matches.size()));
         }
       };
@@ -256,12 +257,10 @@ public final class WorkflowAction extends Action {
           Preference.ANNOY_USER,
           Preference.ALLOW_BULK) {
         @Override
-        protected boolean execute(WorkflowAction action, Optional<String> user) {
+        protected Response execute(WorkflowAction action, Optional<String> user) {
           action.skipWorkflowRun(
               action.runAccession,
-              action
-                  .matches
-                  .stream()
+              action.matches.stream()
                   .filter(m -> m.state().workflowRunAccession() == action.runAccession)
                   .findAny()
                   .map(m -> m.state().workflowAccession())
@@ -676,9 +675,7 @@ public final class WorkflowAction extends Action {
           final int iusAccession = iusAccessions.get(new SimpleLimsKey(signature.getKey()));
           metadata.annotateIUS(
               iusAccession,
-              signature
-                  .getValue()
-                  .stream()
+              signature.getValue().stream()
                   .map(
                       s -> {
                         final IUSAttribute attribute = new IUSAttribute();
@@ -701,11 +698,7 @@ public final class WorkflowAction extends Action {
           final Scheduler scheduler =
               new Scheduler(
                   metadata,
-                  server
-                      .get()
-                      .settings()
-                      .entrySet()
-                      .stream()
+                  server.get().settings().entrySet().stream()
                       .collect(Collectors.toMap(Object::toString, Object::toString)));
           runAccession =
               scheduler
@@ -714,9 +707,7 @@ public final class WorkflowAction extends Action {
                       Collections.singletonList(iniFile.getAbsolutePath()),
                       true,
                       Collections.emptyList(),
-                      iusAccessions
-                          .values()
-                          .stream()
+                      iusAccessions.values().stream()
                           .map(Object::toString)
                           .collect(Collectors.toList()),
                       Collections.emptyList(),
@@ -792,15 +783,15 @@ public final class WorkflowAction extends Action {
     server.get().analysisCache().invalidate(workflowAccession);
   }
 
-  private boolean resetWorkflowRun() {
+  private Response resetWorkflowRun() {
     if (runAccession == 0) {
-      return false;
+      return Response.IGNORED;
     } else {
       runAccession = 0;
       hasLaunched = false;
       lastState = ActionState.UNKNOWN;
       workflowAccessions().forEach(server.get().analysisCache()::invalidate);
-      return true;
+      return Response.RESET;
     }
   }
 
@@ -819,8 +810,7 @@ public final class WorkflowAction extends Action {
         || limsKeysCollection.matches(query)
         || workflowAccessions()
             .anyMatch(workflow -> query.matcher(Long.toString(workflow)).matches())
-        || matches
-            .stream()
+        || matches.stream()
             .anyMatch(
                 match ->
                     query
@@ -856,8 +846,7 @@ public final class WorkflowAction extends Action {
               .cromwellUrl()
               .ifPresent(
                   root ->
-                      run.getWorkflowRunAttributes()
-                          .stream()
+                      run.getWorkflowRunAttributes().stream()
                           .filter(a -> a.getTag().equals("cromwell-workflow-id"))
                           .map(WorkflowRunAttribute::getValue)
                           .forEach(
@@ -900,7 +889,7 @@ public final class WorkflowAction extends Action {
         Collections.emptyMap());
   }
 
-  private boolean skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
+  private Response skipWorkflowRunMatches(List<WorkflowRunMatch> runs) {
     final Set<Long> dirtyAccession = new TreeSet<>();
     for (final WorkflowRunMatch run : runs) {
       if (run.state().skipped()) {
@@ -912,7 +901,7 @@ public final class WorkflowAction extends Action {
     for (final long accession : dirtyAccession) {
       server.get().analysisCache().invalidate(accession);
     }
-    return !dirtyAccession.isEmpty();
+    return dirtyAccession.isEmpty() ? Response.IGNORED : Response.RESET;
   }
 
   @ActionParameter(required = false)
@@ -1001,8 +990,7 @@ public final class WorkflowAction extends Action {
         final ArrayNode outputFiles = node.putArray("files");
 
         final Iterable<FileInfo> files =
-            matches
-                .stream()
+            matches.stream()
                 .filter(m -> m.state().workflowRunAccession() == runAccession)
                 .findAny()
                 .map(m -> m.state().files())
